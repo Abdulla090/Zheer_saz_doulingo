@@ -10,6 +10,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  Platform,
 } from "react-native";
 import {
   ReduceMotion,
@@ -65,6 +66,9 @@ export const HomeScreen = () => {
   );
   const [popupLessonType, setPopupLessonType] =
     useState<LessonType>("practice");
+  const [popupLessonId, setPopupLessonId] = useState(0);
+  const [popupGlobalIndex, setPopupGlobalIndex] = useState(0);
+  const [popupSectionItemIndex, setPopupSectionItemIndex] = useState(0);
   const activeSectionDisplay = useMemo(() => {
     const [unitLabel, ...rest] = activeSectionTitle.split(":");
     return {
@@ -119,10 +123,16 @@ export const HomeScreen = () => {
       popupFaceColor: nextPopupFaceColor,
       popupRimColor: nextPopupRimColor,
       type,
+      lessonId,
+      globalIndex,
+      sectionItemIndex,
     }: ListItemPressMeasurement) => {
       popupFaceColor.value = nextPopupFaceColor;
       popupRimColor.value = nextPopupRimColor;
       setPopupLessonType(type);
+      setPopupLessonId(lessonId);
+      setPopupGlobalIndex(globalIndex);
+      setPopupSectionItemIndex(sectionItemIndex ?? 0);
       const viewportTop = insets.top;
       const viewportBottom = windowHeight - tabBarHeight;
       const usableHeight = Math.max(0, viewportBottom - viewportTop);
@@ -252,7 +262,7 @@ export const HomeScreen = () => {
         ref={listRef}
         renderSectionHeader={renderSectionHeader}
         onLayout={onListLayout}
-        onContentSizeChange={onContentSizeChange}
+        {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
         onScroll={onScroll}
         scrollEventThrottle={16}
         style={styles.list}
@@ -269,6 +279,9 @@ export const HomeScreen = () => {
         faceColor={popupFaceColor}
         rimColor={popupRimColor}
         lessonType={popupLessonType}
+        lessonId={popupLessonId}
+        globalIndex={popupGlobalIndex}
+        sectionItemIndex={popupSectionItemIndex}
         height={POPUP_HEIGHT}
       />
     </View>

@@ -1,5 +1,6 @@
 import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { LessonType } from "@/data/list-items";
+import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -12,9 +13,12 @@ type LessonPressPopupProps = {
   top: SharedValue<number>;
   pointerCenterX: SharedValue<number>;
   progress: SharedValue<number>;
-  faceColor: string;
-  rimColor: string;
+  faceColor: SharedValue<string>;
+  rimColor: SharedValue<string>;
   lessonType: LessonType;
+  lessonId: number;
+  globalIndex: number;
+  sectionItemIndex: number;
   height?: number;
 };
 
@@ -22,18 +26,18 @@ const LESSON_POPUP_CONTENT: Record<
   LessonType,
   { title: string; buttonLabel: string }
 > = {
-  practice: { title: "Practice: Core Skills", buttonLabel: "Practice +10 XP" },
-  video: { title: "Video: Watch and Learn", buttonLabel: "Watch +12 XP" },
-  reading: { title: "Reading: Quick Story", buttonLabel: "Read +12 XP" },
-  listening: { title: "Listening: Focus Audio", buttonLabel: "Listen +12 XP" },
-  gift: { title: "Reward: Chest Ready", buttonLabel: "Open Chest" },
-  game: { title: "Game: Challenge Mode", buttonLabel: "Play +15 XP" },
-  speaking: { title: "Speaking: Say It Out Loud", buttonLabel: "Speak +15 XP" },
+  practice: { title: "ڕاهێنان: شارەزایی سەرەکی", buttonLabel: "ڕاهێنان +10 XP" },
+  video: { title: "ڤیدیۆ: سەیرکە و فێربە", buttonLabel: "سەیرکردن +12 XP" },
+  reading: { title: "خوێندنەوە: چیرۆکی خێرا", buttonLabel: "خوێندنەوە +12 XP" },
+  listening: { title: "گوێگرتن: سەرنجدان لە دەنگ", buttonLabel: "گوێگرتن +12 XP" },
+  gift: { title: "خەڵات: سندوقەکە ئامادەیە", buttonLabel: "کردنەوەی سندوق" },
+  game: { title: "یاری: شێوازی ململانێ", buttonLabel: "یاریکردن +15 XP" },
+  speaking: { title: "قسەکردنی: بە دەنگی بەرز بیڵێ", buttonLabel: "قسەکردن +15 XP" },
   conversation: {
-    title: "Conversation: Real Dialogue",
-    buttonLabel: "Talk +15 XP",
+    title: "گفتوگۆ: وتووێژی ڕاستەقینە",
+    buttonLabel: "قسەکردن +15 XP",
   },
-  cup: { title: "Unit Complete: Final Test", buttonLabel: "Start Unit Test" },
+  cup: { title: "یەکە تەواو بوو: تاقیکردنەوەی کۆتایی", buttonLabel: "دەستپێکردنی تاقیکردنەوە" },
 };
 
 export const LessonPressPopup = ({
@@ -43,49 +47,59 @@ export const LessonPressPopup = ({
   faceColor,
   rimColor,
   lessonType,
+  lessonId,
+  globalIndex,
+  sectionItemIndex,
   height = 116,
 }: LessonPressPopupProps) => {
-  const popupContent = LESSON_POPUP_CONTENT[lessonType];
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      top: top.value,
-      height,
-      // Keep popup hidden through most of shrink; reveal quickly near full size.
-      opacity: interpolate(
-        progress.value,
-        [0, 0.35, 0.72, 1],
-        [0, 0.2, 0.88, 1],
-      ),
-      transform: [
-        { scale: progress.value },
-        { translateY: (1 - progress.value) * 8 },
-      ],
-    };
-  });
+  const router = useRouter();
+  
+  // Use the global index for the title, so each dot is a uniquely numbered lesson
+  const baseContent = LESSON_POPUP_CONTENT[lessonType];
+  const popupContent = {
+    ...baseContent,
+    title: lessonType === "cup" ? baseContent.title : `وانەی ${globalIndex + 1} - ${baseContent.title.split(":")[0]}`,
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    top: top.value,
+    height,
+    opacity: interpolate(
+      progress.value,
+      [0, 0.35, 0.72, 1],
+      [0, 0.2, 0.88, 1],
+    ),
+    transform: [
+      { scale: progress.value },
+      { translateY: (1 - progress.value) * 8 },
+    ],
+  }));
+
   const pointerAnimatedStyle = useAnimatedStyle(() => ({
     left: pointerCenterX.value - 8,
+    backgroundColor: faceColor.value,
+    borderColor: faceColor.value,
+  }));
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: faceColor.value,
+    borderColor: faceColor.value,
+  }));
+
+  const textStyle = useAnimatedStyle(() => ({
+    color: rimColor.value,
   }));
 
   return (
     <Animated.View
-      pointerEvents="none"
-      style={[styles.container, animatedStyle]}
+      style={[styles.container, animatedStyle, { pointerEvents: "box-none" } as any]}
     >
+      <Animated.View style={[styles.pointer, pointerAnimatedStyle]} />
       <Animated.View
-        style={[
-          styles.pointer,
-          pointerAnimatedStyle,
-          { backgroundColor: faceColor, borderColor: faceColor },
-        ]}
-      />
-      <View
-        className=" px-4 justify-between py-3"
-        style={[
-          styles.card,
-          { backgroundColor: faceColor, borderColor: faceColor },
-        ]}
+        className="px-4 justify-between py-3"
+        style={[styles.card, cardAnimatedStyle]}
       >
-        <Text className="text-white  text-xl font-rd-bold" numberOfLines={1}>
+        <Text className="text-white text-xl font-rd-bold" numberOfLines={1}>
           {popupContent.title}
         </Text>
         <SvgAppButton
@@ -96,20 +110,22 @@ export const LessonPressPopup = ({
           leftRadius={10}
           rightRadius={10}
           pressDepth={3}
-          onPress={() => {}}
+          onPress={() => {
+            router.push(`/lesson?id=${lessonId}&q=${globalIndex}&li=${sectionItemIndex}`);
+          }}
           contentContainerStyle={{
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Text
+          <Animated.Text
             className="text-base font-rd-medium"
-            style={{ color: rimColor }}
+            style={textStyle}
           >
             {popupContent.buttonLabel}
-          </Text>
+          </Animated.Text>
         </SvgAppButton>
-      </View>
+      </Animated.View>
     </Animated.View>
   );
 };

@@ -88,12 +88,12 @@ export const LeagueScreen = () => {
     <View className="flex-1 bg-white">
       <SafeContainer className="px-4 pt-2 pb-2 gap-1">
         <Text className="text-text-primary text-xl font-rd-bold">
-          Sapphire League
+          خولی شین
         </Text>
         <View className="flex-row items-center gap-1">
           <Clock color="#777777" size={16} />
           <Text className="text-text-secondary text-sm font-rd-medium">
-            5 DAYS
+            ٥ ڕۆژ 
           </Text>
         </View>
       </SafeContainer>

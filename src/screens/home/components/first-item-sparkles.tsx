@@ -132,8 +132,8 @@ export const FirstItemSparkles = ({ size }: { size: number }) => {
 
   return (
     <View
-      pointerEvents="none"
       style={{
+        pointerEvents: "none" as any,
         position: "absolute",
         left: 0,
         top: 0,

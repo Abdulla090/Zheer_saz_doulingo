@@ -102,7 +102,7 @@ export const ProgressBar = ({
       </Svg>
 
       {value ? (
-        <View pointerEvents="none" style={styles.valueContainer}>
+        <View style={[styles.valueContainer, { pointerEvents: "none" as any }]}>
           <Text
             style={[
               {

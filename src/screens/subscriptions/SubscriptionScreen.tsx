@@ -10,16 +10,16 @@ const plans = [
     name: "Super",
     price: 10,
     isRecommended: true,
-    description: "Learn without distractions",
-    features: ["Unlimited Energy", "No Ads"],
+    description: "فێربە بەبێ بێزارکردن",
+    features: ["پشووی بێ سنوور", "بەبێ ڕیکلام"],
   },
   {
     id: 2,
     name: "Super Family",
-    description: "Share super and save",
+    description: "شەریکایەتی سوپەر و پاشەکەوت بکە",
     price: 20,
     isRecommended: false,
-    features: ["For you and 5 others", "Only 3€ more per month "],
+    features: ["بۆ تۆ و ٥ کەسی تر", "تەنها ٣€ زیاترە لە مانگێکدا "],
   },
   {
     id: 3,
@@ -27,21 +27,21 @@ const plans = [
     price: 20,
     isRecommended: false,
     features: [
-      "Video Call with Lily",
-      "Roleplay",
-      "Real-time Feedback",
-      "Unlimited Energy",
-      "No ads",
+      "پەیوەندی ڤیدیۆیی لەگەڵ لیلی",
+      "نواندنی ڕۆڵ",
+      "فیدباکی ڕاستەوخۆ",
+      "پشووی بێ سنوور",
+      "بەبێ ڕیکلام",
     ],
-    description: "Maximize your learning",
+    description: "بەرزترین ئاستی فێربوون",
   },
   {
     id: 4,
     name: "Max Family",
     price: 20,
     isRecommended: false,
-    description: "Maximize your learning",
-    features: ["For you and 5 others", "Only 5€ more per month "],
+    description: "بەرزترین ئاستی فێربوون",
+    features: ["بۆ تۆ و ٥ کەسی تر", "تەنها ٥€ زیاترە لە مانگێکدا "],
   },
 ];
 const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
@@ -69,7 +69,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
             }}
           >
             <Text className="text-white px-4 text-lg font-rd-medium">
-              Recommended
+              پێشنیارکراو
             </Text>
           </LinearGradient>
         </View>
@@ -80,7 +80,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
             {plan.name}
           </Text>
           <Text className="text-text-secondary text-sm font-rd-medium">
-            Learn without distractions
+            {plan.description}
           </Text>
           {plan.features.map((feature) => (
             <View key={feature} className="flex-row items-center gap-2">
@@ -121,7 +121,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
         }}
       >
         <Text className="text-blue-500 text-base font-rd-bold">
-          Try For 0,00 €
+          تابیکەرەوە بە ٠٫٠٠ €
         </Text>
       </SvgAppButton>
     </View>
@@ -131,9 +131,9 @@ export const SubscriptionScreen = () => {
   return (
     <View className="flex-1  bg-white">
       <SafeContainer className="px-4 pt-2 pb-2 bg-[#0E3270]">
-        <Text className="text-white text-2xl font-rd-bold">Subscription</Text>
+        <Text className="text-white text-2xl font-rd-bold">بەشداریکردن</Text>
         <Text className="text-text-quaternary text-sm font-rd-medium">
-          Compare plans
+          بەراوردکردنی پلانەکان
         </Text>
         <Image
           source={require("@/assets/images/Cry_Super.png")}

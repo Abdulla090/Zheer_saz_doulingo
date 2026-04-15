@@ -127,11 +127,11 @@ export const HomeHeader = () => {
         <FullWindowOverlay>
           <Animated.View
             exiting={FadeOut.duration(50)}
-            pointerEvents="box-none"
             style={[
               styles.overlay,
 
               {
+                pointerEvents: "box-none" as any,
                 top: headerHeight + insets.top,
                 height: Math.max(0, windoHeight - headerHeight - insets.top),
               },

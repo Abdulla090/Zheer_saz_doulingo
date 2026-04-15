@@ -68,7 +68,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
               className="text-base font-bold text-text-primary"
               style={{ fontFamily: "DINNextRoundedBold" }}
             >
-              German
+              ئەڵمانی
             </Text>
           </View>
           <View className="items-center gap-1  ">
@@ -76,7 +76,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
               <Plus color="#AFAFAF" strokeWidth={4} width={20} height={20} />
             </View>
             <Text className="text-base font-bold text-gray-3 font-rd-bold">
-              Course
+              کۆرس
             </Text>
           </View>
         </View>
@@ -96,7 +96,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
             </Text>
           </View>
           <Text className="text-xl  text-text-secondary font-rd-regular">
-            Your German Score 13
+            خاڵیی ئەڵمانیت ١٣
           </Text>
           <Text
             className="text-base uppercase text-[#1CB0F6]"
@@ -106,7 +106,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
               fontWeight: "bold",
             }}
           >
-            More About score
+            زیاتر دەربارەی خاڵ
           </Text>
         </View>
         <View className="mt-3 gap-3 ">
@@ -114,7 +114,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
             className="text-[24px] font-bold text-text-primary"
             style={{ fontFamily: "DINNextRoundedBold" }}
           >
-            New Course
+            کۆرسی نوێ
           </Text>
           <View className="flex-row flex-wrap gap-3">
             {newCourses.map((course) => (
@@ -126,7 +126,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
                   {course.isNew ? (
                     <View className="absolute -right-5 -top-4 z-2 rounded-[8] border-white border-[3] bg-[#FF4B4B] px-[6] py-[6]">
                       <Text className="text-xs font-bold leading-3 text-white">
-                        NEW
+                        نوێ
                       </Text>
                     </View>
                   ) : null}

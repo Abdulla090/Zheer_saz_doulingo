@@ -143,12 +143,12 @@ const QuestScreen = () => {
         <View className="flex-row items-center justify-between">
           <View className="gap-1">
             <Text className="text-white  text-xl font-rd-bold">
-              April Quest
+              ئەرکی نیسان
             </Text>
             <View className="flex-row items-center gap-1">
               <Clock color="#e5e5e5" size={16} />
               <Text className=" text-gray-6 text-sm font-rd-medium">
-                24 Days
+                ٢٤ ڕۆژ
               </Text>
             </View>
           </View>
@@ -161,7 +161,7 @@ const QuestScreen = () => {
 
         <View className="gap-2 bg-white rounded-2xl p-4 bottom-4">
           <Text className="text-text-primary text-base font-rd-bold">
-            Earn 30 Quest Points
+            ٣٠ خاڵی ئەرک بەدەست بهێنە
           </Text>
           <QuestProgressBar
             progress={0.1}
@@ -178,12 +178,12 @@ const QuestScreen = () => {
         <View className="px-5 mt-6 gap-2">
           <View className="flex-row items-center justify-between">
             <Text className="text-text-tertiary text-xl font-rd-bold">
-              Friends Quest
+              ئەرکی هاوڕێیان
             </Text>
             <View className="flex-row items-center gap-1">
               <Clock color="#a7a7a7" size={16} />
               <Text className=" text-text-tertiary text-sm font-rd-medium">
-                3D
+                ٣ ڕۆژ
               </Text>
             </View>
           </View>
@@ -203,7 +203,7 @@ const QuestScreen = () => {
         {/* Friends Quest Progress */}
         <View className="px-5 mt-6 gap-2">
           <QuestGoalRow
-            title="Comlete Your Next Lesson"
+            title="وانەی داهاتووت تەواو بکە"
             progress={0}
             value="1 / 1"
             valueColor="#afafaf"
@@ -211,24 +211,24 @@ const QuestScreen = () => {
           />
           {/* You Quest */}
           <ParticipantRow
-            name="You"
-            lessonsLabel="1 Lesson"
+            name="تۆ"
+            lessonsLabel="١ وانە"
             dotColor="#C894F9"
           />
           <ParticipantRow
-            name="John Doe"
-            lessonsLabel="3 Lessons"
+            name="ئاکام"
+            lessonsLabel="٣ وانە"
             dotColor="#D5B8E8"
           />
           <View className="flex-row items-center justify-between">
             <QuestActionButton
               width={windowWidth * 0.4}
-              label="NUDGE"
+              label="ئاگادارکردنەوە"
               leftNode={<Text className="text-2xl">👋</Text>}
             />
             <QuestActionButton
               width={windowWidth * 0.4}
-              label="Gift"
+              label="خەڵات"
               leftNode={<Gift width={25} height={25} color="#CE82FE" />}
             />
           </View>
@@ -237,32 +237,32 @@ const QuestScreen = () => {
           <View className="gap-3">
             <View className="flex-row items-center justify-between">
               <Text className="text-text-secondary text-base font-rd-medium">
-                Daily Quests
+                ئەرکەکانی ڕۆژانە
               </Text>
               <View className="flex-row items-center gap-1">
                 <Clock color="#ffc800" size={16} />
                 <Text className="text-gold-base text-sm font-rd-medium">
-                  3D
+                  ٣ ڕۆژ
                 </Text>
               </View>
             </View>
             <View className="gap-6">
               <QuestGoalRow
-                title="Comlete Your Next Lesson"
+                title="وانەی داهاتووت تەواو بکە"
                 progress={0.2}
                 value="2 / 14"
                 valueColor="#afafaf"
                 barWidth={goalBarWidth}
               />
               <QuestGoalRow
-                title="Spend 10 minutes learning"
+                title="١٠ خولەک تەرخان بکە بۆ فێربوون"
                 progress={0}
                 value="0 / 14"
                 valueColor="#afafaf"
                 barWidth={goalBarWidth}
               />
               <QuestGoalRow
-                title="Listent to 5 exercise"
+                title="گوێ لە ٥ ڕاهێنان بگرە"
                 progress={0}
                 value="0 / 14"
                 valueColor="#afafaf"

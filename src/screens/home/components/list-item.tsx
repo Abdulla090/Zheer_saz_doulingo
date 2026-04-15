@@ -10,17 +10,15 @@ import {
   NavBarChest,
 } from "@/constants/icons";
 import { LessonListItem } from "@/data/list-items";
-import useRiveCharacters from "@/hooks/useRiveCharacters";
-import { RiveFile, RiveView } from "@rive-app/react-native";
-import React, { useMemo, useRef } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useRef } from "react";
+import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { LessonProgressRing } from "./lesson-progress-ring";
 import { SVG_BUTTON_COLOR_SETS, SvgButton } from "./list-button";
 
 const LESSON_BUTTON_SIZE = 80;
 const CHEST_VISUAL_SIZE = 65;
-const CHARACTER_SIZE = 180;
 const PROGRESS_RING_SIZE = 94;
 const PROGRESS_RING_OFFSET_X = (LESSON_BUTTON_SIZE - PROGRESS_RING_SIZE) / 2;
 const PROGRESS_RING_OFFSET_Y =
@@ -28,13 +26,11 @@ const PROGRESS_RING_OFFSET_Y =
 
 const ITEM_SLOT_HEIGHT = 78;
 const CURVE_AMPLITUDE_RATIO = 0.18;
-
 const ARC_FREQUENCY = Math.PI / 4;
 const CURVE_TENSION = 1.25;
 
 const getDynamicOffset = (globalIndex: number, amplitude: number) => {
   const baseSine = Math.sin(globalIndex * ARC_FREQUENCY);
-  //This is where arc shape is determined
   const adjustedSine =
     Math.sign(baseSine) * Math.pow(Math.abs(baseSine), CURVE_TENSION);
   return adjustedSine * amplitude * -1;
@@ -55,13 +51,14 @@ export type ListItemPressMeasurement = {
   id: string;
   type: LessonListItem["type"];
   globalIndex: number;
+  lessonId: number;
+  sectionItemIndex: number;
   popupFaceColor: string;
   popupRimColor: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  riveFile?: RiveFile;
 };
 
 type ListItemProps = {
@@ -72,13 +69,12 @@ type ListItemProps = {
 export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
   const { width } = useWindowDimensions();
   const buttonAnchorRef = useRef<View>(null);
+  const router = useRouter();
   const amplitude = width * CURVE_AMPLITUDE_RATIO;
 
   const { globalIndex, type, sectionTheme, isCurrent, progressSegments } = item;
 
   const xOffset = getDynamicOffset(globalIndex, amplitude);
-  const isPeak = globalIndex % 4 === 2;
-  const characterAnchorX = xOffset * -1.8;
   const isGrayInProgress = isCurrent && sectionTheme === "gray";
   const buttonColor =
     type === "cup" ? "yellow" : isGrayInProgress ? "mint" : sectionTheme;
@@ -87,78 +83,48 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
   const iconColorOverride =
     globalIndex === 0 ? "#B26A00" : isGrayInProgress ? "white" : undefined;
 
-  /** * PERFORMANCE WARNING:
-   loading all rive files within individual list items is not a good idea 
-   so normally you will have these hosted somewhere and you will fetch them on demand
-   */
-  const { duoRiveFile, girlRiveFile, manRiveFile } = useRiveCharacters();
+  // ─── Mobile: tap → navigate directly (no popup, no hover on touch screens)
+  // ─── Web:    hover → show popup | click → navigate directly
+  const handleNavigate = () => {
+    router.push(`/lesson?id=${item.lessonId}&q=${item.globalIndex}&li=${item.sectionItemIndex}`);
+  };
 
-  const selectedRiveFile = useMemo(() => {
-    if (!isPeak) return undefined;
-
-    if (globalIndex === 2) {
-      return girlRiveFile;
-    }
-
-    const characters = [duoRiveFile, girlRiveFile, manRiveFile];
-
-    const pseudoRandomIndex = (globalIndex * 17) % characters.length;
-
-    return characters[pseudoRandomIndex];
-  }, [isPeak, globalIndex, duoRiveFile, girlRiveFile, manRiveFile]);
-
-  const handlePress = () => {
-    buttonAnchorRef.current?.measureInWindow((x, y, itemWidth, itemHeight) => {
+  const handleHoverIn = () => {
+    buttonAnchorRef.current?.measureInWindow((x, y, w, h) => {
       onPressMeasure?.({
         id: item.id,
-        type,
-        globalIndex,
+        type: item.type,
+        globalIndex: item.globalIndex,
+        lessonId: item.lessonId,
+        sectionItemIndex: item.sectionItemIndex,
         popupFaceColor,
         popupRimColor,
         x,
         y,
-        width: itemWidth,
-        height: itemHeight,
+        width: w,
+        height: h,
       });
     });
   };
 
+  const webHoverProps =
+    Platform.OS === "web" ? { onMouseEnter: handleHoverIn } : {};
+
   return (
     <View className={`justify-center items-center h-[${ITEM_SLOT_HEIGHT}]`}>
-      {/* THE CHARACTER/PROP */}
-      {isPeak && (
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            width: CHARACTER_SIZE,
-            height: CHARACTER_SIZE,
-            justifyContent: "center",
-            alignItems: "center",
-            transform: [{ translateX: characterAnchorX }, { translateY: 15 }],
-            zIndex: 1,
-          }}
-        >
-          {selectedRiveFile && (
-            <RiveView
-              file={selectedRiveFile}
-              style={{ width: "100%", height: "100%" }}
-            />
-          )}
-        </View>
-      )}
-
       <View
         ref={buttonAnchorRef}
         style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}
+        {...(webHoverProps as any)}
       >
         {globalIndex === 0 ? (
           <FirstItemSparkles size={LESSON_BUTTON_SIZE} />
         ) : null}
+
         {isCurrent ? (
           <View
-            pointerEvents="none"
             style={{
+              pointerEvents: "none" as any,
               position: "absolute",
               left: PROGRESS_RING_OFFSET_X,
               top: PROGRESS_RING_OFFSET_Y,
@@ -174,7 +140,7 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
 
         {type === "gift" ? (
           <Pressable
-            onPress={handlePress}
+            onPress={handleNavigate}
             style={{
               width: LESSON_BUTTON_SIZE,
               height: LESSON_BUTTON_SIZE,
@@ -193,11 +159,10 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
             )}
           </Pressable>
         ) : (
-          // TODO:: this has to be optimized it causes frame drops during scrolling
           <SvgButton
             isCurrentLesson={isCurrent}
             size={LESSON_BUTTON_SIZE}
-            onPress={handlePress}
+            onPress={handleNavigate}
             variant={buttonColor}
             IconComponent={LESSON_ICON_MAP[type]}
             iconColor={iconColorOverride}

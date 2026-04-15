@@ -23,6 +23,7 @@ import {
   Profile,
   Subscriptions,
 } from "@/constants/icons";
+import { Settings } from "lucide-react-native";
 import { useRouter, type Href } from "expo-router";
 
 type SvgIconProps = {
@@ -71,24 +72,35 @@ const NAV_BAR_BORDER_WIDTH = 3;
 const moreActions = [
   {
     key: "profile",
-    title: "Profile",
+    title: "هەژمار",
     Icon: Profile,
     fill: "#8d8deb",
     stroke: "#8d8deb",
+    route: null,
   },
   {
     key: "video-call",
-    title: "Video call",
+    title: "پەیوەندی ڤیدیۆیی",
     Icon: LessonVideo,
     fill: "#23236e",
     stroke: "#23236e",
+    route: null,
   },
   {
     key: "practice",
-    title: "Practice",
+    title: "ڕاهێنان",
     Icon: LessonDumbbell,
     fill: "#c894f9",
     stroke: "green",
+    route: null,
+  },
+  {
+    key: "settings",
+    title: "فۆنتەکان / ڕێکخستنەکان",
+    Icon: null,
+    fill: "#1CB0F6",
+    stroke: "#1CB0F6",
+    route: "/more" as const,
   },
 ];
 
@@ -188,7 +200,7 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
         handleComponent={null}
       >
         <BottomSheetView style={[styles.sheet, { paddingBottom: 0 }]}>
-          {moreActions.map(({ key, title, Icon, fill, stroke }, index) => (
+          {moreActions.map(({ key, title, Icon, fill, stroke, route }, index) => (
             <Pressable
               key={key}
               className={`flex-row items-center gap-3 py-4 px-3 ${
@@ -196,9 +208,16 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
                   ? "border-b-[3px] border-[#E5E5E5]"
                   : ""
               }`}
-              onPress={closeMoreSheet}
+              onPress={() => {
+                closeMoreSheet();
+                if (route) router.navigate(route as Href);
+              }}
             >
-              <Icon width={30} height={30} stroke={stroke} fill={fill} />
+              {Icon ? (
+                <Icon width={30} height={30} stroke={stroke} fill={fill} />
+              ) : (
+                <Settings width={30} height={30} color={fill} />
+              )}
               <Text className="text-base font-bold text-text-primary font-rd-bold">
                 {title}
               </Text>

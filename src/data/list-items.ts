@@ -20,6 +20,7 @@ export type LessonListItem = {
   status: LessonStatus;
   isCurrent: boolean;
   progressSegments: number;
+  lessonId: number;
 };
 
 export type LessonStatus = "completed" | "current" | "locked";
@@ -33,66 +34,47 @@ export type SectionDataItem = {
 
 const BASE_PATTERN: LessonType[] = [
   "practice",
-  "video",
   "practice",
-  "reading",
-  "gift",
+  "speaking",
   "practice",
-  "practice",
-  "listening",
-  "practice",
-  "game",
+  "conversation",
   "practice",
   "speaking",
   "practice",
   "gift",
   "practice",
-  "game",
-  "practice",
-  "conversation",
-  "practice",
-  "practice",
-  "practice",
-  "practice",
-  "practice",
-  "cup",
 ];
 
-const sectionConfigs: Array<{
+// ── 12 units: first is BLUE, second uses GREEN, rest follow  ──────────────
+export const sectionConfigs: Array<{
   title: string;
   theme: SectionTheme;
   displayTheme: SectionTheme;
 }> = [
-  {
-    title: "Unit 1: Describe the weather",
-    theme: "green",
-    displayTheme: "green",
-  },
-  { title: "Unit 2: Shop at market", theme: "purple", displayTheme: "purple" },
-  { title: "Unit 3: Talk about family", theme: "blue", displayTheme: "blue" },
-  {
-    title: "Unit 4: Order at restaurant",
-    theme: "yellow",
-    displayTheme: "yellow",
-  },
-  { title: "Unit 5: Navigate the city", theme: "gray", displayTheme: "green" },
-  { title: "Unit 6: Discuss hobbies", theme: "gray", displayTheme: "purple" },
-  { title: "Unit 7: Plan a vacation", theme: "gray", displayTheme: "blue" },
+  // Units 1–4: full-color (unlocked from start)
+  { title: "یەکەی ١: سڵاوی سەر شەقام",           theme: "blue",   displayTheme: "blue"   },
+  { title: "یەکەی ٢: چوونە دەرەوە و پلان",         theme: "green",  displayTheme: "green"  },
+  { title: "یەکەی ٣: قسەی ڕۆژانە",               theme: "purple", displayTheme: "purple" },
+  { title: "یەکەی ٤: کافتریا و خواردنی خێرا",     theme: "yellow", displayTheme: "yellow" },
+
+  // Units 5–12: gray but with distinct display colors (locked, unlocked progressively)
+  { title: "یەکەی ٥: هەستەکان و بێزاری",          theme: "gray",   displayTheme: "blue"   },
+  { title: "یەکەی ٦: سۆشیاڵ میدیا و تێکست",       theme: "gray",   displayTheme: "green"  },
+  { title: "یەکەی ٧: شەڕەقسە و تێگەیشتن",         theme: "gray",   displayTheme: "purple" },
+  { title: "یەکەی ٨: کارو پیشە (Job English)",    theme: "gray",   displayTheme: "yellow" },
+  { title: "یەکەی ٩: ئەکادیمی و زانستگا",          theme: "gray",   displayTheme: "blue"   },
+  { title: "یەکەی ١٠: تەلەفۆن و چاوپێکەوتن",     theme: "gray",   displayTheme: "green"  },
+  { title: "یەکەی ١١: ئەوەرجەنسی و یارمەتی",      theme: "gray",   displayTheme: "purple" },
+  { title: "یەکەی ١٢: ئیدیۆم و ئەکسپرێشن",        theme: "gray",   displayTheme: "yellow" },
 ];
 
 const CURRENT_USER_LEVEL = 45;
 
-// --- THE PURE FUNCTIONAL FIX ---
-// 1. Find which section is the first "gray" section
-const firstGraySectionIndex = sectionConfigs.findIndex(
-  (s) => s.theme === "gray",
-);
+const firstGraySectionIndex = sectionConfigs.findIndex((s) => s.theme === "gray");
 
-let targetCurrentGlobalIndex = -1; // Default fallback
+let targetCurrentGlobalIndex = -1;
 
-// 2. If a gray section exists, calculate the exact global index of its first valid item
 if (firstGraySectionIndex !== -1) {
-  // Find where this section starts mathematically
   const sectionStartGlobalIndex =
     firstGraySectionIndex === 0 ? 0 : 25 + (firstGraySectionIndex - 1) * 24;
 
@@ -101,13 +83,9 @@ if (firstGraySectionIndex !== -1) {
       ? (["practice", ...BASE_PATTERN] as LessonType[])
       : BASE_PATTERN;
 
-  // Find the offset of the first item in this section that is NOT a gift
   const firstEligibleItemOffset = pattern.findIndex((type) => type !== "gift");
-
-  // Lock in the exact mathematical coordinate
   targetCurrentGlobalIndex = sectionStartGlobalIndex + firstEligibleItemOffset;
 }
-// -------------------------------
 
 export const sectionData = sectionConfigs.map(
   ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
@@ -122,11 +100,9 @@ export const sectionData = sectionConfigs.map(
     const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
       const currentGlobalIndex = startGlobalIndex + itemIndex;
 
-      // Base status logic
       let itemStatus: LessonStatus =
         currentGlobalIndex <= CURRENT_USER_LEVEL ? "completed" : "locked";
 
-      // 3. PURE CHECK: If this item is exactly the coordinate we calculated, mark it!
       if (currentGlobalIndex === targetCurrentGlobalIndex) {
         itemStatus = "current";
       }
@@ -140,6 +116,7 @@ export const sectionData = sectionConfigs.map(
         status: itemStatus,
         isCurrent: itemStatus === "current",
         progressSegments: itemStatus === "current" ? 2 : 0,
+        lessonId: sectionIndex,
       };
     });
 

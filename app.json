@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "duolingo-clone",
+    "name": "Phingo English",
     "slug": "duolingo-clone",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,8 +8,9 @@
     "scheme": "duolingoclone",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.hewad.mubariz.duolingo-clone"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
@@ -41,6 +42,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f45df7ff-4701-4664-8ff9-657886a45c18"
+      }
     }
   }
 }
