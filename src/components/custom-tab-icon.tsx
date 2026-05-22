@@ -1,4 +1,3 @@
-import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import Animated, {
   ReduceMotion,
@@ -24,7 +23,6 @@ export function CustomTabIcon({ focused, Icon }: CustomTabIconProps) {
   const scale = useSharedValue(1);
   useEffect(() => {
     if (focused) {
-      void Haptics.selectionAsync();
       scale.value = withSequence(
         withTiming(0.85, {
           duration: 100,

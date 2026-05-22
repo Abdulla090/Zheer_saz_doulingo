@@ -7,67 +7,60 @@ import {
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { CustomTabIcon } from "./custom-tab-icon";
-
+import Svg, { Path, Rect, Circle } from "react-native-svg";
+import { BlurView } from "expo-blur";
+import { PressableScale } from "@/components/animations";
 import {
-  Cup,
-  Feed,
-  Home,
-  HorizontalMore,
+  Profile,
   LessonDumbbell,
   LessonVideo,
-  NavBarChest,
-  Profile,
-  Subscriptions,
 } from "@/constants/icons";
-import { Settings } from "lucide-react-native";
+import { Icon3DSettings } from "@/components/icons/Icon3D";
 import { useRouter, type Href } from "expo-router";
+import { crossShadow } from "@/utils/shadows";
 
-type SvgIconProps = {
-  width?: number;
-  height?: number;
-  opacity?: number;
-  stroke?: string;
-  fill?: string;
-};
+// Custom Sleek Icons for Capsule TabBar
+function HomeIcon({ size = 26, color = "#B4B8C3" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V9.5z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
-// Use a strict type for your routes rather than a generic string
+function CenterWaveIcon({ size = 24, color = "#FFFFFF" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 8c2.5-2.2 5.5 2.2 8 0s5.5 2.2 8 0M4 12c2.5-2.2 5.5 2.2 8 0s5.5 2.2 8 0M4 16c2.5-2.2 5.5 2.2 8 0s5.5 2.2 8 0"
+        stroke={color}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
 
-type RouteName =
-  | "index"
-  | "quest"
-  | "feed"
-  | "league"
-  | "subscription"
-  | "more";
+function StatsIcon({ size = 26, color = "#B4B8C3" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="4" y="10" width="3.5" height="10" rx="1" stroke={color} strokeWidth={2} />
+      <Rect x="10.25" y="4" width="3.5" height="16" rx="1" stroke={color} strokeWidth={2} />
+      <Rect x="16.5" y="13" width="3.5" height="7" rx="1" stroke={color} strokeWidth={2} />
+    </Svg>
+  );
+}
 
-const ROUTE_HREFS: Record<RouteName, Href> = {
-  index: "/",
-  quest: "/quest",
-  feed: "/feed",
-  league: "/league",
-  subscription: "/subscription",
-  more: "/more",
-};
-
-const ROUTE_ICONS: Record<
-  RouteName | string,
-  React.ComponentType<SvgIconProps>
-> = {
-  index: Home,
-  quest: NavBarChest,
-  feed: Feed,
-  league: Cup,
-  subscription: Subscriptions,
-  more: HorizontalMore,
-};
-
-const TAB_BAR_BASE_HEIGHT = 61;
-const NAV_BAR_BORDER_COLOR = "#E5E5E5";
-const NAV_BAR_BORDER_WIDTH = 3;
+const TAB_BAR_RESERVED_HEIGHT = 96;
 
 const moreActions = [
   {
@@ -104,10 +97,8 @@ const moreActions = [
   },
 ];
 
-export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
+export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const bottomPad = insets.bottom;
-  const tabBarReservedSpace = TAB_BAR_BASE_HEIGHT + bottomPad;
   const router = useRouter();
   const moreSheetRef = useRef<BottomSheetModal>(null);
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
@@ -123,7 +114,6 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
     moreSheetRef.current?.dismiss();
   }, []);
 
-  // 2. Apply strict Gorhom types instead of `any`
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
       <BottomSheetBackdrop
@@ -131,61 +121,112 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
         appearsOnIndex={0}
         disappearsOnIndex={-1}
         pressBehavior="close"
-        style={[props.style, { bottom: tabBarReservedSpace }]}
+        style={[props.style, { bottom: TAB_BAR_RESERVED_HEIGHT }]}
       />
     ),
-    [tabBarReservedSpace],
+    [],
   );
 
-  const onPress = (
-    route: (typeof state.routes)[0],
-    isActionTab: boolean,
-    isFocused: boolean,
-  ) => {
-    if (isActionTab) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      openMoreSheet();
-      return;
-    }
+  const activeRouteName = state.routes[state.index]?.name;
 
-    if (!isFocused) {
-      closeMoreSheet();
-      router.navigate(ROUTE_HREFS[route.name as RouteName]);
-    }
+  const handleHomePress = () => {
+    closeMoreSheet();
+    navigation.navigate("index");
+  };
+
+  const handleStatsPress = () => {
+    closeMoreSheet();
+    navigation.navigate("league");
+  };
+
+  const handleCenterPress = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    closeMoreSheet();
+    router.push("/dashboard");
+  };
+
+  const handleLongPress = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    openMoreSheet();
   };
 
   return (
     <>
-      <View style={[styles.container, { paddingBottom: bottomPad }]}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const isActionTab = route.name === "more";
-          const isFocused = isActionTab
-            ? isMoreSheetOpen
-            : !isMoreSheetOpen && state.index === index;
+      <View style={[styles.floatingWrapper, { bottom: Math.max(16, insets.bottom) }]}>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 80 : 40}
+          tint={Platform.OS === 'ios' ? "systemThinMaterialLight" : "default"}
+          style={[
+            styles.container,
+            crossShadow({
+              color: "#0F172A",
+              offsetY: 8,
+              blur: 24,
+              opacity: 0.1,
+              elevation: 8,
+            }),
+          ]}
+        >
+          {/* Left: AI Wave Talk Action */}
+          <PressableScale
+            onPress={handleCenterPress}
+            onLongPress={handleLongPress}
+            style={styles.tabItem}
+            scaleDown={0.9}
+            haptic
+            hapticStyle={Haptics.ImpactFeedbackStyle.Light}
+          >
+            <CenterWaveIcon
+              color={activeRouteName === "dashboard" && !isMoreSheetOpen ? "#208AEF" : "#B4B8C3"}
+              size={26}
+            />
+          </PressableScale>
 
-          const Icon = ROUTE_ICONS[route.name];
-
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              onPress={() => onPress(route, isActionTab, isFocused)}
-              style={styles.item}
+          {/* Center: Home Tab (Floating Highlight) */}
+          <PressableScale
+            onPress={handleHomePress}
+            onLongPress={handleLongPress}
+            style={styles.centerItem}
+            scaleDown={0.92}
+          >
+            <View
+              style={[
+                styles.centerCircle,
+                { backgroundColor: activeRouteName === "index" && !isMoreSheetOpen ? "#208AEF" : "rgba(229, 231, 235, 0.4)" }, // Light transparent gray when inactive
+                activeRouteName === "index" && !isMoreSheetOpen ? crossShadow({
+                  color: "#208AEF",
+                  offsetY: 6,
+                  blur: 16,
+                  opacity: 0.32,
+                  elevation: 6,
+                }) : null,
+              ]}
             >
-              {Icon ? <CustomTabIcon focused={isFocused} Icon={Icon} /> : null}
-              {options.tabBarShowLabel ? (
-                <Text style={[styles.label, isFocused && styles.labelActive]}>
-                  {typeof options.tabBarLabel === "string"
-                    ? options.tabBarLabel
-                    : route.name}
-                </Text>
-              ) : null}
-            </Pressable>
-          );
-        })}
+              <HomeIcon
+                color={activeRouteName === "index" && !isMoreSheetOpen ? "#FFFFFF" : "#9CA3AF"}
+                size={28}
+              />
+            </View>
+          </PressableScale>
+
+          {/* Right: Stats/League Tab */}
+          <PressableScale
+            onPress={handleStatsPress}
+            onLongPress={handleLongPress}
+            style={styles.tabItem}
+            haptic
+            hapticStyle={Haptics.ImpactFeedbackStyle.Light}
+            scaleDown={0.9}
+          >
+            <StatsIcon
+              color={
+                (activeRouteName === "league" || activeRouteName === "quest") && !isMoreSheetOpen
+                  ? "#208AEF"
+                  : "#B4B8C3"
+              }
+            />
+          </PressableScale>
+        </BlurView>
       </View>
 
       <BottomSheetModal
@@ -196,14 +237,14 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
         backdropComponent={renderBackdrop}
         onDismiss={() => setIsMoreSheetOpen(false)}
         backgroundStyle={styles.sheetBackground}
-        bottomInset={tabBarReservedSpace}
+        bottomInset={TAB_BAR_RESERVED_HEIGHT}
         handleComponent={null}
       >
         <BottomSheetView style={[styles.sheet, { paddingBottom: 0 }]}>
           {moreActions.map(({ key, title, Icon, fill, stroke, route }, index) => (
             <Pressable
               key={key}
-              className={`flex-row items-center gap-3 py-4 px-3 ${
+              className={`flex-row items-center gap-3 py-4 px-4 ${
                 index !== moreActions.length - 1
                   ? "border-b-[3px] border-[#E5E5E5]"
                   : ""
@@ -214,9 +255,9 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
               }}
             >
               {Icon ? (
-                <Icon width={30} height={30} stroke={stroke} fill={fill} />
+                <Icon width={28} height={28} stroke={stroke} fill={fill} />
               ) : (
-                <Settings width={30} height={30} color={fill} />
+                <Icon3DSettings size={28} />
               )}
               <Text className="text-base font-bold text-text-primary font-rd-bold">
                 {title}
@@ -230,51 +271,57 @@ export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
 }
 
 const styles = StyleSheet.create({
+  floatingWrapper: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    zIndex: 999,
+  },
   container: {
+    height: 72,
+    borderRadius: 36,
+    // @ts-ignore - RN supports this under the hood, heavily used in iOS
+    borderCurve: "continuous",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 8,
-    paddingHorizontal: 10,
-    borderTopWidth: NAV_BAR_BORDER_WIDTH,
-    borderColor: NAV_BAR_BORDER_COLOR,
-    backgroundColor: "#fff",
+    paddingHorizontal: 22,
+    backgroundColor: Platform.OS === 'web' ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.15)", // Much lower opacity for true translucency
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.4)", // Glowing edge highlight
+    // Subtle top-edge extra glow
+    borderTopColor: "rgba(255, 255, 255, 0.8)",
+    overflow: "hidden", // necessary for BlurView
   },
-  item: {
+  tabItem: {
     flex: 1,
-    minHeight: 50,
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  label: {
-    marginTop: 3,
-    color: "#B4B8C3",
-    fontSize: 11,
-    fontWeight: "600",
+  centerItem: {
+    width: 72,
+    height: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    top: -4, // Floating lift
   },
-  labelActive: {
-    color: "#FFFFFF",
+  centerCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    // Background color is handled dynamically in style array now
+    alignItems: "center",
+    justifyContent: "center",
   },
   sheet: {
     justifyContent: "center",
     paddingTop: 6,
     paddingHorizontal: 0,
   },
-  handle: {
-    backgroundColor: "#D9D9D9",
-    width: 38,
-  },
   sheetBackground: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-  sheetTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#4B4B4B",
-    marginBottom: 10,
-    fontFamily: "DINNextRoundedBold",
-    paddingHorizontal: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
 });

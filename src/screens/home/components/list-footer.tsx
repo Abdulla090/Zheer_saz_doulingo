@@ -1,6 +1,6 @@
 import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { Lock } from "lucide-react-native";
+import { Icon3DLock } from "@/components/icons/Icon3D";
 import { Text, useWindowDimensions, View } from "react-native";
 export const ListFooter = () => {
   const { width: windowWidth } = useWindowDimensions();
@@ -21,7 +21,7 @@ export const ListFooter = () => {
         </Text>
       </View>
       <View className="flex-row gap-1">
-        <Lock color={FOOTER_THEME.lockColor} width={20} height={20} />
+        <Icon3DLock size={22} />
         <Text className="text-base font-rd-bold text-text-secondary">
           Section 3
         </Text>

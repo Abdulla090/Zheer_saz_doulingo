@@ -1,51 +1,53 @@
+import "react-native-gesture-handler";
 import { CustomTabBar } from "@/components/CustomTabBar";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
-import React, { useEffect } from "react";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useCallback, useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { I18nManager, Platform, Text } from "react-native";
+import { Platform, Text } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
 import "../global.css";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function applyGlobalFont(fontFamily: string) {
+  if (Platform.OS === "web" && typeof document !== "undefined") {
+    document.documentElement.style.setProperty("--font-rd-bold", `'${fontFamily}'`);
+    document.documentElement.style.setProperty("--font-rd-medium", `'${fontFamily}'`);
+    document.documentElement.style.setProperty("--font-rd-regular", `'${fontFamily}'`);
+  }
+  (Text as any).defaultProps = (Text as any).defaultProps ?? {};
+  (Text as any).defaultProps.style = { fontFamily };
+}
 
 export default function TabLayout() {
   const { selectedFont, ready } = useFontStore();
 
   useEffect(() => {
-    if (!I18nManager.isRTL) {
-      I18nManager.allowRTL(true);
-      I18nManager.forceRTL(true);
-    }
-    if (Platform.OS === "web" && typeof document !== "undefined") {
-      document.documentElement.dir = "rtl";
-    }
-  }, []);
-
-  // ── Apply selected font to all Text components globally ───────────────
-  // This runs every time the user picks a different font in Settings.
-  useEffect(() => {
-    if (Platform.OS === "web" && typeof document !== "undefined") {
-      document.documentElement.style.setProperty("--font-rd-bold",    `'${selectedFont}'`);
-      document.documentElement.style.setProperty("--font-rd-medium",  `'${selectedFont}'`);
-      document.documentElement.style.setProperty("--font-rd-regular", `'${selectedFont}'`);
-    }
-    // RN global Text default — makes every <Text> in the app use the chosen font
-    (Text as any).defaultProps = (Text as any).defaultProps ?? {};
-    (Text as any).defaultProps.style = { fontFamily: selectedFont };
+    applyGlobalFont(selectedFont);
   }, [selectedFont]);
 
-  // Load ALL Rabar fonts upfront so switching is instant (no network round-trip)
   const [fontsLoaded] = useFonts(fontMap);
 
-  // Don't render until fonts are loaded AND the store has hydrated from storage
+  const onLayoutReady = useCallback(async () => {
+    if (fontsLoaded && ready) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, ready]);
+
+  useEffect(() => {
+    onLayoutReady();
+  }, [onLayoutReady]);
+
   if (!fontsLoaded || !ready) {
     return null;
   }
 
-  // Apply immediately (synchronous, before first paint so there's no flash)
-  (Text as any).defaultProps = (Text as any).defaultProps ?? {};
-  (Text as any).defaultProps.style = { fontFamily: selectedFont };
+  applyGlobalFont(selectedFont);
 
   const rnWebVars = Platform.OS === "web" ? {} : {
     "--font-rd-bold":    selectedFont,
@@ -54,17 +56,27 @@ export default function TabLayout() {
   };
 
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
       <BottomSheetModalProvider>
         <Tabs
+          initialRouteName="index"
           tabBar={(props) => <CustomTabBar {...props} />}
           screenOptions={{
             headerShown: false,
             tabBarShowLabel: false,
             tabBarActiveTintColor: "#FFFFFF",
             tabBarInactiveTintColor: "#B4B8C3",
+            // iOS 2026 Fluid Zoom Morphing Transition (RN 7 "shift")
+            animation: "shift",
           }}
         >
+          <Tabs.Screen
+            name="dashboard"
+            options={{
+              href: null,
+            }}
+          />
           <Tabs.Screen name="index" />
           <Tabs.Screen name="quest" />
           <Tabs.Screen name="league" />
@@ -75,11 +87,26 @@ export default function TabLayout() {
             name="lesson"
             options={{
               headerShown: false,
-              tabBarButton: () => null,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="guidebook"
+            options={{
+              headerShown: false,
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="roleplay"
+            options={{
+              headerShown: false,
+              href: null,
             }}
           />
         </Tabs>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

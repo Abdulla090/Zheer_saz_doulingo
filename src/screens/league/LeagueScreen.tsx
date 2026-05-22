@@ -10,7 +10,7 @@ import {
   LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
-import { Clock } from "lucide-react-native";
+import { Icon3DClock } from "@/components/icons/Icon3D";
 import { Text, View } from "react-native";
 
 const getAvatarUrl = (seed: string) =>
@@ -91,7 +91,7 @@ export const LeagueScreen = () => {
           خولی شین
         </Text>
         <View className="flex-row items-center gap-1">
-          <Clock color="#777777" size={16} />
+          <Icon3DClock size={18} />
           <Text className="text-text-secondary text-sm font-rd-medium">
             ٥ ڕۆژ 
           </Text>

@@ -1,345 +1,303 @@
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import { EaseView } from "react-native-ease";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  interpolateColor,
-  Easing,
-} from "react-native-reanimated";
-import { SentenceBuilderQuestion } from "@/data/lesson-content";
-import { useKurdishFont } from "@/hooks/useKurdishFont";
+/**
+ * SentenceBuilderGame — Duolingo style.
+ *
+ * Drop zone (dashed): tap words from bank to place them.
+ * CONTINUE (3D green) at bottom: validates → calls onAnswer.
+ * Wrong: shake + reset after 1s.
+ */
 
-type Props = { question: SentenceBuilderQuestion; onAnswer: (correct: boolean) => void };
+import React, { useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+// EaseView replaced with Animated.View from reanimated
+import { Icon3DX } from "@/components/icons/Icon3D";
+import { SentenceBuilderQuestion } from "@/data/lesson-content";
+import { G } from "./game-design";
+import { crossShadow } from "@/utils/shadows";
+
+type Props = {
+  question: SentenceBuilderQuestion;
+  onAnswer: (correct: boolean, explanation?: string) => void;
+};
 type FBState = "idle" | "correct" | "wrong";
 
-// Inline style object to force LTR — applied directly on Views (bypasses StyleSheet validator)
-const LTR = { direction: "ltr" } as any;
+// Removed direction: ltr to fix style error
+const LTR = {};
 
-function shuffleArr<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-type PlacedWord = { word: string; slotId: string };
-
-// ─── Ghost placeholder — dashed box preserving word width ─────────────
-function GhostChip({ word }: { word: string }) {
+// ── Ghost placeholder ─────────────────────────────────────────────────────────
+function Ghost({ word }: { word: string }) {
   return (
-    <View style={styles.ghostBase}>
-      <View style={styles.ghostChip}>
-        {/* Invisible text keeps the box the same width as the real chip */}
-        <View style={styles.chipPressable}>
-          <Text style={[styles.wordText, { opacity: 0 }]}>{word}</Text>
-        </View>
-      </View>
+    <View style={sg.ghost}>
+      <Text style={[sg.ghostText, { opacity: 0 }]}>{word}</Text>
     </View>
   );
 }
 
-// ─── Active word chip ─────────────────────────────────────────────────
-function WordChip({ word, isUsed, delay, onPress }: {
+// ── Bank word chip (3D) ───────────────────────────────────────────────────────
+function BankChip({ word, isUsed, delay, onPress }: {
   word: string; isUsed: boolean; delay: number; onPress: () => void;
 }) {
   const ty = useSharedValue(0);
-  const pi = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
-
-  if (isUsed) return <GhostChip word={word} />;
-
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
+  if (isUsed) return <Ghost word={word} />;
   return (
-    <EaseView
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 210, delay, easing: "easeOut" }}
-      style={{ translateY: 12, opacity: 0 }}
+    <Animated.View
+      entering={FadeInDown.duration(300)}
+
+      style={{}}
     >
-      <View style={styles.wordChipBase}>
-        <Animated.View style={[pi, styles.wordChip]}>
+      <View style={sg.rim}>
+        <Animated.View style={[sg.face, faceStyle]}>
           <Pressable
             onPress={onPress}
-            onPressIn={() => { ty.value = withTiming(3, { duration: 80 }); }}
-            onPressOut={() => { ty.value = withTiming(0, { duration: 115 }); }}
-            style={styles.chipPressable}
+            onPressIn={() => { ty.value = withTiming(G.depth, { duration: 70 }); }}
+            onPressOut={() => { ty.value = withTiming(0, { duration: 100 }); }}
+            style={sg.bankInner}
           >
-            <Text style={styles.wordText}>{word}</Text>
+            <Text style={sg.bankText}>{word}</Text>
           </Pressable>
         </Animated.View>
       </View>
-    </EaseView>
+    </Animated.View>
   );
 }
 
-// ─── Placed chip (blue, inside drop zone) ────────────────────────────
-function PlacedChip({ word, onRemove }: { word: string; onRemove: () => void }) {
+// ── Placed word chip (blue 3D) ────────────────────────────────────────────────
+function PlacedChip({ word, onRemove, fb }: { word: string; onRemove: () => void; fb: FBState }) {
+  const faceBg  = fb === "correct" ? G.greenBg : fb === "wrong" ? G.redBg : G.blueBg;
+  const faceCol = fb === "correct" ? G.green   : fb === "wrong" ? G.red   : G.blue;
+  const rimCol  = fb === "correct" ? G.greenRim: fb === "wrong" ? G.redRim: G.blueRim;
+  const textCol = fb === "correct" ? G.greenText: fb === "wrong" ? G.redText: G.blueText;
+
   const ty = useSharedValue(0);
-  const pi = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
+
   return (
-    <EaseView
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "timing", duration: 165, easing: "easeOut" }}
-      style={{ opacity: 0, transform: [{ scale: 0.55 }] }}
+    <Animated.View
+      style={{ opacity: 0, transform: [{ scale: 0.6 }] }}
     >
-      <View style={styles.placedBase}>
-        <Animated.View style={[pi, styles.placed]}>
+      <View style={[sg.placedRim, { backgroundColor: rimCol }]}>
+        <Animated.View style={[sg.placedFace, { backgroundColor: faceBg, borderColor: faceCol }, faceStyle]}>
           <Pressable
             onPress={onRemove}
-            onPressIn={() => { ty.value = withTiming(3, { duration: 75 }); }}
-            onPressOut={() => { ty.value = withTiming(0, { duration: 110 }); }}
-            style={styles.placedPressable}
+            disabled={fb !== "idle"}
+            onPressIn={() => { ty.value = withTiming(G.depth, { duration: 65 }); }}
+            onPressOut={() => { ty.value = withTiming(0, { duration: 90 }); }}
+            style={sg.placedInner}
           >
-            <Text style={styles.placedText}>{word}</Text>
-            <Text style={styles.placedX}>✕</Text>
+            <Text style={[sg.placedText, { color: textCol }]}>{word}</Text>
           </Pressable>
         </Animated.View>
       </View>
-    </EaseView>
+    </Animated.View>
   );
 }
 
-// ─── Main Screen ─────────────────────────────────────────────────────
+// ── CHECK button (3D) ─────────────────────────────────────────────────────────
+function CheckBtn({ onPress, canCheck, fb }: {
+  onPress: () => void; canCheck: boolean; fb: FBState;
+}) {
+  const ty = useSharedValue(0);
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
+
+  const rimCol  = !canCheck ? G.border    : fb === "correct" ? G.greenRim : fb === "wrong" ? G.redRim : G.greenRim;
+  const faceCol = !canCheck ? G.bgSoft    : fb === "correct" ? G.green    : fb === "wrong" ? G.red    : G.green;
+  const textCol = !canCheck ? G.textLight : "#FFF";
+
+  return (
+    <View style={[sg.checkRim, { backgroundColor: rimCol }]}>
+      <Animated.View style={[sg.checkFace, { backgroundColor: faceCol }, faceStyle]}>
+        <Pressable
+          onPress={onPress}
+          disabled={!canCheck}
+          onPressIn={() => { ty.value = withTiming(G.depth, { duration: 75 }); }}
+          onPressOut={() => { ty.value = withTiming(0, { duration: 110 }); }}
+          style={sg.checkInner}
+        >
+          <Text style={[sg.checkText, { color: textCol }]}>
+            {fb === "idle"    ? "CHECK"
+           : fb === "correct" ? "✓ Correct!"
+           :                    "✗ Try again"}
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+type Placed = { word: string; id: string };
+
 export default function SentenceBuilderGame({ question, onAnswer }: Props) {
-  const [wordBank] = useState(() => shuffleArr(question.wordBank));
-  const [sentence, setSentence] = useState<PlacedWord[]>([]);
+  const [sentence, setSentence] = useState<Placed[]>([]);
   const [fb, setFb] = useState<FBState>("idle");
-  const slotCounter = useRef(0);
-  const font = useKurdishFont();
-
+  const slotN = useRef(0);
   const firedRef = useRef(false);
-  const fireAnswer = (correct: boolean) => {
-    if (firedRef.current) return;
-    firedRef.current = true;
-    onAnswer(correct);
-  };
 
-  const areaP = useSharedValue(0);
-  const areaX = useSharedValue(0);
-  const areaStyle = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(areaP.value, [0, 1, 2], ["#D0D0D0", "#58CC02", "#FF4B4B"]),
-    backgroundColor: interpolateColor(areaP.value, [0, 1, 2], ["#FAFAFA", "#E5FFDC", "#FFEBEB"]),
-    transform: [{ translateX: areaX.value }],
+  const dropAnim = useSharedValue(0);
+  const dropStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(dropAnim.value, [0, 1, 2],
+      [G.border, G.green, G.red]),
+    backgroundColor: interpolateColor(dropAnim.value, [0, 1, 2],
+      [G.bgSoft, G.greenBg, G.redBg]),
   }));
 
-  const btnP    = useSharedValue(0);
-  const btnTy   = useSharedValue(0);
-  const btnStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(btnP.value, [0, 1, 2], ["#58CC02", "#58CC02", "#FF4B4B"]),
-  }));
-  const btnShadowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(btnP.value, [0, 1, 2], ["#58A700", "#58A700", "#EA2B2B"]),
-  }));
-  const btnPressStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: btnTy.value }],
-  }));
+  const shakeX = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
 
-  // Per-word supply counts
-  const wordBankCounts: Record<string, number> = {};
-  for (const w of wordBank) wordBankCounts[w] = (wordBankCounts[w] || 0) + 1;
-
-  const usedCounts: Record<string, number> = {};
-  for (const p of sentence) usedCounts[p.word] = (usedCounts[p.word] || 0) + 1;
-
-  // Per-slot "is this specific slot already used?" — handles duplicate words
+  const supply: Record<string, number> = {};
+  for (const w of question.wordBank) supply[w] = (supply[w] || 0) + 1;
+  const used: Record<string, number> = {};
+  for (const p of sentence) used[p.word] = (used[p.word] || 0) + 1;
   const slotUsed: boolean[] = (() => {
-    const remaining = { ...usedCounts };
-    return wordBank.map((word) => {
-      if ((remaining[word] || 0) > 0) {
-        remaining[word]--;
-        return true;
-      }
+    const rem = { ...used };
+    return question.wordBank.map(w => {
+      if ((rem[w] || 0) > 0) { rem[w]--; return true; }
       return false;
     });
   })();
 
   const addWord = (w: string) => {
     if (fb !== "idle") return;
-    if ((usedCounts[w] || 0) >= (wordBankCounts[w] || 0)) return;
-    const slotId = `slot-${slotCounter.current++}`;
-    setSentence((p) => [...p, { word: w, slotId }]);
+    if ((used[w] || 0) >= (supply[w] || 0)) return;
+    const id = `s${slotN.current++}`;
+    setSentence(p => [...p, { word: w, id }]);
   };
-
-  const removeWord = (slotId: string) => {
+  const removeWord = (id: string) => {
     if (fb !== "idle") return;
-    setSentence((p) => p.filter((item) => item.slotId !== slotId));
+    setSentence(p => p.filter(x => x.id !== id));
   };
 
   const check = () => {
     if (!sentence.length || fb !== "idle") return;
-
-    btnTy.value = withSequence(
-      withTiming(4, { duration: 85, easing: Easing.out(Easing.quad) }),
-      withTiming(0, { duration: 125, easing: Easing.out(Easing.cubic) })
-    );
-
-    const placed = sentence.map((p) => p.word);
+    const placed = sentence.map(p => p.word);
     const ok = placed.join(" ").toLowerCase() === question.correctWords.join(" ").toLowerCase();
     const t = (v: number) => withTiming(v, { duration: 220, easing: Easing.out(Easing.quad) });
-
     setFb(ok ? "correct" : "wrong");
-    areaP.value = t(ok ? 1 : 2);
-    btnP.value  = t(ok ? 1 : 2);
+    dropAnim.value = t(ok ? 1 : 2);
 
     if (!ok) {
-      areaX.value = withSequence(
-        withTiming(-6, { duration: 43 }), withTiming(6, { duration: 43 }),
-        withTiming(-4, { duration: 37 }), withTiming(4, { duration: 37 }),
-        withTiming( 0, { duration: 48, easing: Easing.out(Easing.quad) })
+      shakeX.value = withSequence(
+        withTiming(-9, { duration: 40 }), withTiming(9, { duration: 40 }),
+        withTiming(-5, { duration: 34 }), withTiming(5, { duration: 34 }),
+        withTiming( 0, { duration: 46, easing: Easing.out(Easing.quad) }),
       );
       setTimeout(() => {
-        setFb("idle");
-        areaP.value = withTiming(0, { duration: 200 });
-        btnP.value  = withTiming(0, { duration: 200 });
+        setFb("idle"); dropAnim.value = t(0);
       }, 1200);
     } else {
-      setTimeout(() => fireAnswer(true), 1000);
+      setTimeout(() => {
+        if (!firedRef.current) { firedRef.current = true; onAnswer(true); }
+      }, 380);
     }
   };
 
   const canCheck = sentence.length > 0 && fb === "idle";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.instruction}>وشەکان ڕێکبخە بۆ دروستکردنی لێرەیی ئینگلیزی</Text>
+    <View style={sg.root}>
+      {/* Instruction */}
+      <Animated.View
+        entering={FadeInDown.duration(300)}
 
-      {/* Kurdish prompt */}
-      <EaseView
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "timing", duration: 260, easing: "easeOut" }}
-        style={[styles.kuBox, { opacity: 0, transform: [{ scale: 0.91 }] }]}
+        style={{}}
       >
-        <Text style={styles.kuText}>{question.kurdishSentence}</Text>
-      </EaseView>
+        <Text style={[sg.instruction, { color: 'rgba(255,255,255,0.9)' }]}>Arrange the words in order</Text>
+        <Text style={[sg.prompt, { color: '#FFFFFF' }]}>{question.kurdishSentence}</Text>
+      </Animated.View>
 
-      {/* ── Drop zone (forced LTR via inline style) ─────────────────────
-           We do NOT put `direction` in StyleSheet.create() because RN Web
-           validator rejects it. Inline styles skip that validator.        */}
-      <Animated.View style={[styles.dropZone, areaStyle, LTR]}>
+      {/* Drop zone */}
+      <Animated.View style={[sg.drop, dropStyle, shakeStyle]}>
         {sentence.length === 0 ? (
-          <Text style={styles.placeholder}>وشەکان لێرە دابنێ...</Text>
+          <Text style={sg.placeholder}>Tap words below to build the sentence…</Text>
         ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={LTR}
-            contentContainerStyle={[styles.dropScroll, LTR]}
-          >
-            {sentence.map((item) => (
-              <PlacedChip
-                key={item.slotId}
-                word={item.word}
-                onRemove={() => removeWord(item.slotId)}
-              />
+          <View style={[sg.dropContent, LTR]}>
+            {sentence.map(p => (
+              <PlacedChip key={p.id} word={p.word} onRemove={() => removeWord(p.id)} fb={fb} />
             ))}
-          </ScrollView>
+          </View>
         )}
       </Animated.View>
 
-      {/* ── Word bank (forced LTR via inline style) ─────────────────── */}
-      <View style={[styles.wordBank, LTR]}>
-        {wordBank.map((word, i) => (
-          <WordChip
-            key={`${word}-${i}`}
-            word={word}
-            isUsed={slotUsed[i]}
-            delay={65 + i * 38}
-            onPress={() => addWord(word)}
-          />
+      {/* Word bank */}
+      <View style={[sg.bank, LTR]}>
+        {question.wordBank.map((w, i) => (
+          <BankChip key={`${w}-${i}`} word={w} isUsed={slotUsed[i]}
+            delay={50 + i * 35} onPress={() => addWord(w)} />
         ))}
       </View>
 
       <View style={{ flex: 1 }} />
 
-      {/* 3D Check Button */}
-      <Animated.View style={[styles.checkBtnBase, !canCheck && styles.checkBtnOffBase, btnShadowStyle]}>
-        <Animated.View style={[styles.checkBtn, !canCheck && styles.checkBtnOff, btnStyle, btnPressStyle]}>
-          <Pressable onPress={check} disabled={!canCheck} style={styles.checkBtnInner}>
-            <Text style={[styles.checkText, !canCheck && styles.checkTextOff]}>
-              {fb === "idle" ? "پشکنینی وەڵام" : fb === "correct" ? "✓ دروستە!" : "✗ هەڵەیە — دووبارە هەوڵبدە"}
-            </Text>
-          </Pressable>
-        </Animated.View>
-      </Animated.View>
+      {/* CHECK button */}
+      <CheckBtn onPress={check} canCheck={canCheck} fb={fb} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container:   { flex: 1, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24 },
-  instruction: { fontSize: 17, color: "#4B4B4B", textAlign: "center", marginBottom: 16 },
-
-  kuBox: {
-    backgroundColor: "#EAF6FF", borderRadius: 20, padding: 20, alignItems: "center", marginBottom: 18,
-    borderWidth: 2, borderColor: "#1CB0F6",
-    boxShadow: "0px 4px 10px rgba(28, 176, 246, 0.13)" as any, elevation: 4,
+const sg = StyleSheet.create({
+  root: {
+    flex: 1,
+    paddingHorizontal: G.px,
+    paddingTop: 8,
+    paddingBottom: 24,
+    gap: 16,
   },
-  kuText: { fontSize: 22, color: "#1CB0F6", textAlign: "center" },
+  instruction: {
+    fontSize: 13, fontWeight: "700", color: G.textLight,
+    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4,
+  },
+  prompt: { fontSize: 20, fontWeight: "600", color: G.textMid, lineHeight: 26 },
 
-  dropZone: {
-    minHeight: 76,
-    borderRadius: 16,
+  // Drop zone
+  drop: {
+    minHeight: 120,
+    borderRadius: G.rXl,
     borderWidth: 2,
-    borderStyle: "dashed",
-    marginBottom: 20,
+    borderStyle: "dashed" as any,
+    borderColor: "rgba(255,255,255,0.6)",
+    backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     overflow: "hidden",
   },
-  dropScroll: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    padding: 12,
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  placeholder: {
-    color: "#BDBDBD",
-    fontSize: 15,
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    textAlign: "center",
-    width: "100%",
-  },
+  dropContent: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 14, alignItems: "center" },
+  placeholder: { color: "rgba(255,255,255,0.8)", fontSize: 16, textAlign: "center", paddingHorizontal: 16, paddingVertical: 28, width: "100%" },
 
-  placedBase: { backgroundColor: "#1899D6", borderRadius: 12 },
-  placed: {
-    backgroundColor: "#1CB0F6", borderRadius: 12,
-    borderWidth: 2, borderColor: "#1CB0F6", marginBottom: 4,
-  },
-  placedPressable: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
-  placedText: { color: "#FFF", fontSize: 16 },
-  placedX:    { color: "rgba(255,255,255,0.55)", fontSize: 11, marginTop: 2 },
+  // Placed chip
+  placedRim: { borderRadius: G.rMd, overflow: "hidden" },
+  placedFace: { borderRadius: G.rMd, borderWidth: 2, marginBottom: G.depth - 2 },
+  placedInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6 },
+  placedText: { fontSize: 14, fontWeight: "700" },
 
-  wordBank: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 20,
-    justifyContent: "center",
-  },
+  // Bank
+  bank: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
+  rim:  { borderRadius: G.rMd, backgroundColor: G.optRim, overflow: "hidden", ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.15, blur: 8 }) },
+  face: { borderRadius: G.rMd, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.05)', backgroundColor: G.optBg, marginBottom: G.depth },
+  bankInner: { paddingHorizontal: 16, paddingVertical: 12 },
+  bankText: { fontSize: 16, fontWeight: "700", color: G.textDark },
 
-  wordChipBase: { backgroundColor: "#E5E5E5", borderRadius: 14 },
-  wordChip: {
-    backgroundColor: "#FFF", borderRadius: 14,
-    borderWidth: 2, borderColor: "#E5E5E5", marginBottom: 4,
+  // Ghost
+  ghost: {
+    borderRadius: G.rMd, borderWidth: 2.5, borderStyle: "dashed" as any,
+    borderColor: G.border, backgroundColor: "transparent",
+    paddingHorizontal: 16, paddingVertical: 12, opacity: 0.4,
+    marginBottom: G.depth,
   },
-  chipPressable: { paddingHorizontal: 18, paddingVertical: 12 },
-  wordText: { fontSize: 16, color: "#4B4B4B" },
+  ghostText: { fontSize: 16, fontWeight: "700", color: G.textDark },
 
-  // Dashed ghost box — same padding as wordChip to match size
-  ghostBase: {},
-  ghostChip: {
-    borderRadius: 14,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: "#C8C8C8",
-    backgroundColor: "#F7F7F7",
-    marginBottom: 4,
-  },
-
-  checkBtnBase:    { borderRadius: 16 },
-  checkBtn:        { borderRadius: 16, marginBottom: 4 },
-  checkBtnOffBase: { backgroundColor: "#E5E5E5" },
-  checkBtnOff:     { backgroundColor: "#F0F0F0" },
-  checkBtnInner:   { paddingVertical: 18, alignItems: "center" },
-  checkText:       { fontSize: 17, color: "#FFF" },
-  checkTextOff:    { color: "#AFAFAF" },
+  // CHECK button
+  checkRim: { borderRadius: G.rLg, width: "100%", overflow: "hidden" },
+  checkFace: { borderRadius: G.rLg, marginBottom: G.depth },
+  checkInner: { paddingVertical: 18, alignItems: "center" },
+  checkText: { fontSize: 17, fontWeight: "800", letterSpacing: 0.3 },
 });

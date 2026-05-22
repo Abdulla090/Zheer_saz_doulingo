@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { ClipPath, Defs, Ellipse, G, Rect } from "react-native-svg";
+import Svg, { ClipPath, Defs, Ellipse, G, Rect, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
@@ -19,6 +19,8 @@ export const SVG_BUTTON_COLOR_SETS = {
   mint: { rim: "#0B8A6C", face: "#08c296" },
   gray: { rim: "#b7b7b7", face: "#E5E5E5" },
   yellow: { rim: "#ff9600", face: "#ffc800" },
+  orange: { rim: "#E65100", face: "#FF9800" },
+  red: { rim: "#B71C1C", face: "#F44336" },
 } as const;
 
 type SvgButtonProps = {
@@ -35,8 +37,8 @@ const BUTTON_CENTER_X = 50;
 const FACE_BASE_CY = 40;
 const RIM_CY = 53;
 const FACE_PRESSED_CY = 52;
-const RX = 55;
-const RY = 45;
+const RX = 50;
+const RY = 50;
 const CLIP_INSET = 8;
 const ICON_SCALE = 1.8;
 const ICON_DROP_DISTANCE = 12;
@@ -108,13 +110,18 @@ export const SvgButton = React.memo(
               <Ellipse
                 cx={BUTTON_CENTER_X}
                 cy={FACE_BASE_CY}
-                rx={RX - CLIP_INSET}
-                ry={RY - CLIP_INSET}
+                rx={RX}
+                ry={RY}
               />
             </ClipPath>
+            <SvgLinearGradient id={`glass-${clipId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="rgba(255,255,255,0.7)" />
+              <Stop offset="30%" stopColor="rgba(255,255,255,0.15)" />
+              <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </SvgLinearGradient>
           </Defs>
 
-          {/* 1. Shadow/Rim */}
+          {/* 1. Shadow/Rim (adds depth) */}
           <Ellipse
             cx={BUTTON_CENTER_X}
             cy={RIM_CY}
@@ -123,7 +130,7 @@ export const SvgButton = React.memo(
             fill={colors.rim}
           />
 
-          {/* 2. Moving Face */}
+          {/* 2. Moving Face Base */}
           <AnimatedEllipse
             animatedProps={outerCircleAnimatedProps}
             cx={BUTTON_CENTER_X}
@@ -133,27 +140,27 @@ export const SvgButton = React.memo(
             fill={colors.face}
           />
 
-          {/* 3. Universal "Whitish" Gloss Stripes */}
-          {/* Using rgba(255, 255, 255, 0.3) creates a perfect glossy sheen on ANY color */}
+          {/* 3. iOS 2026 Liquid Glass Dome Highlight */}
           <AnimatedGroup
             animatedProps={groupAnimatedProps}
             clipPath={`url(#${clipId})`}
           >
-            <Rect
-              x={GLOSS_X}
-              y={GLOSS_TOP_Y}
-              width={GLOSS_W}
-              height={GLOSS_TOP_H}
-              fill="rgba(255, 255, 255, 0.3)"
-              transform={`rotate(-45 ${BUTTON_CENTER_X} ${FACE_BASE_CY})`}
+            <Ellipse
+              cx={BUTTON_CENTER_X}
+              cy={FACE_BASE_CY}
+              rx={RX}
+              ry={RY}
+              fill={`url(#glass-${clipId})`}
             />
-            <Rect
-              x={GLOSS_X}
-              y={GLOSS_BOTTOM_Y}
-              width={GLOSS_W}
-              height={GLOSS_BOTTOM_H}
-              fill="rgba(255, 255, 255, 0.3)"
-              transform={`rotate(-45 ${BUTTON_CENTER_X} ${FACE_BASE_CY})`}
+            {/* Subtle inner stroke for glass edge */}
+            <Ellipse
+              cx={BUTTON_CENTER_X}
+              cy={FACE_BASE_CY}
+              rx={RX - 2}
+              ry={RY - 2}
+              stroke="rgba(255,255,255,0.4)"
+              strokeWidth="2"
+              fill="none"
             />
           </AnimatedGroup>
 

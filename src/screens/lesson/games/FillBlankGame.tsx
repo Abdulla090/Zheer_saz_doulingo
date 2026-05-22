@@ -1,227 +1,272 @@
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { EaseView } from "react-native-ease";
+/**
+ * FillBlankGame — Duolingo style.
+ *
+ * Sentence with a blank (dashed box). Word option chips below.
+ * Tap chip → fills blank → correct: green border/bg, wrong: red + shows correct.
+ * Calls onAnswer after 380ms.
+ */
+
+import React, { useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  interpolateColor,
+  FadeInDown,
+  FadeInUp,
   Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
+// EaseView replaced with Animated.View from reanimated
+import { Icon3DCheck, Icon3DX } from "@/components/icons/Icon3D";
 import { FillBlankQuestion } from "@/data/lesson-content";
-import { useKurdishFont } from "@/hooks/useKurdishFont";
+import { G } from "./game-design";
+import { crossShadow } from "@/utils/shadows";
 
-type Props = { question: FillBlankQuestion; onAnswer: (correct: boolean) => void };
+// Removed direction: ltr to fix style error
+const LTR = {};
 
-export default function FillBlankGame({ question, onAnswer }: Props) {
-  const [selected, setSelected] = useState<string | null>(null);
-  const [locked, setLocked] = useState(false);
-  const font = useKurdishFont();
+type Props = {
+  question: FillBlankQuestion;
+  onAnswer: (correct: boolean, explanation?: string) => void;
+};
+type ChipState = "idle" | "correct" | "wrong" | "showCorrect";
 
-  const firedRef = useRef(false);
-  const fireAnswer = (correct: boolean) => {
-    if (firedRef.current) return;
-    firedRef.current = true;
-    onAnswer(correct);
-  };
-
-  const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
-
-  const pick = (opt: string) => {
-    if (locked) return;
-    setSelected(opt);
-    setLocked(true);
-
-    const ok = opt === question.correctAnswer;
-    if (!ok) {
-      shakeX.value = withSequence(
-        withTiming(-8, { duration: 42 }), withTiming(8, { duration: 42 }),
-        withTiming(-5, { duration: 36 }), withTiming(5, { duration: 36 }),
-        withTiming( 0, { duration: 50, easing: Easing.out(Easing.quad) })
-      );
-      // Auto-unlock after 1.4s so user can retry
-      setTimeout(() => { setSelected(null); setLocked(false); }, 1400);
-    } else {
-      setTimeout(() => fireAnswer(true), 960);
-    }
-  };
-
-  const optionState = (opt: string): "idle" | "correct" | "wrong" => {
-    if (selected !== opt) return "idle";
-    return opt === question.correctAnswer ? "correct" : "wrong";
-  };
-
-  return (
-    <View style={styles.container}>
-      <EaseView
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 220, easing: "easeOut" }}
-        style={{ opacity: 0, translateY: -10 }}
-      >
-        <Text style={styles.title}>خانەی بەتاڵ پڕبکەرەوە</Text>
-        <Text style={styles.hint}>{question.kurdishHint}</Text>
-      </EaseView>
-
-      {/* Sentence with gap */}
-      <Animated.View style={[styles.sentenceCard, shakeStyle]}>
-        <View style={styles.sentenceRow}>
-          {/* Force LTR for English text */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, direction: "ltr" as any }}>
-            {question.sentenceParts[0] ? (
-              <Text style={styles.sentenceText}>{question.sentenceParts[0]} </Text>
-            ) : null}
-
-            {/* The gap */}
-            <View style={[
-              styles.gap,
-              selected && optionState(selected) === "correct" && styles.gapCorrect,
-              selected && optionState(selected) === "wrong"   && styles.gapWrong,
-            ]}>
-              <Text style={[
-                styles.gapText,
-                selected && optionState(selected) === "correct" && { color: "#FFF" },
-                selected && optionState(selected) === "wrong"   && { color: "#FFF" },
-              ]}>
-                {selected || "___________"}
-              </Text>
-            </View>
-
-            {question.sentenceParts[1] ? (
-              <Text style={styles.sentenceText}> {question.sentenceParts[1]}</Text>
-            ) : null}
-          </View>
-        </View>
-      </Animated.View>
-
-      {/* Options */}
-      <View style={styles.optionsGrid}>
-        {question.options.map((opt, i) => {
-          const state = optionState(opt);
-          return (
-            <EaseView
-              key={opt}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "timing", duration: 200, delay: i * 55, easing: "easeOut" }}
-              style={{ opacity: 0, transform: [{ scale: 0.88 }], flex: 1, minWidth: "45%" }}
-            >
-              <OptionChip opt={opt} state={state} onPress={() => pick(opt)} disabled={locked} />
-            </EaseView>
-          );
-        })}
-      </View>
-
-      {/* Feedback row */}
-      {selected && (
-        <EaseView
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 200, easing: "easeOut" }}
-          style={[
-            styles.feedbackBar,
-            optionState(selected) === "correct" ? styles.feedbackCorrect : styles.feedbackWrong,
-            { opacity: 0, translateY: 12 },
-          ]}
-        >
-          <Text style={styles.feedbackText}>
-            {optionState(selected) === "correct" ? "✓ دروستە!" : `✗ وەڵامی دروست: ${question.correctAnswer}`}
-          </Text>
-        </EaseView>
-      )}
-    </View>
-  );
-}
-
-function OptionChip({ opt, state, onPress, disabled }: {
-  opt: string; state: "idle" | "correct" | "wrong"; onPress: () => void; disabled: boolean;
+// ── Word chip (3D) ────────────────────────────────────────────────────────────
+function WordChip({
+  word, state, onPress, disabled, delay,
+}: {
+  word: string; state: ChipState; onPress: () => void; disabled: boolean; delay: number;
 }) {
   const ty = useSharedValue(0);
-  const colorP = useSharedValue(0);
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(colorP.value, [0, 1, 2], ["#E5E5E5", "#58A700", "#EA2B2B"]),
-  }));
-  const frontStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(colorP.value, [0, 1, 2], ["#FFF", "#58CC02", "#FF4B4B"]),
-    borderColor: interpolateColor(colorP.value, [0, 1, 2], ["#E5E5E5", "#58CC02", "#FF4B4B"]),
-    transform: [{ translateY: ty.value }],
-  }));
+  const p  = useSharedValue(0);
 
   React.useEffect(() => {
     const t = (v: number) => withTiming(v, { duration: 200, easing: Easing.out(Easing.quad) });
-    if (state === "correct") colorP.value = t(1);
-    else if (state === "wrong") colorP.value = t(2);
-    else colorP.value = t(0);
+    if (state === "idle")        p.value = t(0);
+    if (state === "correct" || state === "showCorrect") p.value = t(1);
+    if (state === "wrong")       p.value = t(2);
   }, [state]);
 
+  const rimStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optRim, G.greenRim, G.redRim]),
+  }));
+  const faceStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optBg, G.greenBg, G.redBg]),
+    borderColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optBorder, G.green, G.red]),
+    transform: [{ translateY: ty.value }],
+  }));
+
+  const isGood = state === "correct" || state === "showCorrect";
+  const color = isGood ? G.greenText : state === "wrong" ? G.redText : G.textDark;
+
   return (
-    <Animated.View style={[styles.optBase, shadowStyle]}>
-      <Animated.View style={[styles.optFront, frontStyle]}>
-        <Pressable
-          onPress={onPress}
-          disabled={disabled}
-          onPressIn={() => { ty.value = withTiming(4, { duration: 80 }); }}
-          onPressOut={() => { ty.value = withTiming(0, { duration: 110 }); }}
-          style={styles.optPressable}
-        >
-          <Text style={[
-            styles.optText,
-            state === "correct" && { color: "#FFF" },
-            state === "wrong"   && { color: "#FFF" },
-          ]}>
-            {opt}
-          </Text>
-        </Pressable>
+    <Animated.View
+      style={{ opacity: 0, transform: [{ scale: 0.88 }] }}
+    >
+      <Animated.View style={[s.rim, rimStyle]}>
+        <Animated.View style={[s.face, faceStyle]}>
+          <Pressable
+            onPress={onPress}
+            disabled={disabled}
+            onPressIn={() => { ty.value = withTiming(G.depth, { duration: 75 }); }}
+            onPressOut={() => { ty.value = withTiming(0, { duration: 110 }); }}
+            style={s.chipPressable}
+          >
+            {isGood && <Icon3DCheck size={16} />}
+            {state === "wrong" && <Icon3DX size={16} />}
+            <Text style={[s.chipText, { color }]}>{word}</Text>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24, alignItems: "center" },
-  title:     { fontSize: 20, color: "#4B4B4B", textAlign: "center", marginBottom: 8 },
-  hint:      { fontSize: 15, color: "#7EC8E8", textAlign: "center", marginBottom: 22 },
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function FillBlankGame({ question, onAnswer }: Props) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [locked,   setLocked]   = useState(false);
+  const firedRef = useRef(false);
+
+  const shakeX = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
+  const blankP = useSharedValue(0);
+  const blankStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(blankP.value, [0, 1, 2],
+      ["transparent", G.greenBg, G.redBg]),
+    borderColor: interpolateColor(blankP.value, [0, 1, 2],
+      [G.optBorder, G.green, G.red]),
+  }));
+
+  const pick = (word: string) => {
+    if (locked) return;
+    setSelected(word);
+    setLocked(true);
+    const ok = word === question.correctAnswer;
+    const t = (v: number) => withTiming(v, { duration: 220, easing: Easing.out(Easing.quad) });
+    blankP.value = t(ok ? 1 : 2);
+
+    if (!ok) {
+      shakeX.value = withSequence(
+        withTiming(-10, { duration: 40 }), withTiming(10, { duration: 40 }),
+        withTiming(-5,  { duration: 34 }), withTiming(5,  { duration: 34 }),
+        withTiming( 0,  { duration: 48, easing: Easing.out(Easing.quad) }),
+      );
+    }
+    setTimeout(() => {
+      if (!firedRef.current) { firedRef.current = true; onAnswer(ok); }
+    }, 380);
+  };
+
+  const getState = (w: string): ChipState => {
+    if (!locked) return "idle";
+    if (w === selected) return w === question.correctAnswer ? "correct" : "wrong";
+    if (w === question.correctAnswer && selected !== question.correctAnswer) return "showCorrect";
+    return "idle";
+  };
+
+  const blankTextColor = !selected
+    ? G.textLight
+    : selected === question.correctAnswer ? G.greenText : G.redText;
+
+  return (
+    <View style={s.root}>
+      {/* Instruction */}
+      <Animated.View
+        entering={FadeInDown.duration(300)}
+
+        style={{}}
+      >
+        <Text style={[s.instruction, { color: 'rgba(255,255,255,0.9)' }]}>Fill in the blank</Text>
+        <Text style={[s.hint, { color: '#FFFFFF' }]}>{question.kurdishHint}</Text>
+      </Animated.View>
+
+      {/* Sentence card with blank */}
+      <Animated.View style={[s.sentenceCard, shakeStyle]}>
+        <View style={[s.sentenceRow, LTR]}>
+          {question.sentenceParts[0] ? (
+            <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
+          ) : null}
+
+          {/* The blank */}
+          <Animated.View style={[s.blank, blankStyle]}>
+            <Text style={[s.blankText, { color: blankTextColor }]}>
+              {selected || "___________"}
+            </Text>
+          </Animated.View>
+
+          {question.sentenceParts[1] ? (
+            <Text style={s.sentenceText}> {question.sentenceParts[1]}</Text>
+          ) : null}
+        </View>
+      </Animated.View>
+
+      {/* Word chips */}
+      <View style={[s.chipsWrap, LTR]}>
+        {question.options.map((w, i) => (
+          <WordChip
+            key={w}
+            word={w}
+            state={getState(w)}
+            onPress={() => pick(w)}
+            disabled={locked}
+            delay={i * 55}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root: {
+    flex: 1,
+    paddingHorizontal: G.px,
+    paddingTop: 8,
+    paddingBottom: 28,
+    gap: 20,
+  },
+  instruction: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: G.textLight,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  hint: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: G.textMid,
+    lineHeight: 25,
+  },
 
   sentenceCard: {
-    width: "100%",
-    backgroundColor: "#EAF6FF",
-    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderRadius: G.rXl,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
     padding: 24,
-    alignItems: "center",
-    marginBottom: 28,
-    borderWidth: 2,
-    borderColor: "#1CB0F6",
-    boxShadow: "0px 4px 10px rgba(28, 176, 246, 0.12)" as any,
-    elevation: 4,
-  },
-  sentenceRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap" },
-  sentenceText: { fontSize: 22, color: "#4B4B4B" },
-
-  gap: {
-    minWidth: 90,
-    borderRadius: 10,
-    backgroundColor: "#FFF",
-    borderWidth: 2.5,
-    borderColor: "#1CB0F6",
-    borderStyle: "dashed",
+    minHeight: 120,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    ...crossShadow({ color: "#000000", offsetY: 12, opacity: 0.15, blur: 20, elevation: 8 }),
   },
-  gapCorrect: { backgroundColor: "#58CC02", borderColor: "#58CC02", borderStyle: "solid" },
-  gapWrong:   { backgroundColor: "#FF4B4B", borderColor: "#FF4B4B", borderStyle: "solid" },
-  gapText:    { fontSize: 20, color: "#1CB0F6" },
+  sentenceRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  sentenceText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: G.textDark,
+    lineHeight: 28,
+  },
 
-  optionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, width: "100%", justifyContent: "center", marginTop: 8 },
+  // Blank slot
+  blank: {
+    minWidth: 100,
+    borderRadius: G.rSm,
+    borderWidth: 2.5,
+    borderStyle: "dashed" as any,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blankText: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
 
-  optBase:  { borderRadius: 14, marginBottom: 0 },
-  optFront: { borderRadius: 14, borderWidth: 2, marginBottom: 4 },
-  optPressable: { paddingHorizontal: 20, paddingVertical: 20, alignItems: "center" },
-  optText:  { fontSize: 18, color: "#4B4B4B", textAlign: "center" },
-
-  feedbackBar: { width: "100%", borderRadius: 16, padding: 20, alignItems: "center", marginTop: 20 },
-  feedbackCorrect: { backgroundColor: "#E5FFDC" },
-  feedbackWrong:   { backgroundColor: "#FFEBEB" },
-  feedbackText: { fontSize: 16, color: "#4B4B4B", textAlign: "center" },
+  // Chips
+  chipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "center",
+  },
+  rim:  { borderRadius: G.rMd, overflow: "hidden", ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.1, blur: 8 }) },
+  face: { borderRadius: G.rMd, borderWidth: 1.5, marginBottom: G.depth, borderColor: 'rgba(0,0,0,0.05)' },
+  chipPressable: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  chipText: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
 });

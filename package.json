@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:emu": "adb reverse tcp:8081 tcp:8081 && expo start --localhost --android",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -18,7 +19,10 @@
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
     "@rive-app/react-native": "^0.4.0",
+    "@shopify/flash-list": "2.0.2",
+    "burnt": "^0.13.0",
     "expo": "~55.0.11",
+    "expo-blur": "~55.0.14",
     "expo-constants": "~55.0.11",
     "expo-font": "~55.0.6",
     "expo-haptics": "~55.0.11",
@@ -30,14 +34,12 @@
     "expo-status-bar": "~55.0.5",
     "expo-system-ui": "~55.0.13",
     "expo-web-browser": "~55.0.12",
+    "lottie-react-native": "~7.3.4",
     "lucide-react-native": "^1.7.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.4",
-    "react-native-ease": "^0.4.0",
-    "react-native-filament": "^1.9.0",
     "react-native-gesture-handler": "~2.30.0",
-    "react-native-nitro-modules": "^0.35.3",
     "react-native-reanimated": "4.2.1",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
@@ -45,15 +47,17 @@
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.7.2",
     "tailwindcss": "^4.2.2",
+    "tslib": "2.6.2",
     "uniwind": "^1.6.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@gltf-transform/core": "^4.3.0",
-    "@gltf-transform/functions": "^4.3.0",
     "@types/react": "~19.2.2",
     "react-native-svg-transformer": "^1.5.3",
     "typescript": "~5.9.2"
+  },
+  "resolutions": {
+    "tslib": "2.6.2"
   },
   "private": true,
   "trustedDependencies": [

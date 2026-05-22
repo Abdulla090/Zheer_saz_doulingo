@@ -1,7 +1,9 @@
 import React, { useState, useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Platform } from "react-native";
-import { EaseView } from "react-native-ease";
+// EaseView replaced with Animated.View from reanimated
 import Animated, {
+  FadeInDown,
+  FadeInUp,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -9,9 +11,12 @@ import Animated, {
   withRepeat,
   cancelAnimation,
   Easing,
+  withSpring,
 } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { VoiceQuestion } from "@/data/lesson-content";
-import { Mic, MicOff, Volume2, CheckCircle2 } from "lucide-react-native";
+import { Icon3DMic, Icon3DVolume, Icon3DCheckCircle } from "@/components/icons/Icon3D";
+import { crossShadow, crossTextShadow } from "@/utils/shadows";
 
 type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
 type ListenState = "idle" | "listening" | "success" | "fail";
@@ -23,13 +28,64 @@ function getSpeechRec(): any {
 
 const isWebWithSpeech = Platform.OS === "web" && getSpeechRec() !== null;
 
+// ── Ultra Premium Pill Button ──────────────────────────────────────────────────
+function ActionBtn({
+  label,
+  icon,
+  bgColor,
+  textColor,
+  onPress,
+  disabled = false,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  bgColor: string;
+  textColor: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  
+  return (
+    <Animated.View style={[{ width: "100%" }, faceStyle]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        onPressIn={() => { scale.value = withSpring(0.96, { damping: 15, stiffness: 300 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+        style={{
+          backgroundColor: bgColor,
+          paddingVertical: 18,
+          borderRadius: 24,
+          flexDirection: 'row',
+          alignItems: "center",
+          justifyContent: "center",
+          ...crossShadow({
+            color: bgColor,
+            offsetY: 6,
+            opacity: 0.25,
+            blur: 12,
+            elevation: 6
+          }),
+          elevation: 6,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.1)',
+        }}
+      >
+        {icon && <View style={{ marginRight: 10 }}>{icon}</View>}
+        <Text style={{ fontSize: 17, fontWeight: "700", color: textColor, letterSpacing: 0.5 }}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+
 export default function VoiceGame({ question, onAnswer }: Props) {
   const [state, setState]           = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
   const recRef   = useRef<any>(null);
-  // Guard: prevent calling onAnswer more than once per question
   const firedRef = useRef(false);
-  // Track live state in a ref for use inside callbacks (avoids stale closure)
   const stateRef = useRef<ListenState>("idle");
 
   const fireAnswer = (correct: boolean) => {
@@ -38,20 +94,17 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     onAnswer(correct);
   };
 
-  // Keep stateRef in sync with state
   const updateState = (s: ListenState) => {
     stateRef.current = s;
     setState(s);
   };
 
-  // Reanimated — gesture-driven mic button
   const micTy    = useSharedValue(0);
   const shakeX   = useSharedValue(0);
   const micStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: micTy.value }, { translateX: shakeX.value }],
   }));
 
-  // Reanimated — pulse ring loop
   const ringS = useSharedValue(1);
   const ringO = useSharedValue(0);
   const ringStyle = useAnimatedStyle(() => ({
@@ -59,11 +112,8 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     opacity: ringO.value,
   }));
 
-  // Reanimated — action button (skip/trust)
   const skipO  = useSharedValue(0);
-  const skipTy = useSharedValue(0);
-  const skipStyle      = useAnimatedStyle(() => ({ opacity: skipO.value }));
-  const skipFrontStyle = useAnimatedStyle(() => ({ transform: [{ translateY: skipTy.value }] }));
+  const skipStyle = useAnimatedStyle(() => ({ opacity: skipO.value }));
 
   const stopPulse = () => {
     cancelAnimation(ringS);
@@ -91,7 +141,6 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       withTiming(-5, { duration: 37 }), withTiming( 5, { duration: 37 }),
       withTiming( 0, { duration: 50, easing: Easing.out(Easing.quad) })
     );
-    // Show action buttons after shake
     skipO.value = withTiming(1, { duration: 300 });
   };
 
@@ -99,7 +148,6 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     if (stateRef.current !== "idle") return;
     updateState("listening");
 
-    // Pulse ring animation
     ringO.value = withTiming(0.38, { duration: 180 });
     ringS.value = withRepeat(
       withSequence(
@@ -118,7 +166,6 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     rec.onresult = (e: any) => {
       const result = e.results[0][0].transcript.toLowerCase().trim();
       setTranscript(result);
-      // Fuzzy match: check if spoken text contains the target (or target contains it)
       const target = question.targetWord.toLowerCase();
       if (result.includes(target) || target.includes(result)) {
         onSuccess(result);
@@ -127,7 +174,6 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       }
     };
     rec.onerror = () => { onFail(); };
-    // Use stateRef to avoid stale closure — state at callback creation time is always "idle"
     rec.onend = () => {
       if (stateRef.current === "listening") {
         onFail();
@@ -135,205 +181,323 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     };
 
     rec.start();
-    // Auto-stop after 7 seconds
     setTimeout(() => { try { rec.stop(); } catch (_) {} }, 7000);
   };
 
   // ── Mobile / No-Speech-API mode ─────────────────────────────────────
-  // On mobile, we can't use the web Speech API. Show the phrase clearly
-  // and let user self-assess with "I Said It" / "Skip" buttons.
   if (!isWebWithSpeech) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>{question.prompt}</Text>
+      <View style={s.root}>
+        {/* Preamble */}
+        <Animated.View
+          entering={FadeInDown.duration(300)}
 
-        <EaseView
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "timing", duration: 270, easing: "easeOut" }}
-          style={[styles.card, { opacity: 0, transform: [{ scale: 0.9 }] }]}
+          style={{}}
         >
-          <View style={styles.kuRow}>
-            <Volume2 color="#1CB0F6" size={20} />
-            <Text style={styles.kuHint}>{question.targetKurdish}</Text>
-          </View>
-          <Text style={styles.targetWord}>{question.targetWord}</Text>
-        </EaseView>
+          <Text style={[s.preamble, { color: 'rgba(255,255,255,0.9)' }]}>Pronunciation</Text>
+        </Animated.View>
 
-        <Text style={styles.mobileInstruction}>
-          ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە
-        </Text>
+        <Text style={[s.prompt, crossTextShadow({ color: 'rgba(0,0,0,0.3)', offsetY: 1, blur: 3 })]}>{question.prompt}</Text>
 
-        {/* "I Said It" green button */}
-        <EaseView
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 240, delay: 200, easing: "easeOut" }}
-          style={[styles.mobileActionWrap, { opacity: 0, translateY: 16 }]}
+        {/* Premium White Card */}
+        <View style={s.cardWrapper}>
+          <Animated.View
+            style={[s.whiteCard, { opacity: 0, transform: [{ scale: 0.95 }, { translateY: 20 }] }]}
+          >
+            <LinearGradient
+              colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+              style={s.cardGlow}
+            />
+
+            <View style={s.kuRow}>
+              <View style={s.volBadge}>
+                <Icon3DVolume size={18} />
+              </View>
+              <Text style={s.kuHint}>{question.targetKurdish}</Text>
+            </View>
+            <Text style={s.targetWord}>{question.targetWord}</Text>
+          </Animated.View>
+        </View>
+
+        <Text style={s.mobileInstruction}>ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە</Text>
+
+        {/* Premium Actions */}
+        <Animated.View
+          style={[s.mobileActionWrap, { opacity: 0, translateY: 16 }]}
         >
-          <View style={styles.saidBtnBase}>
-            <View style={styles.saidBtnFront}>
-              <Pressable
-                style={styles.saidBtnInner}
-                onPress={() => fireAnswer(true)}
-              >
-                <CheckCircle2 color="#FFF" size={22} style={{ marginRight: 10 }} />
-                <Text style={styles.saidBtnText}>بڵێیم کرد ✓</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Skip/Can't Say it button */}
-          <View style={[styles.skipBase, { marginTop: 12 }]}>
-            <View style={styles.skipFront}>
-              <Pressable style={styles.skipBtn} onPress={() => fireAnswer(false)}>
-                <Text style={styles.skipText}>نەمتوانی بڵێم (Skip)</Text>
-              </Pressable>
-            </View>
-          </View>
-        </EaseView>
+          <ActionBtn 
+            label="بڵێیم کرد (I said it)" 
+            icon={<Icon3DCheckCircle size={22} />}
+            bgColor="#10B981" 
+            textColor="#FFFFFF" 
+            onPress={() => fireAnswer(true)} 
+          />
+          <View style={{ height: 12 }} />
+          <ActionBtn 
+            label="نەمتوانی بڵێم (Skip)" 
+            bgColor="#FFFFFF" 
+            textColor="#64748B" 
+            onPress={() => fireAnswer(false)} 
+          />
+        </Animated.View>
       </View>
     );
   }
 
-  // ── Web mode: Full speech recognition ───────────────────────────────
-  const micBg      = state === "listening" ? "#1CB0F6" : state === "success" ? "#58CC02" : state === "fail" ? "#FF4B4B" : "#FFFFFF";
-  const micShadow  = state === "listening" ? "#1899D6" : state === "success" ? "#58A700" : state === "fail" ? "#EA2B2B" : "#E5E5E5";
-  const statusColor = state === "success" ? "#58CC02" : state === "fail" ? "#FF4B4B" : "#888";
-  const statusText  =
+  // ── Web mode ───────────────────────────────
+  const micBg = state === "listening" ? "#3B82F6" : state === "success" ? "#10B981" : state === "fail" ? "#EF4444" : "#FFFFFF";
+  const statusColor = state === "success" ? "#10B981" : state === "fail" ? "#EF4444" : "rgba(255,255,255,0.7)";
+  const statusText =
     state === "idle"      ? "دوگمەی مایکرۆفۆن بپەڕینە" :
     state === "listening" ? "گوێم لێیە... قسەبکە" :
-    state === "success"   ? "باشە! دروستت بووە ✓" :
+    state === "success"   ? "باشە! دروستت بووە" :
                             "هەڵەیە، دووبارە هەوڵبدەوە";
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{question.prompt}</Text>
+    <View style={s.root}>
+      {/* Preamble */}
+      <Animated.View
+        entering={FadeInDown.duration(300)}
 
-      <EaseView
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "timing", duration: 270, easing: "easeOut" }}
-        style={[styles.card, { opacity: 0, transform: [{ scale: 0.9 }] }]}
+        style={{}}
       >
-        <View style={styles.kuRow}>
-          <Volume2 color="#1CB0F6" size={20} />
-          <Text style={styles.kuHint}>{question.targetKurdish}</Text>
-        </View>
-        <Text style={styles.targetWord}>{question.targetWord}</Text>
-      </EaseView>
+        <Text style={[s.preamble, { color: 'rgba(255,255,255,0.9)' }]}>Pronunciation</Text>
+      </Animated.View>
 
-      <EaseView
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 280, delay: 110, easing: "easeOut" }}
-        style={[styles.micOuter, { opacity: 0, translateY: 14 }]}
-      >
-        {/* Pulse ring */}
-        <Animated.View style={[styles.ring, { backgroundColor: micBg }, ringStyle]} />
+      <Text style={[s.prompt, crossTextShadow({ color: 'rgba(0,0,0,0.3)', offsetY: 1, blur: 3 })]}>{question.prompt}</Text>
 
-        {/* 3D mic button */}
-        <Animated.View style={[styles.micShadow, { backgroundColor: micShadow }]}>
-          <Animated.View style={[micStyle, styles.micFront, { backgroundColor: micBg, borderColor: state === "idle" ? "#E5E5E5" : micBg }]}>
-            <Pressable
-              onPress={startListening}
-              disabled={state !== "idle"}
-              onPressIn={() => { micTy.value = withTiming(6, { duration: 80 }); }}
-              onPressOut={() => { micTy.value = withTiming(0, { duration: 120 }); }}
-              style={styles.micInner}
-            >
-              <Mic color={state === "idle" ? "#1CB0F6" : "#FFF"} size={38} />
-            </Pressable>
-          </Animated.View>
+      {/* Premium White Card */}
+      <View style={s.cardWrapper}>
+        <Animated.View
+          style={[s.whiteCard, { opacity: 0, transform: [{ scale: 0.95 }, { translateY: 20 }] }]}
+        >
+          <LinearGradient
+            colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+            style={s.cardGlow}
+          />
+          <View style={s.kuRow}>
+            <View style={s.volBadge}>
+              <Icon3DVolume size={18} />
+            </View>
+            <Text style={s.kuHint}>{question.targetKurdish}</Text>
+          </View>
+          <Text style={s.targetWord}>{question.targetWord}</Text>
         </Animated.View>
-      </EaseView>
+      </View>
 
-      <Text style={[styles.status, { color: statusColor }]}>{statusText}</Text>
+      <Animated.View
+        style={[s.micOuter, { opacity: 0, translateY: 14 }]}
+      >
+        <Animated.View style={[s.ring, { backgroundColor: micBg }, ringStyle]} />
+
+        <Animated.View style={[micStyle, s.micFront, { backgroundColor: micBg }]}>
+          <Pressable
+            onPress={startListening}
+            disabled={state !== "idle"}
+            onPressIn={() => { micTy.value = withTiming(6, { duration: 80 }); }}
+            onPressOut={() => { micTy.value = withTiming(0, { duration: 120 }); }}
+            style={s.micInner}
+          >
+            <Icon3DMic size={36} />
+          </Pressable>
+        </Animated.View>
+      </Animated.View>
+
+      <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
 
       {/* Transcript reveal */}
       {transcript.length > 0 && (
-        <EaseView
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "timing", duration: 220, easing: "easeOut" }}
-          style={[styles.transcriptBox, { opacity: 0, transform: [{ scale: 0.93 }] }]}
+        <Animated.View
+          style={[s.transcriptBox, { opacity: 0, transform: [{ scale: 0.93 }] }]}
         >
-          <Text style={styles.transcriptLabel}>بیلێی:</Text>
-          <Text style={styles.transcriptText}>{transcript}</Text>
-        </EaseView>
+          <Text style={s.transcriptLabel}>بیلێی:</Text>
+          <Text style={s.transcriptText}>{transcript}</Text>
+        </Animated.View>
       )}
 
       {/* Skip / Retry buttons on fail */}
       {state === "fail" && (
-        <Animated.View style={[styles.actionRow, skipStyle]}>
-          {/* Try again */}
-          <Animated.View style={[{ flex: 1 }, styles.skipBase]}>
-            <Animated.View style={[styles.skipFront, skipFrontStyle]}>
-              <Pressable
-                style={styles.skipBtn}
-                onPress={() => { firedRef.current = false; setState("idle"); setTranscript(""); }}
-                onPressIn={() => { skipTy.value = withTiming(4, { duration: 80 }); }}
-                onPressOut={() => { skipTy.value = withTiming(0, { duration: 120 }); }}
-              >
-                <Text style={[styles.skipText, { color: "#1CB0F6" }]}>دووبارە هەوڵبدە</Text>
-              </Pressable>
-            </Animated.View>
-          </Animated.View>
-          {/* Skip */}
-          <Animated.View style={[{ flex: 1 }, styles.skipBase]}>
-            <Animated.View style={[styles.skipFront, skipFrontStyle]}>
-              <Pressable
-                style={styles.skipBtn}
-                onPress={() => fireAnswer(false)}
-                onPressIn={() => { skipTy.value = withTiming(4, { duration: 80 }); }}
-                onPressOut={() => { skipTy.value = withTiming(0, { duration: 120 }); }}
-              >
-                <Text style={styles.skipText}>بگوزەرێ (Skip)</Text>
-              </Pressable>
-            </Animated.View>
-          </Animated.View>
+        <Animated.View style={[s.actionRow, skipStyle]}>
+          <View style={{ flex: 1 }}>
+            <ActionBtn 
+              label="دووبارە هەوڵبدە" 
+              bgColor="#FFFFFF" 
+              textColor="#3B82F6" 
+              onPress={() => { firedRef.current = false; setState("idle"); setTranscript(""); }} 
+            />
+          </View>
+          <View style={{ width: 12 }} />
+          <View style={{ flex: 1 }}>
+            <ActionBtn 
+              label="بگوزەرێ" 
+              bgColor="rgba(255,255,255,0.2)" 
+              textColor="#FFFFFF" 
+              onPress={() => fireAnswer(false)} 
+            />
+          </View>
         </Animated.View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24, alignItems: "center" },
-  title: { fontFamily: "DINNextRoundedBold", fontSize: 20, color: "#4B4B4B", textAlign: "center", marginBottom: 20 },
-  card: {
-    width: "100%", backgroundColor: "#EAF6FF", borderRadius: 22, padding: 28, alignItems: "center", marginBottom: 30,
-    borderWidth: 2, borderColor: "#1CB0F6",
-    boxShadow: "0px 5px 12px rgba(28, 176, 246, 0.15)" as any, elevation: 5,
+const s = StyleSheet.create({
+  root: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
-  kuRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  kuHint: { fontFamily: "DINNextRoundedMedium", fontSize: 17, color: "#7EC8E8" },
-  targetWord: { fontFamily: "DINNextRoundedBold", fontSize: 38, color: "#1CB0F6", letterSpacing: 2, textAlign: "center" },
+  preamble: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+  },
+  prompt: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 24,
+    letterSpacing: -0.5,
+  },
+  cardWrapper: {
+    width: "100%",
+    marginBottom: 36,
+  },
+  whiteCard: {
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderRadius: 36,
+    paddingHorizontal: 24,
+    paddingTop: 36,
+    paddingBottom: 40,
+    alignItems: "center",
+    ...crossShadow({
+      color: "#000000",
+      offsetY: 24,
+      opacity: 0.15,
+      blur: 40,
+      elevation: 16
+    }),
+    position: "relative",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
+  },
+  cardGlow: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, height: 40,
+    borderTopLeftRadius: 36, borderTopRightRadius: 36,
+  },
+  kuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+    backgroundColor: "#F0F9FF",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  volBadge: {
+    width: 24, height: 24,
+    borderRadius: 12,
+    backgroundColor: "#E0F2FE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  kuHint: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0284C7",
+    letterSpacing: -0.3,
+  },
+  targetWord: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: 0,
+    textAlign: "center",
+    lineHeight: 44,
+  },
 
-  // Mobile-only UI
-  mobileInstruction: { fontFamily: "DINNextRoundedMedium", fontSize: 16, color: "#888", textAlign: "center", marginBottom: 28 },
-  mobileActionWrap: { width: "100%", gap: 0 },
+  // Mobile
+  mobileInstruction: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  mobileActionWrap: {
+    width: "100%",
+  },
 
-  // "I Said It" green button
-  saidBtnBase:  { backgroundColor: "#58A700", borderRadius: 18 },
-  saidBtnFront: { backgroundColor: "#58CC02", borderRadius: 18, marginBottom: 4 },
-  saidBtnInner: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 18 },
-  saidBtnText:  { fontFamily: "DINNextRoundedBold", fontSize: 18, color: "#FFF" },
+  // Web Mic
+  micOuter: {
+    width: 130, height: 130,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  ring: {
+    position: "absolute",
+    width: 110, height: 110,
+    borderRadius: 55,
+  },
+  micFront: {
+    width: 96, height: 96,
+    borderRadius: 48,
+    alignItems: "center", justifyContent: "center",
+    ...crossShadow({
+      color: "#000",
+      offsetY: 12,
+      opacity: 0.15,
+      blur: 20,
+      elevation: 10
+    }),
+  },
+  micInner: {
+    width: 96, height: 96,
+    borderRadius: 48,
+    alignItems: "center", justifyContent: "center",
+  },
 
-  // Web UI
-  micOuter: { width: 130, height: 130, alignItems: "center", justifyContent: "center", marginBottom: 18 },
-  ring: { position: "absolute", width: 110, height: 110, borderRadius: 55 },
-  micShadow: { width: 96, height: 96, borderRadius: 48 },
-  micFront:  { width: 96, height: 96, borderRadius: 48, borderWidth: 2, marginBottom: 6, alignItems: "center", justifyContent: "center" },
-  micInner:  { width: 96, height: 96, borderRadius: 48, alignItems: "center", justifyContent: "center" },
-
-  status: { fontFamily: "DINNextRoundedMedium", fontSize: 15, textAlign: "center", marginBottom: 14 },
+  status: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 14,
+    letterSpacing: -0.3,
+  },
   transcriptBox: {
-    backgroundColor: "#E5E5E5", borderRadius: 16, padding: 16, width: "100%", alignItems: "center", marginBottom: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 20,
+    padding: 16,
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  transcriptLabel: { fontFamily: "DINNextRoundedMedium", color: "#888", fontSize: 14, marginBottom: 4 },
-  transcriptText:  { fontFamily: "DINNextRoundedBold", color: "#4B4B4B", fontSize: 19 },
+  transcriptLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  transcriptText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.3,
+  },
 
-  actionRow: { flexDirection: "row", gap: 12, width: "100%", marginTop: "auto" as any },
-
-  // Skip button (reused for retry + skip)
-  skipBase:  { backgroundColor: "#E5E5E5", borderRadius: 16 },
-  skipFront: { backgroundColor: "#FFF", borderWidth: 2, borderColor: "#E5E5E5", borderRadius: 16, marginBottom: 4 },
-  skipBtn:   { paddingHorizontal: 20, paddingVertical: 18, alignItems: "center" },
-  skipText:  { fontFamily: "DINNextRoundedBold", fontSize: 15, color: "#AFAFAF" },
+  actionRow: {
+    flexDirection: "row",
+    width: "100%",
+    marginTop: "auto" as any,
+    paddingTop: 20,
+  },
 });

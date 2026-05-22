@@ -1,5 +1,9 @@
-import { HomeScreen } from "@/screens/home/home-screen";
+/**
+ * Home tab — Phingo AI partner landing.
+ */
 
-export default function index() {
-  return <HomeScreen />;
+import { PhingoHomeScreen } from "@/screens/home/PhingoHomeScreen";
+
+export default function HomeIndex() {
+  return <PhingoHomeScreen />;
 }

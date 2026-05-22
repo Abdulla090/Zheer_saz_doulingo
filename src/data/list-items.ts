@@ -9,7 +9,7 @@ export type LessonType =
   | "conversation"
   | "cup";
 
-export type SectionTheme = "purple" | "green" | "blue" | "yellow" | "gray";
+export type SectionTheme = "purple" | "green" | "blue" | "yellow" | "gray" | "orange" | "red" | "mint";
 
 export type LessonListItem = {
   id: string;

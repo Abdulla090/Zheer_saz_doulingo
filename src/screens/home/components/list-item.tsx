@@ -16,6 +16,7 @@ import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { LessonProgressRing } from "./lesson-progress-ring";
 import { SVG_BUTTON_COLOR_SETS, SvgButton } from "./list-button";
+import { Icon3DCheck } from "@/components/icons/Icon3D";
 
 const LESSON_BUTTON_SIZE = 80;
 const CHEST_VISUAL_SIZE = 65;
@@ -66,7 +67,7 @@ type ListItemProps = {
   onPressMeasure?: (measurement: ListItemPressMeasurement) => void;
 };
 
-export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
+export const ListItem = React.memo(({ item, onPressMeasure }: ListItemProps) => {
   const { width } = useWindowDimensions();
   const buttonAnchorRef = useRef<View>(null);
   const router = useRouter();
@@ -111,7 +112,7 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
     Platform.OS === "web" ? { onMouseEnter: handleHoverIn } : {};
 
   return (
-    <View className={`justify-center items-center h-[${ITEM_SLOT_HEIGHT}]`}>
+    <View className={`justify-center items-center`} style={{ height: ITEM_SLOT_HEIGHT }}>
       <View
         ref={buttonAnchorRef}
         style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}
@@ -124,7 +125,7 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
         {isCurrent ? (
           <View
             style={{
-              pointerEvents: "none" as any,
+              pointerEvents: "none",
               position: "absolute",
               left: PROGRESS_RING_OFFSET_X,
               top: PROGRESS_RING_OFFSET_Y,
@@ -159,16 +160,23 @@ export const ListItem = ({ item, onPressMeasure }: ListItemProps) => {
             )}
           </Pressable>
         ) : (
-          <SvgButton
-            isCurrentLesson={isCurrent}
-            size={LESSON_BUTTON_SIZE}
-            onPress={handleNavigate}
-            variant={buttonColor}
-            IconComponent={LESSON_ICON_MAP[type]}
-            iconColor={iconColorOverride}
-          />
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <SvgButton
+              isCurrentLesson={isCurrent}
+              size={LESSON_BUTTON_SIZE}
+              onPress={handleNavigate}
+              variant={buttonColor}
+              IconComponent={LESSON_ICON_MAP[type]}
+              iconColor={iconColorOverride}
+            />
+            {(!isCurrent && sectionTheme !== "gray") && (
+              <View style={{ position: 'absolute', bottom: -5, right: -5 }}>
+                <Icon3DCheck size={24} />
+              </View>
+            )}
+          </View>
         )}
       </View>
     </View>
   );
-};
+});

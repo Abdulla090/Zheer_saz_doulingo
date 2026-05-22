@@ -1,226 +1,281 @@
-import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import { EaseView } from "react-native-ease";
+/**
+ * ConversationPickGame — Duolingo style.
+ *
+ * Situation chip → speech bubble (they say) → 4 stacked 3D option buttons.
+ * On pick: calls onAnswer(correct, explanation) after 380ms.
+ */
+
+import React, { useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSequence,
-  interpolateColor,
+  FadeInDown,
+  FadeInUp,
   Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
+// EaseView replaced with Animated.View from reanimated
+import { Icon3DCheck, Icon3DX, Icon3DTarget, Icon3DMessage } from "@/components/icons/Icon3D";
 import { ConversationPickQuestion } from "@/data/lesson-content";
-import { MessageCircle, User } from "lucide-react-native";
+import { G } from "./game-design";
+import { crossShadow } from "@/utils/shadows";
 
-type Props = { question: ConversationPickQuestion; onAnswer: (correct: boolean) => void };
+type Props = {
+  question: ConversationPickQuestion;
+  onAnswer: (correct: boolean, explanation?: string) => void;
+};
+type OptState = "idle" | "correct" | "showCorrect" | "wrong";
 
-export default function ConversationPickGame({ question, onAnswer }: Props) {
-  const [selected, setSelected]   = useState<string | null>(null);
-  const [showExp, setShowExp]     = useState(false);
-  const [locked, setLocked]       = useState(false);
-
-  const firedRef = useRef(false);
-  const fireAnswer = (correct: boolean) => {
-    if (firedRef.current) return;
-    firedRef.current = true;
-    onAnswer(correct);
-  };
-
-  const pick = (opt: string) => {
-    if (locked) return;
-    setSelected(opt);
-    setLocked(true);
-
-    const ok = opt === question.correctAnswer;
-    if (ok) {
-      setShowExp(true);
-      setTimeout(() => fireAnswer(true), 1600);
-    } else {
-      setShowExp(true);
-      // Auto-unlock after 2s so user can try again
-      setTimeout(() => {
-        setSelected(null);
-        setShowExp(false);
-        setLocked(false);
-      }, 2000);
-    }
-  };
-
-  const state = (opt: string): "idle" | "correct" | "wrong" => {
-    if (selected !== opt) return "idle";
-    return opt === question.correctAnswer ? "correct" : "wrong";
-  };
-
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Situation label */}
-      <EaseView
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 220, easing: "easeOut" }}
-        style={[styles.situationBox, { opacity: 0, translateY: -8 }]}
-      >
-        <Text style={styles.situationLabel}>📍 شوێن</Text>
-        <Text style={styles.situation}>{question.situation}</Text>
-      </EaseView>
-
-      {/* They ask (speech bubble) */}
-      <EaseView
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "timing", duration: 250, delay: 80, easing: "easeOut" }}
-        style={[styles.bubbleWrapper, { opacity: 0, transform: [{ scale: 0.9 }] }]}
-      >
-        <View style={styles.avatarCircle}>
-          <User color="#FFF" size={20} />
-        </View>
-        <View style={[styles.bubble, { direction: "ltr" } as any]}>
-          <Text style={styles.bubbleText}>{question.theyAsk}</Text>
-        </View>
-      </EaseView>
-
-      {/* Prompt */}
-      <Text style={styles.prompt}>ئینگلیزی باشترین وەڵام کوێیە؟</Text>
-
-      {/* Options */}
-      <View style={styles.options}>
-        {question.options.map((opt, i) => (
-          <EaseView
-            key={opt}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 210, delay: 120 + i * 65, easing: "easeOut" }}
-            style={{ opacity: 0, translateY: 14 }}
-          >
-            <OptionRow opt={opt} chipState={state(opt)} onPress={() => pick(opt)} disabled={locked} />
-          </EaseView>
-        ))}
-      </View>
-
-      {/* Explanation after selection */}
-      {showExp && (
-        <EaseView
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "timing", duration: 250, easing: "easeOut" }}
-          style={[
-            styles.expBox,
-            selected === question.correctAnswer ? styles.expCorrect : styles.expWrong,
-            { opacity: 0, transform: [{ scale: 0.93 }] },
-          ]}
-        >
-          <Text style={styles.expIcon}>
-            {selected === question.correctAnswer ? "✓" : "✗"}
-          </Text>
-          <Text style={styles.expText}>{question.explanation}</Text>
-        </EaseView>
-      )}
-    </ScrollView>
-  );
-}
-
-// ─── Option Row ─────────────────────────────────────────────────────────────
-function OptionRow({ opt, chipState, onPress, disabled }: {
-  opt: string; chipState: "idle" | "correct" | "wrong"; onPress: () => void; disabled: boolean;
+// ── 3D Option button (same pattern as MultipleChoice) ─────────────────────────
+function OptionBtn({
+  text, state, onPress, disabled, delay,
+}: {
+  text: string; state: OptState; onPress: () => void; disabled: boolean; delay: number;
 }) {
-  const ty       = useSharedValue(0);
-  const colorP   = useSharedValue(0);
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(colorP.value, [0, 1, 2], ["#E5E5E5", "#58A700", "#EA2B2B"]),
-  }));
-  const frontStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(colorP.value, [0, 1, 2], ["#FFF", "#58CC02", "#FF4B4B"]),
-    borderColor: interpolateColor(colorP.value, [0, 1, 2], ["#E5E5E5", "#58CC02", "#FF4B4B"]),
-    transform: [{ translateY: ty.value }],
-  }));
+  const ty = useSharedValue(0);
+  const p  = useSharedValue(0);
 
   React.useEffect(() => {
     const t = (v: number) => withTiming(v, { duration: 200, easing: Easing.out(Easing.quad) });
-    if (chipState === "correct") colorP.value = t(1);
-    else if (chipState === "wrong") colorP.value = t(2);
-    else colorP.value = t(0);
-  }, [chipState]);
+    if (state === "idle")   p.value = t(0);
+    if (state === "correct" || state === "showCorrect") p.value = t(1);
+    if (state === "wrong")  p.value = t(2);
+  }, [state]);
+
+  const rimStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optRim, G.greenRim, G.redRim]),
+  }));
+  const faceStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optBg, G.greenBg, G.redBg]),
+    borderColor: interpolateColor(p.value, [0, 1, 2],
+      [G.optBorder, G.green, G.red]),
+    transform: [{ translateY: ty.value }],
+  }));
+
+  const isGood = state === "correct" || state === "showCorrect";
+  const textCol = isGood ? G.greenText : state === "wrong" ? G.redText : G.textDark;
 
   return (
-    <Animated.View style={[styles.optBase, shadowStyle]}>
-      <Animated.View style={[styles.optFront, frontStyle]}>
-        <Pressable
-          onPress={onPress}
-          disabled={disabled}
-          onPressIn={() => { ty.value = withTiming(4, { duration: 80 }); }}
-          onPressOut={() => { ty.value = withTiming(0, { duration: 115 }); }}
-          style={styles.optPressable}
-        >
-          <MessageCircle
-            color={chipState === "idle" ? "#1CB0F6" : "#FFF"}
-            size={18}
-            style={{ marginRight: 10, flexShrink: 0 }}
-          />
-          {/* Force LTR for English option text */}
-          <Text style={[
-            styles.optText,
-            chipState !== "idle" && { color: "#FFF" },
-          ]}>
-            {opt}
-          </Text>
-        </Pressable>
+    <Animated.View
+      entering={FadeInDown.duration(300)}
+
+      style={{}}
+    >
+      <Animated.View style={[s.rim, rimStyle]}>
+        <Animated.View style={[s.face, faceStyle]}>
+          <Pressable
+            onPress={onPress}
+            disabled={disabled}
+            onPressIn={() => { ty.value = withTiming(G.depth, { duration: 75 }); }}
+            onPressOut={() => { ty.value = withTiming(0, { duration: 110 }); }}
+            style={s.optPressable}
+          >
+            <View style={[
+              s.badge,
+              state === "idle"
+                ? { borderWidth: 2, borderColor: G.optBorder }
+                : { backgroundColor: isGood ? G.green : G.red, borderWidth: 0 },
+            ]}>
+              {isGood && <Icon3DCheck size={14} />}
+              {state === "wrong" && <Icon3DX size={14} />}
+            </View>
+            <Text style={[s.optText, { color: textCol }]} numberOfLines={3}>{text}</Text>
+          </Pressable>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 32, gap: 16 },
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function ConversationPickGame({ question, onAnswer }: Props) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [locked,   setLocked]   = useState(false);
+  const firedRef = useRef(false);
 
-  situationBox: {
-    backgroundColor: "#F5F3FF",
-    borderRadius: 16,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#1CB0F6",
+  const pick = (opt: string) => {
+    if (locked) return;
+    setSelected(opt);
+    setLocked(true);
+    const ok = opt === question.correctAnswer;
+    setTimeout(() => {
+      if (!firedRef.current) {
+        firedRef.current = true;
+        onAnswer(ok, question.explanation);
+      }
+    }, 380);
+  };
+
+  const getState = (opt: string): OptState => {
+    if (!locked) return "idle";
+    if (opt === selected) return opt === question.correctAnswer ? "correct" : "wrong";
+    if (opt === question.correctAnswer && selected !== question.correctAnswer) return "showCorrect";
+    return "idle";
+  };
+
+  return (
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={s.root}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Situation chip */}
+      <Animated.View
+        entering={FadeInDown.duration(300)}
+
+        style={{}}
+      >
+        <View style={s.situationChip}>
+          <Icon3DTarget size={14} />
+          <Text style={s.situationText}>{question.situation}</Text>
+        </View>
+      </Animated.View>
+
+      {/* Speech bubble */}
+      <Animated.View
+        style={{ opacity: 0, transform: [{ scale: 0.92 }] }}
+      >
+        <View style={s.bubbleRow}>
+          {/* Avatar */}
+          <View style={s.avatar}>
+            <Icon3DMessage size={24} />
+          </View>
+
+          {/* Bubble (Duolingo blue tint) */}
+          <View style={s.bubble}>
+            <Text style={s.bubbleLabel}>THEY SAY</Text>
+            <Text style={s.bubbleText}>{question.theyAsk}</Text>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Instruction */}
+      <Text style={[s.instruction, { color: 'rgba(255,255,255,0.9)' }]}>Choose the best response</Text>
+
+      {/* Options */}
+      <View style={s.optList}>
+        {question.options.map((opt, i) => (
+          <OptionBtn
+            key={opt}
+            text={opt}
+            state={getState(opt)}
+            onPress={() => pick(opt)}
+            disabled={locked}
+            delay={100 + i * 60}
+          />
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+const s = StyleSheet.create({
+  root: {
+    paddingHorizontal: G.px,
+    paddingTop: 8,
+    paddingBottom: 32,
+    gap: 14,
   },
-  situationLabel: { fontSize: 12, color: "#1CB0F6", marginBottom: 4 },
-  situation:      { fontSize: 15, color: "#4B4B4B", textAlign: "right" },
 
-  bubbleWrapper: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 12 },
-  avatarCircle:  {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: "#1CB0F6",
-    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  situationChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: G.rMd,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: "100%",
+    ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.15, blur: 8 }),
+  },
+  situationText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: G.blueText,
+    flex: 1,
+    flexWrap: "wrap" as any,
+  },
+
+  // Speech bubble
+  bubbleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: G.blue,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 4,
+    // Duolingo-style border
+    borderWidth: 3,
+    borderColor: G.blueRim,
   },
   bubble: {
     flex: 1,
-    backgroundColor: "#EAF6FF",
-    borderRadius: 18,
-    borderTopRightRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderRadius: G.rXl,
+    borderTopLeftRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
     padding: 16,
-    borderWidth: 2,
-    borderColor: "#1CB0F6",
-    // direction: "ltr" applied as inline style on the View — web validator rejects it in StyleSheet
+    ...crossShadow({ color: "#000", offsetY: 8, opacity: 0.15, blur: 16 }),
   },
-  bubbleText: { fontSize: 19, color: "#1CB0F6", lineHeight: 28 },
+  bubbleLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: G.blue,
+    letterSpacing: 0.7,
+    marginBottom: 4,
+  },
+  bubbleText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: G.blueText,
+    lineHeight: 24,
+    textAlign: "left",
+    writingDirection: "ltr",
+  },
 
-  prompt: { fontSize: 17, color: "#4B4B4B", textAlign: "center" },
+  instruction: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: G.textLight,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 
-  options: { gap: 10 },
+  optList: { gap: 10 },
 
-  // 3D option chip
-  optBase:  { borderRadius: 14 },
-  optFront: { borderRadius: 14, borderWidth: 2, marginBottom: 4 },
-  optPressable: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 16 },
-  optText:  { fontSize: 16, color: "#4B4B4B", flex: 1, writingDirection: "ltr" },
-
-  // Explanation
-  expBox: {
-    borderRadius: 18,
-    padding: 20,
+  // 3D button
+  rim:  { borderRadius: G.rMd, overflow: "hidden", ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.1, blur: 8 }) },
+  face: { borderRadius: G.rMd, borderWidth: 1.5, marginBottom: G.depth, borderColor: 'rgba(0,0,0,0.05)' },
+  optPressable: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     gap: 12,
-    borderWidth: 2,
+    minHeight: 60,
   },
-  expCorrect: { backgroundColor: "#E5FFDC", borderColor: "#58CC02" },
-  expWrong:   { backgroundColor: "#FFEBEB", borderColor: "#FF4B4B" },
-  expIcon:    { fontSize: 22 },
-  expText:    { fontSize: 14, color: "#4B4B4B", flex: 1, textAlign: "right" },
+  badge: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  optText: {
+    flex: 1, fontSize: 16, fontWeight: "700", lineHeight: 22,
+    writingDirection: "ltr" as any,
+    textAlign: "left",
+  },
 });

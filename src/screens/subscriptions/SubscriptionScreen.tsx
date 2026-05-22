@@ -2,7 +2,7 @@ import SafeContainer from "@/components/shared/safe-container";
 import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Check } from "lucide-react-native";
+import { Icon3DCheck } from "@/components/icons/Icon3D";
 import { ScrollView, Text, View } from "react-native";
 const plans = [
   {
@@ -84,7 +84,7 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
           </Text>
           {plan.features.map((feature) => (
             <View key={feature} className="flex-row items-center gap-2">
-              <Check strokeWidth={5} color="#CE82FF" width={20} height={20} />
+              <Icon3DCheck size={22} />
               <Text
                 key={feature}
                 className="text-text-secondary text-sm font-rd-medium"

@@ -3,9 +3,10 @@ import SafeContainer from "@/components/shared/safe-container";
 import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "@/constants/icons";
 import { Image } from "expo-image";
-import { Clock, Gift } from "lucide-react-native";
+import { Icon3DClock, Icon3DGift } from "@/components/icons/Icon3D";
 import { ReactNode } from "react";
 import { ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { AnimatedCard } from "@/components/animations";
 
 const TRACK_COLOR = "#E5E5E5";
 const HERO_FILL_COLOR = "#1CB0F5";
@@ -146,7 +147,7 @@ const QuestScreen = () => {
               ئەرکی نیسان
             </Text>
             <View className="flex-row items-center gap-1">
-              <Clock color="#e5e5e5" size={16} />
+              <Icon3DClock size={18} />
               <Text className=" text-gray-6 text-sm font-rd-medium">
                 ٢٤ ڕۆژ
               </Text>
@@ -175,102 +176,109 @@ const QuestScreen = () => {
       </SafeContainer>
       <ScrollView contentContainerClassName="pb-10">
         {/* Friends Quest */}
-        <View className="px-5 mt-6 gap-2">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-text-tertiary text-xl font-rd-bold">
-              ئەرکی هاوڕێیان
-            </Text>
-            <View className="flex-row items-center gap-1">
-              <Clock color="#a7a7a7" size={16} />
-              <Text className=" text-text-tertiary text-sm font-rd-medium">
-                ٣ ڕۆژ
-              </Text>
-            </View>
-          </View>
-
-          <View className="w-full rounded-2xl justify-center items-center  bg-[#C6EBFD]">
-            <Image
-              source={require("@/assets/images/characters/boys.png")}
-              contentFit="contain"
-              style={{
-                width: 120,
-                height: 120,
-                transform: [{ scale: 3.1 }, { translateY: 2.5 }],
-              }}
-            />
-          </View>
-        </View>
-        {/* Friends Quest Progress */}
-        <View className="px-5 mt-6 gap-2">
-          <QuestGoalRow
-            title="وانەی داهاتووت تەواو بکە"
-            progress={0}
-            value="1 / 1"
-            valueColor="#afafaf"
-            barWidth={goalBarWidth}
-          />
-          {/* You Quest */}
-          <ParticipantRow
-            name="تۆ"
-            lessonsLabel="١ وانە"
-            dotColor="#C894F9"
-          />
-          <ParticipantRow
-            name="ئاکام"
-            lessonsLabel="٣ وانە"
-            dotColor="#D5B8E8"
-          />
-          <View className="flex-row items-center justify-between">
-            <QuestActionButton
-              width={windowWidth * 0.4}
-              label="ئاگادارکردنەوە"
-              leftNode={<Text className="text-2xl">👋</Text>}
-            />
-            <QuestActionButton
-              width={windowWidth * 0.4}
-              label="خەڵات"
-              leftNode={<Gift width={25} height={25} color="#CE82FE" />}
-            />
-          </View>
-          <View className="h-[2] w-full mt-4 mb-4 bg-gray-200" />
-
-          <View className="gap-3">
+        <AnimatedCard index={0} delay={200}>
+          <View className="px-5 mt-6 gap-2">
             <View className="flex-row items-center justify-between">
-              <Text className="text-text-secondary text-base font-rd-medium">
-                ئەرکەکانی ڕۆژانە
+              <Text className="text-text-tertiary text-xl font-rd-bold">
+                ئەرکی هاوڕێیان
               </Text>
               <View className="flex-row items-center gap-1">
-                <Clock color="#ffc800" size={16} />
-                <Text className="text-gold-base text-sm font-rd-medium">
+                <Icon3DClock size={18} />
+                <Text className=" text-text-tertiary text-sm font-rd-medium">
                   ٣ ڕۆژ
                 </Text>
               </View>
             </View>
-            <View className="gap-6">
-              <QuestGoalRow
-                title="وانەی داهاتووت تەواو بکە"
-                progress={0.2}
-                value="2 / 14"
-                valueColor="#afafaf"
-                barWidth={goalBarWidth}
-              />
-              <QuestGoalRow
-                title="١٠ خولەک تەرخان بکە بۆ فێربوون"
-                progress={0}
-                value="0 / 14"
-                valueColor="#afafaf"
-                barWidth={goalBarWidth}
-              />
-              <QuestGoalRow
-                title="گوێ لە ٥ ڕاهێنان بگرە"
-                progress={0}
-                value="0 / 14"
-                valueColor="#afafaf"
-                barWidth={goalBarWidth}
+
+            <View className="w-full rounded-2xl justify-center items-center  bg-[#C6EBFD]">
+              <Image
+                source={require("@/assets/images/characters/boys.png")}
+                contentFit="contain"
+                style={{
+                  width: 120,
+                  height: 120,
+                  transform: [{ scale: 3.1 }, { translateY: 2.5 }],
+                }}
               />
             </View>
           </View>
-        </View>
+        </AnimatedCard>
+
+        {/* Friends Quest Progress */}
+        <AnimatedCard index={1} delay={200}>
+          <View className="px-5 mt-6 gap-2">
+            <QuestGoalRow
+              title="وانەی داهاتووت تەواو بکە"
+              progress={0}
+              value="1 / 1"
+              valueColor="#afafaf"
+              barWidth={goalBarWidth}
+            />
+            {/* You Quest */}
+            <ParticipantRow
+              name="تۆ"
+              lessonsLabel="١ وانە"
+              dotColor="#C894F9"
+            />
+            <ParticipantRow
+              name="ئاکام"
+              lessonsLabel="٣ وانە"
+              dotColor="#D5B8E8"
+            />
+            <View className="flex-row items-center justify-between">
+              <QuestActionButton
+                width={windowWidth * 0.4}
+                label="ئاگادارکردنەوە"
+                leftNode={<Text className="text-2xl">👋</Text>}
+              />
+              <QuestActionButton
+                width={windowWidth * 0.4}
+                label="خەڵات"
+                leftNode={<Icon3DGift size={26} />}
+              />
+            </View>
+            <View className="h-[2] w-full mt-4 mb-4 bg-gray-200" />
+
+            <AnimatedCard index={2} delay={300}>
+              <View className="gap-3">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-text-secondary text-base font-rd-medium">
+                    ئەرکەکانی ڕۆژانە
+                  </Text>
+                  <View className="flex-row items-center gap-1">
+                    <Icon3DClock size={18} />
+                    <Text className="text-gold-base text-sm font-rd-medium">
+                      ٣ ڕۆژ
+                    </Text>
+                  </View>
+                </View>
+                <View className="gap-6">
+                  <QuestGoalRow
+                    title="وانەی داهاتووت تەواو بکە"
+                    progress={0.2}
+                    value="2 / 14"
+                    valueColor="#afafaf"
+                    barWidth={goalBarWidth}
+                  />
+                  <QuestGoalRow
+                    title="١٠ خولەک تەرخان بکە بۆ فێربوون"
+                    progress={0}
+                    value="0 / 14"
+                    valueColor="#afafaf"
+                    barWidth={goalBarWidth}
+                  />
+                  <QuestGoalRow
+                    title="گوێ لە ٥ ڕاهێنان بگرە"
+                    progress={0}
+                    value="0 / 14"
+                    valueColor="#afafaf"
+                    barWidth={goalBarWidth}
+                  />
+                </View>
+              </View>
+            </AnimatedCard>
+          </View>
+        </AnimatedCard>
       </ScrollView>
     </View>
   );

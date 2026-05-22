@@ -1,7 +1,17 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
+const fs = require("fs");
+
+// Ensure .expo/types directory exists for uniwind dts output (required for EAS cloud builds)
+const expoTypesDir = require("path").resolve(__dirname, ".expo/types");
+if (!fs.existsSync(expoTypesDir)) {
+  fs.mkdirSync(expoTypesDir, { recursive: true });
+}
 
 const config = getDefaultConfig(__dirname);
+
+// Reduce parallel file opens — prevents EMFILE crashes on Windows
+config.maxWorkers = 2;
 
 const { transformer, resolver } = config;
 
@@ -14,7 +24,7 @@ const path = require("path");
 
 config.resolver = {
   ...resolver,
-  assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
+  assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv", "glb"],
   sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
     if (platform === "web" && moduleName.includes("react-native/Libraries/NativeComponent/NativeComponentRegistry")) {
@@ -34,5 +44,5 @@ config.resolver = {
 
 module.exports = withUniwindConfig(config, {
   cssEntryFile: "./src/global.css",
-  dtsFile: "./src/uniwind-types.d.ts",
+  dtsFile: "./.expo/types/uniwind-types.d.ts",
 });

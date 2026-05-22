@@ -10,7 +10,7 @@ import Svg, { Path } from "react-native-svg";
 
 import { Flag } from "@/constants/icons";
 import newCourses from "@/data/newCourses";
-import { Plus } from "lucide-react-native";
+import { Icon3DPlus } from "@/components/icons/Icon3D";
 import Animated, {
   SharedValue,
   useAnimatedStyle,
@@ -73,7 +73,7 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
           </View>
           <View className="items-center gap-1  ">
             <View className="h-[70px] w-[85px] scale-[0.75] items-center justify-center rounded-[14px] border-[3px] border-[#AFAFAF] ">
-              <Plus color="#AFAFAF" strokeWidth={4} width={20} height={20} />
+              <Icon3DPlus size={22} />
             </View>
             <Text className="text-base font-bold text-gray-3 font-rd-bold">
               کۆرس

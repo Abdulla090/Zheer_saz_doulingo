@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, FlatList, SafeAreaView } from "react-native";
+import { PressableScale } from "@/components/animations";
 import { useFontStore } from "@/stores/useFontStore";
-import { ChevronRight, Settings, CheckCircle2 } from "lucide-react-native";
+import { Icon3DSettings, Icon3DChevronRight, Icon3DCheckCircle } from "@/components/icons/Icon3D";
 
 // All 57 Rabar fonts from 016 to 072 + 011
 export const ALL_RABAR_FONTS = [
@@ -15,7 +16,7 @@ export default function MoreScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F7F7F7" }}>
       <View style={{ padding: 24, paddingBottom: 16, backgroundColor: "#FFF", borderBottomWidth: 1, borderBottomColor: "#E5E5E5", marginBottom: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-          <Settings color="#4B4B4B" size={28} style={{ marginRight: 12 }} />
+          <Icon3DSettings size={28} />
           <Text className="font-rd-bold" style={{ fontSize: 24, color: "#4B4B4B" }}>
             ڕێکخستنەکان (Settings)
           </Text>
@@ -30,9 +31,9 @@ export default function MoreScreen() {
         keyExtractor={(item) => item}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
         renderItem={({ item }) => (
-          <TouchableOpacity
+          <PressableScale
             onPress={() => setFont(item)}
-            activeOpacity={0.7}
+            scaleDown={0.96}
             style={{
               padding: 18,
               marginBottom: 10,
@@ -49,7 +50,7 @@ export default function MoreScreen() {
           >
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               {selectedFont === item ? (
-                <CheckCircle2 color="#1CB0F6" size={24} style={{ marginRight: 12 }} />
+                <Icon3DCheckCircle size={24} />
               ) : (
                 <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: "#E5E5E5", marginRight: 12 }} />
               )}
@@ -64,8 +65,8 @@ export default function MoreScreen() {
                 فێربوونی زمان - {item.replace("Rabar_", "فۆنتی ")}
               </Text>
             </View>
-            <ChevronRight color={selectedFont === item ? "#1CB0F6" : "#B7B7B7"} size={22} />
-          </TouchableOpacity>
+            <Icon3DChevronRight size={22} />
+          </PressableScale>
         )}
       />
     </SafeAreaView>

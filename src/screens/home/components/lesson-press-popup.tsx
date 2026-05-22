@@ -104,12 +104,12 @@ export const LessonPressPopup = ({
         </Text>
         <SvgAppButton
           width="100%"
-          height={30}
-          color="#FFFFFF"
-          backgroundColor="#E5E5E5"
-          leftRadius={10}
-          rightRadius={10}
-          pressDepth={3}
+          height={42}
+          color="#1CB0F6"
+          backgroundColor="#1490CC"
+          leftRadius={12}
+          rightRadius={12}
+          pressDepth={4}
           onPress={() => {
             router.push(`/lesson?id=${lessonId}&q=${globalIndex}&li=${sectionItemIndex}`);
           }}
@@ -118,12 +118,12 @@ export const LessonPressPopup = ({
             justifyContent: "center",
           }}
         >
-          <Animated.Text
-            className="text-base font-rd-medium"
-            style={textStyle}
+          <Text
+            className="text-base font-rd-bold"
+            style={{ color: "#FFFFFF", fontWeight: "800" }}
           >
             {popupContent.buttonLabel}
-          </Animated.Text>
+          </Text>
         </SvgAppButton>
       </Animated.View>
     </Animated.View>
