@@ -1,25 +1,25 @@
+import { PressableScale } from "@/components/animations";
+import { Icon3DSettings } from "@/components/icons/Icon3D";
 import {
-  BottomSheetBackdrop,
-  BottomSheetBackdropProps,
-  BottomSheetModal,
-  BottomSheetView,
+    LessonDumbbell,
+    LessonVideo,
+    Profile,
+} from "@/constants/icons";
+import { crossShadow } from "@/utils/shadows";
+import {
+    BottomSheetBackdrop,
+    BottomSheetBackdropProps,
+    BottomSheetModal,
+    BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import * as Haptics from "expo-haptics";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View, Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path, Rect, Circle } from "react-native-svg";
 import { BlurView } from "expo-blur";
-import { PressableScale } from "@/components/animations";
-import {
-  Profile,
-  LessonDumbbell,
-  LessonVideo,
-} from "@/constants/icons";
-import { Icon3DSettings } from "@/components/icons/Icon3D";
+import * as Haptics from "expo-haptics";
 import { useRouter, type Href } from "expo-router";
-import { crossShadow } from "@/utils/shadows";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path, Rect } from "react-native-svg";
 
 // Custom Sleek Icons for Capsule TabBar
 function HomeIcon({ size = 26, color = "#B4B8C3" }: { size?: number; color?: string }) {
@@ -128,6 +128,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   );
 
   const activeRouteName = state.routes[state.index]?.name;
+
+  /* Routes that should NOT show the floating tab bar */
+  const HIDDEN_ROUTES = new Set(["lesson", "guidebook", "roleplay"]);
+  if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
+    return null;
+  }
 
   const handleHomePress = () => {
     closeMoreSheet();

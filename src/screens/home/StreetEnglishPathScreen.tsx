@@ -3,23 +3,23 @@ import { sectionData, SectionTheme, type LessonType } from "@/data/list-items";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  SectionList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  SectionListRenderItemInfo,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  Platform,
-  ImageBackground,
+    ImageBackground,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    Platform,
+    SectionList,
+    SectionListRenderItemInfo,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import {
-  ReduceMotion,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
-  withTiming,
+    ReduceMotion,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
@@ -280,6 +280,12 @@ export const StreetEnglishPathScreen = () => {
           ListFooterComponent={ListFooter}
           contentContainerStyle={[styles.listContainer, { paddingBottom: 0 }]}
           stickySectionHeadersEnabled={false}
+          // ── Perf props ──
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
+          updateCellsBatchingPeriod={50}
           onViewableItemsChanged={onViewableItemsChanged}
         />
         <LessonPressPopup

@@ -1,930 +1,582 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-  Platform,
-  TextInput,
-  KeyboardAvoidingView,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import Svg, { Path, Circle, Rect } from "react-native-svg";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withSpring,
-  withDelay,
-  Easing,
-} from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
+/**
+ * RolePlayScreen — Premium light-mode conversational AI practice.
+ *
+ * Design language: clean white surfaces, soft shadows, generous spacing,
+ * subtle accent colors, lucide icons, spring animations.
+ * Inspired by Headspace / Linear / Apple native apps.
+ */
+
 import { PressableScale } from "@/components/animations";
 import { crossShadow } from "@/utils/shadows";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import {
+    ArrowLeft,
+    AudioLines,
+    Briefcase,
+    Coffee,
+    Loader,
+    Mic,
+    MicOff,
+    Rocket,
+    Send,
+    Sparkles,
+    Store,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+    Dimensions,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from "react-native";
+import Animated, {
+    Easing,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSpring,
+    withTiming
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// ── Palette ────────────────────────────────────────────────────────────────────
-const C = {
-  bgTop: "#F5F9FF",
-  bgBottom: "#FFFFFF",
-  primary: "#208AEF",
-  primaryGlow: "#93C5FD",
-  ink: "#0F172A",
-  inkSoft: "#475569",
-  inkMuted: "#94A3B8",
-  card: "#FFFFFF",
-  cardBorder: "#E2E8F0",
-  success: "#10B981",
-  successGlow: "#A7F3D0",
-  warning: "#F59E0B",
-  error: "#EF4444",
-};
-
-const { width } = Dimensions.get("window");
-
-// ── Error types with Kurdish translations ──────────────────────────────────────
-type MicErrorType = "not-allowed" | "no-speech" | "network" | "aborted" | "unknown";
-
-function getMicErrorMessage(errorType: MicErrorType): {
-  title: string;
-  desc: string;
-  canRetry: boolean;
-} {
-  switch (errorType) {
-    case "not-allowed":
-      return {
-        title: "مایکرۆفۆن ڕێگەپێنەدراوە",
-        desc: "تکایە ڕێگە بدە بە مایکرۆفۆن لە ڕێکخستنەکانی وێبگەڕ، یان دەقەکەت بنووسە.",
-        canRetry: false,
-      };
-    case "no-speech":
-      return {
-        title: "دەنگت نەبیستراوە",
-        desc: "دوبارە هەوڵ بدە و بە دەنگی بەرز قسە بکە.",
-        canRetry: true,
-      };
-    case "network":
-      return {
-        title: "کێشەی ئینترنێت",
-        desc: "پەیوەندی کارنەکرد. پەیوەندیت بپشکنە.",
-        canRetry: true,
-      };
-    case "aborted":
-      return {
-        title: "ڕاگیرا",
-        desc: "گوێدانەوە ڕاگیرا. دوبارە بەست بکە.",
-        canRetry: true,
-      };
-    default:
-      return {
-        title: "کێشەیەکی نەناسراو",
-        desc: "کێشەیەک ڕووی دا. دووبارە هەوڵ بدە.",
-        canRetry: true,
-      };
-  }
-}
+const { width: SW } = Dimensions.get("window");
 
 // ── Scenarios ──────────────────────────────────────────────────────────────────
 type Scenario = {
   id: string;
   title: string;
   titleKu: string;
-  subtitle: string;
   subtitleKu: string;
-  icon: string;
+  icon: React.ComponentType<any>;
   systemPrompt: string;
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
-  accentColor: string;
+  accent: string;
 };
 
 const SCENARIOS: Scenario[] = [
   {
     id: "cafe",
-    title: "Parisian Coffee Shop",
+    title: "Coffee Shop",
     titleKu: "قاوەخانەی پاریس",
-    subtitle: "Order a croissant & warm espresso.",
-    subtitleKu: "داواکردنی قاوە و کرۆسان بە زمانی ئینگلیزی.",
-    icon: "cafe",
-    systemPrompt:
-      "You are Jean, a friendly Parisian barista. Keep answers short and natural. Gently correct the user's English if needed.",
-    initialMessage:
-      "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
+    subtitleKu: "داواکردنی قاوە و کرۆسان بە ئینگلیزی",
+    icon: Coffee,
+    systemPrompt: "You are Jean, a friendly Parisian barista. Keep answers short. Gently correct English.",
+    initialMessage: "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
     voicePitch: 0.95,
     voiceRate: 1.0,
-    accentColor: "#F59E0B",
+    accent: "#F59E0B",
   },
   {
     id: "space",
-    title: "Mars Flight Check-in",
+    title: "Mars Flight",
     titleKu: "گەشتی مەریخ",
-    subtitle: "Explain why your heavy bag is essential.",
-    subtitleKu: "گفتوگۆ لەسەر کێشی زۆری جانتاکەت بە زمانی ئینگلیزی.",
-    icon: "rocket",
-    systemPrompt:
-      "You are Boarding Droid T-800, strict but polite. The user's bag is 5kg overweight.",
-    initialMessage:
-      "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
+    subtitleKu: "گفتوگۆ لەسەر کێشی جانتاکەت",
+    icon: Rocket,
+    systemPrompt: "You are Boarding Droid T-800, strict but polite. The user's bag is 5kg overweight.",
+    initialMessage: "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
     voicePitch: 1.25,
     voiceRate: 1.05,
-    accentColor: "#6366F1",
+    accent: "#8B5CF6",
   },
   {
     id: "job",
-    title: "Tech Job Interview",
+    title: "Job Interview",
     titleKu: "چاوپێکەوتنی کار",
-    subtitle: "Interview for an AI engineer at Phingo.",
-    subtitleKu: "چاوپێکەوتنی کار بۆ ئەندازیاری AI بە ئینگلیزی.",
-    icon: "briefcase",
-    systemPrompt:
-      "You are Dr. Sarah Chen, lead AI researcher at Phingo. Ask challenging questions in English.",
-    initialMessage:
-      "Thank you for joining us. Could you describe your experience optimizing small language models?",
+    subtitleKu: "چاوپێکەوتن بۆ ئەندازیاری AI",
+    icon: Briefcase,
+    systemPrompt: "You are Dr. Sarah Chen, lead AI researcher. Ask challenging questions in English.",
+    initialMessage: "Thank you for joining us. Could you describe your experience optimizing small language models?",
     voicePitch: 1.1,
     voiceRate: 0.95,
-    accentColor: "#10B981",
+    accent: "#10B981",
   },
   {
     id: "market",
-    title: "Grand Bazaar Bargain",
+    title: "Bazaar Bargain",
     titleKu: "بازاڕی گەورە",
-    subtitle: "Haggle a rug price in English.",
-    subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش بە زمانی ئینگلیزی.",
-    icon: "shopping",
-    systemPrompt:
-      "You are Yusuf, a warm carpet merchant. Start the rug at 500 gold coins. The user must haggle.",
-    initialMessage:
-      "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
+    subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش",
+    icon: Store,
+    systemPrompt: "You are Yusuf, a warm carpet merchant. Start the rug at 500 gold coins.",
+    initialMessage: "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
     voicePitch: 0.85,
     voiceRate: 1.1,
-    accentColor: "#EF4444",
+    accent: "#EF4444",
   },
 ];
 
-// ── Scenario Icon ──────────────────────────────────────────────────────────────
-function ScenarioIcon({ icon, color }: { icon: string; color: string }) {
-  if (icon === "cafe") {
-    return (
-      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-        <Path d="M18 8h1a4 4 0 010 8h-1" stroke={color} strokeWidth={2} strokeLinecap="round" />
-        <Path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z" stroke={color} strokeWidth={2} />
-        <Path d="M6 1v3M10 1v3M14 1v3" stroke={color} strokeWidth={2} strokeLinecap="round" />
-      </Svg>
-    );
-  }
-  if (icon === "rocket") {
-    return (
-      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-        <Path d="M9 11l-2 2-1 5 5-1 2-2" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        <Path d="M11 9l4-4a5 5 0 016 6l-4 4" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        <Circle cx="17" cy="7" r="1" fill={color} />
-      </Svg>
-    );
-  }
-  if (icon === "briefcase") {
-    return (
-      <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-        <Rect x="2" y="7" width="20" height="14" rx="2" stroke={color} strokeWidth={2} />
-        <Path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke={color} strokeWidth={2} />
-        <Path d="M12 12v2" stroke={color} strokeWidth={2} strokeLinecap="round" />
-      </Svg>
-    );
-  }
-  return (
-    <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 2l1.5 1.5L9 2l1.5 1.5L12 2l1.5 1.5L15 2l1.5 1.5L18 2v20l-1.5-1.5L15 22l-1.5-1.5L12 22l-1.5-1.5L9 22l-1.5-1.5L6 22V2z" stroke={color} strokeWidth={2} strokeLinejoin="round" />
-      <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────────────
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
-  const [status, setStatus] = useState<"idle" | "listening" | "thinking" | "speaking" | "error">(
-    "idle"
-  );
-  const [micError, setMicError] = useState<{
-    title: string;
-    desc: string;
-    canRetry: boolean;
-  } | null>(null);
-  const [userSpeech, setUserSpeech] = useState<string>("");
-  const [aiSpeech, setAiSpeech] = useState<string>("");
+  const [status, setStatus] = useState<"idle" | "listening" | "thinking" | "speaking" | "error">("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
   const [showTextFallback, setShowTextFallback] = useState(false);
   const [textInput, setTextInput] = useState("");
-  const [micAvailable, setMicAvailable] = useState<boolean | null>(null);
 
-  // Web Speech APIs
+  // Refs for stable access inside callbacks
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<any>(null);
+  const statusRef = useRef(status);
+  const scenarioRef = useRef(activeScenario);
+  const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Animations
+  // Keep refs in sync
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
+
+  // Pulse animation
   const pulse1 = useSharedValue(1);
   const pulse2 = useSharedValue(1);
-  const waveAnim = useSharedValue(0);
 
-  // ── Request mic permission proactively ────────────────────────────────────
-  const checkMicPermission = useCallback(async () => {
-    if (Platform.OS !== "web") {
-      setMicAvailable(false);
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-      setMicAvailable(true);
-      setShowTextFallback(false);
-    } catch {
-      setMicAvailable(false);
-      setShowTextFallback(true);
-      const errInfo = getMicErrorMessage("not-allowed");
-      setMicError(errInfo);
-    }
-  }, []);
-
-  // ── Init speech engine ─────────────────────────────────────────────────────
+  // ── Speech engine setup ────────────────────────────────────────────────────
   useEffect(() => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis;
-
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const rec = new SpeechRecognition();
+      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SR) {
+        const rec = new SR();
         rec.continuous = false;
         rec.interimResults = false;
         rec.lang = "en-US";
+        rec.maxAlternatives = 1;
 
         rec.onstart = () => {
           setStatus("listening");
-          setMicError(null);
         };
 
-        rec.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          setUserSpeech(transcript);
+        rec.onresult = (e: any) => {
+          clearListenTimeout();
+          const transcript = e.results[0][0].transcript;
           setStatus("thinking");
           handleUserResponse(transcript);
         };
 
         rec.onerror = (e: any) => {
-          // e.error is the SpeechRecognitionErrorCode string
-          const errorCode: string = e?.error || "unknown";
-          console.warn("Speech recognition error code:", errorCode);
-
-          if (errorCode === "not-allowed" || errorCode === "service-not-allowed") {
-            const errInfo = getMicErrorMessage("not-allowed");
-            setMicError(errInfo);
-            setMicAvailable(false);
+          clearListenTimeout();
+          const code = e?.error || "unknown";
+          if (code === "not-allowed" || code === "service-not-allowed") {
             setShowTextFallback(true);
-            setStatus("idle");
-          } else if (errorCode === "no-speech") {
-            // Auto-retry no-speech silently
-            const errInfo = getMicErrorMessage("no-speech");
-            setMicError(errInfo);
-            setStatus("idle");
-          } else if (errorCode === "network") {
-            const errInfo = getMicErrorMessage("network");
-            setMicError(errInfo);
-            setStatus("error");
-          } else if (errorCode === "aborted") {
-            // Aborted is intentional (user pressed stop) — don't show error
-            setStatus("idle");
-          } else {
-            const errInfo = getMicErrorMessage("unknown");
-            setMicError(errInfo);
+          }
+          // Only go idle if we're still in listening state
+          if (statusRef.current === "listening") {
             setStatus("idle");
           }
         };
 
         rec.onend = () => {
-          setStatus((current) => (current === "listening" ? "idle" : current));
+          clearListenTimeout();
+          // Only reset to idle if still listening (not if we moved to thinking)
+          if (statusRef.current === "listening") {
+            setStatus("idle");
+          }
         };
 
         recognitionRef.current = rec;
       } else {
-        // Browser doesn't support Web Speech API at all
-        setMicAvailable(false);
         setShowTextFallback(true);
-        setMicError({
-          title: "وێبگەڕەکەت پشتگیری نەکردووە",
-          desc: "وێبگەڕەکەت پشتگیری ناکات. Chrome یان Edge بەکاربهێنە، یان دەقت بنووسە.",
-          canRetry: false,
-        });
       }
+    } else {
+      // Native — no Web Speech API
+      setShowTextFallback(true);
     }
 
     return () => {
-      stopAllAudio();
+      clearListenTimeout();
+      stopSpeaking();
+      stopListening();
     };
-  }, [activeScenario]);
+  }, []);
 
-  // ── Animations ─────────────────────────────────────────────────────────────
+  // ── Pulse animations ───────────────────────────────────────────────────────
   useEffect(() => {
     if (status === "listening") {
-      pulse1.value = withRepeat(
-        withTiming(1.6, { duration: 1200, easing: Easing.out(Easing.quad) }),
-        -1,
-        false
-      );
-      pulse2.value = withDelay(
-        400,
-        withRepeat(
-          withTiming(1.6, { duration: 1200, easing: Easing.out(Easing.quad) }),
-          -1,
-          false
-        )
-      );
+      pulse1.value = withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false);
+      pulse2.value = withDelay(350, withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false));
     } else {
-      pulse1.value = withSpring(1);
-      pulse2.value = withSpring(1);
+      pulse1.value = withSpring(1, { damping: 14, stiffness: 200 });
+      pulse2.value = withSpring(1, { damping: 14, stiffness: 200 });
     }
-  }, [status, pulse1, pulse2]);
+  }, [status]);
 
-  useEffect(() => {
-    if (status === "speaking") {
-      waveAnim.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 400, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0.2, { duration: 400, easing: Easing.inOut(Easing.sin) })
-        ),
-        -1,
-        true
-      );
-    } else {
-      waveAnim.value = withSpring(0);
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const clearListenTimeout = () => {
+    if (listenTimeoutRef.current) {
+      clearTimeout(listenTimeoutRef.current);
+      listenTimeoutRef.current = null;
     }
-  }, [status, waveAnim]);
+  };
 
-  const stopAllAudio = () => {
+  const stopSpeaking = () => {
     if (synthRef.current) {
-      synthRef.current.cancel();
+      try { synthRef.current.cancel(); } catch {}
     }
+  };
+
+  const stopListening = () => {
+    clearListenTimeout();
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch (_) {}
+      try { recognitionRef.current.abort(); } catch {}
     }
   };
 
-  const startScenario = () => {
-    stopAllAudio();
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const initMsg = activeScenario.initialMessage;
-    setAiSpeech(initMsg);
-    setUserSpeech("");
-    setMicError(null);
-    setHistory([{ sender: "ai", text: initMsg }]);
-    setStatus("speaking");
-    speakAloud(initMsg);
+  const stopAll = () => {
+    stopSpeaking();
+    stopListening();
   };
 
-  const speakAloud = (text: string) => {
-    if (synthRef.current) {
+  // ── Speak text aloud ───────────────────────────────────────────────────────
+  const speak = (text: string) => {
+    const sc = scenarioRef.current;
+    if (synthRef.current && Platform.OS === "web") {
       synthRef.current.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = activeScenario.voicePitch;
-      utterance.rate = activeScenario.voiceRate;
+      utterance.pitch = sc.voicePitch;
+      utterance.rate = sc.voiceRate;
+      utterance.lang = "en-US";
 
+      // Try to pick a good voice
       const voices = synthRef.current.getVoices();
-      const preferredVoice = voices.find(
-        (v: any) =>
-          v.lang.startsWith("en") &&
-          (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Apple"))
+      const pref = voices.find((v: any) =>
+        v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Samantha"))
       );
-      if (preferredVoice) utterance.voice = preferredVoice;
+      if (pref) utterance.voice = pref;
 
       utterance.onstart = () => setStatus("speaking");
       utterance.onend = () => {
-        setStatus("listening");
-        startListening();
+        // After AI finishes speaking, auto-start listening
+        if (statusRef.current === "speaking") {
+          startListening();
+        }
       };
-      utterance.onerror = () => setStatus("idle");
+      utterance.onerror = () => {
+        if (statusRef.current === "speaking") {
+          setStatus("idle");
+        }
+      };
 
       synthRef.current.speak(utterance);
+      setStatus("speaking");
     } else {
+      // No TTS available — simulate speaking for 2s then go to listening
       setStatus("speaking");
       setTimeout(() => {
-        setStatus("listening");
+        if (statusRef.current === "speaking") {
+          startListening();
+        }
       }, 2500);
     }
   };
 
+  // ── Start listening for user speech ────────────────────────────────────────
   const startListening = () => {
-    if (showTextFallback) {
-      // In fallback mode, just indicate listening visually
-      setStatus("listening");
+    if (showTextFallback || !recognitionRef.current) {
+      // Text-only mode — just show idle so user types
+      setStatus("idle");
       return;
     }
-    if (recognitionRef.current) {
-      stopAllAudio();
+
+    // Make sure nothing else is running
+    stopSpeaking();
+
+    setStatus("listening");
+
+    // Small delay to let the browser release audio resources
+    setTimeout(() => {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        console.warn("Could not start recognition:", e);
+        // Already started or other error
+        console.warn("Recognition start failed:", e);
         setStatus("idle");
+        return;
       }
-    } else {
-      setStatus("listening");
-      // Simulate for non-web or if recognition truly unavailable
-      setTimeout(() => {
-        const mockPhrases = [
-          "I would like to order a double espresso and a croissant please.",
-          "This bag is very important! It contains my oxygen filter.",
-          "I have experience optimizing speech models using Gemini.",
-          "That rug is beautiful! How about three hundred gold coins?",
-        ];
-        const phrase = mockPhrases[SCENARIOS.indexOf(activeScenario)] || "Hello!";
-        setUserSpeech(phrase);
-        setStatus("thinking");
-        handleUserResponse(phrase);
-      }, 3000);
-    }
+
+      // Safety timeout — if no speech detected in 10s, stop
+      listenTimeoutRef.current = setTimeout(() => {
+        if (statusRef.current === "listening") {
+          try { recognitionRef.current.stop(); } catch {}
+          setStatus("idle");
+        }
+      }, 10000);
+    }, 200);
   };
 
-  const handleUserResponse = useCallback(
-    (userText: string) => {
-      setHistory((prev) => [...prev, { sender: "user", text: userText }]);
+  // ── Start a new session ────────────────────────────────────────────────────
+  const startSession = () => {
+    stopAll();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const msg = scenarioRef.current.initialMessage;
+    setHistory([{ sender: "ai", text: msg }]);
+    speak(msg);
+  };
 
-      setTimeout(() => {
-        let aiResponse = "";
-        const t = userText.toLowerCase();
+  // ── Handle user's response ─────────────────────────────────────────────────
+  const handleUserResponse = useCallback((userText: string) => {
+    setHistory(p => [...p, { sender: "user", text: userText }]);
 
-        if (activeScenario.id === "cafe") {
-          if (t.includes("croissant") || t.includes("pastry")) {
-            aiResponse =
-              "Excellent choice! Our croissants are baked fresh this morning. Would you like a café au lait or espresso with that?";
-          } else if (t.includes("espresso") || t.includes("coffee") || t.includes("latte")) {
-            aiResponse =
-              "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?";
-          } else {
-            aiResponse =
-              "Of course! Will you be enjoying that at our sunny patio, or is it to go, mon ami?";
-          }
-        } else if (activeScenario.id === "space") {
-          if (t.includes("oxygen") || t.includes("suit") || t.includes("life support")) {
-            aiResponse =
-              "Life support systems are classified as critical gear. Fee waived. Enjoy your journey to Mars!";
-          } else if (t.includes("sorry") || t.includes("remove") || t.includes("leave")) {
-            aiResponse =
-              "The disposal chute is behind you. Or pay 150 galactic credits to keep the bag.";
-          } else {
-            aiResponse =
-              "My scanner detects dense materials. You must justify this weight in English, passenger.";
-          }
-        } else if (activeScenario.id === "job") {
-          if (t.includes("optim") || t.includes("gemini") || t.includes("model") || t.includes("ai")) {
-            aiResponse =
-              "Impressive. How do you handle quantization trade-offs for mobile speech models?";
-          } else {
-            aiResponse =
-              "Interesting perspective. What's your approach to balancing UI responsiveness with heavy background AI processing?";
-          }
-        } else if (activeScenario.id === "market") {
-          const numbers = userText.match(/\d+/g);
-          if (numbers) {
-            const bid = parseInt(numbers[0]);
-            if (bid < 250) {
-              aiResponse =
-                "Two hundred?! My friend, you break my heart! The weavers spent three months. Four hundred is my final offer!";
-            } else if (bid >= 250 && bid < 450) {
-              aiResponse =
-                "Ah, a skilled negotiator! Three hundred and fifty, and I add a cup of Turkish tea. Deal?";
-            } else {
-              aiResponse = "It is a deal! May this moon rug bring great fortune to your home!";
-            }
-          } else {
-            aiResponse =
-              "Feel the quality, my friend! Pure silk. Make me a serious offer in English!";
-          }
-        }
+    setTimeout(() => {
+      const sc = scenarioRef.current;
+      let r = "";
+      const t = userText.toLowerCase();
 
-        setAiSpeech(aiResponse);
-        setHistory((prev) => [...prev, { sender: "ai", text: aiResponse }]);
-        speakAloud(aiResponse);
-      }, 1600);
-    },
-    [activeScenario]
-  );
+      if (sc.id === "cafe") {
+        r = t.includes("croissant") || t.includes("pastry")
+          ? "Excellent choice! Our croissants are baked fresh. Would you like a café au lait with that?"
+          : t.includes("espresso") || t.includes("coffee")
+          ? "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?"
+          : "Of course! Will you be enjoying that at our sunny patio, or is it to go?";
+      } else if (sc.id === "space") {
+        r = t.includes("oxygen") || t.includes("life support")
+          ? "Life support systems are critical gear. Fee waived. Enjoy your journey to Mars!"
+          : "My scanner detects dense materials. You must justify this weight in English, passenger.";
+      } else if (sc.id === "job") {
+        r = t.includes("optim") || t.includes("model") || t.includes("ai")
+          ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
+          : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
+      } else {
+        const nums = userText.match(/\d+/g);
+        r = nums
+          ? parseInt(nums[0]) < 300
+            ? "You break my heart! Four hundred is my final offer!"
+            : "A skilled negotiator! Three fifty, and I add Turkish tea. Deal?"
+          : "Feel the quality! Pure silk. Make me a serious offer in English!";
+      }
 
+      setHistory(p => [...p, { sender: "ai", text: r }]);
+      speak(r);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+    }, 1200);
+  }, []);
+
+  // ── Mic button tap handler ─────────────────────────────────────────────────
   const handleMicTap = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setMicError(null);
 
-    if (status === "idle" || status === "error") {
-      if (micAvailable === null && Platform.OS === "web") {
-        // First tap — check permission first
-        checkMicPermission().then(() => startScenario());
-      } else {
-        startScenario();
-      }
-    } else if (status === "speaking") {
-      stopAllAudio();
-      setStatus("listening");
-      startListening();
-    } else if (status === "listening") {
-      if (recognitionRef.current && !showTextFallback) {
-        recognitionRef.current.abort();
-      }
-      setStatus("idle");
+    switch (statusRef.current) {
+      case "idle":
+      case "error":
+        // Start session or resume listening
+        if (history.length === 0) {
+          startSession();
+        } else {
+          startListening();
+        }
+        break;
+
+      case "speaking":
+        // Interrupt AI speech → start listening
+        stopSpeaking();
+        startListening();
+        break;
+
+      case "listening":
+        // Stop listening → go idle
+        stopListening();
+        setStatus("idle");
+        break;
+
+      case "thinking":
+        // Cancel thinking → go idle (can't really cancel the timeout but reset state)
+        setStatus("idle");
+        break;
     }
   };
 
+  // ── Text input submit ──────────────────────────────────────────────────────
   const handleTextSubmit = () => {
-    const text = textInput.trim();
-    if (!text) return;
+    const t = textInput.trim();
+    if (!t) return;
     setTextInput("");
-    setUserSpeech(text);
     setStatus("thinking");
-    handleUserResponse(text);
+    handleUserResponse(t);
   };
 
-  const pulseStyle1 = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse1.value }],
-    opacity: 1 - (pulse1.value - 1) / 0.6,
-  }));
+  const pulseStyle1 = useAnimatedStyle(() => ({ transform: [{ scale: pulse1.value }], opacity: 1 - (pulse1.value - 1) / 0.6 }));
+  const pulseStyle2 = useAnimatedStyle(() => ({ transform: [{ scale: pulse2.value }], opacity: 1 - (pulse2.value - 1) / 0.6 }));
 
-  const pulseStyle2 = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse2.value }],
-    opacity: 1 - (pulse2.value - 1) / 0.6,
-  }));
-
-  const isActive = status !== "idle" && status !== "error";
   const sessionStarted = history.length > 0;
+  const accent = activeScenario.accent;
+  const Icon = activeScenario.icon;
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <View style={styles.root}>
-        {/* Background */}
-        <LinearGradient
-          colors={[C.bgTop, C.bgBottom]}
-          locations={[0, 1]}
-          style={StyleSheet.absoluteFill}
-        />
-
+      <View style={st.root}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-          <TouchableOpacity
-            onPress={() => {
-              stopAllAudio();
-              router.back();
-            }}
-            style={styles.backBtn}
-          >
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M19 12H5M12 19l-7-7 7-7"
-                stroke={C.ink}
-                strokeWidth={2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </TouchableOpacity>
-
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle} className="font-rd-bold">
-              ڕاهێنانی دەنگی AI
-            </Text>
-            <View style={styles.modelBadge}>
-              <Text style={styles.modelBadgeText}>Gemini Flash Lite</Text>
-            </View>
+        <View style={[st.header, { paddingTop: insets.top + 8 }]}>
+          <Pressable onPress={() => { stopAll(); router.back(); }} style={st.backBtn}>
+            <ArrowLeft size={20} color="#1E293B" strokeWidth={2.5} />
+          </Pressable>
+          <View style={st.headerCenter}>
+            <Text style={st.headerTitle}>AI Voice Practice</Text>
+            <View style={[st.headerDot, { backgroundColor: accent }]} />
           </View>
-
           <View style={{ width: 40 }} />
         </View>
 
         <ScrollView
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Scenario Carousel — shown only when idle & no session started */}
+          {/* Scenario picker — before session */}
           {!sessionStarted && (
-            <View style={styles.carouselSection}>
-              <Text style={styles.sectionLabel} className="font-rd-bold">
-                سیناریۆیەک هەڵبژێرە:
-              </Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carouselRow}
-                snapToInterval={width * 0.74 + 14}
-                decelerationRate="fast"
-              >
+            <View style={st.pickerSection}>
+              <Text style={st.pickerLabel}>سیناریۆیەک هەڵبژێرە</Text>
+
+              <View style={st.scenarioGrid}>
                 {SCENARIOS.map((sc) => {
                   const sel = activeScenario.id === sc.id;
+                  const ScIcon = sc.icon;
                   return (
-                    <TouchableOpacity
+                    <Pressable
                       key={sc.id}
-                      onPress={() => {
-                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setActiveScenario(sc);
-                      }}
-                      activeOpacity={0.88}
+                      onPress={() => { void Haptics.selectionAsync(); setActiveScenario(sc); }}
                       style={[
-                        styles.scenarioCard,
-                        sel && { borderColor: sc.accentColor, borderWidth: 2 },
-                        crossShadow({
-                          color: sel ? sc.accentColor : "#000",
-                          offsetY: 6,
-                          blur: 18,
-                          opacity: sel ? 0.14 : 0.05,
-                          elevation: sel ? 7 : 2,
-                        }),
+                        st.scenarioCard,
+                        sel && { borderColor: sc.accent, backgroundColor: sc.accent + "0A" },
+                        crossShadow({ color: sel ? sc.accent : "#000", offsetY: 6, blur: 16, opacity: sel ? 0.12 : 0.04, elevation: sel ? 6 : 2 }),
                       ]}
                     >
-                      {/* Top accent strip */}
-                      <View style={[styles.cardAccentBar, { backgroundColor: sc.accentColor }]} />
-
-                      <View style={styles.cardBody}>
-                        <View
-                          style={[
-                            styles.cardIconCircle,
-                            { backgroundColor: sc.accentColor + "18" },
-                          ]}
-                        >
-                          <ScenarioIcon icon={sc.icon} color={sc.accentColor} />
-                        </View>
-
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.cardTitle} className="font-rd-bold">
-                            {sc.titleKu}
-                          </Text>
-                          <Text style={styles.cardSubtitle} className="font-rd-medium">
-                            {sc.subtitleKu}
-                          </Text>
-                          <Text style={[styles.cardEnLabel, { color: sc.accentColor + "CC" }]}>
-                            {sc.title}
-                          </Text>
-                        </View>
+                      <View style={[st.scenarioIconWrap, { backgroundColor: sc.accent + "14" }]}>
+                        <ScIcon size={22} color={sc.accent} strokeWidth={2} />
                       </View>
-
-                      {sel && (
-                        <View style={[styles.selBadge, { backgroundColor: sc.accentColor }]}>
-                          <Text style={styles.selBadgeText} className="font-rd-bold">
-                            چالاکە
-                          </Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
+                      <Text style={[st.scenarioName, sel && { color: sc.accent }]}>{sc.titleKu}</Text>
+                      <Text style={st.scenarioEn}>{sc.title}</Text>
+                    </Pressable>
                   );
                 })}
-              </ScrollView>
+              </View>
+
+              {/* Hero CTA */}
+              <View style={st.heroArea}>
+                <View style={[st.heroCircle, { borderColor: accent + "30" }]}>
+                  <View style={[st.heroInner, { backgroundColor: accent + "12" }]}>
+                    <Icon size={40} color={accent} strokeWidth={1.8} />
+                  </View>
+                </View>
+                <Text style={st.heroTitle}>{activeScenario.titleKu}</Text>
+                <Text style={st.heroSub}>{activeScenario.subtitleKu}</Text>
+                <Pressable onPress={startSession} style={[st.startBtn, { backgroundColor: accent }]}>
+                  <Sparkles size={18} color="#FFF" strokeWidth={2.5} />
+                  <Text style={st.startBtnText}>دەستپێبکە</Text>
+                </Pressable>
+              </View>
             </View>
           )}
 
-          {/* Active session avatar & transcript */}
+          {/* Chat — active session */}
           {sessionStarted && (
-            <View style={styles.sessionArea}>
-              {/* Scenario pill */}
-              <View
-                style={[
-                  styles.scenarioPill,
-                  { borderColor: activeScenario.accentColor + "50" },
-                ]}
-              >
-                <ScenarioIcon icon={activeScenario.icon} color={activeScenario.accentColor} />
-                <Text style={[styles.scenarioPillText, { color: activeScenario.accentColor }]} className="font-rd-bold">
-                  {activeScenario.titleKu}
-                </Text>
+            <View style={st.chatSection}>
+              {/* Active scenario chip */}
+              <View style={[st.activeChip, { borderColor: accent + "30" }]}>
+                <Icon size={14} color={accent} strokeWidth={2.5} />
+                <Text style={[st.activeChipText, { color: accent }]}>{activeScenario.titleKu}</Text>
               </View>
 
-              {/* Conversation bubbles */}
-              <View style={styles.transcriptArea}>
-                {history.map((msg, i) =>
-                  msg.sender === "ai" ? (
-                    <View key={i} style={styles.aiBubble}>
-                      <Text style={styles.aiBubbleLabel} className="font-rd-bold">
-                        AI
-                      </Text>
-                      <Text style={styles.aiBubbleText}>{msg.text}</Text>
+              {/* Messages */}
+              {history.map((msg, i) => (
+                <Animated.View key={i} entering={FadeInUp.delay(i > 1 ? 0 : i * 60).duration(280)}>
+                  <View style={msg.sender === "ai" ? st.aiRow : st.userRow}>
+                    {msg.sender === "ai" && (
+                      <View style={[st.avatar, { backgroundColor: accent + "14" }]}>
+                        <Icon size={16} color={accent} strokeWidth={2.5} />
+                      </View>
+                    )}
+                    <View style={[
+                      msg.sender === "ai" ? st.aiBubble : st.userBubble,
+                      msg.sender === "ai" && { borderColor: accent + "18" },
+                    ]}>
+                      <Text style={st.msgText}>{msg.text}</Text>
                     </View>
-                  ) : (
-                    <View key={i} style={styles.userBubble}>
-                      <Text style={styles.userBubbleLabel} className="font-rd-bold">
-                        تۆ
-                      </Text>
-                      <Text style={styles.userBubbleText}>{msg.text}</Text>
-                    </View>
-                  )
-                )}
-              </View>
-            </View>
-          )}
+                  </View>
+                </Animated.View>
+              ))}
 
-          {/* Error / Permission Banner */}
-          {micError && (
-            <View style={styles.errorBanner}>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke={C.warning} strokeWidth={2} />
-                <Path d="M12 8v4M12 16h.01" stroke={C.warning} strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.errorTitle} className="font-rd-bold">
-                  {micError.title}
-                </Text>
-                <Text style={styles.errorDesc} className="font-rd-medium">
-                  {micError.desc}
-                </Text>
-              </View>
-              {micError.canRetry && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setMicError(null);
-                    if (status === "idle" || status === "error") {
-                      startListening();
-                    }
-                  }}
-                  style={styles.retryBtn}
-                >
-                  <Text style={styles.retryText} className="font-rd-bold">
-                    دووبارە
-                  </Text>
-                </TouchableOpacity>
+              {status === "thinking" && (
+                <Animated.View entering={FadeInUp.duration(200)}>
+                  <View style={st.aiRow}>
+                    <View style={[st.avatar, { backgroundColor: accent + "14" }]}>
+                      <Loader size={14} color={accent} strokeWidth={2.5} />
+                    </View>
+                    <View style={[st.aiBubble, { borderColor: accent + "18" }]}>
+                      <Text style={[st.msgText, { opacity: 0.4 }]}>Thinking...</Text>
+                    </View>
+                  </View>
+                </Animated.View>
               )}
             </View>
           )}
+        </ScrollView>
 
-          {/* ── Voice Stage ── */}
-          <View style={styles.stage}>
-            {/* Mic button with pulse rings */}
-            <View style={styles.micStage}>
+        {/* Bottom bar — mic + text input */}
+        {sessionStarted && (
+          <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+            {/* Mic orb */}
+            <View style={st.micArea}>
               {status === "listening" && (
                 <>
-                  <Animated.View style={[styles.pulseRing, pulseStyle1]} />
-                  <Animated.View style={[styles.pulseRing, pulseStyle2]} />
+                  <Animated.View style={[st.pulse, { borderColor: accent + "50", backgroundColor: accent + "12" }, pulseStyle1]} />
+                  <Animated.View style={[st.pulse, { borderColor: accent + "30", backgroundColor: accent + "08" }, pulseStyle2]} />
                 </>
               )}
-              {(status === "speaking" || status === "thinking") && (
-                <View
-                  style={[
-                    styles.auraRing,
-                    {
-                      backgroundColor:
-                        status === "thinking"
-                          ? "rgba(147,197,253,0.25)"
-                          : "rgba(167,243,208,0.25)",
-                      borderColor:
-                        status === "thinking"
-                          ? "rgba(32,138,239,0.2)"
-                          : "rgba(16,185,129,0.2)",
-                    },
-                  ]}
-                />
-              )}
-
-              <PressableScale onPress={handleMicTap} scaleDown={0.9} style={{ zIndex: 10 }}>
-                <LinearGradient
-                  colors={
-                    status === "listening"
-                      ? ["#EF4444", "#DC2626"]
-                      : status === "speaking"
-                      ? ["#10B981", "#059669"]
-                      : status === "thinking"
-                      ? ["#3B82F6", "#1D4ED8"]
-                      : ["#208AEF", "#2563EB"]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[
-                    styles.micBtn,
-                    crossShadow({
-                      color: status === "listening" ? "#EF4444" : C.primary,
-                      offsetY: 10,
-                      blur: 24,
-                      opacity: 0.3,
-                      elevation: 10,
-                    }),
-                  ]}
-                >
-                  {status === "thinking" ? (
-                    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-                      <Circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.25)" strokeWidth={2.5} />
-                      <Path d="M12 2a10 10 0 0110 10" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" />
-                    </Svg>
-                  ) : status === "speaking" ? (
-                    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-                      <Path d="M9 9v6M12 6v12M15 9v6M6 11v2M18 11v2" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" />
-                    </Svg>
-                  ) : (
-                    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-                      <Path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" fill="#fff" />
-                      <Path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-                    </Svg>
-                  )}
-                </LinearGradient>
+              <PressableScale onPress={handleMicTap} scaleDown={0.92}>
+                <View style={[
+                  st.micBtn,
+                  { backgroundColor: status === "listening" ? "#EF4444" : accent },
+                  crossShadow({ color: status === "listening" ? "#EF4444" : accent, offsetY: 4, blur: 14, opacity: 0.3, elevation: 6 }),
+                ]}>
+                  {status === "thinking" ? <Loader size={22} color="#FFF" strokeWidth={2.5} />
+                    : status === "speaking" ? <AudioLines size={22} color="#FFF" strokeWidth={2.5} />
+                    : status === "listening" ? <MicOff size={22} color="#FFF" strokeWidth={2.5} />
+                    : <Mic size={22} color="#FFF" strokeWidth={2.5} />}
+                </View>
               </PressableScale>
             </View>
 
-            {/* Status label */}
-            <Text style={styles.statusText} className="font-rd-bold">
-              {status === "idle"
-                ? sessionStarted
-                  ? "داگرە بۆ گفتوگۆی دووبارە"
-                  : "داگرە بۆ دەستپێکردن"
-                : status === "listening"
-                ? "گوێم لێیە... قسە بکە بە ئینگلیزی"
-                : status === "thinking"
-                ? "بیردەکاتەوە..."
-                : status === "speaking"
-                ? "قسەت بۆ دەکەم..."
-                : "کێشەیەکی ڕووی دا"}
+            <Text style={st.statusLabel}>
+              {status === "idle" ? "داگرە بۆ قسەکردن"
+                : status === "listening" ? "گوێم لێیە..."
+                : status === "thinking" ? "بیردەکاتەوە..."
+                : status === "speaking" ? "قسەدەکات..."
+                : ""}
             </Text>
 
-            {!sessionStarted && status === "idle" && !showTextFallback && (
-              <Text style={styles.hintText} className="font-rd-medium">
-                دەنگت بۆ فێربوونی ئینگلیزی بەکاربهێنە
-              </Text>
-            )}
-
-            {/* Speaking waveform */}
-            {status === "speaking" && (
-              <View style={styles.waveRow}>
-                {Array.from({ length: 10 }, (_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.waveBar,
-                      {
-                        height: 8 + ((i * 7 + 3) % 36),
-                        backgroundColor: C.success,
-                        opacity: 0.6 + (i % 3) * 0.13,
-                      },
-                    ]}
-                  />
-                ))}
+            {/* Text input fallback */}
+            {showTextFallback && (
+              <View style={st.inputRow}>
+                <TextInput
+                  style={st.textField}
+                  placeholder="Type in English..."
+                  placeholderTextColor="#94A3B8"
+                  value={textInput}
+                  onChangeText={setTextInput}
+                  onSubmitEditing={handleTextSubmit}
+                  returnKeyType="send"
+                  editable={status === "listening" || status === "idle"}
+                />
+                <Pressable
+                  onPress={handleTextSubmit}
+                  disabled={!textInput.trim()}
+                  style={[st.sendBtn, { backgroundColor: accent, opacity: textInput.trim() ? 1 : 0.35 }]}
+                >
+                  <Send size={16} color="#FFF" strokeWidth={2.5} />
+                </Pressable>
               </View>
             )}
-
-            {/* Mic blocked hint */}
-            {showTextFallback && status !== "speaking" && status !== "thinking" && (
-              <TouchableOpacity
-                style={styles.micBlockedBadge}
-                onPress={() => checkMicPermission()}
-              >
-                <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                  <Path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" fill={C.inkMuted} />
-                  <Path d="M3 3l18 18" stroke={C.error} strokeWidth={2.5} strokeLinecap="round" />
-                </Svg>
-                <Text style={styles.micBlockedText} className="font-rd-medium">
-                  مایکرۆفۆن بەسەربراوە — ڕێگە بدە
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
-
-        {/* Text Fallback Input — shown when mic is blocked */}
-        {showTextFallback && sessionStarted && (
-          <View style={[styles.textInputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            <TextInput
-              style={styles.textField}
-              placeholder="Type your English response here..."
-              placeholderTextColor={C.inkMuted}
-              value={textInput}
-              onChangeText={setTextInput}
-              onSubmitEditing={handleTextSubmit}
-              returnKeyType="send"
-              multiline={false}
-              editable={status === "listening" || status === "idle"}
-            />
-            <TouchableOpacity
-              style={[
-                styles.sendBtn,
-                { opacity: textInput.trim().length > 0 ? 1 : 0.4 },
-              ]}
-              onPress={handleTextSubmit}
-              disabled={textInput.trim().length === 0}
-            >
-              <LinearGradient
-                colors={["#208AEF", "#2563EB"]}
-                style={styles.sendBtnGrad}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
-                    stroke="#fff"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </LinearGradient>
-            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -932,245 +584,279 @@ export function RolePlayScreen() {
   );
 }
 
+
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bgBottom },
+const st = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#F8FAFC" },
 
   // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderColor: "rgba(226,232,240,0.7)",
+    borderColor: "#F1F5F9",
   },
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: C.cardBorder,
-  },
-  headerCenter: { alignItems: "center", gap: 4 },
-  headerTitle: { fontSize: 17, color: C.ink },
-  modelBadge: {
-    backgroundColor: "rgba(32,138,239,0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  modelBadgeText: {
-    fontSize: 9,
-    fontWeight: "700",
-    color: C.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  // Carousel
-  carouselSection: { marginTop: 22 },
-  sectionLabel: {
-    fontSize: 13,
-    color: C.inkSoft,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    textAlign: "left",
-  },
-  carouselRow: { paddingHorizontal: 20, gap: 14, paddingBottom: 8 },
-  scenarioCard: {
-    backgroundColor: C.card,
-    width: width * 0.74,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: C.cardBorder,
-    overflow: "hidden",
-  },
-  cardAccentBar: { height: 4, width: "100%" },
-  cardBody: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    padding: 18,
-    paddingTop: 16,
-  },
-  cardIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    borderRadius: 12,
+    backgroundColor: "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
-  cardTitle: { fontSize: 16, color: C.ink, marginBottom: 4, textAlign: "left" },
-  cardSubtitle: { fontSize: 11, color: C.inkSoft, lineHeight: 16, textAlign: "left" },
-  cardEnLabel: { fontSize: 10, fontWeight: "700", marginTop: 6, textTransform: "uppercase", textAlign: "left" },
-  selBadge: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  selBadgeText: { fontSize: 9, color: "#fff" },
-
-  // Session
-  sessionArea: { paddingHorizontal: 18, marginTop: 20, gap: 14 },
-  scenarioPill: {
+  headerCenter: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    alignSelf: "center",
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: "rgba(255,255,255,0.8)",
   },
-  scenarioPillText: { fontSize: 13 },
-  transcriptArea: { gap: 10 },
-  aiBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(16,185,129,0.08)",
-    borderRadius: 18,
-    borderTopStartRadius: 4,
-    padding: 14,
-    maxWidth: "86%",
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+    letterSpacing: -0.3,
   },
-  aiBubbleLabel: { fontSize: 9, color: C.success, marginBottom: 4 },
-  aiBubbleText: { fontSize: 14, color: C.ink, lineHeight: 21 },
-  userBubble: {
-    alignSelf: "flex-end",
-    backgroundColor: "rgba(32,138,239,0.08)",
-    borderRadius: 18,
-    borderTopEndRadius: 4,
-    padding: 14,
-    maxWidth: "86%",
+  headerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  userBubbleLabel: { fontSize: 9, color: C.primary, marginBottom: 4, textAlign: "right" },
-  userBubbleText: { fontSize: 14, color: C.ink, lineHeight: 21, textAlign: "right" },
 
-  // Error banner
-  errorBanner: {
+  // Scenario picker
+  pickerSection: {
+    paddingTop: 24,
+  },
+  pickerLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#64748B",
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  scenarioGrid: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "rgba(245,158,11,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(245,158,11,0.3)",
-    borderRadius: 14,
-    marginHorizontal: 18,
-    marginTop: 14,
-    padding: 14,
-  },
-  errorTitle: { fontSize: 13, color: C.ink },
-  errorDesc: { fontSize: 11, color: C.inkSoft, marginTop: 2, lineHeight: 16 },
-  retryBtn: {
-    backgroundColor: C.warning,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    alignSelf: "flex-start",
-    marginTop: 2,
-  },
-  retryText: { fontSize: 11, color: "#fff" },
-
-  // Stage
-  stage: {
-    alignItems: "center",
-    marginTop: 36,
-    gap: 14,
+    flexWrap: "wrap",
     paddingHorizontal: 20,
+    gap: 12,
   },
-  micStage: {
-    width: 160,
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  micBtn: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.25)",
-  },
-  pulseRing: {
-    position: "absolute",
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "rgba(239,68,68,0.22)",
+  scenarioCard: {
+    width: (SW - 52) / 2,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: "rgba(239,68,68,0.4)",
+    borderColor: "#E2E8F0",
+    padding: 18,
+    alignItems: "center",
+    gap: 10,
   },
-  auraRing: {
-    position: "absolute",
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 1,
+  scenarioIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scenarioName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1E293B",
+    textAlign: "center",
+    writingDirection: "rtl",
+  },
+  scenarioEn: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#94A3B8",
+    textAlign: "center",
+    letterSpacing: 0.2,
   },
 
-  // Status
-  statusText: { fontSize: 15, color: C.ink, textAlign: "center" },
-  hintText: { fontSize: 12, color: C.inkMuted, textAlign: "center" },
-  waveRow: {
+  // Hero CTA
+  heroArea: {
+    alignItems: "center",
+    marginTop: 40,
+    paddingHorizontal: 32,
+    gap: 14,
+  },
+  heroCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroInner: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0F172A",
+    letterSpacing: -0.5,
+    textAlign: "center",
+    writingDirection: "rtl",
+  },
+  heroSub: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#64748B",
+    textAlign: "center",
+    writingDirection: "rtl",
+    lineHeight: 22,
+  },
+  startBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    height: 54,
-    marginTop: 6,
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 16,
   },
-  waveBar: { width: 4, borderRadius: 2 },
+  startBtnText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
+  },
 
-  // Mic blocked
-  micBlockedBadge: {
+  // Chat
+  chatSection: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    gap: 14,
+  },
+  activeChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(239,68,68,0.06)",
+    alignSelf: "center",
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.2)",
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 6,
+    backgroundColor: "#FFFFFF",
+    marginBottom: 6,
   },
-  micBlockedText: { fontSize: 11, color: C.inkSoft },
+  activeChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    writingDirection: "rtl",
+  },
 
-  // Text input fallback
-  textInputBar: {
+  // Bubbles
+  aiRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    maxWidth: "88%",
+  },
+  userRow: {
+    alignSelf: "flex-end",
+    maxWidth: "82%",
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  aiBubble: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderTopLeftRadius: 6,
+    borderWidth: 1,
+    padding: 14,
+    flex: 1,
+  },
+  userBubble: {
+    backgroundColor: "#EFF6FF",
+    borderRadius: 18,
+    borderTopRightRadius: 6,
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    padding: 14,
+  },
+  msgText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#1E293B",
+    lineHeight: 23,
+    letterSpacing: -0.1,
+  },
+
+  // Bottom bar
+  bottomBar: {
+    alignItems: "center",
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderColor: "#F1F5F9",
+    gap: 10,
+  },
+  micArea: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  micBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pulse: {
+    position: "absolute",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1.5,
+  },
+  statusLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
+    textAlign: "center",
+    writingDirection: "rtl",
+  },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderColor: "rgba(226,232,240,0.8)",
-    backgroundColor: "rgba(255,255,255,0.98)",
+    width: "100%",
+    marginTop: 4,
   },
   textField: {
     flex: 1,
     height: 44,
-    backgroundColor: "rgba(241,245,249,0.9)",
-    borderRadius: 22,
-    paddingHorizontal: 18,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 14,
+    paddingHorizontal: 16,
     fontSize: 14,
-    color: C.ink,
+    fontWeight: "500",
+    color: "#0F172A",
     borderWidth: 1,
-    borderColor: C.cardBorder,
+    borderColor: "#E2E8F0",
   },
-  sendBtn: { width: 44, height: 44 },
-  sendBtnGrad: {
+  sendBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },

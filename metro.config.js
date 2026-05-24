@@ -24,7 +24,7 @@ const path = require("path");
 
 config.resolver = {
   ...resolver,
-  assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv", "glb"],
+  assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
   sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
     if (platform === "web" && moduleName.includes("react-native/Libraries/NativeComponent/NativeComponentRegistry")) {

@@ -1,105 +1,117 @@
 /**
- * LessonScreen — Duolingo-faithful lesson engine.
+ * LessonScreen — Duolingo-faithful engine, iOS 26 Liquid Glass shell.
  *
- * Key UX pattern:
- *   1. Game rendered in scrollable area
- *   2. Games call onAnswer(correct, explanation?) when user picks
- *   3. Bottom feedback sheet slides up (green / red)
- *   4. User taps CONTINUE → advances to next question
+ *   1. Glass header (close pill, progress bar, hearts pill)
+ *   2. Game body (frosted cards, glass options)
+ *   3. Bottom feedback sheet — frosted glass with tinted accent
  */
 
-import React, { useState, useCallback, useRef } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  SafeAreaView,
-  ImageBackground,
-  Platform,
+    Icon3DAward,
+    Icon3DCheck,
+    Icon3DCheckCircle,
+    Icon3DFire,
+    Icon3DX,
+    Icon3DZap,
+} from "@/components/icons/Icon3D";
+import { crossShadow } from "@/utils/shadows";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
+import {
+    ImageBackground,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import Animated, {
-  Easing,
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  withSequence,
-  ReduceMotion,
+    Easing,
+    FadeInDown,
+    FadeInUp,
+    ReduceMotion,
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
-import {
-  Icon3DX,
-  Icon3DFire,
-  Icon3DZap,
-  Icon3DAward,
-  Icon3DCheck,
-  Icon3DCheckCircle,
-} from "@/components/icons/Icon3D";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { crossShadow } from "@/utils/shadows";
 
-import { getLessonQuestions, GameQuestion } from "@/data/lesson-content";
-import MultipleChoiceGame   from "./games/MultipleChoiceGame";
-import PairMatchGame        from "./games/PairMatchGame";
-import SentenceBuilderGame  from "./games/SentenceBuilderGame";
-import VoiceGame            from "./games/VoiceGame";
-import FillBlankGame        from "./games/FillBlankGame";
+import { GameQuestion, getLessonQuestions } from "@/data/lesson-content";
 import ConversationPickGame from "./games/ConversationPickGame";
-import { G } from "./games/game-design";
+import FillBlankGame from "./games/FillBlankGame";
+import { G, Glass, iOS, Radius } from "./games/game-design";
+import { LiquidPrimaryButton } from "./games/liquid-primitives";
+import MultipleChoiceGame from "./games/MultipleChoiceGame";
+import PairMatchGame from "./games/PairMatchGame";
+import SentenceBuilderGame from "./games/SentenceBuilderGame";
+import VoiceGame from "./games/VoiceGame";
 
 const MAX_HEARTS = 5;
-const SHEET_H    = 230;
+const SHEET_H = 280;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ultra Premium Feedback Button
-// ─────────────────────────────────────────────────────────────────────────────
-function SheetContinueBtn({
-  label,
-  faceColor,
-  textColor,
+/* ─────────────────────────────────────────────────────────────────────
+ * Glass header pill (close button, hearts badge)
+ * ───────────────────────────────────────────────────────────────────── */
+function HeaderPill({
+  children,
   onPress,
+  width,
+  height = 44,
+  paddingH = 14,
 }: {
-  label: string;
-  rimColor?: string; // keeping for prop compatibility if needed
-  faceColor: string;
-  textColor: string;
-  onPress: () => void;
+  children: React.ReactNode;
+  onPress?: () => void;
+  width?: number;
+  height?: number;
+  paddingH?: number;
 }) {
   const scale = useSharedValue(1);
-  const faceStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <Animated.View style={[{ width: "100%", marginTop: 8 }, faceStyle]}>
+    <Animated.View style={animStyle}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => { scale.value = withSpring(0.96, { damping: 15, stiffness: 300 }); }}
-        onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
-        style={{
-          backgroundColor: faceColor,
-          paddingVertical: 18,
-          borderRadius: 20,
-          alignItems: "center",
-          ...crossShadow({
-            color: faceColor,
-            offsetY: 6,
-            opacity: 0.3,
-            blur: 12,
-            elevation: 6
-          }),
-        }}
+        onPressIn={() => { if (onPress) scale.value = withTiming(0.9, { duration: 100 }); }}
+        onPressOut={() => { if (onPress) scale.value = withTiming(1, { duration: 140 }); }}
+        style={[
+          {
+            height,
+            width,
+            paddingHorizontal: paddingH,
+            borderRadius: height / 2,
+            borderWidth: 1,
+            borderColor: Glass.borderDark,
+            backgroundColor: Glass.surfaceDark,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          },
+          Platform.OS === "web" && {
+            // @ts-ignore web
+            backdropFilter: "blur(24px) saturate(150%)",
+            // @ts-ignore web
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          },
+        ]}
       >
-        <Text style={{ fontSize: 17, fontWeight: "700", color: textColor, letterSpacing: 0.5 }}>{label}</Text>
+        {Platform.OS !== "web" && (
+          <BlurView intensity={Glass.blurStrong} tint="dark" style={StyleSheet.absoluteFill} />
+        )}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, zIndex: 1 }}>
+          {children}
+        </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Summary stat card
-// ─────────────────────────────────────────────────────────────────────────────
+/* Summary stat card */
 function StatCard({
   icon, label, value, color, delay,
 }: {
@@ -110,10 +122,7 @@ function StatCard({
   delay: number;
 }) {
   return (
-    <Animated.View
-      entering={FadeInDown.delay(delay).duration(220)}
-      style={{ flex: 1 }}
-    >
+    <Animated.View entering={FadeInDown.delay(delay).duration(220)} style={{ flex: 1 }}>
       <View style={[sSum.statCard, { borderColor: color }]}>
         {icon}
         <Text style={[sSum.statValue, { color }]}>{value}</Text>
@@ -123,32 +132,29 @@ function StatCard({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main screen
-// ─────────────────────────────────────────────────────────────────────────────
 export default function LessonScreen() {
-  const router      = useRouter();
-  const insets      = useSafeAreaInsets();
-  const params      = useLocalSearchParams();
-  const lessonId    = parseInt(params.id   as string) || 0;
-  const lessonIndex = parseInt(params.li   as string) || 0;
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams();
+  const lessonId = parseInt(params.id as string) || 0;
+  const lessonIndex = parseInt(params.li as string) || 0;
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex),
     [lessonId, lessonIndex],
   );
 
-  const [current,  setCurrent]  = useState(0);
-  const [hearts,   setHearts]   = useState(MAX_HEARTS);
-  const [xp,       setXp]       = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [hearts, setHearts] = useState(MAX_HEARTS);
+  const [xp, setXp] = useState(0);
   const [correctN, setCorrectN] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [passed,   setPassed]   = useState(false);
+  const [passed, setPassed] = useState(false);
   const [feedback, setFeedback] = useState<{ correct: boolean; explanation?: string } | null>(null);
 
   const nextRef = useRef(0);
 
-  // ── Animations ────────────────────────────────────────────────────
+  /* Animations */
   const progressW = useSharedValue(0);
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progressW.value * 100}%` as any,
@@ -157,24 +163,20 @@ export default function LessonScreen() {
   const xpSc = useSharedValue(1);
   const xpStyle = useAnimatedStyle(() => ({ transform: [{ scale: xpSc.value }] }));
 
-  const closeSc = useSharedValue(1);
-  const closeStyle = useAnimatedStyle(() => ({ transform: [{ scale: closeSc.value }] }));
-
   const sheetY = useSharedValue(SHEET_H + insets.bottom);
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
 
-  // ── Reset on focus ────────────────────────────────────────────────
+  /* Reset on focus */
   useFocusEffect(
     useCallback(() => {
       setCurrent(0); setHearts(MAX_HEARTS); setXp(0);
       setCorrectN(0); setFinished(false); setPassed(false);
       setFeedback(null); nextRef.current = 0;
-      progressW.value = 0; xpSc.value = 1; closeSc.value = 1;
+      progressW.value = 0; xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
     }, [insets.bottom]),
   );
 
-  // ── Handle answer from game ────────────────────────────────────────
   const handleAnswer = useCallback(
     (correct: boolean, explanation?: string) => {
       const q = questions[current];
@@ -191,7 +193,6 @@ export default function LessonScreen() {
         const newH = Math.max(0, hearts - 1);
         setHearts(newH);
         if (newH === 0) {
-          // No sheet — just go straight to fail screen
           setPassed(false);
           setFinished(true);
           return;
@@ -207,20 +208,16 @@ export default function LessonScreen() {
 
       setFeedback({ correct, explanation });
       sheetY.value = withSpring(0, {
-        damping: 20,
-        stiffness: 220,
-        mass: 0.9,
+        damping: 22, stiffness: 220, mass: 0.9,
         reduceMotion: ReduceMotion.System,
       });
     },
     [current, hearts, questions],
   );
 
-  // ── Continue to next question ──────────────────────────────────────
   const continueToNext = useCallback(() => {
     sheetY.value = withTiming(SHEET_H + insets.bottom, {
-      duration: 240,
-      easing: Easing.in(Easing.quad),
+      duration: 240, easing: Easing.in(Easing.quad),
     });
     setTimeout(() => {
       setFeedback(null);
@@ -234,7 +231,6 @@ export default function LessonScreen() {
     }, 260);
   }, [questions.length, insets.bottom]);
 
-  // ── Game renderer ─────────────────────────────────────────────────
   const renderGame = (q: GameQuestion) => {
     switch (q.type) {
       case "multiple_choice":   return <MultipleChoiceGame   key={current} question={q} onAnswer={handleAnswer} />;
@@ -253,30 +249,19 @@ export default function LessonScreen() {
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <SheetContinueBtn
-          label="Go Back"
-          faceColor={G.blue}
-          textColor="#FFF"
-          onPress={() => router.back()}
-        />
+        <LiquidPrimaryButton label="Go Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
 
-  // ─── SUMMARY SCREEN ────────────────────────────────────────────────────────
+  /* ─────── SUMMARY SCREEN ─────── */
   if (finished) {
     const ok = passed;
     return (
       <SafeAreaView style={[sSum.root, { backgroundColor: ok ? G.greenBg : G.redBg }]}>
-        <Animated.View
-          entering={FadeInUp.duration(340)}
-          style={sSum.wrap}
-        >
-          {/* Hero icon */}
+        <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
           <View style={[sSum.iconWrap, { backgroundColor: ok ? G.green : G.red }]}>
-            {ok
-              ? <Icon3DAward size={60} />
-              : <Icon3DX size={52} />}
+            {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
           </View>
 
           <Text style={[sSum.title, { color: ok ? G.greenText : G.redText }]}>
@@ -286,43 +271,21 @@ export default function LessonScreen() {
             {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
           </Text>
 
-          {/* Stats row */}
           {ok && (
             <View style={sSum.statsRow}>
-              <StatCard
-                icon={<Icon3DZap size={26} />}
-                label="XP"
-                value={`+${xp}`}
-                color={G.yellow}
-                delay={80}
-              />
-              <StatCard
-                icon={<Icon3DCheck size={26} />}
-                label="Correct"
-                value={`${correctN}/${questions.length}`}
-                color={G.green}
-                delay={160}
-              />
-              <StatCard
-                icon={<Icon3DFire size={26} />}
-                label="Hearts"
-                value={`${hearts}/${MAX_HEARTS}`}
-                color={G.red}
-                delay={240}
-              />
+              <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={G.yellow} delay={80} />
+              <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={G.green} delay={160} />
+              <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={G.red} delay={240} />
             </View>
           )}
 
-          {/* Continue button */}
           <Animated.View
             entering={FadeInDown.delay(ok ? 360 : 200).duration(280)}
             style={{ width: "100%", marginTop: 12 }}
           >
-            <SheetContinueBtn
+            <LiquidPrimaryButton
               label={ok ? "Continue" : "Try Again"}
-              rimColor={ok ? G.greenRim : G.blueRim}
-              faceColor={ok ? G.green : G.blue}
-              textColor="#FFF"
+              color={ok ? iOS.systemGreen : iOS.systemBlue}
               onPress={() => router.back()}
             />
           </Animated.View>
@@ -331,213 +294,201 @@ export default function LessonScreen() {
     );
   }
 
-  // ─── ACTIVE GAME SCREEN ────────────────────────────────────────────────────
+  /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
 
   return (
-    <ImageBackground 
+    <ImageBackground
       source={require("@/assets/images/oceanbg.png")}
       style={[sL.root, { paddingTop: insets.top }]}
       resizeMode="cover"
     >
-      {/* ── Premium Glass Header ───────────────────────────────────────────── */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 24,
-      }}>
-        {/* Close button (Glass pill) */}
-        <Animated.View style={closeStyle}>
-          <Pressable
-            onPressIn={() => { closeSc.value = withTiming(0.85, { duration: 100 }); }}
-            onPressOut={() => { closeSc.value = withTiming(1, { duration: 150 }); }}
-            onPress={() => router.back()}
-            style={{
-              width: 44, height: 44, borderRadius: 22,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
-              alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Icon3DX size={20} />
-          </Pressable>
-        </Animated.View>
+      {/* Header */}
+      <View style={sL.header}>
+        <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
+          <Icon3DX size={20} />
+        </HeaderPill>
 
-        {/* Center Progress Glass Pill */}
-        <View style={{
-          flex: 1, marginHorizontal: 16, height: 16,
-          backgroundColor: 'rgba(0,0,0,0.15)',
-          borderRadius: 12,
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-          overflow: 'hidden',
-          padding: 2,
-        }}>
-          <Animated.View style={[{ height: '100%', borderRadius: 10, overflow: 'hidden' }, progressStyle]}>
-             <LinearGradient colors={['#34D399', '#10B981']} style={{flex: 1}} />
-          </Animated.View>
+        {/* Progress glass track */}
+        <View style={sL.progressOuter}>
+          <View style={sL.progressTrack}>
+            <Animated.View style={[sL.progressFillWrap, progressStyle]}>
+              <LinearGradient
+                colors={["#5EEAD4", iOS.systemGreen]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+          </View>
         </View>
 
-        {/* Energy badge (Glass pill) */}
-        <Animated.View style={[xpStyle, {
-          height: 44, paddingHorizontal: 16, borderRadius: 22,
-          backgroundColor: 'rgba(255,255,255,0.15)',
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
-          flexDirection: 'row', alignItems: 'center', gap: 6,
-        }]}>
-          <Icon3DZap size={20} />
-          <Text style={{ fontSize: 16, fontWeight: '800', color: '#FFFFFF' }}>{hearts}</Text>
+        <Animated.View style={xpStyle}>
+          <HeaderPill height={44} paddingH={14}>
+            <Icon3DFire size={18} />
+            <Text style={sL.heartsText}>{hearts}</Text>
+          </HeaderPill>
         </Animated.View>
       </View>
 
-      {/* ── Game content ─────────────────────────────────────────────────────── */}
+      {/* Game */}
       <Animated.View
         key={current}
         entering={FadeInDown.duration(260)}
-        style={sL.gameArea}
+        style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
         {renderGame(questions[current]!)}
       </Animated.View>
 
-      {/* ── Feedback bottom sheet ─────────────────────────────────────────────── */}
+      {/* Feedback sheet */}
       {feedback !== null && (
         <Animated.View
           style={[
             sL.sheet,
-            isCorrect ? sL.sheetCorrect : sL.sheetWrong,
-            { paddingBottom: insets.bottom + 20 },
+            { paddingBottom: Math.max(insets.bottom, 16) + 8 },
             sheetStyle,
           ]}
         >
-          {/* Icon + heading */}
-          <View style={sL.sheetHeader}>
-            <View style={[sL.sheetIconWrap, { backgroundColor: isCorrect ? G.green : G.red }]}>
-              {isCorrect
-                ? <Icon3DCheckCircle size={20} />
-                : <Icon3DX size={20} />}
-            </View>
-            <View>
-              <Text style={[sL.sheetTitle, { color: isCorrect ? G.greenText : G.redText }]}>
-                {isCorrect ? "Correct!" : "Incorrect!"}
-              </Text>
-              {feedback.explanation ? (
-                <Text style={[sL.sheetSub, { color: isCorrect ? G.greenText : G.redText }]}>
-                  {feedback.explanation}
-                </Text>
-              ) : (
-                <Text style={[sL.sheetSub, { color: isCorrect ? G.greenText : G.redText }]}>
-                  {isCorrect ? "Perfect! Keep up the momentum." : "Not quite. Let's try to focus on the structure."}
-                </Text>
-              )}
+          {/* Sheet inner with frosted blur */}
+          <View
+            style={[
+              sL.sheetInner,
+              {
+                backgroundColor: "rgba(255,255,255,0.92)",
+                borderColor: isCorrect ? iOS.systemGreen : iOS.systemRed,
+              },
+              Platform.OS === "web" && {
+                // @ts-ignore web
+                backdropFilter: "blur(40px) saturate(180%)",
+                // @ts-ignore web
+                WebkitBackdropFilter: "blur(40px) saturate(180%)",
+              },
+            ]}
+          >
+            {Platform.OS !== "web" && (
+              <BlurView
+                intensity={70}
+                tint="light"
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            {/* Top accent stripe */}
+            <View
+              style={[
+                sL.sheetAccent,
+                { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
+              ]}
+            />
+            <View style={{ position: "relative", zIndex: 1, gap: 18 }}>
+              <View style={sL.sheetHeader}>
+                <View
+                  style={[
+                    sL.sheetIconWrap,
+                    { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
+                  ]}
+                >
+                  {isCorrect ? <Icon3DCheckCircle size={22} /> : <Icon3DX size={22} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      sL.sheetTitle,
+                      { color: isCorrect ? iOS.greenDeep : iOS.redDeep },
+                    ]}
+                  >
+                    {isCorrect ? "Correct!" : "Incorrect"}
+                  </Text>
+                  {feedback.explanation ? (
+                    <Text style={sL.sheetSub}>{feedback.explanation}</Text>
+                  ) : (
+                    <Text style={sL.sheetSub}>
+                      {isCorrect
+                        ? "Perfect. Keep up the momentum."
+                        : "Not quite. Focus on the structure."}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <LiquidPrimaryButton
+                label="CONTINUE"
+                color={isCorrect ? iOS.systemGreen : iOS.systemRed}
+                onPress={continueToNext}
+              />
             </View>
           </View>
-
-          {/* Continue button */}
-          <SheetContinueBtn
-            label="NEXT QUESTION"
-            rimColor={isCorrect ? G.blueRim : G.redRim}
-            faceColor={isCorrect ? G.blue   : G.red}
-            textColor="#FFF"
-            onPress={continueToNext}
-          />
         </Animated.View>
       )}
     </ImageBackground>
   );
 }
 
-// ─── Lesson screen styles ──────────────────────────────────────────────────────
+/* ─── styles ─── */
 const sL = StyleSheet.create({
-  root:  { flex: 1 },
+  root: { flex: 1 },
 
-  // Top bar
-  topBar: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: G.px,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 18,
     gap: 12,
   },
-  closeBtn: {
-    width: 36, height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: G.border,
-    alignItems: "center",
-    justifyContent: "center",
+  progressOuter: {
+    flex: 1,
   },
   progressTrack: {
-    flex: 1,
     height: 14,
-    backgroundColor: G.border,
     borderRadius: 7,
+    backgroundColor: "rgba(15,23,42,0.32)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    overflow: "hidden",
+    padding: 2,
+  },
+  progressFillWrap: {
+    height: "100%",
+    borderRadius: 5,
     overflow: "hidden",
   },
-  progressFill: {
-    height: "100%",
-    backgroundColor: G.blue,
-    borderRadius: 7,
-  },
-  xpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: G.blue,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  xpText: { fontSize: 13, fontWeight: "800", color: "#FFF" },
-
-  // Hearts
-  heartsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: G.px,
-    paddingBottom: 8,
-    gap: 5,
-  },
-  qNum: {
-    marginLeft: "auto" as any,
-    fontSize: 13,
-    fontWeight: "600",
-    color: G.textLight,
+  heartsText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: -0.2,
   },
 
-  // Game area
   gameArea: { flex: 1 },
 
-  // Feedback sheet
+  /* Feedback sheet */
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 28,
-    paddingHorizontal: 24,
-    gap: 20,
-    // Soft glass shadow - cross platform
-    ...crossShadow({
-      color: "#000",
-      offsetY: -10,
-      opacity: 0.08,
-      blur: 20,
-      elevation: 24
-    }),
-    borderTopWidth: 1,
-    borderColor: "rgba(255,255,255,0.6)",
+    paddingHorizontal: 16,
   },
-  sheetCorrect: { backgroundColor: "rgba(240, 253, 244, 0.95)" }, // Ultra soft emerald glass
-  sheetWrong:   { backgroundColor: "rgba(254, 242, 242, 0.95)" }, // Ultra soft rose glass
-
+  sheetInner: {
+    borderRadius: Radius.xl,
+    borderWidth: 1.4,
+    paddingTop: 24,
+    paddingHorizontal: 22,
+    paddingBottom: 22,
+    overflow: "hidden",
+    ...crossShadow({ color: "#000", offsetY: -4, opacity: 0.18, blur: 30, elevation: 24 }),
+  },
+  sheetAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+  },
   sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
   },
   sheetIconWrap: {
     width: 44,
@@ -558,11 +509,11 @@ const sL = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 22,
     letterSpacing: -0.2,
-    opacity: 0.8,
+    color: "#475569",
+    marginTop: 2,
   },
 });
 
-// ─── Summary styles ────────────────────────────────────────────────────────────
 const sSum = StyleSheet.create({
   root: { flex: 1 },
   wrap: {

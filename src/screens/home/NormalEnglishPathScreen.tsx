@@ -3,33 +3,33 @@
  * Dark slate theme. Structurally mirrors HomeScreen completely.
  */
 
-import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { normalSectionData } from "@/data/normal-english";
-import type { SectionTheme, LessonType } from "@/data/list-items";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Icon3DGradCap } from "@/components/icons/Icon3D";
+import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
+import type { LessonType, SectionTheme } from "@/data/list-items";
+import { normalSectionData } from "@/data/normal-english";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  SectionList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-  SectionListRenderItemInfo,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-  ImageBackground,
+    ImageBackground,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    Platform,
+    SectionList,
+    SectionListRenderItemInfo,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import Animated, {
-  Easing,
-  ReduceMotion,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
-  withTiming,
-  FadeInDown,
+    Easing,
+    FadeInDown,
+    ReduceMotion,
+    useSharedValue,
+    withDelay,
+    withSequence,
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
@@ -273,6 +273,12 @@ export function NormalEnglishPathScreen() {
           ListFooterComponent={ComingSoonCard}
           contentContainerStyle={darkStyles.listContent}
           stickySectionHeadersEnabled={false}
+          // ── Perf props ──
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS === "android"}
+          updateCellsBatchingPeriod={50}
           viewabilityConfig={{
             itemVisiblePercentThreshold: 50,
             minimumViewTime: 100,

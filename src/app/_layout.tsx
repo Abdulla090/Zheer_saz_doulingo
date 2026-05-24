@@ -1,15 +1,15 @@
-import "react-native-gesture-handler";
 import { CustomTabBar } from "@/components/CustomTabBar";
+import { fontMap } from "@/fontMap";
+import { useFontStore } from "@/stores/useFontStore";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useCallback, useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Platform, Text } from "react-native";
+import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { fontMap } from "@/fontMap";
-import { useFontStore } from "@/stores/useFontStore";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -88,6 +88,7 @@ export default function TabLayout() {
             options={{
               headerShown: false,
               href: null,
+              tabBarStyle: { display: "none" },
             }}
           />
           <Tabs.Screen
@@ -95,6 +96,7 @@ export default function TabLayout() {
             options={{
               headerShown: false,
               href: null,
+              tabBarStyle: { display: "none" },
             }}
           />
           <Tabs.Screen
@@ -102,6 +104,7 @@ export default function TabLayout() {
             options={{
               headerShown: false,
               href: null,
+              tabBarStyle: { display: "none" },
             }}
           />
         </Tabs>

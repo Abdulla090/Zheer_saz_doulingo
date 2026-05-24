@@ -1,37 +1,37 @@
-import React, { useEffect } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import Animated, {
-  Easing,
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withDelay,
-} from "react-native-reanimated";
 import { PressableScale } from "@/components/animations";
 import {
-  AirplaneIcon,
-  BookSparkIcon,
-  CardWaveMini,
-  HeroAuraRing,
-  PhingoWordmark,
-  SettingsTuneIcon,
-  WaveformIcon,
+    AirplaneIcon,
+    BookSparkIcon,
+    CardWaveMini,
+    HeroAuraRing,
+    PhingoWordmark,
+    SettingsTuneIcon,
+    WaveformIcon,
 } from "@/components/icons/PhingoHomeIcons";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect } from "react";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions,
+} from "react-native";
+import Animated, {
+    Easing,
+    FadeInDown,
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withRepeat,
+    withSequence,
+    withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const C = {
   bgTop: "#F4F9FF",
@@ -253,21 +253,17 @@ export function PhingoHomeScreen({
             <HeroAuraRing size={Math.min(width * 0.74, 280)} />
           </Animated.View>
 
-          {/* Floating interactive water bubbles */}
+          {/* Floating interactive water bubbles (reduced for perf) */}
           <View style={styles.bubblesContainer}>
             <FloatingBubble size={6} delay={0} startX={-65} duration={4800} />
-            <FloatingBubble size={10} delay={900} startX={-20} duration={5200} />
-            <FloatingBubble size={8} delay={1900} startX={45} duration={4400} />
-            <FloatingBubble size={12} delay={2800} startX={15} duration={5800} />
-            <FloatingBubble size={5} delay={3600} startX={-40} duration={4900} />
-            <FloatingBubble size={9} delay={4500} startX={55} duration={5400} />
-            <FloatingBubble size={7} delay={1300} startX={30} duration={4700} />
+            <FloatingBubble size={10} delay={1500} startX={-20} duration={5200} />
+            <FloatingBubble size={8} delay={3000} startX={45} duration={4400} />
           </View>
 
           {/* Robot mascot float */}
           <Animated.View style={[styles.mascotWrap, mascotStyle]}>
             <Image
-              source={require("../../../assets/images/characters/dolphin-mascot.png")}
+              source={require("../../../assets/images/characters/dolphin-mascot.jpg")}
               contentFit="contain"
               style={{
                 width: Math.min(width * 0.52, 210),
@@ -409,7 +405,6 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 90,
     backgroundColor: "rgba(147, 197, 253, 0.15)",
-    filter: "blur(40px)" as any, // Blur for premium backdrop
   },
   auraWrap: {
     position: "absolute",
