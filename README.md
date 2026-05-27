@@ -52,6 +52,44 @@ npx expo run:android
 - `npx expo start` - start Metro bundler
 - `npx expo run:ios` - build and run iOS app
 - `npx expo run:android` - build and run Android app
+- `npm run verify` - pre-release checks (routes, security, native perf flags)
+- `npm run build:apk` - EAS cloud APK (`preview` profile) — requires `eas login` or `EXPO_TOKEN`
+
+## Release verification
+
+Before shipping, run:
+
+```bash
+npm run verify
+```
+
+This checks:
+
+- All Expo Router screens exist (`index`, `dashboard`, `feed`, `lesson`, `roleplay`, `ai-teacher`, …)
+- Tab bar hides on modal routes (`lesson`, `roleplay`, `ai-teacher`, …)
+- AI Teacher API URL must be **HTTPS**; answers capped at 4000 chars
+- Android path optimizations (`LessonPathIcons`, no `AnimatedG` in path buttons)
+
+## EAS Android APK (cloud)
+
+Project ID: `57df22e9-341f-4e45-a08d-fb5ca28d69c5` (in `app.json`).
+
+**Option A — local / CI with token**
+
+1. Create an [Expo access token](https://expo.dev/accounts/settings#access-tokens).
+2. `export EXPO_TOKEN=your_token` (PowerShell: `$env:EXPO_TOKEN="your_token"`).
+3. `npm ci && npm run verify && npm run build:apk`
+
+**Option B — GitHub Actions**
+
+1. Add repository secret `EXPO_TOKEN` with your Expo token.
+2. Run workflow **EAS Android APK** (`.github/workflows/eas-android-apk.yml`) or push to `main` / `cursor/phingo-home-dashboard-bb74`.
+3. Download the APK from the [Expo builds dashboard](https://expo.dev/accounts/abdulla001/projects/duolingo-clone/builds).
+
+Profiles in `eas.json`:
+
+- `preview` — internal APK (`buildType: apk`)
+- `production` — store-ready APK
 
 ## Notes
 
