@@ -1,6 +1,8 @@
 import { CustomTabBar } from "@/components/CustomTabBar";
 import { fontMap } from "@/fontMap";
+import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
 import { useFontStore } from "@/stores/useFontStore";
+import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
@@ -26,7 +28,10 @@ function applyGlobalFont(fontFamily: string) {
 }
 
 export default function TabLayout() {
-  const { selectedFont, ready } = useFontStore();
+  const { selectedFont, ready: fontReady } = useFontStore();
+  const onboardingReady = useOnboardingStore((s) => s.ready);
+  const onboardingComplete = useOnboardingStore((s) => s.completed);
+  const ready = fontReady && onboardingReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
@@ -49,6 +54,16 @@ export default function TabLayout() {
   }
 
   applyGlobalFont(selectedFont);
+
+  if (!onboardingComplete) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <OnboardingFlow />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    );
+  }
 
   const rnWebVars = Platform.OS === "web" ? {} : {
     "--font-rd-bold":    selectedFont,
