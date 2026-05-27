@@ -8,7 +8,6 @@ import {
   getCurrentLessonMeta,
 } from "@/utils/lesson-navigation";
 import {
-  ANDROID_WIDGET_NAME,
   WIDGET_SNAPSHOT_KEY,
   type PhingoHomeWidgetPayload,
 } from "@/widgets/widget-types";
@@ -77,29 +76,12 @@ export async function syncHomeWidget(): Promise<void> {
   const payload = buildPayload();
   await persistSnapshot(payload);
 
-  if (Platform.OS === "ios") {
+  if (Platform.OS === "ios" || Platform.OS === "android") {
     try {
       const { PhingoHomeWidget } = await import("@/widgets/PhingoHomeWidget");
       PhingoHomeWidget.updateSnapshot(payload);
     } catch {
       /* expo-widgets requires dev build */
-    }
-    return;
-  }
-
-  if (Platform.OS === "android") {
-    try {
-      const { requestWidgetUpdate } = await import("react-native-android-widget");
-      const { PhingoHomeAndroidWidget } = await import(
-        "@/widgets/PhingoHomeAndroidWidget"
-      );
-      await requestWidgetUpdate({
-        widgetName: ANDROID_WIDGET_NAME,
-        renderWidget: () => <PhingoHomeAndroidWidget {...payload} />,
-        widgetNotFound: () => {},
-      });
-    } catch {
-      /* widget not placed on home screen yet */
     }
   }
 }

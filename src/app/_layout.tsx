@@ -18,10 +18,7 @@ import "react-native-gesture-handler";
 import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { registerPhingoAndroidWidgetHandler } from "@/widgets/android-widget-handler";
 import "../global.css";
-
-registerPhingoAndroidWidgetHandler();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

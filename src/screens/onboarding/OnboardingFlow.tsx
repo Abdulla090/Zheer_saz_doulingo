@@ -326,6 +326,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "DINNextRoundedBold",
   },
+  swipeArea: {
+    flex: 1,
+  },
   copyBlock: {
     flex: 1,
     justifyContent: "flex-start",

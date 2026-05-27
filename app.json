@@ -59,30 +59,18 @@
               "name": "PhingoHome",
               "displayName": "Phingo",
               "description": "Streak, daily XP, path progress, and your next lesson",
-              "supportedFamilies": ["systemSmall", "systemMedium"]
+              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "ios": {
+                "supportedFamilies": ["systemSmall", "systemMedium"]
+              },
+              "android": {
+                "minWidth": 320,
+                "minHeight": 120,
+                "targetCellWidth": 5,
+                "targetCellHeight": 2,
+                "resizeMode": "horizontal"
+              }
             }
-          ]
-        }
-      ],
-      [
-        "react-native-android-widget",
-        {
-          "widgets": [
-            {
-              "name": "PhingoHome",
-              "label": "Phingo",
-              "description": "Streak, XP, and your next lesson",
-              "minWidth": "320dp",
-              "minHeight": "120dp",
-              "targetCellWidth": 5,
-              "targetCellHeight": 2,
-              "resizeMode": "horizontal",
-              "previewImage": "./assets/images/icon.png"
-            }
-          ],
-          "fonts": [
-            "./assets/fonts/DIN_BOLD.ttf",
-            "./assets/fonts/DIN_MEDIUM.ttf"
           ]
         }
       ]
