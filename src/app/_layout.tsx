@@ -72,18 +72,23 @@ export default function TabLayout() {
             animation: "fade",
           }}
         >
+          <Tabs.Screen name="index" />
+          <Tabs.Screen name="dashboard" />
+          <Tabs.Screen name="feed" />
+          <Tabs.Screen name="subscription" />
+          <Tabs.Screen name="more" />
           <Tabs.Screen
-            name="dashboard"
+            name="quest"
             options={{
               href: null,
             }}
           />
-          <Tabs.Screen name="index" />
-          <Tabs.Screen name="quest" />
-          <Tabs.Screen name="league" />
-          <Tabs.Screen name="feed" />
-          <Tabs.Screen name="subscription" />
-          <Tabs.Screen name="more" />
+          <Tabs.Screen
+            name="league"
+            options={{
+              href: null,
+            }}
+          />
           <Tabs.Screen
             name="lesson"
             options={{

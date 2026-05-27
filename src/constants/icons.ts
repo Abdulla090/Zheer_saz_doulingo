@@ -6,6 +6,7 @@ import Coding from "@/assets/images/svg/courses/coding1.svg";
 import Maths from "@/assets/images/svg/courses/math1.svg";
 import Dumbbell from "@/assets/images/svg/dumbbell.svg";
 import Battery from "@/assets/images/svg/header/battery.svg";
+import Heart from "@/assets/images/svg/header/heart.svg";
 import Fire from "@/assets/images/svg/header/fire.svg";
 import Flag from "@/assets/images/svg/header/flag.svg";
 import Gem from "@/assets/images/svg/header/gem.svg";
@@ -32,6 +33,7 @@ import Star from "@/assets/images/svg/Star.svg";
 import Video from "@/assets/images/svg/video.svg";
 export {
   Battery,
+  Heart,
   Chess,
   Chest,
   ChestUnlocked,

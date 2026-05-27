@@ -1,9 +1,9 @@
 /**
- * Home tab — Phingo AI partner landing.
+ * Home tab — Duolingo-style learn dashboard (Phingo).
  */
 
-import { PhingoHomeScreen } from "@/screens/home/PhingoHomeScreen";
+import { PhingoLearnHomeScreen } from "@/screens/home/PhingoLearnHomeScreen";
 
 export default function HomeIndex() {
-  return <PhingoHomeScreen />;
+  return <PhingoLearnHomeScreen />;
 }
