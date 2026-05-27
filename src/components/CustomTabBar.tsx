@@ -5,6 +5,7 @@ import {
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
+import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
@@ -67,6 +68,9 @@ const HIDDEN_ROUTES = new Set([
   "ai-teacher",
   "quest",
   "league",
+  "privacy-policy",
+  "ai-safety",
+  "terms",
 ]);
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
@@ -75,7 +79,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeRouteName = state.routes[state.index]?.name;
 
   const tabs = useMemo(
-    () => TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) })),
+    () =>
+      TABS.filter((tab) => ENABLE_SHOP || tab.route !== "subscription").map(
+        (tab) => ({ ...tab, label: t(tab.labelKey) }),
+      ),
     [t],
   );
 

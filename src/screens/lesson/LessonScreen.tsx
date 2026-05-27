@@ -32,6 +32,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
@@ -85,6 +86,10 @@ export default function LessonScreen() {
     (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
       ? "normal"
       : "street";
+  const pathIndex = parseInt(
+    (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
+  );
+  const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex, pathMode),
@@ -238,7 +243,12 @@ export default function LessonScreen() {
             <HomeLiquidButton
               label={ok ? "Continue" : "Try Again"}
               color={ok ? L.green : L.blue}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (ok && pathMode === "street" && !Number.isNaN(pathIndex)) {
+                  recordLessonComplete(pathIndex, xp);
+                }
+                router.back();
+              }}
             />
           </Animated.View>
         </SafeAreaView>

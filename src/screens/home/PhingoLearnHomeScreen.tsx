@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/ios-liquid-home";
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
 import { useI18n } from "@/hooks/useI18n";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { Fire, Heart } from "@/constants/icons";
 import { useRouter } from "expo-router";
@@ -98,6 +99,9 @@ export function PhingoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
+  const streakDays = useProgressStore((s) => s.streakDays);
+  const dailyXp = useProgressStore((s) => s.dailyXp);
+  const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
@@ -155,7 +159,7 @@ export function PhingoLearnHomeScreen() {
           <View style={styles.headerStats}>
             <View style={styles.statItem}>
               <Fire width={24} height={24} />
-              <Text style={styles.statFire}>12</Text>
+              <Text style={styles.statFire}>{Math.max(streakDays, 0)}</Text>
             </View>
             <View style={styles.statItem}>
               <Heart width={24} height={24} />
@@ -185,10 +189,12 @@ export function PhingoLearnHomeScreen() {
             <View style={styles.dailyCopy}>
               <View style={styles.dailyXpRow}>
                 <DiamondIcon />
-                <Text style={styles.dailyXp}>8 / 15 XP</Text>
+                <Text style={styles.dailyXp}>
+                  {dailyXp} / {dailyGoalXp} XP
+                </Text>
               </View>
               <ThinProgressBar
-                progress={8 / 15}
+                progress={dailyGoalXp > 0 ? dailyXp / dailyGoalXp : 0}
                 fillColor={C.blue}
                 trackColor={C.track}
                 height={8}

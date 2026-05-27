@@ -121,6 +121,7 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
         id: String(item.lessonId),
         q: String(item.globalIndex),
         li: String(item.sectionItemIndex),
+        pi: String(item.pathIndex),
         mode: pathMode,
       },
     });

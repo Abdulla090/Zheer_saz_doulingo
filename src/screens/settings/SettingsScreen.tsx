@@ -5,12 +5,17 @@ import {
   Icon3DSettings,
 } from "@/components/icons/Icon3D";
 import { AppText } from "@/components/ui/AppText";
+import { APP_VERSION, SUPPORT_EMAIL } from "@/constants/app-meta";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useI18n } from "@/hooks/useI18n";
 import type { AppLocale } from "@/i18n";
 import { useFontStore } from "@/stores/useFontStore";
+import { useProgressStore } from "@/stores/useProgressStore";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -25,12 +30,35 @@ const LOCALE_OPTIONS: { id: AppLocale; labelKey: "settings.languageEn" | "settin
     { id: "ku", labelKey: "settings.languageKu" },
   ];
 
+const LEGAL_LINKS = [
+  { route: "/privacy-policy" as const, labelKey: "settings.privacyPolicy" as const },
+  { route: "/ai-safety" as const, labelKey: "settings.aiSafety" as const },
+  { route: "/terms" as const, labelKey: "settings.termsOfUse" as const },
+];
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { t, locale, setLocale, isKu } = useI18n();
   const { selectedFont, setFont } = useFontStore();
+  const resetProgress = useProgressStore((s) => s.resetProgress);
   const [haptics, setHaptics] = useState(true);
   const [sounds, setSounds] = useState(true);
+
+  const confirmReset = () => {
+    Alert.alert(
+      t("settings.resetProgress"),
+      t("settings.resetProgressHint"),
+      [
+        { text: isKu ? "پاشگەزبوونەوە" : "Cancel", style: "cancel" },
+        {
+          text: t("settings.resetConfirm"),
+          style: "destructive",
+          onPress: resetProgress,
+        },
+      ],
+    );
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -141,6 +169,57 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+
+        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
+          {t("settings.legalSection")}
+        </AppText>
+
+        <View style={styles.card}>
+          {LEGAL_LINKS.map((link, index) => (
+            <PressableScale
+              key={link.route}
+              onPress={() => router.push(link.route)}
+              scaleDown={0.98}
+              style={[
+                styles.row,
+                index < LEGAL_LINKS.length - 1 && styles.rowBorder,
+              ]}
+            >
+              <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+                {t(link.labelKey)}
+              </AppText>
+              <Icon3DChevronRight size={20} />
+            </PressableScale>
+          ))}
+        </View>
+
+        <PressableScale
+          onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+          scaleDown={0.98}
+          style={[styles.supportRow, styles.card]}
+        >
+          <View>
+            <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+              {t("settings.support")}
+            </AppText>
+            <Text style={styles.supportEmail}>{SUPPORT_EMAIL}</Text>
+          </View>
+          <Icon3DChevronRight size={20} />
+        </PressableScale>
+
+        <Text style={styles.versionText}>
+          {t("settings.version")} {APP_VERSION}
+        </Text>
+
+        <PressableScale
+          onPress={confirmReset}
+          scaleDown={0.98}
+          style={[styles.resetBtn, styles.card]}
+        >
+          <AppText style={styles.resetLabel} forceKurdishFont={isKu}>
+            {t("settings.resetProgress")}
+          </AppText>
+        </PressableScale>
       </ScrollView>
     </View>
   );
@@ -270,5 +349,38 @@ const styles = StyleSheet.create({
   },
   fontPreviewOn: {
     color: "#1CB0F6",
+  },
+  supportRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  supportEmail: {
+    fontSize: 14,
+    color: "#1CB0F6",
+    marginTop: 4,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  versionText: {
+    fontSize: 13,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 12,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  resetBtn: {
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  resetLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#E53935",
+    fontFamily: "DINNextRoundedBold",
   },
 });

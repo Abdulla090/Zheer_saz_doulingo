@@ -48,6 +48,15 @@ export const ku = {
     haptics: "لەرزین",
     sounds: "دەنگەکان",
     previewSample: "فێربوونی زمان",
+    legalSection: "یاسایی و سەلامەتی",
+    privacyPolicy: "سیاسەتی تایبەتمەندی",
+    aiSafety: "زانیاری AI و ڕاهێنان",
+    termsOfUse: "مەرجەکانی بەکارهێنان",
+    support: "پشتیوانی",
+    version: "وەشان",
+    resetProgress: "پێشکەوتن بسڕەوە",
+    resetProgressHint: "XP و streak و ڕێڕەو لەم ئامێرەدا دەسڕێتەوە.",
+    resetConfirm: "سڕینەوە",
   },
   aiTeacher: {
     title: "مامۆستای AI",
@@ -77,6 +86,8 @@ export const ku = {
     thinking: "بیردەکاتەوە…",
     interrupt: "بۆ پچڕاندن دابگرە",
     tapSpeak: "بۆ قسەکردن دابگرە",
+    practiceDisclaimer:
+      "تەنها ڕاهێنان — وەڵامی دانراو، نەک ڕاوێژی پیشەیی یان فریاکەوتن.",
   },
   lessons: {
     chooseAnswer: "وەڵام هەڵبژێرە",

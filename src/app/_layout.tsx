@@ -1,4 +1,6 @@
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { CustomTabBar } from "@/components/CustomTabBar";
+import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
@@ -69,6 +71,7 @@ export default function TabLayout() {
   return (
     <SafeAreaProvider>
     <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
+      <AppErrorBoundary>
       <BottomSheetModalProvider>
         <Tabs
           initialRouteName="index"
@@ -85,7 +88,10 @@ export default function TabLayout() {
           <Tabs.Screen name="index" />
           <Tabs.Screen name="dashboard" />
           <Tabs.Screen name="feed" />
-          <Tabs.Screen name="subscription" />
+          <Tabs.Screen
+            name="subscription"
+            options={{ href: ENABLE_SHOP ? undefined : null }}
+          />
           <Tabs.Screen name="more" />
           <Tabs.Screen
             name="quest"
@@ -131,8 +137,12 @@ export default function TabLayout() {
               tabBarStyle: { display: "none" },
             }}
           />
+          <Tabs.Screen name="privacy-policy" options={{ href: null }} />
+          <Tabs.Screen name="ai-safety" options={{ href: null }} />
+          <Tabs.Screen name="terms" options={{ href: null }} />
         </Tabs>
       </BottomSheetModalProvider>
+      </AppErrorBoundary>
     </GestureHandlerRootView>
     </SafeAreaProvider>
   );

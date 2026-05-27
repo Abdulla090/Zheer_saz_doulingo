@@ -385,7 +385,7 @@ export function AiTeacherScreen() {
                 <DolphinFlat width={56} height={56} />
                 <Text style={styles.tipText}>
                   Indicative bands only — practice tool, not an official IELTS
-                  score. 💙
+                  score. See AI & practice info in Settings for details. 💙
                 </Text>
               </HomeLiquidCard>
             </>

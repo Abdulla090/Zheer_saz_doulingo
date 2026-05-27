@@ -13,6 +13,7 @@ export type SectionTheme = "purple" | "green" | "blue" | "yellow" | "gray" | "or
 
 export type LessonListItem = {
   id: string;
+  pathIndex: number;
   globalIndex: number;
   sectionItemIndex: number;
   type: LessonType;
@@ -79,41 +80,44 @@ export const sectionConfigs: Array<{
   { title: "یەکەی ١٢: ئیدیۆم و ئەکسپرێشن",        theme: "gray",   displayTheme: "yellow" },
 ];
 
-const CURRENT_USER_LEVEL = 45;
-/** Path index of the lesson the user should play next (0-based). */
-const NEXT_LESSON_PATH_INDEX = CURRENT_USER_LEVEL + 1;
+/** Build path sections from persisted progress (0 = first lesson is current). */
+export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[] {
+  let streetPathIndex = 0;
 
-let streetPathIndex = 0;
+  return sectionConfigs.map(
+    ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
+      const pattern =
+        sectionIndex === 0
+          ? ["practice" as LessonType, ...BASE_PATTERN]
+          : BASE_PATTERN;
 
-export const sectionData = sectionConfigs.map(
-  ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
-    const pattern =
-      sectionIndex === 0
-        ? ["practice" as LessonType, ...BASE_PATTERN]
-        : BASE_PATTERN;
+      const startGlobalIndex =
+        sectionIndex === 0 ? 0 : 25 + (sectionIndex - 1) * 24;
 
-    const startGlobalIndex =
-      sectionIndex === 0 ? 0 : 25 + (sectionIndex - 1) * 24;
+      const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
+        const currentGlobalIndex = startGlobalIndex + itemIndex;
+        const pathIndex = streetPathIndex++;
+        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
 
-    const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
-      const currentGlobalIndex = startGlobalIndex + itemIndex;
-      const pathIndex = streetPathIndex++;
-      const itemStatus = resolveLessonStatus(pathIndex, NEXT_LESSON_PATH_INDEX);
+        return {
+          id: `level-${currentGlobalIndex}`,
+          pathIndex,
+          globalIndex: currentGlobalIndex,
+          sectionItemIndex: itemIndex,
+          type: lessonType,
+          sectionTheme: theme,
+          displayTheme,
+          status: itemStatus,
+          isCurrent: itemStatus === "current",
+          progressSegments: itemStatus === "current" ? 2 : 0,
+          lessonId: sectionIndex,
+        };
+      });
 
-      return {
-        id: `level-${currentGlobalIndex}`,
-        globalIndex: currentGlobalIndex,
-        sectionItemIndex: itemIndex,
-        type: lessonType,
-        sectionTheme: theme,
-        displayTheme,
-        status: itemStatus,
-        isCurrent: itemStatus === "current",
-        progressSegments: itemStatus === "current" ? 2 : 0,
-        lessonId: sectionIndex,
-      };
-    });
+      return { title, theme, displayTheme, data };
+    },
+  );
+}
 
-    return { title, theme, displayTheme, data };
-  },
-);
+/** @deprecated Use buildSectionData(nextLessonPathIndex) — default for static imports */
+export const sectionData = buildSectionData(0);

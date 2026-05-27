@@ -1,5 +1,6 @@
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { sectionData, SectionTheme } from "@/data/list-items";
+import { buildSectionData, SectionTheme } from "@/data/list-items";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -29,16 +30,23 @@ const renderSectionHeader = ({ section }: { section: { title: string } }) => (
 export const StreetEnglishPathScreen = () => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
+  const nextLessonPathIndex = useProgressStore((s) => s.nextLessonPathIndex);
+  const progressReady = useProgressStore((s) => s.ready);
+  const sectionData = useMemo(
+    () => buildSectionData(nextLessonPathIndex),
+    [nextLessonPathIndex],
+  );
   const listRef = useRef<SectionList<any>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
+  const firstSection = sectionData[0];
   const [activeSectionTitle, setActiveSectionTitle] = useState(
-    sectionData[0]?.title ?? "",
+    firstSection?.title ?? "",
   );
   const [activeSectionTheme, setActiveSectionTheme] = useState(
-    sectionData[0]?.displayTheme ?? "green",
+    firstSection?.displayTheme ?? "green",
   );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
@@ -109,6 +117,10 @@ export const StreetEnglishPathScreen = () => {
       );
     }
   }).current;
+
+  if (!progressReady) {
+    return <View style={{ flex: 1, backgroundColor: "#E8F4FC" }} />;
+  }
 
   return (
     <View style={{ flex: 1 }}>

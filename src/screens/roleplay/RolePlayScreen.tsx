@@ -367,6 +367,9 @@ export function RolePlayScreen() {
           {!sessionStarted ? (
             <>
               <Text style={styles.pickerLabel}>{t("rolePlay.chooseScene")}</Text>
+              <Text style={styles.disclaimer}>
+                {t("rolePlay.practiceDisclaimer")}
+              </Text>
               <View style={styles.scenarioGrid}>
                 {SCENARIOS.map((sc) => {
                   const sel = activeScenario.id === sc.id;
@@ -569,7 +572,13 @@ const styles = StyleSheet.create({
     ...HomeType.section,
     color: C.navy,
     marginTop: 8,
+    marginBottom: 6,
+  },
+  disclaimer: {
+    ...HomeType.caption,
+    color: C.grayLight,
     marginBottom: 14,
+    lineHeight: 18,
   },
   scenarioGrid: {
     flexDirection: "row",

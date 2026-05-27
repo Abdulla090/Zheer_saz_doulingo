@@ -45,6 +45,15 @@ export const en = {
     haptics: "Haptics",
     sounds: "Sound effects",
     previewSample: "فێربوونی زمان",
+    legalSection: "Legal & safety",
+    privacyPolicy: "Privacy Policy",
+    aiSafety: "AI & practice info",
+    termsOfUse: "Terms of Use",
+    support: "Support",
+    version: "Version",
+    resetProgress: "Reset learning progress",
+    resetProgressHint: "Clears XP, streak, and path progress on this device.",
+    resetConfirm: "Reset",
   },
   aiTeacher: {
     title: "AI Teacher",
@@ -74,6 +83,8 @@ export const en = {
     thinking: "Thinking…",
     interrupt: "Tap to interrupt",
     tapSpeak: "Tap to speak",
+    practiceDisclaimer:
+      "Practice only — scripted replies, not professional or emergency advice.",
   },
   lessons: {
     chooseAnswer: "Choose the answer",

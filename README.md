@@ -55,6 +55,14 @@ npx expo run:android
 - `npm run verify` - pre-release checks (routes, security, native perf flags)
 - `npm run build:apk` - EAS cloud APK (`preview` profile) — requires `eas login` or `EXPO_TOKEN`
 
+## Production readiness
+
+See **[PRODUCTION.md](./PRODUCTION.md)** for the full store checklist.
+
+- Shop/subscriptions are **hidden** until IAP is added (`src/constants/feature-flags.ts`).
+- Legal: **Settings → Privacy Policy / AI & practice info / Terms** (also `docs/PRIVACY.md` for hosting).
+- Progress is saved on-device (`useProgressStore`).
+
 ## Release verification
 
 Before shipping, run:

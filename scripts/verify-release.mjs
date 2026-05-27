@@ -34,6 +34,9 @@ const appRoutes = [
   "guidebook",
   "roleplay",
   "ai-teacher",
+  "privacy-policy",
+  "ai-safety",
+  "terms",
 ];
 
 for (const route of appRoutes) {
@@ -45,7 +48,15 @@ for (const route of appRoutes) {
   }
 }
 
-for (const hidden of ["lesson", "guidebook", "roleplay", "ai-teacher"]) {
+for (const hidden of [
+  "lesson",
+  "guidebook",
+  "roleplay",
+  "ai-teacher",
+  "privacy-policy",
+  "ai-safety",
+  "terms",
+]) {
   if (!tabBar.includes(`"${hidden}"`)) {
     fail(`CustomTabBar should hide tab bar on: ${hidden}`);
   } else {
@@ -111,6 +122,31 @@ if (eas.build?.preview?.android?.buildType !== "apk") {
   fail("eas.json preview profile should build apk");
 } else {
   ok("EAS preview profile builds APK");
+}
+
+if (eas.build?.production?.android?.buildType !== "app-bundle") {
+  fail("eas.json production profile should build app-bundle (Play Store)");
+} else {
+  ok("EAS production profile builds AAB");
+}
+
+const featureFlags = read("src/constants/feature-flags.ts");
+if (!featureFlags.includes("ENABLE_SHOP = false")) {
+  fail("Shop should stay disabled (ENABLE_SHOP = false) until IAP exists");
+} else {
+  ok("Shop disabled until IAP");
+}
+
+if (!existsSync(join(root, "src/content/legal/privacy-en.ts"))) {
+  fail("Missing in-app privacy policy content");
+} else {
+  ok("In-app privacy policy present");
+}
+
+if (!existsSync(join(root, "src/stores/useProgressStore.ts"))) {
+  fail("Missing useProgressStore for persisted learning progress");
+} else {
+  ok("Progress persistence store present");
 }
 
 const appJson = JSON.parse(read("app.json"));
