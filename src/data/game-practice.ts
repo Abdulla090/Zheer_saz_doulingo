@@ -40,10 +40,11 @@ export function findPracticeQuestionIndex(
 
 export function buildPracticeLessonParams(
   kind: PracticeGameKind,
-  opts?: { id?: number; li?: number; mode?: LessonPathMode },
+  opts?: { id?: number; li?: number; pi?: number; mode?: LessonPathMode },
 ) {
   const id = opts?.id ?? 0;
   const li = opts?.li ?? 0;
+  const pi = opts?.pi ?? 0;
   const mode = opts?.mode ?? "street";
   const q = findPracticeQuestionIndex(kind, id, li, mode);
   return {
@@ -51,6 +52,7 @@ export function buildPracticeLessonParams(
     params: {
       id: String(id),
       li: String(li),
+      pi: String(pi),
       mode,
       q: String(q),
     },

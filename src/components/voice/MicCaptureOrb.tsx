@@ -68,6 +68,11 @@ export function MicCaptureOrb({
         <Pressable
           onPress={onPress}
           disabled={disabled}
+          accessibilityRole="button"
+          accessibilityLabel={
+            listening ? "Stop listening" : "Start microphone"
+          }
+          accessibilityHint={hint}
           style={({ pressed }) => [
             styles.btn,
             {

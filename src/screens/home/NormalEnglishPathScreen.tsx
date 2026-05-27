@@ -5,7 +5,8 @@
 
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import type { SectionTheme } from "@/data/list-items";
-import { normalSectionData } from "@/data/normal-english";
+import { buildNormalSectionData } from "@/data/normal-english";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -27,8 +28,15 @@ import { ListItem } from "./components/list-item";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
-const NormalSectionHeader = React.memo(({ section }: { section: { title: string } }) => {
-  const isFirst = section.title === normalSectionData[0]?.title;
+const NormalSectionHeader = React.memo(
+  ({
+    section,
+    firstTitle,
+  }: {
+    section: { title: string };
+    firstTitle: string;
+  }) => {
+  const isFirst = section.title === firstTitle;
   if (isFirst) return null;
   return (
     <View style={darkStyles.sectionHeader}>
@@ -37,17 +45,31 @@ const NormalSectionHeader = React.memo(({ section }: { section: { title: string 
       <View style={darkStyles.sectionLine} />
     </View>
   );
-});
-
-const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-  <NormalSectionHeader section={section} />
+  },
 );
 
-const ListFooterSpacer = () => <View style={{ height: 120 }} />;
+const ListFooterSpacer = ({ bottom }: { bottom: number }) => (
+  <View style={{ height: bottom + 96 }} />
+);
 
 export function NormalEnglishPathScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
+  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
+  const progressReady = useProgressStore((s) => s.ready);
+  const normalSectionData = React.useMemo(
+    () => buildNormalSectionData(normalNext),
+    [normalNext],
+  );
+  const firstTitle = normalSectionData[0]?.title ?? "";
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: { title: string } }) => (
+      <NormalSectionHeader section={section} firstTitle={firstTitle} />
+    ),
+    [firstTitle],
+  );
+
   const listRef = useRef<SectionList<any>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
@@ -58,11 +80,12 @@ export function NormalEnglishPathScreen() {
     minimumViewTime: 100,
   }).current;
 
+  const firstSection = normalSectionData[0];
   const [activeSectionTitle, setActiveSectionTitle] = useState(
-    normalSectionData[0]?.title ?? "",
+    firstSection?.title ?? "",
   );
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
-    normalSectionData[0]?.displayTheme ?? "blue",
+    firstSection?.displayTheme ?? "blue",
   );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
@@ -133,6 +156,10 @@ export function NormalEnglishPathScreen() {
     }
   }).current;
 
+  if (!progressReady) {
+    return <View style={{ flex: 1, backgroundColor: "#0F172A" }} />;
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <HomeMeshBackground />
@@ -163,7 +190,9 @@ export function NormalEnglishPathScreen() {
           onScroll={onScroll}
           scrollEventThrottle={32}
           style={darkStyles.list}
-          ListFooterComponent={ListFooterSpacer}
+          ListFooterComponent={() => (
+            <ListFooterSpacer bottom={insets.bottom} />
+          )}
           contentContainerStyle={darkStyles.listContent}
           stickySectionHeadersEnabled={false}
           initialNumToRender={6}

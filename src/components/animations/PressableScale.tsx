@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { Pressable, StyleProp, ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
+import { hapticImpact } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { cssPressStyle, cssReleaseStyle } from "./motion";
 
@@ -21,7 +22,7 @@ export type PressableScaleProps = {
 };
 
 function fireHaptic(style: Haptics.ImpactFeedbackStyle) {
-  void Haptics.impactAsync(style).catch(() => {});
+  hapticImpact(style);
 }
 
 export function PressableScale({

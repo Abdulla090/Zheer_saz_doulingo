@@ -14,7 +14,10 @@ npm run verify
 |------|--------|
 | Shop tab hidden (`ENABLE_SHOP = false`) | ✅ |
 | In-app Privacy Policy, Terms, AI safety | ✅ Settings → Legal |
-| Learning progress persisted (`useProgressStore`) | ✅ |
+| Learning progress persisted (street + normal paths) | ✅ |
+| Haptics preference persisted (`useSettingsStore`) | ✅ |
+| Safe mailto / HTTPS links | ✅ |
+| Native TTS (Guidebook) via `expo-speech` | ✅ |
 | Profile settings (no `@expo/ui` crash) | ✅ |
 | Production Android **AAB** (`eas.json`) | ✅ |
 | Error boundary on root layout | ✅ |

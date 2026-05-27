@@ -71,40 +71,46 @@ const BASE_PATTERN: LessonType[] = [
   "practice",
 ];
 
-const NORMAL_USER_LEVEL = 3;
-const NORMAL_NEXT_PATH_INDEX = NORMAL_USER_LEVEL;
+/** Build normal-English path sections from persisted progress (0 = first lesson current). */
+export function buildNormalSectionData(
+  nextLessonPathIndex: number,
+): SectionDataItem[] {
+  let normalPathIndex = 0;
 
-let normalPathIndex = 0;
+  return normalSectionConfigs.map(
+    ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
+      const pattern =
+        sectionIndex === 0
+          ? (["practice" as LessonType, ...BASE_PATTERN])
+          : BASE_PATTERN;
 
-export const normalSectionData: SectionDataItem[] = normalSectionConfigs.map(
-  ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
-    const pattern =
-      sectionIndex === 0
-        ? (["practice" as LessonType, ...BASE_PATTERN])
-        : BASE_PATTERN;
+      const startGlobalIndex =
+        sectionIndex === 0 ? 0 : 25 + (sectionIndex - 1) * 24;
 
-    const startGlobalIndex =
-      sectionIndex === 0 ? 0 : 25 + (sectionIndex - 1) * 24;
+      const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
+        const currentGlobalIndex = startGlobalIndex + itemIndex;
+        const pathIndex = normalPathIndex++;
+        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
 
-    const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
-      const currentGlobalIndex = startGlobalIndex + itemIndex;
-      const pathIndex = normalPathIndex++;
-      const itemStatus = resolveLessonStatus(pathIndex, NORMAL_NEXT_PATH_INDEX);
+        return {
+          id: `ne-level-${currentGlobalIndex}`,
+          pathIndex,
+          globalIndex: currentGlobalIndex,
+          sectionItemIndex: itemIndex,
+          type: lessonType,
+          sectionTheme: theme,
+          displayTheme,
+          status: itemStatus,
+          isCurrent: itemStatus === "current",
+          progressSegments: itemStatus === "current" ? 2 : 0,
+          lessonId: sectionIndex,
+        };
+      });
 
-      return {
-        id: `ne-level-${currentGlobalIndex}`,
-        globalIndex: currentGlobalIndex,
-        sectionItemIndex: itemIndex,
-        type: lessonType,
-        sectionTheme: theme,
-        displayTheme,
-        status: itemStatus,
-        isCurrent: itemStatus === "current",
-        progressSegments: itemStatus === "current" ? 2 : 0,
-        lessonId: sectionIndex,
-      };
-    });
+      return { title, theme, displayTheme, data };
+    },
+  );
+}
 
-    return { title, theme, displayTheme, data };
-  },
-);
+/** @deprecated Use buildNormalSectionData(index) */
+export const normalSectionData = buildNormalSectionData(0);

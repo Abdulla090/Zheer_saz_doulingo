@@ -15,6 +15,7 @@ const CRITERION_LABELS: Record<
 };
 
 const MAX_ANSWER_CHARS = 4000;
+const FETCH_TIMEOUT_MS = 30_000;
 
 function clampBand(n: number): number {
   return Math.min(9, Math.max(3, Math.round(n * 2) / 2));
@@ -141,11 +142,24 @@ export async function evaluateEnglish(
 
   if (url && isAllowedTeacherApiUrl(url)) {
     try {
+      const apiKey = process.env.EXPO_PUBLIC_AI_TEACHER_API_KEY;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(safe),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       if (res.ok) {
         const data = (await res.json()) as AiTeacherResult;
         if (

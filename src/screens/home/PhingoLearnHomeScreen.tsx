@@ -18,6 +18,8 @@ import {
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
+import { buildLessonRouteForMode } from "@/utils/lesson-navigation";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { Fire, Heart } from "@/constants/icons";
 import { useRouter } from "expo-router";
@@ -102,6 +104,9 @@ export function PhingoLearnHomeScreen() {
   const streakDays = useProgressStore((s) => s.streakDays);
   const dailyXp = useProgressStore((s) => s.dailyXp);
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
+  const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
+  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
+  const pathMode = useSettingsStore((s) => s.pathMode);
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
@@ -134,12 +139,16 @@ export function PhingoLearnHomeScreen() {
   );
 
   const onContinue = useCallback(() => {
-    router.push("/dashboard?mode=normal");
-  }, [router]);
+    router.push({
+      pathname: "/dashboard",
+      params: { mode: pathMode },
+    });
+  }, [pathMode, router]);
 
   const onLessonPress = useCallback(() => {
-    router.push("/lesson");
-  }, [router]);
+    const route = buildLessonRouteForMode(pathMode, streetNext, normalNext);
+    if (route) router.push(route);
+  }, [normalNext, pathMode, router, streetNext]);
 
   return (
     <View style={styles.root}>

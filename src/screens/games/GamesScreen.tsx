@@ -17,6 +17,7 @@ import {
   type PracticeGameKind,
 } from "@/data/game-practice";
 import { useI18n } from "@/hooks/useI18n";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
@@ -111,6 +112,7 @@ export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useI18n();
+  const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
@@ -160,9 +162,11 @@ export function GamesScreen() {
 
   const openPractice = useCallback(
     (kind: PracticeGameKind) => {
-      router.push(buildPracticeLessonParams(kind));
+      router.push(
+        buildPracticeLessonParams(kind, { pi: streetNext, mode: "street" }),
+      );
     },
-    [router],
+    [router, streetNext],
   );
 
   const openTile = useCallback(

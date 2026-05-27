@@ -16,7 +16,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { useSpeechCapture } from "@/hooks/use-speech-capture";
 import { crossShadow } from "@/utils/shadows";
-import * as Haptics from "expo-haptics";
+import { hapticImpact, hapticSelection } from "@/utils/haptics";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -284,14 +284,14 @@ export function RolePlayScreen() {
 
   const startSession = () => {
     stopAll();
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticImpact();
     const msg = scenarioRef.current.initialMessage;
     setHistory([{ sender: "ai", text: msg }]);
     speak(msg);
   };
 
   const handleMicTap = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticImpact();
     switch (statusRef.current) {
       case "idle":
       case "error":
@@ -378,7 +378,7 @@ export function RolePlayScreen() {
                     <PressableScale
                       key={sc.id}
                       onPress={() => {
-                        void Haptics.selectionAsync();
+                        hapticSelection();
                         setActiveScenario(sc);
                       }}
                       scaleDown={0.98}

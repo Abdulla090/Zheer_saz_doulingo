@@ -149,6 +149,18 @@ if (!existsSync(join(root, "src/stores/useProgressStore.ts"))) {
   ok("Progress persistence store present");
 }
 
+if (!existsSync(join(root, "src/stores/useSettingsStore.ts"))) {
+  fail("Missing useSettingsStore for haptics/path preferences");
+} else {
+  ok("Settings store present");
+}
+
+if (!existsSync(join(root, "src/utils/safe-link.ts"))) {
+  fail("Missing safe-link helpers");
+} else {
+  ok("Safe link helpers present");
+}
+
 const appJson = JSON.parse(read("app.json"));
 if (!appJson.expo?.extra?.eas?.projectId) {
   fail("app.json missing EAS projectId");

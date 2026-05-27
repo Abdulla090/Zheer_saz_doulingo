@@ -1,3 +1,4 @@
+import type { LessonPathMode } from "@/data/lesson-content";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
@@ -5,7 +6,10 @@ const STORAGE_KEY = "phingo.app.progress";
 const DAILY_GOAL_XP = 15;
 
 export type ProgressSnapshot = {
+  /** Street Kurdish path — next lesson path index (0-based). */
   nextLessonPathIndex: number;
+  /** Normal English path — next lesson path index (0-based). */
+  normalNextLessonPathIndex: number;
   totalXp: number;
   dailyXp: number;
   dailyGoalXp: number;
@@ -15,6 +19,7 @@ export type ProgressSnapshot = {
 
 const DEFAULT_PROGRESS: ProgressSnapshot = {
   nextLessonPathIndex: 0,
+  normalNextLessonPathIndex: 0,
   totalXp: 0,
   dailyXp: 0,
   dailyGoalXp: DAILY_GOAL_XP,
@@ -24,7 +29,11 @@ const DEFAULT_PROGRESS: ProgressSnapshot = {
 
 interface ProgressState extends ProgressSnapshot {
   ready: boolean;
-  recordLessonComplete: (pathIndex: number, xpEarned: number) => void;
+  recordLessonComplete: (
+    pathIndex: number,
+    xpEarned: number,
+    mode?: LessonPathMode,
+  ) => void;
   resetProgress: () => void;
 }
 
@@ -70,20 +79,26 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   ...DEFAULT_PROGRESS,
   ready: false,
 
-  recordLessonComplete: (pathIndex, xpEarned) => {
+  recordLessonComplete: (pathIndex, xpEarned, mode = "street") => {
     const cur = get();
     const { streakDays, lastActiveDate } = applyStreak(
       cur.lastActiveDate,
       cur.streakDays,
     );
     const dailyXp = rollDailyXp(cur.dailyXp, cur.lastActiveDate) + xpEarned;
+
     const nextLessonPathIndex =
-      pathIndex >= cur.nextLessonPathIndex
+      mode === "street" && pathIndex >= cur.nextLessonPathIndex
         ? pathIndex + 1
         : cur.nextLessonPathIndex;
+    const normalNextLessonPathIndex =
+      mode === "normal" && pathIndex >= cur.normalNextLessonPathIndex
+        ? pathIndex + 1
+        : cur.normalNextLessonPathIndex;
 
     const next: ProgressSnapshot = {
       nextLessonPathIndex,
+      normalNextLessonPathIndex,
       totalXp: cur.totalXp + xpEarned,
       dailyXp,
       dailyGoalXp: DAILY_GOAL_XP,
@@ -112,6 +127,8 @@ async function hydrateProgress() {
     const merged: ProgressSnapshot = {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      normalNextLessonPathIndex:
+        parsed.normalNextLessonPathIndex ?? DEFAULT_PROGRESS.normalNextLessonPathIndex,
       dailyGoalXp: DAILY_GOAL_XP,
     };
     merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);

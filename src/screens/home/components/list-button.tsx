@@ -29,6 +29,7 @@ type SvgButtonProps = {
   variant?: SvgButtonVariant;
   icon?: React.ReactNode;
   isLocked?: boolean;
+  accessibilityLabel?: string;
 };
 
 const BUTTON_CENTER_X = 50;
@@ -47,6 +48,7 @@ export const SvgButton = React.memo(
     variant = "green",
     icon,
     isLocked = false,
+    accessibilityLabel,
   }: SvgButtonProps) => {
     const colors = useMemo(() => SVG_BUTTON_COLOR_SETS[variant], [variant]);
     const offsetY = useSharedValue(0);
@@ -71,6 +73,9 @@ export const SvgButton = React.memo(
         onPressOut={isLocked ? undefined : handlePressOut}
         onPress={onPress}
         disabled={isLocked}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: isLocked }}
         style={{
           width: size,
           height: size,

@@ -9,7 +9,7 @@ import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
-import * as Haptics from "expo-haptics";
+import { hapticSelection } from "@/utils/haptics";
 import React, { useCallback, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -93,7 +93,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const onTabPress = useCallback(
     (route: TabKey, isFocused: boolean) => {
       if (!isFocused) {
-        void Haptics.selectionAsync();
+        hapticSelection();
         navigation.navigate(route);
       }
     },
@@ -124,6 +124,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             key={route}
             onPress={() => onTabPress(route, isFocused)}
             style={styles.item}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isFocused }}
+            accessibilityLabel={label}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
           >
             {renderIcon(isFocused)}
             <Text style={[styles.label, isFocused && styles.labelActive]}>

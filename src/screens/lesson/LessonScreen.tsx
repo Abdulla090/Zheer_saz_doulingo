@@ -244,8 +244,8 @@ export default function LessonScreen() {
               label={ok ? "Continue" : "Try Again"}
               color={ok ? L.green : L.blue}
               onPress={() => {
-                if (ok && pathMode === "street" && !Number.isNaN(pathIndex)) {
-                  recordLessonComplete(pathIndex, xp);
+                if (ok && !Number.isNaN(pathIndex)) {
+                  recordLessonComplete(pathIndex, xp, pathMode);
                 }
                 router.back();
               }}

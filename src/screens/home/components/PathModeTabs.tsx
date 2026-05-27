@@ -2,6 +2,7 @@ import {
   PathSwitcher,
   type PathMode,
 } from "@/screens/home/components/PathSwitcher";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
@@ -18,16 +19,20 @@ export function PathModeTabs() {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const activeMode = parseMode(params.mode);
+  const savedMode = useSettingsStore((s) => s.pathMode);
+  const setPathMode = useSettingsStore((s) => s.setPathMode);
+  const activeMode =
+    params.mode != null ? parseMode(params.mode) : savedMode;
 
   const handleSwitch = useCallback(
     (next: PathMode) => {
+      setPathMode(next);
       router.replace({
         pathname: "/dashboard",
         params: { mode: next },
       });
     },
-    [router],
+    [router, setPathMode],
   );
 
   return (

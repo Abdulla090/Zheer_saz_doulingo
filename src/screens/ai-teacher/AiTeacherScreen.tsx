@@ -20,6 +20,7 @@ import { evaluateEnglish } from "@/services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { hapticImpact, hapticNotification } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Sparkles } from "lucide-react-native";
@@ -136,7 +137,7 @@ export function AiTeacherScreen() {
     }
     setError(null);
     setPhase("loading");
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticImpact(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       const evaluation = await evaluateEnglish({
@@ -164,9 +165,7 @@ export function AiTeacherScreen() {
     };
     await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(attempt));
     setLastSaved(attempt);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-      () => {},
-    );
+    hapticNotification(Haptics.NotificationFeedbackType.Success);
   }, [answer, mode, prompt.id, result]);
 
   const onTryAgain = useCallback(() => {

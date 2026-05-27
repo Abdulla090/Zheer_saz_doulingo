@@ -179,6 +179,11 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
             onPress={isLocked ? undefined : handleNavigate}
             variant={buttonColor}
             icon={pathIcon}
+            accessibilityLabel={
+              isLocked
+                ? `Lesson ${globalIndex + 1}, locked`
+                : `Lesson ${globalIndex + 1}${isCurrent ? ", current" : ""}`
+            }
           />
         )}
       </View>

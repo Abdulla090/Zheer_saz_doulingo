@@ -3,6 +3,8 @@ import { CustomTabBar } from "@/components/CustomTabBar";
 import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
+import { useProgressStore } from "@/stores/useProgressStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
@@ -38,7 +40,10 @@ function applyGlobalFont(kurdishFontFamily: string) {
 }
 
 export default function TabLayout() {
-  const { selectedFont, ready } = useFontStore();
+  const { selectedFont, ready: fontReady } = useFontStore();
+  const progressReady = useProgressStore((s) => s.ready);
+  const settingsReady = useSettingsStore((s) => s.ready);
+  const ready = fontReady && progressReady && settingsReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
@@ -59,8 +64,6 @@ export default function TabLayout() {
   if (!fontsLoaded || !ready) {
     return null;
   }
-
-  applyGlobalFont(selectedFont);
 
   const rnWebVars = Platform.OS === "web" ? {} : {
     "--font-rd-bold":    selectedFont,

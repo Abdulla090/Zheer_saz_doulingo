@@ -1,5 +1,6 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = { children: ReactNode };
 type State = { error: Error | null };
@@ -23,21 +24,38 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return (
-        <View style={styles.fallback}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.body}>
-            Please restart the app. If this keeps happening, contact support
-            from Settings.
-          </Text>
-          <Pressable onPress={this.reset} style={styles.btn}>
-            <Text style={styles.btnText}>Try again</Text>
-          </Pressable>
-        </View>
-      );
+      return <ErrorFallback onRetry={this.reset} />;
     }
     return this.props.children;
   }
+}
+
+function ErrorFallback({ onRetry }: { onRetry: () => void }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={[
+        styles.fallback,
+        { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 },
+      ]}
+    >
+      <Text style={styles.title} accessibilityRole="header">
+        Something went wrong
+      </Text>
+      <Text style={styles.body}>
+        Please restart the app. If this keeps happening, contact support from
+        Settings.
+      </Text>
+      <Pressable
+        onPress={onRetry}
+        style={styles.btn}
+        accessibilityRole="button"
+        accessibilityLabel="Try again"
+      >
+        <Text style={styles.btnText}>Try again</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

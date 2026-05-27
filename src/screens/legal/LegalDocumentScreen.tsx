@@ -1,13 +1,13 @@
 import { AppText } from "@/components/ui/AppText";
 import type { LegalDocId } from "@/content/legal";
 import { getLegalDocument } from "@/content/legal";
-import { SUPPORT_EMAIL } from "@/constants/app-meta";
+import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "@/constants/app-meta";
+import { openHttpsUrl, openMailto } from "@/utils/safe-link";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React from "react";
 import {
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -67,8 +67,22 @@ export function LegalDocumentScreen({ docId }: Props) {
           </View>
         ))}
 
+        {docId === "privacy" && PRIVACY_POLICY_URL ? (
+          <Pressable
+            onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
+            style={[styles.supportBox, { marginBottom: 12 }]}
+          >
+            <Text style={styles.supportLabel}>
+              {isKu ? "وەشانی وێب" : "Web version"}
+            </Text>
+            <Text style={styles.supportEmail} numberOfLines={1}>
+              {PRIVACY_POLICY_URL}
+            </Text>
+          </Pressable>
+        ) : null}
+
         <Pressable
-          onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+          onPress={() => void openMailto(SUPPORT_EMAIL)}
           style={styles.supportBox}
         >
           <Text style={styles.supportLabel}>

@@ -5,17 +5,22 @@ import {
   Icon3DSettings,
 } from "@/components/icons/Icon3D";
 import { AppText } from "@/components/ui/AppText";
-import { APP_VERSION, SUPPORT_EMAIL } from "@/constants/app-meta";
+import {
+  APP_VERSION,
+  PRIVACY_POLICY_URL,
+  SUPPORT_EMAIL,
+} from "@/constants/app-meta";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useI18n } from "@/hooks/useI18n";
 import type { AppLocale } from "@/i18n";
 import { useFontStore } from "@/stores/useFontStore";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
+import { openHttpsUrl, openMailto } from "@/utils/safe-link";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
   Alert,
-  Linking,
   ScrollView,
   StyleSheet,
   Switch,
@@ -42,8 +47,10 @@ export default function SettingsScreen() {
   const { t, locale, setLocale, isKu } = useI18n();
   const { selectedFont, setFont } = useFontStore();
   const resetProgress = useProgressStore((s) => s.resetProgress);
-  const [haptics, setHaptics] = useState(true);
-  const [sounds, setSounds] = useState(true);
+  const haptics = useSettingsStore((s) => s.hapticsEnabled);
+  const sounds = useSettingsStore((s) => s.soundsEnabled);
+  const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
+  const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
 
   const confirmReset = () => {
     Alert.alert(
@@ -174,7 +181,20 @@ export default function SettingsScreen() {
           {t("settings.legalSection")}
         </AppText>
 
-        <View style={styles.card}>
+        {PRIVACY_POLICY_URL ? (
+          <PressableScale
+            onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
+            scaleDown={0.98}
+            style={[styles.supportRow, styles.card, { marginTop: 0 }]}
+          >
+            <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+              {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
+            </AppText>
+            <Icon3DChevronRight size={20} />
+          </PressableScale>
+        ) : null}
+
+        <View style={[styles.card, { marginTop: 16 }]}>
           {LEGAL_LINKS.map((link, index) => (
             <PressableScale
               key={link.route}
@@ -194,7 +214,7 @@ export default function SettingsScreen() {
         </View>
 
         <PressableScale
-          onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+          onPress={() => void openMailto(SUPPORT_EMAIL)}
           scaleDown={0.98}
           style={[styles.supportRow, styles.card]}
         >
