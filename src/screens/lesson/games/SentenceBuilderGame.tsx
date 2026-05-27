@@ -1,22 +1,11 @@
 /**
  * SentenceBuilderGame — iOS 26 Liquid Glass redesign.
- *
- * Glass drop zone (dashed) → tap word chips below to fill it.
- * Words animate into the drop zone with spring bounce.
- * Tap placed words to remove them (spring out).
- * Bottom CHECK button validates. Wrong: shake + reset.
  */
 
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
     Easing,
-    FadeInDown,
-    FadeInUp,
-    FadeOut,
-    Layout,
-    ZoomIn,
-    ZoomOut,
     interpolateColor,
     useAnimatedStyle,
     useSharedValue,
@@ -26,6 +15,7 @@ import Animated, {
 
 import { SentenceBuilderQuestion } from "@/data/lesson-content";
 import { Motion, Radius, Type, iOS } from "./game-design";
+import { ltrText, rtlBlock } from "./game-text";
 import {
     LiquidEyebrow,
     LiquidPrimaryButton,
@@ -64,7 +54,6 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
 
-  /* Word bank tracking */
   const supply: Record<string, number> = {};
   for (const w of question.wordBank) supply[w] = (supply[w] || 0) + 1;
   const used: Record<string, number> = {};
@@ -114,7 +103,6 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
 
   const canCheck = sentence.length > 0 && fb === "idle";
 
-  /* Placed chip state */
   const placedState: OptionState =
     fb === "correct" ? "correct"
     : fb === "wrong" ? "wrong"
@@ -122,75 +110,49 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
 
   return (
     <View style={s.root}>
-      {/* Eyebrow + Kurdish source sentence */}
-      <Animated.View entering={FadeInDown.duration(260)}>
+      <View>
         <LiquidEyebrow>Arrange the words</LiquidEyebrow>
         <Text style={s.prompt}>{question.kurdishSentence}</Text>
-      </Animated.View>
+      </View>
 
-      {/* Drop zone (glass dashed) */}
-      <Animated.View
-        entering={FadeInUp.delay(80).springify().damping(20).stiffness(160)}
-        style={shakeStyle}
-      >
+      <Animated.View style={shakeStyle}>
         <Animated.View style={[s.drop, dropStyle]}>
           {sentence.length === 0 ? (
             <Text style={s.placeholder}>Tap words below to build the sentence</Text>
           ) : (
-            <Animated.View layout={Layout.springify().damping(16).stiffness(140)} style={s.dropContent}>
+            <View style={s.dropContent}>
               {sentence.map(p => (
-                <Animated.View
+                <LiquidWordChip
                   key={p.id}
-                  entering={ZoomIn.springify().damping(14).stiffness(200)}
-                  exiting={ZoomOut.duration(180)}
-                  layout={Layout.springify().damping(16).stiffness(140)}
-                >
-                  <LiquidWordChip
-                    label={p.word}
-                    state={placedState}
-                    onPress={() => removeWord(p.id)}
-                    size="sm"
-                  />
-                </Animated.View>
+                  label={p.word}
+                  state={placedState}
+                  onPress={() => removeWord(p.id)}
+                  size="sm"
+                />
               ))}
-            </Animated.View>
+            </View>
           )}
         </Animated.View>
       </Animated.View>
 
-      {/* Word bank */}
-      <Animated.View layout={Layout.springify().damping(16).stiffness(140)} style={s.bank}>
+      <View style={s.bank}>
         {question.wordBank.map((w, i) => {
           if (slotUsed[i]) {
-            return (
-              <Animated.View
-                key={`${w}-${i}`}
-                exiting={FadeOut.duration(150)}
-                layout={Layout.springify().damping(16).stiffness(140)}
-              >
-                <LiquidWordChip label={w} ghost />
-              </Animated.View>
-            );
+            return <LiquidWordChip key={`${w}-${i}`} label={w} ghost />;
           }
           return (
-            <Animated.View
+            <LiquidWordChip
               key={`${w}-${i}`}
-              entering={ZoomIn.springify().damping(14).stiffness(200)}
-              layout={Layout.springify().damping(16).stiffness(140)}
-            >
-              <LiquidWordChip
-                label={w}
-                state="idle"
-                onPress={() => addWord(w)}
-              />
-            </Animated.View>
+              label={w}
+              state="idle"
+              onPress={() => addWord(w)}
+            />
           );
         })}
-      </Animated.View>
+      </View>
 
       <View style={{ flex: 1 }} />
 
-      {/* CHECK button */}
       <LiquidPrimaryButton
         label="CHECK"
         color={iOS.systemGreen}
@@ -213,10 +175,8 @@ const s = StyleSheet.create({
     ...Type.title,
     color: "#FFFFFF",
     marginTop: 6,
-    textAlign: "right",
-    writingDirection: "rtl",
+    ...rtlBlock,
   },
-
   drop: {
     minHeight: 130,
     borderRadius: Radius.lg,
@@ -231,6 +191,7 @@ const s = StyleSheet.create({
     gap: 8,
     padding: 14,
     alignItems: "center",
+    justifyContent: "flex-start",
   },
   placeholder: {
     ...Type.body,
@@ -239,8 +200,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 28,
     width: "100%",
+    ...ltrText,
   },
-
   bank: {
     flexDirection: "row",
     flexWrap: "wrap",

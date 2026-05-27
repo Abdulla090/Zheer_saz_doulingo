@@ -9,14 +9,15 @@ import {
   LessonVideo,
   NavBarChest,
 } from "@/constants/icons";
-import { LessonListItem } from "@/data/list-items";
+import { LessonListItem, SectionTheme } from "@/data/list-items";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { useRouter } from "expo-router";
-import React, { useRef } from "react";
-import { Platform, Pressable, useWindowDimensions, View } from "react-native";
+import React from "react";
+import { Pressable, View } from "react-native";
+import { CompletedCheckIcon } from "./completed-check-icon";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { LessonProgressRing } from "./lesson-progress-ring";
-import { SVG_BUTTON_COLOR_SETS, SvgButton } from "./list-button";
-import { Icon3DCheck } from "@/components/icons/Icon3D";
+import { SVG_BUTTON_COLOR_SETS, SvgButton, SvgButtonVariant } from "./list-button";
 
 const LESSON_BUTTON_SIZE = 80;
 const CHEST_VISUAL_SIZE = 65;
@@ -48,76 +49,69 @@ const LESSON_ICON_MAP = {
   cup: LessonStar,
 } as const;
 
-export type ListItemPressMeasurement = {
-  id: string;
-  type: LessonListItem["type"];
-  globalIndex: number;
-  lessonId: number;
-  sectionItemIndex: number;
-  popupFaceColor: string;
-  popupRimColor: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+function lessonColorTheme(item: LessonListItem): SectionTheme {
+  if (item.sectionTheme === "gray" && item.displayTheme !== "gray") {
+    return item.displayTheme;
+  }
+  return item.sectionTheme;
+}
+
+function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
+  if (item.status === "completed") return "gold";
+  if (item.status === "locked") return "gray";
+  if (item.type === "cup") return "yellow";
+  if (item.isCurrent && item.sectionTheme === "gray") return "mint";
+
+  const theme = lessonColorTheme(item);
+  if (theme in SVG_BUTTON_COLOR_SETS) {
+    return theme as SvgButtonVariant;
+  }
+  return "blue";
+}
 
 type ListItemProps = {
   item: LessonListItem;
-  onPressMeasure?: (measurement: ListItemPressMeasurement) => void;
+  screenWidth: number;
+  pathMode?: LessonPathMode;
 };
 
-export const ListItem = React.memo(({ item, onPressMeasure }: ListItemProps) => {
-  const { width } = useWindowDimensions();
-  const buttonAnchorRef = useRef<View>(null);
+export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: ListItemProps) => {
   const router = useRouter();
-  const amplitude = width * CURVE_AMPLITUDE_RATIO;
+  const amplitude = screenWidth * CURVE_AMPLITUDE_RATIO;
 
-  const { globalIndex, type, sectionTheme, isCurrent, progressSegments } = item;
+  const { globalIndex, type, isCurrent, progressSegments, status } = item;
 
   const xOffset = getDynamicOffset(globalIndex, amplitude);
-  const isGrayInProgress = isCurrent && sectionTheme === "gray";
-  const buttonColor =
-    type === "cup" ? "yellow" : isGrayInProgress ? "mint" : sectionTheme;
-  const popupFaceColor = SVG_BUTTON_COLOR_SETS[buttonColor].face;
-  const popupRimColor = SVG_BUTTON_COLOR_SETS[buttonColor].rim;
-  const iconColorOverride =
-    globalIndex === 0 ? "#B26A00" : isGrayInProgress ? "white" : undefined;
+  const isCompleted = status === "completed";
+  const isLocked = status === "locked";
+  const isGrayInProgress = isCurrent && item.sectionTheme === "gray";
+  const buttonColor = resolveButtonVariant(item);
+  const iconColorOverride = isCompleted
+    ? "#FFFFFF"
+    : isLocked
+      ? undefined
+      : globalIndex === 0
+        ? "#B26A00"
+        : isGrayInProgress
+          ? "white"
+          : undefined;
+  const IconComponent = isCompleted ? CompletedCheckIcon : LESSON_ICON_MAP[type];
 
-  // ─── Mobile: tap → navigate directly (no popup, no hover on touch screens)
-  // ─── Web:    hover → show popup | click → navigate directly
   const handleNavigate = () => {
-    router.push(`/lesson?id=${item.lessonId}&q=${item.globalIndex}&li=${item.sectionItemIndex}`);
-  };
-
-  const handleHoverIn = () => {
-    buttonAnchorRef.current?.measureInWindow((x, y, w, h) => {
-      onPressMeasure?.({
-        id: item.id,
-        type: item.type,
-        globalIndex: item.globalIndex,
-        lessonId: item.lessonId,
-        sectionItemIndex: item.sectionItemIndex,
-        popupFaceColor,
-        popupRimColor,
-        x,
-        y,
-        width: w,
-        height: h,
-      });
+    router.push({
+      pathname: "/lesson",
+      params: {
+        id: String(item.lessonId),
+        q: String(item.globalIndex),
+        li: String(item.sectionItemIndex),
+        mode: pathMode,
+      },
     });
   };
 
-  const webHoverProps =
-    Platform.OS === "web" ? { onMouseEnter: handleHoverIn } : {};
-
   return (
-    <View className={`justify-center items-center`} style={{ height: ITEM_SLOT_HEIGHT }}>
-      <View
-        ref={buttonAnchorRef}
-        style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}
-        {...(webHoverProps as any)}
-      >
+    <View className="justify-center items-center" style={{ height: ITEM_SLOT_HEIGHT }}>
+      <View style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}>
         {globalIndex === 0 ? (
           <FirstItemSparkles size={LESSON_BUTTON_SIZE} />
         ) : null}
@@ -141,7 +135,8 @@ export const ListItem = React.memo(({ item, onPressMeasure }: ListItemProps) => 
 
         {type === "gift" ? (
           <Pressable
-            onPress={handleNavigate}
+            onPress={isLocked ? undefined : handleNavigate}
+            disabled={isLocked}
             style={{
               width: LESSON_BUTTON_SIZE,
               height: LESSON_BUTTON_SIZE,
@@ -150,7 +145,7 @@ export const ListItem = React.memo(({ item, onPressMeasure }: ListItemProps) => 
               marginTop: -4,
             }}
           >
-            {sectionTheme === "gray" ? (
+            {isLocked || lessonColorTheme(item) === "gray" ? (
               <Chest width={CHEST_VISUAL_SIZE} height={CHEST_VISUAL_SIZE} />
             ) : (
               <NavBarChest
@@ -160,21 +155,15 @@ export const ListItem = React.memo(({ item, onPressMeasure }: ListItemProps) => 
             )}
           </Pressable>
         ) : (
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            <SvgButton
-              isCurrentLesson={isCurrent}
-              size={LESSON_BUTTON_SIZE}
-              onPress={handleNavigate}
-              variant={buttonColor}
-              IconComponent={LESSON_ICON_MAP[type]}
-              iconColor={iconColorOverride}
-            />
-            {(!isCurrent && sectionTheme !== "gray") && (
-              <View style={{ position: 'absolute', bottom: -5, right: -5 }}>
-                <Icon3DCheck size={24} />
-              </View>
-            )}
-          </View>
+          <SvgButton
+            isCurrentLesson={isCurrent}
+            isLocked={isLocked}
+            size={LESSON_BUTTON_SIZE}
+            onPress={isLocked ? undefined : handleNavigate}
+            variant={buttonColor}
+            IconComponent={IconComponent}
+            iconColor={iconColorOverride}
+          />
         )}
       </View>
     </View>

@@ -6,7 +6,7 @@
  */
 
 import { Icon3DZapBlue, Icon3DLayers } from "@/components/icons/Icon3D";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { crossShadow } from "@/utils/shadows";
 import Animated, {
@@ -38,10 +38,17 @@ const TABS: { key: PathMode; label: string; icon: (active: boolean) => React.Rea
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const { width } = useWindowDimensions();
-  const PILL_W = Math.min(width - 32, 380);
-  const TAB_W  = PILL_W / 2;
+  const PILL_W = width > 0 ? Math.min(width - 32, 380) : 340;
+  const TAB_W = PILL_W / 2;
 
   const slideX = useSharedValue(activeMode === "street" ? 0 : TAB_W);
+
+  useEffect(() => {
+    slideX.value = withTiming(activeMode === "street" ? 0 : TAB_W, {
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [activeMode, TAB_W, slideX]);
 
   const handleSwitch = useCallback(
     (mode: PathMode) => {
@@ -101,12 +108,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignSelf: "center",
-    backgroundColor: "#F0F2F5",
+    backgroundColor: "rgba(255,255,255,0.2)",
     borderRadius: 18,
     padding: 4,
     marginBottom: 4,
     position: "relative",
     overflow: "hidden",
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
   },
   slider: {
     position: "absolute",
@@ -116,7 +126,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   sliderLight: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.92)",
     ...crossShadow({ color: "#000", offsetY: 1, opacity: 0.08, blur: 4, elevation: 2 }),
   },
   sliderDark: {

@@ -17,6 +17,7 @@ export type LessonListItem = {
   sectionItemIndex: number;
   type: LessonType;
   sectionTheme: SectionTheme;
+  displayTheme: SectionTheme;
   status: LessonStatus;
   isCurrent: boolean;
   progressSegments: number;
@@ -24,6 +25,16 @@ export type LessonListItem = {
 };
 
 export type LessonStatus = "completed" | "current" | "locked";
+
+/** Status by position on the path (ignores gaps in globalIndex between units). */
+export function resolveLessonStatus(
+  pathIndex: number,
+  nextLessonPathIndex: number,
+): LessonStatus {
+  if (pathIndex < nextLessonPathIndex) return "completed";
+  if (pathIndex === nextLessonPathIndex) return "current";
+  return "locked";
+}
 
 export type SectionDataItem = {
   title: string;
@@ -69,23 +80,10 @@ export const sectionConfigs: Array<{
 ];
 
 const CURRENT_USER_LEVEL = 45;
+/** Path index of the lesson the user should play next (0-based). */
+const NEXT_LESSON_PATH_INDEX = CURRENT_USER_LEVEL + 1;
 
-const firstGraySectionIndex = sectionConfigs.findIndex((s) => s.theme === "gray");
-
-let targetCurrentGlobalIndex = -1;
-
-if (firstGraySectionIndex !== -1) {
-  const sectionStartGlobalIndex =
-    firstGraySectionIndex === 0 ? 0 : 25 + (firstGraySectionIndex - 1) * 24;
-
-  const pattern =
-    firstGraySectionIndex === 0
-      ? (["practice", ...BASE_PATTERN] as LessonType[])
-      : BASE_PATTERN;
-
-  const firstEligibleItemOffset = pattern.findIndex((type) => type !== "gift");
-  targetCurrentGlobalIndex = sectionStartGlobalIndex + firstEligibleItemOffset;
-}
+let streetPathIndex = 0;
 
 export const sectionData = sectionConfigs.map(
   ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
@@ -99,13 +97,8 @@ export const sectionData = sectionConfigs.map(
 
     const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
       const currentGlobalIndex = startGlobalIndex + itemIndex;
-
-      let itemStatus: LessonStatus =
-        currentGlobalIndex <= CURRENT_USER_LEVEL ? "completed" : "locked";
-
-      if (currentGlobalIndex === targetCurrentGlobalIndex) {
-        itemStatus = "current";
-      }
+      const pathIndex = streetPathIndex++;
+      const itemStatus = resolveLessonStatus(pathIndex, NEXT_LESSON_PATH_INDEX);
 
       return {
         id: `level-${currentGlobalIndex}`,
@@ -113,6 +106,7 @@ export const sectionData = sectionConfigs.map(
         sectionItemIndex: itemIndex,
         type: lessonType,
         sectionTheme: theme,
+        displayTheme,
         status: itemStatus,
         isCurrent: itemStatus === "current",
         progressSegments: itemStatus === "current" ? 2 : 0,

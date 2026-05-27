@@ -1,31 +1,35 @@
 /**
  * ConversationPickGame — iOS 26 Liquid Glass redesign.
- *
- * Flow: tap response → CHECK to confirm → reveal pause → continue.
  */
 
 import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 import { Icon3DMessage, Icon3DTarget } from "@/components/icons/Icon3D";
 import { ConversationPickQuestion } from "@/data/lesson-content";
 import { Type, iOS } from "./game-design";
+import { ltrText, rtlBlock } from "./game-text";
 import {
-    LiquidCard,
-    LiquidEyebrow,
-    LiquidOption,
-    LiquidPill,
-    LiquidPrimaryButton,
-    OptionState,
+  GameCard,
+  GameFooter,
+  GameHeader,
+  GameHint,
+  GameOption,
+  GameRoot,
+} from "./GameAnimatedShell";
+import {
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidOption,
+  LiquidPill,
+  LiquidPrimaryButton,
+  OptionState,
 } from "./liquid-primitives";
 
 type Props = {
   question: ConversationPickQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
 };
-
-const REVEAL_DELAY_MS = 0;
 
 export default function ConversationPickGame({ question, onAnswer }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -55,32 +59,27 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <GameRoot style={{ flex: 1 }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={s.root}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(260)}>
-          <LiquidEyebrow>Conversation</LiquidEyebrow>
-        </Animated.View>
+        <GameHeader>
+          <LiquidEyebrow hint="Pick the most natural reply">Conversation</LiquidEyebrow>
+        </GameHeader>
 
-        <Animated.View
-          entering={FadeInDown.delay(60).springify().damping(20).stiffness(180)}
-          style={s.situationRow}
-        >
-          <LiquidPill tint="dark" height={36} paddingHorizontal={14}>
+        <GameCard delay={80}>
+        <View style={s.situationRow}>
+          <LiquidPill tint="dark" height={36} paddingHorizontal={14} style={{ flex: 1 }}>
             <Icon3DTarget size={14} />
-            <Text style={s.situationText} numberOfLines={2}>
+            <Text style={s.situationText} numberOfLines={3}>
               {question.situation}
             </Text>
           </LiquidPill>
-        </Animated.View>
+        </View>
 
-        <Animated.View
-          entering={FadeInUp.delay(140).springify().damping(20).stiffness(160)}
-          style={s.bubbleRow}
-        >
+        <View style={s.bubbleRow}>
           <View style={s.avatar}>
             <Icon3DMessage size={26} />
           </View>
@@ -90,31 +89,30 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
               <Text style={s.bubbleText}>{question.theyAsk}</Text>
             </LiquidCard>
           </View>
-        </Animated.View>
+        </View>
+        </GameCard>
 
-        <Animated.View entering={FadeInDown.delay(240).duration(240)}>
+        <GameHint delay={140}>
           <LiquidEyebrow>Choose the best response</LiquidEyebrow>
-        </Animated.View>
+        </GameHint>
 
         <View style={s.options}>
           {question.options.map((opt, i) => (
-            <Animated.View
+            <GameOption key={opt} index={i} baseDelay={160}>
+            <LiquidOption
               key={opt}
-              entering={FadeInDown.delay(300 + i * 70).springify().damping(18).stiffness(180)}
-            >
-              <LiquidOption
-                text={opt}
-                state={getState(opt)}
-                onPress={() => pick(opt)}
-                disabled={revealed}
-                index={i}
-              />
-            </Animated.View>
+              text={opt}
+              state={getState(opt)}
+              onPress={() => pick(opt)}
+              disabled={revealed}
+              index={i}
+            />
+            </GameOption>
           ))}
         </View>
       </ScrollView>
 
-      {/* CHECK button (sticky bottom) */}
+      <GameFooter>
       <View style={s.checkWrap}>
         <LiquidPrimaryButton
           label="CHECK"
@@ -123,7 +121,8 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
           disabled={!selected || revealed}
         />
       </View>
-    </View>
+      </GameFooter>
+    </GameRoot>
   );
 }
 
@@ -140,9 +139,9 @@ const s = StyleSheet.create({
   situationText: {
     ...Type.caption,
     color: "#FFFFFF",
+    flex: 1,
     flexShrink: 1,
-    writingDirection: "rtl",
-    textAlign: "right",
+    ...rtlBlock,
   },
   bubbleRow: {
     flexDirection: "row",
@@ -170,10 +169,12 @@ const s = StyleSheet.create({
     ...Type.eyebrow,
     color: iOS.systemBlue,
     marginBottom: 4,
+    ...ltrText,
   },
   bubbleText: {
     ...Type.title,
     color: "#0F172A",
+    ...ltrText,
   },
   options: {
     gap: 12,

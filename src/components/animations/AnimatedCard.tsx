@@ -1,22 +1,24 @@
 /**
- * AnimatedCard — A Reanimated-powered card with entrance animation and optional blur.
- * Provides staggered fade-in-up animations that feel organic and premium.
+ * AnimatedCard — Fast fade entrance + LinearTransition layout (Reanimated v4).
  */
 
 import React from "react";
 import { StyleProp, ViewStyle } from "react-native";
-import Animated, { FadeInUp, FadeInDown, FadeInLeft, FadeInRight } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import {
+  enterFadeDown,
+  enterFadeLeft,
+  enterFadeRight,
+  enterFadeUp,
+  layoutSmooth,
+} from "./motion";
 
 type AnimatedCardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** Delay index for staggered entrance (each increment = 80ms) */
   index?: number;
-  /** Base delay in ms before animation starts */
   delay?: number;
-  /** Animation entrance direction */
   direction?: "up" | "down" | "left" | "right";
-  /** Distance in pixels for slide animation */
   distance?: number;
 };
 
@@ -27,23 +29,23 @@ export function AnimatedCard({
   delay = 0,
   direction = "up",
 }: AnimatedCardProps) {
-  const totalDelay = delay + index * 80;
-  
+  const totalDelay = delay + index * 35;
+
   const entering = (() => {
     switch (direction) {
       case "up":
-        return FadeInDown.delay(totalDelay).springify().damping(18).stiffness(120).mass(0.9);
+        return enterFadeDown(totalDelay);
       case "down":
-        return FadeInUp.delay(totalDelay).springify().damping(18).stiffness(120).mass(0.9);
+        return enterFadeUp(totalDelay);
       case "left":
-        return FadeInRight.delay(totalDelay).springify().damping(18).stiffness(120).mass(0.9);
+        return enterFadeRight(totalDelay);
       case "right":
-        return FadeInLeft.delay(totalDelay).springify().damping(18).stiffness(120).mass(0.9);
+        return enterFadeLeft(totalDelay);
     }
   })();
 
   return (
-    <Animated.View entering={entering} style={style}>
+    <Animated.View entering={entering} layout={layoutSmooth} style={style}>
       {children}
     </Animated.View>
   );

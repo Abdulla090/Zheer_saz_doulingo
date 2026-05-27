@@ -1,13 +1,14 @@
 import { CustomTabBar } from "@/components/CustomTabBar";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useCallback, useEffect } from "react";
 import { Platform, Text } from "react-native";
 import "react-native-gesture-handler";
+import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
@@ -67,8 +68,8 @@ export default function TabLayout() {
             tabBarShowLabel: false,
             tabBarActiveTintColor: "#FFFFFF",
             tabBarInactiveTintColor: "#B4B8C3",
-            // iOS 2026 Fluid Zoom Morphing Transition (RN 7 "shift")
-            animation: "shift",
+            // Fast fade — lighter than morph/shift on low-end devices
+            animation: "fade",
           }}
         >
           <Tabs.Screen

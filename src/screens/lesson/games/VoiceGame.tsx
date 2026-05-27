@@ -1,35 +1,40 @@
 /**
  * VoiceGame — iOS 26 Liquid Glass redesign.
  *
- * Glass card with the target word, large mic button beneath.
+ * Glass card with the target phrase, large mic button beneath.
  * Web: uses SpeechRecognition. Native: tap-to-confirm flow.
  */
 
 import React, { useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    cancelAnimation,
-    Easing,
-    FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withSpring,
-    withTiming,
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { Icon3DCheckCircle, Icon3DMic, Icon3DVolume } from "@/components/icons/Icon3D";
 import { VoiceQuestion } from "@/data/lesson-content";
-import { crossShadow, crossTextShadow } from "@/utils/shadows";
-import { iOS, Motion, Type } from "./game-design";
+import { crossShadow } from "@/utils/shadows";
+import { Radius, iOS, Type } from "./game-design";
+import { ltrText, rtlBlock } from "./game-text";
 import {
-    LiquidCard,
-    LiquidEyebrow,
-    LiquidGhostButton,
-    LiquidPill,
-    LiquidPrimaryButton,
+  GameCard,
+  GameFooter,
+  GameHeader,
+  GameHint,
+  GamePopIn,
+  GameRoot,
+} from "./GameAnimatedShell";
+import {
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidGhostButton,
+  LiquidPrimaryButton,
 } from "./liquid-primitives";
 
 type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
@@ -41,6 +46,30 @@ function getSpeechRec(): any {
 }
 
 const isWebWithSpeech = Platform.OS === "web" && getSpeechRec() !== null;
+
+function TargetPhraseCard({ question }: { question: VoiceQuestion }) {
+  const phraseLength = question.targetWord.length;
+  const phraseSize = phraseLength > 48 ? 20 : phraseLength > 32 ? 22 : 26;
+
+  return (
+    <LiquidCard style={s.targetCard} radius={Radius.xl} showSheen={false}>
+      <View style={s.cardInner}>
+        <View style={s.kuRow}>
+          <Icon3DVolume size={16} />
+          <Text style={s.kuText} numberOfLines={3}>
+            {question.targetKurdish}
+          </Text>
+        </View>
+        <View style={s.divider} />
+        <Text
+          style={[s.targetPhrase, { fontSize: phraseSize, lineHeight: phraseSize + 8 }]}
+        >
+          {question.targetWord}
+        </Text>
+      </View>
+    </LiquidCard>
+  );
+}
 
 export default function VoiceGame({ question, onAnswer }: Props) {
   const [state, setState] = useState<ListenState>("idle");
@@ -60,14 +89,12 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     setState(s);
   };
 
-  /* Mic press translateY */
   const micTy = useSharedValue(0);
   const shakeX = useSharedValue(0);
   const micStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: micTy.value }, { translateX: shakeX.value }],
   }));
 
-  /* Pulse rings */
   const ringS = useSharedValue(1);
   const ringO = useSharedValue(0);
   const ringStyle = useAnimatedStyle(() => ({
@@ -100,8 +127,10 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     stopPulse();
     updateState("fail");
     shakeX.value = withSequence(
-      withTiming(-7, { duration: 43 }), withTiming(7, { duration: 43 }),
-      withTiming(-5, { duration: 37 }), withTiming(5, { duration: 37 }),
+      withTiming(-7, { duration: 43 }),
+      withTiming(7, { duration: 43 }),
+      withTiming(-5, { duration: 37 }),
+      withTiming(5, { duration: 37 }),
       withTiming(0, { duration: 50, easing: Easing.out(Easing.quad) }),
     );
     skipO.value = withTiming(1, { duration: 300 });
@@ -115,8 +144,10 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     ringS.value = withRepeat(
       withSequence(
         withTiming(1.55, { duration: 720, easing: Easing.inOut(Easing.quad) }),
-        withTiming(1.0,  { duration: 620, easing: Easing.inOut(Easing.quad) }),
-      ), -1, false,
+        withTiming(1.0, { duration: 620, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+      false,
     );
 
     const Rec = getSpeechRec();
@@ -130,7 +161,12 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       const result = e.results[0][0].transcript.toLowerCase().trim();
       setTranscript(result);
       const target = question.targetWord.toLowerCase();
-      if (result.includes(target) || target.includes(result)) onSuccess(result);
+      const keyWords = target.split(/\s+/).filter((w) => w.length > 2);
+      const matched =
+        result.includes(target) ||
+        target.includes(result) ||
+        keyWords.filter((w) => result.includes(w)).length >= Math.ceil(keyWords.length * 0.55);
+      if (matched) onSuccess(result);
       else onFail();
     };
     rec.onerror = () => onFail();
@@ -139,143 +175,145 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     };
 
     rec.start();
-    setTimeout(() => { try { rec.stop(); } catch {} }, 7000);
+    setTimeout(() => {
+      try {
+        rec.stop();
+      } catch {}
+    }, 7000);
   };
 
-  /* Mic background color + status text */
   const micColor =
-    state === "listening" ? iOS.systemBlue
-    : state === "success" ? iOS.systemGreen
-    : state === "fail" ? iOS.systemRed
-    : iOS.systemBlue;
+    state === "listening"
+      ? iOS.systemBlue
+      : state === "success"
+        ? iOS.systemGreen
+        : state === "fail"
+          ? iOS.systemRed
+          : iOS.systemBlue;
 
-  /* ───────────────────────── Native (no speech API) ───────────────────────── */
   if (!isWebWithSpeech) {
     return (
-      <View style={s.root}>
-        <Animated.View entering={FadeInDown.duration(260)}>
-          <LiquidEyebrow>Pronunciation</LiquidEyebrow>
-        </Animated.View>
-
-        <Animated.Text
-          entering={FadeInDown.delay(60).duration(260)}
-          style={[s.prompt, crossTextShadow({ color: "rgba(0,0,0,0.25)", offsetY: 1, blur: 3 })]}
-        >
-          {question.prompt}
-        </Animated.Text>
-
-        <Animated.View entering={FadeInUp.delay(120).springify().damping(20).stiffness(160)}>
-          <LiquidCard style={s.targetCard}>
-            <View style={s.kuPillRow}>
-              <LiquidPill tint="light" height={32} paddingHorizontal={12}>
-                <Icon3DVolume size={14} />
-                <Text style={s.kuHint}>{question.targetKurdish}</Text>
-              </LiquidPill>
-            </View>
-            <Text style={s.targetWord}>{question.targetWord}</Text>
-          </LiquidCard>
-        </Animated.View>
-
-        <Text style={s.mobileInstruction}>ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە</Text>
-
-        <Animated.View
-          entering={FadeInDown.delay(220).springify().damping(20).stiffness(180)}
-          style={s.actionStack}
-        >
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <GameHeader>
+          <LiquidEyebrow hint="Read the phrase, then confirm">Pronunciation</LiquidEyebrow>
+        </GameHeader>
+        <GameHint>
+          <Text style={s.prompt}>{question.prompt}</Text>
+        </GameHint>
+        <GameCard>
+          <TargetPhraseCard question={question} />
+        </GameCard>
+        <GameHint delay={160}>
+          <Text style={s.mobileInstruction}>ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە</Text>
+        </GameHint>
+        <GameFooter delay={220}>
+          <View style={s.actionStack}>
           <LiquidPrimaryButton
             label="بڵێم کرد (I said it)"
             color={iOS.systemGreen}
             icon={<Icon3DCheckCircle size={20} />}
             onPress={() => fireAnswer(true)}
           />
-          <View style={{ height: 12 }} />
+          <View style={{ height: 10 }} />
           <LiquidGhostButton
             label="نەمتوانی بڵێم (Skip)"
             onPress={() => fireAnswer(false)}
           />
-        </Animated.View>
-      </View>
+          </View>
+        </GameFooter>
+      </ScrollView>
     );
   }
 
-  /* ───────────────────────── Web (speech API) ───────────────────────── */
   const statusText =
-    state === "idle" ? "دوگمەی مایکرۆفۆن بپەڕینە"
-    : state === "listening" ? "گوێم لێیە... قسەبکە"
-    : state === "success" ? "باشە! دروستت بووە"
-    : "هەڵەیە، دووبارە هەوڵبدەوە";
+    state === "idle"
+      ? "دوگمەی مایکرۆفۆن بپەڕینە"
+      : state === "listening"
+        ? "گوێم لێیە... قسەبکە"
+        : state === "success"
+          ? "باشە! دروستت بووە"
+          : "هەڵەیە، دووبارە هەوڵبدەوە";
 
   const statusColor =
-    state === "success" ? iOS.systemGreen
-    : state === "fail" ? iOS.systemRed
-    : "rgba(255,255,255,0.85)";
+    state === "success"
+      ? iOS.systemGreen
+      : state === "fail"
+        ? iOS.systemRed
+        : "rgba(255,255,255,0.78)";
 
   return (
     <View style={s.root}>
-      <Animated.View entering={FadeInDown.duration(260)}>
-        <LiquidEyebrow>Pronunciation</LiquidEyebrow>
-      </Animated.View>
-
-      <Animated.Text
-        entering={FadeInDown.delay(60).duration(260)}
-        style={[s.prompt, crossTextShadow({ color: "rgba(0,0,0,0.25)", offsetY: 1, blur: 3 })]}
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {question.prompt}
-      </Animated.Text>
+        <GameHeader>
+          <LiquidEyebrow hint="Tap the mic and speak clearly">Pronunciation</LiquidEyebrow>
+        </GameHeader>
+        <GameHint>
+          <Text style={s.prompt}>{question.prompt}</Text>
+        </GameHint>
+        <GameCard>
+          <TargetPhraseCard question={question} />
+        </GameCard>
 
-      <Animated.View entering={FadeInUp.delay(120).springify().damping(20).stiffness(160)}>
-        <LiquidCard style={s.targetCard}>
-          <View style={s.kuPillRow}>
-            <LiquidPill tint="light" height={32} paddingHorizontal={12}>
-              <Icon3DVolume size={14} />
-              <Text style={s.kuHint}>{question.targetKurdish}</Text>
-            </LiquidPill>
+        <GameFooter delay={200}>
+          <View style={s.micSection}>
+          <View style={s.micOuter}>
+            <Animated.View style={[s.ring, { backgroundColor: micColor }, ringStyle]} />
+            <Animated.View
+              style={[
+                micStyle,
+                s.micFront,
+                {
+                  backgroundColor: micColor,
+                  ...crossShadow({
+                    color: micColor,
+                    offsetY: 10,
+                    opacity: 0.35,
+                    blur: 22,
+                    elevation: 10,
+                  }),
+                },
+              ]}
+            >
+              <Pressable
+                onPress={startListening}
+                disabled={state !== "idle"}
+                onPressIn={() => {
+                  micTy.value = withTiming(3, { duration: 90 });
+                }}
+                onPressOut={() => {
+                  micTy.value = withTiming(0, { duration: 120 });
+                }}
+                style={s.micInner}
+              >
+                <Icon3DMic size={36} />
+              </Pressable>
+            </Animated.View>
           </View>
-          <Text style={s.targetWord}>{question.targetWord}</Text>
-        </LiquidCard>
-      </Animated.View>
 
-      {/* Mic */}
-      <Animated.View
-        entering={FadeInUp.delay(200).springify().damping(20).stiffness(160)}
-        style={s.micOuter}
-      >
-        <Animated.View style={[s.ring, { backgroundColor: micColor }, ringStyle]} />
-        <Animated.View
-          style={[
-            micStyle,
-            s.micFront,
-            {
-              backgroundColor: micColor,
-              ...crossShadow({ color: micColor, offsetY: 12, opacity: 0.45, blur: 24, elevation: 12 }),
-            },
-          ]}
-        >
-          <Pressable
-            onPress={startListening}
-            disabled={state !== "idle"}
-            onPressIn={() => { micTy.value = withSpring(6, Motion.press); }}
-            onPressOut={() => { micTy.value = withSpring(0, Motion.press); }}
-            style={s.micInner}
-          >
-            <Icon3DMic size={40} />
-          </Pressable>
-        </Animated.View>
-      </Animated.View>
+          <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
+          </View>
+        </GameFooter>
 
-      <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
-
-      {/* Transcript */}
-      {transcript.length > 0 && (
-        <Animated.View entering={FadeInUp.duration(220)} style={s.transcriptWrap}>
+        {transcript.length > 0 && (
+          <GamePopIn>
           <LiquidCard style={s.transcriptCard} showSheen={false}>
             <Text style={s.transcriptLabel}>YOU SAID</Text>
             <Text style={s.transcriptText}>{transcript}</Text>
           </LiquidCard>
-        </Animated.View>
-      )}
+          </GamePopIn>
+        )}
+      </ScrollView>
 
-      {/* Retry / Skip on fail */}
       {state === "fail" && (
         <Animated.View style={[s.actionRow, skipStyle]}>
           <View style={{ flex: 1 }}>
@@ -291,12 +329,9 @@ export default function VoiceGame({ question, onAnswer }: Props) {
               }}
             />
           </View>
-          <View style={{ width: 12 }} />
+          <View style={{ width: 10 }} />
           <View style={{ flex: 1 }}>
-            <LiquidGhostButton
-              label="بگوزەرێ"
-              onPress={() => fireAnswer(false)}
-            />
+            <LiquidGhostButton label="بگوزەرێ" onPress={() => fireAnswer(false)} />
           </View>
         </Animated.View>
       )}
@@ -307,120 +342,144 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    gap: 18,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 12,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    gap: 20,
+    paddingBottom: 8,
   },
   prompt: {
-    ...Type.title,
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginTop: 4,
-    writingDirection: "rtl",
+    ...Type.hint,
+    fontSize: 17,
+    lineHeight: 26,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+    ...rtlBlock,
   },
   targetCard: {
-    paddingHorizontal: 22,
-    paddingTop: 26,
+    paddingHorizontal: 24,
+    paddingTop: 24,
     paddingBottom: 28,
+    minHeight: 128,
+  },
+  cardInner: {
+    width: "100%",
+    gap: 18,
     alignItems: "center",
   },
-  kuPillRow: {
+  kuRow: {
     flexDirection: "row",
-    marginBottom: 14,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: 10,
+    width: "100%",
+    paddingHorizontal: 4,
   },
-  kuHint: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: iOS.blueDeep,
-    letterSpacing: -0.2,
-    writingDirection: "rtl",
-    textAlign: "right",
-  },
-  targetWord: {
-    fontSize: 38,
-    fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.7,
+  kuText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 22,
+    color: iOS.systemBlue,
     textAlign: "center",
-    lineHeight: 46,
+    ...rtlBlock,
   },
-
-  /* Mic */
+  divider: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "rgba(15,23,42,0.08)",
+  },
+  targetPhrase: {
+    fontWeight: "700",
+    letterSpacing: -0.35,
+    color: "#0F172A",
+    textAlign: "center",
+    width: "100%",
+    ...ltrText,
+  },
+  micSection: {
+    alignItems: "center",
+    gap: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
   micOuter: {
-    width: 140,
-    height: 140,
-    alignSelf: "center",
+    width: 120,
+    height: 120,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 14,
   },
   ring: {
     position: "absolute",
-    width: 116,
-    height: 116,
-    borderRadius: 58,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
   },
   micFront: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.4)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.35)",
   },
   micInner: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 52,
+    borderRadius: 48,
   },
-
   status: {
     ...Type.body,
+    fontSize: 15,
+    fontWeight: "600",
     textAlign: "center",
-    marginTop: 4,
+    ...rtlBlock,
   },
-
-  /* Mobile */
   mobileInstruction: {
     ...Type.body,
-    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    color: "rgba(255,255,255,0.78)",
     textAlign: "center",
-    marginTop: 8,
-    writingDirection: "rtl",
+    ...rtlBlock,
   },
   actionStack: {
     width: "100%",
-    marginTop: 8,
-  },
-
-  /* Transcript */
-  transcriptWrap: {
-    width: "100%",
+    paddingTop: 4,
   },
   transcriptCard: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     alignItems: "center",
+    gap: 6,
   },
   transcriptLabel: {
     ...Type.eyebrow,
-    color: "rgba(15,23,42,0.55)",
-    marginBottom: 4,
+    fontSize: 10,
+    color: "rgba(15,23,42,0.45)",
+    letterSpacing: 1.6,
+    ...ltrText,
   },
   transcriptText: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 20,
+    fontWeight: "700",
     color: "#0F172A",
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
+    lineHeight: 28,
+    textAlign: "center",
+    width: "100%",
+    ...ltrText,
   },
-
   actionRow: {
     flexDirection: "row",
     width: "100%",
-    marginTop: "auto",
-    paddingTop: 16,
+    paddingTop: 10,
   },
 });

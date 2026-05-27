@@ -15,12 +15,11 @@ import {
     Icon3DZap,
 } from "@/components/icons/Icon3D";
 import { crossShadow } from "@/utils/shadows";
-import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
-    ImageBackground,
     Platform,
     Pressable,
     SafeAreaView,
@@ -30,21 +29,20 @@ import {
 } from "react-native";
 import Animated, {
     Easing,
-    FadeInDown,
     FadeInUp,
-    ReduceMotion,
     useAnimatedStyle,
     useSharedValue,
     withSequence,
-    withSpring,
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { GameQuestion, getLessonQuestions } from "@/data/lesson-content";
+import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
+import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { G, Glass, iOS, Radius } from "./games/game-design";
+import { G, GameBg, Glass, iOS, Radius } from "./games/game-design";
+import { dirForText } from "./games/game-text";
 import { LiquidPrimaryButton } from "./games/liquid-primitives";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
@@ -91,6 +89,7 @@ function HeaderPill({
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
+            ...crossShadow({ color: "#000", offsetY: 6, opacity: 0.18, blur: 16, elevation: 4 }),
           },
           Platform.OS === "web" && {
             // @ts-ignore web
@@ -100,9 +99,6 @@ function HeaderPill({
           },
         ]}
       >
-        {Platform.OS !== "web" && (
-          <BlurView intensity={Glass.blurStrong} tint="dark" style={StyleSheet.absoluteFill} />
-        )}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, zIndex: 1 }}>
           {children}
         </View>
@@ -113,22 +109,22 @@ function HeaderPill({
 
 /* Summary stat card */
 function StatCard({
-  icon, label, value, color, delay,
+  icon, label, value, color,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   color: string;
-  delay: number;
+  delay?: number;
 }) {
   return (
-    <Animated.View entering={FadeInDown.delay(delay).duration(220)} style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View style={[sSum.statCard, { borderColor: color }]}>
         {icon}
         <Text style={[sSum.statValue, { color }]}>{value}</Text>
         <Text style={sSum.statLabel}>{label}</Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -138,10 +134,14 @@ export default function LessonScreen() {
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
   const lessonIndex = parseInt(params.li as string) || 0;
+  const pathMode: LessonPathMode =
+    (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
+      ? "normal"
+      : "street";
 
   const questions = React.useMemo(
-    () => getLessonQuestions(lessonId, lessonIndex),
-    [lessonId, lessonIndex],
+    () => getLessonQuestions(lessonId, lessonIndex, pathMode),
+    [lessonId, lessonIndex, pathMode],
   );
 
   const [current, setCurrent] = useState(0);
@@ -207,9 +207,9 @@ export default function LessonScreen() {
       });
 
       setFeedback({ correct, explanation });
-      sheetY.value = withSpring(0, {
-        damping: 22, stiffness: 220, mass: 0.9,
-        reduceMotion: ReduceMotion.System,
+      sheetY.value = withTiming(0, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
       });
     },
     [current, hearts, questions],
@@ -273,22 +273,19 @@ export default function LessonScreen() {
 
           {ok && (
             <View style={sSum.statsRow}>
-              <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={G.yellow} delay={80} />
-              <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={G.green} delay={160} />
-              <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={G.red} delay={240} />
+              <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={G.yellow} />
+              <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={G.green} />
+              <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={G.red} />
             </View>
           )}
 
-          <Animated.View
-            entering={FadeInDown.delay(ok ? 360 : 200).duration(280)}
-            style={{ width: "100%", marginTop: 12 }}
-          >
+          <View style={{ width: "100%", marginTop: 12 }}>
             <LiquidPrimaryButton
               label={ok ? "Continue" : "Try Again"}
               color={ok ? iOS.systemGreen : iOS.systemBlue}
               onPress={() => router.back()}
             />
-          </Animated.View>
+          </View>
         </Animated.View>
       </SafeAreaView>
     );
@@ -298,11 +295,16 @@ export default function LessonScreen() {
   const isCorrect = feedback?.correct === true;
 
   return (
-    <ImageBackground
-      source={require("@/assets/images/oceanbg.png")}
-      style={[sL.root, { paddingTop: insets.top }]}
-      resizeMode="cover"
-    >
+    <View style={[sL.root, { paddingTop: insets.top }]}>
+      <Image
+        source={require("@/assets/images/oceanbg.png")}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="low"
+      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: GameBg.scrim }]} />
+
       {/* Header */}
       <View style={sL.header}>
         <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
@@ -332,13 +334,15 @@ export default function LessonScreen() {
       </View>
 
       {/* Game */}
-      <Animated.View
-        key={current}
-        entering={FadeInDown.duration(260)}
-        style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}
-      >
-        {renderGame(questions[current]!)}
-      </Animated.View>
+      <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <Animated.View
+          key={`${pathMode}-${current}`}
+          entering={enterGame}
+          style={{ flex: 1 }}
+        >
+          {renderGame(questions[current]!)}
+        </Animated.View>
+      </View>
 
       {/* Feedback sheet */}
       {feedback !== null && (
@@ -354,7 +358,7 @@ export default function LessonScreen() {
             style={[
               sL.sheetInner,
               {
-                backgroundColor: "rgba(255,255,255,0.92)",
+                backgroundColor: "rgba(255,255,255,0.96)",
                 borderColor: isCorrect ? iOS.systemGreen : iOS.systemRed,
               },
               Platform.OS === "web" && {
@@ -365,13 +369,6 @@ export default function LessonScreen() {
               },
             ]}
           >
-            {Platform.OS !== "web" && (
-              <BlurView
-                intensity={70}
-                tint="light"
-                style={StyleSheet.absoluteFill}
-              />
-            )}
             {/* Top accent stripe */}
             <View
               style={[
@@ -399,7 +396,9 @@ export default function LessonScreen() {
                     {isCorrect ? "Correct!" : "Incorrect"}
                   </Text>
                   {feedback.explanation ? (
-                    <Text style={sL.sheetSub}>{feedback.explanation}</Text>
+                    <Text style={[sL.sheetSub, dirForText(feedback.explanation)]}>
+                      {feedback.explanation}
+                    </Text>
                   ) : (
                     <Text style={sL.sheetSub}>
                       {isCorrect
@@ -419,7 +418,7 @@ export default function LessonScreen() {
           </View>
         </Animated.View>
       )}
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -439,11 +438,11 @@ const sL = StyleSheet.create({
     flex: 1,
   },
   progressTrack: {
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "rgba(15,23,42,0.32)",
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(8,16,32,0.45)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.14)",
     overflow: "hidden",
     padding: 2,
   },

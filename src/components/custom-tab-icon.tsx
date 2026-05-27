@@ -1,12 +1,6 @@
-import React, { useEffect } from "react";
-import Animated, {
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import React from "react";
+import Animated from "react-native-reanimated";
+import { CSS_RELEASE_MS } from "@/components/animations/motion";
 
 type SvgIconProps = {
   width?: number;
@@ -20,34 +14,15 @@ type CustomTabIconProps = {
 };
 
 export function CustomTabIcon({ focused, Icon }: CustomTabIconProps) {
-  const scale = useSharedValue(1);
-  useEffect(() => {
-    if (focused) {
-      scale.value = withSequence(
-        withTiming(0.85, {
-          duration: 100,
-        }),
-        withSpring(1, {
-          duration: 500,
-          dampingRatio: 0.6,
-          mass: 1,
-          overshootClamping: false,
-          energyThreshold: 6e-9,
-          velocity: 0,
-          reduceMotion: ReduceMotion.System,
-        }),
-      );
-    }
-  }, [focused]);
-  const iconStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
   return (
     <Animated.View
       className={`p-2 rounded-lg items-center justify-center ${focused ? "bg-[#DDF4FF] border-[2] border-[#63C9F9]" : ""}`}
-      style={[iconStyle]}
+      style={{
+        opacity: focused ? 1 : 0.88,
+        transitionProperty: "opacity",
+        transitionDuration: CSS_RELEASE_MS,
+        transitionTimingFunction: "ease-out",
+      }}
     >
       <Icon width={26} height={26} opacity={1} />
     </Animated.View>

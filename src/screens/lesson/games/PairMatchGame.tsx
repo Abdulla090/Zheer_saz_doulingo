@@ -1,26 +1,20 @@
 /**
  * PairMatchGame — iOS 26 Liquid Glass redesign.
- *
- * Two columns of frosted glass chips. Tap left → tap right → match.
- * Correct: green + scale-down fade. Wrong: red shake.
- * Animated layout transitions when chips match.
  */
 
-import React, { useRef, useState } from "react";
+import React, { memo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
     Easing,
-    FadeInDown,
-    FadeInUp,
     useAnimatedStyle,
     useSharedValue,
     withSequence,
-    withSpring,
     withTiming,
 } from "react-native-reanimated";
 
 import { PairMatchQuestion } from "@/data/lesson-content";
 import { iOS, Radius, Type } from "./game-design";
+import { ltrText, rtlText } from "./game-text";
 import {
     LiquidEyebrow,
     LiquidWordChip,
@@ -36,20 +30,17 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-/* ───── Wrapped chip with shake + scale-down on match ───── */
-function MatchChip({
+const MatchChip = memo(function MatchChip({
   label,
   state,
   onPress,
   matched,
-  delay,
   rtl = false,
 }: {
   label: string;
   state: OptionState;
   onPress: () => void;
   matched: boolean;
-  delay: number;
   rtl?: boolean;
 }) {
   const shakeX = useSharedValue(0);
@@ -66,17 +57,17 @@ function MatchChip({
         withTiming(0, { duration: 44, easing: Easing.out(Easing.quad) }),
       );
     }
-  }, [state]);
+  }, [state, shakeX]);
 
   React.useEffect(() => {
     if (matched) {
-      chipScale.value = withSpring(0.92, { damping: 14, stiffness: 200 });
-      opac.value = withTiming(0.75, { duration: 400, easing: Easing.out(Easing.quad) });
+      chipScale.value = withTiming(0.94, { duration: 180, easing: Easing.out(Easing.quad) });
+      opac.value = withTiming(0.75, { duration: 200, easing: Easing.out(Easing.quad) });
     } else {
-      chipScale.value = withSpring(1, { damping: 14, stiffness: 200 });
-      opac.value = withTiming(1, { duration: 200 });
+      chipScale.value = withTiming(1, { duration: 140 });
+      opac.value = withTiming(1, { duration: 140 });
     }
-  }, [matched]);
+  }, [matched, chipScale, opac]);
 
   const wrapStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }, { scale: chipScale.value }],
@@ -84,10 +75,7 @@ function MatchChip({
   }));
 
   return (
-    <Animated.View
-      entering={FadeInUp.delay(delay).springify().damping(18).stiffness(180)}
-      style={wrapStyle}
-    >
+    <Animated.View style={wrapStyle}>
       <LiquidWordChip
         label={label}
         state={state}
@@ -97,14 +85,13 @@ function MatchChip({
       />
     </Animated.View>
   );
-}
+});
 
-/* ───── Progress dots ───── */
 function MatchProgress({ done, total }: { done: number; total: number }) {
   return (
     <View style={s.dotsRow}>
       {Array.from({ length: total }).map((_, i) => (
-        <Animated.View
+        <View
           key={i}
           style={[
             s.dot,
@@ -119,7 +106,6 @@ function MatchProgress({ done, total }: { done: number; total: number }) {
   );
 }
 
-/* ───── Main ───── */
 export default function PairMatchGame({ question, onAnswer }: Props) {
   const [left] = useState(() => shuffle(question.pairs.map(p => p.kurdish)));
   const [right] = useState(() => shuffle(question.pairs.map(p => p.english)));
@@ -180,44 +166,36 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
 
   return (
     <View style={s.root}>
-      {/* Eyebrow */}
-      <Animated.View entering={FadeInDown.duration(260)}>
-        <LiquidEyebrow>Match the pairs</LiquidEyebrow>
-      </Animated.View>
+      <LiquidEyebrow>Match the pairs</LiquidEyebrow>
 
-      {/* Progress dots */}
       <MatchProgress done={matched.size / 2} total={total} />
 
-      {/* Column labels */}
       <View style={s.colLabels}>
-        <Text style={[s.colLabel, { writingDirection: "rtl" }]}>کوردی</Text>
-        <Text style={s.colLabel}>English</Text>
+        <Text style={[s.colLabel, s.colLabelKu]}>کوردی</Text>
+        <Text style={[s.colLabel, s.colLabelEn]}>English</Text>
       </View>
 
-      {/* Two columns */}
       <View style={s.columns}>
         <View style={s.col}>
-          {left.map((w, i) => (
+          {left.map((w) => (
             <MatchChip
               key={w}
               label={w}
               state={lState(w)}
               onPress={() => handleL(w)}
               matched={matched.has(w)}
-              delay={i * 55}
               rtl
             />
           ))}
         </View>
         <View style={s.col}>
-          {right.map((w, i) => (
+          {right.map((w) => (
             <MatchChip
               key={w}
               label={w}
               state={rState(w)}
               onPress={() => handleR(w)}
               matched={matched.has(w)}
-              delay={i * 55 + 30}
             />
           ))}
         </View>
@@ -247,12 +225,19 @@ const s = StyleSheet.create({
   },
   colLabels: {
     flexDirection: "row",
+    gap: 12,
   },
   colLabel: {
     flex: 1,
-    textAlign: "center",
     ...Type.eyebrow,
     color: "rgba(255,255,255,0.85)",
+  },
+  colLabelKu: {
+    ...rtlText,
+  },
+  colLabelEn: {
+    ...ltrText,
+    textAlign: "center",
   },
   columns: {
     flex: 1,

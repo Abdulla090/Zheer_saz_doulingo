@@ -34,12 +34,13 @@ import Animated, {
     interpolateColor,
     useAnimatedStyle,
     useSharedValue,
-    withSpring
+    withSpring,
+    withTiming,
 } from "react-native-reanimated";
 
 import { Icon3DCheck, Icon3DX } from "@/components/icons/Icon3D";
 import { crossShadow } from "@/utils/shadows";
-import { Glass, Motion, Radius, Type, iOS } from "./game-design";
+import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
 /* ════════════════════════════════════════════════════════════════════
  * <LiquidCard>
@@ -84,15 +85,15 @@ export function LiquidCard({
         },
         crossShadow({
           color: "#000",
-          offsetY: 18,
-          opacity: 0.16,
-          blur: 36,
-          elevation: 14,
+          offsetY: 12,
+          opacity: 0.12,
+          blur: 28,
+          elevation: 10,
         }),
         style,
       ]}
     >
-      {isNative && (
+      {isNative && USE_GAME_BLUR && (
         <BlurView
           intensity={intensity}
           tint={tint === "light" ? "light" : "dark"}
@@ -165,7 +166,7 @@ export function LiquidPill({
         style,
       ]}
     >
-      {Platform.OS !== "web" && (
+      {Platform.OS !== "web" && USE_GAME_BLUR && (
         <BlurView
           intensity={intensity}
           tint={tint === "dark" ? "dark" : "light"}
@@ -185,19 +186,38 @@ export function LiquidPill({
  * ════════════════════════════════════════════════════════════════════ */
 export function LiquidEyebrow({
   children,
-  color = "rgba(255,255,255,0.85)",
+  color = "rgba(255,255,255,0.92)",
+  hint,
   style,
 }: {
   children: React.ReactNode;
   color?: string;
+  hint?: string;
   style?: StyleProp<TextStyle>;
 }) {
   return (
-    <Text style={[Type.eyebrow, { color }, style]}>
-      {children}
-    </Text>
+    <View style={le.wrap}>
+      <View style={le.labelRow}>
+        <View style={le.accentDot} />
+        <Text style={[Type.eyebrow, { color }, style]}>{children}</Text>
+      </View>
+      {hint ? <Text style={[Type.hint, le.hint]}>{hint}</Text> : null}
+    </View>
   );
 }
+
+const le = StyleSheet.create({
+  wrap: { gap: 6 },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  accentDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: iOS.systemTeal,
+    ...crossShadow({ color: iOS.systemTeal, offsetY: 0, opacity: 0.55, blur: 6 }),
+  },
+  hint: { color: "rgba(255,255,255,0.62)", paddingLeft: 14 },
+});
 
 /* ════════════════════════════════════════════════════════════════════
  * <LiquidOption>
@@ -238,8 +258,8 @@ export function LiquidOption({
       : state === "selected" ? 3
       : 0;
     // Always jump instantly to avoid color bleeding through intermediate states
-    p.value = target;
-  }, [state]);
+    p.value = withTiming(target, { duration: Motion.colorMs, easing: Motion.ease });
+  }, [state, p]);
 
   const surfaceStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
@@ -247,9 +267,9 @@ export function LiquidOption({
       [0, 1, 2, 3],
       [
         Glass.surface,
-        iOS.systemGreen,         // SOLID green when correct
-        iOS.systemRed,           // SOLID red when wrong
-        "#FFFFFF",               // SOLID white when selected (clear vs ocean)
+        iOS.systemGreen,
+        iOS.systemRed,
+        "rgba(255,255,255,0.98)",
       ],
     ),
     borderColor: interpolateColor(
@@ -259,7 +279,7 @@ export function LiquidOption({
         Glass.border,
         iOS.systemGreen,
         iOS.systemRed,
-        iOS.systemBlue,
+        Glass.borderFocus,
       ],
     ),
     transform: [{ scale: scale.value }],
@@ -279,10 +299,20 @@ export function LiquidOption({
       p.value,
       [0, 1, 2, 3],
       [
-        "rgba(255,255,255,0.7)",
         "rgba(255,255,255,0.95)",
-        "rgba(255,255,255,0.95)",
-        "rgba(10,132,255,0.15)",
+        "rgba(255,255,255,0.96)",
+        "rgba(255,255,255,0.96)",
+        "rgba(10,132,255,0.12)",
+      ],
+    ),
+    borderColor: interpolateColor(
+      p.value,
+      [0, 1, 2, 3],
+      [
+        "rgba(148,197,255,0.45)",
+        "rgba(255,255,255,0.65)",
+        "rgba(255,255,255,0.65)",
+        "rgba(10,132,255,0.35)",
       ],
     ),
   }));
@@ -305,14 +335,15 @@ export function LiquidOption({
     <Animated.View style={[
       {
         borderRadius: Radius.lg,
-        borderWidth: 1.4,
+        borderWidth: 1.5,
         overflow: "hidden",
-        ...crossShadow({ color: "#000", offsetY: 6, opacity: 0.10, blur: 14, elevation: 4 }),
+        minHeight: 58,
+        ...crossShadow({ color: "#000", offsetY: 8, opacity: 0.08, blur: 20, elevation: 3 }),
       },
       surfaceStyle,
       style,
     ]}>
-      {Platform.OS !== "web" && !isStrongState && (
+      {Platform.OS !== "web" && USE_GAME_BLUR && !isStrongState && (
         <BlurView
           intensity={Glass.blurMedium}
           tint="light"
@@ -321,12 +352,14 @@ export function LiquidOption({
       )}
       {!isStrongState && (
         <LinearGradient
-          colors={Glass.sheen}
+          colors={["rgba(255,255,255,0.32)", "rgba(186,230,255,0.08)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0, height: 26,
-            borderTopLeftRadius: Radius.lg,
-            borderTopRightRadius: Radius.lg,
+            top: 0, left: 0, right: 0, bottom: 0,
+            borderRadius: Radius.lg,
           }}
           pointerEvents="none"
         />
@@ -351,15 +384,23 @@ export function LiquidOption({
         }}
         disabled={disabled}
         onPressIn={() => {
-          scale.value = withSpring(0.97, Motion.press);
+          scale.value = withSpring(0.97, Motion.soft);
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, Motion.press);
+          scale.value = withSpring(1, Motion.soft);
         }}
         style={lo.pressable}
       >
         {showLetter && (
           <Animated.View style={[lo.letterCircle, letterBgStyle]}>
+            {!isStrongState && (
+              <LinearGradient
+                colors={["rgba(255,255,255,0.98)", "rgba(186,230,255,0.72)"]}
+                start={{ x: 0.15, y: 0.05 }}
+                end={{ x: 0.85, y: 0.95 }}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
             <Animated.Text style={[lo.letterText, letterTextStyle]}>
               {letter}
             </Animated.Text>
@@ -382,32 +423,32 @@ const lo = StyleSheet.create({
   pressable: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 15,
+    paddingHorizontal: 18,
     gap: 14,
     zIndex: 1,
+    minHeight: 58,
   },
   letterCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.6)",
+    overflow: "hidden",
   },
   letterText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 0.3,
+    letterSpacing: 0.6,
   },
   optText: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: "700",
-    lineHeight: 23,
-    letterSpacing: -0.2,
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 22,
+    letterSpacing: -0.15,
   },
 });
 
@@ -447,34 +488,43 @@ export function LiquidPrimaryButton({
         }}
         disabled={disabled}
         onPressIn={() => {
-          scale.value = withSpring(0.96, Motion.press);
+          if (!disabled) scale.value = withSpring(0.96, Motion.soft);
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, Motion.press);
+          scale.value = withSpring(1, Motion.soft);
         }}
         style={[
           lpb.btn,
-          {
-            backgroundColor: disabled ? "rgba(255,255,255,0.25)" : color,
-            opacity: disabled ? 0.55 : 1,
-            ...crossShadow({
-              color: disabled ? "#000" : color,
-              offsetY: 8,
-              opacity: 0.32,
-              blur: 18,
-              elevation: 8,
-            }),
-          },
+          disabled
+            ? {
+                backgroundColor: "rgba(255,255,255,0.12)",
+                borderColor: "rgba(255,255,255,0.22)",
+                ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.08, blur: 12, elevation: 2 }),
+              }
+            : {
+                backgroundColor: color,
+                borderColor: "rgba(255,255,255,0.28)",
+                ...crossShadow({
+                  color,
+                  offsetY: 10,
+                  opacity: 0.38,
+                  blur: 22,
+                  elevation: 8,
+                }),
+              },
         ]}
       >
-        {/* Specular sheen */}
-        <LinearGradient
-          colors={["rgba(255,255,255,0.35)", "rgba(255,255,255,0)"]}
-          style={lpb.sheen}
-          pointerEvents="none"
-        />
+        {!disabled && (
+          <LinearGradient
+            colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]}
+            style={lpb.sheen}
+            pointerEvents="none"
+          />
+        )}
         {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
-        <Text style={[lpb.label, { color: textColor }]}>{label}</Text>
+        <Text style={[lpb.label, { color: disabled ? "rgba(255,255,255,0.42)" : textColor }]}>
+          {label}
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -482,27 +532,26 @@ export function LiquidPrimaryButton({
 
 const lpb = StyleSheet.create({
   btn: {
-    height: 56,
+    height: 54,
     borderRadius: Radius.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
   },
   sheen: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 22,
+    height: 24,
   },
   label: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
-    letterSpacing: 0.3,
+    letterSpacing: 1.1,
   },
 });
 
@@ -531,17 +580,17 @@ export function LiquidGhostButton({
           if (Platform.OS !== "web") void Haptics.selectionAsync().catch(() => {});
           onPress();
         }}
-        onPressIn={() => { scale.value = withSpring(0.96, Motion.press); }}
-        onPressOut={() => { scale.value = withSpring(1, Motion.press); }}
+        onPressIn={() => { scale.value = withSpring(0.96, Motion.soft); }}
+        onPressOut={() => { scale.value = withSpring(1, Motion.soft); }}
         style={[
           lgb.btn,
           {
-            backgroundColor: "rgba(255,255,255,0.18)",
+            backgroundColor: "rgba(255,255,255,0.28)",
             borderColor: "rgba(255,255,255,0.32)",
           },
         ]}
       >
-        {Platform.OS !== "web" && (
+        {Platform.OS !== "web" && USE_GAME_BLUR && (
           <BlurView
             intensity={Glass.blurMedium}
             tint="light"
@@ -603,8 +652,8 @@ export function LiquidWordChip({
       : state === "selected" ? 3
       : 0;
     // Always jump instantly to avoid color bleeding through intermediate states
-    p.value = target;
-  }, [state]);
+    p.value = withTiming(target, { duration: Motion.colorMs, easing: Motion.ease });
+  }, [state, p]);
 
   const surfaceStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
@@ -612,9 +661,9 @@ export function LiquidWordChip({
       [0, 1, 2, 3],
       [
         Glass.surface,
-        iOS.systemGreen,           // SOLID green
-        iOS.systemRed,             // SOLID red
-        "#FFFFFF",                 // SOLID white when selected
+        iOS.systemGreen,
+        iOS.systemRed,
+        "#FFFFFF",
       ],
     ),
     borderColor: interpolateColor(
@@ -659,7 +708,7 @@ export function LiquidWordChip({
 
   return (
     <Animated.View style={[lwc.chipBase, padding, surfaceStyle, crossShadow({ color: "#000", offsetY: 4, opacity: 0.12, blur: 10 })]}>
-      {Platform.OS !== "web" && !isStrongState && (
+      {Platform.OS !== "web" && USE_GAME_BLUR && !isStrongState && (
         <BlurView
           intensity={Glass.blurMedium}
           tint="light"
@@ -673,8 +722,8 @@ export function LiquidWordChip({
           onPress();
         }}
         disabled={disabled}
-        onPressIn={() => { scale.value = withSpring(0.94, Motion.press); }}
-        onPressOut={() => { scale.value = withSpring(1, Motion.press); }}
+        onPressIn={() => { scale.value = withSpring(0.94, Motion.soft); }}
+        onPressOut={() => { scale.value = withSpring(1, Motion.soft); }}
         style={lwc.pressable}
       >
         <Animated.Text style={[lwc.label, { fontSize }, rtl && { writingDirection: "rtl", textAlign: "right" }, textColorStyle]}>
@@ -695,9 +744,11 @@ const lwc = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1,
+    width: "100%",
   },
   label: {
     fontWeight: "700",
     letterSpacing: -0.1,
+    width: "100%",
   },
 });

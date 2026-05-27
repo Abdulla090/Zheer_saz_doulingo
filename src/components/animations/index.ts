@@ -7,3 +7,4 @@ export { PressableScale } from "./PressableScale";
 export { AnimatedCard } from "./AnimatedCard";
 export { GlassCard } from "./GlassCard";
 export { StaggeredList } from "./StaggeredList";
+export * from "./motion";

@@ -1,15 +1,9 @@
 import { NoteBook } from "@/constants/icons";
+import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
 import { useRouter } from "expo-router";
-import React from "react";
-import { Text, useWindowDimensions, View } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  ReduceMotion,
-} from "react-native-reanimated";
-import { Pressable } from "react-native";
+import React, { useState } from "react";
+import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { crossShadow } from "@/utils/shadows";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -24,22 +18,17 @@ type HomeMainButtonProps = {
 // ── 3D Guidebook button ───────────────────────────────────────────────────────
 function GuidebookBtn({
   rimColor,
-  faceColor,
   onPress,
 }: {
   rimColor: string;
   faceColor: string;
   onPress: () => void;
 }) {
-  const ty = useSharedValue(0);
-  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
-
-  // Derived lighter face color with white overlay (keep it visible on colored bg)
+  const [pressed, setPressed] = useState(false);
   const faceBg = "rgba(255,255,255,0.22)";
   const depth = 4;
 
   return (
-    // Rim layer (darker depth color)
     <View
       style={{
         backgroundColor: rimColor,
@@ -49,22 +38,20 @@ function GuidebookBtn({
         overflow: "hidden",
       }}
     >
-      {/* Face layer */}
       <Animated.View
-        style={[
-          {
-            backgroundColor: faceBg,
-            borderRadius: 14,
-            // @ts-ignore
-            borderCurve: "continuous",
-            borderWidth: 1.5,
-            borderColor: "rgba(255,255,255,0.2)",
-            borderTopColor: "rgba(255,255,255,0.7)", // glowing edge highlight
-            marginBottom: depth,
-            overflow: "hidden", // clip gradient
-          },
-          faceStyle,
-        ]}
+        style={{
+          backgroundColor: faceBg,
+          borderRadius: 14,
+          // @ts-ignore
+          borderCurve: "continuous",
+          borderWidth: 1.5,
+          borderColor: "rgba(255,255,255,0.2)",
+          borderTopColor: "rgba(255,255,255,0.7)",
+          marginBottom: depth,
+          overflow: "hidden",
+          transform: [{ translateY: pressed ? depth : 0 }],
+          ...(pressed ? cssPressStyle : cssReleaseStyle),
+        }}
       >
         <LinearGradient
           colors={["rgba(255,255,255,0.3)", "transparent", "rgba(0,0,0,0.05)"]}
@@ -74,13 +61,8 @@ function GuidebookBtn({
         />
         <Pressable
           onPress={onPress}
-          onPressIn={() => { ty.value = withTiming(depth, { duration: 70 }); }}
-          onPressOut={() => {
-            ty.value = withSpring(0, {
-              damping: 14, stiffness: 200, mass: 0.8,
-              reduceMotion: ReduceMotion.System,
-            });
-          }}
+          onPressIn={() => setPressed(true)}
+          onPressOut={() => setPressed(false)}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -110,7 +92,7 @@ function GuidebookBtn({
 }
 
 // ── Main section card ─────────────────────────────────────────────────────────
-export const HomeMainButton = ({
+export const HomeMainButton = React.memo(({
   unitLabel,
   sectionTitle,
   faceColor,
@@ -224,4 +206,4 @@ export const HomeMainButton = ({
       </View>
     </View>
   );
-};
+});

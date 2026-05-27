@@ -7,12 +7,12 @@ import {
 } from "@/constants/icons";
 import { crossShadow } from "@/utils/shadows";
 import {
-    BottomSheetBackdrop,
-    BottomSheetBackdropProps,
     BottomSheetModal,
     BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+    type BottomSheetBackdropProps,
+    type BottomSheetMethods,
+} from "@expo/ui/community/bottom-sheet";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { useRouter, type Href } from "expo-router";
@@ -100,7 +100,7 @@ const moreActions = [
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const moreSheetRef = useRef<BottomSheetModal>(null);
+  const moreSheetRef = useRef<BottomSheetMethods>(null);
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
   const snapPoints = useMemo(() => ["32%"], []);
 
@@ -115,16 +115,15 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }, []);
 
   const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        appearsOnIndex={0}
-        disappearsOnIndex={-1}
-        pressBehavior="close"
-        style={[props.style, { bottom: TAB_BAR_RESERVED_HEIGHT }]}
-      />
-    ),
-    [],
+    (props: BottomSheetBackdropProps) =>
+      Platform.OS === "web" ? (
+        <Pressable
+          {...props}
+          onPress={closeMoreSheet}
+          style={[props.style, StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.45)" }]}
+        />
+      ) : null,
+    [closeMoreSheet],
   );
 
   const activeRouteName = state.routes[state.index]?.name;
@@ -148,7 +147,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const handleCenterPress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     closeMoreSheet();
-    router.push("/dashboard");
+    router.push("/dashboard?mode=street");
   };
 
   const handleLongPress = () => {
@@ -156,83 +155,99 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     openMoreSheet();
   };
 
+  const tabBarSurfaceStyle = useMemo(
+    () => [
+      styles.container,
+      Platform.OS === "android" && styles.containerAndroid,
+      crossShadow({
+        color: "#0F172A",
+        offsetY: 8,
+        blur: 24,
+        opacity: 0.1,
+        elevation: 8,
+      }),
+    ],
+    [],
+  );
+
+  const tabBarContent = (
+    <>
+      {/* Left: AI Wave Talk Action */}
+      <PressableScale
+        onPress={handleCenterPress}
+        onLongPress={handleLongPress}
+        style={styles.tabItem}
+        scaleDown={0.9}
+        haptic
+        hapticStyle={Haptics.ImpactFeedbackStyle.Light}
+      >
+        <CenterWaveIcon
+          color={activeRouteName === "dashboard" && !isMoreSheetOpen ? "#208AEF" : "#B4B8C3"}
+          size={26}
+        />
+      </PressableScale>
+
+      {/* Center: Home Tab (Floating Highlight) */}
+      <PressableScale
+        onPress={handleHomePress}
+        onLongPress={handleLongPress}
+        style={styles.centerItem}
+        scaleDown={0.92}
+      >
+        <View
+          style={[
+            styles.centerCircle,
+            { backgroundColor: activeRouteName === "index" && !isMoreSheetOpen ? "#208AEF" : "rgba(229, 231, 235, 0.4)" },
+            activeRouteName === "index" && !isMoreSheetOpen ? crossShadow({
+              color: "#208AEF",
+              offsetY: 6,
+              blur: 16,
+              opacity: 0.32,
+              elevation: 6,
+            }) : null,
+          ]}
+        >
+          <HomeIcon
+            color={activeRouteName === "index" && !isMoreSheetOpen ? "#FFFFFF" : "#9CA3AF"}
+            size={28}
+          />
+        </View>
+      </PressableScale>
+
+      {/* Right: Stats/League Tab */}
+      <PressableScale
+        onPress={handleStatsPress}
+        onLongPress={handleLongPress}
+        style={styles.tabItem}
+        haptic
+        hapticStyle={Haptics.ImpactFeedbackStyle.Light}
+        scaleDown={0.9}
+      >
+        <StatsIcon
+          color={
+            (activeRouteName === "league" || activeRouteName === "quest") && !isMoreSheetOpen
+              ? "#208AEF"
+              : "#B4B8C3"
+          }
+        />
+      </PressableScale>
+    </>
+  );
+
   return (
     <>
       <View style={[styles.floatingWrapper, { bottom: Math.max(16, insets.bottom) }]}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 80 : 40}
-          tint={Platform.OS === 'ios' ? "systemThinMaterialLight" : "default"}
-          style={[
-            styles.container,
-            crossShadow({
-              color: "#0F172A",
-              offsetY: 8,
-              blur: 24,
-              opacity: 0.1,
-              elevation: 8,
-            }),
-          ]}
-        >
-          {/* Left: AI Wave Talk Action */}
-          <PressableScale
-            onPress={handleCenterPress}
-            onLongPress={handleLongPress}
-            style={styles.tabItem}
-            scaleDown={0.9}
-            haptic
-            hapticStyle={Haptics.ImpactFeedbackStyle.Light}
+        {Platform.OS === "android" ? (
+          <View style={tabBarSurfaceStyle}>{tabBarContent}</View>
+        ) : (
+          <BlurView
+            intensity={Platform.OS === "ios" ? 80 : 40}
+            tint={Platform.OS === "ios" ? "systemThinMaterialLight" : "default"}
+            style={tabBarSurfaceStyle}
           >
-            <CenterWaveIcon
-              color={activeRouteName === "dashboard" && !isMoreSheetOpen ? "#208AEF" : "#B4B8C3"}
-              size={26}
-            />
-          </PressableScale>
-
-          {/* Center: Home Tab (Floating Highlight) */}
-          <PressableScale
-            onPress={handleHomePress}
-            onLongPress={handleLongPress}
-            style={styles.centerItem}
-            scaleDown={0.92}
-          >
-            <View
-              style={[
-                styles.centerCircle,
-                { backgroundColor: activeRouteName === "index" && !isMoreSheetOpen ? "#208AEF" : "rgba(229, 231, 235, 0.4)" }, // Light transparent gray when inactive
-                activeRouteName === "index" && !isMoreSheetOpen ? crossShadow({
-                  color: "#208AEF",
-                  offsetY: 6,
-                  blur: 16,
-                  opacity: 0.32,
-                  elevation: 6,
-                }) : null,
-              ]}
-            >
-              <HomeIcon
-                color={activeRouteName === "index" && !isMoreSheetOpen ? "#FFFFFF" : "#9CA3AF"}
-                size={28}
-              />
-            </View>
-          </PressableScale>
-
-          {/* Right: Stats/League Tab */}
-          <PressableScale
-            onPress={handleStatsPress}
-            onLongPress={handleLongPress}
-            style={styles.tabItem}
-            haptic
-            hapticStyle={Haptics.ImpactFeedbackStyle.Light}
-            scaleDown={0.9}
-          >
-            <StatsIcon
-              color={
-                (activeRouteName === "league" || activeRouteName === "quest") && !isMoreSheetOpen
-                  ? "#208AEF"
-                  : "#B4B8C3"
-              }
-            />
-          </PressableScale>
-        </BlurView>
+            {tabBarContent}
+          </BlurView>
+        )}
       </View>
 
       <BottomSheetModal
@@ -243,7 +258,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         backdropComponent={renderBackdrop}
         onDismiss={() => setIsMoreSheetOpen(false)}
         backgroundStyle={styles.sheetBackground}
-        bottomInset={TAB_BAR_RESERVED_HEIGHT}
         handleComponent={null}
       >
         <BottomSheetView style={[styles.sheet, { paddingBottom: 0 }]}>
@@ -297,7 +311,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.4)", // Glowing edge highlight
     // Subtle top-edge extra glow
     borderTopColor: "rgba(255, 255, 255, 0.8)",
-    overflow: "hidden", // necessary for BlurView
+    overflow: "hidden",
+  },
+  containerAndroid: {
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
   },
   tabItem: {
     flex: 1,

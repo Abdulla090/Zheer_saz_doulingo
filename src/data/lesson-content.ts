@@ -27,7 +27,30 @@ export type {
 } from "./types";
 
 import { GameQuestion, LessonBank } from "./types";
+import { NORMAL_UNITS } from "./normal-english";
 import { ALL_UNITS } from "./units";
+
+export type LessonPathMode = "street" | "normal";
+
+function getUnitsForPath(mode: LessonPathMode) {
+  return mode === "normal" ? NORMAL_UNITS : ALL_UNITS;
+}
+
+const distractorPoolCache: Partial<Record<LessonPathMode, string[]>> = {};
+
+function getDistractorPool(mode: LessonPathMode): string[] {
+  if (!distractorPoolCache[mode]) {
+    const units = getUnitsForPath(mode);
+    distractorPoolCache[mode] = units.flatMap((u) =>
+      u.flatMap((l) => [
+        ...l.words.map((w) => w.english),
+        ...l.sentences.map((s) => s.english.join(" ")),
+        ...l.voices.map((v) => v.target),
+      ]),
+    );
+  }
+  return distractorPoolCache[mode]!;
+}
 
 // ── Seeded deterministic shuffle ─────────────────────────────────────────────
 function shuffle<T>(arr: T[], seed: number): T[] {
@@ -44,19 +67,17 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 // ── Safe circular accessor (never throws) ───────────────────────────────────
 const pick = <T>(arr: T[], i: number): T => arr[Math.abs(i) % arr.length];
 
-// ── Build distractor pool from all lesson banks ──────────────────────────────
-const ALL_ENGLISH = ALL_UNITS.flatMap(unit =>
-  unit.flatMap(lesson => lesson.words.map(w => w.english))
-);
-
 // ── Main Generator ────────────────────────────────────────────────────────────
-// unitIndex:   which unit (0–11)
+// unitIndex:   which unit (0–11 street, 0–5 normal)
 // lessonIndex: which lesson within that unit (0–9), maps to a unique bank
+// mode:        street vs normal english content pool
 export function getLessonQuestions(
   unitIndex: number,
-  lessonIndex: number
+  lessonIndex: number,
+  mode: LessonPathMode = "street",
 ): GameQuestion[] {
-  const unit   = ALL_UNITS[Math.abs(unitIndex) % ALL_UNITS.length];
+  const units = getUnitsForPath(mode);
+  const unit   = units[Math.abs(unitIndex) % units.length];
   const lesson: LessonBank = unit[Math.abs(lessonIndex) % unit.length];
   const seed   = unitIndex * 997 + lessonIndex * 137;
 
@@ -65,12 +86,13 @@ export function getLessonQuestions(
   const sentences = shuffle(lesson.sentences,     seed + 2);
   const fills     = shuffle(lesson.fillBlanks,    seed + 3);
   const convos    = shuffle(lesson.conversations, seed + 4);
-  const distractors = shuffle(ALL_ENGLISH,        seed + 5);
+  const distractors = shuffle(getDistractorPool(mode), seed + 5);
   const safeD = (i: number) => distractors[Math.abs(i) % distractors.length];
 
   const questions: GameQuestion[] = [];
+  const isNormal = mode === "normal";
 
-  // 1. Pair Match (1×)
+  // 1. Pair Match (1×) — full phrases in normal mode
   const pairCount = Math.min(4, words.length);
   questions.push({
     type: "pair_match",
@@ -79,20 +101,43 @@ export function getLessonQuestions(
   });
 
   // 2. Multiple Choice (1×)
-  const mcWord = pick(words, 4);
-  const mcWrongs: string[] = [];
-  for (let i = 0; mcWrongs.length < 3; i++) {
-    const d = safeD(i + 20);
-    if (d !== mcWord.english && !mcWrongs.includes(d)) mcWrongs.push(d);
+  const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;
+  if (isNormal && mcSource) {
+    const correctSentence = mcSource.english.join(" ");
+    const mcWrongs: string[] = [];
+    for (let i = 0; i < distractors.length && mcWrongs.length < 3; i++) {
+      const d = distractors[i];
+      if (d !== correctSentence && !mcWrongs.includes(d) && d.split(" ").length > 2) {
+        mcWrongs.push(d);
+      }
+    }
+    while (mcWrongs.length < 3) mcWrongs.push(safeD(mcWrongs.length + 40));
+    questions.push({
+      type: "multiple_choice",
+      prompt: `ڕستەی دروست هەڵبژێرە:\n«${mcSource.kurdish}»`,
+      promptLang: "ku",
+      correctAnswer: correctSentence,
+      options: shuffle([correctSentence, ...mcWrongs.slice(0, 3)], seed + 10),
+      xp: 10,
+    });
+  } else {
+    const mcWord = pick(words, 4);
+    const mcWrongs: string[] = [];
+    for (let i = 0; mcWrongs.length < 3; i++) {
+      const d = safeD(i + 20);
+      if (d !== mcWord.english && !mcWrongs.includes(d)) mcWrongs.push(d);
+    }
+    questions.push({
+      type: "multiple_choice",
+      prompt: isNormal
+        ? `چۆن بە ئینگلیزی دەڵێیت:\n«${mcWord.kurdish}»`
+        : `${mcWord.kurdish} بە ئینگلیزی چییە؟`,
+      promptLang: "ku",
+      correctAnswer: mcWord.english,
+      options: shuffle([mcWord.english, ...mcWrongs], seed + 10),
+      xp: 10,
+    });
   }
-  questions.push({
-    type: "multiple_choice",
-    prompt: `${mcWord.kurdish} بە ئینگلیزی چییە؟`,
-    promptLang: "ku",
-    correctAnswer: mcWord.english,
-    options: shuffle([mcWord.english, ...mcWrongs], seed + 10),
-    xp: 10,
-  });
 
   // 3. Voice (2×)
   for (let i = 0; i < 2; i++) {

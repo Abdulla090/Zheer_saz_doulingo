@@ -1,13 +1,13 @@
 import { PressableScale } from "@/components/animations";
+import { enterFadeDown } from "@/components/animations/motion";
 import {
-    AirplaneIcon,
-    BookSparkIcon,
     CardWaveMini,
     HeroAuraRing,
     PhingoWordmark,
     SettingsTuneIcon,
     WaveformIcon,
 } from "@/components/icons/PhingoHomeIcons";
+import { Icon3DLayers, Icon3DZapBlue } from "@/components/icons/Icon3D";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -23,7 +23,6 @@ import {
 } from "react-native";
 import Animated, {
     Easing,
-    FadeInDown,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
@@ -151,16 +150,16 @@ export function PhingoHomeScreen({
   useEffect(() => {
     floatY.value = withRepeat(
       withSequence(
-        withTiming(-10, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 2500, easing: Easing.inOut(Easing.sin) }),
+        withTiming(-4, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
       true,
     );
     glow.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
-        withTiming(0.88, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.quad) }),
+        withTiming(0.92, { duration: 2600, easing: Easing.inOut(Easing.quad) }),
       ),
       -1,
       true,
@@ -178,25 +177,25 @@ export function PhingoHomeScreen({
 
   const suggestions: Suggestion[] = [
     {
+      id: "street-path",
+      title: "Street English",
+      subtitle: "Daily path",
+      Icon: ({ size }) => <Icon3DZapBlue size={size ?? 36} active />,
+      onPress: () => router.push("/dashboard?mode=street"),
+    },
+    {
+      id: "normal-path",
+      title: "Normal English",
+      subtitle: "Structured units",
+      Icon: ({ size }) => <Icon3DLayers size={size ?? 36} active />,
+      onPress: () => router.push("/dashboard?mode=normal"),
+    },
+    {
       id: "speak",
       title: "Practice Speaking",
       subtitle: "Let's chat",
       Icon: CardWaveMini,
       onPress: () => router.push("/roleplay"),
-    },
-    {
-      id: "travel",
-      title: "Travel Essentials",
-      subtitle: "12 lessons",
-      Icon: AirplaneIcon,
-      onPress: () => router.push("/dashboard"),
-    },
-    {
-      id: "vocab",
-      title: "Vocabulary Today",
-      subtitle: "15 new words",
-      Icon: BookSparkIcon,
-      onPress: () => router.push("/dashboard"),
     },
   ];
 
@@ -223,7 +222,7 @@ export function PhingoHomeScreen({
         }}
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.duration(420).delay(40)} style={styles.header}>
+        <Animated.View entering={enterFadeDown(20)} style={styles.header}>
           <PhingoWordmark height={26} />
           <PressableScale
             onPress={() => router.push("/more")}
@@ -235,7 +234,7 @@ export function PhingoHomeScreen({
         </Animated.View>
 
         {/* Hero copy */}
-        <Animated.View entering={FadeInDown.duration(480).delay(80)} style={styles.heroCopy}>
+        <Animated.View entering={enterFadeDown(40)} style={styles.heroCopy}>
           <Text style={styles.eyebrow}>Your AI Language Partner</Text>
           <Text style={styles.headline}>
             I'm <Text style={styles.headlineAccent}>Phingo.</Text>
@@ -244,7 +243,7 @@ export function PhingoHomeScreen({
         </Animated.View>
 
         {/* Mascot stage with floating bubbles & layered glows */}
-        <Animated.View entering={FadeInDown.duration(520).delay(120)} style={styles.mascotStage}>
+        <Animated.View entering={enterFadeDown(60)} style={styles.mascotStage}>
           {/* Radial soft ambient glow background */}
           <View style={styles.stageGlow} />
 
@@ -274,7 +273,7 @@ export function PhingoHomeScreen({
         </Animated.View>
 
         {/* CTA "Tap to talk" pill button */}
-        <Animated.View entering={FadeInDown.duration(500).delay(180)} style={styles.ctaWrap}>
+        <Animated.View entering={enterFadeDown(80)} style={styles.ctaWrap}>
           <PressableScale onPress={handleTalk} scaleDown={0.96} haptic>
             <LinearGradient
               colors={["#4FA2F1", "#2563EB", "#1E65EB"]}
@@ -298,7 +297,7 @@ export function PhingoHomeScreen({
         </Animated.View>
 
         {/* Suggestions */}
-        <Animated.View entering={FadeInDown.duration(500).delay(240)} style={styles.section}>
+        <Animated.View entering={enterFadeDown(100)} style={styles.section}>
           <Text style={styles.sectionTitle}>Suggested for you</Text>
           <ScrollView
             horizontal

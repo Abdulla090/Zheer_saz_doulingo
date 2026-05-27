@@ -96,25 +96,38 @@ export const iOS = {
  * ──────────────────────────────────────────────────────────────────── */
 export const Glass = {
   /* Background fills */
-  surface:        "rgba(255,255,255,0.62)",
-  surfaceSoft:    "rgba(255,255,255,0.35)",
-  surfaceInner:   "rgba(255,255,255,0.5)",
-  surfaceDark:    "rgba(15,23,42,0.32)",
+  surface:        "rgba(255,255,255,0.94)",
+  surfaceSoft:    "rgba(255,255,255,0.78)",
+  surfaceInner:   "rgba(255,255,255,0.82)",
+  surfaceDark:    "rgba(12, 20, 38, 0.68)",
 
   /* Borders — subtle white edge that catches light */
-  border:         "rgba(255,255,255,0.55)",
-  borderSoft:     "rgba(255,255,255,0.28)",
-  borderDark:     "rgba(255,255,255,0.18)",
+  border:         "rgba(255,255,255,0.72)",
+  borderSoft:     "rgba(255,255,255,0.32)",
+  borderDark:     "rgba(255,255,255,0.16)",
+  borderFocus:    "rgba(10,132,255,0.85)",
 
   /* Top sheen overlay (highlights the upper rim of glass) */
-  sheen:          ["rgba(255,255,255,0.55)", "rgba(255,255,255,0)"] as const,
-  sheenSoft:      ["rgba(255,255,255,0.3)",  "rgba(255,255,255,0)"] as const,
+  sheen:          ["rgba(255,255,255,0.48)", "rgba(255,255,255,0)"] as const,
+  sheenSoft:      ["rgba(255,255,255,0.22)",  "rgba(255,255,255,0)"] as const,
+  sheenBlue:      ["rgba(186,230,255,0.35)", "rgba(255,255,255,0)"] as const,
 
   /* Blur intensities (BlurView) */
-  blurStrong:     60,
-  blurMedium:     40,
-  blurLight:      24,
+  blurStrong:     28,
+  blurMedium:     18,
+  blurLight:      12,
 } as const;
+
+/* ────────────────────────────────────────────────────────────────────
+ * Game shell — darker scrim over ocean background
+ * ──────────────────────────────────────────────────────────────────── */
+export const GameBg = {
+  scrim:       "rgba(6, 14, 32, 0.62)",
+  scrimHeavy:  "rgba(4, 10, 24, 0.78)",
+} as const;
+
+/** Skip native BlurView in games — solid glass reads better on dark scrim + saves GPU. */
+export const USE_GAME_BLUR = false;
 
 /* ────────────────────────────────────────────────────────────────────
  * Type scale — modern, tight letter-spacing, premium weights
@@ -157,11 +170,17 @@ export const Type = {
   },
   /* Eyebrow — uppercase preamble labels */
   eyebrow: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: "700" as const,
-    letterSpacing: 1.4,
+    letterSpacing: 1.8,
     textTransform: "uppercase" as const,
+  },
+  hint: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "500" as const,
+    letterSpacing: -0.1,
   },
 } as const;
 
@@ -169,14 +188,10 @@ export const Type = {
  * Spring + timing presets — fluid iOS 26 motion
  * ──────────────────────────────────────────────────────────────────── */
 export const Motion = {
-  /* Fast tactile press — buttons compress instantly */
-  press:   { damping: 18, stiffness: 320, mass: 0.5 },
-  /* Standard bounce — selection & enters */
-  bounce:  { damping: 16, stiffness: 220, mass: 0.7 },
-  /* Soft float — sheets, big surfaces */
-  soft:    { damping: 22, stiffness: 180, mass: 0.9 },
-  /* Color transition timing */
-  colorMs: 220,
+  press:   { damping: 26, stiffness: 420, mass: 0.35, overshootClamping: true },
+  bounce:  { damping: 26, stiffness: 360, mass: 0.4, overshootClamping: true },
+  soft:    { damping: 28, stiffness: 280, mass: 0.5, overshootClamping: true },
+  colorMs: 160,
   ease:    Easing.out(Easing.cubic),
 } as const;
 

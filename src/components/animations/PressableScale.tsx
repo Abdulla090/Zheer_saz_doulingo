@@ -1,19 +1,13 @@
 /**
- * PressableScale — Spring-based press animation using RN Pressable + Reanimated.
- * Avoids GestureDetector so it works reliably inside tab bars, lists, and release APKs.
+ * PressableScale — Reanimated v4 CSS transition press (UI-thread, no spring bounce).
+ * @see animating-react-native-expo skill — CSS transitions for state-driven style changes.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, StyleProp, ViewStyle } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  ReduceMotion,
-} from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { cssPressStyle, cssReleaseStyle } from "./motion";
 
 export type PressableScaleProps = {
   children: React.ReactNode;
@@ -26,13 +20,6 @@ export type PressableScaleProps = {
   disabled?: boolean;
 };
 
-const springConfig = {
-  damping: 15,
-  stiffness: 150,
-  mass: 0.8,
-  reduceMotion: ReduceMotion.System,
-};
-
 function fireHaptic(style: Haptics.ImpactFeedbackStyle) {
   void Haptics.impactAsync(style).catch(() => {});
 }
@@ -42,30 +29,18 @@ export function PressableScale({
   onPress,
   onLongPress,
   style,
-  scaleDown = 0.95,
+  scaleDown = 0.96,
   haptic = true,
   hapticStyle = Haptics.ImpactFeedbackStyle.Light,
   disabled = false,
 }: PressableScaleProps) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const [pressed, setPressed] = useState(false);
 
   return (
-    <AnimatedPressable
+    <Pressable
       disabled={disabled}
-      onPressIn={() => {
-        scale.value = withSpring(scaleDown, springConfig);
-        opacity.value = withSpring(0.9, springConfig);
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, springConfig);
-        opacity.value = withSpring(1, springConfig);
-      }}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       onPress={() => {
         if (haptic) fireHaptic(hapticStyle);
         onPress?.();
@@ -74,9 +49,19 @@ export function PressableScale({
         if (haptic) fireHaptic(hapticStyle);
         onLongPress?.();
       }}
-      style={[style, animatedStyle, disabled && { opacity: 0.5 }]}
+      style={disabled ? { opacity: 0.5 } : undefined}
     >
-      {children}
-    </AnimatedPressable>
+      <Animated.View
+        style={[
+          style,
+          {
+            transform: [{ scale: pressed ? scaleDown : 1 }],
+            ...(pressed ? cssPressStyle : cssReleaseStyle),
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
+    </Pressable>
   );
 }

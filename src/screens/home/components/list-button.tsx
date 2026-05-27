@@ -2,24 +2,32 @@ import { Star } from "@/constants/icons";
 import React, { useCallback, useId, useMemo } from "react";
 import { Pressable } from "react-native";
 import Animated, {
-    useAnimatedProps,
-    useSharedValue,
-    withTiming,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
-import Svg, { ClipPath, Defs, Ellipse, G, Stop, LinearGradient as SvgLinearGradient } from "react-native-svg";
+import Svg, {
+  ClipPath,
+  Defs,
+  Ellipse,
+  G,
+  Stop,
+  LinearGradient as SvgLinearGradient,
+} from "react-native-svg";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
 export const SVG_BUTTON_COLOR_SETS = {
-  green:  { rim: "#58a700", face: "#58cc02" },
+  green: { rim: "#58a700", face: "#58cc02" },
   purple: { rim: "#a568cc", face: "#ce82ff" },
-  blue:   { rim: "#2b70c9", face: "#1cb0f6" },
-  mint:   { rim: "#0B8A6C", face: "#08c296" },
-  gray:   { rim: "#b7b7b7", face: "#E5E5E5" },
+  blue: { rim: "#2b70c9", face: "#1cb0f6" },
+  mint: { rim: "#0B8A6C", face: "#08c296" },
+  gray: { rim: "#afafaf", face: "#e0e0e0" },
   yellow: { rim: "#ff9600", face: "#ffc800" },
+  gold: { rim: "#e5a000", face: "#ffc800" },
   orange: { rim: "#E65100", face: "#FF9800" },
-  red:    { rim: "#B71C1C", face: "#F44336" },
+  red: { rim: "#B71C1C", face: "#F44336" },
 } as const;
 
 type SvgButtonProps = {
@@ -30,6 +38,7 @@ type SvgButtonProps = {
   IconComponent?: React.ComponentType<any>;
   iconColor?: string;
   isCurrentLesson?: boolean;
+  isLocked?: boolean;
 };
 
 const BUTTON_CENTER_X = 50;
@@ -53,13 +62,13 @@ export const SvgButton = React.memo(
     IconComponent = Star,
     iconColor,
     isCurrentLesson = false,
+    isLocked = false,
   }: SvgButtonProps) => {
     const colors = useMemo(() => SVG_BUTTON_COLOR_SETS[variant], [variant]);
     const clipId = useId().replace(/[:]/g, "");
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
+      iconColor ?? (variant === "gray" ? "#AFAFAF" : variant === "gold" ? "#FFFFFF" : "white");
 
-    // Single shared value drives both face translation and icon translation
     const offsetY = useSharedValue(0);
 
     const groupAnimatedProps = useAnimatedProps(() => ({
@@ -75,9 +84,10 @@ export const SvgButton = React.memo(
 
     return (
       <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPressIn={isLocked ? undefined : handlePressIn}
+        onPressOut={isLocked ? undefined : handlePressOut}
         onPress={onPress}
+        disabled={isLocked}
         style={{
           width: size,
           height: size,
@@ -87,21 +97,45 @@ export const SvgButton = React.memo(
         <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
           <Defs>
             <ClipPath id={clipId}>
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX}
-                ry={RY}
-              />
+              <Ellipse cx={BUTTON_CENTER_X} cy={FACE_BASE_CY} rx={RX} ry={RY} />
             </ClipPath>
             <SvgLinearGradient id={`glass-${clipId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="rgba(255,255,255,0.7)" />
-              <Stop offset="30%" stopColor="rgba(255,255,255,0.15)" />
+              <Stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
+              <Stop offset="35%" stopColor="rgba(255,255,255,0.1)" />
               <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
+            </SvgLinearGradient>
+            <SvgLinearGradient
+              id={`blueShine-${clipId}`}
+              x1="15%"
+              y1="5%"
+              x2="85%"
+              y2="95%"
+            >
+              <Stop offset="0%" stopColor="rgba(70,150,255,0)" />
+              <Stop offset="28%" stopColor="rgba(80,165,255,0.06)" />
+              <Stop offset="38%" stopColor="rgba(95,180,255,0.28)" />
+              <Stop offset="46%" stopColor="rgba(140,210,255,0.52)" />
+              <Stop offset="50%" stopColor="rgba(190,235,255,0.62)" />
+              <Stop offset="54%" stopColor="rgba(140,210,255,0.52)" />
+              <Stop offset="62%" stopColor="rgba(95,180,255,0.28)" />
+              <Stop offset="72%" stopColor="rgba(80,165,255,0.06)" />
+              <Stop offset="100%" stopColor="rgba(70,150,255,0)" />
+            </SvgLinearGradient>
+            <SvgLinearGradient
+              id={`blueShineWide-${clipId}`}
+              x1="10%"
+              y1="0%"
+              x2="90%"
+              y2="100%"
+            >
+              <Stop offset="0%" stopColor="rgba(60,140,255,0)" />
+              <Stop offset="32%" stopColor="rgba(75,160,255,0.1)" />
+              <Stop offset="50%" stopColor="rgba(110,190,255,0.22)" />
+              <Stop offset="68%" stopColor="rgba(75,160,255,0.1)" />
+              <Stop offset="100%" stopColor="rgba(60,140,255,0)" />
             </SvgLinearGradient>
           </Defs>
 
-          {/* 1. Static rim/shadow */}
           <Ellipse
             cx={BUTTON_CENTER_X}
             cy={RIM_CY}
@@ -110,9 +144,7 @@ export const SvgButton = React.memo(
             fill={colors.rim}
           />
 
-          {/* 2. Animated group: face + glass + icon all move together on press */}
           <AnimatedG animatedProps={groupAnimatedProps}>
-            {/* Face */}
             <Ellipse
               cx={BUTTON_CENTER_X}
               cy={FACE_BASE_CY}
@@ -120,8 +152,24 @@ export const SvgButton = React.memo(
               ry={RY}
               fill={colors.face}
             />
-            {/* Glass dome highlight */}
+
             <G clipPath={`url(#${clipId})`}>
+              <Ellipse
+                cx={BUTTON_CENTER_X}
+                cy={FACE_BASE_CY}
+                rx={RX}
+                ry={RY}
+                fill={`url(#blueShineWide-${clipId})`}
+                opacity={isLocked ? 0.55 : 0.85}
+              />
+              <Ellipse
+                cx={BUTTON_CENTER_X}
+                cy={FACE_BASE_CY}
+                rx={RX}
+                ry={RY}
+                fill={`url(#blueShine-${clipId})`}
+                opacity={isLocked ? 0.65 : 1}
+              />
               <Ellipse
                 cx={BUTTON_CENTER_X}
                 cy={FACE_BASE_CY}
@@ -130,9 +178,11 @@ export const SvgButton = React.memo(
                 fill={`url(#glass-${clipId})`}
               />
             </G>
-            {/* Icon */}
+
             <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
-              <G transform={`scale(${ICON_SCALE}) translate(${-STAR_VB_W / 2} ${-STAR_VB_H / 2})`}>
+              <G
+                transform={`scale(${ICON_SCALE}) translate(${-STAR_VB_W / 2} ${-STAR_VB_H / 2})`}
+              >
                 {isCurrentLesson ? (
                   <CurrentLessonIcon
                     IconComponent={IconComponent}

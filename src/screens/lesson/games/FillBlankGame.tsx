@@ -1,15 +1,11 @@
 /**
  * FillBlankGame — iOS 26 Liquid Glass redesign.
- *
- * Flow: tap a chip → fills blank in blue → CHECK to reveal → continue.
  */
 
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
     Easing,
-    FadeInDown,
-    FadeInUp,
     interpolateColor,
     useAnimatedStyle,
     useSharedValue,
@@ -19,6 +15,7 @@ import Animated, {
 
 import { FillBlankQuestion } from "@/data/lesson-content";
 import { Glass, Motion, Radius, Type, iOS } from "./game-design";
+import { ltrText, rtlBlock } from "./game-text";
 import {
     LiquidCard,
     LiquidEyebrow,
@@ -32,8 +29,6 @@ type Props = {
   onAnswer: (correct: boolean, explanation?: string) => void;
 };
 
-const REVEAL_DELAY_MS = 0;
-
 export default function FillBlankGame({ question, onAnswer }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -42,18 +37,12 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
 
-  /* Blank slot color: 0 idle, 1 selected (blue), 2 correct (green), 3 wrong (red) */
   const blankP = useSharedValue(0);
   const blankStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       blankP.value,
       [0, 1, 2, 3],
-      [
-        Glass.surfaceInner,
-        "rgba(10,132,255,0.32)",
-        iOS.systemGreen,
-        iOS.systemRed,
-      ],
+      [Glass.surfaceInner, "rgba(10,132,255,0.32)", iOS.systemGreen, iOS.systemRed],
     ),
     borderColor: interpolateColor(
       blankP.value,
@@ -92,7 +81,6 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
       );
     }
 
-    // Fire immediately — feedback sheet handles the pause
     if (!firedRef.current) { firedRef.current = true; onAnswer(ok); }
   };
 
@@ -105,15 +93,12 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
 
   return (
     <View style={s.root}>
-      <Animated.View entering={FadeInDown.duration(260)}>
+      <View>
         <LiquidEyebrow>Fill in the blank</LiquidEyebrow>
         <Text style={s.hint}>{question.kurdishHint}</Text>
-      </Animated.View>
+      </View>
 
-      <Animated.View
-        entering={FadeInUp.delay(80).springify().damping(20).stiffness(160)}
-        style={shakeStyle}
-      >
+      <Animated.View style={shakeStyle}>
         <LiquidCard style={s.sentenceCard}>
           <View style={s.sentenceRow}>
             {question.sentenceParts[0] ? (
@@ -134,24 +119,19 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
       </Animated.View>
 
       <View style={s.chipsWrap}>
-        {question.options.map((w, i) => (
-          <Animated.View
+        {question.options.map((w) => (
+          <LiquidWordChip
             key={w}
-            entering={FadeInDown.delay(180 + i * 50).springify().damping(18).stiffness(180)}
-          >
-            <LiquidWordChip
-              label={w}
-              state={getState(w)}
-              onPress={() => pick(w)}
-              disabled={revealed}
-            />
-          </Animated.View>
+            label={w}
+            state={getState(w)}
+            onPress={() => pick(w)}
+            disabled={revealed}
+          />
         ))}
       </View>
 
       <View style={{ flex: 1 }} />
 
-      {/* CHECK button */}
       <LiquidPrimaryButton
         label="CHECK"
         color={iOS.systemGreen}
@@ -174,8 +154,7 @@ const s = StyleSheet.create({
     ...Type.title,
     color: "#FFFFFF",
     marginTop: 6,
-    textAlign: "right",
-    writingDirection: "rtl",
+    ...rtlBlock,
   },
   sentenceCard: {
     paddingHorizontal: 22,
@@ -196,6 +175,7 @@ const s = StyleSheet.create({
     color: "#0F172A",
     lineHeight: 30,
     letterSpacing: -0.3,
+    ...ltrText,
   },
   blank: {
     minWidth: 96,
@@ -211,6 +191,7 @@ const s = StyleSheet.create({
     fontSize: 19,
     fontWeight: "800",
     letterSpacing: -0.2,
+    ...ltrText,
   },
   chipsWrap: {
     flexDirection: "row",

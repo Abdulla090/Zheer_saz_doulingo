@@ -9,15 +9,14 @@ import {
   ViewStyle,
 } from "react-native";
 import Animated, {
-  ReduceMotion,
   type SharedValue,
   interpolate,
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { pressTiming, releaseTiming } from "@/components/animations/motion";
 import Svg, { ClipPath, Defs, Path } from "react-native-svg";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -163,18 +162,12 @@ export const SvgAppButton = ({
   const handlePressIn = () => {
     onPressIn?.();
     // Quick, clean settle (no jitter).
-    pressY.value = withTiming(pressDepth, { duration: 20 });
+    pressY.value = withTiming(pressDepth, pressTiming);
   };
 
   const handlePressOut = () => {
     onPressOut?.();
-    pressY.value = withSpring(0, {
-      damping: 16,
-      stiffness: 240,
-      mass: 0.9,
-      overshootClamping: false,
-      reduceMotion: ReduceMotion.System,
-    });
+    pressY.value = withTiming(0, releaseTiming);
   };
 
   return (

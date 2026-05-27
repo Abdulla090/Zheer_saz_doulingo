@@ -1,34 +1,34 @@
 /**
  * MultipleChoiceGame — iOS 26 Liquid Glass redesign.
- *
- * Flow:
- *   1. Tap option → option turns blue (selected, can change mind)
- *   2. Tap CHECK → reveal correct (green) / wrong (red, also highlight correct)
- *   3. Auto-continue after a delay long enough to read the answer
  */
 
-import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
 import { crossTextShadow } from "@/utils/shadows";
-import { Type, iOS } from "./game-design";
+import { Radius, Type, iOS } from "./game-design";
+import { rtlBlock } from "./game-text";
 import {
-    LiquidCard,
-    LiquidEyebrow,
-    LiquidOption,
-    LiquidPrimaryButton,
-    OptionState,
+  GameCard,
+  GameFooter,
+  GameHeader,
+  GameOption,
+  GameRoot,
+} from "./GameAnimatedShell";
+import {
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidOption,
+  LiquidPrimaryButton,
+  OptionState,
 } from "./liquid-primitives";
 
 type Props = {
   question: MultipleChoiceQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
 };
-
-const REVEAL_DELAY_MS = 0;
 
 export default function MultipleChoiceGame({ question, onAnswer }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -44,7 +44,6 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     if (!selected || revealed) return;
     setRevealed(true);
     const correct = selected === question.correctAnswer;
-    // Fire immediately — the LessonScreen feedback sheet handles the pause
     if (!firedRef.current) {
       firedRef.current = true;
       onAnswer(correct);
@@ -60,60 +59,38 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     return "idle";
   };
 
-  return (
-    <View style={s.root}>
-      {/* Eyebrow */}
-      <Animated.View entering={FadeInDown.duration(260)} style={s.eyebrowRow}>
-        <LiquidEyebrow>Multiple Choice</LiquidEyebrow>
-      </Animated.View>
+  const isKuPrompt = question.promptLang === "ku";
 
-      {/* Question card */}
-      <Animated.View
-        entering={FadeInUp.delay(80).springify().damping(20).stiffness(140)}
-      >
-        <LiquidCard
-          style={[
-            s.questionCard,
-            question.promptLang === "ku"
-              ? { paddingLeft: 92, paddingRight: 22 }
-              : { paddingRight: 92 },
-          ]}
-        >
+  return (
+    <GameRoot style={s.root}>
+      <GameHeader>
+        <LiquidEyebrow hint="Select the best answer">Multiple Choice</LiquidEyebrow>
+      </GameHeader>
+
+      <GameCard>
+        <LiquidCard style={s.questionCard} radius={Radius.xl}>
+          <LinearGradient
+            colors={["rgba(10,132,255,0.12)", "rgba(10,132,255,0)"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={s.questionAccent}
+            pointerEvents="none"
+          />
           <Text
             style={[
               s.questionText,
-              question.promptLang === "ku" && s.questionTextRTL,
-              crossTextShadow({ color: "rgba(0,0,0,0.04)", offsetY: 1, blur: 1 }),
+              isKuPrompt && rtlBlock,
+              crossTextShadow({ color: "rgba(0,0,0,0.03)", offsetY: 1, blur: 1 }),
             ]}
           >
             {question.prompt}
           </Text>
-
-          <View
-            style={[
-              s.mascotWrap,
-              question.promptLang === "ku" ? s.mascotWrapLeft : s.mascotWrapRight,
-            ]}
-            pointerEvents="none"
-          >
-            <Image
-              source={{
-                uri: "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/user-assets/WN31PESNqnk/components/Pf9EJxsRI9K.png",
-              }}
-              style={s.mascotImg}
-              contentFit="contain"
-            />
-          </View>
         </LiquidCard>
-      </Animated.View>
+      </GameCard>
 
-      {/* Options */}
       <View style={s.options}>
         {question.options.map((opt, i) => (
-          <Animated.View
-            key={opt}
-            entering={FadeInDown.delay(160 + i * 60).springify().damping(18).stiffness(180)}
-          >
+          <GameOption key={opt} index={i}>
             <LiquidOption
               text={opt}
               state={getState(opt)}
@@ -121,72 +98,53 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
               disabled={revealed}
               index={i}
             />
-          </Animated.View>
+          </GameOption>
         ))}
       </View>
 
       <View style={{ flex: 1 }} />
 
-      {/* CHECK button */}
-      <View style={s.checkWrap}>
+      <GameFooter>
         <LiquidPrimaryButton
           label="CHECK"
           color={iOS.systemGreen}
           onPress={check}
           disabled={!selected || revealed}
         />
-      </View>
-    </View>
+      </GameFooter>
+    </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
   root: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 4,
+    paddingHorizontal: 22,
+    paddingTop: 6,
     paddingBottom: 12,
-    gap: 18,
-  },
-  eyebrowRow: {
-    paddingLeft: 4,
+    gap: 20,
   },
   questionCard: {
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 26,
-    minHeight: 110,
+    paddingHorizontal: 24,
+    paddingVertical: 26,
+    minHeight: 108,
     justifyContent: "center",
+  },
+  questionAccent: {
+    position: "absolute",
+    left: 0,
+    top: 18,
+    bottom: 18,
+    width: 4,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
   questionText: {
     ...Type.display,
+    fontSize: 24,
+    lineHeight: 32,
     color: "#0F172A",
   },
-  questionTextRTL: {
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  mascotWrap: {
-    position: "absolute",
-    top: -32,
-    width: 120,
-    height: 120,
-  },
-  mascotWrapRight: {
-    right: -12,
-  },
-  mascotWrapLeft: {
-    left: -12,
-    transform: [{ scaleX: -1 }],
-  },
-  mascotImg: {
-    width: "100%",
-    height: "100%",
-  },
   options: {
-    gap: 12,
-  },
-  checkWrap: {
-    paddingTop: 8,
+    gap: 10,
   },
 });
