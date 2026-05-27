@@ -76,7 +76,7 @@ export async function syncHomeWidget(): Promise<void> {
   const payload = buildPayload();
   await persistSnapshot(payload);
 
-  if (Platform.OS === "ios" || Platform.OS === "android") {
+  if (Platform.OS === "ios") {
     try {
       const { PhingoHomeWidget } = await import("@/widgets/PhingoHomeWidget");
       PhingoHomeWidget.updateSnapshot(payload);

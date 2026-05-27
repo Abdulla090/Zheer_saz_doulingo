@@ -50,6 +50,7 @@
           "speechRecognitionPermission": "Allow Phingo English to transcribe your speech for lessons and AI feedback."
         }
       ],
+      "./plugins/with-normalize-android-receivers.js",
       [
         "expo-widgets",
         {
@@ -63,13 +64,7 @@
               "ios": {
                 "supportedFamilies": ["systemSmall", "systemMedium"]
               },
-              "android": {
-                "minWidth": 320,
-                "minHeight": 120,
-                "targetCellWidth": 5,
-                "targetCellHeight": 2,
-                "resizeMode": "horizontal"
-              }
+              "android": null
             }
           ]
         }
