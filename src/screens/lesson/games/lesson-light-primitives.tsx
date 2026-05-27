@@ -73,9 +73,26 @@ export function LightPromptCard({
   );
 }
 
-type TileState = "idle" | "selected" | "correct" | "wrong" | "ghost";
+export type LightTileState = "idle" | "selected" | "correct" | "wrong" | "ghost";
 
-export function LightWordTile({
+type TileState = LightTileState;
+
+export function LightSurfaceCard({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[lh.surfaceCard, style]}>
+      {children}
+    </View>
+  );
+}
+
+/** Full-width answer row for multiple choice / conversation */
+export function LightOptionRow({
   label,
   state = "idle",
   onPress,
@@ -83,10 +100,46 @@ export function LightWordTile({
   rtl,
 }: {
   label: string;
+  state?: LightTileState;
+  onPress?: () => void;
+  disabled?: boolean;
+  rtl?: boolean;
+}) {
+  return (
+    <View style={lh.optionRowWrap}>
+      <LightWordTile
+        label={label}
+        state={state}
+        onPress={onPress}
+        disabled={disabled}
+        rtl={rtl}
+        wide
+      />
+    </View>
+  );
+}
+
+export function mapOptionState(
+  state: "idle" | "selected" | "correct" | "wrong" | "showCorrect",
+): LightTileState {
+  if (state === "showCorrect") return "correct";
+  return state;
+}
+
+export function LightWordTile({
+  label,
+  state = "idle",
+  onPress,
+  disabled,
+  rtl,
+  wide,
+}: {
+  label: string;
   state?: TileState;
   onPress?: () => void;
   disabled?: boolean;
   rtl?: boolean;
+  wide?: boolean;
 }) {
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({
@@ -119,6 +172,7 @@ export function LightWordTile({
     <View
       style={[
         lh.tile,
+        wide && lh.tileWide,
         {
           backgroundColor: bg,
           borderColor: border,
@@ -193,14 +247,22 @@ export function LightAnswerSlots({
   );
 }
 
-export function LightHintButton({ onPress }: { onPress?: () => void }) {
+export function LightHintButton({
+  onPress,
+  label = "Hint",
+  showBulb = true,
+}: {
+  onPress?: () => void;
+  label?: string;
+  showBulb?: boolean;
+}) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [lh.hintBtn, pressed && { opacity: 0.9 }]}
     >
-      <Text style={lh.hintEmoji}>💡</Text>
-      <Text style={lh.hintLabel}>Hint</Text>
+      {showBulb ? <Text style={lh.hintEmoji}>💡</Text> : null}
+      <Text style={lh.hintLabel}>{label}</Text>
     </Pressable>
   );
 }
@@ -471,6 +533,21 @@ const lh = StyleSheet.create({
     borderColor: L.cardTintBorder,
   },
   promptTextCol: { flex: 1, gap: 4 },
+  surfaceCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: LightRadius.card,
+    borderWidth: 1,
+    borderColor: L.border,
+    padding: 18,
+    ...crossShadow({
+      color: "#0F172A",
+      offsetY: 6,
+      blur: 14,
+      opacity: 0.05,
+      elevation: 2,
+    }),
+  },
+  optionRowWrap: { width: "100%" },
   tile: {
     minHeight: 48,
     paddingHorizontal: 16,
@@ -479,6 +556,11 @@ const lh = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+  },
+  tileWide: {
+    width: "100%",
+    minHeight: 54,
+    paddingHorizontal: 18,
   },
   slotsRow: {
     flexDirection: "row",

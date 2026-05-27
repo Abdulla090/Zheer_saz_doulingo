@@ -42,10 +42,9 @@ export const LightRadius = {
   pill: 999,
 } as const;
 
-export function usesLightLessonShell(
-  type: string | undefined,
-): boolean {
-  return type === "sentence_builder" || type === "pair_match";
+/** All in-lesson games use the premium light shell (white canvas). */
+export function usesLightLessonShell(_type?: string): boolean {
+  return true;
 }
 
 export const LightType = {

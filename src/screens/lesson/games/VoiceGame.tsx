@@ -31,11 +31,13 @@ import {
   GameRoot,
 } from "./GameAnimatedShell";
 import {
-  LiquidCard,
-  LiquidEyebrow,
-  LiquidGhostButton,
-  LiquidPrimaryButton,
-} from "./liquid-primitives";
+  LightCheckButton,
+  LightGameHeading,
+  LightHintButton,
+  LightPromptCard,
+  LightSurfaceCard,
+} from "./lesson-light-primitives";
+import { L } from "./lesson-light-design";
 
 type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
 type ListenState = "idle" | "listening" | "success" | "fail";
@@ -48,26 +50,11 @@ function getSpeechRec(): any {
 const isWebWithSpeech = Platform.OS === "web" && getSpeechRec() !== null;
 
 function TargetPhraseCard({ question }: { question: VoiceQuestion }) {
-  const phraseLength = question.targetWord.length;
-  const phraseSize = phraseLength > 48 ? 20 : phraseLength > 32 ? 22 : 26;
-
   return (
-    <LiquidCard style={s.targetCard} radius={Radius.xl} showSheen={false}>
-      <View style={s.cardInner}>
-        <View style={s.kuRow}>
-          <Icon3DVolume size={16} />
-          <Text style={s.kuText} numberOfLines={3}>
-            {question.targetKurdish}
-          </Text>
-        </View>
-        <View style={s.divider} />
-        <Text
-          style={[s.targetPhrase, { fontSize: phraseSize, lineHeight: phraseSize + 8 }]}
-        >
-          {question.targetWord}
-        </Text>
-      </View>
-    </LiquidCard>
+    <LightPromptCard
+      kurdish={question.targetKurdish}
+      english={question.targetWord}
+    />
   );
 }
 
@@ -184,12 +171,12 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
   const micColor =
     state === "listening"
-      ? iOS.systemBlue
+      ? L.blue
       : state === "success"
-        ? iOS.systemGreen
+        ? L.green
         : state === "fail"
-          ? iOS.systemRed
-          : iOS.systemBlue;
+          ? L.red
+          : L.blue;
 
   if (!isWebWithSpeech) {
     return (
@@ -200,30 +187,25 @@ export default function VoiceGame({ question, onAnswer }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <GameHeader>
-          <LiquidEyebrow hint="Read the phrase, then confirm">Pronunciation</LiquidEyebrow>
+          <LightGameHeading
+            title="Say it out loud"
+            subtitle="Read the phrase, then confirm."
+          />
         </GameHeader>
-        <GameHint>
-          <Text style={s.prompt}>{question.prompt}</Text>
-        </GameHint>
-        <GameCard>
-          <TargetPhraseCard question={question} />
-        </GameCard>
-        <GameHint delay={160}>
-          <Text style={s.mobileInstruction}>ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە</Text>
-        </GameHint>
+        <Text style={s.prompt}>{question.prompt}</Text>
+        <TargetPhraseCard question={question} />
+        <Text style={s.mobileInstruction}>
+          ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە
+        </Text>
         <GameFooter delay={220}>
           <View style={s.actionStack}>
-          <LiquidPrimaryButton
-            label="بڵێم کرد (I said it)"
-            color={iOS.systemGreen}
-            icon={<Icon3DCheckCircle size={20} />}
-            onPress={() => fireAnswer(true)}
-          />
-          <View style={{ height: 10 }} />
-          <LiquidGhostButton
-            label="نەمتوانی بڵێم (Skip)"
-            onPress={() => fireAnswer(false)}
-          />
+            <LightCheckButton
+              label="I SAID IT"
+              color={L.green}
+              onPress={() => fireAnswer(true)}
+            />
+            <View style={{ height: 10 }} />
+            <LightHintButton label="Skip" showBulb={false} onPress={() => fireAnswer(false)} />
           </View>
         </GameFooter>
       </ScrollView>
@@ -241,10 +223,10 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
   const statusColor =
     state === "success"
-      ? iOS.systemGreen
+      ? L.green
       : state === "fail"
-        ? iOS.systemRed
-        : "rgba(255,255,255,0.78)";
+        ? L.red
+        : L.gray;
 
   return (
     <View style={s.root}>
@@ -255,14 +237,13 @@ export default function VoiceGame({ question, onAnswer }: Props) {
         keyboardShouldPersistTaps="handled"
       >
         <GameHeader>
-          <LiquidEyebrow hint="Tap the mic and speak clearly">Pronunciation</LiquidEyebrow>
+          <LightGameHeading
+            title="Say it out loud"
+            subtitle="Tap the mic and speak clearly."
+          />
         </GameHeader>
-        <GameHint>
-          <Text style={s.prompt}>{question.prompt}</Text>
-        </GameHint>
-        <GameCard>
-          <TargetPhraseCard question={question} />
-        </GameCard>
+        <Text style={s.prompt}>{question.prompt}</Text>
+        <TargetPhraseCard question={question} />
 
         <GameFooter delay={200}>
           <View style={s.micSection}>
@@ -306,10 +287,10 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
         {transcript.length > 0 && (
           <GamePopIn>
-          <LiquidCard style={s.transcriptCard} showSheen={false}>
+          <LightSurfaceCard style={s.transcriptCard}>
             <Text style={s.transcriptLabel}>YOU SAID</Text>
             <Text style={s.transcriptText}>{transcript}</Text>
-          </LiquidCard>
+          </LightSurfaceCard>
           </GamePopIn>
         )}
       </ScrollView>
@@ -317,9 +298,8 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       {state === "fail" && (
         <Animated.View style={[s.actionRow, skipStyle]}>
           <View style={{ flex: 1 }}>
-            <LiquidPrimaryButton
-              label="دووبارە هەوڵبدە"
-              color={iOS.systemBlue}
+            <LightCheckButton
+              label="TRY AGAIN"
               onPress={() => {
                 firedRef.current = false;
                 setState("idle");
@@ -331,7 +311,7 @@ export default function VoiceGame({ question, onAnswer }: Props) {
           </View>
           <View style={{ width: 10 }} />
           <View style={{ flex: 1 }}>
-            <LiquidGhostButton label="بگوزەرێ" onPress={() => fireAnswer(false)} />
+            <LightHintButton label="Skip" showBulb={false} onPress={() => fireAnswer(false)} />
           </View>
         </Animated.View>
       )}
@@ -354,11 +334,11 @@ const s = StyleSheet.create({
     paddingBottom: 8,
   },
   prompt: {
-    ...Type.hint,
-    fontSize: 17,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 24,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
+    color: L.gray,
+    fontFamily: "DINNextRoundedMedium",
     ...rtlBlock,
   },
   targetCard: {
@@ -437,17 +417,17 @@ const s = StyleSheet.create({
     borderRadius: 48,
   },
   status: {
-    ...Type.body,
     fontSize: 15,
     fontWeight: "600",
     textAlign: "center",
+    fontFamily: "DINNextRoundedMedium",
     ...rtlBlock,
   },
   mobileInstruction: {
-    ...Type.body,
     fontSize: 15,
-    color: "rgba(255,255,255,0.78)",
+    color: L.gray,
     textAlign: "center",
+    fontFamily: "DINNextRoundedMedium",
     ...rtlBlock,
   },
   actionStack: {

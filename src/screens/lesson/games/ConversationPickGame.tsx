@@ -1,30 +1,26 @@
 /**
- * ConversationPickGame — iOS 26 Liquid Glass redesign.
+ * ConversationPickGame — Premium light lesson UI.
  */
 
 import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Icon3DMessage, Icon3DTarget } from "@/components/icons/Icon3D";
 import { ConversationPickQuestion } from "@/data/lesson-content";
-import { Type, iOS } from "./game-design";
-import { ltrText, rtlBlock } from "./game-text";
+import { rtlBlock } from "./game-text";
 import {
-  GameCard,
   GameFooter,
   GameHeader,
-  GameHint,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
+import { L } from "./lesson-light-design";
 import {
-  LiquidCard,
-  LiquidEyebrow,
-  LiquidOption,
-  LiquidPill,
-  LiquidPrimaryButton,
-  OptionState,
-} from "./liquid-primitives";
+  LightCheckButton,
+  LightGameHeading,
+  LightOptionRow,
+  LightSurfaceCard,
+  mapOptionState,
+} from "./lesson-light-primitives";
 
 type Props = {
   question: ConversationPickQuestion;
@@ -51,10 +47,17 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
     }
   };
 
-  const getState = (opt: string): OptionState => {
+  const getState = (opt: string) => {
     if (!revealed) return opt === selected ? "selected" : "idle";
-    if (opt === selected) return opt === question.correctAnswer ? "correct" : "wrong";
-    if (opt === question.correctAnswer && selected !== question.correctAnswer) return "showCorrect";
+    if (opt === selected) {
+      return opt === question.correctAnswer ? "correct" : "wrong";
+    }
+    if (
+      opt === question.correctAnswer &&
+      selected !== question.correctAnswer
+    ) {
+      return "showCorrect";
+    }
     return "idle";
   };
 
@@ -66,61 +69,45 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <GameHeader>
-          <LiquidEyebrow hint="Pick the most natural reply">Conversation</LiquidEyebrow>
+          <LightGameHeading
+            title="Conversation"
+            subtitle="Pick the most natural reply."
+          />
         </GameHeader>
 
-        <GameCard delay={80}>
-        <View style={s.situationRow}>
-          <LiquidPill tint="dark" height={36} paddingHorizontal={14} style={{ flex: 1 }}>
-            <Icon3DTarget size={14} />
-            <Text style={s.situationText} numberOfLines={3}>
-              {question.situation}
-            </Text>
-          </LiquidPill>
-        </View>
+        <LightSurfaceCard style={s.situationCard}>
+          <Text style={s.situationLabel}>SITUATION</Text>
+          <Text style={[s.situationText, rtlBlock]}>{question.situation}</Text>
+        </LightSurfaceCard>
 
-        <View style={s.bubbleRow}>
-          <View style={s.avatar}>
-            <Icon3DMessage size={26} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <LiquidCard style={s.bubble}>
-              <Text style={s.bubbleLabel}>THEY SAY</Text>
-              <Text style={s.bubbleText}>{question.theyAsk}</Text>
-            </LiquidCard>
-          </View>
-        </View>
-        </GameCard>
+        <LightSurfaceCard>
+          <Text style={s.theyLabel}>THEY SAY</Text>
+          <Text style={[s.theyText, rtlBlock]}>{question.theyAsk}</Text>
+        </LightSurfaceCard>
 
-        <GameHint delay={140}>
-          <LiquidEyebrow>Choose the best response</LiquidEyebrow>
-        </GameHint>
+        <Text style={s.chooseLabel}>Choose the best response</Text>
 
         <View style={s.options}>
           {question.options.map((opt, i) => (
-            <GameOption key={opt} index={i} baseDelay={160}>
-            <LiquidOption
-              key={opt}
-              text={opt}
-              state={getState(opt)}
-              onPress={() => pick(opt)}
-              disabled={revealed}
-              index={i}
-            />
+            <GameOption key={opt} index={i} baseDelay={120}>
+              <LightOptionRow
+                label={opt}
+                state={mapOptionState(getState(opt))}
+                onPress={() => pick(opt)}
+                disabled={revealed}
+              />
             </GameOption>
           ))}
         </View>
       </ScrollView>
 
       <GameFooter>
-      <View style={s.checkWrap}>
-        <LiquidPrimaryButton
-          label="CHECK"
-          color={iOS.systemGreen}
-          onPress={check}
-          disabled={!selected || revealed}
-        />
-      </View>
+        <View style={s.checkWrap}>
+          <LightCheckButton
+            onPress={check}
+            disabled={!selected || revealed}
+          />
+        </View>
       </GameFooter>
     </GameRoot>
   );
@@ -129,59 +116,54 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
 const s = StyleSheet.create({
   root: {
     paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 24,
-    gap: 16,
+    paddingTop: 8,
+    paddingBottom: 100,
+    gap: 14,
   },
-  situationRow: {
-    flexDirection: "row",
+  situationCard: { gap: 6 },
+  situationLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: L.grayLight,
+    letterSpacing: 0.6,
+    fontFamily: "DINNextRoundedBold",
   },
   situationText: {
-    ...Type.caption,
-    color: "#FFFFFF",
-    flex: 1,
-    flexShrink: 1,
-    ...rtlBlock,
+    fontSize: 17,
+    fontWeight: "700",
+    color: L.navy,
+    lineHeight: 24,
+    fontFamily: "DINNextRoundedBold",
   },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+  theyLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: L.grayLight,
+    letterSpacing: 0.6,
+    fontFamily: "DINNextRoundedBold",
+    marginBottom: 6,
   },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: iOS.systemBlue,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.6)",
-    marginTop: 6,
+  theyText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: L.navy,
+    lineHeight: 24,
+    fontFamily: "DINNextRoundedBold",
   },
-  bubble: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 16,
-    borderTopLeftRadius: 8,
+  chooseLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: L.gray,
+    fontFamily: "DINNextRoundedBold",
+    marginTop: 4,
   },
-  bubbleLabel: {
-    ...Type.eyebrow,
-    color: iOS.systemBlue,
-    marginBottom: 4,
-    ...ltrText,
-  },
-  bubbleText: {
-    ...Type.title,
-    color: "#0F172A",
-    ...ltrText,
-  },
-  options: {
-    gap: 12,
-  },
+  options: { gap: 10 },
   checkWrap: {
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 12,
+    paddingTop: 8,
+    backgroundColor: L.bg,
+    borderTopWidth: 1,
+    borderTopColor: L.border,
   },
 });
