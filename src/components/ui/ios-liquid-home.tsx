@@ -58,6 +58,80 @@ function useNativeLiquidGlass() {
   return Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
 }
 
+/** Compact glass chip — lesson header pills, icon buttons */
+export function HomeLiquidPill({
+  children,
+  onPress,
+  size = 44,
+  style,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const inner = (
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: Glass.border,
+          backgroundColor: IS_ANDROID ? "rgba(255,255,255,0.94)" : Glass.surface,
+        },
+        crossShadow({
+          color: "#1A2B48",
+          offsetY: 6,
+          blur: 14,
+          opacity: 0.06,
+          elevation: 4,
+        }),
+        style,
+      ]}
+    >
+      {Platform.OS !== "web" && !IS_ANDROID && (
+        <BlurView
+          intensity={Glass.blurLight}
+          tint="light"
+          style={[StyleSheet.absoluteFill, { borderRadius: size / 2 }]}
+        />
+      )}
+      <LinearGradient
+        colors={[...Glass.sheen]}
+        style={[styles.cardSheen, { height: size * 0.45, borderTopLeftRadius: size / 2, borderTopRightRadius: size / 2 }]}
+        pointerEvents="none"
+      />
+      <View style={{ zIndex: 1 }}>{children}</View>
+    </View>
+  );
+
+  const scale = useSharedValue(1);
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  if (!onPress) return inner;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withSpring(0.92, Motion.soft);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, Motion.soft);
+        }}
+      >
+        {inner}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 /** Frosted card — primary home sections */
 export function HomeLiquidCard({
   children,

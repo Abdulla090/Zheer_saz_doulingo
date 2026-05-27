@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Image } from "expo-image";
+import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
@@ -112,17 +112,10 @@ export const StreetEnglishPathScreen = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <Image
-        source={require("../../../assets/images/oceanbg.png")}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        priority="low"
-      />
+      <HomeMeshBackground />
       <View
         style={{
           flex: 1,
-          backgroundColor: "transparent",
           paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
         }}
       >

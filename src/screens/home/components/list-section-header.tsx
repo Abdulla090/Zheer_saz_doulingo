@@ -31,14 +31,15 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.28)",
+    backgroundColor: "#E2E8F0",
   },
   title: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
+    color: "#6B7280",
     letterSpacing: 0.3,
     maxWidth: "62%",
     textAlign: "center",
+    fontFamily: "DINNextRoundedMedium",
   },
 });

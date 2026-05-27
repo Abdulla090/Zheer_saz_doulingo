@@ -9,17 +9,13 @@
 import {
     Icon3DAward,
     Icon3DCheck,
-    Icon3DCheckCircle,
     Icon3DFire,
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
-import { crossShadow } from "@/utils/shadows";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
-    Platform,
-    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -39,14 +35,14 @@ import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/le
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { G, iOS, Radius } from "./games/game-design";
-import { dirForText } from "./games/game-text";
+import { G } from "./games/game-design";
 import { L } from "./games/lesson-light-design";
 import {
   LessonLightHeader,
-  LightCheckButton,
+  LessonLiquidFeedback,
+  LessonMeshBackdrop,
 } from "./games/lesson-light-primitives";
-import { LiquidPrimaryButton } from "./games/liquid-primitives";
+import { HomeLiquidButton, HomeLiquidCard } from "@/components/ui/ios-liquid-home";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
@@ -67,11 +63,11 @@ function StatCard({
 }) {
   return (
     <View style={{ flex: 1 }}>
-      <View style={[sSum.statCard, { borderColor: color }]}>
+      <HomeLiquidCard contentStyle={sSum.statCard} radius={18}>
         {icon}
         <Text style={[sSum.statValue, { color }]}>{value}</Text>
         <Text style={sSum.statLabel}>{label}</Text>
-      </View>
+      </HomeLiquidCard>
     </View>
   );
 }
@@ -207,7 +203,7 @@ export default function LessonScreen() {
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <LiquidPrimaryButton label="Go Back" onPress={() => router.back()} />
+        <HomeLiquidButton label="Go Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
@@ -216,140 +212,85 @@ export default function LessonScreen() {
   if (finished) {
     const ok = passed;
     return (
-      <SafeAreaView style={[sSum.root, { backgroundColor: ok ? G.greenBg : G.redBg }]}>
-        <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
-          <View style={[sSum.iconWrap, { backgroundColor: ok ? G.green : G.red }]}>
-            {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
-          </View>
+      <LessonMeshBackdrop>
+        <SafeAreaView style={sSum.root}>
+          <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
+            <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
+              <View style={[sSum.iconWrap, { backgroundColor: ok ? L.green : L.red }]}>
+                {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
+              </View>
+              <Text style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
+                {ok ? "Lesson Complete!" : "Out of Hearts!"}
+              </Text>
+              <Text style={sSum.sub}>
+                {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
+              </Text>
+            </HomeLiquidCard>
 
-          <Text style={[sSum.title, { color: ok ? G.greenText : G.redText }]}>
-            {ok ? "Lesson Complete!" : "Out of Hearts!"}
-          </Text>
-          <Text style={sSum.sub}>
-            {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
-          </Text>
+            {ok ? (
+              <View style={sSum.statsRow}>
+                <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={L.gold} />
+                <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={L.green} />
+                <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={L.red} />
+              </View>
+            ) : null}
 
-          {ok && (
-            <View style={sSum.statsRow}>
-              <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={G.yellow} />
-              <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={G.green} />
-              <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={G.red} />
-            </View>
-          )}
-
-          <View style={{ width: "100%", marginTop: 12 }}>
-            <LiquidPrimaryButton
+            <HomeLiquidButton
               label={ok ? "Continue" : "Try Again"}
-              color={ok ? iOS.systemGreen : iOS.systemBlue}
+              color={ok ? L.green : L.blue}
               onPress={() => router.back()}
             />
-          </View>
-        </Animated.View>
-      </SafeAreaView>
+          </Animated.View>
+        </SafeAreaView>
+      </LessonMeshBackdrop>
     );
   }
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
   return (
-    <View
-      style={[
-        sL.root,
-        { paddingTop: insets.top, backgroundColor: L.bg },
-      ]}
-    >
-      <LessonLightHeader
-        progressFillStyle={progressStyle}
-        hearts={hearts}
-        onBack={() => router.back()}
-      />
+    <LessonMeshBackdrop>
+      <View style={[sL.root, { paddingTop: insets.top }]}>
+        <LessonLightHeader
+          progressFillStyle={progressStyle}
+          hearts={hearts}
+          onBack={() => router.back()}
+        />
 
-      {/* Game */}
-      <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <Animated.View
-          key={`${pathMode}-${current}`}
-          entering={enterGame}
-          style={{ flex: 1 }}
-        >
-          {renderGame(questions[current]!)}
-        </Animated.View>
-      </View>
+        <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <Animated.View
+            key={`${pathMode}-${current}`}
+            entering={enterGame}
+            style={{ flex: 1 }}
+          >
+            {renderGame(questions[current]!)}
+          </Animated.View>
+        </View>
 
-      {/* Feedback sheet */}
-      {feedback !== null && (
-        <Animated.View
-          style={[
-            sL.sheet,
-            { paddingBottom: Math.max(insets.bottom, 16) + 8 },
-            sheetStyle,
-          ]}
-        >
-          {/* Sheet inner with frosted blur */}
-          <View
+        {feedback !== null && (
+          <Animated.View
             style={[
-              sL.sheetInner,
-              {
-                backgroundColor: "rgba(255,255,255,0.96)",
-                borderColor: isCorrect ? iOS.systemGreen : iOS.systemRed,
-              },
-              Platform.OS === "web" && {
-                // @ts-ignore web
-                backdropFilter: "blur(40px) saturate(180%)",
-                // @ts-ignore web
-                WebkitBackdropFilter: "blur(40px) saturate(180%)",
-              },
+              sL.sheet,
+              { paddingBottom: Math.max(insets.bottom, 16) + 8 },
+              sheetStyle,
             ]}
           >
-            {/* Top accent stripe */}
-            <View
-              style={[
-                sL.sheetAccent,
-                { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
-              ]}
+            <LessonLiquidFeedback
+              correct={isCorrect}
+              title={isCorrect ? "Correct!" : "Incorrect"}
+              subtitle={
+                feedback.explanation
+                  ? feedback.explanation
+                  : isCorrect
+                    ? "Perfect. Keep up the momentum."
+                    : "Not quite. Focus on the structure."
+              }
+              onContinue={continueToNext}
             />
-            <View style={{ position: "relative", zIndex: 1, gap: 18 }}>
-              <View style={sL.sheetHeader}>
-                <View
-                  style={[
-                    sL.sheetIconWrap,
-                    { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
-                  ]}
-                >
-                  {isCorrect ? <Icon3DCheckCircle size={22} /> : <Icon3DX size={22} />}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      sL.sheetTitle,
-                      { color: isCorrect ? iOS.greenDeep : iOS.redDeep },
-                    ]}
-                  >
-                    {isCorrect ? "Correct!" : "Incorrect"}
-                  </Text>
-                  {feedback.explanation ? (
-                    <Text style={[sL.sheetSub, dirForText(feedback.explanation)]}>
-                      {feedback.explanation}
-                    </Text>
-                  ) : (
-                    <Text style={sL.sheetSub}>
-                      {isCorrect
-                        ? "Perfect. Keep up the momentum."
-                        : "Not quite. Focus on the structure."}
-                    </Text>
-                  )}
-                </View>
-              </View>
-
-              <LightCheckButton
-                label="CONTINUE"
-                onPress={continueToNext}
-                color={isCorrect ? L.green : L.red}
-              />
-            </View>
-          </View>
-        </Animated.View>
-      )}
-    </View>
+          </Animated.View>
+        )}
+      </View>
+    </LessonMeshBackdrop>
   );
 }
 
@@ -391,56 +332,12 @@ const sL = StyleSheet.create({
 
   gameArea: { flex: 1 },
 
-  /* Feedback sheet */
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-  },
-  sheetInner: {
-    borderRadius: Radius.xl,
-    borderWidth: 1.4,
-    paddingTop: 24,
-    paddingHorizontal: 22,
-    paddingBottom: 22,
-    overflow: "hidden",
-    ...crossShadow({ color: "#000", offsetY: -4, opacity: 0.18, blur: 30, elevation: 24 }),
-  },
-  sheetAccent: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  sheetIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  sheetTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    lineHeight: 28,
-    letterSpacing: -0.5,
-  },
-  sheetSub: {
-    fontSize: 15,
-    fontWeight: "600",
-    lineHeight: 22,
-    letterSpacing: -0.2,
-    color: "#475569",
-    marginTop: 2,
   },
 });
 
@@ -462,22 +359,38 @@ const sSum = StyleSheet.create({
     marginBottom: 6,
   },
   title: { fontSize: 28, fontWeight: "900", textAlign: "center" },
-  sub:   { fontSize: 16, color: G.textMid, textAlign: "center" },
+  sub: {
+    fontSize: 16,
+    color: L.gray,
+    textAlign: "center",
+    fontFamily: "DINNextRoundedMedium",
+  },
   statsRow: {
     flexDirection: "row",
     gap: 10,
     width: "100%",
     marginTop: 8,
   },
-  statCard: {
-    flex: 1,
+  heroCard: {
     alignItems: "center",
-    backgroundColor: G.bg,
-    borderRadius: G.rMd,
-    borderWidth: 2.5,
-    paddingVertical: 18,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  statCard: {
+    alignItems: "center",
+    paddingVertical: 16,
     gap: 4,
   },
-  statValue: { fontSize: 20, fontWeight: "800" },
-  statLabel: { fontSize: 12, fontWeight: "600", color: G.textMid },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: L.gray,
+    fontFamily: "DINNextRoundedMedium",
+  },
 });

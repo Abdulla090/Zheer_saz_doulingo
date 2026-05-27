@@ -1,7 +1,13 @@
 /**
- * Premium light lesson UI — soft cards, iOS-smooth buttons (no heavy gradients).
+ * Lesson UI — same liquid glass / smooth press feel as the home dashboard.
  */
 
+import {
+  HomeLiquidButton,
+  HomeLiquidCard,
+  HomeLiquidPill,
+  HomeMeshBackground,
+} from "@/components/ui/ios-liquid-home";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,7 +55,7 @@ export function LightPromptCard({
   onSpeak?: () => void;
 }) {
   return (
-    <View style={lh.promptCard}>
+    <HomeLiquidCard contentStyle={lh.promptCardInner} radius={22}>
       <Pressable
         onPress={onSpeak}
         style={({ pressed }) => [lh.speakerBtn, pressed && { opacity: 0.85 }]}
@@ -69,7 +75,7 @@ export function LightPromptCard({
         <Text style={[LightType.promptKu, { textAlign: "right" }]}>{kurdish}</Text>
         <Text style={LightType.promptEn}>{english}</Text>
       </View>
-    </View>
+    </HomeLiquidCard>
   );
 }
 
@@ -85,8 +91,18 @@ export function LightSurfaceCard({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={[lh.surfaceCard, style]}>
+    <HomeLiquidCard contentStyle={[lh.surfaceCardInner, style]} radius={22}>
       {children}
+    </HomeLiquidCard>
+  );
+}
+
+/** Mesh backdrop for lesson + path screens */
+export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={lh.backdrop}>
+      <HomeMeshBackground />
+      <View style={lh.backdropContent}>{children}</View>
     </View>
   );
 }
@@ -181,18 +197,27 @@ export function LightWordTile({
         },
         state !== "ghost" &&
           crossShadow({
-            color: "#0F172A",
-            offsetY: 4,
-            blur: 10,
-            opacity: 0.05,
-            elevation: 2,
+            color: "#1A2B48",
+            offsetY: 6,
+            blur: 14,
+            opacity: 0.07,
+            elevation: 3,
           }),
       ]}
     >
+      {state !== "ghost" && (
+        <LinearGradient
+          colors={["rgba(255,255,255,0.55)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.4, 1]}
+          style={lh.tileSheen}
+          pointerEvents="none"
+        />
+      )}
       <Text
         style={[
           LightType.tile,
           rtl && { writingDirection: "rtl", textAlign: "center" },
+          { zIndex: 1 },
         ]}
       >
         {label}
@@ -257,12 +282,11 @@ export function LightHintButton({
   showBulb?: boolean;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [lh.hintBtn, pressed && { opacity: 0.9 }]}
-    >
-      {showBulb ? <Text style={lh.hintEmoji}>💡</Text> : null}
-      <Text style={lh.hintLabel}>{label}</Text>
+    <Pressable onPress={onPress}>
+      <HomeLiquidCard contentStyle={lh.hintBtn} radius={LightRadius.btn}>
+        {showBulb ? <Text style={lh.hintEmoji}>💡</Text> : null}
+        <Text style={lh.hintLabel}>{label}</Text>
+      </HomeLiquidCard>
     </Pressable>
   );
 }
@@ -278,56 +302,14 @@ export function LightCheckButton({
   disabled?: boolean;
   color?: string;
 }) {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View style={[{ width: "100%" }, anim]}>
-      <Pressable
-        onPress={() => {
-          if (disabled) return;
-          if (Platform.OS !== "web") {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
-          onPress();
-        }}
-        disabled={disabled}
-        onPressIn={() => {
-          if (!disabled) scale.value = withSpring(0.97, LightMotion.soft);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, LightMotion.soft);
-        }}
-        style={[
-          lh.checkBtn,
-          {
-            backgroundColor: disabled ? L.track : color,
-          },
-          !disabled &&
-            crossShadow({
-              color: L.blue,
-              offsetY: 6,
-              blur: 16,
-              opacity: 0.28,
-              elevation: 5,
-            }),
-        ]}
-      >
-        {!disabled && (
-          <LinearGradient
-            colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]}
-            style={lh.checkSheen}
-            pointerEvents="none"
-          />
-        )}
-        <Text style={[lh.checkLabel, disabled && { color: L.grayLight }]}>
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
+  if (disabled) {
+    return (
+      <View style={lh.checkBtnDisabled}>
+        <Text style={[lh.checkLabel, { color: L.grayLight }]}>{label}</Text>
+      </View>
+    );
+  }
+  return <HomeLiquidButton label={label} onPress={onPress} color={color} />;
 }
 
 /** Match row: tile + connector dot + tile */
@@ -428,25 +410,57 @@ export function LessonLightHeader({
 }) {
   return (
     <View style={lh.lessonHeader}>
-      <Pressable
-        onPress={onBack}
-        hitSlop={12}
-        style={({ pressed }) => [lh.backBtn, pressed && { opacity: 0.6 }]}
-      >
+      <HomeLiquidPill onPress={onBack} size={44}>
         <BackChevron />
-      </Pressable>
-      <View style={lh.progressOuter}>
+      </HomeLiquidPill>
+      <HomeLiquidCard style={lh.progressGlass} contentStyle={lh.progressGlassInner} radius={14}>
         <View style={lh.progressTrack}>
           <Animated.View style={[lh.progressFill, progressFillStyle]}>
             <View style={lh.progressKnob} />
           </Animated.View>
         </View>
-      </View>
-      <View style={lh.heartsPill}>
+      </HomeLiquidCard>
+      <HomeLiquidCard contentStyle={lh.heartsPill} radius={22}>
         <HeartIcon />
         <Text style={lh.heartsText}>{hearts}</Text>
-      </View>
+      </HomeLiquidCard>
     </View>
+  );
+}
+
+/** Bottom feedback — liquid glass card (correct / incorrect) */
+export function LessonLiquidFeedback({
+  correct,
+  title,
+  subtitle,
+  buttonLabel,
+  onContinue,
+}: {
+  correct: boolean;
+  title: string;
+  subtitle: string;
+  buttonLabel?: string;
+  onContinue: () => void;
+}) {
+  const accent = correct ? L.green : L.red;
+  return (
+    <HomeLiquidCard
+      style={{ borderColor: accent, borderWidth: 1.5 }}
+      contentStyle={lh.feedbackInner}
+      radius={26}
+    >
+      <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
+      <Text style={[lh.feedbackTitle, { color: correct ? L.greenDeep : L.redDeep }]}>
+        {title}
+      </Text>
+      <Text style={lh.feedbackSub}>{subtitle}</Text>
+      <HomeLiquidButton
+        label={buttonLabel ?? "CONTINUE"}
+        onPress={onContinue}
+        color={accent}
+        style={{ marginTop: 4 }}
+      />
+    </HomeLiquidCard>
   );
 }
 
@@ -459,16 +473,16 @@ const lh = StyleSheet.create({
     paddingBottom: 16,
     gap: 12,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
+  backdrop: { flex: 1 },
+  backdropContent: { flex: 1 },
+  progressGlass: { flex: 1 },
+  progressGlassInner: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
-  progressOuter: { flex: 1 },
   progressTrack: {
-    height: 14,
-    borderRadius: 7,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: L.track,
     overflow: "hidden",
     justifyContent: "center",
@@ -495,8 +509,8 @@ const lh = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    minWidth: 52,
-    justifyContent: "flex-end",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   heartsText: {
     fontSize: 17,
@@ -505,22 +519,11 @@ const lh = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
   },
   headingWrap: { gap: 6, marginBottom: 4 },
-  promptCard: {
+  promptCardInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: L.cardTint,
-    borderRadius: LightRadius.card,
-    borderWidth: 1,
-    borderColor: L.cardTintBorder,
     padding: 16,
-    ...crossShadow({
-      color: "#0F172A",
-      offsetY: 6,
-      blur: 14,
-      opacity: 0.04,
-      elevation: 2,
-    }),
   },
   speakerBtn: {
     width: 48,
@@ -533,19 +536,52 @@ const lh = StyleSheet.create({
     borderColor: L.cardTintBorder,
   },
   promptTextCol: { flex: 1, gap: 4 },
-  surfaceCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: LightRadius.card,
-    borderWidth: 1,
-    borderColor: L.border,
+  surfaceCardInner: {
     padding: 18,
-    ...crossShadow({
-      color: "#0F172A",
-      offsetY: 6,
-      blur: 14,
-      opacity: 0.05,
-      elevation: 2,
-    }),
+  },
+  tileSheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 22,
+    borderTopLeftRadius: LightRadius.tile,
+    borderTopRightRadius: LightRadius.tile,
+  },
+  checkBtnDisabled: {
+    height: 52,
+    borderRadius: LightRadius.btn,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: L.track,
+  },
+  feedbackInner: {
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 18,
+    gap: 10,
+  },
+  feedbackAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+  },
+  feedbackTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.4,
+  },
+  feedbackSub: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: L.gray,
+    lineHeight: 22,
+    fontFamily: "DINNextRoundedMedium",
   },
   optionRowWrap: { width: "100%" },
   tile: {
@@ -556,6 +592,7 @@ const lh = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   tileWide: {
     width: "100%",
@@ -592,17 +629,6 @@ const lh = StyleSheet.create({
     alignSelf: "center",
     paddingVertical: 12,
     paddingHorizontal: 22,
-    borderRadius: LightRadius.btn,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: L.border,
-    ...crossShadow({
-      color: "#0F172A",
-      offsetY: 3,
-      blur: 8,
-      opacity: 0.04,
-      elevation: 1,
-    }),
   },
   hintEmoji: { fontSize: 18 },
   hintLabel: {

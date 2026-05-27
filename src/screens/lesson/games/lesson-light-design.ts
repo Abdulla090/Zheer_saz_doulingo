@@ -1,31 +1,33 @@
 /**
- * Premium light lesson shell — Duolingo-style white canvas.
- * Soft elevation, iOS spring press, brand blue CTAs.
+ * Lesson shell — aligned with home liquid glass (HomePalette).
  */
 
+import { HomePalette } from "@/components/ui/ios-liquid-home";
 import { Easing } from "react-native-reanimated";
 
+const H = HomePalette;
+
 export const L = {
-  bg: "#FFFFFF",
-  bgSoft: "#F7F9FC",
-  blue: "#3355FF",
-  bluePress: "#2848E8",
-  navy: "#1A1A1A",
-  navySoft: "#3D3D3D",
-  gray: "#6B7280",
-  grayLight: "#9CA3AF",
-  track: "#E5E7EB",
-  trackInner: "#E0E0E0",
-  cardTint: "#EAF1FF",
+  bg: H.meshBottom,
+  bgSoft: H.meshMid,
+  blue: H.blue,
+  bluePress: "#2348D4",
+  navy: H.navy,
+  navySoft: "#3D4F6F",
+  gray: H.gray,
+  grayLight: H.grayLight,
+  track: H.track,
+  trackInner: "#DCE3EA",
+  cardTint: "#EEF4FF",
   cardTintBorder: "#D6E4FF",
-  border: "#E8EAED",
-  red: "#FF4B4B",
+  border: H.divider,
+  red: H.red,
   green: "#58CC02",
   greenDeep: "#46A302",
   redDeep: "#E53838",
-  gold: "#FFC800",
+  gold: H.gold,
   slotDash: "#C5CED8",
-  shadow: "rgba(15, 23, 42, 0.06)",
+  shadow: "rgba(26, 43, 72, 0.08)",
 } as const;
 
 export const LightMotion = {

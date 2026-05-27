@@ -6,7 +6,7 @@
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import type { SectionTheme } from "@/data/list-items";
 import { normalSectionData } from "@/data/normal-english";
-import { Image } from "expo-image";
+import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -135,18 +135,11 @@ export function NormalEnglishPathScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Image
-        source={require("../../../assets/images/oceanbg.png")}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        priority="low"
-      />
+      <HomeMeshBackground />
       <View
         style={[
           darkStyles.root,
           {
-            backgroundColor: "transparent",
             paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
           },
         ]}
@@ -199,11 +192,11 @@ const darkStyles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 4,
   },
-  sectionLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.28)" },
+  sectionLine: { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
+    color: "#6B7280",
     letterSpacing: 0.5,
     maxWidth: "62%",
     textAlign: "center",
