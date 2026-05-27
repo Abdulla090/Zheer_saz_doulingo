@@ -41,7 +41,15 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Phingo English to use the microphone for speaking practice.",
+          "speechRecognitionPermission": "Allow Phingo English to transcribe your speech for lessons and AI feedback."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -13,13 +13,15 @@ import type {
   AiTeacherPrompt,
   AiTeacherResult,
 } from "@/data/ai-teacher-types";
+import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
+import { useSpeechCapture } from "@/hooks/use-speech-capture";
 import { evaluateEnglish } from "@/services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Mic, Sparkles } from "lucide-react-native";
+import { ArrowLeft, Sparkles } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -95,6 +97,8 @@ export function AiTeacherScreen() {
   );
   const [lastSaved, setLastSaved] = useState<AiTeacherAttempt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showTyping, setShowTyping] = useState(false);
+  const speech = useSpeechCapture("en-US");
 
   const promptsForMode = useMemo(
     () => AI_TEACHER_PROMPTS.filter((p) => p.mode === mode),
@@ -114,6 +118,13 @@ export function AiTeacherScreen() {
       setPrompt(promptsForMode[0]);
     }
   }, [mode, promptsForMode, prompt.id]);
+
+  useEffect(() => {
+    if (mode !== "speaking") {
+      speech.abort();
+      setShowTyping(false);
+    }
+  }, [mode, speech]);
 
   const onSubmit = useCallback(async () => {
     const text = answer.trim();
@@ -161,31 +172,38 @@ export function AiTeacherScreen() {
     setResult(null);
     setAnswer("");
     setError(null);
-  }, []);
+    setShowTyping(false);
+    speech.abort();
+  }, [speech]);
 
-  const startMic = useCallback(() => {
-    if (Platform.OS !== "web" || typeof window === "undefined") {
-      setError("Voice input works on web for now — type your answer below.");
+  const toggleMic = useCallback(async () => {
+    if (speech.listening) {
+      speech.stop();
       return;
     }
-    const SR =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      setError("Speech recognition is not available in this browser.");
+    if (!speech.available) {
+      setError("Speech recognition is not available on this device.");
       return;
     }
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.interimResults = false;
-    rec.onresult = (e: any) => {
-      const transcript = e.results[0][0].transcript as string;
-      setAnswer((prev) => (prev ? `${prev} ${transcript}` : transcript));
-      setError(null);
-    };
-    rec.onerror = () => setError("Microphone permission denied or unavailable.");
-    rec.start();
-  }, []);
+    setError(null);
+    await speech.start(
+      {
+        onResult: (text, isFinal) => {
+          if (!isFinal) {
+            setAnswer(text);
+            return;
+          }
+          setAnswer((prev) => {
+            const next = text.trim();
+            if (!prev.trim()) return next;
+            if (prev.endsWith(next) || next.startsWith(prev)) return next;
+            return `${prev.trimEnd()} ${next}`;
+          });
+        },
+      },
+      { continuous: true },
+    );
+  }, [speech]);
 
   return (
     <View style={styles.root}>
@@ -276,28 +294,59 @@ export function AiTeacherScreen() {
               </HomeLiquidCard>
 
               <Text style={styles.sectionTitle}>Your answer</Text>
-              <View style={styles.inputShell}>
-                <TextInput
-                  value={answer}
-                  onChangeText={setAnswer}
-                  placeholder={
-                    mode === "speaking"
-                      ? "Tap the mic or type what you said…"
-                      : "Type your response in English…"
-                  }
-                  placeholderTextColor={C.grayLight}
-                  multiline
-                  style={styles.textInput}
-                  editable={phase !== "loading"}
-                />
-                {mode === "speaking" ? (
-                  <Pressable onPress={startMic} style={styles.micBtn}>
-                    <Mic size={22} color="#FFFFFF" />
+              {mode === "speaking" && !showTyping ? (
+                <View style={styles.speakingMicBlock}>
+                  <MicCaptureOrb
+                    listening={speech.listening}
+                    disabled={phase === "loading"}
+                    color={speech.listening ? C.blue : C.navy}
+                    size={112}
+                    hint={
+                      speech.listening
+                        ? "Tap to stop recording"
+                        : "Tap the mic and speak your answer"
+                    }
+                    onPress={toggleMic}
+                  />
+                  {answer.trim().length > 0 ? (
+                    <Text style={styles.speakingTranscript}>{answer}</Text>
+                  ) : null}
+                  <Pressable
+                    onPress={() => setShowTyping(true)}
+                    style={styles.typeInsteadBtn}
+                  >
+                    <Text style={styles.typeInsteadText}>Type instead</Text>
                   </Pressable>
-                ) : null}
-              </View>
+                </View>
+              ) : (
+                <View style={styles.inputShell}>
+                  <TextInput
+                    value={answer}
+                    onChangeText={setAnswer}
+                    placeholder={
+                      mode === "speaking"
+                        ? "Type what you said…"
+                        : "Type your response in English…"
+                    }
+                    placeholderTextColor={C.grayLight}
+                    multiline
+                    style={styles.textInput}
+                    editable={phase !== "loading"}
+                  />
+                  {mode === "speaking" ? (
+                    <Pressable
+                      onPress={() => setShowTyping(false)}
+                      style={styles.typeInsteadBtnInline}
+                    >
+                      <Text style={styles.typeInsteadText}>Use mic</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              )}
 
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              {error || speech.error ? (
+                <Text style={styles.errorText}>{error || speech.error}</Text>
+              ) : null}
 
               {phase === "loading" ? (
                 <View style={styles.loadingBox}>
@@ -540,14 +589,44 @@ const styles = StyleSheet.create({
     fontFamily: "DINNextRoundedRegular",
     textAlignVertical: "top",
   },
-  micBtn: {
-    alignSelf: "flex-end",
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: C.blue,
+  speakingMicBlock: {
     alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.divider,
+    marginBottom: 4,
+    ...crossShadow({
+      color: "#1A2B48",
+      offsetY: 6,
+      blur: 16,
+      opacity: 0.05,
+      elevation: 3,
+    }),
+  },
+  speakingTranscript: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: C.navy,
+    textAlign: "center",
+    paddingHorizontal: 20,
+    fontFamily: "DINNextRoundedRegular",
+  },
+  typeInsteadBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  typeInsteadBtnInline: {
+    alignSelf: "flex-start",
+    paddingTop: 8,
+  },
+  typeInsteadText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.blue,
+    fontFamily: "DINNextRoundedBold",
   },
   errorText: {
     color: C.red,

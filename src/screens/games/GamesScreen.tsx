@@ -17,24 +17,18 @@ import {
   buildPracticeLessonParams,
   type PracticeGameKind,
 } from "@/data/game-practice";
+import { PressableScale } from "@/components/animations";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const C = HomePalette;
@@ -124,49 +118,35 @@ function GameCard({
   width: number;
   onPress: () => void;
 }) {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Animated.View style={[{ width }, anim]}>
-      <Pressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          onPress();
-        }}
-        onPressIn={() => {
-          scale.value = withSpring(0.97, { damping: 18, stiffness: 320 });
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 14, stiffness: 260 });
-        }}
-        style={[
-          styles.gameCard,
-          crossShadow({
-            color: "#1A2B48",
-            offsetY: 8,
-            blur: 20,
-            opacity: 0.06,
-            elevation: 4,
-          }),
-        ]}
-      >
-        {tile.renderIcon()}
-        <View style={styles.gameCardText}>
-          <Text style={styles.gameTitle} numberOfLines={1}>
-            {tile.title}
-          </Text>
-          {tile.stars > 0 ? <StarRow filled={tile.stars} /> : null}
-          {tile.bestPercent > 0 ? (
-            <Text style={styles.gameBest}>Best: {tile.bestPercent}%</Text>
-          ) : (
-            <Text style={styles.gameBest}>Practice with AI</Text>
-          )}
-        </View>
-      </Pressable>
-    </Animated.View>
+    <PressableScale
+      onPress={onPress}
+      scaleDown={0.98}
+      style={[
+        styles.gameCard,
+        { width },
+        crossShadow({
+          color: "#1A2B48",
+          offsetY: 8,
+          blur: 20,
+          opacity: 0.06,
+          elevation: 4,
+        }),
+      ]}
+    >
+      {tile.renderIcon()}
+      <View style={styles.gameCardText}>
+        <Text style={styles.gameTitle} numberOfLines={1}>
+          {tile.title}
+        </Text>
+        {tile.stars > 0 ? <StarRow filled={tile.stars} /> : null}
+        {tile.bestPercent > 0 ? (
+          <Text style={styles.gameBest}>Best: {tile.bestPercent}%</Text>
+        ) : (
+          <Text style={styles.gameBest}>Practice with AI</Text>
+        )}
+      </View>
+    </PressableScale>
   );
 }
 
