@@ -16,6 +16,7 @@ import {
   HomeType,
 } from "@/components/ui/ios-liquid-home";
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { Fire, Heart } from "@/constants/icons";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback } from "react";
@@ -137,7 +138,7 @@ export function PhingoLearnHomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        removeClippedSubviews
+        removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
           paddingTop: insets.top + 12,
           paddingBottom: insets.bottom + 96,

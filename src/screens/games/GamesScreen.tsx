@@ -17,6 +17,7 @@ import {
   buildPracticeLessonParams,
   type PracticeGameKind,
 } from "@/data/game-practice";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -201,6 +202,7 @@ export function GamesScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
           paddingTop: insets.top + 8,
           paddingBottom: insets.bottom + 100,

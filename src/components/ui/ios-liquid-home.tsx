@@ -5,6 +5,7 @@
  */
 
 import { Glass, Motion, Radius } from "@/screens/lesson/games/game-design";
+import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -109,7 +110,7 @@ export function HomeLiquidCard({
           borderRadius: radius,
           borderWidth: 1,
           borderColor: Glass.border,
-          backgroundColor: Glass.surface,
+          backgroundColor: IS_ANDROID ? "rgba(255,255,255,0.94)" : Glass.surface,
           overflow: "hidden",
         },
         crossShadow({
@@ -122,7 +123,7 @@ export function HomeLiquidCard({
         style,
       ]}
     >
-      {Platform.OS !== "web" && (
+      {Platform.OS !== "web" && !IS_ANDROID && (
         <BlurView
           intensity={Glass.blurMedium}
           tint="light"
@@ -312,7 +313,9 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
 
   return (
     <View style={styles.xpOuter}>
-      <BlurView intensity={Glass.blurLight} tint="light" style={StyleSheet.absoluteFill} />
+      {!IS_ANDROID && (
+        <BlurView intensity={Glass.blurLight} tint="light" style={StyleSheet.absoluteFill} />
+      )}
       <Text style={styles.xpText}>{label}</Text>
     </View>
   );

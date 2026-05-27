@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
 
@@ -167,7 +168,7 @@ export function NormalEnglishPathScreen() {
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
-          scrollEventThrottle={16}
+          scrollEventThrottle={32}
           style={darkStyles.list}
           ListFooterComponent={ListFooterSpacer}
           contentContainerStyle={darkStyles.listContent}
@@ -175,7 +176,7 @@ export function NormalEnglishPathScreen() {
           initialNumToRender={6}
           maxToRenderPerBatch={4}
           windowSize={3}
-          removeClippedSubviews
+          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
           updateCellsBatchingPeriod={100}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}

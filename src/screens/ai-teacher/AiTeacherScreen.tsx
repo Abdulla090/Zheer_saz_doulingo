@@ -14,6 +14,7 @@ import type {
   AiTeacherResult,
 } from "@/data/ai-teacher-types";
 import { evaluateEnglish } from "@/services/ai-teacher-service";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -196,6 +197,7 @@ export function AiTeacherScreen() {
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
           contentContainerStyle={{
             paddingTop: insets.top + 8,
             paddingBottom: insets.bottom + 32,

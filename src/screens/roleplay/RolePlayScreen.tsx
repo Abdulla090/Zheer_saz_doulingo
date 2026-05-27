@@ -7,6 +7,7 @@
  */
 
 import { PressableScale } from "@/components/animations";
+import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
@@ -202,7 +203,7 @@ export function RolePlayScreen() {
 
   // ── Pulse animations ───────────────────────────────────────────────────────
   useEffect(() => {
-    if (status === "listening") {
+    if (status === "listening" && !IS_ANDROID) {
       pulse1.value = withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false);
       pulse2.value = withDelay(350, withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false));
     } else {

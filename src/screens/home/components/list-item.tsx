@@ -1,20 +1,15 @@
+import { Chest, NavBarChest } from "@/constants/icons";
 import {
-  Chest,
-  LessonBook,
-  LessonDumbbell,
-  LessonGame,
-  LessonHeadphone,
-  LessonMicrophone,
-  LessonStar,
-  LessonVideo,
-  NavBarChest,
-} from "@/constants/icons";
+  LessonPathIcon,
+  type LessonPathIconType,
+} from "@/components/icons/LessonPathIcons";
 import { LessonListItem, SectionTheme } from "@/data/list-items";
 import type { LessonPathMode } from "@/data/lesson-content";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { CompletedCheckIcon } from "./completed-check-icon";
+import { CurrentLessonIcon } from "./current-lesson-icon";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { LessonProgressRing } from "./lesson-progress-ring";
 import { SVG_BUTTON_COLOR_SETS, SvgButton, SvgButtonVariant } from "./list-button";
@@ -30,6 +25,7 @@ const ITEM_SLOT_HEIGHT = 78;
 const CURVE_AMPLITUDE_RATIO = 0.18;
 const ARC_FREQUENCY = Math.PI / 4;
 const CURVE_TENSION = 1.25;
+const PATH_ICON_SIZE = 30;
 
 const getDynamicOffset = (globalIndex: number, amplitude: number) => {
   const baseSine = Math.sin(globalIndex * ARC_FREQUENCY);
@@ -37,17 +33,6 @@ const getDynamicOffset = (globalIndex: number, amplitude: number) => {
     Math.sign(baseSine) * Math.pow(Math.abs(baseSine), CURVE_TENSION);
   return adjustedSine * amplitude * -1;
 };
-
-const LESSON_ICON_MAP = {
-  practice: LessonStar,
-  video: LessonVideo,
-  reading: LessonBook,
-  listening: LessonHeadphone,
-  game: LessonGame,
-  speaking: LessonMicrophone,
-  conversation: LessonDumbbell,
-  cup: LessonStar,
-} as const;
 
 function lessonColorTheme(item: LessonListItem): SectionTheme {
   if (item.sectionTheme === "gray" && item.displayTheme !== "gray") {
@@ -69,6 +54,20 @@ function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
   return "blue";
 }
 
+function resolveIconColor(
+  item: LessonListItem,
+  isCompleted: boolean,
+  isLocked: boolean,
+  isGrayInProgress: boolean,
+  globalIndex: number,
+): string {
+  if (isCompleted) return "#FFFFFF";
+  if (isLocked) return "#6B7280";
+  if (globalIndex === 0) return "#B26A00";
+  if (isGrayInProgress) return "#FFFFFF";
+  return "#FFFFFF";
+}
+
 type ListItemProps = {
   item: LessonListItem;
   screenWidth: number;
@@ -86,16 +85,34 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
   const isLocked = status === "locked";
   const isGrayInProgress = isCurrent && item.sectionTheme === "gray";
   const buttonColor = resolveButtonVariant(item);
-  const iconColorOverride = isCompleted
-    ? "#FFFFFF"
-    : isLocked
-      ? undefined
-      : globalIndex === 0
-        ? "#B26A00"
-        : isGrayInProgress
-          ? "white"
-          : undefined;
-  const IconComponent = isCompleted ? CompletedCheckIcon : LESSON_ICON_MAP[type];
+  const iconColor = resolveIconColor(
+    item,
+    isCompleted,
+    isLocked,
+    isGrayInProgress,
+    globalIndex,
+  );
+
+  const iconType = (type === "gift" ? "practice" : type) as LessonPathIconType;
+
+  const pathIcon = useMemo(() => {
+    if (isCompleted) {
+      return (
+        <CompletedCheckIcon
+          width={PATH_ICON_SIZE}
+          height={PATH_ICON_SIZE}
+          color={iconColor}
+        />
+      );
+    }
+    const glyph = (
+      <LessonPathIcon type={iconType} color={iconColor} size={PATH_ICON_SIZE} />
+    );
+    if (isCurrent) {
+      return <CurrentLessonIcon>{glyph}</CurrentLessonIcon>;
+    }
+    return glyph;
+  }, [iconColor, iconType, isCompleted, isCurrent]);
 
   const handleNavigate = () => {
     router.push({
@@ -156,16 +173,16 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
           </Pressable>
         ) : (
           <SvgButton
-            isCurrentLesson={isCurrent}
             isLocked={isLocked}
             size={LESSON_BUTTON_SIZE}
             onPress={isLocked ? undefined : handleNavigate}
             variant={buttonColor}
-            IconComponent={IconComponent}
-            iconColor={iconColorOverride}
+            icon={pathIcon}
           />
         )}
       </View>
     </View>
   );
 });
+
+ListItem.displayName = "ListItem";

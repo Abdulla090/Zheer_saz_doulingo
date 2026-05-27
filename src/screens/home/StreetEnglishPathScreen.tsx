@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
@@ -141,7 +142,7 @@ export const StreetEnglishPathScreen = () => {
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
-          scrollEventThrottle={16}
+          scrollEventThrottle={32}
           style={styles.list}
           ListFooterComponent={ListFooter}
           contentContainerStyle={[styles.listContainer, { paddingBottom: 0 }]}
@@ -149,7 +150,7 @@ export const StreetEnglishPathScreen = () => {
           initialNumToRender={6}
           maxToRenderPerBatch={4}
           windowSize={3}
-          removeClippedSubviews
+          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
           updateCellsBatchingPeriod={100}
           onViewableItemsChanged={onViewableItemsChanged}
         />

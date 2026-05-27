@@ -68,7 +68,14 @@ The **Games** and **Home** dashboards share the same layout, colors, and typogra
 | **iOS 26+** (dev build with `expo-glass-effect`) | Native **Liquid Glass** via `GlassView` in `src/components/ui/ios-liquid-home.tsx` |
 | **Android** (and older iOS) | **Frosted blur** (`expo-blur`) + light specular sheen + soft shadow — same structure, different material |
 
-Implementation: `useNativeLiquidGlass()` is `true` only when `Platform.OS === "ios"` and `isGlassEffectAPIAvailable()` from `expo-glass-effect`. Android always uses the blur fallback so the app feels consistent without requiring iOS 26 APIs.
+Implementation: `useNativeLiquidGlass()` is `true` only when `Platform.OS === "ios"` and `isGlassEffectAPIAvailable()` from `expo-glass-effect`. On Android, home cards use a **lightweight frosted surface** (solid glass + sheen, no `BlurView`) for smoother scrolling while keeping the liquid look. iOS keeps native glass or blur.
+
+### Native performance (Android / iOS)
+
+- Path lesson nodes use **Lucide overlays** instead of nested SVG imports (`LessonPathIcons`) — fixes white/missing icons on Android release APKs.
+- `SvgButton` animates with `Animated.View` (not `AnimatedG` inside SVG).
+- `removeClippedSubviews` is **iOS-only** on path lists (`PATH_LIST_REMOVE_CLIPPED` in `src/utils/native-perf.ts`).
+- Lesson games skip `BlurView` (`USE_GAME_BLUR = false` in `game-design.ts`).
 
 ## Games tab
 
