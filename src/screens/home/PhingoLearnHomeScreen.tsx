@@ -16,10 +16,11 @@ import {
   HomeType,
 } from "@/components/ui/ios-liquid-home";
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
+import { useI18n } from "@/hooks/useI18n";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { Fire, Heart } from "@/constants/icons";
 import { useRouter } from "expo-router";
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -39,30 +40,6 @@ type QuestDef = {
   progressLabel?: string;
   renderIcon: () => React.ReactNode;
 };
-
-const QUESTS: QuestDef[] = [
-  {
-    id: "xp",
-    title: "Earn 20 XP",
-    progress: 8 / 20,
-    progressLabel: "8 / 20",
-    renderIcon: () => <QuestZapFlat size={40} />,
-  },
-  {
-    id: "listen",
-    title: "Do a listening lesson",
-    progress: 0,
-    progressLabel: "0 / 1",
-    renderIcon: () => <QuestHeadphonesFlat size={40} />,
-  },
-  {
-    id: "score",
-    title: "Score 80% or higher",
-    progress: 0,
-    progressLabel: "0 / 1",
-    renderIcon: () => <QuestTargetFlat size={40} />,
-  },
-];
 
 function DiamondIcon({ size = 10 }: { size?: number }) {
   return (
@@ -120,9 +97,37 @@ function StarRating({ filled }: { filled: number }) {
 export function PhingoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
+
+  const quests = useMemo<QuestDef[]>(
+    () => [
+      {
+        id: "xp",
+        title: t("home.questXp"),
+        progress: 8 / 20,
+        progressLabel: "8 / 20",
+        renderIcon: () => <QuestZapFlat size={40} />,
+      },
+      {
+        id: "listen",
+        title: t("home.questListen"),
+        progress: 0,
+        progressLabel: "0 / 1",
+        renderIcon: () => <QuestHeadphonesFlat size={40} />,
+      },
+      {
+        id: "score",
+        title: t("home.questScore"),
+        progress: 0,
+        progressLabel: "0 / 1",
+        renderIcon: () => <QuestTargetFlat size={40} />,
+      },
+    ],
+    [t],
+  );
 
   const onContinue = useCallback(() => {
     router.push("/dashboard?mode=normal");
@@ -167,17 +172,15 @@ export function PhingoLearnHomeScreen() {
           <View style={styles.heroRow}>
             <DolphinFlat width={72} height={72} />
             <View style={styles.heroCopy}>
-              <Text style={styles.heroTitle}>Hi there!</Text>
-              <Text style={styles.heroSub}>
-                Learn English — made for Kurdish speakers
-              </Text>
-              <HomeLiquidButton label="CONTINUE" onPress={onContinue} />
+              <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
+              <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
+              <HomeLiquidButton label={t("home.continue")} onPress={onContinue} />
             </View>
           </View>
         </HomeLiquidCard>
 
         <HomeLiquidCard style={styles.cardSpacer} contentStyle={styles.dailyInner}>
-          <Text style={styles.cardHeading}>Daily goal</Text>
+          <Text style={styles.cardHeading}>{t("home.dailyGoal")}</Text>
           <View style={styles.dailyRow}>
             <View style={styles.dailyCopy}>
               <View style={styles.dailyXpRow}>
@@ -201,17 +204,17 @@ export function PhingoLearnHomeScreen() {
           style={styles.cardSpacer}
         >
           <View style={styles.lessonTextCol}>
-            <Text style={styles.lessonLabel}>Lesson 5</Text>
-            <Text style={styles.lessonTitle}>At the Café</Text>
+            <Text style={styles.lessonLabel}>{t("home.lessonLabel")}</Text>
+            <Text style={styles.lessonTitle}>{t("home.lessonTitle")}</Text>
             <StarRating filled={2} />
           </View>
           <CoffeeCupFlat width={84} height={84} />
         </HomeLiquidLessonTile>
 
-        <Text style={styles.questsSectionTitle}>Today's quests</Text>
+        <Text style={styles.questsSectionTitle}>{t("home.todaysQuests")}</Text>
         <HomeLiquidCard contentStyle={styles.questsInner}>
-          {QUESTS.map((q, i) => (
-            <QuestRow key={q.id} {...q} isLast={i === QUESTS.length - 1} />
+          {quests.map((q, i) => (
+            <QuestRow key={q.id} {...q} isLast={i === quests.length - 1} />
           ))}
         </HomeLiquidCard>
       </ScrollView>

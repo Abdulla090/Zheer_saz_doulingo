@@ -2,6 +2,7 @@
  * PairMatchGame — Premium light UI ("Pair the words").
  */
 
+import { useI18n } from "@/hooks/useI18n";
 import React, { memo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -74,6 +75,7 @@ const MatchChip = memo(function MatchChip({
 });
 
 export default function PairMatchGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [left] = useState(() => shuffle(question.pairs.map((p) => p.kurdish)));
   const [right] = useState(() => shuffle(question.pairs.map((p) => p.english)));
 
@@ -168,8 +170,8 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
-          title="Pair the words"
-          subtitle="Match each word with its meaning."
+          title={t("lessons.pairWords")}
+          subtitle={t("lessons.pairWordsSub")}
         />
       </GameHeader>
 

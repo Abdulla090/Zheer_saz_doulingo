@@ -16,6 +16,7 @@ import Animated, {
 
 import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
 import { VoiceQuestion } from "@/data/lesson-content";
+import { useI18n } from "@/hooks/useI18n";
 import { useSpeechCapture } from "@/hooks/use-speech-capture";
 import { GameFooter, GameHeader } from "./GameAnimatedShell";
 import { LightGameHeading } from "./lesson-light-primitives";
@@ -37,6 +38,7 @@ function matchesTarget(result: string, target: string) {
 }
 
 export default function VoiceGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
   const firedRef = useRef(false);
@@ -158,12 +160,12 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
   const statusText =
     state === "idle"
-      ? "Tap the mic and speak"
+      ? t("lessons.tapMicSpeak")
       : state === "listening"
-        ? "Listening…"
+        ? t("lessons.listening")
         : state === "success"
-          ? "Nice!"
-          : speech.error || "Try again";
+          ? t("lessons.nice")
+          : speech.error || t("lessons.micRetry");
 
   const micOnly = Platform.OS !== "web";
 
@@ -172,7 +174,7 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       {!micOnly ? (
         <GameHeader>
           <LightGameHeading
-            title="Say it out loud"
+            title={t("lessons.sayOutLoud")}
             subtitle={question.targetWord}
           />
         </GameHeader>

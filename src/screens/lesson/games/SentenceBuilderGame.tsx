@@ -2,6 +2,7 @@
  * SentenceBuilderGame — Premium light UI ("Order the words").
  */
 
+import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -36,6 +37,7 @@ type Placed = { word: string; id: string };
 type FBState = "idle" | "correct" | "wrong";
 
 export default function SentenceBuilderGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [sentence, setSentence] = useState<Placed[]>([]);
   const [fb, setFb] = useState<FBState>("idle");
   const slotN = useRef(0);
@@ -115,8 +117,8 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
-          title="Order the words"
-          subtitle="to make a correct sentence."
+          title={t("lessons.orderWords")}
+          subtitle={t("lessons.orderWordsSub")}
         />
       </GameHeader>
 
@@ -165,7 +167,11 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
       <GameFooter delay={200}>
         <LightHintButton />
         <View style={{ height: 12 }} />
-        <LightCheckButton onPress={check} disabled={!canCheck} />
+        <LightCheckButton
+          label={t("lessons.check")}
+          onPress={check}
+          disabled={!canCheck}
+        />
       </GameFooter>
     </GameRoot>
   );

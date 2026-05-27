@@ -3,6 +3,7 @@
  */
 
 import { AppText } from "@/components/ui/AppText";
+import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export default function MultipleChoiceGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -67,8 +69,8 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
-          title="Choose the answer"
-          subtitle="Select the best option."
+          title={t("lessons.chooseAnswer")}
+          subtitle={t("lessons.chooseAnswerSub")}
         />
       </GameHeader>
 
@@ -98,6 +100,7 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
 
       <GameFooter>
         <LightCheckButton
+          label={t("lessons.check")}
           onPress={check}
           disabled={!selected || revealed}
         />

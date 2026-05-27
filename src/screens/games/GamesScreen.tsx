@@ -16,11 +16,12 @@ import {
   buildPracticeLessonParams,
   type PracticeGameKind,
 } from "@/data/game-practice";
+import { useI18n } from "@/hooks/useI18n";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -42,47 +43,6 @@ type GameTile = {
   featured?: boolean;
   renderIcon: () => React.ReactNode;
 };
-
-/** Single hub list — no duplicate voice tiles (Speak Up covers mic practice). */
-const GAME_TILES: GameTile[] = [
-  {
-    id: "roleplay",
-    title: "AI Role Play",
-    subtitle: "Live conversations in real-world scenes",
-    badge: "NEW",
-    href: "/roleplay",
-    featured: true,
-    renderIcon: () => <RolePlayGameIcon size={56} />,
-  },
-  {
-    id: "order",
-    title: "Order Words",
-    subtitle: "Build sentences in the right order",
-    kind: "sentence_builder",
-    renderIcon: () => <OrderWordsGameIcon size={52} />,
-  },
-  {
-    id: "pair",
-    title: "Pair Words",
-    subtitle: "Match English with Kurdish",
-    kind: "pair_match",
-    renderIcon: () => <PairWordsGameIcon size={52} />,
-  },
-  {
-    id: "speak",
-    title: "Speak Up",
-    subtitle: "Mic practice — say the phrase out loud",
-    kind: "voice_speak",
-    renderIcon: () => <SpeakUpGameIcon size={52} />,
-  },
-  {
-    id: "ai-teacher",
-    title: "AI Teacher",
-    subtitle: "IELTS-style writing & speaking feedback",
-    href: "/ai-teacher",
-    renderIcon: () => <AiTeacherGameIcon size={52} />,
-  },
-];
 
 function GameHubCard({
   tile,
@@ -150,9 +110,53 @@ function GameHubCard({
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useI18n();
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
+
+  const gameTiles = useMemo<GameTile[]>(
+    () => [
+      {
+        id: "roleplay",
+        title: t("games.rolePlayTitle"),
+        subtitle: t("games.rolePlaySub"),
+        badge: t("games.badgeNew"),
+        href: "/roleplay",
+        featured: true,
+        renderIcon: () => <RolePlayGameIcon size={56} />,
+      },
+      {
+        id: "order",
+        title: t("games.orderTitle"),
+        subtitle: t("games.orderSub"),
+        kind: "sentence_builder",
+        renderIcon: () => <OrderWordsGameIcon size={52} />,
+      },
+      {
+        id: "pair",
+        title: t("games.pairTitle"),
+        subtitle: t("games.pairSub"),
+        kind: "pair_match",
+        renderIcon: () => <PairWordsGameIcon size={52} />,
+      },
+      {
+        id: "speak",
+        title: t("games.speakTitle"),
+        subtitle: t("games.speakSub"),
+        kind: "voice_speak",
+        renderIcon: () => <SpeakUpGameIcon size={52} />,
+      },
+      {
+        id: "ai-teacher",
+        title: t("games.teacherTitle"),
+        subtitle: t("games.teacherSub"),
+        href: "/ai-teacher",
+        renderIcon: () => <AiTeacherGameIcon size={52} />,
+      },
+    ],
+    [t],
+  );
 
   const openPractice = useCallback(
     (kind: PracticeGameKind) => {
@@ -185,11 +189,11 @@ export function GamesScreen() {
           paddingHorizontal: horizontalPad,
         }}
       >
-        <Text style={styles.pageTitle}>Games</Text>
-        <Text style={styles.pageSub}>Premium practice modes</Text>
+        <Text style={styles.pageTitle}>{t("games.title")}</Text>
+        <Text style={styles.pageSub}>{t("games.subtitle")}</Text>
 
         <View style={styles.list}>
-          {GAME_TILES.map((tile) => (
+          {gameTiles.map((tile) => (
             <GameHubCard
               key={tile.id}
               tile={tile}

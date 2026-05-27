@@ -3,6 +3,7 @@
  */
 
 import { AppText } from "@/components/ui/AppText";
+import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -28,6 +29,7 @@ type Props = {
 };
 
 export default function ConversationPickGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -70,26 +72,26 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
       >
         <GameHeader>
           <LightGameHeading
-            title="Conversation"
-            subtitle="Pick the most natural reply."
+            title={t("lessons.conversation")}
+            subtitle={t("lessons.conversationSub")}
           />
         </GameHeader>
 
         <LightSurfaceCard style={s.situationCard}>
-          <Text style={s.situationLabel}>SITUATION</Text>
+          <Text style={s.situationLabel}>{t("lessons.situation")}</Text>
           <AppText style={s.situationText} forceKurdishFont>
             {question.situation}
           </AppText>
         </LightSurfaceCard>
 
         <LightSurfaceCard>
-          <Text style={s.theyLabel}>THEY SAY</Text>
+          <Text style={s.theyLabel}>{t("lessons.theySay")}</Text>
           <AppText style={s.theyText} forceKurdishFont>
             {question.theyAsk}
           </AppText>
         </LightSurfaceCard>
 
-        <Text style={s.chooseLabel}>Choose the best response</Text>
+        <Text style={s.chooseLabel}>{t("lessons.chooseResponse")}</Text>
 
         <View style={s.options}>
           {question.options.map((opt, i) => (
@@ -108,6 +110,7 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
       <GameFooter>
         <View style={s.checkWrap}>
           <LightCheckButton
+            label={t("lessons.check")}
             onPress={check}
             disabled={!selected || revealed}
           />

@@ -13,6 +13,7 @@ import {
   HomePalette,
   HomeType,
 } from "@/components/ui/ios-liquid-home";
+import { useI18n } from "@/hooks/useI18n";
 import { useSpeechCapture } from "@/hooks/use-speech-capture";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
@@ -112,6 +113,7 @@ type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
 
@@ -311,11 +313,11 @@ export function RolePlayScreen() {
   };
 
   const handleTextSubmit = () => {
-    const t = textInput.trim();
-    if (!t) return;
+    const trimmed = textInput.trim();
+    if (!trimmed) return;
     setTextInput("");
     setStatus("thinking");
-    handleUserResponse(t);
+    handleUserResponse(trimmed);
   };
 
   const sessionStarted = history.length > 0;
@@ -324,12 +326,12 @@ export function RolePlayScreen() {
 
   const micHint =
     status === "listening"
-      ? "Listening… tap to stop"
+      ? t("rolePlay.listening")
       : status === "thinking"
-        ? "Thinking…"
+        ? t("rolePlay.thinking")
         : status === "speaking"
-          ? "Tap to interrupt"
-          : "Tap to speak";
+          ? t("rolePlay.interrupt")
+          : t("rolePlay.tapSpeak");
 
   return (
     <View style={styles.root}>
@@ -346,8 +348,8 @@ export function RolePlayScreen() {
           <View style={styles.headerCenter}>
             <RolePlayGameIcon size={40} />
             <View>
-              <Text style={styles.headerTitle}>AI Role Play</Text>
-              <Text style={styles.headerSub}>Real-world voice practice</Text>
+              <Text style={styles.headerTitle}>{t("rolePlay.headerTitle")}</Text>
+              <Text style={styles.headerSub}>{t("rolePlay.headerSub")}</Text>
             </View>
           </View>
           <View style={{ width: 44 }} />
@@ -364,7 +366,7 @@ export function RolePlayScreen() {
         >
           {!sessionStarted ? (
             <>
-              <Text style={styles.pickerLabel}>Choose a scene</Text>
+              <Text style={styles.pickerLabel}>{t("rolePlay.chooseScene")}</Text>
               <View style={styles.scenarioGrid}>
                 {SCENARIOS.map((sc) => {
                   const sel = activeScenario.id === sc.id;
@@ -432,7 +434,7 @@ export function RolePlayScreen() {
                   {activeScenario.subtitleKu}
                 </AppText>
                 <HomeLiquidButton
-                  label="START CONVERSATION"
+                  label={t("rolePlay.start")}
                   onPress={startSession}
                   style={styles.startBtn}
                 />
@@ -478,7 +480,7 @@ export function RolePlayScreen() {
 
               {status === "thinking" ? (
                 <Animated.View entering={FadeInUp.duration(200)}>
-                  <Text style={styles.thinking}>Thinking…</Text>
+                  <Text style={styles.thinking}>{t("rolePlay.thinking")}</Text>
                 </Animated.View>
               ) : null}
             </View>
@@ -525,7 +527,7 @@ export function RolePlayScreen() {
               </View>
             ) : (
               <Pressable onPress={() => setShowTyping(true)}>
-                <Text style={styles.typeLink}>Type instead</Text>
+                <Text style={styles.typeLink}>{t("rolePlay.typeInstead")}</Text>
               </Pressable>
             )}
           </View>

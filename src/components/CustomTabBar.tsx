@@ -5,9 +5,11 @@ import {
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
+import { useI18n } from "@/hooks/useI18n";
+import type { I18nKey } from "@/i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import * as Haptics from "expo-haptics";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -18,40 +20,40 @@ type TabKey = "index" | "dashboard" | "feed" | "subscription" | "more";
 
 const TABS: {
   route: TabKey;
-  label: string;
+  labelKey: I18nKey;
   renderIcon: (active: boolean) => React.ReactNode;
 }[] = [
   {
     route: "index",
-    label: "HOME",
+    labelKey: "tabs.home",
     renderIcon: (active) => (
       <HomeTabIconFlat size={26} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "dashboard",
-    label: "PATH",
+    labelKey: "tabs.path",
     renderIcon: (active) => (
       <PathTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "feed",
-    label: "GAMES",
+    labelKey: "tabs.games",
     renderIcon: (active) => (
       <GamesTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "subscription",
-    label: "SHOP",
+    labelKey: "tabs.shop",
     renderIcon: (active) => (
       <ShopTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "more",
-    label: "PROFILE",
+    labelKey: "tabs.profile",
     renderIcon: (active) => (
       <ProfileTabIconFlat size={26} color={active ? ACTIVE : INACTIVE} />
     ),
@@ -69,7 +71,13 @@ const HIDDEN_ROUTES = new Set([
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const activeRouteName = state.routes[state.index]?.name;
+
+  const tabs = useMemo(
+    () => TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) })),
+    [t],
+  );
 
   if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
     return null;
@@ -97,7 +105,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         },
       ]}
     >
-      {TABS.map(({ route, label, renderIcon }) => {
+      {tabs.map(({ route, label, renderIcon }) => {
         const routeIndex = state.routes.findIndex((r) => r.name === route);
         const isFocused =
           routeIndex >= 0

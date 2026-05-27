@@ -3,6 +3,7 @@
  */
 
 import { AppText } from "@/components/ui/AppText";
+import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -31,6 +32,7 @@ type Props = {
 };
 
 export default function FillBlankGame({ question, onAnswer }: Props) {
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -90,8 +92,8 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
-          title="Fill in the blank"
-          subtitle="Pick the word that completes the sentence."
+          title={t("lessons.fillBlank")}
+          subtitle={t("lessons.fillBlankSub")}
         />
       </GameHeader>
 
@@ -131,6 +133,7 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
 
       <GameFooter>
         <LightCheckButton
+          label={t("lessons.check")}
           onPress={check}
           disabled={!selected || revealed}
         />

@@ -15,6 +15,7 @@ import type {
 } from "@/data/ai-teacher-types";
 import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
 import { useSpeechCapture } from "@/hooks/use-speech-capture";
+import { useI18n } from "@/hooks/useI18n";
 import { evaluateEnglish } from "@/services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
@@ -85,6 +86,7 @@ type Phase = "input" | "loading" | "results";
 export function AiTeacherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
 
@@ -129,7 +131,7 @@ export function AiTeacherScreen() {
   const onSubmit = useCallback(async () => {
     const text = answer.trim();
     if (text.length < 12) {
-      setError("Write or record at least a short answer (12+ characters).");
+      setError(t("aiTeacher.minAnswer"));
       return;
     }
     setError(null);
@@ -148,7 +150,7 @@ export function AiTeacherScreen() {
       setError("Could not check your English right now. Try again.");
       setPhase("input");
     }
-  }, [answer, mode, prompt.id]);
+  }, [answer, mode, prompt.id, t]);
 
   const onSave = useCallback(async () => {
     if (!result) return;
@@ -232,8 +234,8 @@ export function AiTeacherScreen() {
               <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
             </Pressable>
             <View style={styles.topTitles}>
-              <Text style={styles.pageTitle}>AI Teacher</Text>
-              <Text style={styles.pageSub}>IELTS-style English check</Text>
+              <Text style={styles.pageTitle}>{t("aiTeacher.title")}</Text>
+              <Text style={styles.pageSub}>{t("aiTeacher.subtitle")}</Text>
             </View>
             <View style={styles.backSpacer} />
           </View>
@@ -259,13 +261,13 @@ export function AiTeacherScreen() {
                         mode === m && styles.modeChipTextOn,
                       ]}
                     >
-                      {m === "speaking" ? "Speaking" : "Writing"}
+                      {m === "speaking" ? t("aiTeacher.speaking") : t("aiTeacher.writing")}
                     </Text>
                   </Pressable>
                 ))}
               </View>
 
-              <Text style={styles.sectionTitle}>Choose a prompt</Text>
+              <Text style={styles.sectionTitle}>{t("aiTeacher.choosePrompt")}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -288,12 +290,12 @@ export function AiTeacherScreen() {
               <HomeLiquidCard contentStyle={styles.promptBody}>
                 <View style={styles.promptHeader}>
                   <Sparkles size={18} color={C.blue} />
-                  <Text style={styles.promptScenarioLabel}>Your task</Text>
+                  <Text style={styles.promptScenarioLabel}>{t("aiTeacher.yourTask")}</Text>
                 </View>
                 <Text style={styles.promptScenario}>{prompt.scenario}</Text>
               </HomeLiquidCard>
 
-              <Text style={styles.sectionTitle}>Your answer</Text>
+              <Text style={styles.sectionTitle}>{t("aiTeacher.yourAnswer")}</Text>
               {mode === "speaking" && !showTyping ? (
                 <View style={styles.speakingMicBlock}>
                   <MicCaptureOrb
@@ -303,8 +305,8 @@ export function AiTeacherScreen() {
                     size={112}
                     hint={
                       speech.listening
-                        ? "Tap to stop recording"
-                        : "Tap the mic and speak your answer"
+                        ? t("aiTeacher.tapMicStop")
+                        : t("aiTeacher.tapMicSpeak")
                     }
                     onPress={toggleMic}
                   />
@@ -315,7 +317,7 @@ export function AiTeacherScreen() {
                     onPress={() => setShowTyping(true)}
                     style={styles.typeInsteadBtn}
                   >
-                    <Text style={styles.typeInsteadText}>Type instead</Text>
+                    <Text style={styles.typeInsteadText}>{t("aiTeacher.typeInstead")}</Text>
                   </Pressable>
                 </View>
               ) : (
@@ -325,8 +327,8 @@ export function AiTeacherScreen() {
                     onChangeText={setAnswer}
                     placeholder={
                       mode === "speaking"
-                        ? "Type what you said…"
-                        : "Type your response in English…"
+                        ? t("aiTeacher.typeSpeaking")
+                        : t("aiTeacher.typeWriting")
                     }
                     placeholderTextColor={C.grayLight}
                     multiline
@@ -338,7 +340,7 @@ export function AiTeacherScreen() {
                       onPress={() => setShowTyping(false)}
                       style={styles.typeInsteadBtnInline}
                     >
-                      <Text style={styles.typeInsteadText}>Use mic</Text>
+                      <Text style={styles.typeInsteadText}>{t("aiTeacher.useMic")}</Text>
                     </Pressable>
                   ) : null}
                 </View>
@@ -351,13 +353,11 @@ export function AiTeacherScreen() {
               {phase === "loading" ? (
                 <View style={styles.loadingBox}>
                   <ActivityIndicator color={C.blue} size="large" />
-                  <Text style={styles.loadingText}>
-                    Checking your English…
-                  </Text>
+                  <Text style={styles.loadingText}>{t("aiTeacher.checking")}</Text>
                 </View>
               ) : (
                 <HomeLiquidButton
-                  label="CHECK MY ENGLISH"
+                  label={t("aiTeacher.checkEnglish")}
                   onPress={onSubmit}
                   style={styles.submitBtn}
                 />
