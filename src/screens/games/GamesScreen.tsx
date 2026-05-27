@@ -1,5 +1,6 @@
 import { DolphinFlat } from "@/components/icons/HomeDashboardIcons";
 import {
+  AiTeacherGameIcon,
   ListenUpGameIcon,
   OrderWordsGameIcon,
   PairWordsGameIcon,
@@ -43,7 +44,7 @@ type GameTile = {
   stars: number;
   bestPercent: number;
   kind?: PracticeGameKind;
-  href?: "/roleplay";
+  href?: "/roleplay" | "/ai-teacher";
   renderIcon: () => React.ReactNode;
 };
 
@@ -83,6 +84,14 @@ const PRACTICE_TILES: GameTile[] = [
 ];
 
 const AI_TILES: GameTile[] = [
+  {
+    id: "ai-teacher",
+    title: "AI Teacher",
+    stars: 0,
+    bestPercent: 0,
+    href: "/ai-teacher",
+    renderIcon: () => <AiTeacherGameIcon size={52} />,
+  },
   {
     id: "roleplay",
     title: "AI Role Play",

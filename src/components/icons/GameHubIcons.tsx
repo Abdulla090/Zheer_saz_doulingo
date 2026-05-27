@@ -61,6 +61,26 @@ export function SpeakUpGameIcon({ size = 52 }: { size?: number }) {
   );
 }
 
+export function AiTeacherGameIcon({ size = 52 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
+      <Rect width={52} height={52} rx={14} fill="#FEF3C7" />
+      <Rect x="14" y="12" width="24" height="28" rx="4" fill="#FFFFFF" />
+      <Rect x="18" y="16" width="16" height="3" rx="1.5" fill="#F59E0B" />
+      <Rect x="18" y="22" width="12" height="2" rx="1" fill="#FCD34D" />
+      <Rect x="18" y="27" width="14" height="2" rx="1" fill="#FCD34D" />
+      <Circle cx="36" cy="36" r="10" fill="#2B59F3" />
+      <Path
+        d="M33 36l2 2 5-6"
+        stroke="#FFFFFF"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function RolePlayGameIcon({ size = 52 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
