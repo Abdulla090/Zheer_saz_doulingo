@@ -1,4 +1,3 @@
-import { PressableScale } from "@/components/animations";
 import {
   ChestFlat,
   CoffeeCupFlat,
@@ -7,14 +6,20 @@ import {
   QuestTargetFlat,
   QuestZapFlat,
 } from "@/components/icons/HomeDashboardIcons";
-import { FlatCard } from "@/components/ui/FlatCard";
+import {
+  HomeLiquidButton,
+  HomeLiquidCard,
+  HomeLiquidLessonTile,
+  HomeLiquidXpChip,
+  HomeMeshBackground,
+  HomePalette,
+  HomeType,
+} from "@/components/ui/ios-liquid-home";
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
 import { Fire, Heart } from "@/constants/icons";
-import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback } from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,21 +29,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
-/** Reference palette — flat Phingo home */
-const C = {
-  bg: "#FFFFFF",
-  blue: "#2B59F3",
-  navy: "#1A2B48",
-  gray: "#6B7280",
-  grayLight: "#9CA3AF",
-  track: "#E8EDF2",
-  orange: "#FF9600",
-  red: "#FF4B4B",
-  gold: "#FFC800",
-  divider: "#EEF2F6",
-  xpBorder: "#BFDBFE",
-  xpBg: "#EFF6FF",
-};
+const C = HomePalette;
 
 type QuestDef = {
   id: string;
@@ -105,9 +96,7 @@ const QuestRow = memo(function QuestRow({
           />
         </View>
       </View>
-      <View style={styles.xpBadge}>
-        <Text style={styles.xpBadgeText}>XP</Text>
-      </View>
+      <HomeLiquidXpChip />
     </View>
   );
 });
@@ -135,17 +124,17 @@ export function PhingoLearnHomeScreen() {
   const cardWidth = width - horizontalPad * 2;
 
   const onContinue = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push("/dashboard?mode=normal");
   }, [router]);
 
   const onLessonPress = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push("/lesson");
   }, [router]);
 
   return (
     <View style={styles.root}>
+      <HomeMeshBackground />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         removeClippedSubviews
@@ -169,26 +158,22 @@ export function PhingoLearnHomeScreen() {
           </View>
         </View>
 
-        <FlatCard style={styles.cardSpacer} contentStyle={styles.heroInner}>
+        <HomeLiquidCard
+          style={styles.cardSpacer}
+          contentStyle={styles.heroInner}
+          interactive
+        >
           <View style={styles.heroRow}>
             <DolphinFlat width={72} height={72} />
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>Hi there!</Text>
               <Text style={styles.heroSub}>Let's learn Kurdish (Sorani)</Text>
-              <Pressable
-                onPress={onContinue}
-                style={({ pressed }) => [
-                  styles.continueBtn,
-                  pressed && styles.continueBtnPressed,
-                ]}
-              >
-                <Text style={styles.continueLabel}>CONTINUE</Text>
-              </Pressable>
+              <HomeLiquidButton label="CONTINUE" onPress={onContinue} />
             </View>
           </View>
-        </FlatCard>
+        </HomeLiquidCard>
 
-        <FlatCard style={styles.cardSpacer} contentStyle={styles.dailyInner}>
+        <HomeLiquidCard style={styles.cardSpacer} contentStyle={styles.dailyInner}>
           <Text style={styles.cardHeading}>Daily goal</Text>
           <View style={styles.dailyRow}>
             <View style={styles.dailyCopy}>
@@ -206,15 +191,11 @@ export function PhingoLearnHomeScreen() {
             </View>
             <ChestFlat width={64} height={64} />
           </View>
-        </FlatCard>
+        </HomeLiquidCard>
 
-        <Pressable
+        <HomeLiquidLessonTile
           onPress={onLessonPress}
-          style={({ pressed }) => [
-            styles.lessonCard,
-            styles.cardSpacer,
-            pressed && { opacity: 0.92 },
-          ]}
+          style={styles.cardSpacer}
         >
           <View style={styles.lessonTextCol}>
             <Text style={styles.lessonLabel}>Lesson 5</Text>
@@ -222,14 +203,14 @@ export function PhingoLearnHomeScreen() {
             <StarRating filled={2} />
           </View>
           <CoffeeCupFlat width={84} height={84} />
-        </Pressable>
+        </HomeLiquidLessonTile>
 
         <Text style={styles.questsSectionTitle}>Today's quests</Text>
-        <FlatCard contentStyle={styles.questsInner}>
+        <HomeLiquidCard contentStyle={styles.questsInner}>
           {QUESTS.map((q, i) => (
             <QuestRow key={q.id} {...q} isLast={i === QUESTS.length - 1} />
           ))}
-        </FlatCard>
+        </HomeLiquidCard>
       </ScrollView>
     </View>
   );
@@ -238,7 +219,7 @@ export function PhingoLearnHomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: C.meshBottom,
   },
   header: {
     flexDirection: "row",
@@ -247,11 +228,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   logo: {
-    fontSize: 32,
-    fontWeight: "800",
+    ...HomeType.logo,
     color: C.blue,
-    letterSpacing: -0.8,
-    fontFamily: "DINNextRoundedBold",
   },
   headerStats: {
     flexDirection: "row",
@@ -291,35 +269,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
+    ...HomeType.heading,
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
   },
   heroSub: {
-    fontSize: 15,
-    fontWeight: "500",
+    ...HomeType.body,
     color: C.gray,
-    lineHeight: 21,
-    fontFamily: "DINNextRoundedRegular",
     marginTop: 2,
-  },
-  continueBtn: {
-    marginTop: 14,
-    backgroundColor: C.blue,
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  continueBtnPressed: {
-    opacity: 0.88,
-  },
-  continueLabel: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-    letterSpacing: 1,
-    fontFamily: "DINNextRoundedBold",
   },
   dailyInner: {
     paddingVertical: 18,
@@ -341,25 +297,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardHeading: {
-    fontSize: 18,
-    fontWeight: "800",
+    ...HomeType.section,
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
   },
   dailyXp: {
     fontSize: 16,
     fontWeight: "600",
     color: C.gray,
     fontFamily: "DINNextRoundedMedium",
-  },
-  lessonCard: {
-    backgroundColor: C.blue,
-    borderRadius: 28,
-    padding: 20,
-    minHeight: 124,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   lessonTextCol: {
     flex: 1,
@@ -368,14 +313,16 @@ const styles = StyleSheet.create({
   lessonLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255,255,255,0.92)",
     fontFamily: "DINNextRoundedMedium",
+    letterSpacing: -0.1,
   },
   lessonTitle: {
     fontSize: 24,
     fontWeight: "800",
     color: "#FFFFFF",
     fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.5,
   },
   starsRow: {
     flexDirection: "row",
@@ -387,15 +334,13 @@ const styles = StyleSheet.create({
     color: C.gold,
   },
   starEmpty: {
-    color: "rgba(255,255,255,0.35)",
+    color: "rgba(255,255,255,0.38)",
   },
   questsSectionTitle: {
+    ...HomeType.section,
+    color: C.navy,
     marginTop: 24,
     marginBottom: 12,
-    fontSize: 18,
-    fontWeight: "800",
-    color: C.navy,
-    fontFamily: "DINNextRoundedBold",
   },
   questsInner: {
     paddingVertical: 6,
@@ -427,31 +372,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.2,
   },
   questProgressLabel: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...HomeType.caption,
     color: C.grayLight,
-    fontFamily: "DINNextRoundedMedium",
   },
   questBar: {
     marginTop: 4,
     maxWidth: "100%",
-  },
-  xpBadge: {
-    minWidth: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: C.xpBorder,
-    backgroundColor: C.xpBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  xpBadgeText: {
-    color: C.blue,
-    fontSize: 13,
-    fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
   },
 });
