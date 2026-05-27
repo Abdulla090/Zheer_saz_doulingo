@@ -5,23 +5,24 @@
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { FillBlankQuestion } from "@/data/lesson-content";
-import { Glass, Motion, Radius, Type, iOS } from "./game-design";
+import { GameSpace, Motion, Radius, Type, iOS, Glass } from "./game-design";
 import { ltrText, rtlBlock } from "./game-text";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-    LiquidCard,
-    LiquidEyebrow,
-    LiquidPrimaryButton,
-    LiquidWordChip,
-    OptionState,
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidPrimaryButton,
+  LiquidWordChip,
+  OptionState,
 } from "./liquid-primitives";
 
 type Props = {
@@ -92,14 +93,25 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
   };
 
   return (
-    <View style={s.root}>
-      <View>
-        <LiquidEyebrow>Fill in the blank</LiquidEyebrow>
-        <Text style={s.hint}>{question.kurdishHint}</Text>
-      </View>
-
+    <GameScreenLayout
+      header={
+        <>
+          <LiquidEyebrow>Fill blank</LiquidEyebrow>
+          <Text style={s.hint} numberOfLines={2}>{question.kurdishHint}</Text>
+        </>
+      }
+      bodyStyle={s.body}
+      footer={
+        <LiquidPrimaryButton
+          label="CHECK"
+          color={iOS.systemGreen}
+          onPress={check}
+          disabled={!selected || revealed}
+        />
+      }
+    >
       <Animated.View style={shakeStyle}>
-        <LiquidCard style={s.sentenceCard}>
+        <LiquidCard style={s.sentenceCard} radius={Radius.lg}>
           <View style={s.sentenceRow}>
             {question.sentenceParts[0] ? (
               <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
@@ -107,7 +119,7 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
 
             <Animated.View style={[s.blank, blankStyle]}>
               <Animated.Text style={[s.blankText, blankTextStyle]}>
-                {selected || "____"}
+                {selected || "___"}
               </Animated.Text>
             </Animated.View>
 
@@ -126,40 +138,28 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
             state={getState(w)}
             onPress={() => pick(w)}
             disabled={revealed}
+            size="sm"
           />
         ))}
       </View>
-
-      <View style={{ flex: 1 }} />
-
-      <LiquidPrimaryButton
-        label="CHECK"
-        color={iOS.systemGreen}
-        onPress={check}
-        disabled={!selected || revealed}
-      />
-    </View>
+    </GameScreenLayout>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 12,
-    gap: 18,
+  body: {
+    gap: GameSpace.gap,
   },
   hint: {
     ...Type.title,
     color: "#FFFFFF",
-    marginTop: 6,
+    marginTop: 4,
     ...rtlBlock,
   },
   sentenceCard: {
-    paddingHorizontal: 22,
-    paddingVertical: 26,
-    minHeight: 130,
+    paddingHorizontal: GameSpace.cardPadH,
+    paddingVertical: GameSpace.cardPadV,
+    minHeight: 0,
     justifyContent: "center",
   },
   sentenceRow: {
@@ -167,28 +167,28 @@ const s = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 4,
   },
   sentenceText: {
-    fontSize: 21,
+    fontSize: 18,
     fontWeight: "700",
     color: "#0F172A",
-    lineHeight: 30,
-    letterSpacing: -0.3,
+    lineHeight: 26,
+    letterSpacing: -0.2,
     ...ltrText,
   },
   blank: {
-    minWidth: 96,
+    minWidth: 72,
     borderRadius: Radius.sm,
     borderWidth: 2,
     borderStyle: "dashed",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     alignItems: "center",
     justifyContent: "center",
   },
   blankText: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "800",
     letterSpacing: -0.2,
     ...ltrText,
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
   },
 });

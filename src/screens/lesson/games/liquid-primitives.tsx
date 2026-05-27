@@ -207,8 +207,8 @@ export function LiquidEyebrow({
 }
 
 const le = StyleSheet.create({
-  wrap: { gap: 6 },
-  labelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  wrap: { gap: 0 },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   accentDot: {
     width: 6,
     height: 6,
@@ -423,11 +423,11 @@ const lo = StyleSheet.create({
   pressable: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
     zIndex: 1,
-    minHeight: 58,
+    minHeight: 50,
   },
   letterCircle: {
     width: 36,
@@ -532,7 +532,7 @@ export function LiquidPrimaryButton({
 
 const lpb = StyleSheet.create({
   btn: {
-    height: 54,
+    height: 50,
     borderRadius: Radius.lg,
     flexDirection: "row",
     alignItems: "center",
@@ -684,8 +684,8 @@ export function LiquidWordChip({
 
   const isStrongState = state === "correct" || state === "showCorrect" || state === "wrong" || state === "selected";
 
-  const padding = size === "sm" ? { paddingHorizontal: 14, paddingVertical: 9 } : { paddingHorizontal: 16, paddingVertical: 12 };
-  const fontSize = size === "sm" ? 14 : 16;
+  const padding = size === "sm" ? { paddingHorizontal: 10, paddingVertical: 7 } : { paddingHorizontal: 12, paddingVertical: 9 };
+  const fontSize = size === "sm" ? 13 : 15;
 
   // Ghost = used / placeholder slot
   if (ghost) {

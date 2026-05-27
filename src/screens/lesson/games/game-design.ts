@@ -135,17 +135,17 @@ export const USE_GAME_BLUR = false;
 export const Type = {
   /* Display — used for question hero text */
   display: {
-    fontSize: 26,
-    lineHeight: 34,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: "800" as const,
-    letterSpacing: -0.7,
+    letterSpacing: -0.5,
   },
   /* Title — section heads inside cards */
   title: {
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
     fontWeight: "700" as const,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   /* Body — option labels, primary content */
   body: {
@@ -200,9 +200,17 @@ export const Motion = {
  * ──────────────────────────────────────────────────────────────────── */
 export const Radius = {
   pill:   999,
-  xl:     32,
-  lg:     24,
-  md:     18,
-  sm:     14,
+  xl:     28,
+  lg:     20,
+  md:     16,
+  sm:     12,
   xs:     10,
+} as const;
+
+/** Shared vertical rhythm for lesson games — tight enough to avoid scroll. */
+export const GameSpace = {
+  gap: 10,
+  gapSm: 6,
+  cardPadV: 16,
+  cardPadH: 18,
 } as const;

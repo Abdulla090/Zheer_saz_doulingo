@@ -5,22 +5,23 @@
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { SentenceBuilderQuestion } from "@/data/lesson-content";
-import { Motion, Radius, Type, iOS } from "./game-design";
-import { ltrText, rtlBlock } from "./game-text";
+import { GameSpace, Motion, Radius, Type, iOS } from "./game-design";
+import { rtlBlock } from "./game-text";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-    LiquidEyebrow,
-    LiquidPrimaryButton,
-    LiquidWordChip,
-    OptionState,
+  LiquidEyebrow,
+  LiquidPrimaryButton,
+  LiquidWordChip,
+  OptionState,
 } from "./liquid-primitives";
 
 type Props = {
@@ -109,17 +110,26 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
     : "selected";
 
   return (
-    <View style={s.root}>
-      <View>
-        <LiquidEyebrow>Arrange the words</LiquidEyebrow>
-        <Text style={s.prompt}>{question.kurdishSentence}</Text>
-      </View>
-
-      <Animated.View style={shakeStyle}>
+    <GameScreenLayout
+      header={
+        <>
+          <LiquidEyebrow>Word order</LiquidEyebrow>
+          <Text style={s.prompt} numberOfLines={3}>{question.kurdishSentence}</Text>
+        </>
+      }
+      bodyStyle={s.body}
+      footer={
+        <LiquidPrimaryButton
+          label="CHECK"
+          color={iOS.systemGreen}
+          onPress={check}
+          disabled={!canCheck}
+        />
+      }
+    >
+      <Animated.View style={[shakeStyle, s.dropWrap]}>
         <Animated.View style={[s.drop, dropStyle]}>
-          {sentence.length === 0 ? (
-            <Text style={s.placeholder}>Tap words below to build the sentence</Text>
-          ) : (
+          {sentence.length > 0 && (
             <View style={s.dropContent}>
               {sentence.map(p => (
                 <LiquidWordChip
@@ -138,7 +148,7 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
       <View style={s.bank}>
         {question.wordBank.map((w, i) => {
           if (slotUsed[i]) {
-            return <LiquidWordChip key={`${w}-${i}`} label={w} ghost />;
+            return <LiquidWordChip key={`${w}-${i}`} label={w} ghost size="sm" />;
           }
           return (
             <LiquidWordChip
@@ -146,41 +156,33 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
               label={w}
               state="idle"
               onPress={() => addWord(w)}
+              size="sm"
             />
           );
         })}
       </View>
-
-      <View style={{ flex: 1 }} />
-
-      <LiquidPrimaryButton
-        label="CHECK"
-        color={iOS.systemGreen}
-        onPress={check}
-        disabled={!canCheck}
-      />
-    </View>
+    </GameScreenLayout>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 12,
-    gap: 16,
+  body: {
+    gap: GameSpace.gap,
   },
   prompt: {
     ...Type.title,
     color: "#FFFFFF",
-    marginTop: 6,
+    marginTop: 4,
     ...rtlBlock,
   },
+  dropWrap: {
+    flexShrink: 1,
+  },
   drop: {
-    minHeight: 130,
-    borderRadius: Radius.lg,
-    borderWidth: 1.6,
+    minHeight: 64,
+    maxHeight: 120,
+    borderRadius: Radius.md,
+    borderWidth: 1.4,
     borderStyle: "dashed",
     overflow: "hidden",
     justifyContent: "center",
@@ -188,24 +190,16 @@ const s = StyleSheet.create({
   dropContent: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    padding: 14,
+    gap: 6,
+    padding: 10,
     alignItems: "center",
     justifyContent: "flex-start",
-  },
-  placeholder: {
-    ...Type.body,
-    color: "rgba(255,255,255,0.85)",
-    textAlign: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 28,
-    width: "100%",
-    ...ltrText,
   },
   bank: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
+    flexShrink: 0,
   },
 });

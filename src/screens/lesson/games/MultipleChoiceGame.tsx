@@ -8,15 +8,14 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
 import { crossTextShadow } from "@/utils/shadows";
-import { Radius, Type, iOS } from "./game-design";
+import { GameSpace, Radius, Type, iOS } from "./game-design";
 import { rtlBlock } from "./game-text";
 import {
   GameCard,
-  GameFooter,
-  GameHeader,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
   LiquidCard,
   LiquidEyebrow,
@@ -62,89 +61,84 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
   const isKuPrompt = question.promptLang === "ku";
 
   return (
-    <GameRoot style={s.root}>
-      <GameHeader>
-        <LiquidEyebrow hint="Select the best answer">Multiple Choice</LiquidEyebrow>
-      </GameHeader>
-
-      <GameCard>
-        <LiquidCard style={s.questionCard} radius={Radius.xl}>
-          <LinearGradient
-            colors={["rgba(10,132,255,0.12)", "rgba(10,132,255,0)"]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={s.questionAccent}
-            pointerEvents="none"
+    <GameRoot style={{ flex: 1 }}>
+      <GameScreenLayout
+        header={<LiquidEyebrow>Multiple choice</LiquidEyebrow>}
+        bodyStyle={s.body}
+        footer={
+          <LiquidPrimaryButton
+            label="CHECK"
+            color={iOS.systemGreen}
+            onPress={check}
+            disabled={!selected || revealed}
           />
-          <Text
-            style={[
-              s.questionText,
-              isKuPrompt && rtlBlock,
-              crossTextShadow({ color: "rgba(0,0,0,0.03)", offsetY: 1, blur: 1 }),
-            ]}
-          >
-            {question.prompt}
-          </Text>
-        </LiquidCard>
-      </GameCard>
-
-      <View style={s.options}>
-        {question.options.map((opt, i) => (
-          <GameOption key={opt} index={i}>
-            <LiquidOption
-              text={opt}
-              state={getState(opt)}
-              onPress={() => pick(opt)}
-              disabled={revealed}
-              index={i}
+        }
+      >
+        <GameCard>
+          <LiquidCard style={s.questionCard} radius={Radius.lg}>
+            <LinearGradient
+              colors={["rgba(10,132,255,0.12)", "rgba(10,132,255,0)"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={s.questionAccent}
+              pointerEvents="none"
             />
-          </GameOption>
-        ))}
-      </View>
+            <Text
+              style={[
+                s.questionText,
+                isKuPrompt && rtlBlock,
+                crossTextShadow({ color: "rgba(0,0,0,0.03)", offsetY: 1, blur: 1 }),
+              ]}
+              numberOfLines={4}
+            >
+              {question.prompt}
+            </Text>
+          </LiquidCard>
+        </GameCard>
 
-      <View style={{ flex: 1 }} />
-
-      <GameFooter>
-        <LiquidPrimaryButton
-          label="CHECK"
-          color={iOS.systemGreen}
-          onPress={check}
-          disabled={!selected || revealed}
-        />
-      </GameFooter>
+        <View style={s.options}>
+          {question.options.map((opt, i) => (
+            <GameOption key={opt} index={i} baseDelay={80}>
+              <LiquidOption
+                text={opt}
+                state={getState(opt)}
+                onPress={() => pick(opt)}
+                disabled={revealed}
+                index={i}
+              />
+            </GameOption>
+          ))}
+        </View>
+      </GameScreenLayout>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    paddingHorizontal: 22,
-    paddingTop: 6,
-    paddingBottom: 12,
-    gap: 20,
+  body: {
+    gap: GameSpace.gap,
   },
   questionCard: {
-    paddingHorizontal: 24,
-    paddingVertical: 26,
-    minHeight: 108,
+    paddingHorizontal: GameSpace.cardPadH,
+    paddingVertical: GameSpace.cardPadV,
+    minHeight: 0,
     justifyContent: "center",
   },
   questionAccent: {
     position: "absolute",
     left: 0,
-    top: 18,
-    bottom: 18,
+    top: 12,
+    bottom: 12,
     width: 4,
     borderTopRightRadius: 4,
     borderBottomRightRadius: 4,
   },
   questionText: {
     ...Type.display,
-    fontSize: 24,
-    lineHeight: 32,
     color: "#0F172A",
   },
   options: {
-    gap: 10,
+    gap: 8,
+    flexShrink: 1,
   },
 });
