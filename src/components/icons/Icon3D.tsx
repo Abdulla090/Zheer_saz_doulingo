@@ -12,6 +12,7 @@
 import React from "react";
 import Svg, {
   Defs,
+  Ellipse,
   LinearGradient,
   Stop,
   Path,
@@ -26,65 +27,56 @@ function useId(prefix: string) {
 }
 
 // ----- Core icon builder -------------------------------------------------------
-// Duolingo / Lovable style: extruded squircle (rounded rect), NOT a sphere.
-//   • Linear gradient top→bottom: bright (top) → shade (bottom), same hue
-//   • Extrusion "ledge": offset squircle below in shade color = 3D raised button feel
-//   • 1px translucent inner stroke for crisp edge
-//   • NO white specular blob. NO radial gradient. NO fake lighting.
+// Soft 3D: smooth gradient + diffuse ground shadow (no hard extrusion ledge).
+// Path lesson circles (SvgButton) use a separate rim/face system — unchanged.
 interface SphereProps {
   size: number;
-  bright: string; // top face color (lighter)
-  mid: string;    // middle (gradient midpoint)
-  shade: string;  // bottom face / ledge color (slightly darker, same hue)
-  sheen?: string; // unused — kept for API compat
+  bright: string;
+  mid: string;
+  shade: string;
+  sheen?: string;
   id: string;
 }
 
 function Sphere({ size, bright, mid, shade, id, children }: SphereProps & { children?: React.ReactNode }) {
-  const bg  = `bg-${id}`;
-  // Padding so ledge is visible
-  const pad = size * 0.03;
-  const w   = size - pad * 2;
-  // Corner radius: 50% of width → perfect circle
-  const rx  = w / 2;
-  // Ledge depth in px (gives 3D lift look)
-  const ledge = Math.max(2, size * 0.10);
+  const bg = `bg-${id}`;
+  const pad = size * 0.05;
+  const w = size - pad * 2;
+  const rx = w / 2;
+  const cx = size / 2;
 
   return (
-    <Svg width={size} height={size + ledge} viewBox={`0 0 ${size} ${size + ledge}`}>
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
-        {/* Clean top→bottom gradient — same hue, bright top, slightly deeper bottom */}
-        <LinearGradient id={bg} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%"   stopColor={bright} />
-          <Stop offset="100%" stopColor={mid}    />
+        <LinearGradient id={bg} x1="0.2" y1="0" x2="0.8" y2="1">
+          <Stop offset="0%" stopColor={bright} />
+          <Stop offset="52%" stopColor={mid} />
+          <Stop offset="100%" stopColor={shade} />
         </LinearGradient>
       </Defs>
 
-      {/* Ledge (extrusion): same shape offset down by ledge px, shade color */}
-      <Rect
-        x={pad} y={pad + ledge}
-        width={w} height={w}
-        rx={rx} fill={shade}
+      <Ellipse
+        cx={cx}
+        cy={size * 0.93}
+        rx={w * 0.4}
+        ry={Math.max(1.5, w * 0.065)}
+        fill={shade}
+        opacity={0.2}
       />
 
-      {/* Face: main squircle body with gradient */}
-      <Rect
-        x={pad} y={pad}
-        width={w} height={w}
-        rx={rx} fill={`url(#${bg})`}
-      />
+      <Rect x={pad} y={pad} width={w} height={w} rx={rx} fill={`url(#${bg})`} />
 
-      {/* 1px inner stroke — translucent white, gives crisp glassy edge */}
       <Rect
-        x={pad + 0.75} y={pad + 0.75}
-        width={w - 1.5} height={w - 1.5}
-        rx={rx - 0.75}
+        x={pad + 0.5}
+        y={pad + 0.5}
+        width={w - 1}
+        height={w - 1}
+        rx={rx - 0.5}
         fill="none"
-        stroke="rgba(255,255,255,0.35)"
-        strokeWidth={1}
+        stroke="rgba(255,255,255,0.42)"
+        strokeWidth={1.1}
       />
 
-      {/* Icon glyph — white, centered on face */}
       {children}
     </Svg>
   );

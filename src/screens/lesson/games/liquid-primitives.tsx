@@ -38,7 +38,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { Icon3DCheck, Icon3DX } from "@/components/icons/Icon3D";
+import { Check, X } from "lucide-react-native";
 import { crossShadow } from "@/utils/shadows";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
@@ -412,8 +412,12 @@ export function LiquidOption({
         >
           {text}
         </Animated.Text>
-        {isCorrectState && <Icon3DCheck size={22} />}
-        {state === "wrong" && <Icon3DX size={22} />}
+        {isCorrectState ? (
+          <Check size={20} color="#16A34A" strokeWidth={3} />
+        ) : null}
+        {state === "wrong" ? (
+          <X size={20} color="#DC2626" strokeWidth={3} />
+        ) : null}
       </Pressable>
     </Animated.View>
   );

@@ -3,7 +3,7 @@
  */
 
 import { PressableScale } from "@/components/animations";
-import { RolePlayGameIcon3D } from "@/components/icons/GameHubIcons3D";
+import { RolePlayGameIcon } from "@/components/icons/GameHubIcons";
 import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
 import {
   HomeLiquidButton,
@@ -343,7 +343,7 @@ export function RolePlayScreen() {
             <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} />
           </HomeLiquidPill>
           <View style={styles.headerCenter}>
-            <RolePlayGameIcon3D size={36} />
+            <RolePlayGameIcon size={40} />
             <View>
               <Text style={styles.headerTitle}>AI Role Play</Text>
               <Text style={styles.headerSub}>Real-world voice practice</Text>

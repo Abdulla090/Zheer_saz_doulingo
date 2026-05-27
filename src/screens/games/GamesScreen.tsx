@@ -1,11 +1,11 @@
 import { PressableScale } from "@/components/animations";
 import {
-  AiTeacherGameIcon3D,
-  OrderWordsGameIcon3D,
-  PairWordsGameIcon3D,
-  RolePlayGameIcon3D,
-  SpeakUpGameIcon3D,
-} from "@/components/icons/GameHubIcons3D";
+  AiTeacherGameIcon,
+  OrderWordsGameIcon,
+  PairWordsGameIcon,
+  RolePlayGameIcon,
+  SpeakUpGameIcon,
+} from "@/components/icons/GameHubIcons";
 import {
   HomeLiquidCard,
   HomeMeshBackground,
@@ -52,35 +52,35 @@ const GAME_TILES: GameTile[] = [
     badge: "NEW",
     href: "/roleplay",
     featured: true,
-    renderIcon: () => <RolePlayGameIcon3D size={64} />,
+    renderIcon: () => <RolePlayGameIcon size={56} />,
   },
   {
     id: "order",
     title: "Order Words",
     subtitle: "Build sentences in the right order",
     kind: "sentence_builder",
-    renderIcon: () => <OrderWordsGameIcon3D size={56} />,
+    renderIcon: () => <OrderWordsGameIcon size={52} />,
   },
   {
     id: "pair",
     title: "Pair Words",
     subtitle: "Match English with Kurdish",
     kind: "pair_match",
-    renderIcon: () => <PairWordsGameIcon3D size={56} />,
+    renderIcon: () => <PairWordsGameIcon size={52} />,
   },
   {
     id: "speak",
     title: "Speak Up",
     subtitle: "Mic practice — say the phrase out loud",
     kind: "voice_speak",
-    renderIcon: () => <SpeakUpGameIcon3D size={56} />,
+    renderIcon: () => <SpeakUpGameIcon size={52} />,
   },
   {
     id: "ai-teacher",
     title: "AI Teacher",
     subtitle: "IELTS-style writing & speaking feedback",
     href: "/ai-teacher",
-    renderIcon: () => <AiTeacherGameIcon3D size={56} />,
+    renderIcon: () => <AiTeacherGameIcon size={52} />,
   },
 ];
 

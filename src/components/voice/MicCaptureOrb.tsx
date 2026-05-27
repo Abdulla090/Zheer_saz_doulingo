@@ -1,5 +1,5 @@
-import { Icon3DMic } from "@/components/icons/Icon3D";
 import { crossShadow } from "@/utils/shadows";
+import { Mic } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -86,7 +86,7 @@ export function MicCaptureOrb({
             },
           ]}
         >
-          <Icon3DMic size={Math.round(size * 0.36)} />
+          <Mic size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
       </View>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
