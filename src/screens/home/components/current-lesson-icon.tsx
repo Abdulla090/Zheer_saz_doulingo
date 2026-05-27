@@ -1,14 +1,14 @@
 import React, { useEffect } from "react";
+import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
-  useAnimatedProps,
+  useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { G } from "react-native-svg";
 
 type CurrentLessonIconProps = {
   IconComponent: React.ComponentType<any>;
@@ -18,8 +18,6 @@ type CurrentLessonIconProps = {
   active?: boolean;
 };
 
-const AnimatedGroup = Animated.createAnimatedComponent(G);
-
 export const CurrentLessonIcon = ({
   IconComponent,
   color,
@@ -28,8 +26,6 @@ export const CurrentLessonIcon = ({
   active = true,
 }: CurrentLessonIconProps) => {
   const translateY = useSharedValue(0);
-  const cx = width / 2;
-  const cy = height / 2;
 
   useEffect(() => {
     if (!active) {
@@ -50,24 +46,21 @@ export const CurrentLessonIcon = ({
     return () => cancelAnimation(translateY);
   }, [active, translateY]);
 
-  const animatedProps = useAnimatedProps(() => ({
-    transform: [
-      { translateX: cx },
-      { translateY: cy + translateY.value },
-      { translateX: -cx },
-      { translateY: -cy },
-    ],
+  const bounceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
   }));
 
   return (
-    <AnimatedGroup animatedProps={animatedProps}>
-      <IconComponent
-        fill={color}
-        stroke={color}
-        strokeWidth={1}
-        width={width}
-        height={height}
-      />
-    </AnimatedGroup>
+    <Animated.View style={bounceStyle}>
+      <View style={{ width, height, alignItems: "center", justifyContent: "center" }}>
+        <IconComponent
+          fill={color}
+          stroke={color}
+          strokeWidth={1}
+          width={width}
+          height={height}
+        />
+      </View>
+    </Animated.View>
   );
 };

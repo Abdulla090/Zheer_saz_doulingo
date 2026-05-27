@@ -1,36 +1,28 @@
+import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
 import { Star } from "@/constants/icons";
-import React, { useCallback, useId, useMemo } from "react";
-import { Pressable } from "react-native";
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, {
-  ClipPath,
-  Defs,
-  Ellipse,
-  G,
-  Stop,
-  LinearGradient as SvgLinearGradient,
-} from "react-native-svg";
+import { crossShadow } from "@/utils/shadows";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import { Pressable, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
+/** Face + rim pairs for path lesson nodes (soft 2.5D, matches header Guidebook). */
 export const SVG_BUTTON_COLOR_SETS = {
-  green: { rim: "#58a700", face: "#58cc02" },
-  purple: { rim: "#a568cc", face: "#ce82ff" },
-  blue: { rim: "#2b70c9", face: "#1cb0f6" },
-  mint: { rim: "#0B8A6C", face: "#08c296" },
-  gray: { rim: "#afafaf", face: "#e0e0e0" },
-  yellow: { rim: "#ff9600", face: "#ffc800" },
-  gold: { rim: "#e5a000", face: "#ffc800" },
+  green: { rim: "#0B8A6C", face: "#08c296" },
+  purple: { rim: "#5E35B1", face: "#7E57C2" },
+  blue: { rim: "#0277BD", face: "#039BE5" },
+  mint: { rim: "#00695C", face: "#00897B" },
+  gray: { rim: "#90A4AE", face: "#B0BEC5" },
+  yellow: { rim: "#F57F17", face: "#FBC02D" },
+  gold: { rim: "#E5A000", face: "#FFC800" },
   orange: { rim: "#E65100", face: "#FF9800" },
   red: { rim: "#B71C1C", face: "#F44336" },
 } as const;
 
-type SvgButtonProps = {
+type PathButtonProps = {
   size?: number;
   onPress?: () => void;
   translateX?: number;
@@ -41,17 +33,8 @@ type SvgButtonProps = {
   isLocked?: boolean;
 };
 
-const BUTTON_CENTER_X = 50;
-const FACE_BASE_CY = 40;
-const RIM_CY = 53;
-const FACE_PRESSED_CY = 52;
-const RX = 50;
-const RY = 50;
-const ICON_SCALE = 1.8;
-const SVG_VIEWBOX = "-10 -10 120 130";
-const STAR_VB_W = 32;
-const STAR_VB_H = 32;
-const AnimatedG = Animated.createAnimatedComponent(G);
+const ICON_RATIO = 0.42;
+const DEPTH_RATIO = 0.05;
 
 export const SvgButton = React.memo(
   ({
@@ -63,147 +46,136 @@ export const SvgButton = React.memo(
     iconColor,
     isCurrentLesson = false,
     isLocked = false,
-  }: SvgButtonProps) => {
-    const colors = useMemo(() => SVG_BUTTON_COLOR_SETS[variant], [variant]);
-    const clipId = useId().replace(/[:]/g, "");
+  }: PathButtonProps) => {
+    const colors = SVG_BUTTON_COLOR_SETS[variant];
+    const [pressed, setPressed] = useState(false);
+    const depth = Math.max(3, Math.round(size * DEPTH_RATIO));
+    const iconSize = Math.round(size * ICON_RATIO);
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#AFAFAF" : variant === "gold" ? "#FFFFFF" : "white");
+      iconColor ?? (variant === "gray" ? "#78909C" : variant === "gold" ? "#FFFFFF" : "#FFFFFF");
 
-    const offsetY = useSharedValue(0);
-
-    const groupAnimatedProps = useAnimatedProps(() => ({
-      transform: [{ translateY: offsetY.value }],
-    }));
-
-    const handlePressIn = useCallback(() => {
-      offsetY.value = withTiming(FACE_PRESSED_CY - FACE_BASE_CY, { duration: 100 });
-    }, [offsetY]);
-    const handlePressOut = useCallback(() => {
-      offsetY.value = withTiming(0, { duration: 100 });
-    }, [offsetY]);
+    const glossStrong = !isLocked && variant !== "gray";
+    const topHighlight = isLocked
+      ? "rgba(255,255,255,0.35)"
+      : "rgba(255,255,255,0.72)";
+    const faceBorder = isLocked
+      ? "rgba(255,255,255,0.18)"
+      : "rgba(255,255,255,0.22)";
 
     return (
       <Pressable
-        onPressIn={isLocked ? undefined : handlePressIn}
-        onPressOut={isLocked ? undefined : handlePressOut}
         onPress={onPress}
         disabled={isLocked}
+        onPressIn={isLocked ? undefined : () => setPressed(true)}
+        onPressOut={isLocked ? undefined : () => setPressed(false)}
         style={{
           width: size,
-          height: size,
+          height: size + depth,
           transform: [{ translateX: translateX || 0 }],
         }}
       >
-        <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
-          <Defs>
-            <ClipPath id={clipId}>
-              <Ellipse cx={BUTTON_CENTER_X} cy={FACE_BASE_CY} rx={RX} ry={RY} />
-            </ClipPath>
-            <SvgLinearGradient id={`glass-${clipId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
-              <Stop offset="35%" stopColor="rgba(255,255,255,0.1)" />
-              <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </SvgLinearGradient>
-            <SvgLinearGradient
-              id={`blueShine-${clipId}`}
-              x1="15%"
-              y1="5%"
-              x2="85%"
-              y2="95%"
-            >
-              <Stop offset="0%" stopColor="rgba(70,150,255,0)" />
-              <Stop offset="28%" stopColor="rgba(80,165,255,0.06)" />
-              <Stop offset="38%" stopColor="rgba(95,180,255,0.28)" />
-              <Stop offset="46%" stopColor="rgba(140,210,255,0.52)" />
-              <Stop offset="50%" stopColor="rgba(190,235,255,0.62)" />
-              <Stop offset="54%" stopColor="rgba(140,210,255,0.52)" />
-              <Stop offset="62%" stopColor="rgba(95,180,255,0.28)" />
-              <Stop offset="72%" stopColor="rgba(80,165,255,0.06)" />
-              <Stop offset="100%" stopColor="rgba(70,150,255,0)" />
-            </SvgLinearGradient>
-            <SvgLinearGradient
-              id={`blueShineWide-${clipId}`}
-              x1="10%"
-              y1="0%"
-              x2="90%"
-              y2="100%"
-            >
-              <Stop offset="0%" stopColor="rgba(60,140,255,0)" />
-              <Stop offset="32%" stopColor="rgba(75,160,255,0.1)" />
-              <Stop offset="50%" stopColor="rgba(110,190,255,0.22)" />
-              <Stop offset="68%" stopColor="rgba(75,160,255,0.1)" />
-              <Stop offset="100%" stopColor="rgba(60,140,255,0)" />
-            </SvgLinearGradient>
-          </Defs>
-
-          <Ellipse
-            cx={BUTTON_CENTER_X}
-            cy={RIM_CY}
-            rx={RX}
-            ry={RY}
-            fill={colors.rim}
-          />
-
-          <AnimatedG animatedProps={groupAnimatedProps}>
-            <Ellipse
-              cx={BUTTON_CENTER_X}
-              cy={FACE_BASE_CY}
-              rx={RX}
-              ry={RY}
-              fill={colors.face}
+        <View
+          style={{
+            width: size,
+            height: size + depth,
+            borderRadius: size / 2,
+            backgroundColor: colors.rim,
+            overflow: "hidden",
+            ...crossShadow({
+              color: colors.rim,
+              offsetY: depth + 2,
+              opacity: isLocked ? 0.14 : 0.32,
+              blur: 16,
+              elevation: 6,
+            }),
+          }}
+        >
+          <Animated.View
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              backgroundColor: colors.face,
+              marginBottom: depth,
+              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1.5,
+              borderColor: faceBorder,
+              borderTopColor: topHighlight,
+              borderLeftColor: "rgba(255,255,255,0.28)",
+              borderRightColor: "rgba(255,255,255,0.2)",
+              transform: [{ translateY: pressed ? depth : 0 }],
+              ...(pressed ? cssPressStyle : cssReleaseStyle),
+            }}
+          >
+            <LinearGradient
+              colors={
+                glossStrong
+                  ? [
+                      "rgba(255,255,255,0.42)",
+                      "rgba(255,255,255,0.08)",
+                      "rgba(0,0,0,0.06)",
+                    ]
+                  : [
+                      "rgba(255,255,255,0.22)",
+                      "rgba(255,255,255,0.04)",
+                      "rgba(0,0,0,0.04)",
+                    ]
+              }
+              locations={[0, 0.45, 1]}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: size / 2,
+              }}
+              pointerEvents="none"
             />
 
-            <G clipPath={`url(#${clipId})`}>
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX}
-                ry={RY}
-                fill={`url(#blueShineWide-${clipId})`}
-                opacity={isLocked ? 0.55 : 0.85}
+            {glossStrong && (
+              <LinearGradient
+                colors={[
+                  "rgba(255,255,255,0.35)",
+                  "rgba(255,255,255,0)",
+                  "rgba(255,255,255,0)",
+                ]}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 0.55 }}
+                style={{
+                  position: "absolute",
+                  top: size * 0.06,
+                  left: size * 0.12,
+                  width: size * 0.5,
+                  height: size * 0.28,
+                  borderRadius: size * 0.2,
+                  opacity: 0.85,
+                }}
+                pointerEvents="none"
               />
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX}
-                ry={RY}
-                fill={`url(#blueShine-${clipId})`}
-                opacity={isLocked ? 0.65 : 1}
-              />
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX}
-                ry={RY}
-                fill={`url(#glass-${clipId})`}
-              />
-            </G>
+            )}
 
-            <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
-              <G
-                transform={`scale(${ICON_SCALE}) translate(${-STAR_VB_W / 2} ${-STAR_VB_H / 2})`}
-              >
-                {isCurrentLesson ? (
-                  <CurrentLessonIcon
-                    IconComponent={IconComponent}
-                    color={resolvedIconColor}
-                    width={STAR_VB_W}
-                    height={STAR_VB_H}
-                  />
-                ) : (
-                  <IconComponent
-                    color={resolvedIconColor}
-                    fill={resolvedIconColor}
-                    stroke={resolvedIconColor}
-                    strokeWidth={1}
-                    width={STAR_VB_W}
-                    height={STAR_VB_H}
-                  />
-                )}
-              </G>
-            </G>
-          </AnimatedG>
-        </Svg>
+            {isCurrentLesson ? (
+              <CurrentLessonIcon
+                IconComponent={IconComponent}
+                color={resolvedIconColor}
+                width={iconSize}
+                height={iconSize}
+              />
+            ) : (
+              <IconComponent
+                color={resolvedIconColor}
+                fill={resolvedIconColor}
+                stroke={resolvedIconColor}
+                strokeWidth={1}
+                width={iconSize}
+                height={iconSize}
+              />
+            )}
+          </Animated.View>
+        </View>
       </Pressable>
     );
   },
