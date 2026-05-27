@@ -10,11 +10,15 @@
     },
     "preview": {
       "distribution": "internal",
+      "node": "22.14.0",
+      "installCommand": "npm ci",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "node": "22.14.0",
+      "installCommand": "npm ci",
       "android": {
         "buildType": "apk"
       }
