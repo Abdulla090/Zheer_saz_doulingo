@@ -93,6 +93,18 @@ if (!existsSync(join(root, "src/components/icons/LessonPathIcons.tsx"))) {
   ok("LessonPathIcons present for Android path nodes");
 }
 
+// Single package manager (EAS uses bun if bun.lock is in the repo)
+if (existsSync(join(root, "bun.lock")) || existsSync(join(root, "bun.lockb"))) {
+  fail("Remove bun.lock / bun.lockb — EAS must use npm + package-lock.json only");
+} else {
+  ok("No bun lockfile in repo (npm-only for EAS)");
+}
+if (!existsSync(join(root, "package-lock.json"))) {
+  fail("Missing package-lock.json");
+} else {
+  ok("package-lock.json present");
+}
+
 // EAS
 const eas = JSON.parse(read("eas.json"));
 if (eas.build?.preview?.android?.buildType !== "apk") {
