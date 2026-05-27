@@ -5,6 +5,7 @@ import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Tabs } from "expo-router";
@@ -15,7 +16,10 @@ import "react-native-gesture-handler";
 import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { registerPhingoAndroidWidgetHandler } from "@/widgets/android-widget-handler";
 import "../global.css";
+
+registerPhingoAndroidWidgetHandler();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -60,6 +64,12 @@ export default function TabLayout() {
   useEffect(() => {
     onLayoutReady();
   }, [onLayoutReady]);
+
+  useEffect(() => {
+    if (ready) {
+      void syncHomeWidget();
+    }
+  }, [ready]);
 
   if (!fontsLoaded || !ready) {
     return null;

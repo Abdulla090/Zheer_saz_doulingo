@@ -19,12 +19,19 @@ import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import { buildLessonRouteForMode } from "@/utils/lesson-navigation";
+import {
+  buildLessonRouteForMode,
+  buildLessonRouteFromMeta,
+  getCurrentLessonMeta,
+} from "@/utils/lesson-navigation";
+import { getPathProgressSummary } from "@/utils/path-progress";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { syncHomeWidget } from "@/services/home-widget-sync";
 import { Fire, Heart } from "@/constants/icons";
 import { useRouter } from "expo-router";
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -82,21 +89,6 @@ const QuestRow = memo(function QuestRow({
   );
 });
 
-function StarRating({ filled }: { filled: number }) {
-  return (
-    <View style={styles.starsRow}>
-      {[0, 1, 2].map((i) => (
-        <Text
-          key={i}
-          style={[styles.star, i >= filled && styles.starEmpty]}
-        >
-          ★
-        </Text>
-      ))}
-    </View>
-  );
-}
-
 export function PhingoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -106,8 +98,23 @@ export function PhingoLearnHomeScreen() {
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
   const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
+  const lastActivity = useProgressStore((s) => s.lastActivity);
   const pathMode = useSettingsStore((s) => s.pathMode);
   const { width } = useWindowDimensions();
+
+  const pathSummary = useMemo(
+    () => getPathProgressSummary(streetNext, normalNext),
+    [streetNext, normalNext],
+  );
+
+  const nextLessonMeta = useMemo(
+    () => getCurrentLessonMeta(pathMode, streetNext, normalNext),
+    [pathMode, streetNext, normalNext],
+  );
+
+  useEffect(() => {
+    void syncHomeWidget();
+  }, [streetNext, normalNext, lastActivity, dailyXp, streakDays]);
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
 
@@ -146,9 +153,52 @@ export function PhingoLearnHomeScreen() {
   }, [pathMode, router]);
 
   const onLessonPress = useCallback(() => {
-    const route = buildLessonRouteForMode(pathMode, streetNext, normalNext);
+    const route = nextLessonMeta
+      ? buildLessonRouteFromMeta(nextLessonMeta)
+      : buildLessonRouteForMode(pathMode, streetNext, normalNext);
     if (route) router.push(route);
-  }, [normalNext, pathMode, router, streetNext]);
+  }, [nextLessonMeta, normalNext, pathMode, router, streetNext]);
+
+  const onRecentPress = useCallback(() => {
+    if (!lastActivity) return;
+    if (lastActivity.kind === "lesson") {
+      const route = buildLessonRouteForMode(
+        lastActivity.mode,
+        streetNext,
+        normalNext,
+      );
+      if (route) router.push(route);
+      return;
+    }
+    const id = lastActivity.gameId;
+    if (id === "roleplay") {
+      router.push("/roleplay");
+      return;
+    }
+    if (id === "ai-teacher") {
+      router.push("/ai-teacher");
+      return;
+    }
+    router.push("/games");
+  }, [lastActivity, normalNext, router, streetNext]);
+
+  const lessonLabel = nextLessonMeta
+    ? `${t("home.nextLesson")} · ${nextLessonMeta.lessonNumber}`
+    : t("home.nextLesson");
+  const lessonTitle = nextLessonMeta?.sectionTitle ?? t("home.tapToContinue");
+
+  const recentTitle =
+    lastActivity?.kind === "game"
+      ? lastActivity.label
+      : lastActivity?.kind === "lesson"
+        ? lastActivity.label
+        : null;
+  const recentHint =
+    lastActivity?.kind === "game"
+      ? t("games.title")
+      : lastActivity?.kind === "lesson"
+        ? t("home.nextLesson")
+        : null;
 
   return (
     <View style={styles.root}>
@@ -214,17 +264,73 @@ export function PhingoLearnHomeScreen() {
           </View>
         </HomeLiquidCard>
 
+        <HomeLiquidCard style={styles.cardSpacer} contentStyle={styles.pathProgressInner}>
+          <Text style={styles.cardHeading}>{t("home.pathProgress")}</Text>
+          <View style={styles.pathRow}>
+            <Text style={styles.pathLabel}>{t("home.streetPath")}</Text>
+            <Text style={styles.pathPct}>
+              {pathSummary.streetCompleted}/{pathSummary.streetTotal}{" "}
+              {t("home.lessonsComplete")}
+            </Text>
+          </View>
+          <ThinProgressBar
+            progress={pathSummary.streetPercent}
+            fillColor={C.blue}
+            trackColor={C.track}
+            height={8}
+            style={styles.pathBar}
+          />
+          <View style={[styles.pathRow, styles.pathRowSpaced]}>
+            <Text style={styles.pathLabel}>{t("home.normalPath")}</Text>
+            <Text style={styles.pathPct}>
+              {pathSummary.normalCompleted}/{pathSummary.normalTotal}{" "}
+              {t("home.lessonsComplete")}
+            </Text>
+          </View>
+          <ThinProgressBar
+            progress={pathSummary.normalPercent}
+            fillColor="#58CC02"
+            trackColor={C.track}
+            height={8}
+            style={styles.pathBar}
+          />
+        </HomeLiquidCard>
+
+        <Text style={styles.sectionLabel}>{t("home.upNext")}</Text>
         <HomeLiquidLessonTile
           onPress={onLessonPress}
-          style={styles.cardSpacer}
+          style={styles.cardSpacerTight}
         >
           <View style={styles.lessonTextCol}>
-            <Text style={styles.lessonLabel}>{t("home.lessonLabel")}</Text>
-            <Text style={styles.lessonTitle}>{t("home.lessonTitle")}</Text>
-            <StarRating filled={2} />
+            <Text style={styles.lessonLabel}>{lessonLabel}</Text>
+            <Text style={styles.lessonTitle} numberOfLines={2}>
+              {lessonTitle}
+            </Text>
+            <Text style={styles.lessonTapHint}>{t("home.tapToContinue")}</Text>
           </View>
           <CoffeeCupFlat width={84} height={84} />
         </HomeLiquidLessonTile>
+
+        {recentTitle ? (
+          <>
+            <Text style={styles.sectionLabel}>{t("home.recentActivity")}</Text>
+            <Pressable onPress={onRecentPress} accessibilityRole="button">
+              <HomeLiquidCard
+                interactive
+                style={styles.cardSpacerTight}
+                contentStyle={styles.recentInner}
+              >
+                <View style={styles.recentCopy}>
+                  <Text style={styles.recentHint}>{recentHint}</Text>
+                  <Text style={styles.recentTitle} numberOfLines={2}>
+                    {recentTitle}
+                  </Text>
+                </View>
+                <Text style={styles.recentChevron}>›</Text>
+              </HomeLiquidCard>
+            </Pressable>
+          </>
+        ) : null}
 
         <Text style={styles.questsSectionTitle}>{t("home.todaysQuests")}</Text>
         <HomeLiquidCard contentStyle={styles.questsInner}>
@@ -276,6 +382,78 @@ const styles = StyleSheet.create({
   },
   cardSpacer: {
     marginTop: 16,
+  },
+  cardSpacerTight: {
+    marginTop: 10,
+  },
+  sectionLabel: {
+    ...HomeType.section,
+    color: C.navy,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  pathProgressInner: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  pathRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+    gap: 8,
+  },
+  pathRowSpaced: {
+    marginTop: 14,
+  },
+  pathLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+    flex: 1,
+  },
+  pathPct: {
+    ...HomeType.caption,
+    color: C.grayLight,
+    textAlign: "right",
+  },
+  pathBar: {
+    marginTop: 6,
+  },
+  lessonTapHint: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.78)",
+    fontFamily: "DINNextRoundedMedium",
+    marginTop: 8,
+  },
+  recentInner: {
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  recentCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  recentHint: {
+    ...HomeType.caption,
+    color: C.grayLight,
+  },
+  recentTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.2,
+  },
+  recentChevron: {
+    fontSize: 28,
+    fontWeight: "300",
+    color: C.blue,
+    marginLeft: 8,
   },
   heroInner: {
     padding: 18,

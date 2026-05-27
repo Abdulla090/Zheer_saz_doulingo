@@ -88,7 +88,13 @@ export function LightPromptCard({
   );
 }
 
-export type LightTileState = "idle" | "selected" | "correct" | "wrong" | "ghost";
+export type LightTileState =
+  | "idle"
+  | "pending"
+  | "selected"
+  | "correct"
+  | "wrong"
+  | "ghost";
 
 type TileState = LightTileState;
 
@@ -145,9 +151,9 @@ export function LightOptionRow({
 }
 
 export function mapOptionState(
-  state: "idle" | "selected" | "correct" | "wrong" | "showCorrect",
+  state: "idle" | "pending" | "selected" | "correct" | "wrong",
 ): LightTileState {
-  if (state === "showCorrect") return "correct";
+  if (state === "selected") return "pending";
   return state;
 }
 
@@ -176,22 +182,26 @@ export function LightWordTile({
       ? "#E7F9E0"
       : state === "wrong"
         ? "#FFE8E8"
-        : state === "selected"
-          ? "#E8EFFF"
-          : state === "ghost"
-            ? "transparent"
-            : "#FFFFFF";
+        : state === "pending"
+          ? "#F8FAFC"
+          : state === "selected"
+            ? "#E8EFFF"
+            : state === "ghost"
+              ? "transparent"
+              : "#FFFFFF";
 
   const border =
     state === "correct"
       ? L.green
       : state === "wrong"
         ? L.red
-        : state === "selected"
-          ? L.blue
-          : state === "ghost"
-            ? L.slotDash
-            : L.border;
+        : state === "pending"
+          ? "#94A3B8"
+          : state === "selected"
+            ? L.blue
+            : state === "ghost"
+              ? L.slotDash
+              : L.border;
 
   const content = (
     <View

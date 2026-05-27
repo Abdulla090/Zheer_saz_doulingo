@@ -21,6 +21,7 @@ import {
   LightHintButton,
   LightPromptCard,
   LightWordTile,
+  type LightTileState,
 } from "./lesson-light-primitives";
 import {
   GameFooter,
@@ -41,7 +42,8 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   const [sentence, setSentence] = useState<Placed[]>([]);
   const [fb, setFb] = useState<FBState>("idle");
   const slotN = useRef(0);
-  const firedRef = useRef(false);
+  const completedRef = useRef(false);
+  const wrongSentRef = useRef(false);
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
@@ -67,7 +69,8 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   })();
 
   const addWord = (w: string) => {
-    if (fb !== "idle") return;
+    if (fb === "wrong") setFb("idle");
+    if (fb === "correct") return;
     if ((used[w] || 0) >= (supply[w] || 0)) return;
     if (sentence.length >= slotCount) return;
     const id = `s${slotN.current++}`;
@@ -75,7 +78,8 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   };
 
   const removeFromSlot = (index: number) => {
-    if (fb !== "idle") return;
+    if (fb === "correct") return;
+    if (fb === "wrong") setFb("idle");
     setSentence((p) => p.filter((_, i) => i !== index));
   };
 
@@ -95,23 +99,24 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
         withTiming(4, { duration: 30 }),
         withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
       );
-      setTimeout(() => {
-        setFb("idle");
-      }, 1100);
-    } else if (!firedRef.current) {
-      firedRef.current = true;
+      if (!wrongSentRef.current) {
+        wrongSentRef.current = true;
+        onAnswer(false);
+      }
+    } else if (!completedRef.current) {
+      completedRef.current = true;
       onAnswer(true);
     }
   };
 
-  const slotTileState = (index: number): "idle" | "selected" | "correct" | "wrong" | "ghost" => {
+  const slotTileState = (index: number): LightTileState => {
     if (index >= sentence.length) return "ghost";
     if (fb === "correct") return "correct";
     if (fb === "wrong") return "wrong";
-    return "selected";
+    return "pending";
   };
 
-  const canCheck = sentence.length > 0 && fb === "idle";
+  const canCheck = sentence.length > 0 && fb !== "correct";
 
   return (
     <GameRoot style={s.root}>

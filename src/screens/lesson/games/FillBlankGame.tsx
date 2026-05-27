@@ -70,12 +70,6 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
     if (w === selected) {
       return w === question.correctAnswer ? "correct" : "wrong";
     }
-    if (
-      w === question.correctAnswer &&
-      selected !== question.correctAnswer
-    ) {
-      return "showCorrect";
-    }
     return "idle";
   };
 

@@ -49,6 +49,42 @@
           "microphonePermission": "Allow Phingo English to use the microphone for speaking practice.",
           "speechRecognitionPermission": "Allow Phingo English to transcribe your speech for lessons and AI feedback."
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.hewad.mubariz.duolingoclone",
+          "widgets": [
+            {
+              "name": "PhingoHome",
+              "displayName": "Phingo",
+              "description": "Streak, daily XP, path progress, and your next lesson",
+              "supportedFamilies": ["systemSmall", "systemMedium"]
+            }
+          ]
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "PhingoHome",
+              "label": "Phingo",
+              "description": "Streak, XP, and your next lesson",
+              "minWidth": "320dp",
+              "minHeight": "120dp",
+              "targetCellWidth": 5,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal",
+              "previewImage": "./assets/images/icon.png"
+            }
+          ],
+          "fonts": [
+            "./assets/fonts/DIN_BOLD.ttf",
+            "./assets/fonts/DIN_MEDIUM.ttf"
+          ]
+        }
       ]
     ],
     "experiments": {

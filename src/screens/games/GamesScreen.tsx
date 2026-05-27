@@ -113,6 +113,7 @@ export function GamesScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
+  const recordGamePlayed = useProgressStore((s) => s.recordGamePlayed);
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
@@ -171,13 +172,14 @@ export function GamesScreen() {
 
   const openTile = useCallback(
     (tile: GameTile) => {
+      recordGamePlayed(tile.title, tile.id);
       if (tile.href) {
         router.push(tile.href);
         return;
       }
       if (tile.kind) openPractice(tile.kind);
     },
-    [openPractice, router],
+    [openPractice, recordGamePlayed, router],
   );
 
   return (

@@ -5,6 +5,20 @@ import { create } from "zustand";
 const STORAGE_KEY = "phingo.app.progress";
 const DAILY_GOAL_XP = 15;
 
+export type LastActivity =
+  | {
+      kind: "lesson";
+      mode: "street" | "normal";
+      label: string;
+      at: string;
+    }
+  | {
+      kind: "game";
+      label: string;
+      gameId?: string;
+      at: string;
+    };
+
 export type ProgressSnapshot = {
   /** Street Kurdish path — next lesson path index (0-based). */
   nextLessonPathIndex: number;
@@ -15,6 +29,7 @@ export type ProgressSnapshot = {
   dailyGoalXp: number;
   streakDays: number;
   lastActiveDate: string | null;
+  lastActivity: LastActivity | null;
 };
 
 const DEFAULT_PROGRESS: ProgressSnapshot = {
@@ -25,6 +40,7 @@ const DEFAULT_PROGRESS: ProgressSnapshot = {
   dailyGoalXp: DAILY_GOAL_XP,
   streakDays: 0,
   lastActiveDate: null,
+  lastActivity: null,
 };
 
 interface ProgressState extends ProgressSnapshot {
@@ -33,7 +49,9 @@ interface ProgressState extends ProgressSnapshot {
     pathIndex: number,
     xpEarned: number,
     mode?: LessonPathMode,
+    label?: string,
   ) => void;
+  recordGamePlayed: (label: string, gameId?: string) => void;
   resetProgress: () => void;
 }
 
@@ -79,7 +97,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   ...DEFAULT_PROGRESS,
   ready: false,
 
-  recordLessonComplete: (pathIndex, xpEarned, mode = "street") => {
+  recordLessonComplete: (pathIndex, xpEarned, mode = "street", label) => {
     const cur = get();
     const { streakDays, lastActiveDate } = applyStreak(
       cur.lastActiveDate,
@@ -104,10 +122,33 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       dailyGoalXp: DAILY_GOAL_XP,
       streakDays,
       lastActiveDate,
+      lastActivity: {
+        kind: "lesson",
+        mode: mode === "normal" ? "normal" : "street",
+        label: label ?? `Lesson ${pathIndex + 1}`,
+        at: new Date().toISOString(),
+      },
     };
 
     set(next);
     void persistProgress(next);
+    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
+  },
+
+  recordGamePlayed: (label, gameId) => {
+    const cur = get();
+    const next: ProgressSnapshot = {
+      ...cur,
+      lastActivity: {
+        kind: "game",
+        label,
+        gameId,
+        at: new Date().toISOString(),
+      },
+    };
+    set(next);
+    void persistProgress(next);
+    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
   resetProgress: () => {
@@ -132,6 +173,7 @@ async function hydrateProgress() {
       dailyGoalXp: DAILY_GOAL_XP,
     };
     merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);
+    merged.lastActivity = merged.lastActivity ?? null;
     useProgressStore.setState({ ...merged, ready: true });
   } catch {
     useProgressStore.setState({ ready: true });

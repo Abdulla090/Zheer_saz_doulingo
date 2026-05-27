@@ -54,12 +54,6 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     if (opt === selected) {
       return opt === question.correctAnswer ? "correct" : "wrong";
     }
-    if (
-      opt === question.correctAnswer &&
-      selected !== question.correctAnswer
-    ) {
-      return "showCorrect";
-    }
     return "idle";
   };
 
