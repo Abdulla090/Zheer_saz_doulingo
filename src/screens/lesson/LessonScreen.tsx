@@ -55,61 +55,6 @@ import VoiceGame from "./games/VoiceGame";
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
 
-/* ─────────────────────────────────────────────────────────────────────
- * Glass header pill (close button, hearts badge)
- * ───────────────────────────────────────────────────────────────────── */
-function HeaderPill({
-  children,
-  onPress,
-  width,
-  height = 44,
-  paddingH = 14,
-}: {
-  children: React.ReactNode;
-  onPress?: () => void;
-  width?: number;
-  height?: number;
-  paddingH?: number;
-}) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  return (
-    <Animated.View style={animStyle}>
-      <Pressable
-        onPress={onPress}
-        onPressIn={() => { if (onPress) scale.value = withTiming(0.9, { duration: 100 }); }}
-        onPressOut={() => { if (onPress) scale.value = withTiming(1, { duration: 140 }); }}
-        style={[
-          {
-            height,
-            width,
-            paddingHorizontal: paddingH,
-            borderRadius: height / 2,
-            borderWidth: 1,
-            borderColor: Glass.borderDark,
-            backgroundColor: Glass.surfaceDark,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            ...crossShadow({ color: "#000", offsetY: 6, opacity: 0.18, blur: 16, elevation: 4 }),
-          },
-          Platform.OS === "web" && {
-            // @ts-ignore web
-            backdropFilter: "blur(24px) saturate(150%)",
-            // @ts-ignore web
-            WebkitBackdropFilter: "blur(24px) saturate(150%)",
-          },
-        ]}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, zIndex: 1 }}>
-          {children}
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 /* Summary stat card */
 function StatCard({
   icon, label, value, color,

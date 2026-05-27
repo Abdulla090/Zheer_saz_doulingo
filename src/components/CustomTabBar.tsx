@@ -62,6 +62,7 @@ const HIDDEN_ROUTES = new Set([
   "lesson",
   "guidebook",
   "roleplay",
+  "ai-teacher",
   "quest",
   "league",
 ]);

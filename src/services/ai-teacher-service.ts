@@ -14,8 +14,27 @@ const CRITERION_LABELS: Record<
   pronunciation: "Pronunciation",
 };
 
+const MAX_ANSWER_CHARS = 4000;
+
 function clampBand(n: number): number {
   return Math.min(9, Math.max(3, Math.round(n * 2) / 2));
+}
+
+function isAllowedTeacherApiUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeRequest(request: AiTeacherRequest): AiTeacherRequest {
+  return {
+    ...request,
+    text: request.text.trim().slice(0, MAX_ANSWER_CHARS),
+    mode: request.mode === "writing" ? "writing" : "speaking",
+  };
 }
 
 /** Local heuristic scorer — replace with API when `EXPO_PUBLIC_AI_TEACHER_URL` is set. */
@@ -113,18 +132,29 @@ function mockEvaluateEnglish(req: AiTeacherRequest): AiTeacherResult {
 export async function evaluateEnglish(
   request: AiTeacherRequest,
 ): Promise<AiTeacherResult> {
+  const safe = sanitizeRequest(request);
+  if (safe.text.length < 12) {
+    throw new Error("Answer too short");
+  }
+
   const url = process.env.EXPO_PUBLIC_AI_TEACHER_URL;
 
-  if (url) {
+  if (url && isAllowedTeacherApiUrl(url)) {
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
+        body: JSON.stringify(safe),
       });
       if (res.ok) {
         const data = (await res.json()) as AiTeacherResult;
-        if (data.overallBand && data.criteria?.length) return data;
+        if (
+          typeof data.overallBand === "number" &&
+          Array.isArray(data.criteria) &&
+          data.criteria.length >= 4
+        ) {
+          return data;
+        }
       }
     } catch {
       /* fall through to mock */
@@ -132,5 +162,5 @@ export async function evaluateEnglish(
   }
 
   await new Promise((r) => setTimeout(r, 900));
-  return mockEvaluateEnglish(request);
+  return mockEvaluateEnglish(safe);
 }

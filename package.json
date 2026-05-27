@@ -12,7 +12,9 @@
     "android:prebuild": "expo prebuild --platform android --clean",
     "web": "expo start --web",
     "web:mcp": "node ./scripts/start-with-mcp.js --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "verify": "node scripts/verify-release.mjs",
+    "build:apk": "eas build --platform android --profile preview --non-interactive"
   },
   "dependencies": {
     "@expo/ui": "~56.0.14",
