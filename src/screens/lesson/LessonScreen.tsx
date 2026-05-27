@@ -139,6 +139,9 @@ export default function LessonScreen() {
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
   const lessonIndex = parseInt(params.li as string) || 0;
+  const startQuestion = parseInt(
+    (Array.isArray(params.q) ? params.q[0] : params.q) as string,
+  ) || 0;
   const pathMode: LessonPathMode =
     (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
       ? "normal"
@@ -174,12 +177,19 @@ export default function LessonScreen() {
   /* Reset on focus */
   useFocusEffect(
     useCallback(() => {
-      setCurrent(0); setHearts(MAX_HEARTS); setXp(0);
+      const safeStart = Math.min(
+        Math.max(0, startQuestion),
+        Math.max(0, questions.length - 1),
+      );
+      setCurrent(safeStart);
+      setHearts(MAX_HEARTS);
+      setXp(0);
+      progressW.value = safeStart / Math.max(questions.length, 1);
       setCorrectN(0); setFinished(false); setPassed(false);
       setFeedback(null); nextRef.current = 0;
       progressW.value = 0; xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
-    }, [insets.bottom]),
+    }, [insets.bottom, startQuestion, questions.length]),
   );
 
   const handleAnswer = useCallback(
