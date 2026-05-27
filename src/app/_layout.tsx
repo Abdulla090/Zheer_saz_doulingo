@@ -3,6 +3,8 @@ import { CustomTabBar } from "@/components/CustomTabBar";
 import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
+import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
+import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { syncHomeWidget } from "@/services/home-widget-sync";
@@ -47,7 +49,10 @@ export default function TabLayout() {
   const { selectedFont, ready: fontReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
-  const ready = fontReady && progressReady && settingsReady;
+  const onboardingReady = useOnboardingStore((s) => s.ready);
+  const onboardingComplete = useOnboardingStore((s) => s.completed);
+  const ready =
+    fontReady && progressReady && settingsReady && onboardingReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
@@ -73,6 +78,18 @@ export default function TabLayout() {
 
   if (!fontsLoaded || !ready) {
     return null;
+  }
+
+  if (!onboardingComplete) {
+    return (
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AppErrorBoundary>
+            <OnboardingFlow />
+          </AppErrorBoundary>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    );
   }
 
   const rnWebVars = Platform.OS === "web" ? {} : {

@@ -118,6 +118,31 @@ export const en = {
     check: "CHECK",
     tryAgain: "TRY AGAIN",
   },
+  onboarding: {
+    skip: "Skip",
+    continue: "Continue",
+    getStarted: "Start learning",
+    swipeHint: "A premium path built for you",
+    welcomeTitle: "Welcome to Phingo",
+    welcomeSubtitle:
+      "Learn English with clarity — designed for Kurdish speakers, polished like a flagship app.",
+    pathsTitle: "Two paths. One goal.",
+    pathsSubtitle:
+      "Follow the Kurdish street curriculum or standard English — switch anytime in settings.",
+    pathStreetTitle: "Kurdish path",
+    pathStreetSub: "Sorani-guided lessons & street English",
+    pathNormalTitle: "Normal English",
+    pathNormalSub: "Classic path, global curriculum",
+    practiceTitle: "Practice that feels alive",
+    practiceSubtitle:
+      "Games, AI role play, speaking drills, and an IELTS-style teacher — all in liquid-smooth flows.",
+    progressTitle: "Progress you can feel",
+    progressSubtitle:
+      "Daily XP, streaks, dual-path stats, and home screen widgets keep momentum on lock.",
+    readyTitle: "You're ready",
+    readySubtitle:
+      "Your dashboard is set. Tap below — the next lesson is waiting.",
+  },
   common: {
     continue: "CONTINUE",
     skip: "Skip",

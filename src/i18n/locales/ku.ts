@@ -121,6 +121,31 @@ export const ku = {
     check: "پشکنین",
     tryAgain: "دووبارە هەوڵبدەوە",
   },
+  onboarding: {
+    skip: "تێپەڕاندن",
+    continue: "بەردەوامبە",
+    getStarted: "دەست بە فێربوون بکە",
+    swipeHint: "ڕێڕەوێکی تایبەت بۆ تۆ",
+    welcomeTitle: "بەخێربێیت بۆ Phingo",
+    welcomeSubtitle:
+      "فێری ئینگلیزی ببە بە ڕوونی — بۆ قسەکەرانی کوردی دروستکراوە، وەک ئەپێکی پڕیمێم.",
+    pathsTitle: "دوو ڕێڕەو. یەک ئامانج.",
+    pathsSubtitle:
+      "ڕێڕەوی کوردی یان ئینگلیزی ئاسایی هەڵبژێرە — هەر کات لە ڕێکخستنەکان دەگۆڕیت.",
+    pathStreetTitle: "ڕێڕەوی کوردی",
+    pathStreetSub: "وانە بە ڕێنمایی سۆرانی",
+    pathNormalTitle: "ئینگلیزی ئاسایی",
+    pathNormalSub: "ڕێڕەوی کلاسیکی جیهانی",
+    practiceTitle: "ڕاهێنانێکی زیندوو",
+    practiceSubtitle:
+      "یاری، ڕۆڵی AI، قسەکردن، و مامۆستای AI — هەمووی بە ڕێڕەوێکی نەرم.",
+    progressTitle: "پێشکەوتنێکی هەستپێکراو",
+    progressSubtitle:
+      "XPی ڕۆژانە، streak، دوو ڕێڕەو، و ویجێتی سەر شاشە — بەردەوامی پارێزراوە.",
+    readyTitle: "ئامادەیت",
+    readySubtitle:
+      "داشبۆردەکەت ئامادەیە. دابگرە — وانەی داهاتوو چاوەڕێ دەکات.",
+  },
   common: {
     continue: "بەردەوامبە",
     skip: "تێپەڕاندن",
