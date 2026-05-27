@@ -49,6 +49,23 @@ const Buttons = [
     textColor: "#A993C5",
   },
 ];
+const HeaderStat = ({
+  Icon,
+  title,
+  textColor,
+}: {
+  Icon: React.FC<SvgProps>;
+  title: string;
+  textColor: string;
+}) => (
+  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+    <Icon width={30} height={30} />
+    <Text style={{ color: textColor, fontWeight: "bold", fontSize: 16 }}>
+      {title}
+    </Text>
+  </View>
+);
+
 const HeaderButton = ({
   Icon,
   onPress,
@@ -59,18 +76,11 @@ const HeaderButton = ({
   onPress: () => void;
   title: string;
   textColor: string;
-}) => {
-  return (
-    <Pressable onPress={onPress}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Icon width={30} height={30} />
-        <Text style={{ color: textColor, fontWeight: "bold", fontSize: 16 }}>
-          {title}
-        </Text>
-      </View>
-    </Pressable>
-  );
-};
+}) => (
+  <Pressable onPress={onPress} accessibilityRole="button">
+    <HeaderStat Icon={Icon} title={title} textColor={textColor} />
+  </Pressable>
+);
 export const HomeHeader = () => {
   const [headerHeight, setHeaderHeight] = useState(0);
   const { height: windoHeight } = useWindowDimensions();
@@ -113,15 +123,24 @@ export const HomeHeader = () => {
       style={[styles.headerContainer]}
       onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
     >
-      {Buttons.map((button) => (
-        <HeaderButton
-          onPress={() => handleFlagPress(button.name)}
-          key={button.title}
-          Icon={button.Icon}
-          title={button.title}
-          textColor={button.textColor}
-        />
-      ))}
+      {Buttons.map((button) =>
+        button.name === "Flag" ? (
+          <HeaderButton
+            onPress={() => handleFlagPress(button.name)}
+            key={button.title}
+            Icon={button.Icon}
+            title={button.title}
+            textColor={button.textColor}
+          />
+        ) : (
+          <HeaderStat
+            key={button.title}
+            Icon={button.Icon}
+            title={button.title}
+            textColor={button.textColor}
+          />
+        ),
+      )}
 
       {showCourseOverlay && (
         <FullWindowOverlay>

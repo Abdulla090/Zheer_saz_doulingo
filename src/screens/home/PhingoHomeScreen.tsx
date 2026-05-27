@@ -8,6 +8,7 @@ import {
     WaveformIcon,
 } from "@/components/icons/PhingoHomeIcons";
 import { Icon3DLayers, Icon3DZapBlue } from "@/components/icons/Icon3D";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -218,7 +219,7 @@ export function PhingoHomeScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 10,
-          paddingBottom: insets.bottom + 120,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
         }}
       >
         {/* Header */}

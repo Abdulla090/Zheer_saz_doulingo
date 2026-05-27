@@ -1,10 +1,6 @@
 import { PressableScale } from "@/components/animations";
 import { Icon3DSettings } from "@/components/icons/Icon3D";
-import {
-    LessonDumbbell,
-    LessonVideo,
-    Profile,
-} from "@/constants/icons";
+import { LessonDumbbell } from "@/constants/icons";
 import { crossShadow } from "@/utils/shadows";
 import {
     BottomSheetModal,
@@ -60,36 +56,18 @@ function StatsIcon({ size = 26, color = "#B4B8C3" }: { size?: number; color?: st
   );
 }
 
-const TAB_BAR_RESERVED_HEIGHT = 96;
-
 const moreActions = [
   {
-    key: "profile",
-    title: "هەژمار",
-    Icon: Profile,
-    fill: "#8d8deb",
-    stroke: "#8d8deb",
-    route: null,
-  },
-  {
-    key: "video-call",
-    title: "پەیوەندی ڤیدیۆیی",
-    Icon: LessonVideo,
-    fill: "#23236e",
-    stroke: "#23236e",
-    route: null,
-  },
-  {
     key: "practice",
-    title: "ڕاهێنان",
+    title: "ڕاهێنان / قسەکردن",
     Icon: LessonDumbbell,
     fill: "#c894f9",
-    stroke: "green",
-    route: null,
+    stroke: "#58CC02",
+    route: "/roleplay" as const,
   },
   {
     key: "settings",
-    title: "فۆنتەکان / ڕێکخستنەکان",
+    title: "ڕێکخستنەکان",
     Icon: null,
     fill: "#1CB0F6",
     stroke: "#1CB0F6",

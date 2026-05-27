@@ -5,20 +5,21 @@
 import React, { memo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
 } from "react-native-reanimated";
 
 import { PairMatchQuestion } from "@/data/lesson-content";
-import { iOS, Radius, Type } from "./game-design";
+import { GameSpace, iOS, Radius, Type } from "./game-design";
 import { ltrText, rtlText } from "./game-text";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-    LiquidEyebrow,
-    LiquidWordChip,
-    OptionState,
+  LiquidEyebrow,
+  LiquidWordChip,
+  OptionState,
 } from "./liquid-primitives";
 
 type Props = {
@@ -82,6 +83,7 @@ const MatchChip = memo(function MatchChip({
         onPress={onPress}
         disabled={matched}
         rtl={rtl}
+        size="sm"
       />
     </Animated.View>
   );
@@ -97,7 +99,7 @@ function MatchProgress({ done, total }: { done: number; total: number }) {
             s.dot,
             {
               backgroundColor: i < done ? iOS.systemGreen : "rgba(255,255,255,0.3)",
-              transform: [{ scale: i < done ? 1.15 : 1 }],
+              transform: [{ scale: i < done ? 1.1 : 1 }],
             },
           ]}
         />
@@ -165,11 +167,15 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
     matched.has(w) ? "correct" : wrongR === w ? "wrong" : selR === w ? "selected" : "idle";
 
   return (
-    <View style={s.root}>
-      <LiquidEyebrow>Match the pairs</LiquidEyebrow>
-
-      <MatchProgress done={matched.size / 2} total={total} />
-
+    <GameScreenLayout
+      header={
+        <>
+          <LiquidEyebrow>Match pairs</LiquidEyebrow>
+          <MatchProgress done={matched.size / 2} total={total} />
+        </>
+      }
+      bodyStyle={s.body}
+    >
       <View style={s.colLabels}>
         <Text style={[s.colLabel, s.colLabelKu]}>کوردی</Text>
         <Text style={[s.colLabel, s.colLabelEn]}>English</Text>
@@ -200,37 +206,34 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
           ))}
         </View>
       </View>
-    </View>
+    </GameScreenLayout>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 28,
-    gap: 14,
+  body: {
+    gap: GameSpace.gapSm,
   },
   dotsRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
     justifyContent: "center",
-    marginVertical: 4,
+    marginTop: 4,
   },
   dot: {
-    width: 28,
-    height: 8,
+    width: 24,
+    height: 6,
     borderRadius: Radius.pill,
   },
   colLabels: {
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
   },
   colLabel: {
     flex: 1,
     ...Type.eyebrow,
-    color: "rgba(255,255,255,0.85)",
+    fontSize: 10,
+    color: "rgba(255,255,255,0.8)",
   },
   colLabelKu: {
     ...rtlText,
@@ -242,10 +245,12 @@ const s = StyleSheet.create({
   columns: {
     flex: 1,
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
+    minHeight: 0,
   },
   col: {
     flex: 1,
-    gap: 10,
+    gap: 8,
+    justifyContent: "flex-start",
   },
 });

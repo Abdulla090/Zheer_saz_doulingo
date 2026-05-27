@@ -4,6 +4,7 @@
  */
 
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
+import { tabBarScrollPadding } from "@/constants/layout";
 import type { SectionTheme } from "@/data/list-items";
 import { normalSectionData } from "@/data/normal-english";
 import { Image } from "expo-image";
@@ -41,8 +42,6 @@ const NormalSectionHeader = React.memo(({ section }: { section: { title: string 
 const renderSectionHeader = ({ section }: { section: { title: string } }) => (
   <NormalSectionHeader section={section} />
 );
-
-const ListFooterSpacer = () => <View style={{ height: 120 }} />;
 
 export function NormalEnglishPathScreen() {
   const insets = useSafeAreaInsets();
@@ -169,8 +168,10 @@ export function NormalEnglishPathScreen() {
           onScroll={onScroll}
           scrollEventThrottle={16}
           style={darkStyles.list}
-          ListFooterComponent={ListFooterSpacer}
-          contentContainerStyle={darkStyles.listContent}
+          contentContainerStyle={[
+            darkStyles.listContent,
+            { paddingBottom: tabBarScrollPadding(insets.bottom) },
+          ]}
           stickySectionHeadersEnabled={false}
           initialNumToRender={6}
           maxToRenderPerBatch={4}
@@ -188,7 +189,7 @@ export function NormalEnglishPathScreen() {
 const darkStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
   list: { flex: 1, backgroundColor: "transparent" },
-  listContent: { paddingBottom: 10, backgroundColor: "transparent", paddingTop: 24 },
+  listContent: { backgroundColor: "transparent", paddingTop: 24 },
   sectionHeader: {
     height: 56,
     flexDirection: "row",

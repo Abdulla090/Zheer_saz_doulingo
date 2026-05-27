@@ -12,8 +12,10 @@ import {
   Switch,
   Text,
 } from "@expo/ui";
+import { tabBarScrollPadding } from "@/constants/layout";
 import React, { useState } from "react";
 import { Text as RNText } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function LabeledRow({
   label,
@@ -73,10 +75,15 @@ export default function SettingsExpoUIScreen() {
   const { selectedFont, setFont } = useFontStore();
   const [haptics, setHaptics] = useState(true);
   const [sounds, setSounds] = useState(true);
+  const insets = useSafeAreaInsets();
 
   return (
     <Host
-      style={{ flex: 1 }}
+      style={{
+        flex: 1,
+        paddingTop: insets.top,
+        paddingBottom: tabBarScrollPadding(insets.bottom),
+      }}
       layoutDirection="rightToLeft"
       useViewportSizeMeasurement
     >

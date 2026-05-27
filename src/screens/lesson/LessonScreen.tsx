@@ -401,9 +401,7 @@ export default function LessonScreen() {
                     </Text>
                   ) : (
                     <Text style={sL.sheetSub}>
-                      {isCorrect
-                        ? "Perfect. Keep up the momentum."
-                        : "Not quite. Focus on the structure."}
+                      {isCorrect ? "Keep going." : "Review and try the next one."}
                     </Text>
                   )}
                 </View>
@@ -429,17 +427,17 @@ const sL = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 18,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    gap: 10,
   },
   progressOuter: {
     flex: 1,
   },
   progressTrack: {
-    height: 12,
-    borderRadius: 6,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: "rgba(8,16,32,0.45)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",

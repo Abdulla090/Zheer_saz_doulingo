@@ -64,7 +64,13 @@ export function isSwipeNext(translationX: number, isRtl: boolean): boolean {
  * Avoids reload when only using View direction; call when locale changes.
  */
 export function syncNativeRtl(isRtl: boolean): void {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web") {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
+      document.documentElement.setAttribute("lang", isRtl ? "ckb" : "en");
+    }
+    return;
+  }
   try {
     I18nManager.allowRTL(true);
     if (I18nManager.isRTL !== isRtl) {

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
@@ -144,7 +145,10 @@ export const StreetEnglishPathScreen = () => {
           scrollEventThrottle={16}
           style={styles.list}
           ListFooterComponent={ListFooter}
-          contentContainerStyle={[styles.listContainer, { paddingBottom: 0 }]}
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: tabBarScrollPadding(insets.bottom) },
+          ]}
           stickySectionHeadersEnabled={false}
           initialNumToRender={6}
           maxToRenderPerBatch={4}
