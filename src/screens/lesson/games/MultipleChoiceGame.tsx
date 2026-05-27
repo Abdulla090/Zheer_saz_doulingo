@@ -2,11 +2,11 @@
  * MultipleChoiceGame — Premium light lesson UI.
  */
 
+import { AppText } from "@/components/ui/AppText";
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
-import { rtlBlock } from "./game-text";
 import {
   GameFooter,
   GameHeader,
@@ -73,7 +73,12 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
       </GameHeader>
 
       <LightSurfaceCard>
-        <Text style={[s.prompt, isKuPrompt && rtlBlock]}>{question.prompt}</Text>
+        <AppText
+          style={s.prompt}
+          forceKurdishFont={isKuPrompt}
+        >
+          {question.prompt}
+        </AppText>
       </LightSurfaceCard>
 
       <View style={s.options}>

@@ -1,6 +1,13 @@
+const dinBold = require("@/assets/fonts/DIN_BOLD.ttf");
+const dinMedium = require("@/assets/fonts/DIN_MEDIUM.ttf");
+const dinRegular = require("@/assets/fonts/DIN_REGULAR.ttf");
+
 export const fontMap = {
-  Rabar_011: require('@/assets/fonts/Rabar_011.ttf'),
-  Rabar_016: require('@/assets/fonts/Rabar_016.ttf'),
+  DINNextRoundedBold: dinBold,
+  DINNextRoundedMedium: dinMedium,
+  DINNextRoundedRegular: dinRegular,
+  Rabar_011: require("@/assets/fonts/Rabar_011.ttf"),
+  Rabar_016: require("@/assets/fonts/Rabar_016.ttf"),
   Rabar_017: require('@/assets/fonts/Rabar_017.ttf'),
   Rabar_018: require('@/assets/fonts/Rabar_018.ttf'),
   Rabar_019: require('@/assets/fonts/Rabar_019.ttf'),

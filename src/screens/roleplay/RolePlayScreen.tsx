@@ -25,6 +25,7 @@ import {
   Send,
   Store,
 } from "lucide-react-native";
+import { AppText } from "@/components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -403,12 +404,13 @@ export function RolePlayScreen() {
                         >
                           <ScIcon size={24} color={sc.accent} strokeWidth={2} />
                         </View>
-                        <Text
+                        <AppText
                           style={[styles.scenarioName, sel && { color: sc.accent }]}
                           numberOfLines={2}
+                          forceKurdishFont
                         >
                           {sc.titleKu}
-                        </Text>
+                        </AppText>
                         <Text style={styles.scenarioEn}>{sc.title}</Text>
                       </HomeLiquidCard>
                     </PressableScale>
@@ -423,8 +425,12 @@ export function RolePlayScreen() {
                 <View style={[styles.heroIconRing, { borderColor: accent + "40" }]}>
                   <Icon size={44} color={accent} strokeWidth={1.8} />
                 </View>
-                <Text style={styles.heroTitle}>{activeScenario.titleKu}</Text>
-                <Text style={styles.heroSub}>{activeScenario.subtitleKu}</Text>
+                <AppText style={styles.heroTitle} forceKurdishFont>
+                  {activeScenario.titleKu}
+                </AppText>
+                <AppText style={styles.heroSub} forceKurdishFont>
+                  {activeScenario.subtitleKu}
+                </AppText>
                 <HomeLiquidButton
                   label="START CONVERSATION"
                   onPress={startSession}

@@ -1,10 +1,6 @@
 /**
- * Icon3D — Premium smooth 3D SVG icons for Phingo.
- * Every icon uses a sphere-lighting model:
- *   • Radial gradient: bright catch-light (top-left) → deep mid-tone → dark rim edge
- *   • Specular overlay: soft white gloss blob top-left
- *   • Drop-shadow disk offset below
- *   • Icon path: shadowed copy below + bright white on top
+ * Icon3D — Soft gradient coin icons for Phingo (no hard extrusion ledge).
+ * Path lesson node circles use SvgButton rim/face — not these icons.
  *
  * All gradient IDs are unique per component mount via useRef + module counter.
  */

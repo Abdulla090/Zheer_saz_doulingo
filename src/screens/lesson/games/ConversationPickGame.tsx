@@ -2,11 +2,11 @@
  * ConversationPickGame — Premium light lesson UI.
  */
 
+import { AppText } from "@/components/ui/AppText";
 import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ConversationPickQuestion } from "@/data/lesson-content";
-import { rtlBlock } from "./game-text";
 import {
   GameFooter,
   GameHeader,
@@ -77,12 +77,16 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
 
         <LightSurfaceCard style={s.situationCard}>
           <Text style={s.situationLabel}>SITUATION</Text>
-          <Text style={[s.situationText, rtlBlock]}>{question.situation}</Text>
+          <AppText style={s.situationText} forceKurdishFont>
+            {question.situation}
+          </AppText>
         </LightSurfaceCard>
 
         <LightSurfaceCard>
           <Text style={s.theyLabel}>THEY SAY</Text>
-          <Text style={[s.theyText, rtlBlock]}>{question.theyAsk}</Text>
+          <AppText style={s.theyText} forceKurdishFont>
+            {question.theyAsk}
+          </AppText>
         </LightSurfaceCard>
 
         <Text style={s.chooseLabel}>Choose the best response</Text>

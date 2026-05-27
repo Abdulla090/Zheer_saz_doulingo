@@ -12,6 +12,7 @@ import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
+import { AppText } from "@/components/ui/AppText";
 import {
   Platform,
   Pressable,
@@ -39,8 +40,12 @@ export function LightGameHeading({
 }) {
   return (
     <View style={lh.headingWrap}>
-      <Text style={LightType.title}>{title}</Text>
-      <Text style={LightType.subtitle}>{subtitle}</Text>
+      <AppText style={LightType.title} forceLatinFont>
+        {title}
+      </AppText>
+      <AppText style={LightType.subtitle} forceLatinFont latinRole="regular">
+        {subtitle}
+      </AppText>
     </View>
   );
 }
@@ -72,8 +77,12 @@ export function LightPromptCard({
         </Svg>
       </Pressable>
       <View style={lh.promptTextCol}>
-        <Text style={[LightType.promptKu, { textAlign: "right" }]}>{kurdish}</Text>
-        <Text style={LightType.promptEn}>{english}</Text>
+        <AppText style={LightType.promptKu} forceKurdishFont>
+          {kurdish}
+        </AppText>
+        <AppText style={LightType.promptEn} forceLatinFont latinRole="medium">
+          {english}
+        </AppText>
       </View>
     </HomeLiquidCard>
   );
@@ -213,15 +222,12 @@ export function LightWordTile({
           pointerEvents="none"
         />
       )}
-      <Text
-        style={[
-          LightType.tile,
-          rtl && { writingDirection: "rtl", textAlign: "center" },
-          { zIndex: 1 },
-        ]}
+      <AppText
+        style={[LightType.tile, { zIndex: 1 }]}
+        forceKurdishFont={rtl}
       >
         {label}
-      </Text>
+      </AppText>
     </View>
   );
 

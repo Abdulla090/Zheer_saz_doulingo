@@ -1,5 +1,6 @@
+import { AppText } from "@/components/ui/AppText";
 import { sectionData } from "@/data/list-items";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 const FIRST_SECTION_TITLE = sectionData[0]?.title;
 
@@ -9,9 +10,9 @@ export const ListSectionHeader = ({ section }: { section: { title: string } }) =
   return (
     <View style={styles.wrap}>
       <View style={styles.line} />
-      <Text style={styles.title} numberOfLines={2}>
+      <AppText style={styles.title} numberOfLines={2}>
         {section.title}
-      </Text>
+      </AppText>
       <View style={styles.line} />
     </View>
   );

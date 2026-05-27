@@ -3,6 +3,7 @@
  * Uses expo-speech-recognition on native and web.
  */
 
+import { AppText } from "@/components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -179,7 +180,9 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
       <View style={s.micStage}>
         {micOnly ? (
-          <Text style={s.targetHint}>{question.targetWord}</Text>
+          <AppText style={s.targetHint} forceLatinFont>
+            {question.targetWord}
+          </AppText>
         ) : null}
         <Animated.View style={shakeStyle}>
           <MicCaptureOrb

@@ -15,14 +15,24 @@ import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function applyGlobalFont(fontFamily: string) {
+function applyGlobalFont(kurdishFontFamily: string) {
   if (Platform.OS === "web" && typeof document !== "undefined") {
-    document.documentElement.style.setProperty("--font-rd-bold", `'${fontFamily}'`);
-    document.documentElement.style.setProperty("--font-rd-medium", `'${fontFamily}'`);
-    document.documentElement.style.setProperty("--font-rd-regular", `'${fontFamily}'`);
+    document.documentElement.style.setProperty(
+      "--font-rd-bold",
+      `'${kurdishFontFamily}'`,
+    );
+    document.documentElement.style.setProperty(
+      "--font-rd-medium",
+      `'${kurdishFontFamily}'`,
+    );
+    document.documentElement.style.setProperty(
+      "--font-rd-regular",
+      `'${kurdishFontFamily}'`,
+    );
   }
+  // Fallback when styles omit fontFamily — AppText picks Rabar vs DIN per string.
   (Text as any).defaultProps = (Text as any).defaultProps ?? {};
-  (Text as any).defaultProps.style = { fontFamily };
+  (Text as any).defaultProps.style = { fontFamily: kurdishFontFamily };
 }
 
 export default function TabLayout() {

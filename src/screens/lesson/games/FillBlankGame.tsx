@@ -2,6 +2,7 @@
  * FillBlankGame — Premium light lesson UI.
  */
 
+import { AppText } from "@/components/ui/AppText";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
@@ -94,7 +95,9 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <Text style={[s.hint, rtlBlock]}>{question.kurdishHint}</Text>
+      <AppText style={s.hint} forceKurdishFont>
+        {question.kurdishHint}
+      </AppText>
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>

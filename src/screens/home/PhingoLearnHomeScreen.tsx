@@ -168,7 +168,9 @@ export function PhingoLearnHomeScreen() {
             <DolphinFlat width={72} height={72} />
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>Hi there!</Text>
-              <Text style={styles.heroSub}>Let's learn Kurdish (Sorani)</Text>
+              <Text style={styles.heroSub}>
+                Learn English — made for Kurdish speakers
+              </Text>
               <HomeLiquidButton label="CONTINUE" onPress={onContinue} />
             </View>
           </View>

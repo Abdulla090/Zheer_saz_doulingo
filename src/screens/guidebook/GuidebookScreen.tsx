@@ -1,3 +1,4 @@
+import { AppText } from "@/components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { ALL_GUIDEBOOKS, GuidebookLesson } from "@/data/guidebook-data";
 import { useTTS } from "@/hooks/use-tts";
@@ -130,7 +131,12 @@ function WordCard({
           >
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.wordEn}>{english}</Text>
-              <Text style={[styles.wordKu, { color: rgba(faceColor, 0.75) }]}>{kurdish}</Text>
+              <AppText
+                style={[styles.wordKu, { color: rgba(faceColor, 0.75) }]}
+                forceKurdishFont
+              >
+                {kurdish}
+              </AppText>
             </View>
             <TTSPill
               onPress={onPress}
@@ -193,7 +199,9 @@ function PhraseCard({
                 />
               </View>
               <View style={[styles.phraseDivider, { backgroundColor: rgba(faceColor, 0.12) }]} />
-              <Text style={styles.phraseKu}>{kurdish}</Text>
+              <AppText style={styles.phraseKu} forceKurdishFont>
+                {kurdish}
+              </AppText>
             </View>
           </Pressable>
         </Animated.View>
