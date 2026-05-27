@@ -43,6 +43,11 @@ import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
 import { G, GameBg, Glass, iOS, Radius } from "./games/game-design";
 import { dirForText } from "./games/game-text";
+import { L, usesLightLessonShell } from "./games/lesson-light-design";
+import {
+  LessonLightHeader,
+  LightCheckButton,
+} from "./games/lesson-light-primitives";
 import { LiquidPrimaryButton } from "./games/liquid-primitives";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
@@ -293,45 +298,60 @@ export default function LessonScreen() {
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
+  const currentQ = questions[current];
+  const lightShell = usesLightLessonShell(currentQ?.type);
 
   return (
-    <View style={[sL.root, { paddingTop: insets.top }]}>
-      <Image
-        source={require("@/assets/images/oceanbg.png")}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        priority="low"
-      />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: GameBg.scrim }]} />
+    <View
+      style={[
+        sL.root,
+        { paddingTop: insets.top, backgroundColor: lightShell ? L.bg : "transparent" },
+      ]}
+    >
+      {!lightShell && (
+        <>
+          <Image
+            source={require("@/assets/images/oceanbg.png")}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="low"
+          />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: GameBg.scrim }]} />
+        </>
+      )}
 
-      {/* Header */}
-      <View style={sL.header}>
-        <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
-          <Icon3DX size={20} />
-        </HeaderPill>
-
-        {/* Progress glass track */}
-        <View style={sL.progressOuter}>
-          <View style={sL.progressTrack}>
-            <Animated.View style={[sL.progressFillWrap, progressStyle]}>
-              <LinearGradient
-                colors={["#5EEAD4", iOS.systemGreen]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        <Animated.View style={xpStyle}>
-          <HeaderPill height={44} paddingH={14}>
-            <Icon3DFire size={18} />
-            <Text style={sL.heartsText}>{hearts}</Text>
+      {lightShell ? (
+        <LessonLightHeader
+          progressFillStyle={progressStyle}
+          hearts={hearts}
+          onBack={() => router.back()}
+        />
+      ) : (
+        <View style={sL.header}>
+          <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
+            <Icon3DX size={20} />
           </HeaderPill>
-        </Animated.View>
-      </View>
+          <View style={sL.progressOuter}>
+            <View style={sL.progressTrack}>
+              <Animated.View style={[sL.progressFillWrap, progressStyle]}>
+                <LinearGradient
+                  colors={["#5EEAD4", iOS.systemGreen]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Animated.View>
+            </View>
+          </View>
+          <Animated.View style={xpStyle}>
+            <HeaderPill height={44} paddingH={14}>
+              <Icon3DFire size={18} />
+              <Text style={sL.heartsText}>{hearts}</Text>
+            </HeaderPill>
+          </Animated.View>
+        </View>
+      )}
 
       {/* Game */}
       <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -409,11 +429,19 @@ export default function LessonScreen() {
                 </View>
               </View>
 
-              <LiquidPrimaryButton
-                label="CONTINUE"
-                color={isCorrect ? iOS.systemGreen : iOS.systemRed}
-                onPress={continueToNext}
-              />
+              {lightShell ? (
+                <LightCheckButton
+                  label="CONTINUE"
+                  onPress={continueToNext}
+                  color={isCorrect ? L.green : L.red}
+                />
+              ) : (
+                <LiquidPrimaryButton
+                  label="CONTINUE"
+                  color={isCorrect ? iOS.systemGreen : iOS.systemRed}
+                  onPress={continueToNext}
+                />
+              )}
             </View>
           </View>
         </Animated.View>
