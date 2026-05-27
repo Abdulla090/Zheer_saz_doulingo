@@ -2,6 +2,7 @@ import { CustomTabBar } from "@/components/CustomTabBar";
 import { fontMap } from "@/fontMap";
 import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
 import { useFontStore } from "@/stores/useFontStore";
+import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
@@ -30,8 +31,9 @@ function applyGlobalFont(fontFamily: string) {
 export default function TabLayout() {
   const { selectedFont, ready: fontReady } = useFontStore();
   const onboardingReady = useOnboardingStore((s) => s.ready);
+  const localeReady = useLocaleStore((s) => s.ready);
   const onboardingComplete = useOnboardingStore((s) => s.completed);
-  const ready = fontReady && onboardingReady;
+  const ready = fontReady && onboardingReady && localeReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);

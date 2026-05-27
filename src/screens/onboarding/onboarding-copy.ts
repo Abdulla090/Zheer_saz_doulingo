@@ -1,4 +1,6 @@
-export type OnboardingLocale = "en" | "ku";
+import type { AppLocale } from "@/utils/rtl";
+
+export type OnboardingLocale = AppLocale;
 
 export const ONBOARDING_COPY = {
   en: {
@@ -39,34 +41,38 @@ export const ONBOARDING_COPY = {
     skip: "تێپەڕین",
     continue: "بەردەوامبوون",
     getStarted: "دەست پێ بکە",
-    swipeHint: "بۆ خوارەوە بیخشێنە",
-    languageEn: "English",
+    swipeHint: "بۆ لای ڕاست بخشێنە بۆ دواتر",
+    languageEn: "ئینگلیزی",
     languageKu: "کوردی",
     steps: [
       {
-        title: "Phingo بناسە",
-        subtitle: "هاوڕێی زمانی AIـەکەت بۆ گفتوگۆی ڕاستەقینە و ئینگلیزی ڕۆژانە.",
+        title: "Phingo ـ بناسە",
+        subtitle:
+          "هاوڕێی زمانی AIـەکەت بۆ گفتوگۆی ڕاستەقینە و فێربوونی ئینگلیزی ڕۆژانە.",
       },
       {
         title: "ڕێگاکەت هەڵبژێرە",
-        subtitle: "Street English بۆ قسەی ڕۆژانە، Normal English بۆ وانەی ڕێکخراو.",
+        subtitle:
+          "ئینگلیزی شەقامی بۆ قسەی ڕۆژانە، یان ئینگلیزی ئاسایی بۆ وانەی ڕێکخراو.",
       },
       {
         title: "بە کردەوە فێربە",
-        subtitle: "یاری، قسەکردن و ڕۆڵ — وانەی کورت کە دەمێنێتەوە.",
+        subtitle:
+          "یاری، قسەکردن و ڕۆڵـلێدان — وانەی کورت کە لەبیر دەمێنێتەوە.",
       },
       {
         title: "بەردەوام بە",
-        subtitle: "دڵ، XP و streak یارمەتیت دەدەن بەردەوام بیت.",
+        subtitle:
+          "دڵ، خاڵی ئەزموون و زنجیرەی ڕۆژانە یارمەتیت دەدەن بە پێشەوە بچیت.",
       },
       {
-        title: "ئامادەیت",
+        title: "ئامادەیت!",
         subtitle: "کاتێک ئامادە بوویت، یەکەم وانەکەت دەست پێ بکە.",
       },
     ],
-    pathStreetTitle: "Street English",
-    pathStreetSub: "دەربڕینی ڕۆژانە",
-    pathNormalTitle: "Normal English",
-    pathNormalSub: "وانەی ڕێکخراو",
+    pathStreetTitle: "ئینگلیزی شەقام",
+    pathStreetSub: "دەربڕینی ڕۆژانە و سروشت",
+    pathNormalTitle: "ئینگلیزی ئاسایی",
+    pathNormalSub: "وانە و یەکەی ڕێکخراو",
   },
 } as const;

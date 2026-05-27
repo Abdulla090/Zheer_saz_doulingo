@@ -1,9 +1,12 @@
 import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
+import { rtlTextCenter } from "@/utils/rtl";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
+
+import { useOnboardingLocale } from "../OnboardingLocaleContext";
 
 type Props = {
   label: string;
@@ -18,12 +21,14 @@ export function OnboardingPrimaryButton({
   color = "#208AEF",
   rimColor,
 }: Props) {
+  const { isRtl, locale } = useOnboardingLocale();
   const [pressed, setPressed] = useState(false);
   const rim = rimColor ?? color;
   const depth = 4;
+  const fontFamily = locale === "ku" ? "Rabar_011" : undefined;
 
   return (
-    <View style={[styles.rim, { backgroundColor: rim }]}>
+    <View style={[styles.rim, { backgroundColor: rim }, { direction: isRtl ? "rtl" : "ltr" }]}>
       <Animated.View
         style={[
           styles.face,
@@ -52,7 +57,15 @@ export function OnboardingPrimaryButton({
           onPressOut={() => setPressed(false)}
           style={styles.press}
         >
-          <Text style={styles.label}>{label}</Text>
+          <Text
+            style={[
+              styles.label,
+              rtlTextCenter(isRtl),
+              fontFamily && { fontFamily },
+            ]}
+          >
+            {label}
+          </Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -63,6 +76,7 @@ const styles = StyleSheet.create({
   rim: {
     borderRadius: 16,
     overflow: "hidden",
+    width: "100%",
   },
   face: {
     borderRadius: 16,
@@ -81,6 +95,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: "#FFFFFF",
-    letterSpacing: 0.6,
+    letterSpacing: 0.2,
   },
 });

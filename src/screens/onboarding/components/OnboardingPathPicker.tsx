@@ -1,8 +1,11 @@
 import { Icon3DLayers, Icon3DZapBlue } from "@/components/icons/Icon3D";
 import { crossShadow } from "@/utils/shadows";
+import { rtlTextCenter } from "@/utils/rtl";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import { useOnboardingLocale } from "../OnboardingLocaleContext";
 
 type PathMode = "street" | "normal";
 
@@ -23,6 +26,9 @@ export function OnboardingPathPicker({
   normalTitle,
   normalSub,
 }: Props) {
+  const { isRtl, locale } = useOnboardingLocale();
+  const fontFamily = locale === "ku" ? "Rabar_011" : undefined;
+
   return (
     <View style={styles.row}>
       <PathCard
@@ -32,6 +38,8 @@ export function OnboardingPathPicker({
         subtitle={streetSub}
         icon={<Icon3DZapBlue size={32} active={selected === "street"} />}
         accent="#208AEF"
+        isRtl={isRtl}
+        fontFamily={fontFamily}
       />
       <PathCard
         active={selected === "normal"}
@@ -40,6 +48,8 @@ export function OnboardingPathPicker({
         subtitle={normalSub}
         icon={<Icon3DLayers size={32} active={selected === "normal"} />}
         accent="#7C3AED"
+        isRtl={isRtl}
+        fontFamily={fontFamily}
       />
     </View>
   );
@@ -52,6 +62,8 @@ function PathCard({
   subtitle,
   icon,
   accent,
+  isRtl,
+  fontFamily,
 }: {
   active: boolean;
   onPress: () => void;
@@ -59,6 +71,8 @@ function PathCard({
   subtitle: string;
   icon: React.ReactNode;
   accent: string;
+  isRtl: boolean;
+  fontFamily?: string;
 }) {
   return (
     <Pressable
@@ -83,10 +97,21 @@ function PathCard({
         />
       )}
       <View style={styles.iconWrap}>{icon}</View>
-      <Text style={[styles.title, active && { color: accent }]} numberOfLines={2}>
+      <Text
+        style={[
+          styles.title,
+          rtlTextCenter(isRtl),
+          active && { color: accent },
+          fontFamily && { fontFamily },
+        ]}
+        numberOfLines={2}
+      >
         {title}
       </Text>
-      <Text style={styles.sub} numberOfLines={2}>
+      <Text
+        style={[styles.sub, rtlTextCenter(isRtl), fontFamily && { fontFamily }]}
+        numberOfLines={2}
+      >
         {subtitle}
       </Text>
     </Pressable>
@@ -98,6 +123,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     marginTop: 16,
+    width: "100%",
   },
   card: {
     flex: 1,
@@ -118,15 +144,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     color: "#0F172A",
-    textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 20,
   },
   sub: {
     fontSize: 11,
     fontWeight: "500",
     color: "#64748B",
-    textAlign: "center",
-    marginTop: 4,
-    lineHeight: 15,
+    marginTop: 6,
+    lineHeight: 16,
   },
 });
