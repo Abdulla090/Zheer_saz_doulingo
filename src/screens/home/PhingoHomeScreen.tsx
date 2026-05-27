@@ -9,6 +9,7 @@ import {
 } from "@/components/icons/PhingoHomeIcons";
 import { Icon3DLayers, Icon3DZapBlue } from "@/components/icons/Icon3D";
 import { tabBarScrollPadding } from "@/constants/layout";
+import { SoftPressableButton } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -275,26 +276,20 @@ export function PhingoHomeScreen({
 
         {/* CTA "Tap to talk" pill button */}
         <Animated.View entering={enterFadeDown(80)} style={styles.ctaWrap}>
-          <PressableScale onPress={handleTalk} scaleDown={0.96} haptic>
-            <LinearGradient
-              colors={["#4FA2F1", "#2563EB", "#1E65EB"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.talkBtn,
-                crossShadow({
-                  color: C.blue,
-                  offsetY: 10,
-                  blur: 24,
-                  opacity: 0.32,
-                  elevation: 10,
-                }),
-              ]}
-            >
-              <WaveformIcon size={20} color="#FFFFFF" />
-              <Text style={styles.talkLabel}>Tap to talk</Text>
-            </LinearGradient>
-          </PressableScale>
+          <SoftPressableButton
+            faceColor="#3B82F6"
+            rimColor="#1D4ED8"
+            borderRadius={30}
+            depth={5}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleTalk();
+            }}
+            contentStyle={styles.talkBtn}
+          >
+            <WaveformIcon size={20} color="#FFFFFF" />
+            <Text style={styles.talkLabel}>Tap to talk</Text>
+          </SoftPressableButton>
         </Animated.View>
 
         {/* Suggestions */}
@@ -430,14 +425,12 @@ const styles = StyleSheet.create({
   },
   talkBtn: {
     height: 60,
-    borderRadius: 30,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 28,
     gap: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+    zIndex: 1,
   },
   talkLabel: {
     fontSize: 18,

@@ -1,18 +1,13 @@
 /**
- * Icon3D — Premium smooth 3D SVG icons for Phingo.
- * Every icon uses a sphere-lighting model:
- *   • Radial gradient: bright catch-light (top-left) → deep mid-tone → dark rim edge
- *   • Specular overlay: soft white gloss blob top-left
- *   • Drop-shadow disk offset below
- *   • Icon path: shadowed copy below + bright white on top
- *
- * All gradient IDs are unique per component mount via useRef + module counter.
+ * Icon3D — Soft premium coin icons (matches home path buttons).
+ * Radial face lighting, gloss sheen, and gentle depth — no hard extruded ledges.
  */
 
 import React from "react";
 import Svg, {
   Defs,
   LinearGradient,
+  RadialGradient,
   Stop,
   Path,
   Rect,
@@ -26,66 +21,84 @@ function useId(prefix: string) {
 }
 
 // ----- Core icon builder -------------------------------------------------------
-// Duolingo / Lovable style: extruded squircle (rounded rect), NOT a sphere.
-//   • Linear gradient top→bottom: bright (top) → shade (bottom), same hue
-//   • Extrusion "ledge": offset squircle below in shade color = 3D raised button feel
-//   • 1px translucent inner stroke for crisp edge
-//   • NO white specular blob. NO radial gradient. NO fake lighting.
+// Soft premium coin — radial lighting + gentle depth (matches home path buttons).
 interface SphereProps {
   size: number;
-  bright: string; // top face color (lighter)
-  mid: string;    // middle (gradient midpoint)
-  shade: string;  // bottom face / ledge color (slightly darker, same hue)
-  sheen?: string; // unused — kept for API compat
+  bright: string;
+  mid: string;
+  shade: string;
+  sheen?: string;
   id: string;
 }
 
 function Sphere({ size, bright, mid, shade, id, children }: SphereProps & { children?: React.ReactNode }) {
-  const bg  = `bg-${id}`;
-  // Padding so ledge is visible
-  const pad = size * 0.03;
-  const w   = size - pad * 2;
-  // Corner radius: 50% of width → perfect circle
-  const rx  = w / 2;
-  // Ledge depth in px (gives 3D lift look)
-  const ledge = Math.max(2, size * 0.10);
+  const radial = `rad-${id}`;
+  const gloss = `gloss-${id}`;
+  const pad = size * 0.04;
+  const w = size - pad * 2;
+  const rx = w / 2;
+  const cx = pad + rx;
+  const cy = pad + rx;
+  const depth = Math.max(2, Math.round(size * 0.05));
+  const totalH = size + depth;
 
   return (
-    <Svg width={size} height={size + ledge} viewBox={`0 0 ${size} ${size + ledge}`}>
+    <Svg width={size} height={totalH} viewBox={`0 0 ${size} ${totalH}`}>
       <Defs>
-        {/* Clean top→bottom gradient — same hue, bright top, slightly deeper bottom */}
-        <LinearGradient id={bg} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%"   stopColor={bright} />
-          <Stop offset="100%" stopColor={mid}    />
+        <RadialGradient
+          id={radial}
+          cx="32%"
+          cy="28%"
+          rx="72%"
+          ry="72%"
+          fx="28%"
+          fy="22%"
+        >
+          <Stop offset="0%" stopColor={bright} />
+          <Stop offset="55%" stopColor={mid} />
+          <Stop offset="100%" stopColor={shade} />
+        </RadialGradient>
+        <LinearGradient id={gloss} x1="0" y1="0" x2="0.4" y2="1">
+          <Stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
+          <Stop offset="45%" stopColor="rgba(255,255,255,0.08)" />
+          <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
         </LinearGradient>
       </Defs>
 
-      {/* Ledge (extrusion): same shape offset down by ledge px, shade color */}
       <Rect
-        x={pad} y={pad + ledge}
-        width={w} height={w}
-        rx={rx} fill={shade}
+        x={pad}
+        y={pad + depth * 0.85}
+        width={w}
+        height={w}
+        rx={rx}
+        fill={shade}
+        opacity={0.38}
       />
 
-      {/* Face: main squircle body with gradient */}
+      <Rect x={pad} y={pad} width={w} height={w} rx={rx} fill={`url(#${radial})`} />
+
       <Rect
-        x={pad} y={pad}
-        width={w} height={w}
-        rx={rx} fill={`url(#${bg})`}
+        x={pad}
+        y={pad}
+        width={w}
+        height={w * 0.55}
+        rx={rx}
+        fill={`url(#${gloss})`}
+        opacity={0.9}
       />
 
-      {/* 1px inner stroke — translucent white, gives crisp glassy edge */}
       <Rect
-        x={pad + 0.75} y={pad + 0.75}
-        width={w - 1.5} height={w - 1.5}
+        x={pad + 0.75}
+        y={pad + 0.75}
+        width={w - 1.5}
+        height={w - 1.5}
         rx={rx - 0.75}
         fill="none"
-        stroke="rgba(255,255,255,0.35)"
-        strokeWidth={1}
+        stroke="rgba(255,255,255,0.42)"
+        strokeWidth={1.25}
       />
 
-      {/* Icon glyph — white, centered on face */}
-      {children}
+      <G>{children}</G>
     </Svg>
   );
 }

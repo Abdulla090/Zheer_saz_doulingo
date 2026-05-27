@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   Platform,
   StyleSheet,
   I18nManager,

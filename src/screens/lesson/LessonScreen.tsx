@@ -14,6 +14,7 @@ import {
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
+import { SoftCircleButton } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -68,13 +69,26 @@ function HeaderPill({
   height?: number;
   paddingH?: number;
 }) {
+  if (width && width <= 48 && onPress) {
+    return (
+      <SoftCircleButton
+        size={height}
+        onPress={onPress}
+        faceColor="rgba(255,255,255,0.22)"
+        rimColor="rgba(15,23,42,0.35)"
+      >
+        {children}
+      </SoftCircleButton>
+    );
+  }
+
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
     <Animated.View style={animStyle}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => { if (onPress) scale.value = withTiming(0.9, { duration: 100 }); }}
+        onPressIn={() => { if (onPress) scale.value = withTiming(0.96, { duration: 100 }); }}
         onPressOut={() => { if (onPress) scale.value = withTiming(1, { duration: 140 }); }}
         style={[
           {
@@ -89,7 +103,7 @@ function HeaderPill({
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
-            ...crossShadow({ color: "#000", offsetY: 6, opacity: 0.18, blur: 16, elevation: 4 }),
+            ...crossShadow({ color: "#000", offsetY: 8, opacity: 0.14, blur: 18, elevation: 4 }),
           },
           Platform.OS === "web" && {
             // @ts-ignore web

@@ -1,7 +1,11 @@
 import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
+import {
+  SoftGloss,
+  softDepth,
+  softFaceBorders,
+} from "@/components/ui/soft-2.5d";
 import { Star } from "@/constants/icons";
 import { crossShadow } from "@/utils/shadows";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -34,7 +38,6 @@ type PathButtonProps = {
 };
 
 const ICON_RATIO = 0.42;
-const DEPTH_RATIO = 0.05;
 
 export const SvgButton = React.memo(
   ({
@@ -49,18 +52,12 @@ export const SvgButton = React.memo(
   }: PathButtonProps) => {
     const colors = SVG_BUTTON_COLOR_SETS[variant];
     const [pressed, setPressed] = useState(false);
-    const depth = Math.max(3, Math.round(size * DEPTH_RATIO));
+    const depth = softDepth(size);
     const iconSize = Math.round(size * ICON_RATIO);
     const resolvedIconColor =
       iconColor ?? (variant === "gray" ? "#78909C" : variant === "gold" ? "#FFFFFF" : "#FFFFFF");
 
     const glossStrong = !isLocked && variant !== "gray";
-    const topHighlight = isLocked
-      ? "rgba(255,255,255,0.35)"
-      : "rgba(255,255,255,0.72)";
-    const faceBorder = isLocked
-      ? "rgba(255,255,255,0.18)"
-      : "rgba(255,255,255,0.22)";
 
     return (
       <Pressable
@@ -100,62 +97,17 @@ export const SvgButton = React.memo(
               overflow: "hidden",
               alignItems: "center",
               justifyContent: "center",
-              borderWidth: 1.5,
-              borderColor: faceBorder,
-              borderTopColor: topHighlight,
-              borderLeftColor: "rgba(255,255,255,0.28)",
-              borderRightColor: "rgba(255,255,255,0.2)",
+              ...softFaceBorders(isLocked),
               transform: [{ translateY: pressed ? depth : 0 }],
               ...(pressed ? cssPressStyle : cssReleaseStyle),
             }}
           >
-            <LinearGradient
-              colors={
-                glossStrong
-                  ? [
-                      "rgba(255,255,255,0.42)",
-                      "rgba(255,255,255,0.08)",
-                      "rgba(0,0,0,0.06)",
-                    ]
-                  : [
-                      "rgba(255,255,255,0.22)",
-                      "rgba(255,255,255,0.04)",
-                      "rgba(0,0,0,0.04)",
-                    ]
-              }
-              locations={[0, 0.45, 1]}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: size / 2,
-              }}
-              pointerEvents="none"
+            <SoftGloss
+              borderRadius={size / 2}
+              width={size}
+              height={size}
+              strong={glossStrong}
             />
-
-            {glossStrong && (
-              <LinearGradient
-                colors={[
-                  "rgba(255,255,255,0.35)",
-                  "rgba(255,255,255,0)",
-                  "rgba(255,255,255,0)",
-                ]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 0.55 }}
-                style={{
-                  position: "absolute",
-                  top: size * 0.06,
-                  left: size * 0.12,
-                  width: size * 0.5,
-                  height: size * 0.28,
-                  borderRadius: size * 0.2,
-                  opacity: 0.85,
-                }}
-                pointerEvents="none"
-              />
-            )}
 
             {isCurrentLesson ? (
               <CurrentLessonIcon
