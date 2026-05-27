@@ -1,12 +1,11 @@
-import { DolphinFlat } from "@/components/icons/HomeDashboardIcons";
+import { PressableScale } from "@/components/animations";
 import {
-  AiTeacherGameIcon,
-  ListenUpGameIcon,
-  OrderWordsGameIcon,
-  PairWordsGameIcon,
-  RolePlayGameIcon,
-  SpeakUpGameIcon,
-} from "@/components/icons/GameHubIcons";
+  AiTeacherGameIcon3D,
+  OrderWordsGameIcon3D,
+  PairWordsGameIcon3D,
+  RolePlayGameIcon3D,
+  SpeakUpGameIcon3D,
+} from "@/components/icons/GameHubIcons3D";
 import {
   HomeLiquidCard,
   HomeMeshBackground,
@@ -17,10 +16,10 @@ import {
   buildPracticeLessonParams,
   type PracticeGameKind,
 } from "@/data/game-practice";
-import { PressableScale } from "@/components/animations";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
+import { ChevronRight } from "lucide-react-native";
 import React, { useCallback } from "react";
 import {
   ScrollView,
@@ -36,116 +35,114 @@ const C = HomePalette;
 type GameTile = {
   id: string;
   title: string;
-  stars: number;
-  bestPercent: number;
+  subtitle: string;
+  badge?: string;
   kind?: PracticeGameKind;
   href?: "/roleplay" | "/ai-teacher";
+  featured?: boolean;
   renderIcon: () => React.ReactNode;
 };
 
-const PRACTICE_TILES: GameTile[] = [
+/** Single hub list — no duplicate voice tiles (Speak Up covers mic practice). */
+const GAME_TILES: GameTile[] = [
+  {
+    id: "roleplay",
+    title: "AI Role Play",
+    subtitle: "Live conversations in real-world scenes",
+    badge: "NEW",
+    href: "/roleplay",
+    featured: true,
+    renderIcon: () => <RolePlayGameIcon3D size={64} />,
+  },
   {
     id: "order",
     title: "Order Words",
-    stars: 3,
-    bestPercent: 92,
+    subtitle: "Build sentences in the right order",
     kind: "sentence_builder",
-    renderIcon: () => <OrderWordsGameIcon size={52} />,
+    renderIcon: () => <OrderWordsGameIcon3D size={56} />,
   },
   {
     id: "pair",
     title: "Pair Words",
-    stars: 2,
-    bestPercent: 88,
+    subtitle: "Match English with Kurdish",
     kind: "pair_match",
-    renderIcon: () => <PairWordsGameIcon size={52} />,
-  },
-  {
-    id: "listen",
-    title: "Listen Up",
-    stars: 2,
-    bestPercent: 76,
-    kind: "voice_listen",
-    renderIcon: () => <ListenUpGameIcon size={52} />,
+    renderIcon: () => <PairWordsGameIcon3D size={56} />,
   },
   {
     id: "speak",
     title: "Speak Up",
-    stars: 1,
-    bestPercent: 64,
+    subtitle: "Mic practice — say the phrase out loud",
     kind: "voice_speak",
-    renderIcon: () => <SpeakUpGameIcon size={52} />,
+    renderIcon: () => <SpeakUpGameIcon3D size={56} />,
   },
-];
-
-const AI_TILES: GameTile[] = [
   {
     id: "ai-teacher",
     title: "AI Teacher",
-    stars: 0,
-    bestPercent: 0,
+    subtitle: "IELTS-style writing & speaking feedback",
     href: "/ai-teacher",
-    renderIcon: () => <AiTeacherGameIcon size={52} />,
-  },
-  {
-    id: "roleplay",
-    title: "AI Role Play",
-    stars: 0,
-    bestPercent: 0,
-    href: "/roleplay",
-    renderIcon: () => <RolePlayGameIcon size={52} />,
+    renderIcon: () => <AiTeacherGameIcon3D size={56} />,
   },
 ];
 
-function StarRow({ filled }: { filled: number }) {
-  return (
-    <View style={styles.starsRow}>
-      {[0, 1, 2].map((i) => (
-        <Text key={i} style={[styles.star, i >= filled && styles.starMuted]}>
-          ★
-        </Text>
-      ))}
-    </View>
-  );
-}
-
-function GameCard({
+function GameHubCard({
   tile,
-  width,
   onPress,
+  fullWidth,
 }: {
   tile: GameTile;
-  width: number;
   onPress: () => void;
+  fullWidth: boolean;
 }) {
-  return (
-    <PressableScale
-      onPress={onPress}
-      scaleDown={0.98}
-      style={[
-        styles.gameCard,
-        { width },
-        crossShadow({
-          color: "#1A2B48",
-          offsetY: 8,
-          blur: 20,
-          opacity: 0.06,
-          elevation: 4,
-        }),
-      ]}
-    >
-      {tile.renderIcon()}
-      <View style={styles.gameCardText}>
-        <Text style={styles.gameTitle} numberOfLines={1}>
-          {tile.title}
+  const content = (
+    <View style={[styles.cardRow, tile.featured && styles.cardRowFeatured]}>
+      <View style={styles.iconWrap}>{tile.renderIcon()}</View>
+      <View style={styles.cardCopy}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.gameTitle, tile.featured && styles.gameTitleFeatured]} numberOfLines={1}>
+            {tile.title}
+          </Text>
+          {tile.badge ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{tile.badge}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.gameSub} numberOfLines={2}>
+          {tile.subtitle}
         </Text>
-        {tile.stars > 0 ? <StarRow filled={tile.stars} /> : null}
-        {tile.bestPercent > 0 ? (
-          <Text style={styles.gameBest}>Best: {tile.bestPercent}%</Text>
-        ) : (
-          <Text style={styles.gameBest}>Practice with AI</Text>
-        )}
       </View>
+      <ChevronRight size={20} color={tile.featured ? C.blue : C.grayLight} strokeWidth={2.5} />
+    </View>
+  );
+
+  if (tile.featured) {
+    return (
+      <PressableScale onPress={onPress} scaleDown={0.99} style={{ width: fullWidth }}>
+        <HomeLiquidCard
+          interactive
+          style={[
+            styles.featuredCard,
+            crossShadow({
+              color: C.blue,
+              offsetY: 12,
+              blur: 28,
+              opacity: 0.12,
+              elevation: 8,
+            }),
+          ]}
+          contentStyle={styles.featuredInner}
+        >
+          {content}
+        </HomeLiquidCard>
+      </PressableScale>
+    );
+  }
+
+  return (
+    <PressableScale onPress={onPress} scaleDown={0.98} style={{ width: fullWidth }}>
+      <HomeLiquidCard interactive contentStyle={styles.cardInner}>
+        {content}
+      </HomeLiquidCard>
     </PressableScale>
   );
 }
@@ -155,8 +152,7 @@ export function GamesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
-  const gap = 12;
-  const cardWidth = (width - horizontalPad * 2 - gap) / 2;
+  const cardWidth = width - horizontalPad * 2;
 
   const openPractice = useCallback(
     (kind: PracticeGameKind) => {
@@ -190,40 +186,18 @@ export function GamesScreen() {
         }}
       >
         <Text style={styles.pageTitle}>Games</Text>
+        <Text style={styles.pageSub}>Premium practice modes</Text>
 
-        <Text style={styles.sectionTitle}>Play & learn</Text>
-        <View style={styles.grid}>
-          {PRACTICE_TILES.map((tile) => (
-            <GameCard
+        <View style={styles.list}>
+          {GAME_TILES.map((tile) => (
+            <GameHubCard
               key={tile.id}
               tile={tile}
-              width={cardWidth}
+              fullWidth={cardWidth}
               onPress={() => openTile(tile)}
             />
           ))}
         </View>
-
-        <Text style={styles.sectionTitle}>AI experiences</Text>
-        {AI_TILES.map((tile) => (
-          <GameCard
-            key={tile.id}
-            tile={tile}
-            width={width - horizontalPad * 2}
-            onPress={() => openTile(tile)}
-          />
-        ))}
-
-        <HomeLiquidCard
-          style={styles.encourageCard}
-          contentStyle={styles.encourageInner}
-        >
-          <DolphinFlat width={64} height={64} />
-          <View style={styles.encourageBubble}>
-            <Text style={styles.encourageText}>
-              Practice games make perfect! Keep going! 💙
-            </Text>
-          </View>
-        </HomeLiquidCard>
       </ScrollView>
     </View>
   );
@@ -239,78 +213,78 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: C.navy,
     textAlign: "center",
+    marginBottom: 4,
+  },
+  pageSub: {
+    ...HomeType.caption,
+    color: C.grayLight,
+    textAlign: "center",
     marginBottom: 20,
   },
-  sectionTitle: {
-    ...HomeType.section,
-    color: C.navy,
-    marginBottom: 12,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  list: {
     gap: 12,
-    marginBottom: 24,
   },
-  gameCard: {
+  featuredCard: {
+    borderWidth: 1.5,
+    borderColor: "rgba(43,89,243,0.22)",
+  },
+  featuredInner: {
+    padding: 18,
+  },
+  cardInner: {
+    padding: 16,
+  },
+  cardRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: C.divider,
-    minHeight: 88,
+    gap: 14,
   },
-  gameCardText: {
+  cardRowFeatured: {
+    gap: 16,
+  },
+  iconWrap: {
+    width: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardCopy: {
     flex: 1,
-    gap: 2,
+    gap: 4,
     minWidth: 0,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
   gameTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "800",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.2,
   },
-  starsRow: {
-    flexDirection: "row",
-    gap: 1,
-    marginTop: 2,
+  gameTitleFeatured: {
+    fontSize: 19,
+    color: C.blue,
   },
-  star: {
-    fontSize: 14,
-    color: C.gold,
-  },
-  starMuted: {
-    color: "#E5E7EB",
-  },
-  gameBest: {
+  gameSub: {
     ...HomeType.caption,
-    color: C.grayLight,
-    marginTop: 2,
+    color: C.gray,
+    lineHeight: 18,
   },
-  encourageCard: {
-    marginTop: 8,
+  badge: {
+    backgroundColor: C.blue,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  encourageInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 16,
-  },
-  encourageBubble: {
-    flex: 1,
-    backgroundColor: "#E8F2FF",
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  encourageText: {
-    ...HomeType.body,
-    color: C.navy,
-    fontWeight: "600",
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.6,
+    fontFamily: "DINNextRoundedBold",
   },
 });

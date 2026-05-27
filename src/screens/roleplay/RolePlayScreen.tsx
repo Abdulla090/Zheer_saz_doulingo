@@ -1,63 +1,54 @@
 /**
- * RolePlayScreen — Premium light-mode conversational AI practice.
- *
- * Design language: clean white surfaces, soft shadows, generous spacing,
- * subtle accent colors, lucide icons, spring animations.
- * Inspired by Headspace / Linear / Apple native apps.
+ * RolePlayScreen — liquid glass + soft 3D hub, native/web speech via expo-speech-recognition.
  */
 
 import { PressableScale } from "@/components/animations";
-import { IS_ANDROID } from "@/utils/native-perf";
+import { RolePlayGameIcon3D } from "@/components/icons/GameHubIcons3D";
+import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
+import {
+  HomeLiquidButton,
+  HomeLiquidCard,
+  HomeLiquidPill,
+  HomeMeshBackground,
+  HomePalette,
+  HomeType,
+} from "@/components/ui/ios-liquid-home";
+import { useSpeechCapture } from "@/hooks/use-speech-capture";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    AudioLines,
-    Briefcase,
-    Coffee,
-    Loader,
-    Mic,
-    MicOff,
-    Rocket,
-    Send,
-    Sparkles,
-    Store,
+  ArrowLeft,
+  Briefcase,
+  Coffee,
+  Rocket,
+  Send,
+  Store,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    Dimensions,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
-import Animated, {
-    Easing,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withRepeat,
-    withSpring,
-    withTiming
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const C = HomePalette;
 const { width: SW } = Dimensions.get("window");
 
-// ── Scenarios ──────────────────────────────────────────────────────────────────
 type Scenario = {
   id: string;
   title: string;
   titleKu: string;
   subtitleKu: string;
-  icon: React.ComponentType<any>;
-  systemPrompt: string;
+  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
@@ -71,8 +62,8 @@ const SCENARIOS: Scenario[] = [
     titleKu: "قاوەخانەی پاریس",
     subtitleKu: "داواکردنی قاوە و کرۆسان بە ئینگلیزی",
     icon: Coffee,
-    systemPrompt: "You are Jean, a friendly Parisian barista. Keep answers short. Gently correct English.",
-    initialMessage: "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
+    initialMessage:
+      "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
     voicePitch: 0.95,
     voiceRate: 1.0,
     accent: "#F59E0B",
@@ -83,8 +74,8 @@ const SCENARIOS: Scenario[] = [
     titleKu: "گەشتی مەریخ",
     subtitleKu: "گفتوگۆ لەسەر کێشی جانتاکەت",
     icon: Rocket,
-    systemPrompt: "You are Boarding Droid T-800, strict but polite. The user's bag is 5kg overweight.",
-    initialMessage: "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
+    initialMessage:
+      "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
     voicePitch: 1.25,
     voiceRate: 1.05,
     accent: "#8B5CF6",
@@ -95,8 +86,8 @@ const SCENARIOS: Scenario[] = [
     titleKu: "چاوپێکەوتنی کار",
     subtitleKu: "چاوپێکەوتن بۆ ئەندازیاری AI",
     icon: Briefcase,
-    systemPrompt: "You are Dr. Sarah Chen, lead AI researcher. Ask challenging questions in English.",
-    initialMessage: "Thank you for joining us. Could you describe your experience optimizing small language models?",
+    initialMessage:
+      "Thank you for joining us. Could you describe your experience optimizing small language models?",
     voicePitch: 1.1,
     voiceRate: 0.95,
     accent: "#10B981",
@@ -107,112 +98,52 @@ const SCENARIOS: Scenario[] = [
     titleKu: "بازاڕی گەورە",
     subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش",
     icon: Store,
-    systemPrompt: "You are Yusuf, a warm carpet merchant. Start the rug at 500 gold coins.",
-    initialMessage: "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
+    initialMessage:
+      "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
     voicePitch: 0.85,
     voiceRate: 1.1,
     accent: "#EF4444",
   },
 ];
 
-// ── Main ───────────────────────────────────────────────────────────────────────
+type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
+
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const speech = useSpeechCapture("en-US");
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
-  const [status, setStatus] = useState<"idle" | "listening" | "thinking" | "speaking" | "error">("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
-  const [showTextFallback, setShowTextFallback] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [showTyping, setShowTyping] = useState(false);
 
-  // Refs for stable access inside callbacks
-  const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<any>(null);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep refs in sync
-  useEffect(() => { statusRef.current = status; }, [status]);
-  useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+  useEffect(() => {
+    scenarioRef.current = activeScenario;
+  }, [activeScenario]);
 
-  // Pulse animation
-  const pulse1 = useSharedValue(1);
-  const pulse2 = useSharedValue(1);
-
-  // ── Speech engine setup ────────────────────────────────────────────────────
   useEffect(() => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis;
-      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SR) {
-        const rec = new SR();
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.lang = "en-US";
-        rec.maxAlternatives = 1;
-
-        rec.onstart = () => {
-          setStatus("listening");
-        };
-
-        rec.onresult = (e: any) => {
-          clearListenTimeout();
-          const transcript = e.results[0][0].transcript;
-          setStatus("thinking");
-          handleUserResponse(transcript);
-        };
-
-        rec.onerror = (e: any) => {
-          clearListenTimeout();
-          const code = e?.error || "unknown";
-          if (code === "not-allowed" || code === "service-not-allowed") {
-            setShowTextFallback(true);
-          }
-          // Only go idle if we're still in listening state
-          if (statusRef.current === "listening") {
-            setStatus("idle");
-          }
-        };
-
-        rec.onend = () => {
-          clearListenTimeout();
-          // Only reset to idle if still listening (not if we moved to thinking)
-          if (statusRef.current === "listening") {
-            setStatus("idle");
-          }
-        };
-
-        recognitionRef.current = rec;
-      } else {
-        setShowTextFallback(true);
-      }
-    } else {
-      // Native — no Web Speech API
-      setShowTextFallback(true);
     }
-
+    if (!speech.available) setShowTyping(true);
     return () => {
       clearListenTimeout();
       stopSpeaking();
-      stopListening();
+      speech.abort();
     };
-  }, []);
+  }, [speech]);
 
-  // ── Pulse animations ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (status === "listening" && !IS_ANDROID) {
-      pulse1.value = withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false);
-      pulse2.value = withDelay(350, withRepeat(withTiming(1.65, { duration: 1200, easing: Easing.out(Easing.quad) }), -1, false));
-    } else {
-      pulse1.value = withSpring(1, { damping: 14, stiffness: 200 });
-      pulse2.value = withSpring(1, { damping: 14, stiffness: 200 });
-    }
-  }, [status]);
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
   const clearListenTimeout = () => {
     if (listenTimeoutRef.current) {
       clearTimeout(listenTimeoutRef.current);
@@ -221,16 +152,16 @@ export function RolePlayScreen() {
   };
 
   const stopSpeaking = () => {
-    if (synthRef.current) {
-      try { synthRef.current.cancel(); } catch {}
+    try {
+      synthRef.current?.cancel();
+    } catch {
+      /* noop */
     }
   };
 
   const stopListening = () => {
     clearListenTimeout();
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
-    }
+    speech.stop();
   };
 
   const stopAll = () => {
@@ -238,7 +169,6 @@ export function RolePlayScreen() {
     stopListening();
   };
 
-  // ── Speak text aloud ───────────────────────────────────────────────────────
   const speak = (text: string) => {
     const sc = scenarioRef.current;
     if (synthRef.current && Platform.OS === "web") {
@@ -247,75 +177,108 @@ export function RolePlayScreen() {
       utterance.pitch = sc.voicePitch;
       utterance.rate = sc.voiceRate;
       utterance.lang = "en-US";
-
-      // Try to pick a good voice
       const voices = synthRef.current.getVoices();
-      const pref = voices.find((v: any) =>
-        v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.name.includes("Samantha"))
+      const pref = voices.find(
+        (v) =>
+          v.lang.startsWith("en") &&
+          (v.name.includes("Google") ||
+            v.name.includes("Natural") ||
+            v.name.includes("Samantha")),
       );
       if (pref) utterance.voice = pref;
-
       utterance.onstart = () => setStatus("speaking");
       utterance.onend = () => {
-        // After AI finishes speaking, auto-start listening
-        if (statusRef.current === "speaking") {
-          startListening();
-        }
+        if (statusRef.current === "speaking") void startListening();
       };
       utterance.onerror = () => {
-        if (statusRef.current === "speaking") {
-          setStatus("idle");
-        }
+        if (statusRef.current === "speaking") setStatus("idle");
       };
-
       synthRef.current.speak(utterance);
       setStatus("speaking");
     } else {
-      // No TTS available — simulate speaking for 2s then go to listening
       setStatus("speaking");
       setTimeout(() => {
-        if (statusRef.current === "speaking") {
-          startListening();
-        }
-      }, 2500);
+        if (statusRef.current === "speaking") void startListening();
+      }, 2200);
     }
   };
 
-  // ── Start listening for user speech ────────────────────────────────────────
-  const startListening = () => {
-    if (showTextFallback || !recognitionRef.current) {
-      // Text-only mode — just show idle so user types
+  const handleUserResponse = useCallback((userText: string) => {
+    setHistory((p) => [...p, { sender: "user", text: userText }]);
+
+    setTimeout(() => {
+      const sc = scenarioRef.current;
+      let r = "";
+      const t = userText.toLowerCase();
+
+      if (sc.id === "cafe") {
+        r =
+          t.includes("croissant") || t.includes("pastry")
+            ? "Excellent choice! Our croissants are baked fresh. Would you like a café au lait with that?"
+            : t.includes("espresso") || t.includes("coffee")
+              ? "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?"
+              : "Of course! Will you be enjoying that at our sunny patio, or is it to go?";
+      } else if (sc.id === "space") {
+        r =
+          t.includes("oxygen") || t.includes("life support")
+            ? "Life support systems are critical gear. Fee waived. Enjoy your journey to Mars!"
+            : "My scanner detects dense materials. You must justify this weight in English, passenger.";
+      } else if (sc.id === "job") {
+        r =
+          t.includes("optim") || t.includes("model") || t.includes("ai")
+            ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
+            : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
+      } else {
+        const nums = userText.match(/\d+/g);
+        r = nums
+          ? parseInt(nums[0], 10) < 300
+            ? "You break my heart! Four hundred is my final offer!"
+            : "A skilled negotiator! Three fifty, and I add Turkish tea. Deal?"
+          : "Feel the quality! Pure silk. Make me a serious offer in English!";
+      }
+
+      setHistory((p) => [...p, { sender: "ai", text: r }]);
+      speak(r);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+    }, 1100);
+  }, []);
+
+  const startListening = useCallback(async () => {
+    if (showTyping || !speech.available) {
       setStatus("idle");
       return;
     }
 
-    // Make sure nothing else is running
     stopSpeaking();
-
     setStatus("listening");
 
-    // Small delay to let the browser release audio resources
-    setTimeout(() => {
-      try {
-        recognitionRef.current.start();
-      } catch (e) {
-        // Already started or other error
-        console.warn("Recognition start failed:", e);
+    const started = await speech.start({
+      onResult: (text, isFinal) => {
+        if (!isFinal) return;
+        clearListenTimeout();
+        setStatus("thinking");
+        handleUserResponse(text);
+      },
+      onEnd: () => {
+        if (statusRef.current === "listening") setStatus("idle");
+      },
+    });
+
+    if (!started) {
+      setShowTyping(true);
+      setStatus("idle");
+      return;
+    }
+
+    clearListenTimeout();
+    listenTimeoutRef.current = setTimeout(() => {
+      if (statusRef.current === "listening") {
+        speech.stop();
         setStatus("idle");
-        return;
       }
+    }, 12000);
+  }, [handleUserResponse, showTyping, speech]);
 
-      // Safety timeout — if no speech detected in 10s, stop
-      listenTimeoutRef.current = setTimeout(() => {
-        if (statusRef.current === "listening") {
-          try { recognitionRef.current.stop(); } catch {}
-          setStatus("idle");
-        }
-      }, 10000);
-    }, 200);
-  };
-
-  // ── Start a new session ────────────────────────────────────────────────────
   const startSession = () => {
     stopAll();
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -324,79 +287,28 @@ export function RolePlayScreen() {
     speak(msg);
   };
 
-  // ── Handle user's response ─────────────────────────────────────────────────
-  const handleUserResponse = useCallback((userText: string) => {
-    setHistory(p => [...p, { sender: "user", text: userText }]);
-
-    setTimeout(() => {
-      const sc = scenarioRef.current;
-      let r = "";
-      const t = userText.toLowerCase();
-
-      if (sc.id === "cafe") {
-        r = t.includes("croissant") || t.includes("pastry")
-          ? "Excellent choice! Our croissants are baked fresh. Would you like a café au lait with that?"
-          : t.includes("espresso") || t.includes("coffee")
-          ? "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?"
-          : "Of course! Will you be enjoying that at our sunny patio, or is it to go?";
-      } else if (sc.id === "space") {
-        r = t.includes("oxygen") || t.includes("life support")
-          ? "Life support systems are critical gear. Fee waived. Enjoy your journey to Mars!"
-          : "My scanner detects dense materials. You must justify this weight in English, passenger.";
-      } else if (sc.id === "job") {
-        r = t.includes("optim") || t.includes("model") || t.includes("ai")
-          ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
-          : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
-      } else {
-        const nums = userText.match(/\d+/g);
-        r = nums
-          ? parseInt(nums[0]) < 300
-            ? "You break my heart! Four hundred is my final offer!"
-            : "A skilled negotiator! Three fifty, and I add Turkish tea. Deal?"
-          : "Feel the quality! Pure silk. Make me a serious offer in English!";
-      }
-
-      setHistory(p => [...p, { sender: "ai", text: r }]);
-      speak(r);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    }, 1200);
-  }, []);
-
-  // ── Mic button tap handler ─────────────────────────────────────────────────
   const handleMicTap = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
     switch (statusRef.current) {
       case "idle":
       case "error":
-        // Start session or resume listening
-        if (history.length === 0) {
-          startSession();
-        } else {
-          startListening();
-        }
+        if (history.length === 0) startSession();
+        else void startListening();
         break;
-
       case "speaking":
-        // Interrupt AI speech → start listening
         stopSpeaking();
-        startListening();
+        void startListening();
         break;
-
       case "listening":
-        // Stop listening → go idle
         stopListening();
         setStatus("idle");
         break;
-
       case "thinking":
-        // Cancel thinking → go idle (can't really cancel the timeout but reset state)
         setStatus("idle");
         break;
     }
   };
 
-  // ── Text input submit ──────────────────────────────────────────────────────
   const handleTextSubmit = () => {
     const t = textInput.trim();
     if (!t) return;
@@ -405,337 +317,321 @@ export function RolePlayScreen() {
     handleUserResponse(t);
   };
 
-  const pulseStyle1 = useAnimatedStyle(() => ({ transform: [{ scale: pulse1.value }], opacity: 1 - (pulse1.value - 1) / 0.6 }));
-  const pulseStyle2 = useAnimatedStyle(() => ({ transform: [{ scale: pulse2.value }], opacity: 1 - (pulse2.value - 1) / 0.6 }));
-
   const sessionStarted = history.length > 0;
   const accent = activeScenario.accent;
   const Icon = activeScenario.icon;
 
+  const micHint =
+    status === "listening"
+      ? "Listening… tap to stop"
+      : status === "thinking"
+        ? "Thinking…"
+        : status === "speaking"
+          ? "Tap to interrupt"
+          : "Tap to speak";
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <View style={st.root}>
-        {/* Header */}
-        <View style={[st.header, { paddingTop: insets.top + 8 }]}>
-          <Pressable onPress={() => { stopAll(); router.back(); }} style={st.backBtn}>
-            <ArrowLeft size={20} color="#1E293B" strokeWidth={2.5} />
-          </Pressable>
-          <View style={st.headerCenter}>
-            <Text style={st.headerTitle}>AI Voice Practice</Text>
-            <View style={[st.headerDot, { backgroundColor: accent }]} />
+    <View style={styles.root}>
+      <HomeMeshBackground />
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
+            <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} />
+          </HomeLiquidPill>
+          <View style={styles.headerCenter}>
+            <RolePlayGameIcon3D size={36} />
+            <View>
+              <Text style={styles.headerTitle}>AI Role Play</Text>
+              <Text style={styles.headerSub}>Real-world voice practice</Text>
+            </View>
           </View>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
 
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: insets.bottom + (sessionStarted ? 200 : 32),
+          }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Scenario picker — before session */}
-          {!sessionStarted && (
-            <View style={st.pickerSection}>
-              <Text style={st.pickerLabel}>سیناریۆیەک هەڵبژێرە</Text>
-
-              <View style={st.scenarioGrid}>
+          {!sessionStarted ? (
+            <>
+              <Text style={styles.pickerLabel}>Choose a scene</Text>
+              <View style={styles.scenarioGrid}>
                 {SCENARIOS.map((sc) => {
                   const sel = activeScenario.id === sc.id;
                   const ScIcon = sc.icon;
                   return (
-                    <Pressable
+                    <PressableScale
                       key={sc.id}
-                      onPress={() => { void Haptics.selectionAsync(); setActiveScenario(sc); }}
-                      style={[
-                        st.scenarioCard,
-                        sel && { borderColor: sc.accent, backgroundColor: sc.accent + "0A" },
-                        crossShadow({ color: sel ? sc.accent : "#000", offsetY: 6, blur: 16, opacity: sel ? 0.12 : 0.04, elevation: sel ? 6 : 2 }),
-                      ]}
+                      onPress={() => {
+                        void Haptics.selectionAsync();
+                        setActiveScenario(sc);
+                      }}
+                      scaleDown={0.98}
+                      style={{ width: (SW - 52) / 2 }}
                     >
-                      <View style={[st.scenarioIconWrap, { backgroundColor: sc.accent + "14" }]}>
-                        <ScIcon size={22} color={sc.accent} strokeWidth={2} />
-                      </View>
-                      <Text style={[st.scenarioName, sel && { color: sc.accent }]}>{sc.titleKu}</Text>
-                      <Text style={st.scenarioEn}>{sc.title}</Text>
-                    </Pressable>
+                      <HomeLiquidCard
+                        interactive
+                        style={[
+                          sel && {
+                            borderWidth: 1.5,
+                            borderColor: sc.accent + "55",
+                          },
+                          crossShadow({
+                            color: sel ? sc.accent : "#1A2B48",
+                            offsetY: 8,
+                            blur: 18,
+                            opacity: sel ? 0.1 : 0.05,
+                            elevation: sel ? 5 : 2,
+                          }),
+                        ]}
+                        contentStyle={styles.scenarioInner}
+                      >
+                        <View
+                          style={[
+                            styles.scenarioIconWrap,
+                            { backgroundColor: sc.accent + "18" },
+                          ]}
+                        >
+                          <ScIcon size={24} color={sc.accent} strokeWidth={2} />
+                        </View>
+                        <Text
+                          style={[styles.scenarioName, sel && { color: sc.accent }]}
+                          numberOfLines={2}
+                        >
+                          {sc.titleKu}
+                        </Text>
+                        <Text style={styles.scenarioEn}>{sc.title}</Text>
+                      </HomeLiquidCard>
+                    </PressableScale>
                   );
                 })}
               </View>
 
-              {/* Hero CTA */}
-              <View style={st.heroArea}>
-                <View style={[st.heroCircle, { borderColor: accent + "30" }]}>
-                  <View style={[st.heroInner, { backgroundColor: accent + "12" }]}>
-                    <Icon size={40} color={accent} strokeWidth={1.8} />
-                  </View>
+              <HomeLiquidCard
+                style={styles.heroCard}
+                contentStyle={styles.heroInner}
+              >
+                <View style={[styles.heroIconRing, { borderColor: accent + "40" }]}>
+                  <Icon size={44} color={accent} strokeWidth={1.8} />
                 </View>
-                <Text style={st.heroTitle}>{activeScenario.titleKu}</Text>
-                <Text style={st.heroSub}>{activeScenario.subtitleKu}</Text>
-                <Pressable onPress={startSession} style={[st.startBtn, { backgroundColor: accent }]}>
-                  <Sparkles size={18} color="#FFF" strokeWidth={2.5} />
-                  <Text style={st.startBtnText}>دەستپێبکە</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {/* Chat — active session */}
-          {sessionStarted && (
-            <View style={st.chatSection}>
-              {/* Active scenario chip */}
-              <View style={[st.activeChip, { borderColor: accent + "30" }]}>
+                <Text style={styles.heroTitle}>{activeScenario.titleKu}</Text>
+                <Text style={styles.heroSub}>{activeScenario.subtitleKu}</Text>
+                <HomeLiquidButton
+                  label="START CONVERSATION"
+                  onPress={startSession}
+                  style={styles.startBtn}
+                />
+              </HomeLiquidCard>
+            </>
+          ) : (
+            <View style={styles.chatSection}>
+              <View style={[styles.activeChip, { borderColor: accent + "35" }]}>
                 <Icon size={14} color={accent} strokeWidth={2.5} />
-                <Text style={[st.activeChipText, { color: accent }]}>{activeScenario.titleKu}</Text>
+                <Text style={[styles.activeChipText, { color: accent }]}>
+                  {activeScenario.title}
+                </Text>
               </View>
 
-              {/* Messages */}
               {history.map((msg, i) => (
-                <Animated.View key={i} entering={FadeInUp.delay(i > 1 ? 0 : i * 60).duration(280)}>
-                  <View style={msg.sender === "ai" ? st.aiRow : st.userRow}>
-                    {msg.sender === "ai" && (
-                      <View style={[st.avatar, { backgroundColor: accent + "14" }]}>
+                <Animated.View
+                  key={`${i}-${msg.text.slice(0, 12)}`}
+                  entering={FadeInUp.duration(260)}
+                >
+                  <View style={msg.sender === "ai" ? styles.aiRow : styles.userRow}>
+                    {msg.sender === "ai" ? (
+                      <View
+                        style={[
+                          styles.avatar,
+                          { backgroundColor: accent + "16" },
+                        ]}
+                      >
                         <Icon size={16} color={accent} strokeWidth={2.5} />
                       </View>
-                    )}
-                    <View style={[
-                      msg.sender === "ai" ? st.aiBubble : st.userBubble,
-                      msg.sender === "ai" && { borderColor: accent + "18" },
-                    ]}>
-                      <Text style={st.msgText}>{msg.text}</Text>
-                    </View>
+                    ) : null}
+                    <HomeLiquidCard
+                      style={[
+                        styles.bubble,
+                        msg.sender === "user" && styles.userBubble,
+                      ]}
+                      contentStyle={styles.bubbleInner}
+                    >
+                      <Text style={styles.msgText}>{msg.text}</Text>
+                    </HomeLiquidCard>
                   </View>
                 </Animated.View>
               ))}
 
-              {status === "thinking" && (
+              {status === "thinking" ? (
                 <Animated.View entering={FadeInUp.duration(200)}>
-                  <View style={st.aiRow}>
-                    <View style={[st.avatar, { backgroundColor: accent + "14" }]}>
-                      <Loader size={14} color={accent} strokeWidth={2.5} />
-                    </View>
-                    <View style={[st.aiBubble, { borderColor: accent + "18" }]}>
-                      <Text style={[st.msgText, { opacity: 0.4 }]}>Thinking...</Text>
-                    </View>
-                  </View>
+                  <Text style={styles.thinking}>Thinking…</Text>
                 </Animated.View>
-              )}
+              ) : null}
             </View>
           )}
         </ScrollView>
 
-        {/* Bottom bar — mic + text input */}
-        {sessionStarted && (
-          <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
-            {/* Mic orb */}
-            <View style={st.micArea}>
-              {status === "listening" && (
-                <>
-                  <Animated.View style={[st.pulse, { borderColor: accent + "50", backgroundColor: accent + "12" }, pulseStyle1]} />
-                  <Animated.View style={[st.pulse, { borderColor: accent + "30", backgroundColor: accent + "08" }, pulseStyle2]} />
-                </>
-              )}
-              <PressableScale onPress={handleMicTap} scaleDown={0.92}>
-                <View style={[
-                  st.micBtn,
-                  { backgroundColor: status === "listening" ? "#EF4444" : accent },
-                  crossShadow({ color: status === "listening" ? "#EF4444" : accent, offsetY: 4, blur: 14, opacity: 0.3, elevation: 6 }),
-                ]}>
-                  {status === "thinking" ? <Loader size={22} color="#FFF" strokeWidth={2.5} />
-                    : status === "speaking" ? <AudioLines size={22} color="#FFF" strokeWidth={2.5} />
-                    : status === "listening" ? <MicOff size={22} color="#FFF" strokeWidth={2.5} />
-                    : <Mic size={22} color="#FFF" strokeWidth={2.5} />}
-                </View>
-              </PressableScale>
-            </View>
+        {sessionStarted ? (
+          <View
+            style={[
+              styles.bottomBar,
+              { paddingBottom: Math.max(insets.bottom, 16) },
+            ]}
+          >
+            <MicCaptureOrb
+              listening={status === "listening" || speech.listening}
+              disabled={status === "thinking"}
+              color={status === "listening" ? C.red : accent}
+              size={100}
+              hint={micHint}
+              onPress={handleMicTap}
+            />
 
-            <Text style={st.statusLabel}>
-              {status === "idle" ? "داگرە بۆ قسەکردن"
-                : status === "listening" ? "گوێم لێیە..."
-                : status === "thinking" ? "بیردەکاتەوە..."
-                : status === "speaking" ? "قسەدەکات..."
-                : ""}
-            </Text>
-
-            {/* Text input fallback */}
-            {showTextFallback && (
-              <View style={st.inputRow}>
+            {showTyping || speech.error ? (
+              <View style={styles.inputRow}>
                 <TextInput
-                  style={st.textField}
-                  placeholder="Type in English..."
-                  placeholderTextColor="#94A3B8"
+                  style={styles.textField}
+                  placeholder="Type in English…"
+                  placeholderTextColor={C.grayLight}
                   value={textInput}
                   onChangeText={setTextInput}
                   onSubmitEditing={handleTextSubmit}
                   returnKeyType="send"
-                  editable={status === "listening" || status === "idle"}
                 />
                 <Pressable
                   onPress={handleTextSubmit}
                   disabled={!textInput.trim()}
-                  style={[st.sendBtn, { backgroundColor: accent, opacity: textInput.trim() ? 1 : 0.35 }]}
+                  style={[
+                    styles.sendBtn,
+                    { backgroundColor: accent, opacity: textInput.trim() ? 1 : 0.4 },
+                  ]}
                 >
-                  <Send size={16} color="#FFF" strokeWidth={2.5} />
+                  <Send size={18} color="#FFF" strokeWidth={2.5} />
                 </Pressable>
               </View>
+            ) : (
+              <Pressable onPress={() => setShowTyping(true)}>
+                <Text style={styles.typeLink}>Type instead</Text>
+              </Pressable>
             )}
           </View>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+        ) : null}
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
-
-// ── Styles ─────────────────────────────────────────────────────────────────────
-const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F8FAFC" },
-
-  // Header
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: C.meshBottom },
+  flex: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderColor: "#F1F5F9",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   headerCenter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+    flex: 1,
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: "800",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.3,
   },
-  headerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-
-  // Scenario picker
-  pickerSection: {
-    paddingTop: 24,
+  headerSub: {
+    ...HomeType.caption,
+    color: C.grayLight,
   },
   pickerLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#64748B",
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    textAlign: "right",
-    writingDirection: "rtl",
+    ...HomeType.section,
+    color: C.navy,
+    marginTop: 8,
+    marginBottom: 14,
   },
   scenarioGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 20,
     gap: 12,
+    marginBottom: 16,
   },
-  scenarioCard: {
-    width: (SW - 52) / 2,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    padding: 18,
+  scenarioInner: {
+    padding: 16,
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    minHeight: 120,
   },
   scenarioIconWrap: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   scenarioName: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#1E293B",
+    color: C.navy,
     textAlign: "center",
-    writingDirection: "rtl",
+    fontFamily: "DINNextRoundedBold",
   },
   scenarioEn: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#94A3B8",
+    color: C.grayLight,
     textAlign: "center",
-    letterSpacing: 0.2,
   },
-
-  // Hero CTA
-  heroArea: {
-    alignItems: "center",
-    marginTop: 40,
-    paddingHorizontal: 32,
-    gap: 14,
-  },
-  heroCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+  heroCard: {
+    marginTop: 4,
   },
   heroInner: {
+    alignItems: "center",
+    padding: 24,
+    gap: 12,
+  },
+  heroIconRing: {
     width: 96,
     height: 96,
     borderRadius: 48,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.6)",
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
-    letterSpacing: -0.5,
+    color: C.navy,
     textAlign: "center",
-    writingDirection: "rtl",
+    fontFamily: "DINNextRoundedBold",
   },
   heroSub: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#64748B",
+    ...HomeType.body,
+    color: C.gray,
     textAlign: "center",
-    writingDirection: "rtl",
     lineHeight: 22,
   },
   startBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
     marginTop: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 16,
+    alignSelf: "stretch",
   },
-  startBtnText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: 0.2,
-  },
-
-  // Chat
   chatSection: {
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    gap: 14,
+    paddingTop: 12,
+    gap: 12,
   },
   activeChip: {
     flexDirection: "row",
@@ -743,122 +639,100 @@ const st = StyleSheet.create({
     gap: 6,
     alignSelf: "center",
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 6,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    marginBottom: 8,
   },
   activeChipText: {
     fontSize: 12,
     fontWeight: "700",
-    writingDirection: "rtl",
+    fontFamily: "DINNextRoundedBold",
   },
-
-  // Bubbles
   aiRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    maxWidth: "88%",
+    maxWidth: "92%",
   },
   userRow: {
     alignSelf: "flex-end",
-    maxWidth: "82%",
+    maxWidth: "88%",
   },
   avatar: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 2,
+    marginTop: 4,
   },
-  aiBubble: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderTopLeftRadius: 6,
-    borderWidth: 1,
-    padding: 14,
+  bubble: {
     flex: 1,
   },
   userBubble: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 18,
-    borderTopRightRadius: 6,
-    borderWidth: 1,
-    borderColor: "#DBEAFE",
+    backgroundColor: "#E8F2FF",
+  },
+  bubbleInner: {
     padding: 14,
   },
   msgText: {
     fontSize: 15,
     fontWeight: "500",
-    color: "#1E293B",
+    color: C.navy,
     lineHeight: 23,
-    letterSpacing: -0.1,
+    fontFamily: "DINNextRoundedRegular",
   },
-
-  // Bottom bar
-  bottomBar: {
-    alignItems: "center",
-    paddingTop: 16,
-    paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderColor: "#F1F5F9",
-    gap: 10,
-  },
-  micArea: {
-    width: 80,
-    height: 80,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  micBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pulse: {
-    position: "absolute",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1.5,
-  },
-  statusLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
+  thinking: {
+    ...HomeType.caption,
+    color: C.grayLight,
     textAlign: "center",
-    writingDirection: "rtl",
+    paddingVertical: 8,
+  },
+  bottomBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderTopWidth: 1,
+    borderTopColor: C.divider,
+    gap: 10,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     width: "100%",
-    marginTop: 4,
   },
   textField: {
     flex: 1,
-    height: 44,
+    height: 48,
     backgroundColor: "#F1F5F9",
-    borderRadius: 14,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#0F172A",
+    fontSize: 15,
+    color: C.navy,
+    fontFamily: "DINNextRoundedRegular",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: C.divider,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  typeLink: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.blue,
+    fontFamily: "DINNextRoundedBold",
+    paddingVertical: 4,
   },
 });

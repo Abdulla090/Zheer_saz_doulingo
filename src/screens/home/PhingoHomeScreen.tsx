@@ -195,7 +195,7 @@ export function PhingoHomeScreen({
       title: "Practice Speaking",
       subtitle: "Let's chat",
       Icon: CardWaveMini,
-      onPress: () => router.push("/roleplay"),
+      onPress: () => router.push("/feed"),
     },
   ];
 
@@ -203,7 +203,7 @@ export function PhingoHomeScreen({
 
   const handleTalk = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/roleplay");
+    router.push("/feed");
   };
 
   return (
