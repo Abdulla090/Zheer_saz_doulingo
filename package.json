@@ -18,6 +18,7 @@
     "build:apk:wait": "eas build --platform android --profile preview --non-interactive --wait"
   },
   "dependencies": {
+    "@expo/ui": "~56.0.14",
     "@legendapp/list": "^3.0.0-beta.43",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-navigation/bottom-tabs": "^7.15.5",
@@ -39,7 +40,6 @@
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
-    "@expo/ui": "~56.0.14",
     "lottie-react-native": "~7.3.4",
     "lucide-react-native": "^1.7.0",
     "react": "19.2.3",
@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
-    "eas-cli": "^16.0.0",
+    "eas-cli": "^16.32.0",
     "expo-mcp": "~0.2.1",
     "react-native-svg-transformer": "^1.5.3",
     "typescript": "~6.0.3"
@@ -67,6 +67,7 @@
   "resolutions": {
     "tslib": "2.6.2"
   },
+  "packageManager": "npm@10.9.2",
   "private": true,
   "trustedDependencies": [
     "@rive-app/react-native",
