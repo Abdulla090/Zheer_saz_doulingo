@@ -173,10 +173,31 @@ if (!existsSync(join(root, "src/utils/safe-link.ts"))) {
 
 const appJson = JSON.parse(read("app.json"));
 const pluginList = JSON.stringify(appJson.expo?.plugins ?? []);
-if (!pluginList.includes("with-android-widget-strings")) {
-  fail("app.json must include ./plugins/with-android-widget-strings.js for EAS widget builds");
+if (!pluginList.includes("with-android-widget-resources")) {
+  fail(
+    "app.json must include ./plugins/with-android-widget-resources.js for EAS widget builds",
+  );
 } else {
-  ok("Android widget strings fix plugin registered");
+  ok("Android widget resources fix plugin registered");
+}
+
+const plugins = appJson.expo?.plugins ?? [];
+const widgetFixIdx = plugins.findIndex(
+  (p) =>
+    p === "./plugins/with-android-widget-resources.js" ||
+    (Array.isArray(p) && String(p[0]).includes("with-android-widget-resources")),
+);
+const expoWidgetsIdx = plugins.findIndex(
+  (p) => (Array.isArray(p) && p[0] === "expo-widgets") || p === "expo-widgets",
+);
+if (widgetFixIdx === -1 || expoWidgetsIdx === -1) {
+  fail("Could not locate widget-resources and expo-widgets plugins in app.json");
+} else if (widgetFixIdx >= expoWidgetsIdx) {
+  fail(
+    "with-android-widget-resources.js must be listed before expo-widgets in app.json (dangerous mod order)",
+  );
+} else {
+  ok("Widget resources plugin ordered before expo-widgets");
 }
 
 const easIgnore = existsSync(join(root, ".easignore"))

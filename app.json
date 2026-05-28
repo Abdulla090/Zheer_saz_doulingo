@@ -51,6 +51,7 @@
         }
       ],
       "./plugins/with-normalize-android-receivers.js",
+      "./plugins/with-android-widget-resources.js",
       [
         "expo-widgets",
         {
@@ -72,7 +73,7 @@
             {
               "name": "PhingoDailyXp",
               "displayName": "Phingo Daily XP",
-              "description": "Track today's XP goal and streak",
+              "description": "Track daily XP goal and streak",
               "supportedFamilies": ["systemSmall"],
               "ios": { "supportedFamilies": ["systemSmall"] },
               "android": {
@@ -108,8 +109,7 @@
             }
           ]
         }
-      ],
-      "./plugins/with-android-widget-strings.js"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
