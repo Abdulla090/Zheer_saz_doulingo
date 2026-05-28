@@ -108,7 +108,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/with-android-widget-strings.js"
     ],
     "experiments": {
       "typedRoutes": true,

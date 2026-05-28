@@ -1,2 +1,6 @@
 # Force EAS to use npm (package-lock.json) — bun.lock triggers Bun install on CI.
 bun.lock
+
+# Always prebuild native projects on EAS so config plugins (widgets, etc.) apply cleanly.
+/android
+/ios

@@ -172,6 +172,22 @@ if (!existsSync(join(root, "src/utils/safe-link.ts"))) {
 }
 
 const appJson = JSON.parse(read("app.json"));
+const pluginList = JSON.stringify(appJson.expo?.plugins ?? []);
+if (!pluginList.includes("with-android-widget-strings")) {
+  fail("app.json must include ./plugins/with-android-widget-strings.js for EAS widget builds");
+} else {
+  ok("Android widget strings fix plugin registered");
+}
+
+const easIgnore = existsSync(join(root, ".easignore"))
+  ? read(".easignore")
+  : "";
+if (!easIgnore.includes("/android")) {
+  fail(".easignore should exclude /android so EAS runs a fresh prebuild");
+} else {
+  ok(".easignore excludes /android for clean EAS prebuild");
+}
+
 if (!appJson.expo?.extra?.eas?.projectId) {
   fail("app.json missing EAS projectId");
 } else {
