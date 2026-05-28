@@ -30,6 +30,8 @@ export type ProgressSnapshot = {
   streakDays: number;
   lastActiveDate: string | null;
   lastActivity: LastActivity | null;
+  /** True if user scored ≥80% on a lesson today (resets each calendar day). */
+  scoredEightyToday: boolean;
 };
 
 const DEFAULT_PROGRESS: ProgressSnapshot = {
@@ -41,6 +43,7 @@ const DEFAULT_PROGRESS: ProgressSnapshot = {
   streakDays: 0,
   lastActiveDate: null,
   lastActivity: null,
+  scoredEightyToday: false,
 };
 
 interface ProgressState extends ProgressSnapshot {
@@ -50,6 +53,7 @@ interface ProgressState extends ProgressSnapshot {
     xpEarned: number,
     mode?: LessonPathMode,
     label?: string,
+    accuracyPercent?: number,
   ) => void;
   recordGamePlayed: (label: string, gameId?: string) => void;
   resetProgress: () => void;
@@ -97,13 +101,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   ...DEFAULT_PROGRESS,
   ready: false,
 
-  recordLessonComplete: (pathIndex, xpEarned, mode = "street", label) => {
+  recordLessonComplete: (pathIndex, xpEarned, mode = "street", label, accuracyPercent) => {
     const cur = get();
     const { streakDays, lastActiveDate } = applyStreak(
       cur.lastActiveDate,
       cur.streakDays,
     );
     const dailyXp = rollDailyXp(cur.dailyXp, cur.lastActiveDate) + xpEarned;
+    const sameDay = cur.lastActiveDate === lastActiveDate;
+    const hitEighty =
+      accuracyPercent !== undefined && accuracyPercent >= 80;
+    const scoredEightyToday = sameDay
+      ? cur.scoredEightyToday || hitEighty
+      : hitEighty;
 
     const nextLessonPathIndex =
       mode === "street" && pathIndex >= cur.nextLessonPathIndex
@@ -128,6 +138,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         label: label ?? `Lesson ${pathIndex + 1}`,
         at: new Date().toISOString(),
       },
+      scoredEightyToday,
     };
 
     set(next);
@@ -174,6 +185,8 @@ async function hydrateProgress() {
     };
     merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);
     merged.lastActivity = merged.lastActivity ?? null;
+    merged.scoredEightyToday =
+      merged.lastActiveDate === todayIso() ? (merged.scoredEightyToday ?? false) : false;
     useProgressStore.setState({ ...merged, ready: true });
   } catch {
     useProgressStore.setState({ ready: true });

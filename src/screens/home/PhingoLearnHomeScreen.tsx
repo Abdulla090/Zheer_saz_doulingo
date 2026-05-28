@@ -99,6 +99,7 @@ export function PhingoLearnHomeScreen() {
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
   const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
   const lastActivity = useProgressStore((s) => s.lastActivity);
+  const scoredEightyToday = useProgressStore((s) => s.scoredEightyToday);
   const pathMode = useSettingsStore((s) => s.pathMode);
   const { width } = useWindowDimensions();
 
@@ -137,12 +138,12 @@ export function PhingoLearnHomeScreen() {
       {
         id: "score",
         title: t("home.questScore"),
-        progress: 0,
-        progressLabel: "0 / 1",
+        progress: scoredEightyToday ? 1 : 0,
+        progressLabel: scoredEightyToday ? "1 / 1" : "0 / 1",
         renderIcon: () => <QuestTargetFlat size={40} />,
       },
     ],
-    [t, dailyXp, dailyGoalXp, lastActivity],
+    [t, dailyXp, dailyGoalXp, lastActivity, scoredEightyToday],
   );
 
   const onContinue = useCallback(() => {

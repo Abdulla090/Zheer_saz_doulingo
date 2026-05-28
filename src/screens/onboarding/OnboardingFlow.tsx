@@ -17,7 +17,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { OnboardingHero, type OnboardingHeroVariant } from "./components/OnboardingHero";
@@ -108,10 +107,12 @@ export function OnboardingFlow() {
     <OnboardingLocaleProvider locale={locale}>
       <View style={[styles.root, rtlRoot(isRtl)]}>
         <LinearGradient
-          colors={["#F4F9FF", "#FFFFFF", "#FFFFFF"]}
-          locations={[0, 0.35, 1]}
+          colors={["#EEF4FF", "#F8FAFF", "#FFFFFF"]}
+          locations={[0, 0.45, 1]}
           style={StyleSheet.absoluteFill}
         />
+        <View style={styles.meshOrb} pointerEvents="none" />
+        <View style={[styles.meshOrb, styles.meshOrbRight]} pointerEvents="none" />
 
         <View
           style={[
@@ -153,10 +154,8 @@ export function OnboardingFlow() {
             <View style={styles.body}>
               <OnboardingHero variant={variant} />
 
-              <Animated.View
+              <View
                 key={`${locale}-${index}`}
-                entering={FadeInDown.duration(360).springify().damping(22)}
-                exiting={FadeOutUp.duration(180)}
                 style={[styles.copy, alignStretch(isRtl)]}
               >
                 <Text
@@ -190,7 +189,7 @@ export function OnboardingFlow() {
                     normalSub={copy.pathNormalSub}
                   />
                 ) : null}
-              </Animated.View>
+              </View>
             </View>
           </GestureDetector>
 
@@ -264,6 +263,25 @@ function LocaleChip({
 const styles = StyleSheet.create({
   root: {
     backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+  },
+  meshOrb: {
+    position: "absolute",
+    top: -80,
+    left: -60,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(32, 138, 239, 0.12)",
+  },
+  meshOrbRight: {
+    left: undefined,
+    right: -40,
+    top: 120,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(91, 79, 214, 0.08)",
   },
   container: {
     flex: 1,

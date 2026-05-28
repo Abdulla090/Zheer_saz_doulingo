@@ -318,7 +318,11 @@ export default function LessonScreen() {
                   const label = meta
                     ? `${meta.sectionTitle} · ${meta.lessonNumber}`
                     : undefined;
-                  recordLessonComplete(pathIndex, xp, pathMode, label);
+                  const accuracy =
+                    questions.length > 0
+                      ? Math.round((correctN / questions.length) * 100)
+                      : 0;
+                  recordLessonComplete(pathIndex, xp, pathMode, label, accuracy);
                 }
                 router.back();
               }}

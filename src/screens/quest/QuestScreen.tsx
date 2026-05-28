@@ -7,6 +7,7 @@ import { tabBarScrollPadding } from "@/constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { AnimatedCard } from "@/components/animations";
+import { useI18n } from "@/hooks/useI18n";
 
 const TRACK_COLOR = "#E5E5E5";
 const HERO_FILL_COLOR = "#1CB0F5";
@@ -101,6 +102,7 @@ const QuestGoalRow = ({
 const QuestScreen = () => {
   const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { t, isKu } = useI18n();
   const goalBarWidth = windowWidth - 128;
 
   return (
@@ -109,12 +111,12 @@ const QuestScreen = () => {
         <View className="flex-row items-center justify-between">
           <View className="gap-1">
             <Text className="text-white  text-xl font-rd-bold">
-              ئەرکی نیسان
+              {t("quest.title")}
             </Text>
             <View className="flex-row items-center gap-1">
               <Icon3DClock size={18} />
               <Text className=" text-gray-6 text-sm font-rd-medium">
-                ٢٤ ڕۆژ
+                {t("quest.durationDays")}
               </Text>
             </View>
           </View>
@@ -127,7 +129,7 @@ const QuestScreen = () => {
 
         <View className="gap-2 bg-white rounded-2xl p-4 bottom-4">
           <Text className="text-text-primary text-base font-rd-bold">
-            ٣٠ خاڵی ئەرک بەدەست بهێنە
+            {t("quest.heroGoal")}
           </Text>
           <QuestProgressBar
             progress={0.1}
@@ -147,12 +149,12 @@ const QuestScreen = () => {
           <View className="px-5 mt-6 gap-2">
             <View className="flex-row items-center justify-between">
               <Text className="text-text-tertiary text-xl font-rd-bold">
-                ئەرکی هاوڕێیان
+                {t("quest.friendsTitle")}
               </Text>
               <View className="flex-row items-center gap-1">
                 <Icon3DClock size={18} />
                 <Text className=" text-text-tertiary text-sm font-rd-medium">
-                  ٣ ڕۆژ
+                  {t("quest.friendsDuration")}
                 </Text>
               </View>
             </View>
@@ -171,21 +173,20 @@ const QuestScreen = () => {
         <AnimatedCard index={1} delay={200}>
           <View className="px-5 mt-6 gap-2">
             <QuestGoalRow
-              title="وانەی داهاتووت تەواو بکە"
+              title={t("quest.nextLessonGoal")}
               progress={0}
               value="1 / 1"
               valueColor="#afafaf"
               barWidth={goalBarWidth}
             />
-            {/* You Quest */}
             <ParticipantRow
-              name="تۆ"
-              lessonsLabel="١ وانە"
+              name={t("quest.you")}
+              lessonsLabel={t("quest.lessonsOne")}
               dotColor="#C894F9"
             />
             <ParticipantRow
-              name="ئاکام"
-              lessonsLabel="٣ وانە"
+              name={isKu ? "ئاکام" : "Adam"}
+              lessonsLabel={isKu ? "٣ وانە" : `3 ${t("quest.lessonsMany")}`}
               dotColor="#D5B8E8"
             />
             <View className="h-[2] w-full mt-4 mb-4 bg-gray-200" />
@@ -194,32 +195,32 @@ const QuestScreen = () => {
               <View className="gap-3">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-text-secondary text-base font-rd-medium">
-                    ئەرکەکانی ڕۆژانە
+                    {t("quest.dailyTitle")}
                   </Text>
                   <View className="flex-row items-center gap-1">
                     <Icon3DClock size={18} />
                     <Text className="text-gold-base text-sm font-rd-medium">
-                      ٣ ڕۆژ
+                      {t("quest.dailyDuration")}
                     </Text>
                   </View>
                 </View>
                 <View className="gap-6">
                   <QuestGoalRow
-                    title="وانەی داهاتووت تەواو بکە"
+                    title={t("quest.nextLessonGoal")}
                     progress={0.2}
                     value="2 / 14"
                     valueColor="#afafaf"
                     barWidth={goalBarWidth}
                   />
                   <QuestGoalRow
-                    title="١٠ خولەک تەرخان بکە بۆ فێربوون"
+                    title={t("quest.studyGoal")}
                     progress={0}
                     value="0 / 14"
                     valueColor="#afafaf"
                     barWidth={goalBarWidth}
                   />
                   <QuestGoalRow
-                    title="گوێ لە ٥ ڕاهێنان بگرە"
+                    title={t("quest.listenGoal")}
                     progress={0}
                     value="0 / 14"
                     valueColor="#afafaf"

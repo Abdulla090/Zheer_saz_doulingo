@@ -7,13 +7,13 @@ export const ONBOARDING_COPY = {
     skip: "Skip",
     continue: "Continue",
     getStarted: "Get started",
-    swipeHint: "Swipe left for next",
+    swipeHint: "Swipe to continue",
     languageEn: "English",
     languageKu: "کوردی",
     steps: [
       {
-        title: "Meet Phingo",
-        subtitle: "Your AI language partner for real conversations and daily English.",
+        title: "Welcome to Phingo",
+        subtitle: "Premium English learning built for Kurdish speakers — clear, focused, flagship-quality.",
       },
       {
         title: "Pick your path",
@@ -24,8 +24,8 @@ export const ONBOARDING_COPY = {
         subtitle: "Games, speaking, and roleplay — short sessions that stick.",
       },
       {
-        title: "Stay motivated",
-        subtitle: "Hearts, XP, and streaks keep you moving forward.",
+        title: "Track your momentum",
+        subtitle: "Daily XP, streaks, dual-path progress, and home widgets keep you on track.",
       },
       {
         title: "You're all set",
