@@ -39,7 +39,6 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Icon3DCheck, Icon3DX } from "@/components/icons/Icon3D";
-import { SoftGloss, softDepth, softFaceBorders, softRimFromFace } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
@@ -208,8 +207,8 @@ export function LiquidEyebrow({
 }
 
 const le = StyleSheet.create({
-  wrap: { gap: 6 },
-  labelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  wrap: { gap: 0 },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   accentDot: {
     width: 6,
     height: 6,
@@ -424,11 +423,11 @@ const lo = StyleSheet.create({
   pressable: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
     zIndex: 1,
-    minHeight: 58,
+    minHeight: 50,
   },
   letterCircle: {
     width: 36,
@@ -475,90 +474,79 @@ export function LiquidPrimaryButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const scale = useSharedValue(1);
-  const pressY = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  const faceAnim = useAnimatedStyle(() => ({
-    transform: [{ translateY: pressY.value }],
-  }));
-
-  const rim = softRimFromFace(color, 0.2);
-  const depth = softDepth(54, 0.07, 3, 5);
 
   return (
     <Animated.View style={[{ width: "100%" }, animStyle, style]}>
-      <View
+      <Pressable
+        onPress={() => {
+          if (disabled) return;
+          if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          onPress();
+        }}
+        disabled={disabled}
+        onPressIn={() => {
+          if (!disabled) scale.value = withSpring(0.96, Motion.soft);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, Motion.soft);
+        }}
         style={[
-          {
-            borderRadius: Radius.lg,
-            backgroundColor: disabled ? "rgba(255,255,255,0.08)" : rim,
-            overflow: "hidden",
-          },
+          lpb.btn,
           disabled
-            ? crossShadow({ color: "#000", offsetY: 4, opacity: 0.08, blur: 12, elevation: 2 })
-            : crossShadow({
-                color: rim,
-                offsetY: depth + 2,
-                opacity: 0.32,
-                blur: 20,
-                elevation: 8,
-              }),
+            ? {
+                backgroundColor: "rgba(255,255,255,0.12)",
+                borderColor: "rgba(255,255,255,0.22)",
+                ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.08, blur: 12, elevation: 2 }),
+              }
+            : {
+                backgroundColor: color,
+                borderColor: "rgba(255,255,255,0.28)",
+                ...crossShadow({
+                  color,
+                  offsetY: 10,
+                  opacity: 0.38,
+                  blur: 22,
+                  elevation: 8,
+                }),
+              },
         ]}
       >
-        <Animated.View
-          style={[
-            lpb.btn,
-            faceAnim,
-            {
-              marginBottom: disabled ? 0 : depth,
-              backgroundColor: disabled ? "rgba(255,255,255,0.12)" : color,
-              ...(!disabled ? softFaceBorders() : {}),
-            },
-          ]}
-        >
-          <Pressable
-            onPress={() => {
-              if (disabled) return;
-              if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-              onPress();
-            }}
-            disabled={disabled}
-            onPressIn={() => {
-              if (!disabled) {
-                scale.value = withSpring(0.98, Motion.soft);
-                pressY.value = withTiming(depth, { duration: 70 });
-              }
-            }}
-            onPressOut={() => {
-              scale.value = withSpring(1, Motion.soft);
-              pressY.value = withTiming(0, { duration: 110 });
-            }}
-            style={lpb.pressFill}
-          >
-            {!disabled && <SoftGloss borderRadius={Radius.lg} />}
-            {icon && <View style={{ marginRight: 8, zIndex: 1 }}>{icon}</View>}
-            <Text style={[lpb.label, { color: disabled ? "rgba(255,255,255,0.42)" : textColor, zIndex: 1 }]}>
-              {label}
-            </Text>
-          </Pressable>
-        </Animated.View>
-      </View>
+        {!disabled && (
+          <LinearGradient
+            colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]}
+            style={lpb.sheen}
+            pointerEvents="none"
+          />
+        )}
+        {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
+        <Text style={[lpb.label, { color: disabled ? "rgba(255,255,255,0.42)" : textColor }]}>
+          {label}
+        </Text>
+      </Pressable>
     </Animated.View>
   );
 }
 
 const lpb = StyleSheet.create({
   btn: {
+    height: 50,
     borderRadius: Radius.lg,
-    overflow: "hidden",
-  },
-  pressFill: {
-    height: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 22,
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  sheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 24,
   },
   label: {
     fontSize: 16,
@@ -696,8 +684,8 @@ export function LiquidWordChip({
 
   const isStrongState = state === "correct" || state === "showCorrect" || state === "wrong" || state === "selected";
 
-  const padding = size === "sm" ? { paddingHorizontal: 14, paddingVertical: 9 } : { paddingHorizontal: 16, paddingVertical: 12 };
-  const fontSize = size === "sm" ? 14 : 16;
+  const padding = size === "sm" ? { paddingHorizontal: 10, paddingVertical: 7 } : { paddingHorizontal: 12, paddingVertical: 9 };
+  const fontSize = size === "sm" ? 13 : 15;
 
   // Ghost = used / placeholder slot
   if (ghost) {

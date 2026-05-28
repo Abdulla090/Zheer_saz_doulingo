@@ -145,14 +145,34 @@ export function getLessonQuestions(
     questions.push({ type: "voice", prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 });
   }
 
+  // Short tokens only — long phrases blow up the word bank and force scrolling.
+  const shortDistractor = (text: string, maxWords = 3) => {
+    const trimmed = text.trim();
+    if (!trimmed || trimmed.split(/\s+/).length > maxWords) return null;
+    return trimmed;
+  };
+
   // 4. Sentence Builder (2×)
   for (let i = 0; i < 2; i++) {
     const s = pick(sentences, i);
     const sentSet = new Set(s.english.map(w => w.toLowerCase()));
     const extra: string[] = [];
     for (let j = 0; extra.length < 2; j++) {
-      const d = safeD(seed + i * 7 + j + 30);
-      if (!sentSet.has(d.toLowerCase()) && !extra.includes(d)) extra.push(d);
+      const d = shortDistractor(safeD(seed + i * 7 + j + 30));
+      if (
+        d &&
+        !sentSet.has(d.toLowerCase()) &&
+        !extra.includes(d)
+      ) {
+        extra.push(d);
+      }
+    }
+    // Fallback: single words from vocabulary when pool has no short distractors
+    for (let j = 0; extra.length < 2; j++) {
+      const w = pick(words, j + i).english;
+      if (!sentSet.has(w.toLowerCase()) && !extra.includes(w) && shortDistractor(w, 2)) {
+        extra.push(w);
+      }
     }
     questions.push({
       type: "sentence_builder",
