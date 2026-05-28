@@ -1,3 +1,4 @@
+import { useI18n } from "@/hooks/useI18n";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -32,6 +33,7 @@ export class AppErrorBoundary extends Component<Props, State> {
 
 function ErrorFallback({ onRetry }: { onRetry: () => void }) {
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   return (
     <View
       style={[
@@ -40,19 +42,16 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
       ]}
     >
       <Text style={styles.title} accessibilityRole="header">
-        Something went wrong
+        {t("errors.title")}
       </Text>
-      <Text style={styles.body}>
-        Please restart the app. If this keeps happening, contact support from
-        Settings.
-      </Text>
+      <Text style={styles.body}>{t("errors.body")}</Text>
       <Pressable
         onPress={onRetry}
         style={styles.btn}
         accessibilityRole="button"
-        accessibilityLabel="Try again"
+        accessibilityLabel={t("errors.retry")}
       >
-        <Text style={styles.btnText}>Try again</Text>
+        <Text style={styles.btnText}>{t("errors.retry")}</Text>
       </Pressable>
     </View>
   );

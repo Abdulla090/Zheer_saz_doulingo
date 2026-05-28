@@ -37,6 +37,7 @@ const appRoutes = [
   "privacy-policy",
   "ai-safety",
   "terms",
+  "widgets",
 ];
 
 for (const route of appRoutes) {
@@ -56,6 +57,8 @@ for (const hidden of [
   "privacy-policy",
   "ai-safety",
   "terms",
+  "widgets",
+  "quest",
 ]) {
   if (!tabBar.includes(`"${hidden}"`)) {
     fail(`CustomTabBar should hide tab bar on: ${hidden}`);
@@ -141,6 +144,13 @@ if (!existsSync(join(root, "src/content/legal/privacy-en.ts"))) {
   fail("Missing in-app privacy policy content");
 } else {
   ok("In-app privacy policy present");
+}
+
+const feedRoute = read("src/app/feed.tsx");
+if (!feedRoute.includes("GamesScreen")) {
+  fail("feed.tsx should render GamesScreen (GAMES tab hub)");
+} else {
+  ok("GAMES tab routes to GamesScreen");
 }
 
 if (!existsSync(join(root, "src/stores/useProgressStore.ts"))) {

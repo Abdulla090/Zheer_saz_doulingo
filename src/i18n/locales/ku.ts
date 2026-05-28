@@ -8,6 +8,14 @@ export const ku = {
     games: "یاریەکان",
     shop: "فرۆشگا",
     profile: "پڕۆفایل",
+    practice: "ڕاهێنان / قسەکردن",
+    settings: "ڕێکخستنەکان",
+  },
+  common: {
+    continue: "بەردەوامبە",
+    skip: "تێپەڕاندن",
+    new: "نوێ",
+    cancel: "پاشگەزبوونەوە",
   },
   home: {
     greeting: "سڵاو!",
@@ -25,7 +33,7 @@ export const ku = {
     normalPath: "ئینگلیزی ئاسایی",
     lessonsComplete: "وانە",
     tapToContinue: "بۆ فێربوون دابگرە",
-    questXp: "٢٠ XP بەدەستبهێنە",
+    questXp: "ئامانجی XPی ڕۆژانەت تەواو بکە",
     questListen: "وانەی گوێگرتن تەواو بکە",
     questScore: "٨٠٪ یان زیاتر بەدەستبهێنە",
   },
@@ -67,6 +75,12 @@ export const ku = {
     resetConfirm: "سڕینەوە",
     homeWidgets: "ویدجێتەکانی سەرەکی",
     homeWidgetsHint: "streak و XP و وانە و ڕێڕەو زیاد بکە",
+    privacyWeb: "سیاسەت (وێب)",
+  },
+  errors: {
+    title: "هەڵەیەک ڕوویدا",
+    body: "تکایە ئەپەکە دووبارە بکەرەوە. ئەگەر بەردەوام بوو، لە ڕێکخستنەکان پشتیوانی بگرە.",
+    retry: "دووبارە هەوڵبدەوە",
   },
   widgets: {
     title: "ویدجێتەکانی سەرەکی",
@@ -177,10 +191,5 @@ export const ku = {
     readyTitle: "ئامادەیت",
     readySubtitle:
       "داشبۆردەکەت ئامادەیە. دابگرە — وانەی داهاتوو چاوەڕێ دەکات.",
-  },
-  common: {
-    continue: "بەردەوامبە",
-    skip: "تێپەڕاندن",
-    new: "نوێ",
   },
 } satisfies TranslationKey;

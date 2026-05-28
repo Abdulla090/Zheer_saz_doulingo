@@ -27,7 +27,7 @@ import {
 import { getPathProgressSummary } from "@/utils/path-progress";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { syncHomeWidget } from "@/services/home-widget-sync";
-import { Fire, Heart } from "@/constants/icons";
+import { Fire } from "@/constants/icons";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import {
@@ -123,15 +123,15 @@ export function PhingoLearnHomeScreen() {
       {
         id: "xp",
         title: t("home.questXp"),
-        progress: 8 / 20,
-        progressLabel: "8 / 20",
+        progress: dailyGoalXp > 0 ? Math.min(1, dailyXp / dailyGoalXp) : 0,
+        progressLabel: `${dailyXp} / ${dailyGoalXp} XP`,
         renderIcon: () => <QuestZapFlat size={40} />,
       },
       {
         id: "listen",
         title: t("home.questListen"),
-        progress: 0,
-        progressLabel: "0 / 1",
+        progress: lastActivity?.kind === "lesson" ? 1 : 0,
+        progressLabel: lastActivity?.kind === "lesson" ? "1 / 1" : "0 / 1",
         renderIcon: () => <QuestHeadphonesFlat size={40} />,
       },
       {
@@ -142,7 +142,7 @@ export function PhingoLearnHomeScreen() {
         renderIcon: () => <QuestTargetFlat size={40} />,
       },
     ],
-    [t],
+    [t, dailyXp, dailyGoalXp, lastActivity],
   );
 
   const onContinue = useCallback(() => {
@@ -179,7 +179,7 @@ export function PhingoLearnHomeScreen() {
       router.push("/ai-teacher");
       return;
     }
-    router.push("/games");
+    router.push("/feed");
   }, [lastActivity, normalNext, router, streetNext]);
 
   const lessonLabel = nextLessonMeta
@@ -220,10 +220,14 @@ export function PhingoLearnHomeScreen() {
               <Fire width={24} height={24} />
               <Text style={styles.statFire}>{Math.max(streakDays, 0)}</Text>
             </View>
-            <View style={styles.statItem}>
-              <Heart width={24} height={24} />
-              <Text style={styles.statHeart}>5</Text>
-            </View>
+            <Pressable
+              onPress={() => router.push("/feed")}
+              accessibilityRole="button"
+              accessibilityLabel={t("games.title")}
+              style={styles.gamesChip}
+            >
+              <Text style={styles.gamesChipText}>{t("tabs.games")}</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -392,11 +396,18 @@ const styles = StyleSheet.create({
     color: C.orange,
     fontFamily: "DINNextRoundedBold",
   },
-  statHeart: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: C.red,
+  gamesChip: {
+    backgroundColor: C.blue,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  gamesChipText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#FFFFFF",
     fontFamily: "DINNextRoundedBold",
+    letterSpacing: 0.5,
   },
   cardSpacer: {
     marginTop: 16,

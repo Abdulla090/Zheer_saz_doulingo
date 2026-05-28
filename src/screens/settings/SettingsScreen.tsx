@@ -57,7 +57,7 @@ export default function SettingsScreen() {
       t("settings.resetProgress"),
       t("settings.resetProgressHint"),
       [
-        { text: isKu ? "پاشگەزبوونەوە" : "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
           text: t("settings.resetConfirm"),
           style: "destructive",
@@ -204,7 +204,7 @@ export default function SettingsScreen() {
             style={[styles.supportRow, styles.card, { marginTop: 0 }]}
           >
             <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-              {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
+              {t("settings.privacyWeb")}
             </AppText>
             <Icon3DChevronRight size={20} />
           </PressableScale>

@@ -5,6 +5,14 @@ export const en = {
     games: "GAMES",
     shop: "SHOP",
     profile: "PROFILE",
+    practice: "Practice & speaking",
+    settings: "Settings",
+  },
+  common: {
+    continue: "CONTINUE",
+    skip: "Skip",
+    new: "NEW",
+    cancel: "Cancel",
   },
   home: {
     greeting: "Hi there!",
@@ -22,7 +30,7 @@ export const en = {
     normalPath: "Normal English",
     lessonsComplete: "lessons",
     tapToContinue: "Tap to continue learning",
-    questXp: "Earn 20 XP",
+    questXp: "Reach your daily XP goal",
     questListen: "Do a listening lesson",
     questScore: "Score 80% or higher",
   },
@@ -64,6 +72,12 @@ export const en = {
     resetConfirm: "Reset",
     homeWidgets: "Home screen widgets",
     homeWidgetsHint: "Add streak, XP, lesson, and path widgets",
+    privacyWeb: "Privacy (web)",
+  },
+  errors: {
+    title: "Something went wrong",
+    body: "Please restart the app. If this keeps happening, contact support from Settings.",
+    retry: "Try again",
   },
   widgets: {
     title: "Home widgets",
@@ -174,11 +188,6 @@ export const en = {
     readyTitle: "You're ready",
     readySubtitle:
       "Your dashboard is set. Tap below — the next lesson is waiting.",
-  },
-  common: {
-    continue: "CONTINUE",
-    skip: "Skip",
-    new: "NEW",
   },
 };
 

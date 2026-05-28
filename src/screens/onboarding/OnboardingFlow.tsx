@@ -2,6 +2,7 @@ import { PressableScale } from "@/components/animations";
 import { useFontStore } from "@/stores/useFontStore";
 import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { isSwipeNext, rtlRoot, rtlText, rtlTextCenter } from "@/utils/rtl";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -70,8 +71,9 @@ export function OnboardingFlow() {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       completeOnboarding(mode);
+      useSettingsStore.getState().setPathMode(mode);
       router.replace({
-        pathname: "/dashboard",
+        pathname: "/",
         params: { mode },
       });
     },
