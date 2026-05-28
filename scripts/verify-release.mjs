@@ -215,5 +215,14 @@ if (!appJson.expo?.extra?.eas?.projectId) {
   ok(`EAS projectId: ${appJson.expo.extra.eas.projectId}`);
 }
 
+import { spawnSync } from "node:child_process";
+const features = spawnSync("node", ["scripts/verify-app-features.mjs"], {
+  cwd: root,
+  stdio: "inherit",
+});
+if (features.status !== 0) {
+  failed++;
+}
+
 console.log(failed ? `\n${failed} check(s) failed.` : "\nAll checks passed.");
 process.exit(failed ? 1 : 0);
