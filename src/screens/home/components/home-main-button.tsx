@@ -25,7 +25,6 @@ function GuidebookBtn({
       faceColor="rgba(255,255,255,0.24)"
       rimColor={rimColor}
       borderRadius={14}
-      depth={3}
       contentStyle={{
         flexDirection: "row",
         alignItems: "center",
@@ -67,7 +66,6 @@ export const HomeMainButton = React.memo(({
         faceColor={faceColor}
         rimColor={rimColor}
         borderRadius={24}
-        depth={6}
         innerStyle={{
           paddingHorizontal: 14,
           paddingVertical: 14,

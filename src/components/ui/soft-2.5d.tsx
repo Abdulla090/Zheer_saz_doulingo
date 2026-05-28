@@ -123,7 +123,7 @@ type SoftSurfaceProps = {
   fullWidth?: boolean;
 };
 
-/** Static rim + face stack (no press). */
+/** Static soft surface — iOS gloss + shadow (no hard bottom rim). */
 export function SoftSurface({
   faceColor,
   rimColor,
@@ -136,45 +136,32 @@ export function SoftSurface({
   innerStyle,
   fullWidth,
 }: SoftSurfaceProps) {
-  const rim = rimColor ?? softRimFromFace(faceColor);
-  const depth = depthProp ?? softDepth(borderRadius * 2, 0.08, 3, 5);
-  const translateY = pressed ? depth : 0;
+  const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
+  const pressScale = pressed ? 0.98 : 1;
 
   return (
     <View
       style={[
         {
           borderRadius,
-          backgroundColor: rim,
+          backgroundColor: faceColor,
           overflow: "hidden",
+          transform: [{ scale: pressScale }],
           ...(fullWidth ? { width: "100%" } : null),
+          ...softFaceBorders(locked),
           ...crossShadow({
-            color: rim,
-            offsetY: depth + 2,
-            opacity: locked ? 0.12 : 0.28,
-            blur: 18,
+            color: shadow,
+            offsetY: depthProp ?? 8,
+            opacity: locked ? 0.1 : 0.22,
+            blur: 20,
             elevation: 5,
           }),
         },
         style,
       ]}
     >
-      <Animated.View
-        style={[
-          {
-            borderRadius,
-            backgroundColor: faceColor,
-            marginBottom: depth,
-            overflow: "hidden",
-            transform: [{ translateY }],
-            ...softFaceBorders(locked),
-          },
-          innerStyle,
-        ]}
-      >
-        <SoftGloss borderRadius={borderRadius} strong={!locked} />
-        {children}
-      </Animated.View>
+      <SoftGloss borderRadius={borderRadius} strong={!locked} />
+      <View style={[innerStyle, { zIndex: 1 }]}>{children}</View>
     </View>
   );
 }
@@ -207,8 +194,7 @@ export function SoftPressableButton({
   onPressOut,
 }: SoftPressableButtonProps) {
   const [pressed, setPressed] = useState(false);
-  const rim = rimColor ?? softRimFromFace(faceColor);
-  const depth = depthProp ?? softDepth(52, 0.075, 3, 5);
+  const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
 
   return (
     <Pressable
@@ -232,38 +218,29 @@ export function SoftPressableButton({
       }
       style={[{ width: "100%", opacity: disabled ? 0.55 : 1 }, style]}
     >
-      <View
-        style={{
-          borderRadius,
-          backgroundColor: rim,
-          overflow: "hidden",
-          ...crossShadow({
-            color: rim,
-            offsetY: depth + 2,
-            opacity: 0.3,
-            blur: 20,
-            elevation: 6,
-          }),
-        }}
+      <Animated.View
+        style={[
+          {
+            borderRadius,
+            backgroundColor: faceColor,
+            overflow: "hidden",
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+            ...softFaceBorders(),
+            ...crossShadow({
+              color: shadow,
+              offsetY: depthProp ?? 8,
+              opacity: 0.26,
+              blur: 18,
+              elevation: 5,
+            }),
+          },
+          pressed ? cssPressStyle : cssReleaseStyle,
+          contentStyle,
+        ]}
       >
-        <Animated.View
-          style={[
-            {
-              borderRadius,
-              backgroundColor: faceColor,
-              marginBottom: depth,
-              overflow: "hidden",
-              transform: [{ translateY: pressed ? depth : 0 }],
-              ...softFaceBorders(),
-            },
-            pressed ? cssPressStyle : cssReleaseStyle,
-            contentStyle,
-          ]}
-        >
-          <SoftGloss borderRadius={borderRadius} />
-          {children}
-        </Animated.View>
-      </View>
+        <SoftGloss borderRadius={borderRadius} />
+        <View style={{ zIndex: 1 }}>{children}</View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -286,8 +263,7 @@ export function SoftCircleButton({
   children,
 }: SoftCircleButtonProps) {
   const [pressed, setPressed] = useState(false);
-  const rim = rimColor ?? softRimFromFace(faceColor);
-  const depth = softDepth(size);
+  const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
   const r = size / 2;
 
   const face = (
@@ -297,43 +273,28 @@ export function SoftCircleButton({
         height: size,
         borderRadius: r,
         backgroundColor: faceColor,
-        marginBottom: depth,
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
-        transform: [{ translateY: pressed ? depth : 0 }],
+        transform: [{ scale: pressed ? 0.94 : 1 }],
         ...softFaceBorders(disabled),
         ...(pressed ? cssPressStyle : cssReleaseStyle),
-      }}
-    >
-      <SoftGloss borderRadius={r} width={size} height={size} strong={!disabled} />
-      {children}
-    </Animated.View>
-  );
-
-  const shell = (
-    <View
-      style={{
-        width: size,
-        height: size + depth,
-        borderRadius: r,
-        backgroundColor: rim,
-        overflow: "hidden",
         ...crossShadow({
-          color: rim,
-          offsetY: depth + 2,
-          opacity: disabled ? 0.12 : 0.28,
-          blur: 16,
-          elevation: 5,
+          color: shadow,
+          offsetY: 6,
+          opacity: disabled ? 0.1 : 0.22,
+          blur: 14,
+          elevation: 4,
         }),
       }}
     >
-      {face}
-    </View>
+      <SoftGloss borderRadius={r} width={size} height={size} strong={!disabled} />
+      <View style={{ zIndex: 1 }}>{children}</View>
+    </Animated.View>
   );
 
   if (!onPress || disabled) {
-    return shell;
+    return face;
   }
 
   return (
@@ -341,9 +302,9 @@ export function SoftCircleButton({
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
-      style={{ width: size, height: size + depth }}
+      style={{ width: size, height: size }}
     >
-      {shell}
+      {face}
     </Pressable>
   );
 }

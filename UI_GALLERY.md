@@ -1,10 +1,12 @@
 # Phingo — all screens (gallery)
 
+> **Note:** PNGs below are from an older capture (hard 3D edges, 5-tab bar). Install build **`1.0.6 (soft-ios-1.0.6)`** on your phone for the real soft UI. New screenshots will be added after the next capture.
+
 **Open in your phone browser (renders as a real page, not code):**
 
 https://raw.githack.com/Abdulla090/Zheer_saz_doulingo/main/artifacts/screenshots/index.html
 
-Build **1.0.5 (soft-ui-1.0.5)** · one image per screen, no duplicates.
+Build **1.0.6 (soft-ios-1.0.6)** · path unit bar + games icons use iOS-soft gloss (no hard bottom rim).
 
 ---
 

@@ -5,7 +5,7 @@ export const SUPPORT_EMAIL = "support@phingo.app";
 export const PRIVACY_POLICY_URL =
   process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ?? "";
 
-export const APP_VERSION = "1.0.5";
+export const APP_VERSION = "1.0.6";
 
 /** Shown in Settings — confirms soft UI + light lesson games build. */
-export const APP_BUILD_LABEL = "soft-ui-1.0.5";
+export const APP_BUILD_LABEL = "soft-ios-1.0.6";
