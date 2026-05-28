@@ -76,7 +76,8 @@ export function useSpeechCapture(lang = "en-US") {
         lang,
         interimResults: true,
         continuous:
-          options?.continuous ?? Platform.OS === "android" || Platform.OS === "ios",
+          options?.continuous ??
+          (Platform.OS === "android" || Platform.OS === "ios"),
       });
       return true;
     },
