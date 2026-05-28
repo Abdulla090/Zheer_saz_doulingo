@@ -15,7 +15,7 @@
     "web:mcp": "node ./scripts/start-with-mcp.js --web",
     "lint": "expo lint",
     "verify": "node scripts/verify-release.mjs",
-    "eas-build-pre-install": "bash scripts/eas-pre-install.sh",
+    "eas-build-pre-install": "node scripts/eas-pre-install.mjs",
     "build:apk": "npx eas-cli build --platform android --profile preview --non-interactive"
   },
   "dependencies": {

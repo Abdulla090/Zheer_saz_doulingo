@@ -10,7 +10,11 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Phingo English to transcribe your speech for lessons and AI feedback.",
+        "NSMicrophoneUsageDescription": "Allow Phingo English to use the microphone for speaking practice."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +24,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.hewad.mubariz.duolingoclone"
+      "package": "com.hewad.mubariz.duolingoclone",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "output": "static",
@@ -60,9 +70,15 @@
               "name": "PhingoHome",
               "displayName": "Phingo",
               "description": "Streak, daily XP, path progress, and your next lesson",
-              "supportedFamilies": ["systemSmall", "systemMedium"],
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium"
+              ],
               "ios": {
-                "supportedFamilies": ["systemSmall", "systemMedium"]
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium"
+                ]
               },
               "android": null
             }
@@ -77,9 +93,26 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "57df22e9-341f-4e45-a08d-fb5ca28d69c5"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.duolingoclone.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.hewad.mubariz.duolingoclone"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "ddd179c2-af80-49a4-9bdf-bf85f09294a3"
       }
     },
-    "owner": "abdulla001"
+    "owner": "abdullla001"
   }
 }

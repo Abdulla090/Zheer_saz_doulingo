@@ -20,6 +20,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { tabBarScrollPadding } from "@/constants/layout";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
