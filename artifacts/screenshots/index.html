@@ -35,6 +35,7 @@
       border-radius: 12px;
       border: 1px solid #e2e8f0;
       font-size: 14px;
+      line-height: 1.5;
     }
     .link-box a { color: #208aef; word-break: break-all; }
     h2 {
@@ -95,104 +96,76 @@
   <header>
     <h1>Phingo English — all screens</h1>
     <p class="meta">
-      One image per screen — no duplicate or alternate home/games variants.
-      Matches <strong>main</strong> build <strong>1.0.5 (soft-ui-1.0.5)</strong>.
+      One image per screen — no duplicate variants.
+      Build <strong>1.0.5 (soft-ui-1.0.5)</strong> on <strong>main</strong>.
     </p>
     <span class="badge">v1.0.5</span>
     <span class="badge">Soft iOS UI</span>
   </header>
 
   <div class="link-box">
-    <strong>Bookmark this page:</strong>
-    <a id="gallery-url" href=""></a>
+    <strong>Gallery link (always works):</strong><br />
+    <a href="https://cdn.jsdelivr.net/gh/Abdulla090/Zheer_saz_doulingo@main/artifacts/screenshots/index.html">https://cdn.jsdelivr.net/gh/Abdulla090/Zheer_saz_doulingo@main/artifacts/screenshots/index.html</a>
+    <br /><br />
+    <strong>GitHub Pages</strong> (after deploy):<br />
+    <a href="https://abdulla090.github.io/Zheer_saz_doulingo/">https://abdulla090.github.io/Zheer_saz_doulingo/</a>
   </div>
-  <script>
-    document.getElementById("gallery-url").href = location.href;
-    document.getElementById("gallery-url").textContent = location.href;
-  </script>
 
   <h2>Main tabs</h2>
-  <div class="grid">
-    <figure>
-      <figcaption>Home</figcaption>
-      <div class="route">/</div>
-      <img src="./01-home.png" alt="Home" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Games hub</figcaption>
-      <div class="route">/feed</div>
-      <img src="./02-games.png" alt="Games hub" loading="lazy" />
-    </figure>
-  </div>
-
-  <h2>Learning paths</h2>
-  <div class="grid">
-    <figure>
-      <figcaption>Street English path</figcaption>
-      <div class="route">/dashboard?mode=street</div>
-      <img src="./05-dashboard-street.png" alt="Street path" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Normal English path</figcaption>
-      <div class="route">/dashboard?mode=normal</div>
-      <img src="./06-dashboard-normal.png" alt="Normal path" loading="lazy" />
-    </figure>
-  </div>
-
-  <h2>AI &amp; role play</h2>
-  <div class="grid">
-    <figure>
-      <figcaption>AI Teacher — hub</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./03-ai-teacher.png" alt="AI Teacher" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Teacher — chat input</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./ai-teacher-input.png" alt="AI Teacher input" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Teacher — results</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./ai-teacher-results.png" alt="AI Teacher results" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Role Play</figcaption>
-      <div class="route">/roleplay</div>
-      <img src="./04-roleplay-picker.png" alt="Role Play" loading="lazy" />
-    </figure>
-  </div>
-
-  <h2>Lesson games (light UI)</h2>
-  <div class="grid">
-    <figure>
-      <figcaption>Order words</figcaption>
-      <div class="route">/lesson</div>
-      <img src="./lesson-order-words.png" alt="Order words" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Pair words</figcaption>
-      <div class="route">/lesson</div>
-      <img src="./lesson-pair-words.png" alt="Pair words" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Multiple choice</figcaption>
-      <div class="route">/lesson</div>
-      <img src="./lesson-multiple-choice.png" alt="Multiple choice" loading="lazy" />
-    </figure>
-  </div>
+  <div class="grid" id="gallery"></div>
 
   <div class="missing">
-    <strong>Not in this gallery</strong> (open in the app — no screenshot yet):
+    <strong>Not in this gallery</strong> (open in the app):
     <ul>
-      <li>Stats / League tab — <code>/league</code></li>
+      <li>Stats / League — <code>/league</code></li>
       <li>Settings — <code>/more</code> (long-press tab bar)</li>
-      <li>Quests — <code>/quest</code></li>
-      <li>Onboarding (first launch)</li>
-      <li>Widgets gallery — <code>/widgets</code></li>
-      <li>Guidebook, subscription, legal pages</li>
+      <li>Quests, onboarding, widgets, guidebook, subscription, legal</li>
     </ul>
-    <p style="margin: 12px 0 0;">Tab bar: <strong>Games · Home · Stats</strong> — long-press for settings sheet.</p>
+    <p style="margin: 12px 0 0;">Tab bar: <strong>Games · Home · Stats</strong></p>
   </div>
+
+  <script>
+    const IMG = "https://cdn.jsdelivr.net/gh/Abdulla090/Zheer_saz_doulingo@main/artifacts/screenshots/";
+    const screens = [
+      { section: "Main tabs", items: [
+        { title: "Home", route: "/", file: "01-home.png" },
+        { title: "Games hub", route: "/feed", file: "02-games.png" },
+      ]},
+      { section: "Learning paths", items: [
+        { title: "Street English path", route: "/dashboard?mode=street", file: "05-dashboard-street.png" },
+        { title: "Normal English path", route: "/dashboard?mode=normal", file: "06-dashboard-normal.png" },
+      ]},
+      { section: "AI & role play", items: [
+        { title: "AI Teacher — hub", route: "/ai-teacher", file: "03-ai-teacher.png" },
+        { title: "AI Teacher — chat input", route: "/ai-teacher", file: "ai-teacher-input.png" },
+        { title: "AI Teacher — results", route: "/ai-teacher", file: "ai-teacher-results.png" },
+        { title: "AI Role Play", route: "/roleplay", file: "04-roleplay-picker.png" },
+      ]},
+      { section: "Lesson games (light UI)", items: [
+        { title: "Order words", route: "/lesson", file: "lesson-order-words.png" },
+        { title: "Pair words", route: "/lesson", file: "lesson-pair-words.png" },
+        { title: "Multiple choice", route: "/lesson", file: "lesson-multiple-choice.png" },
+      ]},
+    ];
+
+    const root = document.getElementById("gallery");
+    screens.forEach((group) => {
+      const h2 = document.createElement("h2");
+      h2.textContent = group.section;
+      root.before(h2);
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      group.items.forEach((item) => {
+        const fig = document.createElement("figure");
+        fig.innerHTML =
+          "<figcaption>" + item.title + "</figcaption>" +
+          '<div class="route">' + item.route + "</div>" +
+          '<img src="' + IMG + item.file + '" alt="' + item.title + '" loading="lazy" decoding="async" />';
+        grid.appendChild(fig);
+      });
+      root.before(grid);
+    });
+    root.remove();
+  </script>
 </body>
 </html>
