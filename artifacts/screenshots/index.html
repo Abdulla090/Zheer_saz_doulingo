@@ -3,38 +3,178 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phingo UI Screenshots — latest</title>
+  <title>Phingo — all screens (restored app)</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 24px; background: #f4f9ff; color: #1a2b48; }
-    h1 { font-size: 1.6rem; margin: 0 0 6px; }
-    h2 { font-size: 1rem; margin: 28px 0 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
-    p { margin: 0 0 20px; color: #64748b; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-    figure { margin: 0; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 8px 28px rgba(26,43,72,.09); }
-    figcaption { font-weight: 700; margin-bottom: 10px; font-size: 14px; }
-    img { width: 100%; height: auto; border-radius: 12px; border: 1px solid #eef2f6; display: block; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(180deg, #e8f0fe 0%, #f7f9fc 40%, #fff 100%);
+      color: #1a2b48;
+    }
+    header { max-width: 960px; margin: 0 auto 32px; }
+    h1 { font-size: 1.75rem; margin: 0 0 8px; }
+    .meta { color: #64748b; font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
+    .badge {
+      display: inline-block;
+      background: #208aef;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      letter-spacing: 0.04em;
+    }
+    h2 {
+      font-size: 0.85rem;
+      margin: 36px auto 14px;
+      max-width: 1200px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    figure {
+      margin: 0;
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 8px 28px rgba(26, 43, 72, 0.09);
+    }
+    figcaption {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .route {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      font-family: ui-monospace, monospace;
+    }
+    img {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid #eef2f6;
+      display: block;
+      background: #f1f5f9;
+    }
   </style>
 </head>
 <body>
-  <h1>Phingo — latest UI (May 2026)</h1>
-  <p>Games hub, AI Role Play redesign, AI Teacher, home & learning paths.</p>
+  <header>
+    <h1>Phingo English — full UI gallery</h1>
+    <p class="meta">
+      Screenshots from the <strong>restored app</strong> (commit <code>4194373</code>).
+      Compare these to your phone — this is what the repo is supposed to look like.
+    </p>
+    <span class="badge">Restored build reference</span>
+  </header>
 
-  <h2>Main app</h2>
+  <h2>Main tabs &amp; home</h2>
   <div class="grid">
-    <figure><figcaption>Home</figcaption><img src="./01-home.png" alt="Home" /></figure>
-    <figure><figcaption>Games hub (3D tiles)</figcaption><img src="./02-games.png" alt="Games" /></figure>
-    <figure><figcaption>AI Teacher</figcaption><img src="./03-ai-teacher.png" alt="AI Teacher" /></figure>
-    <figure><figcaption>AI Role Play</figcaption><img src="./04-roleplay-picker.png" alt="Role Play" /></figure>
-    <figure><figcaption>Street English path</figcaption><img src="./05-dashboard-street.png" alt="Street path" /></figure>
-    <figure><figcaption>Normal English path</figcaption><img src="./06-dashboard-normal.png" alt="Normal path" /></figure>
+    <figure>
+      <figcaption>Home (learn dashboard)</figcaption>
+      <div class="route">/</div>
+      <img src="./01-home.png" alt="Home" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Home (liquid)</figcaption>
+      <div class="route">phingo-home-liquid</div>
+      <img src="./phingo-home-liquid.png" alt="Home liquid" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Home (mobile)</figcaption>
+      <div class="route">phingo-home-mobile</div>
+      <img src="./phingo-home-mobile.png" alt="Home mobile" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Home (flat mobile)</figcaption>
+      <div class="route">phingo-home-flat-mobile</div>
+      <img src="./phingo-home-flat-mobile.png" alt="Home flat" loading="lazy" />
+    </figure>
   </div>
 
-  <h2>Lesson games</h2>
+  <h2>Games &amp; AI</h2>
   <div class="grid">
-    <figure><figcaption>Order words</figcaption><img src="./lesson-order-words.png" alt="Order words" /></figure>
-    <figure><figcaption>Pair words</figcaption><img src="./lesson-pair-words.png" alt="Pair words" /></figure>
-    <figure><figcaption>Multiple choice</figcaption><img src="./lesson-multiple-choice.png" alt="Multiple choice" /></figure>
+    <figure>
+      <figcaption>Games hub</figcaption>
+      <div class="route">/feed</div>
+      <img src="./02-games.png" alt="Games" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Games hub (alt)</figcaption>
+      <div class="route">phingo-games-hub</div>
+      <img src="./phingo-games-hub.png" alt="Games hub" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Teacher</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./03-ai-teacher.png" alt="AI Teacher" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Teacher — input</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./phingo-ai-teacher-input.png" alt="AI Teacher input" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Teacher — results</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./phingo-ai-teacher-results.png" alt="AI Teacher results" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Role Play</figcaption>
+      <div class="route">/roleplay</div>
+      <img src="./04-roleplay-picker.png" alt="Role Play" loading="lazy" />
+    </figure>
   </div>
+
+  <h2>Learning paths</h2>
+  <div class="grid">
+    <figure>
+      <figcaption>Street English path</figcaption>
+      <div class="route">/dashboard?mode=street</div>
+      <img src="./05-dashboard-street.png" alt="Street path" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Normal English path</figcaption>
+      <div class="route">/dashboard?mode=normal</div>
+      <img src="./06-dashboard-normal.png" alt="Normal path" loading="lazy" />
+    </figure>
+  </div>
+
+  <h2>Lesson mini-games</h2>
+  <div class="grid">
+    <figure>
+      <figcaption>Order words</figcaption>
+      <div class="route">/lesson</div>
+      <img src="./lesson-order-words.png" alt="Order words" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Pair words</figcaption>
+      <div class="route">/lesson</div>
+      <img src="./lesson-pair-words.png" alt="Pair words" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>Multiple choice</figcaption>
+      <div class="route">/lesson</div>
+      <img src="./lesson-multiple-choice.png" alt="Multiple choice" loading="lazy" />
+    </figure>
+  </div>
+
+  <header style="margin-top: 48px;">
+    <p class="meta">
+      Not pictured here (open in app): onboarding, Settings/Profile (<code>/more</code>),
+      widgets gallery, league/quests. Tab bar: Games · Home · Stats; long-press for settings.
+    </p>
+  </header>
 </body>
 </html>
