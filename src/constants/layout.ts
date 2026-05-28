@@ -1,8 +1,25 @@
-/** Space reserved above the floating tab bar (height + typical bottom inset). */
-export const FLOATING_TAB_BAR_HEIGHT = 72;
-export const TAB_BAR_BOTTOM_MARGIN = 16;
-export const TAB_BAR_CLEARANCE = FLOATING_TAB_BAR_HEIGHT + TAB_BAR_BOTTOM_MARGIN + 8;
+import { Platform } from "react-native";
 
-export function tabBarScrollPadding(bottomInset: number): number {
-  return bottomInset + TAB_BAR_CLEARANCE;
+/** CustomTabBar inner row: icon + label + vertical padding (excludes home indicator). */
+export const TAB_BAR_INNER_HEIGHT = 56;
+export const TAB_BAR_TOP_PADDING = 8;
+
+/** Bottom inset applied inside the tab bar (home indicator / gesture nav). */
+export function tabBarBottomInset(deviceBottomInset: number): number {
+  return Math.max(deviceBottomInset, Platform.OS === "android" ? 10 : 6);
 }
+
+/** Full tab bar height from the bottom of the screen. */
+export function tabBarTotalHeight(deviceBottomInset: number): number {
+  return (
+    TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT + tabBarBottomInset(deviceBottomInset)
+  );
+}
+
+/** Scroll content padding so lists clear the tab bar. */
+export function tabBarScrollPadding(deviceBottomInset: number): number {
+  return tabBarTotalHeight(deviceBottomInset) + 12;
+}
+
+/** @deprecated Use tabBarTotalHeight — old floating bar constant */
+export const FLOATING_TAB_BAR_HEIGHT = TAB_BAR_INNER_HEIGHT;

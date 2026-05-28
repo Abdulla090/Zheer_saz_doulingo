@@ -16,8 +16,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -44,6 +46,11 @@ const STEP_ORDER: StepId[] = ["welcome", "paths", "practice", "progress", "ready
 
 export function OnboardingFlow() {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
+  const compact = screenHeight < 720;
+  const heroHeight = compact
+    ? Math.min(200, Math.round(screenHeight * 0.26))
+    : Math.min(260, Math.round(screenHeight * 0.32));
   const { t, locale, setEnglish, setKurdish } = useI18n();
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
   const pathMode = useSettingsStore((s) => s.pathMode);
@@ -144,14 +151,13 @@ export function OnboardingFlow() {
       <View
         style={[
           styles.container,
-          {
-            paddingTop: insets.top + 12,
-            paddingBottom: insets.bottom + 20,
-          },
+          { paddingTop: insets.top + (compact ? 6 : 10) },
         ]}
       >
         <View style={styles.topBar}>
-          <Text style={styles.brand}>Phingo</Text>
+          <Text style={[styles.brand, compact && styles.brandCompact]}>
+            Phingo
+          </Text>
           <Pressable
             onPress={skip}
             hitSlop={12}
@@ -175,37 +181,54 @@ export function OnboardingFlow() {
           />
         </View>
 
-        <GestureDetector gesture={swipeAdvance}>
-          <View style={styles.swipeArea}>
-            <OnboardingHeroScene variant={copy.variant} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <GestureDetector gesture={swipeAdvance}>
+            <View>
+              <OnboardingHeroScene variant={copy.variant} height={heroHeight} />
 
-            <Animated.View
-              key={stepId}
-              entering={FadeInDown.duration(480)
-                .springify()
-                .damping(22)
-                .stiffness(280)}
-              exiting={FadeOutUp.duration(220)}
-              style={styles.copyBlock}
-            >
-              <Text style={styles.title}>{copy.title}</Text>
-              <Text style={styles.subtitle}>{copy.subtitle}</Text>
+              <Animated.View
+                key={stepId}
+                entering={FadeInDown.duration(480)
+                  .springify()
+                  .damping(22)
+                  .stiffness(280)}
+                exiting={FadeOutUp.duration(220)}
+                style={styles.copyBlock}
+              >
+                <Text style={[styles.title, compact && styles.titleCompact]}>
+                  {copy.title}
+                </Text>
+                <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
+                  {copy.subtitle}
+                </Text>
 
-              {showPathPicker ? (
-                <OnboardingPathPicker
-                  selected={selectedPath}
-                  onSelect={setSelectedPath}
-                  streetTitle={t("onboarding.pathStreetTitle")}
-                  streetSub={t("onboarding.pathStreetSub")}
-                  normalTitle={t("onboarding.pathNormalTitle")}
-                  normalSub={t("onboarding.pathNormalSub")}
-                />
-              ) : null}
-            </Animated.View>
-          </View>
-        </GestureDetector>
+                {showPathPicker ? (
+                  <OnboardingPathPicker
+                    selected={selectedPath}
+                    onSelect={setSelectedPath}
+                    streetTitle={t("onboarding.pathStreetTitle")}
+                    streetSub={t("onboarding.pathStreetSub")}
+                    normalTitle={t("onboarding.pathNormalTitle")}
+                    normalSub={t("onboarding.pathNormalSub")}
+                  />
+                ) : null}
+              </Animated.View>
+            </View>
+          </GestureDetector>
+        </ScrollView>
 
-        <View style={styles.footer}>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(insets.bottom, 12) + 4 },
+          ]}
+        >
           <OnboardingProgressDots total={STEP_ORDER.length} index={index} />
 
           <Animated.View
@@ -300,6 +323,7 @@ const styles = StyleSheet.create({
   },
   localeRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 4,
   },
@@ -329,8 +353,14 @@ const styles = StyleSheet.create({
   swipeArea: {
     flex: 1,
   },
-  copyBlock: {
+  scroll: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 8,
+  },
+  copyBlock: {
     justifyContent: "flex-start",
     paddingTop: 4,
   },
@@ -342,6 +372,10 @@ const styles = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.8,
   },
+  titleCompact: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
   subtitle: {
     ...HomeType.body,
     color: C.gray,
@@ -349,9 +383,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     maxWidth: 340,
   },
+  subtitleCompact: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  brandCompact: {
+    fontSize: 22,
+  },
   footer: {
-    gap: 16,
-    paddingTop: 8,
+    gap: 14,
+    paddingTop: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(0,0,0,0.06)",
+    backgroundColor: "rgba(255,255,255,0.72)",
   },
   ctaWrap: {
     width: "100%",

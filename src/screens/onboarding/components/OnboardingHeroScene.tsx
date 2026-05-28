@@ -106,7 +106,13 @@ function GlassPlate({
   );
 }
 
-export function OnboardingHeroScene({ variant }: { variant: OnboardingSceneVariant }) {
+export function OnboardingHeroScene({
+  variant,
+  height = 260,
+}: {
+  variant: OnboardingSceneVariant;
+  height?: number;
+}) {
   const enter = useSharedValue(0);
 
   useEffect(() => {
@@ -123,10 +129,10 @@ export function OnboardingHeroScene({ variant }: { variant: OnboardingSceneVaria
   }));
 
   return (
-    <Animated.View style={[styles.stage, wrapStyle]}>
+    <Animated.View style={[styles.stage, { height, marginBottom: height < 220 ? 4 : 8 }, wrapStyle]}>
       <LinearGradient
         colors={["rgba(43,89,243,0.14)", "rgba(43,89,243,0)"]}
-        style={styles.glow}
+        style={[styles.glow, { width: height, height, borderRadius: height / 2, top: height * 0.07 }]}
         pointerEvents="none"
       />
 
@@ -305,17 +311,11 @@ function MiniStat({
 
 const styles = StyleSheet.create({
   stage: {
-    height: 280,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
   },
   glow: {
     position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    top: 20,
   },
   centerStack: {
     width: "100%",

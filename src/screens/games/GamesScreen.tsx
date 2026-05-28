@@ -19,7 +19,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
 import { ChevronRight } from "lucide-react-native";
@@ -193,7 +193,7 @@ export function GamesScreen() {
         removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
           paddingTop: insets.top + 8,
-          paddingBottom: insets.bottom + 100,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
           paddingHorizontal: horizontalPad,
         }}
       >

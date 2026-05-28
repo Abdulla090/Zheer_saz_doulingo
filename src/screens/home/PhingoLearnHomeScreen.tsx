@@ -38,6 +38,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 
@@ -209,7 +210,7 @@ export function PhingoLearnHomeScreen() {
         removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
           paddingTop: insets.top + 12,
-          paddingBottom: insets.bottom + 96,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
           paddingHorizontal: horizontalPad,
         }}
       >

@@ -10,7 +10,7 @@ import {
   PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
 } from "@/constants/app-meta";
-import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { useI18n } from "@/hooks/useI18n";
 import type { AppLocale } from "@/i18n";
 import { useFontStore } from "@/stores/useFontStore";
@@ -80,7 +80,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: insets.bottom + 100,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
         }}
       >
         <AppText style={styles.sectionLabel} forceKurdishFont={isKu}>

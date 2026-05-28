@@ -5,13 +5,25 @@ import {
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
+import {
+  tabBarBottomInset,
+  TAB_BAR_INNER_HEIGHT,
+  TAB_BAR_TOP_PADDING,
+} from "@/constants/layout";
 import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { hapticSelection } from "@/utils/haptics";
 import React, { useCallback, useMemo } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ACTIVE = "#2B59F3";
@@ -22,41 +34,41 @@ type TabKey = "index" | "dashboard" | "feed" | "subscription" | "more";
 const TABS: {
   route: TabKey;
   labelKey: I18nKey;
-  renderIcon: (active: boolean) => React.ReactNode;
+  renderIcon: (active: boolean, size: number) => React.ReactNode;
 }[] = [
   {
     route: "index",
     labelKey: "tabs.home",
-    renderIcon: (active) => (
-      <HomeTabIconFlat size={26} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size) => (
+      <HomeTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "dashboard",
     labelKey: "tabs.path",
-    renderIcon: (active) => (
-      <PathTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size) => (
+      <PathTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "feed",
     labelKey: "tabs.games",
-    renderIcon: (active) => (
-      <GamesTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size) => (
+      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "subscription",
     labelKey: "tabs.shop",
-    renderIcon: (active) => (
-      <ShopTabIcon size={26} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size) => (
+      <ShopTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
     route: "more",
     labelKey: "tabs.profile",
-    renderIcon: (active) => (
-      <ProfileTabIconFlat size={26} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size) => (
+      <ProfileTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
 ];
@@ -75,8 +87,14 @@ const HIDDEN_ROUTES = new Set([
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { t } = useI18n();
   const activeRouteName = state.routes[state.index]?.name;
+
+  const compact = width < 390;
+  const iconSize = compact ? 22 : 24;
+  const labelSize = compact ? 9 : 10;
+  const bottomPad = tabBarBottomInset(insets.bottom);
 
   const tabs = useMemo(
     () =>
@@ -105,10 +123,9 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       style={[
         styles.bar,
         {
-          paddingBottom: Math.max(
-            insets.bottom,
-            Platform.OS === "android" ? 8 : 4,
-          ),
+          paddingTop: TAB_BAR_TOP_PADDING,
+          paddingBottom: bottomPad,
+          minHeight: TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT + bottomPad,
         },
       ]}
     >
@@ -127,10 +144,19 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityRole="tab"
             accessibilityState={{ selected: isFocused }}
             accessibilityLabel={label}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
           >
-            {renderIcon(isFocused)}
-            <Text style={[styles.label, isFocused && styles.labelActive]}>
+            {renderIcon(isFocused, iconSize)}
+            <Text
+              style={[
+                styles.label,
+                { fontSize: labelSize },
+                isFocused && styles.labelActive,
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
               {label}
             </Text>
           </Pressable>
@@ -143,27 +169,37 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
+    ...Platform.select({
+      android: { elevation: 8 },
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+    }),
   },
   item: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 52,
-    gap: 4,
+    minHeight: TAB_BAR_INNER_HEIGHT,
+    paddingHorizontal: 2,
+    gap: 3,
   },
   label: {
-    fontSize: 10,
     fontWeight: "800",
     color: INACTIVE,
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
     fontFamily: "DINNextRoundedBold",
+    textAlign: "center",
+    maxWidth: "100%",
   },
   labelActive: {
     color: ACTIVE,
