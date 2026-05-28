@@ -1,28 +1,26 @@
 /**
- * MultipleChoiceGame — iOS 26 Liquid Glass redesign.
+ * MultipleChoiceGame — Premium light lesson UI.
  */
 
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
-import { crossTextShadow } from "@/utils/shadows";
-import { GameSpace, Radius, Type, iOS } from "./game-design";
 import { rtlBlock } from "./game-text";
 import {
-  GameCard,
+  GameFooter,
+  GameHeader,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
-import { GameScreenLayout } from "./GameScreenLayout";
 import {
-  LiquidCard,
-  LiquidEyebrow,
-  LiquidOption,
-  LiquidPrimaryButton,
-  OptionState,
-} from "./liquid-primitives";
+  LightCheckButton,
+  LightGameHeading,
+  LightOptionRow,
+  LightSurfaceCard,
+  mapOptionState,
+} from "./lesson-light-primitives";
+import { L } from "./lesson-light-design";
 
 type Props = {
   question: MultipleChoiceQuestion;
@@ -49,10 +47,16 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     }
   };
 
-  const getState = (opt: string): OptionState => {
+  const getState = (opt: string) => {
     if (!revealed) return opt === selected ? "selected" : "idle";
     if (opt === selected) {
       return opt === question.correctAnswer ? "correct" : "wrong";
+    }
+    if (
+      opt === question.correctAnswer &&
+      selected !== question.correctAnswer
+    ) {
+      return "showCorrect";
     }
     return "idle";
   };
@@ -60,84 +64,57 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
   const isKuPrompt = question.promptLang === "ku";
 
   return (
-    <GameRoot style={{ flex: 1 }}>
-      <GameScreenLayout
-        header={<LiquidEyebrow>Multiple choice</LiquidEyebrow>}
-        bodyStyle={s.body}
-        footer={
-          <LiquidPrimaryButton
-            label="CHECK"
-            color={iOS.systemGreen}
-            onPress={check}
-            disabled={!selected || revealed}
-          />
-        }
-      >
-        <GameCard>
-          <LiquidCard style={s.questionCard} radius={Radius.lg}>
-            <LinearGradient
-              colors={["rgba(10,132,255,0.12)", "rgba(10,132,255,0)"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={s.questionAccent}
-              pointerEvents="none"
-            />
-            <Text
-              style={[
-                s.questionText,
-                isKuPrompt && rtlBlock,
-                crossTextShadow({ color: "rgba(0,0,0,0.03)", offsetY: 1, blur: 1 }),
-              ]}
-              numberOfLines={4}
-            >
-              {question.prompt}
-            </Text>
-          </LiquidCard>
-        </GameCard>
+    <GameRoot style={s.root}>
+      <GameHeader>
+        <LightGameHeading
+          title="Choose the answer"
+          subtitle="Select the best option."
+        />
+      </GameHeader>
 
-        <View style={s.options}>
-          {question.options.map((opt, i) => (
-            <GameOption key={opt} index={i} baseDelay={80}>
-              <LiquidOption
-                text={opt}
-                state={getState(opt)}
-                onPress={() => pick(opt)}
-                disabled={revealed}
-                index={i}
-              />
-            </GameOption>
-          ))}
-        </View>
-      </GameScreenLayout>
+      <LightSurfaceCard>
+        <Text style={[s.prompt, isKuPrompt && rtlBlock]}>{question.prompt}</Text>
+      </LightSurfaceCard>
+
+      <View style={s.options}>
+        {question.options.map((opt, i) => (
+          <GameOption key={opt} index={i}>
+            <LightOptionRow
+              label={opt}
+              state={mapOptionState(getState(opt))}
+              onPress={() => pick(opt)}
+              disabled={revealed}
+            />
+          </GameOption>
+        ))}
+      </View>
+
+      <View style={{ flex: 1 }} />
+
+      <GameFooter>
+        <LightCheckButton
+          onPress={check}
+          disabled={!selected || revealed}
+        />
+      </GameFooter>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  body: {
-    gap: GameSpace.gap,
+  root: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    gap: 16,
   },
-  questionCard: {
-    paddingHorizontal: GameSpace.cardPadH,
-    paddingVertical: GameSpace.cardPadV,
-    minHeight: 0,
-    justifyContent: "center",
+  prompt: {
+    fontSize: 20,
+    fontWeight: "700",
+    lineHeight: 28,
+    color: L.navy,
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.3,
   },
-  questionAccent: {
-    position: "absolute",
-    left: 0,
-    top: 12,
-    bottom: 12,
-    width: 4,
-    borderTopRightRadius: 4,
-    borderBottomRightRadius: 4,
-  },
-  questionText: {
-    ...Type.display,
-    color: "#0F172A",
-  },
-  options: {
-    gap: 8,
-    flexShrink: 1,
-  },
+  options: { gap: 10 },
 });

@@ -39,6 +39,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Icon3DCheck, Icon3DX } from "@/components/icons/Icon3D";
+import { SoftPressableButton, softRimFromFace } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
@@ -473,73 +474,34 @@ export function LiquidPrimaryButton({
   icon?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <Animated.View style={[{ width: "100%" }, animStyle, style]}>
-      <Pressable
-        onPress={() => {
-          if (disabled) return;
-          if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-          onPress();
-        }}
-        disabled={disabled}
-        onPressIn={() => {
-          if (!disabled) scale.value = withSpring(0.96, Motion.soft);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, Motion.soft);
-        }}
-        style={[
-          lpb.btn,
-          disabled
-            ? {
-                backgroundColor: "rgba(255,255,255,0.12)",
-                borderColor: "rgba(255,255,255,0.22)",
-                ...crossShadow({ color: "#000", offsetY: 4, opacity: 0.08, blur: 12, elevation: 2 }),
-              }
-            : {
-                backgroundColor: color,
-                borderColor: "rgba(255,255,255,0.28)",
-                ...crossShadow({
-                  color,
-                  offsetY: 10,
-                  opacity: 0.38,
-                  blur: 22,
-                  elevation: 8,
-                }),
-              },
-        ]}
-      >
-        {!disabled && (
-          <LinearGradient
-            colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]}
-            style={lpb.sheen}
-            pointerEvents="none"
-          />
-        )}
-        {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
-        <Text style={[lpb.label, { color: disabled ? "rgba(255,255,255,0.42)" : textColor }]}>
-          {label}
-        </Text>
-      </Pressable>
-    </Animated.View>
+    <SoftPressableButton
+      onPress={() => {
+        if (disabled) return;
+        if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        onPress();
+      }}
+      faceColor={disabled ? "#E8EDF2" : color}
+      rimColor={disabled ? "#CBD5E1" : softRimFromFace(color)}
+      borderRadius={Radius.lg}
+      disabled={disabled}
+      style={style}
+      contentStyle={lpb.content}
+    >
+      {icon}
+      <Text style={[lpb.label, { color: disabled ? "#94A3B8" : textColor }]}>{label}</Text>
+    </SoftPressableButton>
   );
 }
 
 const lpb = StyleSheet.create({
-  btn: {
-    height: 50,
-    borderRadius: Radius.lg,
+  content: {
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 22,
-    overflow: "hidden",
-    borderWidth: 1,
+    gap: 8,
   },
   sheen: {
     position: "absolute",

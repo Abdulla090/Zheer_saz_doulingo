@@ -1,9 +1,12 @@
 /**
  * VoiceGame — iOS 26 Liquid Glass redesign.
+ *
+ * Glass card with the target phrase, large mic button beneath.
+ * Web: uses SpeechRecognition. Native: tap-to-confirm flow.
  */
 
 import React, { useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -17,16 +20,24 @@ import Animated, {
 import { Icon3DCheckCircle, Icon3DMic, Icon3DVolume } from "@/components/icons/Icon3D";
 import { VoiceQuestion } from "@/data/lesson-content";
 import { crossShadow } from "@/utils/shadows";
-import { GameSpace, Radius, iOS, Type } from "./game-design";
+import { Radius, iOS, Type } from "./game-design";
 import { ltrText, rtlBlock } from "./game-text";
-import { GameCard, GameRoot } from "./GameAnimatedShell";
-import { GameScreenLayout } from "./GameScreenLayout";
 import {
-  LiquidCard,
-  LiquidEyebrow,
-  LiquidGhostButton,
-  LiquidPrimaryButton,
-} from "./liquid-primitives";
+  GameCard,
+  GameFooter,
+  GameHeader,
+  GameHint,
+  GamePopIn,
+  GameRoot,
+} from "./GameAnimatedShell";
+import {
+  LightCheckButton,
+  LightGameHeading,
+  LightHintButton,
+  LightPromptCard,
+  LightSurfaceCard,
+} from "./lesson-light-primitives";
+import { L } from "./lesson-light-design";
 
 type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
 type ListenState = "idle" | "listening" | "success" | "fail";
@@ -39,27 +50,11 @@ function getSpeechRec(): any {
 const isWebWithSpeech = Platform.OS === "web" && getSpeechRec() !== null;
 
 function TargetPhraseCard({ question }: { question: VoiceQuestion }) {
-  const phraseLength = question.targetWord.length;
-  const phraseSize = phraseLength > 48 ? 18 : phraseLength > 32 ? 20 : 22;
-
   return (
-    <LiquidCard style={s.targetCard} radius={Radius.lg} showSheen={false}>
-      <View style={s.cardInner}>
-        <View style={s.kuRow}>
-          <Icon3DVolume size={14} />
-          <Text style={s.kuText} numberOfLines={2}>
-            {question.targetKurdish}
-          </Text>
-        </View>
-        <View style={s.divider} />
-        <Text
-          style={[s.targetPhrase, { fontSize: phraseSize, lineHeight: phraseSize + 6 }]}
-          numberOfLines={4}
-        >
-          {question.targetWord}
-        </Text>
-      </View>
-    </LiquidCard>
+    <LightPromptCard
+      kurdish={question.targetKurdish}
+      english={question.targetWord}
+    />
   );
 }
 
@@ -76,9 +71,9 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     onAnswer(correct);
   };
 
-  const updateState = (next: ListenState) => {
-    stateRef.current = next;
-    setState(next);
+  const updateState = (s: ListenState) => {
+    stateRef.current = s;
+    setState(s);
   };
 
   const micTy = useSharedValue(0);
@@ -176,90 +171,82 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
   const micColor =
     state === "listening"
-      ? iOS.systemBlue
+      ? L.blue
       : state === "success"
-        ? iOS.systemGreen
+        ? L.green
         : state === "fail"
-          ? iOS.systemRed
-          : iOS.systemBlue;
+          ? L.red
+          : L.blue;
 
   if (!isWebWithSpeech) {
     return (
-      <GameRoot style={{ flex: 1 }}>
-        <GameScreenLayout
-          header={<LiquidEyebrow>Speak</LiquidEyebrow>}
-          bodyStyle={s.body}
-          footer={
-            <View style={s.actionStack}>
-              <LiquidPrimaryButton
-                label="I said it"
-                color={iOS.systemGreen}
-                icon={<Icon3DCheckCircle size={18} />}
-                onPress={() => fireAnswer(true)}
-              />
-              <View style={{ height: 8 }} />
-              <LiquidGhostButton label="Skip" onPress={() => fireAnswer(false)} />
-            </View>
-          }
-        >
-          <GameCard>
-            <TargetPhraseCard question={question} />
-          </GameCard>
-        </GameScreenLayout>
-      </GameRoot>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <GameHeader>
+          <LightGameHeading
+            title="Say it out loud"
+            subtitle="Read the phrase, then confirm."
+          />
+        </GameHeader>
+        <Text style={s.prompt}>{question.prompt}</Text>
+        <TargetPhraseCard question={question} />
+        <Text style={s.mobileInstruction}>
+          ئەم دەقەیە بە دەنگی بەرز بڵێ، پاشان هەڵبژێرە
+        </Text>
+        <GameFooter delay={220}>
+          <View style={s.actionStack}>
+            <LightCheckButton
+              label="I SAID IT"
+              color={L.green}
+              onPress={() => fireAnswer(true)}
+            />
+            <View style={{ height: 10 }} />
+            <LightHintButton label="Skip" showBulb={false} onPress={() => fireAnswer(false)} />
+          </View>
+        </GameFooter>
+      </ScrollView>
     );
   }
 
   const statusText =
     state === "idle"
-      ? "Tap mic to speak"
+      ? "دوگمەی مایکرۆفۆن بپەڕینە"
       : state === "listening"
-        ? "Listening…"
+        ? "گوێم لێیە... قسەبکە"
         : state === "success"
-          ? "Nice!"
-          : "Try again";
+          ? "باشە! دروستت بووە"
+          : "هەڵەیە، دووبارە هەوڵبدەوە";
 
   const statusColor =
     state === "success"
-      ? iOS.systemGreen
+      ? L.green
       : state === "fail"
-        ? iOS.systemRed
-        : "rgba(255,255,255,0.78)";
+        ? L.red
+        : L.gray;
 
   return (
-    <GameRoot style={{ flex: 1 }}>
-      <GameScreenLayout
-        header={<LiquidEyebrow>Speak</LiquidEyebrow>}
-        bodyStyle={s.body}
-        footer={
-          state === "fail" ? (
-            <Animated.View style={[s.actionRow, skipStyle]}>
-              <View style={{ flex: 1 }}>
-                <LiquidPrimaryButton
-                  label="Retry"
-                  color={iOS.systemBlue}
-                  onPress={() => {
-                    firedRef.current = false;
-                    setState("idle");
-                    stateRef.current = "idle";
-                    setTranscript("");
-                    skipO.value = withTiming(0, { duration: 200 });
-                  }}
-                />
-              </View>
-              <View style={{ width: 8 }} />
-              <View style={{ flex: 1 }}>
-                <LiquidGhostButton label="Skip" onPress={() => fireAnswer(false)} />
-              </View>
-            </Animated.View>
-          ) : undefined
-        }
+    <View style={s.root}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <GameCard>
-          <TargetPhraseCard question={question} />
-        </GameCard>
+        <GameHeader>
+          <LightGameHeading
+            title="Say it out loud"
+            subtitle="Tap the mic and speak clearly."
+          />
+        </GameHeader>
+        <Text style={s.prompt}>{question.prompt}</Text>
+        <TargetPhraseCard question={question} />
 
-        <View style={s.micSection}>
+        <GameFooter delay={200}>
+          <View style={s.micSection}>
           <View style={s.micOuter}>
             <Animated.View style={[s.ring, { backgroundColor: micColor }, ringStyle]} />
             <Animated.View
@@ -270,10 +257,10 @@ export default function VoiceGame({ question, onAnswer }: Props) {
                   backgroundColor: micColor,
                   ...crossShadow({
                     color: micColor,
-                    offsetY: 8,
-                    opacity: 0.32,
-                    blur: 18,
-                    elevation: 8,
+                    offsetY: 10,
+                    opacity: 0.35,
+                    blur: 22,
+                    elevation: 10,
                   }),
                 },
               ]}
@@ -289,49 +276,95 @@ export default function VoiceGame({ question, onAnswer }: Props) {
                 }}
                 style={s.micInner}
               >
-                <Icon3DMic size={32} />
+                <Icon3DMic size={36} />
               </Pressable>
             </Animated.View>
           </View>
+
           <Text style={[s.status, { color: statusColor }]}>{statusText}</Text>
-          {transcript.length > 0 && (
-            <Text style={s.transcriptInline} numberOfLines={2}>
-              {transcript}
-            </Text>
-          )}
-        </View>
-      </GameScreenLayout>
-    </GameRoot>
+          </View>
+        </GameFooter>
+
+        {transcript.length > 0 && (
+          <GamePopIn>
+          <LightSurfaceCard style={s.transcriptCard}>
+            <Text style={s.transcriptLabel}>YOU SAID</Text>
+            <Text style={s.transcriptText}>{transcript}</Text>
+          </LightSurfaceCard>
+          </GamePopIn>
+        )}
+      </ScrollView>
+
+      {state === "fail" && (
+        <Animated.View style={[s.actionRow, skipStyle]}>
+          <View style={{ flex: 1 }}>
+            <LightCheckButton
+              label="TRY AGAIN"
+              onPress={() => {
+                firedRef.current = false;
+                setState("idle");
+                stateRef.current = "idle";
+                setTranscript("");
+                skipO.value = withTiming(0, { duration: 200 });
+              }}
+            />
+          </View>
+          <View style={{ width: 10 }} />
+          <View style={{ flex: 1 }}>
+            <LightHintButton label="Skip" showBulb={false} onPress={() => fireAnswer(false)} />
+          </View>
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  body: {
-    gap: GameSpace.gap,
-    alignItems: "center",
+  root: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 12,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    gap: 20,
+    paddingBottom: 8,
+  },
+  prompt: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "600",
+    color: L.gray,
+    fontFamily: "DINNextRoundedMedium",
+    ...rtlBlock,
   },
   targetCard: {
-    paddingHorizontal: GameSpace.cardPadH,
-    paddingVertical: GameSpace.cardPadV,
-    width: "100%",
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 28,
+    minHeight: 128,
   },
   cardInner: {
     width: "100%",
-    gap: 10,
+    gap: 18,
     alignItems: "center",
   },
   kuRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     width: "100%",
+    paddingHorizontal: 4,
   },
   kuText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    lineHeight: 20,
+    lineHeight: 22,
     color: iOS.systemBlue,
     textAlign: "center",
     ...rtlBlock,
@@ -343,7 +376,7 @@ const s = StyleSheet.create({
   },
   targetPhrase: {
     fontWeight: "700",
-    letterSpacing: -0.3,
+    letterSpacing: -0.35,
     color: "#0F172A",
     textAlign: "center",
     width: "100%",
@@ -351,27 +384,26 @@ const s = StyleSheet.create({
   },
   micSection: {
     alignItems: "center",
-    gap: 10,
-    flex: 1,
-    justifyContent: "center",
-    width: "100%",
+    gap: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   micOuter: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     alignItems: "center",
     justifyContent: "center",
   },
   ring: {
     position: "absolute",
-    width: 92,
-    height: 92,
-    borderRadius: 46,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
   },
   micFront: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
@@ -382,26 +414,52 @@ const s = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 40,
+    borderRadius: 48,
   },
   status: {
-    ...Type.caption,
+    fontSize: 15,
     fontWeight: "600",
     textAlign: "center",
-    ...ltrText,
+    fontFamily: "DINNextRoundedMedium",
+    ...rtlBlock,
   },
-  transcriptInline: {
-    ...Type.caption,
-    color: "rgba(255,255,255,0.75)",
+  mobileInstruction: {
+    fontSize: 15,
+    color: L.gray,
     textAlign: "center",
-    paddingHorizontal: 12,
-    ...ltrText,
+    fontFamily: "DINNextRoundedMedium",
+    ...rtlBlock,
   },
   actionStack: {
     width: "100%",
+    paddingTop: 4,
+  },
+  transcriptCard: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    alignItems: "center",
+    gap: 6,
+  },
+  transcriptLabel: {
+    ...Type.eyebrow,
+    fontSize: 10,
+    color: "rgba(15,23,42,0.45)",
+    letterSpacing: 1.6,
+    ...ltrText,
+  },
+  transcriptText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0F172A",
+    letterSpacing: -0.3,
+    lineHeight: 28,
+    textAlign: "center",
+    width: "100%",
+    ...ltrText,
   },
   actionRow: {
     flexDirection: "row",
     width: "100%",
+    paddingTop: 10,
   },
 });

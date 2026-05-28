@@ -6,6 +6,7 @@ import {
 } from "@/components/icons/Icon3D";
 import { AppText } from "@/components/ui/AppText";
 import {
+  APP_BUILD_LABEL,
   APP_VERSION,
   PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
@@ -244,7 +245,7 @@ export default function SettingsScreen() {
         </PressableScale>
 
         <Text style={styles.versionText}>
-          {t("settings.version")} {APP_VERSION}
+          {t("settings.version")} {APP_VERSION} ({APP_BUILD_LABEL})
         </Text>
 
         <PressableScale

@@ -1,5 +1,5 @@
 /**
- * PairMatchGame — iOS 26 Liquid Glass redesign.
+ * PairMatchGame — Premium light UI ("Pair the words").
  */
 
 import React, { memo, useRef, useState } from "react";
@@ -13,19 +13,19 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { PairMatchQuestion } from "@/data/lesson-content";
-import { GameSpace, iOS, Radius, Type } from "./game-design";
-import { ltrText, rtlText } from "./game-text";
-import { GameScreenLayout } from "./GameScreenLayout";
+import { L } from "./lesson-light-design";
 import {
-  LiquidEyebrow,
-  LiquidWordChip,
-  OptionState,
-} from "./liquid-primitives";
+  LightGameHeading,
+  LightWordTile,
+} from "./lesson-light-primitives";
+import { GameHeader, GameRoot } from "./GameAnimatedShell";
 
 type Props = {
   question: PairMatchQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
 };
+
+type TileState = "idle" | "selected" | "correct" | "wrong";
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -36,81 +36,46 @@ const MatchChip = memo(function MatchChip({
   state,
   onPress,
   matched,
-  rtl = false,
+  rtl,
 }: {
   label: string;
-  state: OptionState;
+  state: TileState;
   onPress: () => void;
   matched: boolean;
   rtl?: boolean;
 }) {
   const shakeX = useSharedValue(0);
-  const chipScale = useSharedValue(1);
-  const opac = useSharedValue(1);
+  const wrapStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+    opacity: matched ? 0.55 : 1,
+  }));
 
   React.useEffect(() => {
     if (state === "wrong") {
       shakeX.value = withSequence(
-        withTiming(-8, { duration: 38 }),
-        withTiming(8, { duration: 38 }),
-        withTiming(-5, { duration: 32 }),
-        withTiming(5, { duration: 32 }),
-        withTiming(0, { duration: 44, easing: Easing.out(Easing.quad) }),
+        withTiming(-7, { duration: 36 }),
+        withTiming(7, { duration: 36 }),
+        withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
       );
     }
   }, [state, shakeX]);
 
-  React.useEffect(() => {
-    if (matched) {
-      chipScale.value = withTiming(0.94, { duration: 180, easing: Easing.out(Easing.quad) });
-      opac.value = withTiming(0.75, { duration: 200, easing: Easing.out(Easing.quad) });
-    } else {
-      chipScale.value = withTiming(1, { duration: 140 });
-      opac.value = withTiming(1, { duration: 140 });
-    }
-  }, [matched, chipScale, opac]);
-
-  const wrapStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }, { scale: chipScale.value }],
-    opacity: opac.value,
-  }));
-
   return (
     <Animated.View style={wrapStyle}>
-      <LiquidWordChip
+      <LightWordTile
         label={label}
         state={state}
         onPress={onPress}
         disabled={matched}
         rtl={rtl}
-        size="sm"
       />
     </Animated.View>
   );
 });
 
-function MatchProgress({ done, total }: { done: number; total: number }) {
-  return (
-    <View style={s.dotsRow}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          style={[
-            s.dot,
-            {
-              backgroundColor: i < done ? iOS.systemGreen : "rgba(255,255,255,0.3)",
-              transform: [{ scale: i < done ? 1.1 : 1 }],
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 export default function PairMatchGame({ question, onAnswer }: Props) {
-  const [left] = useState(() => shuffle(question.pairs.map(p => p.kurdish)));
-  const [right] = useState(() => shuffle(question.pairs.map(p => p.english)));
+  const [left] = useState(() => shuffle(question.pairs.map((p) => p.kurdish)));
+  const [right] = useState(() => shuffle(question.pairs.map((p) => p.english)));
 
   const selLRef = useRef<string | null>(null);
   const selRRef = useRef<string | null>(null);
@@ -121,136 +86,220 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   const [wrongR, setWrongR] = useState<string | null>(null);
   const firedRef = useRef(false);
   const total = question.pairs.length;
+  const rowCount = Math.max(left.length, right.length);
 
   const isLocked = wrongL !== null || wrongR !== null;
 
   const tryMatch = (pendL: string | null, pendR: string | null) => {
     if (!pendL || !pendR) return;
-    const ok = question.pairs.some(p => p.kurdish === pendL && p.english === pendR);
+    const ok = question.pairs.some(
+      (p) => p.kurdish === pendL && p.english === pendR,
+    );
     if (ok) {
-      setMatched(cur => {
+      setMatched((cur) => {
         const next = new Set(cur).add(pendL).add(pendR);
         if (next.size / 2 === total && !firedRef.current) {
           firedRef.current = true;
-          setTimeout(() => onAnswer(true), 500);
+          setTimeout(() => onAnswer(true), 480);
         }
         return next;
       });
-      setSelL(null); setSelR(null);
-      selLRef.current = null; selRRef.current = null;
+      setSelL(null);
+      setSelR(null);
+      selLRef.current = null;
+      selRRef.current = null;
     } else {
-      setWrongL(pendL); setWrongR(pendR);
+      setWrongL(pendL);
+      setWrongR(pendR);
       setTimeout(() => {
-        setSelL(null); setSelR(null); setWrongL(null); setWrongR(null);
-        selLRef.current = null; selRRef.current = null;
-      }, 700);
+        setSelL(null);
+        setSelR(null);
+        setWrongL(null);
+        setWrongR(null);
+        selLRef.current = null;
+        selRRef.current = null;
+      }, 680);
     }
   };
 
   const handleL = (w: string) => {
     if (isLocked || matched.has(w)) return;
-    if (selL === w) { selLRef.current = null; setSelL(null); return; }
-    selLRef.current = w; setSelL(w);
+    if (selL === w) {
+      selLRef.current = null;
+      setSelL(null);
+      return;
+    }
+    selLRef.current = w;
+    setSelL(w);
     tryMatch(w, selRRef.current);
   };
 
   const handleR = (w: string) => {
     if (isLocked || matched.has(w)) return;
-    if (selR === w) { selRRef.current = null; setSelR(null); return; }
-    selRRef.current = w; setSelR(w);
+    if (selR === w) {
+      selRRef.current = null;
+      setSelR(null);
+      return;
+    }
+    selRRef.current = w;
+    setSelR(w);
     tryMatch(selLRef.current, w);
   };
 
-  const lState = (w: string): OptionState =>
-    matched.has(w) ? "correct" : wrongL === w ? "wrong" : selL === w ? "selected" : "idle";
-  const rState = (w: string): OptionState =>
-    matched.has(w) ? "correct" : wrongR === w ? "wrong" : selR === w ? "selected" : "idle";
+  const lState = (w: string): TileState =>
+    matched.has(w)
+      ? "correct"
+      : wrongL === w
+        ? "wrong"
+        : selL === w
+          ? "selected"
+          : "idle";
+
+  const rState = (w: string): TileState =>
+    matched.has(w)
+      ? "correct"
+      : wrongR === w
+        ? "wrong"
+        : selR === w
+          ? "selected"
+          : "idle";
 
   return (
-    <GameScreenLayout
-      header={
-        <>
-          <LiquidEyebrow>Match pairs</LiquidEyebrow>
-          <MatchProgress done={matched.size / 2} total={total} />
-        </>
-      }
-      bodyStyle={s.body}
-    >
-      <View style={s.colLabels}>
-        <Text style={[s.colLabel, s.colLabelKu]}>کوردی</Text>
-        <Text style={[s.colLabel, s.colLabelEn]}>English</Text>
+    <GameRoot style={s.root}>
+      <GameHeader>
+        <LightGameHeading
+          title="Pair the words"
+          subtitle="Match each word with its meaning."
+        />
+      </GameHeader>
+
+      <View style={s.progressRow}>
+        {Array.from({ length: total }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              s.progressPip,
+              i < matched.size / 2 && s.progressPipDone,
+            ]}
+          />
+        ))}
       </View>
 
-      <View style={s.columns}>
-        <View style={s.col}>
-          {left.map((w) => (
-            <MatchChip
-              key={w}
-              label={w}
-              state={lState(w)}
-              onPress={() => handleL(w)}
-              matched={matched.has(w)}
-              rtl
-            />
-          ))}
-        </View>
-        <View style={s.col}>
-          {right.map((w) => (
-            <MatchChip
-              key={w}
-              label={w}
-              state={rState(w)}
-              onPress={() => handleR(w)}
-              matched={matched.has(w)}
-            />
-          ))}
-        </View>
+      <View style={s.colLabels}>
+        <Text style={[s.colLabel, { textAlign: "right" }]}>کوردی</Text>
+        <View style={s.colLabelSpacer} />
+        <Text style={s.colLabel}>English</Text>
       </View>
-    </GameScreenLayout>
+
+      <View style={s.grid}>
+        {Array.from({ length: rowCount }).map((_, row) => {
+          const lw = left[row];
+          const rw = right[row];
+          return (
+            <View key={row} style={s.row}>
+              <View style={s.side}>
+                {lw ? (
+                  <MatchChip
+                    label={lw}
+                    state={lState(lw)}
+                    onPress={() => handleL(lw)}
+                    matched={matched.has(lw)}
+                    rtl
+                  />
+                ) : (
+                  <View style={s.sidePlaceholder} />
+                )}
+              </View>
+              <View style={s.dotCol}>
+                <View
+                  style={[
+                    s.dot,
+                    (selL === lw || selR === rw) && s.dotActive,
+                    matched.has(lw ?? "") && s.dotMatched,
+                  ]}
+                />
+              </View>
+              <View style={s.side}>
+                {rw ? (
+                  <MatchChip
+                    label={rw}
+                    state={rState(rw)}
+                    onPress={() => handleR(rw)}
+                    matched={matched.has(rw)}
+                  />
+                ) : (
+                  <View style={s.sidePlaceholder} />
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  body: {
-    gap: GameSpace.gapSm,
+  root: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    gap: 14,
   },
-  dotsRow: {
+  progressRow: {
     flexDirection: "row",
     gap: 6,
     justifyContent: "center",
-    marginTop: 4,
   },
-  dot: {
-    width: 24,
+  progressPip: {
+    flex: 1,
+    maxWidth: 48,
     height: 6,
-    borderRadius: Radius.pill,
+    borderRadius: 3,
+    backgroundColor: L.track,
+  },
+  progressPipDone: {
+    backgroundColor: L.green,
   },
   colLabels: {
     flexDirection: "row",
-    gap: 10,
+    alignItems: "center",
+    paddingHorizontal: 4,
   },
   colLabel: {
     flex: 1,
-    ...Type.eyebrow,
-    fontSize: 10,
-    color: "rgba(255,255,255,0.8)",
+    fontSize: 11,
+    fontWeight: "800",
+    color: L.grayLight,
+    letterSpacing: 0.5,
+    fontFamily: "DINNextRoundedBold",
+    textTransform: "uppercase",
   },
-  colLabelKu: {
-    ...rtlText,
-  },
-  colLabelEn: {
-    ...ltrText,
-    textAlign: "center",
-  },
-  columns: {
-    flex: 1,
+  colLabelSpacer: { width: 20 },
+  grid: { flex: 1, gap: 10 },
+  row: {
     flexDirection: "row",
-    gap: 10,
-    minHeight: 0,
-  },
-  col: {
-    flex: 1,
+    alignItems: "center",
     gap: 8,
-    justifyContent: "flex-start",
+  },
+  side: { flex: 1 },
+  sidePlaceholder: { height: 48 },
+  dotCol: {
+    width: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: L.track,
+  },
+  dotActive: {
+    backgroundColor: L.blue,
+    transform: [{ scale: 1.25 }],
+  },
+  dotMatched: {
+    backgroundColor: L.green,
   },
 });

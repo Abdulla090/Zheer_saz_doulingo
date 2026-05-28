@@ -1,27 +1,26 @@
 /**
- * ConversationPickGame — iOS 26 Liquid Glass redesign.
+ * ConversationPickGame — Premium light lesson UI.
  */
 
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Icon3DMessage } from "@/components/icons/Icon3D";
 import { ConversationPickQuestion } from "@/data/lesson-content";
-import { GameSpace, Type, iOS } from "./game-design";
-import { ltrText } from "./game-text";
+import { rtlBlock } from "./game-text";
 import {
-  GameCard,
+  GameFooter,
+  GameHeader,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
-import { GameScreenLayout } from "./GameScreenLayout";
+import { L } from "./lesson-light-design";
 import {
-  LiquidCard,
-  LiquidEyebrow,
-  LiquidOption,
-  LiquidPrimaryButton,
-  OptionState,
-} from "./liquid-primitives";
+  LightCheckButton,
+  LightGameHeading,
+  LightOptionRow,
+  LightSurfaceCard,
+  mapOptionState,
+} from "./lesson-light-primitives";
 
 type Props = {
   question: ConversationPickQuestion;
@@ -48,92 +47,123 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
     }
   };
 
-  const getState = (opt: string): OptionState => {
+  const getState = (opt: string) => {
     if (!revealed) return opt === selected ? "selected" : "idle";
-    if (opt === selected) return opt === question.correctAnswer ? "correct" : "wrong";
+    if (opt === selected) {
+      return opt === question.correctAnswer ? "correct" : "wrong";
+    }
+    if (
+      opt === question.correctAnswer &&
+      selected !== question.correctAnswer
+    ) {
+      return "showCorrect";
+    }
     return "idle";
   };
 
   return (
     <GameRoot style={{ flex: 1 }}>
-      <GameScreenLayout
-        header={<LiquidEyebrow>Reply</LiquidEyebrow>}
-        bodyStyle={s.body}
-        footer={
-          <LiquidPrimaryButton
-            label="CHECK"
-            color={iOS.systemGreen}
-            onPress={check}
-            disabled={!selected || revealed}
-          />
-        }
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.root}
+        showsVerticalScrollIndicator={false}
       >
-        <GameCard delay={60}>
-          <View style={s.bubbleRow}>
-            <View style={s.avatar}>
-              <Icon3DMessage size={22} />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <LiquidCard style={s.bubble} radius={16}>
-                <Text style={s.bubbleText} numberOfLines={3}>{question.theyAsk}</Text>
-              </LiquidCard>
-            </View>
-          </View>
-        </GameCard>
+        <GameHeader>
+          <LightGameHeading
+            title="Conversation"
+            subtitle="Pick the most natural reply."
+          />
+        </GameHeader>
+
+        <LightSurfaceCard style={s.situationCard}>
+          <Text style={s.situationLabel}>SITUATION</Text>
+          <Text style={[s.situationText, rtlBlock]}>{question.situation}</Text>
+        </LightSurfaceCard>
+
+        <LightSurfaceCard>
+          <Text style={s.theyLabel}>THEY SAY</Text>
+          <Text style={[s.theyText, rtlBlock]}>{question.theyAsk}</Text>
+        </LightSurfaceCard>
+
+        <Text style={s.chooseLabel}>Choose the best response</Text>
 
         <View style={s.options}>
           {question.options.map((opt, i) => (
-            <GameOption key={opt} index={i} baseDelay={100}>
-              <LiquidOption
-                text={opt}
-                state={getState(opt)}
+            <GameOption key={opt} index={i} baseDelay={120}>
+              <LightOptionRow
+                label={opt}
+                state={mapOptionState(getState(opt))}
                 onPress={() => pick(opt)}
                 disabled={revealed}
-                index={i}
               />
             </GameOption>
           ))}
         </View>
-      </GameScreenLayout>
+      </ScrollView>
+
+      <GameFooter>
+        <View style={s.checkWrap}>
+          <LightCheckButton
+            onPress={check}
+            disabled={!selected || revealed}
+          />
+        </View>
+      </GameFooter>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  body: {
-    gap: GameSpace.gap,
+  root: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 100,
+    gap: 14,
   },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
+  situationCard: { gap: 6 },
+  situationLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: L.grayLight,
+    letterSpacing: 0.6,
+    fontFamily: "DINNextRoundedBold",
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: iOS.systemBlue,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.5)",
-    marginTop: 2,
-    flexShrink: 0,
+  situationText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: L.navy,
+    lineHeight: 24,
+    fontFamily: "DINNextRoundedBold",
   },
-  bubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderTopLeftRadius: 6,
+  theyLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: L.grayLight,
+    letterSpacing: 0.6,
+    fontFamily: "DINNextRoundedBold",
+    marginBottom: 6,
   },
-  bubbleText: {
-    ...Type.body,
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#0F172A",
-    ...ltrText,
+  theyText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: L.navy,
+    lineHeight: 24,
+    fontFamily: "DINNextRoundedBold",
   },
-  options: {
-    gap: 8,
-    flexShrink: 1,
+  chooseLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: L.gray,
+    fontFamily: "DINNextRoundedBold",
+    marginTop: 4,
+  },
+  options: { gap: 10 },
+  checkWrap: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 8,
+    backgroundColor: L.bg,
+    borderTopWidth: 1,
+    borderTopColor: L.border,
   },
 });

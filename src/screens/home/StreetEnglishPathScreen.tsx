@@ -11,7 +11,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Image } from "expo-image";
+import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tabBarScrollPadding } from "@/constants/layout";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
@@ -112,17 +113,10 @@ export const StreetEnglishPathScreen = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <Image
-        source={require("../../../assets/images/oceanbg.png")}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        priority="low"
-      />
+      <HomeMeshBackground />
       <View
         style={{
           flex: 1,
-          backgroundColor: "transparent",
           paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
         }}
       >
@@ -153,7 +147,7 @@ export const StreetEnglishPathScreen = () => {
           initialNumToRender={6}
           maxToRenderPerBatch={4}
           windowSize={3}
-          removeClippedSubviews
+          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
           updateCellsBatchingPeriod={100}
           onViewableItemsChanged={onViewableItemsChanged}
         />

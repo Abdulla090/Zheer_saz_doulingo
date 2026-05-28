@@ -14,10 +14,7 @@ import {
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
-import { SoftCircleButton } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -39,14 +36,16 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { G, GameBg, Glass, iOS, Radius } from "./games/game-design";
+import { G, iOS, Radius } from "./games/game-design";
 import { dirForText } from "./games/game-text";
-import { LiquidPrimaryButton } from "./games/liquid-primitives";
+import { L } from "./games/lesson-light-design";
+import {
+  LessonLightHeader,
+  LightCheckButton,
+} from "./games/lesson-light-primitives";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
@@ -71,26 +70,13 @@ function HeaderPill({
   height?: number;
   paddingH?: number;
 }) {
-  if (width && width <= 48 && onPress) {
-    return (
-      <SoftCircleButton
-        size={height}
-        onPress={onPress}
-        faceColor="rgba(255,255,255,0.22)"
-        rimColor="rgba(15,23,42,0.35)"
-      >
-        {children}
-      </SoftCircleButton>
-    );
-  }
-
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
     <Animated.View style={animStyle}>
       <Pressable
         onPress={onPress}
-        onPressIn={() => { if (onPress) scale.value = withTiming(0.96, { duration: 100 }); }}
+        onPressIn={() => { if (onPress) scale.value = withTiming(0.9, { duration: 100 }); }}
         onPressOut={() => { if (onPress) scale.value = withTiming(1, { duration: 140 }); }}
         style={[
           {
@@ -105,7 +91,7 @@ function HeaderPill({
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
-            ...crossShadow({ color: "#000", offsetY: 8, opacity: 0.14, blur: 18, elevation: 4 }),
+            ...crossShadow({ color: "#000", offsetY: 6, opacity: 0.18, blur: 16, elevation: 4 }),
           },
           Platform.OS === "web" && {
             // @ts-ignore web
@@ -150,14 +136,13 @@ export default function LessonScreen() {
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
   const lessonIndex = parseInt(params.li as string) || 0;
+  const startQuestion = parseInt(
+    (Array.isArray(params.q) ? params.q[0] : params.q) as string,
+  ) || 0;
   const pathMode: LessonPathMode =
     (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
       ? "normal"
       : "street";
-  const pathIndex = parseInt(
-    (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
-  );
-  const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex, pathMode),
@@ -189,12 +174,19 @@ export default function LessonScreen() {
   /* Reset on focus */
   useFocusEffect(
     useCallback(() => {
-      setCurrent(0); setHearts(MAX_HEARTS); setXp(0);
+      const safeStart = Math.min(
+        Math.max(0, startQuestion),
+        Math.max(0, questions.length - 1),
+      );
+      setCurrent(safeStart);
+      setHearts(MAX_HEARTS);
+      setXp(0);
+      progressW.value = safeStart / Math.max(questions.length, 1);
       setCorrectN(0); setFinished(false); setPassed(false);
       setFeedback(null); nextRef.current = 0;
       progressW.value = 0; xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
-    }, [insets.bottom]),
+    }, [insets.bottom, startQuestion, questions.length]),
   );
 
   const handleAnswer = useCallback(
@@ -269,7 +261,7 @@ export default function LessonScreen() {
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <LiquidPrimaryButton label="Go Back" onPress={() => router.back()} />
+        <LightCheckButton label="Go Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
@@ -300,32 +292,10 @@ export default function LessonScreen() {
           )}
 
           <View style={{ width: "100%", marginTop: 12 }}>
-            <LiquidPrimaryButton
+            <LightCheckButton
               label={ok ? "Continue" : "Try Again"}
               color={ok ? iOS.systemGreen : iOS.systemBlue}
-              onPress={() => {
-                if (ok && !Number.isNaN(pathIndex)) {
-                  const snap = useProgressStore.getState();
-                  const meta = getCurrentLessonMeta(
-                    pathMode,
-                    pathMode === "street"
-                      ? pathIndex
-                      : snap.nextLessonPathIndex,
-                    pathMode === "normal"
-                      ? pathIndex
-                      : snap.normalNextLessonPathIndex,
-                  );
-                  const label = meta
-                    ? `${meta.sectionTitle} · ${meta.lessonNumber}`
-                    : undefined;
-                  const accuracy =
-                    questions.length > 0
-                      ? Math.round((correctN / questions.length) * 100)
-                      : 0;
-                  recordLessonComplete(pathIndex, xp, pathMode, label, accuracy);
-                }
-                router.back();
-              }}
+              onPress={() => router.back()}
             />
           </View>
         </Animated.View>
@@ -335,45 +305,18 @@ export default function LessonScreen() {
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
-
   return (
-    <View style={[sL.root, { paddingTop: insets.top }]}>
-      <Image
-        source={require("@/assets/images/oceanbg.png")}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        priority="low"
+    <View
+      style={[
+        sL.root,
+        { paddingTop: insets.top, backgroundColor: L.bg },
+      ]}
+    >
+      <LessonLightHeader
+        progressFillStyle={progressStyle}
+        hearts={hearts}
+        onBack={() => router.back()}
       />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: GameBg.scrim }]} />
-
-      {/* Header */}
-      <View style={sL.header}>
-        <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
-          <Icon3DX size={20} />
-        </HeaderPill>
-
-        {/* Progress glass track */}
-        <View style={sL.progressOuter}>
-          <View style={sL.progressTrack}>
-            <Animated.View style={[sL.progressFillWrap, progressStyle]}>
-              <LinearGradient
-                colors={["#5EEAD4", iOS.systemGreen]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        <Animated.View style={xpStyle}>
-          <HeaderPill height={44} paddingH={14}>
-            <Icon3DFire size={18} />
-            <Text style={sL.heartsText}>{hearts}</Text>
-          </HeaderPill>
-        </Animated.View>
-      </View>
 
       {/* Game */}
       <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -443,16 +386,18 @@ export default function LessonScreen() {
                     </Text>
                   ) : (
                     <Text style={sL.sheetSub}>
-                      {isCorrect ? "Keep going." : "Review and try the next one."}
+                      {isCorrect
+                        ? "Perfect. Keep up the momentum."
+                        : "Not quite. Focus on the structure."}
                     </Text>
                   )}
                 </View>
               </View>
 
-              <LiquidPrimaryButton
+              <LightCheckButton
                 label="CONTINUE"
-                color={isCorrect ? iOS.systemGreen : iOS.systemRed}
                 onPress={continueToNext}
+                color={isCorrect ? L.green : L.red}
               />
             </View>
           </View>
@@ -469,17 +414,17 @@ const sL = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 10,
-    gap: 10,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 18,
+    gap: 12,
   },
   progressOuter: {
     flex: 1,
   },
   progressTrack: {
-    height: 10,
-    borderRadius: 5,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: "rgba(8,16,32,0.45)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",

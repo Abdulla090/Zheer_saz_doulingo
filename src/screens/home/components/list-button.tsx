@@ -1,15 +1,15 @@
-import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
 import { Star } from "@/constants/icons";
-import { crossShadow } from "@/utils/shadows";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
-import { Pressable, View } from "react-native";
-import Animated from "react-native-reanimated";
+import {
+  SoftCircleButton,
+  type SoftColorPair,
+} from "@/components/ui/soft-2.5d";
+import React from "react";
+import { View } from "react-native";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
-/** Face + rim pairs for path lesson nodes (soft 2.5D, matches header Guidebook). */
+/** Face + rim pairs for path lesson nodes (soft 2.5D, matches home + games). */
 export const SVG_BUTTON_COLOR_SETS = {
   green: { rim: "#0B8A6C", face: "#08c296" },
   purple: { rim: "#5E35B1", face: "#7E57C2" },
@@ -34,7 +34,6 @@ type PathButtonProps = {
 };
 
 const ICON_RATIO = 0.42;
-const DEPTH_RATIO = 0.05;
 
 export const SvgButton = React.memo(
   ({
@@ -47,136 +46,42 @@ export const SvgButton = React.memo(
     isCurrentLesson = false,
     isLocked = false,
   }: PathButtonProps) => {
-    const colors = SVG_BUTTON_COLOR_SETS[variant];
-    const [pressed, setPressed] = useState(false);
-    const depth = Math.max(3, Math.round(size * DEPTH_RATIO));
+    const colors: SoftColorPair = SVG_BUTTON_COLOR_SETS[variant];
     const iconSize = Math.round(size * ICON_RATIO);
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#78909C" : variant === "gold" ? "#FFFFFF" : "#FFFFFF");
+      iconColor ??
+      (variant === "gray" ? "#78909C" : variant === "gold" ? "#FFFFFF" : "#FFFFFF");
 
-    const glossStrong = !isLocked && variant !== "gray";
-    const topHighlight = isLocked
-      ? "rgba(255,255,255,0.35)"
-      : "rgba(255,255,255,0.72)";
-    const faceBorder = isLocked
-      ? "rgba(255,255,255,0.18)"
-      : "rgba(255,255,255,0.22)";
+    const icon = isCurrentLesson ? (
+      <CurrentLessonIcon
+        IconComponent={IconComponent}
+        color={resolvedIconColor}
+        width={iconSize}
+        height={iconSize}
+      />
+    ) : (
+      <IconComponent
+        color={resolvedIconColor}
+        fill={resolvedIconColor}
+        stroke={resolvedIconColor}
+        strokeWidth={1}
+        width={iconSize}
+        height={iconSize}
+      />
+    );
 
     return (
-      <Pressable
-        onPress={onPress}
-        disabled={isLocked}
-        onPressIn={isLocked ? undefined : () => setPressed(true)}
-        onPressOut={isLocked ? undefined : () => setPressed(false)}
-        style={{
-          width: size,
-          height: size + depth,
-          transform: [{ translateX: translateX || 0 }],
-        }}
-      >
-        <View
-          style={{
-            width: size,
-            height: size + depth,
-            borderRadius: size / 2,
-            backgroundColor: colors.rim,
-            overflow: "hidden",
-            ...crossShadow({
-              color: colors.rim,
-              offsetY: depth + 2,
-              opacity: isLocked ? 0.14 : 0.32,
-              blur: 16,
-              elevation: 6,
-            }),
-          }}
+      <View style={{ transform: [{ translateX: translateX || 0 }] }}>
+        <SoftCircleButton
+          size={size}
+          onPress={onPress}
+          faceColor={colors.face}
+          rimColor={colors.rim}
+          disabled={isLocked}
         >
-          <Animated.View
-            style={{
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: colors.face,
-              marginBottom: depth,
-              overflow: "hidden",
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1.5,
-              borderColor: faceBorder,
-              borderTopColor: topHighlight,
-              borderLeftColor: "rgba(255,255,255,0.28)",
-              borderRightColor: "rgba(255,255,255,0.2)",
-              transform: [{ translateY: pressed ? depth : 0 }],
-              ...(pressed ? cssPressStyle : cssReleaseStyle),
-            }}
-          >
-            <LinearGradient
-              colors={
-                glossStrong
-                  ? [
-                      "rgba(255,255,255,0.42)",
-                      "rgba(255,255,255,0.08)",
-                      "rgba(0,0,0,0.06)",
-                    ]
-                  : [
-                      "rgba(255,255,255,0.22)",
-                      "rgba(255,255,255,0.04)",
-                      "rgba(0,0,0,0.04)",
-                    ]
-              }
-              locations={[0, 0.45, 1]}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: size / 2,
-              }}
-              pointerEvents="none"
-            />
-
-            {glossStrong && (
-              <LinearGradient
-                colors={[
-                  "rgba(255,255,255,0.35)",
-                  "rgba(255,255,255,0)",
-                  "rgba(255,255,255,0)",
-                ]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 0.55 }}
-                style={{
-                  position: "absolute",
-                  top: size * 0.06,
-                  left: size * 0.12,
-                  width: size * 0.5,
-                  height: size * 0.28,
-                  borderRadius: size * 0.2,
-                  opacity: 0.85,
-                }}
-                pointerEvents="none"
-              />
-            )}
-
-            {isCurrentLesson ? (
-              <CurrentLessonIcon
-                IconComponent={IconComponent}
-                color={resolvedIconColor}
-                width={iconSize}
-                height={iconSize}
-              />
-            ) : (
-              <IconComponent
-                color={resolvedIconColor}
-                fill={resolvedIconColor}
-                stroke={resolvedIconColor}
-                strokeWidth={1}
-                width={iconSize}
-                height={iconSize}
-              />
-            )}
-          </Animated.View>
-        </View>
-      </Pressable>
+          {icon}
+        </SoftCircleButton>
+      </View>
     );
   },
 );
