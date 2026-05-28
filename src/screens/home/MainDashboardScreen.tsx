@@ -4,13 +4,13 @@ import {
   Text,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   Platform,
   StyleSheet,
   I18nManager,
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PhingoMascot from "@/assets/images/svg/phingo charecter.svg";
 import { useRouter } from "expo-router";
@@ -86,7 +86,7 @@ export function MainDashboardScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 20,
-          paddingBottom: insets.bottom + 120,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
           paddingHorizontal: 20,
         }}
         style={s.scroll}
@@ -103,20 +103,18 @@ export function MainDashboardScreen({
 
             <View style={s.headerRight}>
               {/* Streak pill */}
-              <PressableScale style={[s.pill, shadow(1)]}>
+              <View style={[s.pill, shadow(1)]}>
                 <Icon3DFire size={18} />
                 <Text style={s.pillText}>12</Text>
-              </PressableScale>
-              {/* Gems pill */}
-              <PressableScale style={[s.pill, shadow(1)]}>
+              </View>
+              <View style={[s.pill, shadow(1)]}>
                 <Icon3DDiamond size={18} />
                 <Text style={s.pillText}>340</Text>
-              </PressableScale>
-              {/* Bell */}
-              <PressableScale style={s.bellBtn} hapticStyle={"light" as any}>
+              </View>
+              <View style={s.bellBtn}>
                 <Icon3DBell size={22} />
                 <View style={s.bellDot} />
-              </PressableScale>
+              </View>
             </View>
           </View>
         </AnimatedCard>
@@ -271,9 +269,7 @@ export function MainDashboardScreen({
         <AnimatedCard index={6} delay={100} style={s.section}>
           <View style={s.sectionHeader}>
             <Text style={s.sectionTitle}>Explore Modes</Text>
-            <TouchableOpacity>
-              <Text style={s.sectionLink}>View all</Text>
-            </TouchableOpacity>
+            <Text style={s.sectionLinkMuted}>Coming soon</Text>
           </View>
           <View style={s.modesGrid}>
             {[
@@ -291,6 +287,7 @@ export function MainDashboardScreen({
                 Icon: Icon3DGamepad,
                 bg: "#F4EAFF",
                 border: "#E9D5FF",
+                onPress: undefined,
               },
               {
                 label: "Practice",
@@ -298,6 +295,7 @@ export function MainDashboardScreen({
                 Icon: Icon3DPencil,
                 bg: "#FFFBEB",
                 border: "#FDE68A",
+                onPress: () => router.push("/roleplay"),
               },
               {
                 label: "Quests",
@@ -305,8 +303,10 @@ export function MainDashboardScreen({
                 Icon: Icon3DFlag,
                 bg: "#EFF6FF",
                 border: "#BFDBFE",
+                onPress: () => router.push("/quest"),
               },
-            ].map(({ label, sub, Icon, bg, border, onPress }) => (
+            ].map(({ label, sub, Icon, bg, border, onPress }) =>
+              onPress ? (
               <PressableScale
                 key={label}
                 onPress={onPress}
@@ -322,7 +322,22 @@ export function MainDashboardScreen({
                 </View>
                 <Text style={s.modeSub}>{sub}</Text>
               </PressableScale>
-            ))}
+            ) : (
+              <View
+                key={label}
+                style={[
+                  s.modeCard,
+                  { backgroundColor: bg, borderColor: border, opacity: 0.55 },
+                ]}
+              >
+                <View style={s.modeTop}>
+                  <Text style={s.modeLabel}>{label}</Text>
+                  <Icon size={32} />
+                </View>
+                <Text style={s.modeSub}>{sub}</Text>
+              </View>
+            ),
+            )}
           </View>
         </AnimatedCard>
 
@@ -330,9 +345,7 @@ export function MainDashboardScreen({
         <AnimatedCard index={7} delay={100} style={s.section}>
           <View style={s.sectionHeader}>
             <Text style={s.sectionTitle}>Your Badges</Text>
-            <TouchableOpacity>
-              <Text style={s.sectionLink}>View all</Text>
-            </TouchableOpacity>
+            <Text style={s.sectionLinkMuted}>Coming soon</Text>
           </View>
           <View style={[s.badgesRow, shadow(1)]}>
             {[
@@ -689,6 +702,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: C.textPrimary },
   sectionLink: { fontSize: 12, fontWeight: "700", color: C.accent },
+  sectionLinkMuted: { fontSize: 12, fontWeight: "600", color: C.textTertiary },
 
   // Modes grid
   modesGrid: {

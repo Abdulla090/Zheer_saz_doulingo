@@ -1,42 +1,39 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import type { AppLocale } from "@/i18n";
-import { Platform } from "react-native";
+import type { AppLocale } from "@/utils/rtl";
+import { syncNativeRtl, localeIsRtl } from "@/utils/rtl";
 
-const STORAGE_KEY = "phingo.app.locale";
+const STORAGE_KEY = "@phingo/ui_locale";
 
 interface LocaleState {
-  locale: AppLocale;
   ready: boolean;
+  locale: AppLocale;
   setLocale: (locale: AppLocale) => void;
 }
 
+function persistLocale(locale: AppLocale) {
+  void AsyncStorage.setItem(STORAGE_KEY, locale).catch(() => {});
+}
+
 export const useLocaleStore = create<LocaleState>((set) => ({
-  locale: "en",
   ready: false,
+  locale: "ku",
   setLocale: (locale) => {
-    if (Platform.OS === "web" && typeof localStorage !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, locale);
-    } else {
-      void AsyncStorage.setItem(STORAGE_KEY, locale);
-    }
+    persistLocale(locale);
+    syncNativeRtl(localeIsRtl(locale));
     set({ locale });
   },
 }));
 
-async function hydrateLocale() {
+async function hydrate() {
   try {
-    let saved: string | null = null;
-    if (Platform.OS === "web" && typeof localStorage !== "undefined") {
-      saved = localStorage.getItem(STORAGE_KEY);
-    } else {
-      saved = await AsyncStorage.getItem(STORAGE_KEY);
-    }
-    const locale: AppLocale = saved === "ku" ? "ku" : "en";
-    useLocaleStore.setState({ locale, ready: true });
+    const saved = await AsyncStorage.getItem(STORAGE_KEY);
+    const locale: AppLocale = saved === "en" ? "en" : "ku";
+    syncNativeRtl(localeIsRtl(locale));
+    useLocaleStore.setState({ ready: true, locale });
   } catch {
-    useLocaleStore.setState({ ready: true });
+    useLocaleStore.setState({ ready: true, locale: "ku" });
   }
 }
 
-void hydrateLocale();
+void hydrate();

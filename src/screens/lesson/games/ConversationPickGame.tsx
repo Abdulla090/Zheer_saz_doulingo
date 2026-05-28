@@ -1,27 +1,27 @@
 /**
- * ConversationPickGame — Premium light lesson UI.
+ * ConversationPickGame — iOS 26 Liquid Glass redesign.
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
+import { Icon3DMessage } from "@/components/icons/Icon3D";
 import { ConversationPickQuestion } from "@/data/lesson-content";
+import { GameSpace, Type, iOS } from "./game-design";
+import { ltrText } from "./game-text";
 import {
-  GameFooter,
-  GameHeader,
+  GameCard,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
-import { L } from "./lesson-light-design";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-  LightCheckButton,
-  LightGameHeading,
-  LightOptionRow,
-  LightSurfaceCard,
-  mapOptionState,
-} from "./lesson-light-primitives";
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidOption,
+  LiquidPrimaryButton,
+  OptionState,
+} from "./liquid-primitives";
 
 type Props = {
   question: ConversationPickQuestion;
@@ -29,7 +29,6 @@ type Props = {
 };
 
 export default function ConversationPickGame({ question, onAnswer }: Props) {
-  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -49,122 +48,92 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
     }
   };
 
-  const getState = (opt: string) => {
+  const getState = (opt: string): OptionState => {
     if (!revealed) return opt === selected ? "selected" : "idle";
-    if (opt === selected) {
-      return opt === question.correctAnswer ? "correct" : "wrong";
-    }
+    if (opt === selected) return opt === question.correctAnswer ? "correct" : "wrong";
     return "idle";
   };
 
   return (
     <GameRoot style={{ flex: 1 }}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={s.root}
-        showsVerticalScrollIndicator={false}
-      >
-        <GameHeader>
-          <LightGameHeading
-            title={t("lessons.conversation")}
-            subtitle={t("lessons.conversationSub")}
+      <GameScreenLayout
+        header={<LiquidEyebrow>Reply</LiquidEyebrow>}
+        bodyStyle={s.body}
+        footer={
+          <LiquidPrimaryButton
+            label="CHECK"
+            color={iOS.systemGreen}
+            onPress={check}
+            disabled={!selected || revealed}
           />
-        </GameHeader>
-
-        <LightSurfaceCard style={s.situationCard}>
-          <Text style={s.situationLabel}>{t("lessons.situation")}</Text>
-          <AppText style={s.situationText} forceKurdishFont>
-            {question.situation}
-          </AppText>
-        </LightSurfaceCard>
-
-        <LightSurfaceCard>
-          <Text style={s.theyLabel}>{t("lessons.theySay")}</Text>
-          <AppText style={s.theyText} forceKurdishFont>
-            {question.theyAsk}
-          </AppText>
-        </LightSurfaceCard>
-
-        <Text style={s.chooseLabel}>{t("lessons.chooseResponse")}</Text>
+        }
+      >
+        <GameCard delay={60}>
+          <View style={s.bubbleRow}>
+            <View style={s.avatar}>
+              <Icon3DMessage size={22} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <LiquidCard style={s.bubble} radius={16}>
+                <Text style={s.bubbleText} numberOfLines={3}>{question.theyAsk}</Text>
+              </LiquidCard>
+            </View>
+          </View>
+        </GameCard>
 
         <View style={s.options}>
           {question.options.map((opt, i) => (
-            <GameOption key={opt} index={i} baseDelay={120}>
-              <LightOptionRow
-                label={opt}
-                state={mapOptionState(getState(opt))}
+            <GameOption key={opt} index={i} baseDelay={100}>
+              <LiquidOption
+                text={opt}
+                state={getState(opt)}
                 onPress={() => pick(opt)}
                 disabled={revealed}
+                index={i}
               />
             </GameOption>
           ))}
         </View>
-      </ScrollView>
-
-      <GameFooter>
-        <View style={s.checkWrap}>
-          <LightCheckButton
-            label={t("lessons.check")}
-            onPress={check}
-            disabled={!selected || revealed}
-          />
-        </View>
-      </GameFooter>
+      </GameScreenLayout>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 100,
-    gap: 14,
+  body: {
+    gap: GameSpace.gap,
   },
-  situationCard: { gap: 6 },
-  situationLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: L.grayLight,
-    letterSpacing: 0.6,
-    fontFamily: "DINNextRoundedBold",
+  bubbleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
   },
-  situationText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: L.navy,
-    lineHeight: 24,
-    fontFamily: "DINNextRoundedBold",
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: iOS.systemBlue,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.5)",
+    marginTop: 2,
+    flexShrink: 0,
   },
-  theyLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: L.grayLight,
-    letterSpacing: 0.6,
-    fontFamily: "DINNextRoundedBold",
-    marginBottom: 6,
+  bubble: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderTopLeftRadius: 6,
   },
-  theyText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: L.navy,
-    lineHeight: 24,
-    fontFamily: "DINNextRoundedBold",
+  bubbleText: {
+    ...Type.body,
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#0F172A",
+    ...ltrText,
   },
-  chooseLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: L.gray,
-    fontFamily: "DINNextRoundedBold",
-    marginTop: 4,
-  },
-  options: { gap: 10 },
-  checkWrap: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    paddingTop: 8,
-    backgroundColor: L.bg,
-    borderTopWidth: 1,
-    borderTopColor: L.border,
+  options: {
+    gap: 8,
+    flexShrink: 1,
   },
 });

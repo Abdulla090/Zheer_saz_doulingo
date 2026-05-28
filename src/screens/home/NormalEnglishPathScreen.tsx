@@ -4,10 +4,10 @@
  */
 
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
+import { tabBarScrollPadding } from "@/constants/layout";
 import type { SectionTheme } from "@/data/list-items";
-import { buildNormalSectionData } from "@/data/normal-english";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
+import { normalSectionData } from "@/data/normal-english";
+import { Image } from "expo-image";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -22,21 +22,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
-const NormalSectionHeader = React.memo(
-  ({
-    section,
-    firstTitle,
-  }: {
-    section: { title: string };
-    firstTitle: string;
-  }) => {
-  const isFirst = section.title === firstTitle;
+const NormalSectionHeader = React.memo(({ section }: { section: { title: string } }) => {
+  const isFirst = section.title === normalSectionData[0]?.title;
   if (isFirst) return null;
   return (
     <View style={darkStyles.sectionHeader}>
@@ -45,31 +37,15 @@ const NormalSectionHeader = React.memo(
       <View style={darkStyles.sectionLine} />
     </View>
   );
-  },
-);
+});
 
-const ListFooterSpacer = ({ bottom }: { bottom: number }) => (
-  <View style={{ height: bottom + 96 }} />
+const renderSectionHeader = ({ section }: { section: { title: string } }) => (
+  <NormalSectionHeader section={section} />
 );
 
 export function NormalEnglishPathScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
-  const progressReady = useProgressStore((s) => s.ready);
-  const normalSectionData = React.useMemo(
-    () => buildNormalSectionData(normalNext),
-    [normalNext],
-  );
-  const firstTitle = normalSectionData[0]?.title ?? "";
-
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: { title: string } }) => (
-      <NormalSectionHeader section={section} firstTitle={firstTitle} />
-    ),
-    [firstTitle],
-  );
-
   const listRef = useRef<SectionList<any>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
@@ -80,12 +56,11 @@ export function NormalEnglishPathScreen() {
     minimumViewTime: 100,
   }).current;
 
-  const firstSection = normalSectionData[0];
   const [activeSectionTitle, setActiveSectionTitle] = useState(
-    firstSection?.title ?? "",
+    normalSectionData[0]?.title ?? "",
   );
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
-    firstSection?.displayTheme ?? "blue",
+    normalSectionData[0]?.displayTheme ?? "blue",
   );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
@@ -156,17 +131,20 @@ export function NormalEnglishPathScreen() {
     }
   }).current;
 
-  if (!progressReady) {
-    return <View style={{ flex: 1, backgroundColor: "#0F172A" }} />;
-  }
-
   return (
     <View style={{ flex: 1 }}>
-      <HomeMeshBackground />
+      <Image
+        source={require("../../../assets/images/oceanbg.png")}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="low"
+      />
       <View
         style={[
           darkStyles.root,
           {
+            backgroundColor: "transparent",
             paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
           },
         ]}
@@ -188,17 +166,17 @@ export function NormalEnglishPathScreen() {
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
-          scrollEventThrottle={32}
+          scrollEventThrottle={16}
           style={darkStyles.list}
-          ListFooterComponent={() => (
-            <ListFooterSpacer bottom={insets.bottom} />
-          )}
-          contentContainerStyle={darkStyles.listContent}
+          contentContainerStyle={[
+            darkStyles.listContent,
+            { paddingBottom: tabBarScrollPadding(insets.bottom) },
+          ]}
           stickySectionHeadersEnabled={false}
           initialNumToRender={6}
           maxToRenderPerBatch={4}
           windowSize={3}
-          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
+          removeClippedSubviews
           updateCellsBatchingPeriod={100}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
@@ -211,7 +189,7 @@ export function NormalEnglishPathScreen() {
 const darkStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
   list: { flex: 1, backgroundColor: "transparent" },
-  listContent: { paddingBottom: 10, backgroundColor: "transparent", paddingTop: 24 },
+  listContent: { backgroundColor: "transparent", paddingTop: 24 },
   sectionHeader: {
     height: 56,
     flexDirection: "row",
@@ -221,11 +199,11 @@ const darkStyles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 4,
   },
-  sectionLine: { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
+  sectionLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.28)" },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "rgba(255,255,255,0.9)",
     letterSpacing: 0.5,
     maxWidth: "62%",
     textAlign: "center",

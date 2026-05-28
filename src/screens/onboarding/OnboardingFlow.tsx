@@ -1,103 +1,82 @@
-import {
-  HomeLiquidButton,
-  HomeMeshBackground,
-  HomePalette,
-  HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
-import { Motion } from "@/screens/lesson/games/game-design";
+import { PressableScale } from "@/components/animations";
+import { useFontStore } from "@/stores/useFontStore";
 import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { crossShadow } from "@/utils/shadows";
+import { isSwipeNext, rtlRoot, rtlText, rtlTextCenter } from "@/utils/rtl";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  FadeOutUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { OnboardingHeroScene, type OnboardingSceneVariant } from "./components/OnboardingHeroScene";
+import { OnboardingHero, type OnboardingHeroVariant } from "./components/OnboardingHero";
 import { OnboardingPathPicker } from "./components/OnboardingPathPicker";
+import { OnboardingPrimaryButton } from "./components/OnboardingPrimaryButton";
 import { OnboardingProgressDots } from "./components/OnboardingProgressDots";
+import { OnboardingLocaleProvider } from "./OnboardingLocaleContext";
+import { ONBOARDING_COPY } from "./onboarding-copy";
 
-const C = HomePalette;
+const STEP_VARIANTS: OnboardingHeroVariant[] = [
+  "welcome",
+  "paths",
+  "practice",
+  "progress",
+  "ready",
+];
 
-type StepId = "welcome" | "paths" | "practice" | "progress" | "ready";
-
-const STEP_ORDER: StepId[] = ["welcome", "paths", "practice", "progress", "ready"];
+const STEP_COUNT = STEP_VARIANTS.length;
+const KURDISH_FONT = "Rabar_011";
 
 export function OnboardingFlow() {
   const insets = useSafeAreaInsets();
-  const { t, locale, setEnglish, setKurdish } = useI18n();
+  const router = useRouter();
+  const { height } = useWindowDimensions();
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
-  const pathMode = useSettingsStore((s) => s.pathMode);
-  const setPathMode = useSettingsStore((s) => s.setPathMode);
-  const localeReady = useLocaleStore((s) => s.ready);
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
+  const setFont = useFontStore((s) => s.setFont);
+  const isRtl = locale === "ku";
 
-  const [index, setIndex] = useState(0);
-  const [selectedPath, setSelectedPath] = useState<"street" | "normal">(pathMode);
+  const [index, setIndex] = React.useState(0);
+  const [selectedPath, setSelectedPath] = React.useState<"street" | "normal">("street");
 
-  const stepId = STEP_ORDER[index] ?? "welcome";
-  const isLast = index === STEP_ORDER.length - 1;
-  const showPathPicker = stepId === "paths";
-
-  const copy = useMemo(() => {
-    const map: Record<
-      StepId,
-      { title: string; subtitle: string; variant: OnboardingSceneVariant }
-    > = {
-      welcome: {
-        title: t("onboarding.welcomeTitle"),
-        subtitle: t("onboarding.welcomeSubtitle"),
-        variant: "welcome",
-      },
-      paths: {
-        title: t("onboarding.pathsTitle"),
-        subtitle: t("onboarding.pathsSubtitle"),
-        variant: "paths",
-      },
-      practice: {
-        title: t("onboarding.practiceTitle"),
-        subtitle: t("onboarding.practiceSubtitle"),
-        variant: "practice",
-      },
-      progress: {
-        title: t("onboarding.progressTitle"),
-        subtitle: t("onboarding.progressSubtitle"),
-        variant: "progress",
-      },
-      ready: {
-        title: t("onboarding.readyTitle"),
-        subtitle: t("onboarding.readySubtitle"),
-        variant: "ready",
-      },
-    };
-    return map[stepId];
-  }, [stepId, t]);
-
-  const finish = useCallback(() => {
-    setPathMode(selectedPath);
-    if (Platform.OS !== "web") {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  useEffect(() => {
+    if (locale === "ku") {
+      setFont(KURDISH_FONT);
     }
-    completeOnboarding();
-  }, [completeOnboarding, selectedPath, setPathMode]);
+  }, [locale, setFont]);
+
+  const copy = ONBOARDING_COPY[locale];
+  const step = copy.steps[index]!;
+  const variant = STEP_VARIANTS[index]!;
+  const isLast = index === STEP_COUNT - 1;
+  const isPathStep = variant === "paths";
+  const compact = height < 700;
+
+  const finish = useCallback(
+    (path?: "street" | "normal") => {
+      const mode = path ?? selectedPath;
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      completeOnboarding(mode);
+      router.replace({
+        pathname: "/dashboard",
+        params: { mode },
+      });
+    },
+    [completeOnboarding, router, selectedPath],
+  );
 
   const goNext = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -107,262 +86,267 @@ export function OnboardingFlow() {
       finish();
       return;
     }
-    setIndex((i) => Math.min(i + 1, STEP_ORDER.length - 1));
+    setIndex((i) => Math.min(i + 1, STEP_COUNT - 1));
   }, [finish, isLast]);
 
-  const skip = useCallback(() => {
-    finish();
-  }, [finish]);
-
-  const swipeAdvance = useMemo(
+  const swipe = useMemo(
     () =>
       Gesture.Pan()
-        .activeOffsetX([-24, 24])
+        .activeOffsetX([-20, 20])
         .onEnd((e) => {
-          if (e.translationX < -48 && e.velocityX < 0) {
-            goNext();
-          }
+          if (isSwipeNext(e.translationX, isRtl)) goNext();
         }),
-    [goNext],
+    [goNext, isRtl],
   );
 
-  if (!localeReady) {
-    return <View style={styles.root} />;
-  }
+  const titleSize = compact ? 24 : 28;
+  const fontFamily = locale === "ku" ? KURDISH_FONT : undefined;
 
   return (
-    <View style={styles.root}>
-      <HomeMeshBackground />
+    <OnboardingLocaleProvider locale={locale}>
+      <View style={[styles.root, rtlRoot(isRtl)]}>
+        <LinearGradient
+          colors={["#F4F9FF", "#FFFFFF", "#FFFFFF"]}
+          locations={[0, 0.35, 1]}
+          style={StyleSheet.absoluteFill}
+        />
 
-      <LinearGradient
-        colors={["rgba(43,89,243,0.08)", "transparent", "rgba(255,200,0,0.06)"]}
-        locations={[0, 0.45, 1]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-
-      <View
-        style={[
-          styles.container,
-          {
-            paddingTop: insets.top + 12,
-            paddingBottom: insets.bottom + 20,
-          },
-        ]}
-      >
-        <View style={styles.topBar}>
-          <Text style={styles.brand}>Phingo</Text>
-          <Pressable
-            onPress={skip}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={t("onboarding.skip")}
-          >
-            <Text style={styles.skip}>{t("onboarding.skip")}</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.localeRow}>
-          <LocaleChip
-            label={t("settings.languageEn")}
-            active={locale === "en"}
-            onPress={setEnglish}
-          />
-          <LocaleChip
-            label={t("settings.languageKu")}
-            active={locale === "ku"}
-            onPress={setKurdish}
-          />
-        </View>
-
-        <GestureDetector gesture={swipeAdvance}>
-          <View style={styles.swipeArea}>
-            <OnboardingHeroScene variant={copy.variant} />
-
-            <Animated.View
-              key={stepId}
-              entering={FadeInDown.duration(480)
-                .springify()
-                .damping(22)
-                .stiffness(280)}
-              exiting={FadeOutUp.duration(220)}
-              style={styles.copyBlock}
-            >
-              <Text style={styles.title}>{copy.title}</Text>
-              <Text style={styles.subtitle}>{copy.subtitle}</Text>
-
-              {showPathPicker ? (
-                <OnboardingPathPicker
-                  selected={selectedPath}
-                  onSelect={setSelectedPath}
-                  streetTitle={t("onboarding.pathStreetTitle")}
-                  streetSub={t("onboarding.pathStreetSub")}
-                  normalTitle={t("onboarding.pathNormalTitle")}
-                  normalSub={t("onboarding.pathNormalSub")}
-                />
-              ) : null}
-            </Animated.View>
+        <View
+          style={[
+            styles.container,
+            directionContainer(isRtl),
+            {
+              paddingTop: insets.top + 8,
+              paddingBottom: insets.bottom + 12,
+            },
+          ]}
+        >
+          <View style={styles.topBar}>
+            <Text style={[styles.brand, fontFamily && { fontFamily }]}>Phingo</Text>
+            <Pressable onPress={() => finish()} hitSlop={12}>
+              <Text style={[styles.skip, rtlText(isRtl), fontFamily && { fontFamily }]}>
+                {copy.skip}
+              </Text>
+            </Pressable>
           </View>
-        </GestureDetector>
 
-        <View style={styles.footer}>
-          <OnboardingProgressDots total={STEP_ORDER.length} index={index} />
-
-          <Animated.View
-            entering={FadeIn.delay(200).duration(400)}
-            style={styles.ctaWrap}
-          >
-            <HomeLiquidButton
-              label={
-                isLast ? t("onboarding.getStarted") : t("onboarding.continue")
-              }
-              onPress={goNext}
-              color={isLast ? "#58CC02" : C.blue}
-              style={styles.cta}
+          <View style={styles.localeRow}>
+            <LocaleChip
+              label={copy.languageKu}
+              active={locale === "ku"}
+              onPress={() => setLocale("ku")}
+              isRtl={isRtl}
+              fontFamily={fontFamily}
             />
-          </Animated.View>
+            <LocaleChip
+              label={copy.languageEn}
+              active={locale === "en"}
+              onPress={() => setLocale("en")}
+              isRtl={isRtl}
+              fontFamily={undefined}
+            />
+          </View>
 
-          {!isLast ? (
-            <Animated.View exiting={FadeOut.duration(150)}>
-              <Text style={styles.hint}>{t("onboarding.swipeHint")}</Text>
-            </Animated.View>
-          ) : null}
+          <GestureDetector gesture={swipe}>
+            <View style={styles.body}>
+              <OnboardingHero variant={variant} />
+
+              <Animated.View
+                key={`${locale}-${index}`}
+                entering={FadeInDown.duration(360).springify().damping(22)}
+                exiting={FadeOutUp.duration(180)}
+                style={[styles.copy, alignStretch(isRtl)]}
+              >
+                <Text
+                  style={[
+                    styles.title,
+                    rtlText(isRtl),
+                    { fontSize: titleSize, lineHeight: titleSize + 8 },
+                    fontFamily && { fontFamily },
+                  ]}
+                >
+                  {step.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitle,
+                    rtlText(isRtl),
+                    fontFamily && { fontFamily },
+                  ]}
+                  numberOfLines={compact ? 4 : 5}
+                >
+                  {step.subtitle}
+                </Text>
+
+                {isPathStep ? (
+                  <OnboardingPathPicker
+                    selected={selectedPath}
+                    onSelect={setSelectedPath}
+                    streetTitle={copy.pathStreetTitle}
+                    streetSub={copy.pathStreetSub}
+                    normalTitle={copy.pathNormalTitle}
+                    normalSub={copy.pathNormalSub}
+                  />
+                ) : null}
+              </Animated.View>
+            </View>
+          </GestureDetector>
+
+          <View style={[styles.footer, alignStretch(isRtl)]}>
+            <OnboardingProgressDots total={STEP_COUNT} index={index} />
+
+            <OnboardingPrimaryButton
+              label={isLast ? copy.getStarted : copy.continue}
+              color={isLast ? "#58CC02" : "#208AEF"}
+              rimColor={isLast ? "#58A700" : "#1B6FD4"}
+              onPress={goNext}
+            />
+
+            {!isLast ? (
+              <Text
+                style={[
+                  styles.hint,
+                  rtlTextCenter(isRtl),
+                  fontFamily && { fontFamily },
+                ]}
+              >
+                {copy.swipeHint}
+              </Text>
+            ) : null}
+          </View>
         </View>
       </View>
-    </View>
+    </OnboardingLocaleProvider>
   );
+}
+
+function directionContainer(isRtl: boolean) {
+  return { direction: isRtl ? ("rtl" as const) : ("ltr" as const) };
+}
+
+function alignStretch(isRtl: boolean) {
+  return { alignSelf: "stretch" as const, width: "100%" as const };
 }
 
 function LocaleChip({
   label,
   active,
   onPress,
+  isRtl,
+  fontFamily,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
+  isRtl: boolean;
+  fontFamily?: string;
 }) {
-  const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
   return (
-    <Animated.View style={anim}>
-      <Pressable
-        onPress={() => {
-          if (Platform.OS !== "web") {
-            void Haptics.selectionAsync();
-          }
-          onPress();
-        }}
-        onPressIn={() => {
-          scale.value = withSpring(0.94, Motion.soft);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, Motion.soft);
-        }}
-        style={[styles.localeChip, active && styles.localeChipActive]}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-      >
-        <Text style={[styles.localeLabel, active && styles.localeLabelActive]}>
+    <PressableScale onPress={onPress} scaleDown={0.96}>
+      <View style={[styles.chip, active && styles.chipActive]}>
+        <Text
+          style={[
+            styles.chipLabel,
+            rtlTextCenter(isRtl),
+            active && styles.chipLabelActive,
+            fontFamily && { fontFamily },
+          ]}
+        >
           {label}
         </Text>
-      </Pressable>
-    </Animated.View>
+      </View>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
-    backgroundColor: C.meshBottom,
+    backgroundColor: "#FFFFFF",
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 6,
+    width: "100%",
   },
   brand: {
-    ...HomeType.logo,
-    fontSize: 26,
-    color: C.blue,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#208AEF",
+    letterSpacing: -0.5,
+    writingDirection: "ltr",
   },
   skip: {
     fontSize: 15,
     fontWeight: "600",
-    color: C.grayLight,
-    fontFamily: "DINNextRoundedMedium",
+    color: "#94A3B8",
   },
   localeRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     marginBottom: 4,
+    width: "100%",
   },
-  localeChip: {
+  chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: C.divider,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    borderColor: "#E2E8F0",
+    backgroundColor: "rgba(255,255,255,0.85)",
   },
-  localeChipActive: {
-    borderColor: C.blue,
-    backgroundColor: "rgba(43,89,243,0.12)",
+  chipActive: {
+    borderColor: "#208AEF",
+    backgroundColor: "rgba(32,138,239,0.1)",
   },
-  localeLabel: {
+  chipLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: C.gray,
-    fontFamily: "DINNextRoundedMedium",
+    color: "#64748B",
   },
-  localeLabelActive: {
-    color: C.blue,
+  chipLabelActive: {
+    color: "#208AEF",
     fontWeight: "700",
-    fontFamily: "DINNextRoundedBold",
   },
-  swipeArea: {
+  body: {
     flex: 1,
+    minHeight: 0,
+    justifyContent: "center",
+    width: "100%",
   },
-  copyBlock: {
-    flex: 1,
-    justifyContent: "flex-start",
+  copy: {
+    flexShrink: 1,
     paddingTop: 4,
   },
   title: {
-    fontSize: 28,
-    lineHeight: 34,
     fontWeight: "800",
-    color: C.navy,
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.8,
+    color: "#0F172A",
+    letterSpacing: -0.3,
   },
   subtitle: {
-    ...HomeType.body,
-    color: C.gray,
     marginTop: 10,
-    lineHeight: 22,
-    maxWidth: 340,
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: "500",
+    color: "#64748B",
   },
   footer: {
-    gap: 16,
+    flexShrink: 0,
+    gap: 12,
     paddingTop: 8,
   },
-  ctaWrap: {
-    width: "100%",
-  },
-  cta: {
-    marginTop: 4,
-  },
   hint: {
-    textAlign: "center",
-    ...HomeType.caption,
-    color: C.grayLight,
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#94A3B8",
     marginTop: -4,
   },
 });

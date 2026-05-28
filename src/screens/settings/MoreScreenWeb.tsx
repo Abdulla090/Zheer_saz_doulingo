@@ -1,5 +1,7 @@
+import { tabBarScrollPadding } from "@/constants/layout";
 import React from "react";
 import { View, Text, FlatList, SafeAreaView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "@/components/animations";
 import { useFontStore } from "@/stores/useFontStore";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
@@ -7,6 +9,7 @@ import { Icon3DSettings, Icon3DChevronRight, Icon3DCheckCircle } from "@/compone
 
 export default function MoreScreenWeb() {
   const { selectedFont, setFont } = useFontStore();
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F7F7F7" }}>
@@ -34,7 +37,10 @@ export default function MoreScreenWeb() {
       <FlatList
         data={ALL_RABAR_FONTS}
         keyExtractor={(item) => item}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
+        }}
         renderItem={({ item }) => (
           <PressableScale
             onPress={() => setFont(item)}

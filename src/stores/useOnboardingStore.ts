@@ -1,34 +1,50 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.onboarding.completed";
+const STORAGE_KEY = "@phingo/onboarding_complete";
+const PATH_KEY = "@phingo/preferred_path";
+
+type PathMode = "street" | "normal";
 
 interface OnboardingState {
   ready: boolean;
   completed: boolean;
-  completeOnboarding: () => void;
+  preferredPath: PathMode;
+  completeOnboarding: (path?: PathMode) => void;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   ready: false,
   completed: false,
-
-  completeOnboarding: () => {
-    set({ completed: true });
-    void AsyncStorage.setItem(STORAGE_KEY, "1").catch(() => {});
+  preferredPath: "street",
+  completeOnboarding: (path) => {
+    const mode = path ?? "street";
+    void AsyncStorage.multiSet([
+      [STORAGE_KEY, "1"],
+      [PATH_KEY, mode],
+    ]).catch(() => {});
+    set({ completed: true, preferredPath: mode });
   },
 }));
 
-async function hydrateOnboarding() {
+async function hydrate() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const [[, done], [, path]] = await AsyncStorage.multiGet([
+      STORAGE_KEY,
+      PATH_KEY,
+    ]);
     useOnboardingStore.setState({
-      completed: raw === "1",
       ready: true,
+      completed: done === "1",
+      preferredPath: path === "normal" ? "normal" : "street",
     });
   } catch {
     useOnboardingStore.setState({ ready: true });
   }
 }
 
-void hydrateOnboarding();
+void hydrate();
+
+export function getPreferredPathFromStore(): PathMode {
+  return useOnboardingStore.getState().preferredPath;
+}

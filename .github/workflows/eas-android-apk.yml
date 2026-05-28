@@ -2,36 +2,37 @@ name: EAS Android APK
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - cursor/phingo-home-dashboard-bb74
-      - main
+    inputs:
+      profile:
+        description: EAS build profile
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run verify
-
   build:
-    needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - uses: expo/expo-github-action@v8
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - run: npm ci
-      - name: Build Android APK (preview)
-        run: eas build --platform android --profile preview --non-interactive
+
+      - name: Build APK
+        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive

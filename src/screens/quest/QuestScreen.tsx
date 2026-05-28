@@ -1,10 +1,10 @@
 import ProgressBar from "@/components/shared/progress-bar";
 import SafeContainer from "@/components/shared/safe-container";
-import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "@/constants/icons";
 import { Image } from "expo-image";
-import { Icon3DClock, Icon3DGift } from "@/components/icons/Icon3D";
-import { ReactNode } from "react";
+import { Icon3DClock } from "@/components/icons/Icon3D";
+import { tabBarScrollPadding } from "@/constants/layout";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { AnimatedCard } from "@/components/animations";
 
@@ -69,42 +69,6 @@ const ParticipantRow = ({
   </View>
 );
 
-type QuestActionButtonProps = {
-  width: number;
-  label: string;
-  leftNode: ReactNode;
-};
-
-const QuestActionButton = ({
-  width,
-  label,
-  leftNode,
-}: QuestActionButtonProps) => (
-  <SvgAppButton
-    color="#FFFFFF"
-    backgroundColor={TRACK_COLOR}
-    onPress={() => {}}
-    leftRadius={13}
-    pressDepth={3}
-    rightRadius={13}
-    contentContainerStyle={{
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 8,
-      paddingHorizontal: 16,
-      borderWidth: 1,
-      borderColor: TRACK_COLOR,
-      borderRadius: 13,
-    }}
-    width={width}
-    height={40}
-  >
-    {leftNode}
-    <Text className="text-text-primary text-sm font-rd-medium">{label}</Text>
-  </SvgAppButton>
-);
-
 type QuestGoalRowProps = {
   title: string;
   progress: number;
@@ -136,6 +100,7 @@ const QuestGoalRow = ({
 
 const QuestScreen = () => {
   const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const goalBarWidth = windowWidth - 128;
 
   return (
@@ -174,7 +139,9 @@ const QuestScreen = () => {
           />
         </View>
       </SafeContainer>
-      <ScrollView contentContainerClassName="pb-10">
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: tabBarScrollPadding(insets.bottom) }}
+      >
         {/* Friends Quest */}
         <AnimatedCard index={0} delay={200}>
           <View className="px-5 mt-6 gap-2">
@@ -190,15 +157,11 @@ const QuestScreen = () => {
               </View>
             </View>
 
-            <View className="w-full rounded-2xl justify-center items-center  bg-[#C6EBFD]">
+            <View className="w-full rounded-2xl justify-center items-center overflow-hidden bg-[#C6EBFD] py-4">
               <Image
                 source={require("@/assets/images/characters/boys.png")}
                 contentFit="contain"
-                style={{
-                  width: 120,
-                  height: 120,
-                  transform: [{ scale: 3.1 }, { translateY: 2.5 }],
-                }}
+                style={{ width: 200, height: 100 }}
               />
             </View>
           </View>
@@ -225,18 +188,6 @@ const QuestScreen = () => {
               lessonsLabel="٣ وانە"
               dotColor="#D5B8E8"
             />
-            <View className="flex-row items-center justify-between">
-              <QuestActionButton
-                width={windowWidth * 0.4}
-                label="ئاگادارکردنەوە"
-                leftNode={<Text className="text-2xl">👋</Text>}
-              />
-              <QuestActionButton
-                width={windowWidth * 0.4}
-                label="خەڵات"
-                leftNode={<Icon3DGift size={26} />}
-              />
-            </View>
             <View className="h-[2] w-full mt-4 mb-4 bg-gray-200" />
 
             <AnimatedCard index={2} delay={300}>

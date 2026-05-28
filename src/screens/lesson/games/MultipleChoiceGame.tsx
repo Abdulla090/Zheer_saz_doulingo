@@ -1,27 +1,28 @@
 /**
- * MultipleChoiceGame — Premium light lesson UI.
+ * MultipleChoiceGame — iOS 26 Liquid Glass redesign.
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
+import { crossTextShadow } from "@/utils/shadows";
+import { GameSpace, Radius, Type, iOS } from "./game-design";
+import { rtlBlock } from "./game-text";
 import {
-  GameFooter,
-  GameHeader,
+  GameCard,
   GameOption,
   GameRoot,
 } from "./GameAnimatedShell";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-  LightCheckButton,
-  LightGameHeading,
-  LightOptionRow,
-  LightSurfaceCard,
-  mapOptionState,
-} from "./lesson-light-primitives";
-import { L } from "./lesson-light-design";
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidOption,
+  LiquidPrimaryButton,
+  OptionState,
+} from "./liquid-primitives";
 
 type Props = {
   question: MultipleChoiceQuestion;
@@ -29,7 +30,6 @@ type Props = {
 };
 
 export default function MultipleChoiceGame({ question, onAnswer }: Props) {
-  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -49,7 +49,7 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
     }
   };
 
-  const getState = (opt: string) => {
+  const getState = (opt: string): OptionState => {
     if (!revealed) return opt === selected ? "selected" : "idle";
     if (opt === selected) {
       return opt === question.correctAnswer ? "correct" : "wrong";
@@ -60,63 +60,84 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
   const isKuPrompt = question.promptLang === "ku";
 
   return (
-    <GameRoot style={s.root}>
-      <GameHeader>
-        <LightGameHeading
-          title={t("lessons.chooseAnswer")}
-          subtitle={t("lessons.chooseAnswerSub")}
-        />
-      </GameHeader>
-
-      <LightSurfaceCard>
-        <AppText
-          style={s.prompt}
-          forceKurdishFont={isKuPrompt}
-        >
-          {question.prompt}
-        </AppText>
-      </LightSurfaceCard>
-
-      <View style={s.options}>
-        {question.options.map((opt, i) => (
-          <GameOption key={opt} index={i}>
-            <LightOptionRow
-              label={opt}
-              state={mapOptionState(getState(opt))}
-              onPress={() => pick(opt)}
-              disabled={revealed}
+    <GameRoot style={{ flex: 1 }}>
+      <GameScreenLayout
+        header={<LiquidEyebrow>Multiple choice</LiquidEyebrow>}
+        bodyStyle={s.body}
+        footer={
+          <LiquidPrimaryButton
+            label="CHECK"
+            color={iOS.systemGreen}
+            onPress={check}
+            disabled={!selected || revealed}
+          />
+        }
+      >
+        <GameCard>
+          <LiquidCard style={s.questionCard} radius={Radius.lg}>
+            <LinearGradient
+              colors={["rgba(10,132,255,0.12)", "rgba(10,132,255,0)"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={s.questionAccent}
+              pointerEvents="none"
             />
-          </GameOption>
-        ))}
-      </View>
+            <Text
+              style={[
+                s.questionText,
+                isKuPrompt && rtlBlock,
+                crossTextShadow({ color: "rgba(0,0,0,0.03)", offsetY: 1, blur: 1 }),
+              ]}
+              numberOfLines={4}
+            >
+              {question.prompt}
+            </Text>
+          </LiquidCard>
+        </GameCard>
 
-      <View style={{ flex: 1 }} />
-
-      <GameFooter>
-        <LightCheckButton
-          label={t("lessons.check")}
-          onPress={check}
-          disabled={!selected || revealed}
-        />
-      </GameFooter>
+        <View style={s.options}>
+          {question.options.map((opt, i) => (
+            <GameOption key={opt} index={i} baseDelay={80}>
+              <LiquidOption
+                text={opt}
+                state={getState(opt)}
+                onPress={() => pick(opt)}
+                disabled={revealed}
+                index={i}
+              />
+            </GameOption>
+          ))}
+        </View>
+      </GameScreenLayout>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 16,
+  body: {
+    gap: GameSpace.gap,
   },
-  prompt: {
-    fontSize: 20,
-    fontWeight: "700",
-    lineHeight: 28,
-    color: L.navy,
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.3,
+  questionCard: {
+    paddingHorizontal: GameSpace.cardPadH,
+    paddingVertical: GameSpace.cardPadV,
+    minHeight: 0,
+    justifyContent: "center",
   },
-  options: { gap: 10 },
+  questionAccent: {
+    position: "absolute",
+    left: 0,
+    top: 12,
+    bottom: 12,
+    width: 4,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  questionText: {
+    ...Type.display,
+    color: "#0F172A",
+  },
+  options: {
+    gap: 8,
+    flexShrink: 1,
+  },
 });

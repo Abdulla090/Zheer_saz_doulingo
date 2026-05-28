@@ -9,13 +9,20 @@
 import {
     Icon3DAward,
     Icon3DCheck,
+    Icon3DCheckCircle,
     Icon3DFire,
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
+import { SoftCircleButton } from "@/components/ui/soft-2.5d";
+import { crossShadow } from "@/utils/shadows";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
+    Platform,
+    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -37,14 +44,9 @@ import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { G } from "./games/game-design";
-import { L } from "./games/lesson-light-design";
-import {
-  LessonLightHeader,
-  LessonLiquidFeedback,
-  LessonMeshBackdrop,
-} from "./games/lesson-light-primitives";
-import { HomeLiquidButton, HomeLiquidCard } from "@/components/ui/ios-liquid-home";
+import { G, GameBg, Glass, iOS, Radius } from "./games/game-design";
+import { dirForText } from "./games/game-text";
+import { LiquidPrimaryButton } from "./games/liquid-primitives";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
@@ -52,6 +54,74 @@ import VoiceGame from "./games/VoiceGame";
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Glass header pill (close button, hearts badge)
+ * ───────────────────────────────────────────────────────────────────── */
+function HeaderPill({
+  children,
+  onPress,
+  width,
+  height = 44,
+  paddingH = 14,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  width?: number;
+  height?: number;
+  paddingH?: number;
+}) {
+  if (width && width <= 48 && onPress) {
+    return (
+      <SoftCircleButton
+        size={height}
+        onPress={onPress}
+        faceColor="rgba(255,255,255,0.22)"
+        rimColor="rgba(15,23,42,0.35)"
+      >
+        {children}
+      </SoftCircleButton>
+    );
+  }
+
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => { if (onPress) scale.value = withTiming(0.96, { duration: 100 }); }}
+        onPressOut={() => { if (onPress) scale.value = withTiming(1, { duration: 140 }); }}
+        style={[
+          {
+            height,
+            width,
+            paddingHorizontal: paddingH,
+            borderRadius: height / 2,
+            borderWidth: 1,
+            borderColor: Glass.borderDark,
+            backgroundColor: Glass.surfaceDark,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            ...crossShadow({ color: "#000", offsetY: 8, opacity: 0.14, blur: 18, elevation: 4 }),
+          },
+          Platform.OS === "web" && {
+            // @ts-ignore web
+            backdropFilter: "blur(24px) saturate(150%)",
+            // @ts-ignore web
+            WebkitBackdropFilter: "blur(24px) saturate(150%)",
+          },
+        ]}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, zIndex: 1 }}>
+          {children}
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 /* Summary stat card */
 function StatCard({
@@ -65,11 +135,11 @@ function StatCard({
 }) {
   return (
     <View style={{ flex: 1 }}>
-      <HomeLiquidCard contentStyle={sSum.statCard} radius={18}>
+      <View style={[sSum.statCard, { borderColor: color }]}>
         {icon}
         <Text style={[sSum.statValue, { color }]}>{value}</Text>
         <Text style={sSum.statLabel}>{label}</Text>
-      </HomeLiquidCard>
+      </View>
     </View>
   );
 }
@@ -80,9 +150,6 @@ export default function LessonScreen() {
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
   const lessonIndex = parseInt(params.li as string) || 0;
-  const startQuestion = parseInt(
-    (Array.isArray(params.q) ? params.q[0] : params.q) as string,
-  ) || 0;
   const pathMode: LessonPathMode =
     (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
       ? "normal"
@@ -122,19 +189,12 @@ export default function LessonScreen() {
   /* Reset on focus */
   useFocusEffect(
     useCallback(() => {
-      const safeStart = Math.min(
-        Math.max(0, startQuestion),
-        Math.max(0, questions.length - 1),
-      );
-      setCurrent(safeStart);
-      setHearts(MAX_HEARTS);
-      setXp(0);
-      progressW.value = safeStart / Math.max(questions.length, 1);
+      setCurrent(0); setHearts(MAX_HEARTS); setXp(0);
       setCorrectN(0); setFinished(false); setPassed(false);
       setFeedback(null); nextRef.current = 0;
       progressW.value = 0; xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
-    }, [insets.bottom, startQuestion, questions.length]),
+    }, [insets.bottom]),
   );
 
   const handleAnswer = useCallback(
@@ -209,7 +269,7 @@ export default function LessonScreen() {
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <HomeLiquidButton label="Go Back" onPress={() => router.back()} />
+        <LiquidPrimaryButton label="Go Back" onPress={() => router.back()} />
       </SafeAreaView>
     );
   }
@@ -218,32 +278,31 @@ export default function LessonScreen() {
   if (finished) {
     const ok = passed;
     return (
-      <LessonMeshBackdrop>
-        <SafeAreaView style={sSum.root}>
-          <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
-            <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
-              <View style={[sSum.iconWrap, { backgroundColor: ok ? L.green : L.red }]}>
-                {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
-              </View>
-              <Text style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
-                {ok ? "Lesson Complete!" : "Out of Hearts!"}
-              </Text>
-              <Text style={sSum.sub}>
-                {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
-              </Text>
-            </HomeLiquidCard>
+      <SafeAreaView style={[sSum.root, { backgroundColor: ok ? G.greenBg : G.redBg }]}>
+        <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
+          <View style={[sSum.iconWrap, { backgroundColor: ok ? G.green : G.red }]}>
+            {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
+          </View>
 
-            {ok ? (
-              <View style={sSum.statsRow}>
-                <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={L.gold} />
-                <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={L.green} />
-                <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={L.red} />
-              </View>
-            ) : null}
+          <Text style={[sSum.title, { color: ok ? G.greenText : G.redText }]}>
+            {ok ? "Lesson Complete!" : "Out of Hearts!"}
+          </Text>
+          <Text style={sSum.sub}>
+            {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
+          </Text>
 
-            <HomeLiquidButton
+          {ok && (
+            <View style={sSum.statsRow}>
+              <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={G.yellow} />
+              <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={G.green} />
+              <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={G.red} />
+            </View>
+          )}
+
+          <View style={{ width: "100%", marginTop: 12 }}>
+            <LiquidPrimaryButton
               label={ok ? "Continue" : "Try Again"}
-              color={ok ? L.green : L.blue}
+              color={ok ? iOS.systemGreen : iOS.systemBlue}
               onPress={() => {
                 if (ok && !Number.isNaN(pathIndex)) {
                   const snap = useProgressStore.getState();
@@ -264,57 +323,138 @@ export default function LessonScreen() {
                 router.back();
               }}
             />
-          </Animated.View>
-        </SafeAreaView>
-      </LessonMeshBackdrop>
+          </View>
+        </Animated.View>
+      </SafeAreaView>
     );
   }
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
-  return (
-    <LessonMeshBackdrop>
-      <View style={[sL.root, { paddingTop: insets.top }]}>
-        <LessonLightHeader
-          progressFillStyle={progressStyle}
-          hearts={hearts}
-          onBack={() => router.back()}
-        />
 
-        <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-          <Animated.View
-            key={`${pathMode}-${current}`}
-            entering={enterGame}
-            style={{ flex: 1 }}
-          >
-            {renderGame(questions[current]!)}
-          </Animated.View>
+  return (
+    <View style={[sL.root, { paddingTop: insets.top }]}>
+      <Image
+        source={require("@/assets/images/oceanbg.png")}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="low"
+      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: GameBg.scrim }]} />
+
+      {/* Header */}
+      <View style={sL.header}>
+        <HeaderPill onPress={() => router.back()} width={44} paddingH={0}>
+          <Icon3DX size={20} />
+        </HeaderPill>
+
+        {/* Progress glass track */}
+        <View style={sL.progressOuter}>
+          <View style={sL.progressTrack}>
+            <Animated.View style={[sL.progressFillWrap, progressStyle]}>
+              <LinearGradient
+                colors={["#5EEAD4", iOS.systemGreen]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+          </View>
         </View>
 
-        {feedback !== null && (
-          <Animated.View
+        <Animated.View style={xpStyle}>
+          <HeaderPill height={44} paddingH={14}>
+            <Icon3DFire size={18} />
+            <Text style={sL.heartsText}>{hearts}</Text>
+          </HeaderPill>
+        </Animated.View>
+      </View>
+
+      {/* Game */}
+      <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <Animated.View
+          key={`${pathMode}-${current}`}
+          entering={enterGame}
+          style={{ flex: 1 }}
+        >
+          {renderGame(questions[current]!)}
+        </Animated.View>
+      </View>
+
+      {/* Feedback sheet */}
+      {feedback !== null && (
+        <Animated.View
+          style={[
+            sL.sheet,
+            { paddingBottom: Math.max(insets.bottom, 16) + 8 },
+            sheetStyle,
+          ]}
+        >
+          {/* Sheet inner with frosted blur */}
+          <View
             style={[
-              sL.sheet,
-              { paddingBottom: Math.max(insets.bottom, 16) + 8 },
-              sheetStyle,
+              sL.sheetInner,
+              {
+                backgroundColor: "rgba(255,255,255,0.96)",
+                borderColor: isCorrect ? iOS.systemGreen : iOS.systemRed,
+              },
+              Platform.OS === "web" && {
+                // @ts-ignore web
+                backdropFilter: "blur(40px) saturate(180%)",
+                // @ts-ignore web
+                WebkitBackdropFilter: "blur(40px) saturate(180%)",
+              },
             ]}
           >
-            <LessonLiquidFeedback
-              correct={isCorrect}
-              title={isCorrect ? "Correct!" : "Incorrect"}
-              subtitle={
-                feedback.explanation
-                  ? feedback.explanation
-                  : isCorrect
-                    ? "Perfect. Keep up the momentum."
-                    : "Not quite. Focus on the structure."
-              }
-              onContinue={continueToNext}
+            {/* Top accent stripe */}
+            <View
+              style={[
+                sL.sheetAccent,
+                { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
+              ]}
             />
-          </Animated.View>
-        )}
-      </View>
-    </LessonMeshBackdrop>
+            <View style={{ position: "relative", zIndex: 1, gap: 18 }}>
+              <View style={sL.sheetHeader}>
+                <View
+                  style={[
+                    sL.sheetIconWrap,
+                    { backgroundColor: isCorrect ? iOS.systemGreen : iOS.systemRed },
+                  ]}
+                >
+                  {isCorrect ? <Icon3DCheckCircle size={22} /> : <Icon3DX size={22} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      sL.sheetTitle,
+                      { color: isCorrect ? iOS.greenDeep : iOS.redDeep },
+                    ]}
+                  >
+                    {isCorrect ? "Correct!" : "Incorrect"}
+                  </Text>
+                  {feedback.explanation ? (
+                    <Text style={[sL.sheetSub, dirForText(feedback.explanation)]}>
+                      {feedback.explanation}
+                    </Text>
+                  ) : (
+                    <Text style={sL.sheetSub}>
+                      {isCorrect ? "Keep going." : "Review and try the next one."}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <LiquidPrimaryButton
+                label="CONTINUE"
+                color={isCorrect ? iOS.systemGreen : iOS.systemRed}
+                onPress={continueToNext}
+              />
+            </View>
+          </View>
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
@@ -325,17 +465,17 @@ const sL = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 18,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    gap: 10,
   },
   progressOuter: {
     flex: 1,
   },
   progressTrack: {
-    height: 12,
-    borderRadius: 6,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: "rgba(8,16,32,0.45)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
@@ -356,12 +496,56 @@ const sL = StyleSheet.create({
 
   gameArea: { flex: 1 },
 
+  /* Feedback sheet */
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 16,
+  },
+  sheetInner: {
+    borderRadius: Radius.xl,
+    borderWidth: 1.4,
+    paddingTop: 24,
+    paddingHorizontal: 22,
+    paddingBottom: 22,
+    overflow: "hidden",
+    ...crossShadow({ color: "#000", offsetY: -4, opacity: 0.18, blur: 30, elevation: 24 }),
+  },
+  sheetAccent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  sheetIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  sheetTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 28,
+    letterSpacing: -0.5,
+  },
+  sheetSub: {
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 22,
+    letterSpacing: -0.2,
+    color: "#475569",
+    marginTop: 2,
   },
 });
 
@@ -383,38 +567,22 @@ const sSum = StyleSheet.create({
     marginBottom: 6,
   },
   title: { fontSize: 28, fontWeight: "900", textAlign: "center" },
-  sub: {
-    fontSize: 16,
-    color: L.gray,
-    textAlign: "center",
-    fontFamily: "DINNextRoundedMedium",
-  },
+  sub:   { fontSize: 16, color: G.textMid, textAlign: "center" },
   statsRow: {
     flexDirection: "row",
     gap: 10,
     width: "100%",
     marginTop: 8,
   },
-  heroCard: {
-    alignItems: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    gap: 10,
-  },
   statCard: {
+    flex: 1,
     alignItems: "center",
-    paddingVertical: 16,
+    backgroundColor: G.bg,
+    borderRadius: G.rMd,
+    borderWidth: 2.5,
+    paddingVertical: 18,
     gap: 4,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: L.gray,
-    fontFamily: "DINNextRoundedMedium",
-  },
+  statValue: { fontSize: 20, fontWeight: "800" },
+  statLabel: { fontSize: 12, fontWeight: "600", color: G.textMid },
 });

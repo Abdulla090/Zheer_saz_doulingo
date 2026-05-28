@@ -1,7 +1,2 @@
+# Force EAS to use npm (package-lock.json) — bun.lock triggers Bun install on CI.
 bun.lock
-bun.lockb
-node_modules/
-.expo/
-artifacts/
-playwright-report/
-*.log

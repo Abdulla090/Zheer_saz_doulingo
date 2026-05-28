@@ -1,9 +1,10 @@
 import SafeContainer from "@/components/shared/safe-container";
-import { SvgAppButton } from "@/components/shared/svg-app-button";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Icon3DCheck } from "@/components/icons/Icon3D";
 import { ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 const plans = [
   {
     id: 1,
@@ -100,34 +101,27 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
           style={{ width: 100, height: 100 }}
         />
       </View>
-      <SvgAppButton
-        width="100%"
-        height={40}
+      <View
         style={{
           marginTop: 10,
-        }}
-        color="#FFFFFF"
-        backgroundColor="#E5E5E5"
-        leftRadius={10}
-        rightRadius={10}
-        pressDepth={3}
-        onPress={() => {}}
-        contentContainerStyle={{
+          height: 44,
+          borderRadius: 12,
+          backgroundColor: "#E8EDF2",
           alignItems: "center",
           justifyContent: "center",
-          borderWidth: 1,
-          borderColor: "#E5E5E5",
-          borderRadius: 10,
+          opacity: 0.72,
         }}
       >
-        <Text className="text-blue-500 text-base font-rd-bold">
-          تابیکەرەوە بە ٠٫٠٠ €
+        <Text className="text-text-secondary text-sm font-rd-bold">
+          بەشداریکردن بەم زووانە
         </Text>
-      </SvgAppButton>
+      </View>
     </View>
   );
 };
 export const SubscriptionScreen = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <View className="flex-1  bg-white">
       <SafeContainer className="px-4 pt-2 pb-2 bg-[#0E3270]">
@@ -140,7 +134,11 @@ export const SubscriptionScreen = () => {
           style={{ width: 150, height: 150, alignSelf: "center" }}
         />
       </SafeContainer>
-      <ScrollView>
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: tabBarScrollPadding(insets.bottom),
+        }}
+      >
         {plans.map((plan) => (
           <PlanCard key={plan.id} plan={plan} />
         ))}

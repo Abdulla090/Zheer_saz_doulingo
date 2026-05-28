@@ -1,15 +1,13 @@
 /**
- * Icon3D — Soft gradient coin icons for Phingo (no hard extrusion ledge).
- * Path lesson node circles use SvgButton rim/face — not these icons.
- *
- * All gradient IDs are unique per component mount via useRef + module counter.
+ * Icon3D — Soft premium coin icons (matches home path buttons).
+ * Radial face lighting, gloss sheen, and gentle depth — no hard extruded ledges.
  */
 
 import React from "react";
 import Svg, {
   Defs,
-  Ellipse,
   LinearGradient,
+  RadialGradient,
   Stop,
   Path,
   Rect,
@@ -23,8 +21,7 @@ function useId(prefix: string) {
 }
 
 // ----- Core icon builder -------------------------------------------------------
-// Soft 3D: smooth gradient + diffuse ground shadow (no hard extrusion ledge).
-// Path lesson circles (SvgButton) use a separate rim/face system — unchanged.
+// Soft premium coin — radial lighting + gentle depth (matches home path buttons).
 interface SphereProps {
   size: number;
   bright: string;
@@ -35,45 +32,73 @@ interface SphereProps {
 }
 
 function Sphere({ size, bright, mid, shade, id, children }: SphereProps & { children?: React.ReactNode }) {
-  const bg = `bg-${id}`;
-  const pad = size * 0.05;
+  const radial = `rad-${id}`;
+  const gloss = `gloss-${id}`;
+  const pad = size * 0.04;
   const w = size - pad * 2;
   const rx = w / 2;
-  const cx = size / 2;
+  const cx = pad + rx;
+  const cy = pad + rx;
+  const depth = Math.max(2, Math.round(size * 0.05));
+  const totalH = size + depth;
 
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <Svg width={size} height={totalH} viewBox={`0 0 ${size} ${totalH}`}>
       <Defs>
-        <LinearGradient id={bg} x1="0.2" y1="0" x2="0.8" y2="1">
+        <RadialGradient
+          id={radial}
+          cx="32%"
+          cy="28%"
+          rx="72%"
+          ry="72%"
+          fx="28%"
+          fy="22%"
+        >
           <Stop offset="0%" stopColor={bright} />
-          <Stop offset="52%" stopColor={mid} />
+          <Stop offset="55%" stopColor={mid} />
           <Stop offset="100%" stopColor={shade} />
+        </RadialGradient>
+        <LinearGradient id={gloss} x1="0" y1="0" x2="0.4" y2="1">
+          <Stop offset="0%" stopColor="rgba(255,255,255,0.45)" />
+          <Stop offset="45%" stopColor="rgba(255,255,255,0.08)" />
+          <Stop offset="100%" stopColor="rgba(255,255,255,0)" />
         </LinearGradient>
       </Defs>
 
-      <Ellipse
-        cx={cx}
-        cy={size * 0.93}
-        rx={w * 0.4}
-        ry={Math.max(1.5, w * 0.065)}
+      <Rect
+        x={pad}
+        y={pad + depth * 0.85}
+        width={w}
+        height={w}
+        rx={rx}
         fill={shade}
-        opacity={0.2}
+        opacity={0.38}
       />
 
-      <Rect x={pad} y={pad} width={w} height={w} rx={rx} fill={`url(#${bg})`} />
+      <Rect x={pad} y={pad} width={w} height={w} rx={rx} fill={`url(#${radial})`} />
 
       <Rect
-        x={pad + 0.5}
-        y={pad + 0.5}
-        width={w - 1}
-        height={w - 1}
-        rx={rx - 0.5}
-        fill="none"
-        stroke="rgba(255,255,255,0.42)"
-        strokeWidth={1.1}
+        x={pad}
+        y={pad}
+        width={w}
+        height={w * 0.55}
+        rx={rx}
+        fill={`url(#${gloss})`}
+        opacity={0.9}
       />
 
-      {children}
+      <Rect
+        x={pad + 0.75}
+        y={pad + 0.75}
+        width={w - 1.5}
+        height={w - 1.5}
+        rx={rx - 0.75}
+        fill="none"
+        stroke="rgba(255,255,255,0.42)"
+        strokeWidth={1.25}
+      />
+
+      <G>{children}</G>
     </Svg>
   );
 }

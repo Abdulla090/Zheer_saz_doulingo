@@ -34,6 +34,7 @@ import Animated, {
 } from "react-native-reanimated";
 // EaseView replaced with Animated.View from reanimated
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SoftCircleButton } from "@/components/ui/soft-2.5d";
 import { crossShadow } from "@/utils/shadows";
 
 // ─── Color utils ──────────────────────────────────────────────────────────────
@@ -44,8 +45,6 @@ const rgba = (hex: string, a: number) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
-// ─── 3-D TTS Pill Button ──────────────────────────────────────────────────────
-// Matches the exact same 3D architecture as the game chips (shadow layer + face layer + marginBottom)
 function TTSPill({
   onPress,
   isActive,
@@ -59,38 +58,18 @@ function TTSPill({
   rimColor: string;
   size?: "sm" | "lg";
 }) {
-  const p = useSharedValue(0);
-  const ty = useSharedValue(0);
-
-  React.useEffect(() => {
-    p.value = withTiming(isActive ? 1 : 0, { duration: 180, easing: Easing.out(Easing.quad) });
-  }, [isActive]);
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#E5E5E5", rimColor]),
-  }));
-  const faceStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#FFFFFF", faceColor]),
-    transform: [{ translateY: ty.value }],
-  }));
-
+  const dim = size === "lg" ? 40 : 34;
   const iconSize = size === "lg" ? 20 : 16;
-  const pad = size === "lg" ? 10 : 7;
-  const br = size === "lg" ? 16 : 12;
 
   return (
-    <Animated.View style={[{ borderRadius: br }, shadowStyle]}>
-      <Animated.View style={[{ borderRadius: br, marginBottom: 3 }, faceStyle]}>
-        <Pressable
-          onPress={onPress}
-          onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-          onPressOut={() => { ty.value = withTiming(0, { duration: 100 }); }}
-          style={{ padding: pad }}
-        >
-          <Icon3DVolume size={iconSize} />
-        </Pressable>
-      </Animated.View>
-    </Animated.View>
+    <SoftCircleButton
+      size={dim}
+      onPress={onPress}
+      faceColor={isActive ? faceColor : "#FFFFFF"}
+      rimColor={isActive ? rimColor : "#E2E8F0"}
+    >
+      <Icon3DVolume size={iconSize} />
+    </SoftCircleButton>
   );
 }
 
@@ -101,34 +80,26 @@ function WordCard({
   english: string; kurdish: string; faceColor: string; rimColor: string;
   isActive: boolean; onPress: () => void; delay: number;
 }) {
-  const p  = useSharedValue(0);
-  const ty = useSharedValue(0);               // ← 3D press
+  const p = useSharedValue(0);
   React.useEffect(() => {
     p.value = withTiming(isActive ? 1 : 0, { duration: 200 });
   }, [isActive]);
 
   const cardBg = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(p.value, [0, 1], ["#FAFAFA", rgba(faceColor, 0.07)]),
-    transform: [{ translateY: ty.value }],     // ← follows press
   }));
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(300)}
-
-      style={{}}
-    >
-      {/* Rim (depth shadow using face color) */}
-      <View style={[styles.wordCardRim, { backgroundColor: isActive ? rgba(faceColor, 0.5) : "#E5E5E5" }]}>
-        <Animated.View
-          style={[styles.wordCard, cardBg, { borderLeftColor: faceColor }]}
-        >
-          <Pressable
-            onPress={onPress}
-            onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-            onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
-            style={styles.wordCardInner}
-          >
+    <Animated.View entering={FadeInDown.duration(300)}>
+      <Animated.View
+        style={[
+          styles.wordCard,
+          cardBg,
+          { borderLeftColor: faceColor },
+          isActive && crossShadow({ color: faceColor, offsetY: 6, opacity: 0.12, blur: 12, elevation: 3 }),
+        ]}
+      >
+        <Pressable onPress={onPress} style={styles.wordCardInner}>
             <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.wordEn}>{english}</Text>
               <AppText
@@ -145,9 +116,8 @@ function WordCard({
               rimColor={rimColor}
               size="sm"
             />
-          </Pressable>
-        </Animated.View>
-      </View>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -159,8 +129,7 @@ function PhraseCard({
   english: string; kurdish: string; faceColor: string; rimColor: string;
   isActive: boolean; onPress: () => void; delay: number;
 }) {
-  const p  = useSharedValue(0);
-  const ty = useSharedValue(0);               // ← 3D press
+  const p = useSharedValue(0);
   React.useEffect(() => {
     p.value = withTiming(isActive ? 1 : 0, { duration: 200 });
   }, [isActive]);
@@ -168,23 +137,18 @@ function PhraseCard({
   const cardStyle = useAnimatedStyle(() => ({
     borderColor: interpolateColor(p.value, [0, 1], ["#EBEBEB", faceColor]),
     backgroundColor: interpolateColor(p.value, [0, 1], ["#FFFFFF", rgba(faceColor, 0.05)]),
-    transform: [{ translateY: ty.value }],
   }));
 
   return (
-    <Animated.View
-      style={{ opacity: 0, transform: [{ scale: 0.95 }] }}
-    >
-      {/* Rim */}
-      <View style={[styles.phraseRim, {
-        backgroundColor: isActive ? rgba(faceColor, 0.4) : "#E0E0E0",
-      }]}>
-        <Animated.View style={[styles.phraseCard, cardStyle]}>
-          <Pressable
-            onPress={onPress}
-            onPressIn={() => { ty.value = withTiming(4, { duration: 65 }); }}
-            onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
-          >
+    <Animated.View>
+      <Animated.View
+        style={[
+          styles.phraseCard,
+          cardStyle,
+          isActive && crossShadow({ color: faceColor, offsetY: 6, opacity: 0.1, blur: 12, elevation: 2 }),
+        ]}
+      >
+        <Pressable onPress={onPress}>
             {/* Accent stripe */}
             <View style={[styles.phraseAccentBar, { backgroundColor: faceColor }]} />
             <View style={styles.phraseInner}>
@@ -203,9 +167,8 @@ function PhraseCard({
                 {kurdish}
               </AppText>
             </View>
-          </Pressable>
-        </Animated.View>
-      </View>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -250,10 +213,6 @@ function LessonAccordion({
     });
   };
 
-  // ── Press animation for header row ──
-  const headerTy = useSharedValue(0);
-  const headerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: headerTy.value }] }));
-
   return (
     <Animated.View
       entering={FadeInDown.duration(300)}
@@ -262,12 +221,8 @@ function LessonAccordion({
     >
       <View style={styles.accordionCard}>
         {/* Header ──────────────────────────────────── */}
-        <Pressable
-          onPress={toggle}
-          onPressIn={() => { headerTy.value = withTiming(1.5, { duration: 60 }); }}
-          onPressOut={() => { headerTy.value = withTiming(0, { duration: 100 }); }}
-        >
-          <Animated.View style={[styles.accordionHeader, headerStyle]}>
+        <Pressable onPress={toggle}>
+          <View style={styles.accordionHeader}>
             {/* Index badge */}
             <View style={[styles.indexBadge, { backgroundColor: faceColor }]}>
               <Text style={styles.indexBadgeText}>{index + 1}</Text>
@@ -291,7 +246,7 @@ function LessonAccordion({
                 <Icon3DChevronDown size={18} />
               </Animated.View>
             </View>
-          </Animated.View>
+          </View>
         </Pressable>
 
         {/* Body ───────────────────────────────────── */}
@@ -356,22 +311,15 @@ function LessonAccordion({
 
 // ─── Close Button ─────────────────────────────────────────────────────────────
 function CloseBtn({ onPress }: { onPress: () => void }) {
-  const ty = useSharedValue(0);
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
   return (
-    // 3D rim + face
-    <View style={[styles.closeBtnRim]}>
-      <Animated.View style={[styles.closeBtn, style]}>
-        <Pressable
-          onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-          onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
-          onPress={onPress}
-          style={styles.closeBtnInner}
-        >
-          <Icon3DX size={20} />
-        </Pressable>
-      </Animated.View>
-    </View>
+    <SoftCircleButton
+      size={36}
+      onPress={onPress}
+      faceColor="rgba(255,255,255,0.28)"
+      rimColor="rgba(0,0,0,0.2)"
+    >
+      <Icon3DX size={18} />
+    </SoftCircleButton>
   );
 }
 
@@ -694,7 +642,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     borderRadius: 14,
     borderLeftWidth: 3.5,
-    marginBottom: 3,
+    ...crossShadow({ color: "#0F172A", offsetY: 4, opacity: 0.06, blur: 10, elevation: 2 }),
   },
   wordCardInner: {
     flex: 1,
@@ -726,7 +674,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     overflow: "hidden" as const,
-    marginBottom: 4,
+    ...crossShadow({ color: "#0F172A", offsetY: 4, opacity: 0.06, blur: 10, elevation: 2 }),
   },
   phraseAccentBar: {
     height: 4,

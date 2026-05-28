@@ -1,13 +1,8 @@
-import { HomePalette } from "@/components/ui/ios-liquid-home";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
-import { Motion } from "@/screens/lesson/games/game-design";
 
-const C = HomePalette;
+const ACTIVE = "#208AEF";
+const INACTIVE = "#CBD5E1";
 
 export function OnboardingProgressDots({
   total,
@@ -17,41 +12,37 @@ export function OnboardingProgressDots({
   index: number;
 }) {
   return (
-    <View style={styles.row} accessibilityRole="tablist">
-      {Array.from({ length: total }, (_, i) => (
-        <Dot key={i} active={i === index} />
+    <View style={styles.row}>
+      {Array.from({ length: total }).map((_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.dot,
+            i === index ? styles.dotActive : styles.dotIdle,
+          ]}
+        />
       ))}
     </View>
-  );
-}
-
-function Dot({ active }: { active: boolean }) {
-  const style = useAnimatedStyle(() => ({
-    width: withSpring(active ? 28 : 8, Motion.soft),
-    opacity: withSpring(active ? 1 : 0.35, Motion.soft),
-  }));
-
-  return (
-    <Animated.View
-      style={[styles.dot, style, active && styles.dotActive]}
-    />
   );
 }
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    minHeight: 12,
+    width: "100%",
   },
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: C.track,
   },
   dotActive: {
-    backgroundColor: C.blue,
+    width: 24,
+    backgroundColor: ACTIVE,
+  },
+  dotIdle: {
+    width: 8,
+    backgroundColor: INACTIVE,
   },
 });

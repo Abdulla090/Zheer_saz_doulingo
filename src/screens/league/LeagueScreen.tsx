@@ -11,7 +11,9 @@ import {
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
 import { Icon3DClock } from "@/components/icons/Icon3D";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const getAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/adventurer/png?seed=${encodeURIComponent(seed)}`;
@@ -84,6 +86,8 @@ const renderLeagueItem = ({ item }: LegendListRenderItemProps<LeagueEntry>) => (
 );
 
 export const LeagueScreen = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <View className="flex-1 bg-white">
       <SafeContainer className="px-4 pt-2 pb-2 gap-1">
@@ -103,7 +107,7 @@ export const LeagueScreen = () => {
         keyExtractor={keyExtractor}
         renderItem={renderLeagueItem}
         estimatedItemSize={74}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: tabBarScrollPadding(insets.bottom) }}
       />
     </View>
   );

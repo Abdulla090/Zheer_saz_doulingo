@@ -1,13 +1,12 @@
 /**
- * FillBlankGame — Premium light lesson UI.
+ * FillBlankGame — iOS 26 Liquid Glass redesign.
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -15,16 +14,16 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { FillBlankQuestion } from "@/data/lesson-content";
+import { GameSpace, Motion, Radius, Type, iOS, Glass } from "./game-design";
 import { ltrText, rtlBlock } from "./game-text";
-import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
-import { L } from "./lesson-light-design";
+import { GameScreenLayout } from "./GameScreenLayout";
 import {
-  LightCheckButton,
-  LightGameHeading,
-  LightSurfaceCard,
-  LightWordTile,
-  mapOptionState,
-} from "./lesson-light-primitives";
+  LiquidCard,
+  LiquidEyebrow,
+  LiquidPrimaryButton,
+  LiquidWordChip,
+  OptionState,
+} from "./liquid-primitives";
 
 type Props = {
   question: FillBlankQuestion;
@@ -32,160 +31,171 @@ type Props = {
 };
 
 export default function FillBlankGame({ question, onAnswer }: Props) {
-  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
+
   const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
+  const blankP = useSharedValue(0);
+  const blankStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      blankP.value,
+      [0, 1, 2, 3],
+      [Glass.surfaceInner, "rgba(10,132,255,0.32)", iOS.systemGreen, iOS.systemRed],
+    ),
+    borderColor: interpolateColor(
+      blankP.value,
+      [0, 1, 2, 3],
+      [Glass.border, iOS.systemBlue, iOS.systemGreen, iOS.systemRed],
+    ),
+  }));
+
+  const blankTextStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      blankP.value,
+      [0, 1, 2, 3],
+      ["#94A3B8", iOS.blueDeep, "#FFFFFF", "#FFFFFF"],
+    ) as any,
   }));
 
   const pick = (word: string) => {
     if (revealed) return;
     setSelected(word);
+    blankP.value = withTiming(1, { duration: Motion.colorMs, easing: Motion.ease });
   };
 
   const check = () => {
     if (!selected || revealed) return;
     setRevealed(true);
     const ok = selected === question.correctAnswer;
+    blankP.value = withTiming(ok ? 2 : 3, { duration: Motion.colorMs, easing: Motion.ease });
 
     if (!ok) {
       shakeX.value = withSequence(
-        withTiming(-8, { duration: 36 }),
-        withTiming(8, { duration: 36 }),
-        withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
+        withTiming(-9, { duration: 38 }),
+        withTiming(9, { duration: 38 }),
+        withTiming(-5, { duration: 32 }),
+        withTiming(5, { duration: 32 }),
+        withTiming(0, { duration: 44, easing: Easing.out(Easing.quad) }),
       );
     }
 
-    if (!firedRef.current) {
-      firedRef.current = true;
-      onAnswer(ok);
-    }
+    if (!firedRef.current) { firedRef.current = true; onAnswer(ok); }
   };
 
-  const getState = (w: string) => {
+  const getState = (w: string): OptionState => {
     if (!revealed) return w === selected ? "selected" : "idle";
-    if (w === selected) {
-      return w === question.correctAnswer ? "correct" : "wrong";
-    }
+    if (w === selected) return w === question.correctAnswer ? "correct" : "wrong";
     return "idle";
   };
 
-  const blankBorder =
-    revealed && selected
-      ? selected === question.correctAnswer
-        ? L.green
-        : L.red
-      : selected
-        ? L.blue
-        : L.slotDash;
-
   return (
-    <GameRoot style={s.root}>
-      <GameHeader>
-        <LightGameHeading
-          title={t("lessons.fillBlank")}
-          subtitle={t("lessons.fillBlankSub")}
+    <GameScreenLayout
+      header={
+        <>
+          <LiquidEyebrow>Fill blank</LiquidEyebrow>
+          <Text style={s.hint} numberOfLines={2}>{question.kurdishHint}</Text>
+        </>
+      }
+      bodyStyle={s.body}
+      footer={
+        <LiquidPrimaryButton
+          label="CHECK"
+          color={iOS.systemGreen}
+          onPress={check}
+          disabled={!selected || revealed}
         />
-      </GameHeader>
-
-      <AppText style={s.hint} forceKurdishFont>
-        {question.kurdishHint}
-      </AppText>
-
+      }
+    >
       <Animated.View style={shakeStyle}>
-        <LightSurfaceCard>
+        <LiquidCard style={s.sentenceCard} radius={Radius.lg}>
           <View style={s.sentenceRow}>
             {question.sentenceParts[0] ? (
               <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
             ) : null}
-            <View style={[s.blank, { borderColor: blankBorder }]}>
-              <Text style={s.blankText}>{selected || "____"}</Text>
-            </View>
+
+            <Animated.View style={[s.blank, blankStyle]}>
+              <Animated.Text style={[s.blankText, blankTextStyle]}>
+                {selected || "___"}
+              </Animated.Text>
+            </Animated.View>
+
             {question.sentenceParts[1] ? (
               <Text style={s.sentenceText}> {question.sentenceParts[1]}</Text>
             ) : null}
           </View>
-        </LightSurfaceCard>
+        </LiquidCard>
       </Animated.View>
 
       <View style={s.chipsWrap}>
         {question.options.map((w) => (
-          <LightWordTile
+          <LiquidWordChip
             key={w}
             label={w}
-            state={mapOptionState(getState(w))}
+            state={getState(w)}
             onPress={() => pick(w)}
             disabled={revealed}
+            size="sm"
           />
         ))}
       </View>
-
-      <View style={{ flex: 1 }} />
-
-      <GameFooter>
-        <LightCheckButton
-          label={t("lessons.check")}
-          onPress={check}
-          disabled={!selected || revealed}
-        />
-      </GameFooter>
-    </GameRoot>
+    </GameScreenLayout>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 16,
+  body: {
+    gap: GameSpace.gap,
   },
   hint: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: L.navy,
-    fontFamily: "DINNextRoundedBold",
+    ...Type.title,
+    color: "#FFFFFF",
+    marginTop: 4,
     ...rtlBlock,
+  },
+  sentenceCard: {
+    paddingHorizontal: GameSpace.cardPadH,
+    paddingVertical: GameSpace.cardPadV,
+    minHeight: 0,
+    justifyContent: "center",
   },
   sentenceRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 4,
   },
   sentenceText: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "700",
-    color: L.navy,
-    lineHeight: 28,
-    fontFamily: "DINNextRoundedBold",
+    color: "#0F172A",
+    lineHeight: 26,
+    letterSpacing: -0.2,
     ...ltrText,
   },
   blank: {
-    minWidth: 88,
-    borderRadius: 14,
+    minWidth: 72,
+    borderRadius: Radius.sm,
     borderWidth: 2,
     borderStyle: "dashed",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: L.bgSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
   },
   blankText: {
     fontSize: 17,
     fontWeight: "800",
-    color: L.navy,
-    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.2,
     ...ltrText,
   },
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
   },
 });

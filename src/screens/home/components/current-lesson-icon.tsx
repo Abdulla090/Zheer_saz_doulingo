@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -10,13 +11,18 @@ import Animated, {
 } from "react-native-reanimated";
 
 type CurrentLessonIconProps = {
-  children: React.ReactNode;
+  IconComponent: React.ComponentType<any>;
+  color: string;
+  width: number;
+  height: number;
   active?: boolean;
 };
 
-/** Bounce wrapper — animates a View, not SVG groups (Android-safe). */
 export const CurrentLessonIcon = ({
-  children,
+  IconComponent,
+  color,
+  width,
+  height,
   active = true,
 }: CurrentLessonIconProps) => {
   const translateY = useSharedValue(0);
@@ -40,9 +46,21 @@ export const CurrentLessonIcon = ({
     return () => cancelAnimation(translateY);
   }, [active, translateY]);
 
-  const style = useAnimatedStyle(() => ({
+  const bounceStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
 
-  return <Animated.View style={style}>{children}</Animated.View>;
+  return (
+    <Animated.View style={bounceStyle}>
+      <View style={{ width, height, alignItems: "center", justifyContent: "center" }}>
+        <IconComponent
+          fill={color}
+          stroke={color}
+          strokeWidth={1}
+          width={width}
+          height={height}
+        />
+      </View>
+    </Animated.View>
+  );
 };
