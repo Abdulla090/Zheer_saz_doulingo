@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Phingo — all screens (restored app)</title>
+  <title>Phingo — all screens (v1.0.5)</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -15,7 +15,7 @@
     }
     header { max-width: 960px; margin: 0 auto 32px; }
     h1 { font-size: 1.75rem; margin: 0 0 8px; }
-    .meta { color: #64748b; font-size: 15px; line-height: 1.5; margin: 0 0 12px; }
+    .meta { color: #64748b; font-size: 15px; line-height: 1.6; margin: 0 0 12px; }
     .badge {
       display: inline-block;
       background: #208aef;
@@ -25,7 +25,18 @@
       padding: 4px 10px;
       border-radius: 8px;
       letter-spacing: 0.04em;
+      margin-right: 8px;
     }
+    .link-box {
+      max-width: 960px;
+      margin: 0 auto 24px;
+      padding: 14px 16px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    .link-box a { color: #208aef; word-break: break-all; }
     h2 {
       font-size: 0.85rem;
       margin: 36px auto 14px;
@@ -67,73 +78,50 @@
       display: block;
       background: #f1f5f9;
     }
+    .missing {
+      max-width: 1200px;
+      margin: 24px auto 0;
+      padding: 16px;
+      background: #fff8e6;
+      border-radius: 12px;
+      border: 1px solid #fde68a;
+      font-size: 14px;
+      color: #78350f;
+    }
+    .missing ul { margin: 8px 0 0; padding-left: 1.2rem; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Phingo English — full UI gallery</h1>
+    <h1>Phingo English — all screens</h1>
     <p class="meta">
-      Screenshots from the <strong>restored app</strong> (commit <code>4194373</code>).
-      Compare these to your phone — this is what the repo is supposed to look like.
+      One image per screen — no duplicate or alternate home/games variants.
+      Matches <strong>main</strong> build <strong>1.0.5 (soft-ui-1.0.5)</strong>.
     </p>
-    <span class="badge">Restored build reference</span>
+    <span class="badge">v1.0.5</span>
+    <span class="badge">Soft iOS UI</span>
   </header>
 
-  <h2>Main tabs &amp; home</h2>
+  <div class="link-box">
+    <strong>Bookmark this page:</strong>
+    <a id="gallery-url" href=""></a>
+  </div>
+  <script>
+    document.getElementById("gallery-url").href = location.href;
+    document.getElementById("gallery-url").textContent = location.href;
+  </script>
+
+  <h2>Main tabs</h2>
   <div class="grid">
     <figure>
-      <figcaption>Home (learn dashboard)</figcaption>
+      <figcaption>Home</figcaption>
       <div class="route">/</div>
       <img src="./01-home.png" alt="Home" loading="lazy" />
     </figure>
     <figure>
-      <figcaption>Home (liquid)</figcaption>
-      <div class="route">phingo-home-liquid</div>
-      <img src="./phingo-home-liquid.png" alt="Home liquid" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Home (mobile)</figcaption>
-      <div class="route">phingo-home-mobile</div>
-      <img src="./phingo-home-mobile.png" alt="Home mobile" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Home (flat mobile)</figcaption>
-      <div class="route">phingo-home-flat-mobile</div>
-      <img src="./phingo-home-flat-mobile.png" alt="Home flat" loading="lazy" />
-    </figure>
-  </div>
-
-  <h2>Games &amp; AI</h2>
-  <div class="grid">
-    <figure>
       <figcaption>Games hub</figcaption>
       <div class="route">/feed</div>
-      <img src="./02-games.png" alt="Games" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>Games hub (alt)</figcaption>
-      <div class="route">phingo-games-hub</div>
-      <img src="./phingo-games-hub.png" alt="Games hub" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Teacher</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./03-ai-teacher.png" alt="AI Teacher" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Teacher — input</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./phingo-ai-teacher-input.png" alt="AI Teacher input" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Teacher — results</figcaption>
-      <div class="route">/ai-teacher</div>
-      <img src="./phingo-ai-teacher-results.png" alt="AI Teacher results" loading="lazy" />
-    </figure>
-    <figure>
-      <figcaption>AI Role Play</figcaption>
-      <div class="route">/roleplay</div>
-      <img src="./04-roleplay-picker.png" alt="Role Play" loading="lazy" />
+      <img src="./02-games.png" alt="Games hub" loading="lazy" />
     </figure>
   </div>
 
@@ -151,7 +139,31 @@
     </figure>
   </div>
 
-  <h2>Lesson mini-games</h2>
+  <h2>AI &amp; role play</h2>
+  <div class="grid">
+    <figure>
+      <figcaption>AI Teacher — hub</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./03-ai-teacher.png" alt="AI Teacher" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Teacher — chat input</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./ai-teacher-input.png" alt="AI Teacher input" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Teacher — results</figcaption>
+      <div class="route">/ai-teacher</div>
+      <img src="./ai-teacher-results.png" alt="AI Teacher results" loading="lazy" />
+    </figure>
+    <figure>
+      <figcaption>AI Role Play</figcaption>
+      <div class="route">/roleplay</div>
+      <img src="./04-roleplay-picker.png" alt="Role Play" loading="lazy" />
+    </figure>
+  </div>
+
+  <h2>Lesson games (light UI)</h2>
   <div class="grid">
     <figure>
       <figcaption>Order words</figcaption>
@@ -170,11 +182,17 @@
     </figure>
   </div>
 
-  <header style="margin-top: 48px;">
-    <p class="meta">
-      Not pictured here (open in app): onboarding, Settings/Profile (<code>/more</code>),
-      widgets gallery, league/quests. Tab bar: Games · Home · Stats; long-press for settings.
-    </p>
-  </header>
+  <div class="missing">
+    <strong>Not in this gallery</strong> (open in the app — no screenshot yet):
+    <ul>
+      <li>Stats / League tab — <code>/league</code></li>
+      <li>Settings — <code>/more</code> (long-press tab bar)</li>
+      <li>Quests — <code>/quest</code></li>
+      <li>Onboarding (first launch)</li>
+      <li>Widgets gallery — <code>/widgets</code></li>
+      <li>Guidebook, subscription, legal pages</li>
+    </ul>
+    <p style="margin: 12px 0 0;">Tab bar: <strong>Games · Home · Stats</strong> — long-press for settings sheet.</p>
+  </div>
 </body>
 </html>
