@@ -39,23 +39,22 @@ export const NORMAL_UNITS: UnitBank[] = [
 ];
 
 export const normalSectionConfigs: Array<{
-  title: string;
   theme: SectionTheme;
   displayTheme: SectionTheme;
 }> = [
-  { title: "Unit 1: Everyday Essentials",       theme: "blue",   displayTheme: "blue"   },
-  { title: "Unit 2: Social & Daily Life",       theme: "green",  displayTheme: "green"  },
-  { title: "Unit 3: Work & Business",           theme: "purple", displayTheme: "purple" },
-  { title: "Unit 4: Deep Conversations",        theme: "orange", displayTheme: "orange" },
-  { title: "Unit 5: Special Encounters",        theme: "red",    displayTheme: "red"    },
-  { title: "Unit 6: Travel & Exploring",        theme: "blue",   displayTheme: "blue"   },
-  { title: "Unit 7: Idioms & Natural Slang",   theme: "green",  displayTheme: "green"  },
-  { title: "Unit 8: Digital Life",             theme: "purple", displayTheme: "purple" },
-  { title: "Unit 9: Relationships & Feelings",  theme: "orange", displayTheme: "orange" },
-  { title: "Unit 10: Health & Emergencies",    theme: "red",    displayTheme: "red"    },
-  { title: "Unit 11: Money & Shopping",         theme: "yellow", displayTheme: "yellow" },
-  { title: "Unit 12: Real-World Mastery",       theme: "mint",   displayTheme: "mint"   },
-  { title: "Unit 13: Opinions & Confidence",   theme: "purple", displayTheme: "purple" },
+  { theme: "blue", displayTheme: "blue" },
+  { theme: "green", displayTheme: "green" },
+  { theme: "purple", displayTheme: "purple" },
+  { theme: "orange", displayTheme: "orange" },
+  { theme: "red", displayTheme: "red" },
+  { theme: "blue", displayTheme: "blue" },
+  { theme: "green", displayTheme: "green" },
+  { theme: "purple", displayTheme: "purple" },
+  { theme: "orange", displayTheme: "orange" },
+  { theme: "red", displayTheme: "red" },
+  { theme: "yellow", displayTheme: "yellow" },
+  { theme: "mint", displayTheme: "mint" },
+  { theme: "purple", displayTheme: "purple" },
 ];
 
 const BASE_PATTERN: LessonType[] = [
@@ -78,7 +77,7 @@ export function buildNormalSectionData(
   let normalPathIndex = 0;
 
   return normalSectionConfigs.map(
-    ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
+    ({ theme, displayTheme }, sectionIndex): SectionDataItem => {
       const pattern =
         sectionIndex === 0
           ? (["practice" as LessonType, ...BASE_PATTERN])
@@ -107,7 +106,7 @@ export function buildNormalSectionData(
         };
       });
 
-      return { title, theme, displayTheme, data };
+      return { unitIndex: sectionIndex, title: "", theme, displayTheme, data };
     },
   );
 }

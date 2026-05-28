@@ -1,5 +1,20 @@
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { sectionData, SectionTheme } from "@/data/list-items";
+import { tabBarScrollPadding } from "@/constants/layout";
+import {
+  buildSectionData,
+  sectionData,
+  type LessonListItem,
+  type SectionDataItem,
+  type SectionTheme,
+} from "@/data/list-items";
+import {
+  getPathUnitTitle,
+  localizePathSections,
+  splitPathUnitTitle,
+} from "@/data/path-unit-titles";
+import { useI18n } from "@/hooks/useI18n";
+import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -11,10 +26,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { tabBarScrollPadding } from "@/constants/layout";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
@@ -23,33 +35,29 @@ import { ListSectionHeader } from "./components/list-section-header";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
-const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-  <ListSectionHeader section={section} />
-);
-
 export const StreetEnglishPathScreen = () => {
   const insets = useSafeAreaInsets();
+  const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
-  const listRef = useRef<SectionList<any>>(null);
+  const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
-  const [activeSectionTitle, setActiveSectionTitle] = useState(
-    sectionData[0]?.title ?? "",
-  );
-  const [activeSectionTheme, setActiveSectionTheme] = useState(
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     sectionData[0]?.displayTheme ?? "green",
   );
-  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+
+  const localizedSections = useMemo(
+    () => localizePathSections(sectionData, "street", locale),
+    [locale],
+  );
 
   const activeSectionDisplay = useMemo(() => {
-    const [unitLabel, ...rest] = activeSectionTitle.split(":");
-    return {
-      unitLabel: unitLabel?.trim() || "Unit",
-      sectionTitle: rest.join(":").trim() || activeSectionTitle,
-    };
-  }, [activeSectionTitle]);
+    const fullTitle = getPathUnitTitle("street", activeSectionIndex, locale);
+    return splitPathUnitTitle(fullTitle);
+  }, [activeSectionIndex, locale]);
 
   const buttonColors =
     BUTTON_FACE_RIM_COLORS[
@@ -87,25 +95,30 @@ export const StreetEnglishPathScreen = () => {
   );
 
   const renderItem = useCallback(
-    ({ item }: SectionListRenderItemInfo<any>) => (
+    ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
       <ListItem item={item} screenWidth={windowWidth} pathMode="street" />
     ),
     [windowWidth],
   );
 
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionDataItem }) => (
+      <ListSectionHeader section={section} />
+    ),
+    [],
+  );
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     const firstVisible = viewableItems?.[0]?.section;
-    const nextTitle = firstVisible?.title;
+    const nextIndex = firstVisible?.unitIndex;
     const nextTheme = firstVisible?.displayTheme;
 
-    if (typeof nextTitle === "string" && nextTitle.length > 0) {
-      setActiveSectionTitle((prev) => (prev === nextTitle ? prev : nextTitle));
-      const idx = sectionData.findIndex((s) => s.title === nextTitle);
-      if (idx !== -1) setActiveSectionIndex((prev) => (prev === idx ? prev : idx));
+    if (typeof nextIndex === "number" && nextIndex >= 0) {
+      setActiveSectionIndex((prev) => (prev === nextIndex ? prev : nextIndex));
     }
     if (typeof nextTheme === "string" && nextTheme in BUTTON_FACE_RIM_COLORS) {
       const typedTheme = nextTheme as SectionTheme;
-      setActiveSectionTheme((prev: SectionTheme) =>
+      setActiveSectionTheme((prev) =>
         prev === typedTheme ? prev : typedTheme,
       );
     }
@@ -128,8 +141,8 @@ export const StreetEnglishPathScreen = () => {
           unitIndex={activeSectionIndex}
           pathMode="street"
         />
-        <SectionList
-          sections={sectionData}
+        <SectionList<LessonListItem, SectionDataItem>
+          sections={localizedSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ref={listRef}
@@ -165,3 +178,6 @@ const styles = StyleSheet.create({
   },
   list: { flex: 1, width: "100%", backgroundColor: "transparent" },
 });
+
+/** Re-export for callers that need fresh progress-based sections */
+export { buildSectionData };

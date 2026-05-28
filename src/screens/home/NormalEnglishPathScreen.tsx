@@ -3,11 +3,19 @@
  * Dark slate theme. Structurally mirrors HomeScreen completely.
  */
 
+import { AppText } from "@/components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { tabBarScrollPadding } from "@/constants/layout";
-import type { SectionTheme } from "@/data/list-items";
+import type { LessonListItem, SectionDataItem, SectionTheme } from "@/data/list-items";
 import { normalSectionData } from "@/data/normal-english";
+import {
+  getPathUnitTitle,
+  localizePathSections,
+  splitPathUnitTitle,
+} from "@/data/path-unit-titles";
+import { useI18n } from "@/hooks/useI18n";
 import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
+import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -17,7 +25,6 @@ import {
   SectionList,
   SectionListRenderItemInfo,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -28,26 +35,33 @@ import { ListItem } from "./components/list-item";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
-const NormalSectionHeader = React.memo(({ section }: { section: { title: string } }) => {
-  const isFirst = section.title === normalSectionData[0]?.title;
-  if (isFirst) return null;
-  return (
-    <View style={darkStyles.sectionHeader}>
-      <View style={darkStyles.sectionLine} />
-      <Text style={darkStyles.sectionTitle}>{section.title}</Text>
-      <View style={darkStyles.sectionLine} />
-    </View>
-  );
-});
+const NormalSectionHeader = React.memo(
+  ({ section, isKu }: { section: SectionDataItem; isKu: boolean }) => {
+    if (section.unitIndex === 0) return null;
+    const direction = isKu ? rtlText : ltrText;
 
-const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-  <NormalSectionHeader section={section} />
+    return (
+      <View style={darkStyles.sectionHeader}>
+        <View style={darkStyles.sectionLine} />
+        <AppText
+          style={[darkStyles.sectionTitle, direction]}
+          forceKurdishFont={isKu}
+          forceLatinFont={!isKu}
+          numberOfLines={2}
+        >
+          {section.title}
+        </AppText>
+        <View style={darkStyles.sectionLine} />
+      </View>
+    );
+  },
 );
 
 export function NormalEnglishPathScreen() {
   const insets = useSafeAreaInsets();
+  const { locale, isKu } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
-  const listRef = useRef<SectionList<any>>(null);
+  const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
@@ -57,21 +71,20 @@ export function NormalEnglishPathScreen() {
     minimumViewTime: 100,
   }).current;
 
-  const [activeSectionTitle, setActiveSectionTitle] = useState(
-    normalSectionData[0]?.title ?? "",
-  );
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     normalSectionData[0]?.displayTheme ?? "blue",
   );
-  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+
+  const localizedSections = useMemo(
+    () => localizePathSections(normalSectionData, "normal", locale),
+    [locale],
+  );
 
   const activeSectionDisplay = useMemo(() => {
-    const [unitLabel, ...rest] = activeSectionTitle.split(":");
-    return {
-      unitLabel: unitLabel?.trim() || "Unit",
-      sectionTitle: rest.join(":").trim() || activeSectionTitle,
-    };
-  }, [activeSectionTitle]);
+    const fullTitle = getPathUnitTitle("normal", activeSectionIndex, locale);
+    return splitPathUnitTitle(fullTitle);
+  }, [activeSectionIndex, locale]);
 
   const buttonColors =
     BUTTON_FACE_RIM_COLORS[
@@ -109,21 +122,26 @@ export function NormalEnglishPathScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: SectionListRenderItemInfo<any>) => (
+    ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
       <ListItem item={item} screenWidth={windowWidth} pathMode="normal" />
     ),
     [windowWidth],
   );
 
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionDataItem }) => (
+      <NormalSectionHeader section={section} isKu={isKu} />
+    ),
+    [isKu],
+  );
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     const firstVisible = viewableItems?.[0]?.section;
-    const nextTitle = firstVisible?.title;
+    const nextIndex = firstVisible?.unitIndex;
     const nextTheme = firstVisible?.displayTheme;
 
-    if (typeof nextTitle === "string" && nextTitle.length > 0) {
-      setActiveSectionTitle((prev) => (prev === nextTitle ? prev : nextTitle));
-      const idx = normalSectionData.findIndex((s) => s.title === nextTitle);
-      if (idx !== -1) setActiveSectionIndex((prev) => (prev === idx ? prev : idx));
+    if (typeof nextIndex === "number" && nextIndex >= 0) {
+      setActiveSectionIndex((prev) => (prev === nextIndex ? prev : nextIndex));
     }
     if (typeof nextTheme === "string" && nextTheme in BUTTON_FACE_RIM_COLORS) {
       setActiveSectionTheme((prev) =>
@@ -152,8 +170,8 @@ export function NormalEnglishPathScreen() {
           pathMode="normal"
         />
 
-        <SectionList
-          sections={normalSectionData}
+        <SectionList<LessonListItem, SectionDataItem>
+          sections={localizedSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ref={listRef}

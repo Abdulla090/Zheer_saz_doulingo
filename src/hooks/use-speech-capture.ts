@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { Platform } from "react-native";
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -7,7 +8,20 @@ import {
 export type SpeechCaptureHandlers = {
   onResult: (text: string, isFinal: boolean) => void;
   onEnd?: () => void;
+  /** Native speech engine error (e.g. no-speech). */
+  onError?: (code: string, message: string) => void;
 };
+
+function joinTranscript(
+  results: { transcript?: string | null }[] | undefined,
+): string {
+  if (!results?.length) return "";
+  return results
+    .map((r) => r.transcript?.trim() ?? "")
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+}
 
 export function useSpeechCapture(lang = "en-US") {
   const [listening, setListening] = useState(false);
@@ -27,14 +41,16 @@ export function useSpeechCapture(lang = "en-US") {
   });
 
   useSpeechRecognitionEvent("result", (event) => {
-    const transcript = event.results[0]?.transcript?.trim() ?? "";
+    const transcript = joinTranscript(event.results);
     if (!transcript) return;
     handlersRef.current?.onResult(transcript, Boolean(event.isFinal));
   });
 
   useSpeechRecognitionEvent("error", (event) => {
     setListening(false);
-    setError(event.message || "Speech recognition unavailable");
+    const message = event.message || "Speech recognition unavailable";
+    setError(message);
+    handlersRef.current?.onError?.(event.error ?? "unknown", message);
   });
 
   const start = useCallback(
@@ -59,7 +75,8 @@ export function useSpeechCapture(lang = "en-US") {
       ExpoSpeechRecognitionModule.start({
         lang,
         interimResults: true,
-        continuous: options?.continuous ?? false,
+        continuous:
+          options?.continuous ?? Platform.OS === "android" || Platform.OS === "ios",
       });
       return true;
     },
@@ -75,6 +92,7 @@ export function useSpeechCapture(lang = "en-US") {
   }, []);
 
   const abort = useCallback(() => {
+    handlersRef.current = null;
     try {
       ExpoSpeechRecognitionModule.abort();
     } catch {

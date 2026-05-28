@@ -178,6 +178,8 @@ type SoftPressableButtonProps = {
   contentStyle?: StyleProp<ViewStyle>;
   onPressIn?: () => void;
   onPressOut?: () => void;
+  /** Stretch to parent width (default false — fits content). */
+  fullWidth?: boolean;
 };
 
 export function SoftPressableButton({
@@ -192,6 +194,7 @@ export function SoftPressableButton({
   contentStyle,
   onPressIn,
   onPressOut,
+  fullWidth = false,
 }: SoftPressableButtonProps) {
   const [pressed, setPressed] = useState(false);
   const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
@@ -216,7 +219,11 @@ export function SoftPressableButton({
               onPressOut?.();
             }
       }
-      style={[{ width: "100%", opacity: disabled ? 0.55 : 1 }, style]}
+      style={[
+        { opacity: disabled ? 0.55 : 1, alignSelf: fullWidth ? "stretch" : "flex-start" },
+        fullWidth ? { width: "100%" } : null,
+        style,
+      ]}
     >
       <Animated.View
         style={[

@@ -18,6 +18,7 @@ import {
 } from "@/data/game-practice";
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
@@ -48,11 +49,11 @@ type GameTile = {
 function GameHubCard({
   tile,
   onPress,
-  fullWidth,
+  cardWidth,
 }: {
   tile: GameTile;
   onPress: () => void;
-  fullWidth: boolean;
+  cardWidth: number;
 }) {
   const content = (
     <View style={[styles.cardRow, tile.featured && styles.cardRowFeatured]}>
@@ -78,7 +79,7 @@ function GameHubCard({
 
   if (tile.featured) {
     return (
-      <PressableScale onPress={onPress} scaleDown={0.99} style={{ width: fullWidth }}>
+      <PressableScale onPress={onPress} scaleDown={0.99} style={{ width: cardWidth }}>
         <HomeLiquidCard
           interactive
           style={[
@@ -100,7 +101,7 @@ function GameHubCard({
   }
 
   return (
-    <PressableScale onPress={onPress} scaleDown={0.98} style={{ width: fullWidth }}>
+    <PressableScale onPress={onPress} scaleDown={0.98} style={{ width: cardWidth }}>
       <HomeLiquidCard interactive contentStyle={styles.cardInner}>
         {content}
       </HomeLiquidCard>
@@ -113,6 +114,8 @@ export function GamesScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
+  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
+  const pathMode = useSettingsStore((s) => s.pathMode);
   const recordGamePlayed = useProgressStore((s) => s.recordGamePlayed);
   const { width } = useWindowDimensions();
   const horizontalPad = 20;
@@ -127,35 +130,35 @@ export function GamesScreen() {
         badge: t("games.badgeNew"),
         href: "/roleplay",
         featured: true,
-        renderIcon: () => <RolePlayGameIcon size={56} />,
+        renderIcon: () => <RolePlayGameIcon size={68} />,
       },
       {
         id: "order",
         title: t("games.orderTitle"),
         subtitle: t("games.orderSub"),
         kind: "sentence_builder",
-        renderIcon: () => <OrderWordsGameIcon size={52} />,
+        renderIcon: () => <OrderWordsGameIcon size={64} />,
       },
       {
         id: "pair",
         title: t("games.pairTitle"),
         subtitle: t("games.pairSub"),
         kind: "pair_match",
-        renderIcon: () => <PairWordsGameIcon size={52} />,
+        renderIcon: () => <PairWordsGameIcon size={64} />,
       },
       {
         id: "speak",
         title: t("games.speakTitle"),
         subtitle: t("games.speakSub"),
         kind: "voice_speak",
-        renderIcon: () => <SpeakUpGameIcon size={52} />,
+        renderIcon: () => <SpeakUpGameIcon size={64} />,
       },
       {
         id: "ai-teacher",
         title: t("games.teacherTitle"),
         subtitle: t("games.teacherSub"),
         href: "/ai-teacher",
-        renderIcon: () => <AiTeacherGameIcon size={52} />,
+        renderIcon: () => <AiTeacherGameIcon size={64} />,
       },
     ],
     [t],
@@ -163,11 +166,10 @@ export function GamesScreen() {
 
   const openPractice = useCallback(
     (kind: PracticeGameKind) => {
-      router.push(
-        buildPracticeLessonParams(kind, { pi: streetNext, mode: "street" }),
-      );
+      const pi = pathMode === "normal" ? normalNext : streetNext;
+      router.push(buildPracticeLessonParams(kind, { pi, mode: pathMode }));
     },
-    [router, streetNext],
+    [router, pathMode, normalNext, streetNext],
   );
 
   const openTile = useCallback(
@@ -203,7 +205,7 @@ export function GamesScreen() {
             <GameHubCard
               key={tile.id}
               tile={tile}
-              fullWidth={cardWidth}
+              cardWidth={cardWidth}
               onPress={() => openTile(tile)}
             />
           ))}
@@ -253,7 +255,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   iconWrap: {
-    width: 64,
+    width: 72,
     alignItems: "center",
     justifyContent: "center",
   },

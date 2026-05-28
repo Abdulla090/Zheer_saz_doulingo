@@ -38,6 +38,7 @@ export function resolveLessonStatus(
 }
 
 export type SectionDataItem = {
+  unitIndex: number;
   title: string;
   theme: SectionTheme;
   displayTheme: SectionTheme;
@@ -59,25 +60,21 @@ const BASE_PATTERN: LessonType[] = [
 
 // ── 12 units: first is BLUE, second uses GREEN, rest follow  ──────────────
 export const sectionConfigs: Array<{
-  title: string;
   theme: SectionTheme;
   displayTheme: SectionTheme;
 }> = [
-  // Units 1–4: full-color (unlocked from start)
-  { title: "یەکەی ١: سڵاوی سەر شەقام",           theme: "blue",   displayTheme: "blue"   },
-  { title: "یەکەی ٢: چوونە دەرەوە و پلان",         theme: "green",  displayTheme: "green"  },
-  { title: "یەکەی ٣: قسەی ڕۆژانە",               theme: "purple", displayTheme: "purple" },
-  { title: "یەکەی ٤: کافتریا و خواردنی خێرا",     theme: "yellow", displayTheme: "yellow" },
-
-  // Units 5–12: gray but with distinct display colors (locked, unlocked progressively)
-  { title: "یەکەی ٥: هەستەکان و بێزاری",          theme: "gray",   displayTheme: "blue"   },
-  { title: "یەکەی ٦: سۆشیاڵ میدیا و تێکست",       theme: "gray",   displayTheme: "green"  },
-  { title: "یەکەی ٧: شەڕەقسە و تێگەیشتن",         theme: "gray",   displayTheme: "purple" },
-  { title: "یەکەی ٨: کارو پیشە (Job English)",    theme: "gray",   displayTheme: "yellow" },
-  { title: "یەکەی ٩: ئەکادیمی و زانستگا",          theme: "gray",   displayTheme: "blue"   },
-  { title: "یەکەی ١٠: تەلەفۆن و چاوپێکەوتن",     theme: "gray",   displayTheme: "green"  },
-  { title: "یەکەی ١١: ئەوەرجەنسی و یارمەتی",      theme: "gray",   displayTheme: "purple" },
-  { title: "یەکەی ١٢: ئیدیۆم و ئەکسپرێشن",        theme: "gray",   displayTheme: "yellow" },
+  { theme: "blue", displayTheme: "blue" },
+  { theme: "green", displayTheme: "green" },
+  { theme: "purple", displayTheme: "purple" },
+  { theme: "yellow", displayTheme: "yellow" },
+  { theme: "gray", displayTheme: "blue" },
+  { theme: "gray", displayTheme: "green" },
+  { theme: "gray", displayTheme: "purple" },
+  { theme: "gray", displayTheme: "yellow" },
+  { theme: "gray", displayTheme: "blue" },
+  { theme: "gray", displayTheme: "green" },
+  { theme: "gray", displayTheme: "purple" },
+  { theme: "gray", displayTheme: "yellow" },
 ];
 
 /** Build path sections from persisted progress (0 = first lesson is current). */
@@ -85,7 +82,7 @@ export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[]
   let streetPathIndex = 0;
 
   return sectionConfigs.map(
-    ({ title, theme, displayTheme }, sectionIndex): SectionDataItem => {
+    ({ theme, displayTheme }, sectionIndex): SectionDataItem => {
       const pattern =
         sectionIndex === 0
           ? ["practice" as LessonType, ...BASE_PATTERN]
@@ -114,7 +111,7 @@ export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[]
         };
       });
 
-      return { title, theme, displayTheme, data };
+      return { unitIndex: sectionIndex, title: "", theme, displayTheme, data };
     },
   );
 }

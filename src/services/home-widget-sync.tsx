@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useLocaleStore } from "@/stores/useLocaleStore";
 import { getPathProgressSummary } from "@/utils/path-progress";
 import {
   buildLessonRouteForMode,
@@ -22,6 +23,7 @@ async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> 
 
 function buildPayload(): PhingoHomeWidgetPayload {
   const s = useProgressStore.getState();
+  const locale = useLocaleStore.getState().locale;
   const summary = getPathProgressSummary(
     s.nextLessonPathIndex,
     s.normalNextLessonPathIndex,
@@ -31,11 +33,13 @@ function buildPayload(): PhingoHomeWidgetPayload {
     "street",
     s.nextLessonPathIndex,
     s.normalNextLessonPathIndex,
+    locale,
   );
   const normalMeta = getCurrentLessonMeta(
     "normal",
     s.nextLessonPathIndex,
     s.normalNextLessonPathIndex,
+    locale,
   );
   const nextMeta = streetMeta ?? normalMeta;
 

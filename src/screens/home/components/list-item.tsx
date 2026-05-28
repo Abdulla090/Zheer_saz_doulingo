@@ -106,7 +106,12 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
       );
     }
     const glyph = (
-      <LessonPathIcon type={iconType} color={iconColor} size={PATH_ICON_SIZE} />
+      <LessonPathIcon
+        type={iconType}
+        color={iconColor}
+        size={PATH_ICON_SIZE}
+        active={isCurrent}
+      />
     );
     if (isCurrent) {
       return <CurrentLessonIcon>{glyph}</CurrentLessonIcon>;
@@ -175,6 +180,7 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
         ) : (
           <SvgButton
             isLocked={isLocked}
+            isCurrentLesson={isCurrent}
             size={LESSON_BUTTON_SIZE}
             onPress={isLocked ? undefined : handleNavigate}
             variant={buttonColor}

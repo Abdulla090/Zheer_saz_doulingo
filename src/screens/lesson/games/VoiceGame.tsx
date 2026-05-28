@@ -26,16 +26,43 @@ import { ltrText, rtlBlock } from "./game-text";
 type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
 type ListenState = "idle" | "listening" | "success" | "fail";
 
-function matchesTarget(result: string, target: string) {
-  const r = result.toLowerCase().trim();
-  const t = target.toLowerCase();
-  const keyWords = t.split(/\s+/).filter((w) => w.length > 2);
-  return (
-    r.includes(t) ||
-    t.includes(r) ||
-    keyWords.filter((w) => r.includes(w)).length >= Math.ceil(keyWords.length * 0.55)
-  );
+const LISTEN_TIMEOUT_MS = 12000;
+/** Android often fires `end` immediately unless continuous mode + grace period. */
+const MIN_LISTEN_MS = Platform.OS === "android" ? 1800 : 900;
+
+function normalizeSpeech(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\w\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
+
+function matchesTarget(result: string, target: string) {
+  const r = normalizeSpeech(result);
+  const t = normalizeSpeech(target);
+  if (!t || !r) return false;
+  if (r.includes(t) || t.includes(r)) return true;
+
+  const rWords = r.split(" ");
+  const tWords = t.split(" ");
+  const keyWords = tWords.filter((w) => w.length > 1);
+  if (keyWords.length === 0) {
+    return rWords.some((w) => w === t);
+  }
+
+  const hits = keyWords.filter((w) =>
+    rWords.some((rw) => rw === w || rw.includes(w) || w.includes(rw)),
+  );
+  return hits.length >= Math.ceil(keyWords.length * 0.5);
+}
+
+const BENIGN_SPEECH_ERRORS = new Set([
+  "no-speech",
+  "aborted",
+  "audio-capture",
+  "network",
+]);
 
 export default function VoiceGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
@@ -45,6 +72,7 @@ export default function VoiceGame({ question, onAnswer }: Props) {
   const stateRef = useRef<ListenState>("idle");
   const transcriptRef = useRef("");
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listenStartedAtRef = useRef(0);
 
   const speech = useSpeechCapture("en-US");
   const shakeX = useSharedValue(0);
@@ -80,14 +108,17 @@ export default function VoiceGame({ question, onAnswer }: Props) {
     speech.abort();
   }, [speech]);
 
-  const onSuccess = (text: string) => {
-    stopSession();
-    setTranscript(text);
-    updateState("success");
-    setTimeout(() => fireAnswer(true), 700);
-  };
+  const onSuccess = useCallback(
+    (text: string) => {
+      stopSession();
+      setTranscript(text);
+      updateState("success");
+      setTimeout(() => fireAnswer(true), 700);
+    },
+    [stopSession],
+  );
 
-  const onFail = () => {
+  const onFail = useCallback(() => {
     if (stateRef.current === "fail" || stateRef.current === "success") return;
     stopSession();
     updateState("fail");
@@ -96,23 +127,11 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       withTiming(6, { duration: 40 }),
       withTiming(0, { duration: 50, easing: Easing.out(Easing.quad) }),
     );
-  };
+  }, [shakeX, stopSession]);
 
-  const startListening = async () => {
-    if (stateRef.current !== "idle") return;
-    if (!speech.available) {
-      onFail();
-      return;
-    }
-
-    updateState("listening");
-    clearListenTimeout();
-    listenTimeoutRef.current = setTimeout(() => {
-      if (stateRef.current === "listening") onFail();
-    }, 8000);
-
-    const started = await speech.start({
-      onResult: (text) => {
+  const buildHandlers = useCallback(
+    () => ({
+      onResult: (text: string, _isFinal: boolean) => {
         transcriptRef.current = text;
         setTranscript(text);
         if (matchesTarget(text, question.targetWord)) {
@@ -121,17 +140,58 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       },
       onEnd: () => {
         if (stateRef.current !== "listening") return;
+
+        const elapsed = Date.now() - listenStartedAtRef.current;
         const last = transcriptRef.current;
+
         if (last && matchesTarget(last, question.targetWord)) {
           onSuccess(last);
-        } else {
+          return;
+        }
+
+        // Native: ignore premature engine stop; timeout handles real failure.
+        if (Platform.OS !== "web" && elapsed < MIN_LISTEN_MS) {
+          return;
+        }
+
+        if (Platform.OS === "web") {
           onFail();
         }
       },
-    });
+      onError: (code: string) => {
+        if (stateRef.current !== "listening") return;
+        if (BENIGN_SPEECH_ERRORS.has(code)) return;
+        onFail();
+      },
+    }),
+    [onFail, onSuccess, question.targetWord],
+  );
 
-    if (!started) onFail();
-  };
+  const startListening = useCallback(async () => {
+    if (stateRef.current !== "idle" && stateRef.current !== "fail") return;
+    if (!speech.available) {
+      onFail();
+      return;
+    }
+
+    firedRef.current = false;
+    transcriptRef.current = "";
+    setTranscript("");
+    listenStartedAtRef.current = Date.now();
+    updateState("listening");
+    clearListenTimeout();
+    listenTimeoutRef.current = setTimeout(() => {
+      if (stateRef.current === "listening") onFail();
+    }, LISTEN_TIMEOUT_MS);
+
+    const started = await speech.start(buildHandlers(), { continuous: true });
+    if (!started) {
+      onFail();
+      return;
+    }
+
+    listenStartedAtRef.current = Date.now();
+  }, [buildHandlers, onFail, speech]);
 
   const handleMicPress = () => {
     if (state === "listening") {
@@ -140,8 +200,6 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       return;
     }
     if (state === "fail") {
-      firedRef.current = false;
-      setTranscript("");
       updateState("idle");
       void startListening();
       return;
@@ -210,10 +268,7 @@ export default function VoiceGame({ question, onAnswer }: Props) {
 
       {state === "fail" ? (
         <GameFooter delay={120}>
-          <Text
-            style={s.skipLink}
-            onPress={() => fireAnswer(false)}
-          >
+          <Text style={s.skipLink} onPress={() => fireAnswer(false)}>
             Skip
           </Text>
         </GameFooter>

@@ -1,99 +1,99 @@
+import { HomePalette } from "@/components/ui/ios-liquid-home";
+import {
+  Bot,
+  Link2,
+  ListOrdered,
+  MessagesSquare,
+  Mic,
+} from "lucide-react-native";
 import React from "react";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import { View, type ViewStyle } from "react-native";
 
-export function OrderWordsGameIcon({ size = 52 }: { size?: number }) {
+const C = HomePalette;
+
+type GameIconProps = {
+  size?: number;
+};
+
+function GameIconTile({
+  size,
+  backgroundColor,
+  children,
+  style,
+}: {
+  size: number;
+  backgroundColor: string;
+  children: React.ReactNode;
+  style?: ViewStyle;
+}) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#2B59F3" />
-      <Rect x="12" y="14" width="12" height="12" rx="3" fill="#60A5FA" />
-      <Rect x="28" y="14" width="12" height="12" rx="3" fill="#93C5FD" />
-      <Rect x="12" y="28" width="12" height="12" rx="3" fill="#93C5FD" />
-      <Rect x="28" y="28" width="12" height="12" rx="3" fill="#BFDBFE" />
-    </Svg>
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: Math.round(size * 0.28),
+          backgroundColor,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
   );
 }
 
-export function PairWordsGameIcon({ size = 52 }: { size?: number }) {
+export function RolePlayGameIcon({ size = 64 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#6EE7B7" />
-      <Circle cx="26" cy="28" r="12" fill="#4FA3F7" />
-      <Circle cx="30" cy="24" r="2.5" fill="#1A2B48" />
-      <Path
-        d="M16 30c2-4 6-6 10-6 3 0 6 1 8 3"
-        stroke="#2B59F3"
-        strokeWidth="2"
-        strokeLinecap="round"
+    <GameIconTile size={size} backgroundColor="#DBEAFE">
+      <MessagesSquare
+        size={glyph}
+        color={C.blue}
+        strokeWidth={2.1}
+        fill={`${C.blue}18`}
       />
-      <Circle cx="38" cy="18" r="5" fill="#FBBF24" />
-    </Svg>
+    </GameIconTile>
   );
 }
 
-export function ListenUpGameIcon({ size = 52 }: { size?: number }) {
+export function OrderWordsGameIcon({ size = 60 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#EDE9FE" />
-      <Path
-        d="M16 26v-6a10 10 0 0120 0v6M16 26a4 4 0 004 4v3a4 4 0 01-8 0v-7zm20 0a4 4 0 01-4 4v3a4 4 0 004-4v-7z"
-        stroke="#7C3AED"
-        strokeWidth="2.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </Svg>
+    <GameIconTile size={size} backgroundColor="#EEF2FF">
+      <ListOrdered size={glyph} color={C.blue} strokeWidth={2.1} />
+    </GameIconTile>
   );
 }
 
-export function SpeakUpGameIcon({ size = 52 }: { size?: number }) {
+export function PairWordsGameIcon({ size = 60 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#EDE9FE" />
-      <Rect x="20" y="14" width="12" height="18" rx="6" fill="#7C3AED" />
-      <Path
-        d="M16 32h20M26 32v6"
-        stroke="#7C3AED"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <Path d="M22 38h8" stroke="#7C3AED" strokeWidth="2.5" strokeLinecap="round" />
-    </Svg>
+    <GameIconTile size={size} backgroundColor="#D1FAE5">
+      <Link2 size={glyph} color="#059669" strokeWidth={2.1} />
+    </GameIconTile>
   );
 }
 
-export function AiTeacherGameIcon({ size = 52 }: { size?: number }) {
+export function SpeakUpGameIcon({ size = 60 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#FEF3C7" />
-      <Rect x="14" y="12" width="24" height="28" rx="4" fill="#FFFFFF" />
-      <Rect x="18" y="16" width="16" height="3" rx="1.5" fill="#F59E0B" />
-      <Rect x="18" y="22" width="12" height="2" rx="1" fill="#FCD34D" />
-      <Rect x="18" y="27" width="14" height="2" rx="1" fill="#FCD34D" />
-      <Circle cx="36" cy="36" r="10" fill="#2B59F3" />
-      <Path
-        d="M33 36l2 2 5-6"
-        stroke="#FFFFFF"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <GameIconTile size={size} backgroundColor="#EDE9FE">
+      <Mic size={glyph} color="#7C3AED" strokeWidth={2.1} fill="#7C3AED22" />
+    </GameIconTile>
   );
 }
 
-export function RolePlayGameIcon({ size = 52 }: { size?: number }) {
+export function AiTeacherGameIcon({ size = 60 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
   return (
-    <Svg width={size} height={size} viewBox="0 0 52 52" fill="none">
-      <Rect width={52} height={52} rx={14} fill="#DBEAFE" />
-      <Path
-        d="M14 30c0-6 4-10 12-10s12 4 12 10"
-        stroke="#2B59F3"
-        strokeWidth="2"
-        fill="none"
-      />
-      <Circle cx="20" cy="22" r="3" fill="#2B59F3" />
-      <Circle cx="32" cy="22" r="3" fill="#60A5FA" />
-      <Rect x="12" y="32" width="28" height="8" rx="4" fill="#2B59F3" opacity={0.2} />
-    </Svg>
+    <GameIconTile size={size} backgroundColor="#FEF3C7">
+      <Bot size={glyph} color="#D97706" strokeWidth={2.1} fill="#D9770618" />
+    </GameIconTile>
   );
 }
+
+/** @deprecated Use SpeakUpGameIcon */
+export const ListenUpGameIcon = SpeakUpGameIcon;

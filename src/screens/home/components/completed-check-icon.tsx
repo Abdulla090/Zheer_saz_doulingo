@@ -1,5 +1,5 @@
+import { CheckCircle2 } from "lucide-react-native";
 import React from "react";
-import Svg, { Circle, Path } from "react-native-svg";
 
 /** White checkmark used inside completed gold lesson nodes. */
 export function CompletedCheckIcon({
@@ -11,24 +11,13 @@ export function CompletedCheckIcon({
   height?: number;
   color?: string;
 }) {
+  const size = Math.max(width, height);
   return (
-    <Svg width={width} height={height} viewBox="0 0 24 24">
-      <Circle
-        cx={12}
-        cy={12}
-        r={9}
-        fill="none"
-        stroke={color}
-        strokeWidth={2.2}
-      />
-      <Path
-        d="M8 12.2l2.6 2.6L16 9.4"
-        fill="none"
-        stroke={color}
-        strokeWidth={2.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
+    <CheckCircle2
+      size={size}
+      color={color}
+      strokeWidth={2.4}
+      fill={`${color}33`}
+    />
   );
 }

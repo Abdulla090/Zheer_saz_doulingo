@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { CurrentLessonIcon } from "./current-lesson-icon";
+import { PathCircleShine } from "./path-circle-shine";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
@@ -58,6 +59,7 @@ export const SvgButton = React.memo(
       iconColor ?? (variant === "gray" ? "#78909C" : "#FFFFFF");
 
     const glossStrong = !isLocked && variant !== "gray";
+    const showActiveShine = isCurrentLesson && !isLocked;
     const topHighlight = isLocked
       ? "rgba(255,255,255,0.35)"
       : "rgba(255,255,255,0.72)";
@@ -65,14 +67,7 @@ export const SvgButton = React.memo(
       ? "rgba(255,255,255,0.18)"
       : "rgba(255,255,255,0.22)";
 
-    const fallbackIcon = isCurrentLesson ? (
-      <CurrentLessonIcon
-        IconComponent={IconComponent}
-        color={resolvedIconColor}
-        width={iconSize}
-        height={iconSize}
-      />
-    ) : (
+    const glyph = (
       <IconComponent
         color={resolvedIconColor}
         fill={resolvedIconColor}
@@ -81,6 +76,12 @@ export const SvgButton = React.memo(
         width={iconSize}
         height={iconSize}
       />
+    );
+
+    const fallbackIcon = isCurrentLesson ? (
+      <CurrentLessonIcon>{glyph}</CurrentLessonIcon>
+    ) : (
+      glyph
     );
 
     return (
@@ -105,9 +106,9 @@ export const SvgButton = React.memo(
             ...crossShadow({
               color: colors.rim,
               offsetY: depth + 2,
-              opacity: isLocked ? 0.14 : 0.28,
-              blur: 14,
-              elevation: 5,
+              opacity: isLocked ? 0.14 : showActiveShine ? 0.38 : 0.28,
+              blur: showActiveShine ? 18 : 14,
+              elevation: showActiveShine ? 7 : 5,
             }),
           }}
         >
@@ -130,9 +131,17 @@ export const SvgButton = React.memo(
               ...(pressed ? cssPressStyle : cssReleaseStyle),
             }}
           >
+            {showActiveShine ? <PathCircleShine size={size} /> : null}
+
             <LinearGradient
               colors={
-                glossStrong
+                showActiveShine
+                  ? [
+                      "rgba(255,255,255,0.22)",
+                      "rgba(255,255,255,0.04)",
+                      "rgba(0,0,0,0.03)",
+                    ]
+                  : glossStrong
                   ? [
                       "rgba(255,255,255,0.45)",
                       "rgba(255,255,255,0.1)",
@@ -156,7 +165,7 @@ export const SvgButton = React.memo(
               pointerEvents="none"
             />
 
-            {glossStrong ? (
+            {glossStrong && !showActiveShine ? (
               <LinearGradient
                 colors={[
                   "rgba(255,255,255,0.38)",

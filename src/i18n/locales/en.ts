@@ -148,6 +148,38 @@ export const en = {
     skip: "Skip",
     new: "NEW",
   },
+  path: {
+    guidebook: "Guidebook",
+    street: {
+      unit1: "Unit 1: Street Greetings",
+      unit2: "Unit 2: Going Out & Plans",
+      unit3: "Unit 3: Daily Talk",
+      unit4: "Unit 4: Café & Fast Food",
+      unit5: "Unit 5: Feelings & Annoyances",
+      unit6: "Unit 6: Social Media & Texting",
+      unit7: "Unit 7: Arguments & Understanding",
+      unit8: "Unit 8: Jobs & Careers",
+      unit9: "Unit 9: Academic & University",
+      unit10: "Unit 10: Phone & Appointments",
+      unit11: "Unit 11: Emergencies & Help",
+      unit12: "Unit 12: Idioms & Expressions",
+    },
+    normal: {
+      unit1: "Unit 1: Everyday Essentials",
+      unit2: "Unit 2: Social & Daily Life",
+      unit3: "Unit 3: Work & Business",
+      unit4: "Unit 4: Deep Conversations",
+      unit5: "Unit 5: Special Encounters",
+      unit6: "Unit 6: Travel & Exploring",
+      unit7: "Unit 7: Idioms & Natural Slang",
+      unit8: "Unit 8: Digital Life",
+      unit9: "Unit 9: Relationships & Feelings",
+      unit10: "Unit 10: Health & Emergencies",
+      unit11: "Unit 11: Money & Shopping",
+      unit12: "Unit 12: Real-World Mastery",
+      unit13: "Unit 13: Opinions & Confidence",
+    },
+  },
 };
 
 export type TranslationKey = typeof en;

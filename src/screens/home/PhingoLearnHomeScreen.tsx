@@ -92,7 +92,7 @@ const QuestRow = memo(function QuestRow({
 export function PhingoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const streakDays = useProgressStore((s) => s.streakDays);
   const dailyXp = useProgressStore((s) => s.dailyXp);
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
@@ -108,8 +108,8 @@ export function PhingoLearnHomeScreen() {
   );
 
   const nextLessonMeta = useMemo(
-    () => getCurrentLessonMeta(pathMode, streetNext, normalNext),
-    [pathMode, streetNext, normalNext],
+    () => getCurrentLessonMeta(pathMode, streetNext, normalNext, locale),
+    [pathMode, streetNext, normalNext, locale],
   );
 
   useEffect(() => {

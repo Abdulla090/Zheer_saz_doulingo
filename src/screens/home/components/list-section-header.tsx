@@ -1,22 +1,37 @@
+import { sectionData, type SectionDataItem } from "@/data/list-items";
 import { AppText } from "@/components/ui/AppText";
-import { sectionData } from "@/data/list-items";
+import { useI18n } from "@/hooks/useI18n";
+import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
 import { StyleSheet, View } from "react-native";
 
-const FIRST_SECTION_TITLE = sectionData[0]?.title;
+export const ListSectionHeader = ({
+  section,
+}: {
+  section: SectionDataItem;
+}) => {
+  const { isKu } = useI18n();
+  if (section.unitIndex === 0) return null;
 
-export const ListSectionHeader = ({ section }: { section: { title: string } }) => {
-  if (section?.title === FIRST_SECTION_TITLE) return null;
+  const direction = isKu ? rtlText : ltrText;
 
   return (
     <View style={styles.wrap}>
       <View style={styles.line} />
-      <AppText style={styles.title} numberOfLines={2}>
+      <AppText
+        style={[styles.title, direction]}
+        forceKurdishFont={isKu}
+        forceLatinFont={!isKu}
+        numberOfLines={2}
+      >
         {section.title}
       </AppText>
       <View style={styles.line} />
     </View>
   );
 };
+
+/** @deprecated First section is hidden via unitIndex === 0 */
+export const FIRST_PATH_SECTION_INDEX = sectionData[0]?.unitIndex ?? 0;
 
 const styles = StyleSheet.create({
   wrap: {
@@ -41,6 +56,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     maxWidth: "62%",
     textAlign: "center",
-    fontFamily: "DINNextRoundedMedium",
   },
 });

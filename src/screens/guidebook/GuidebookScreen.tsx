@@ -3,6 +3,7 @@ import { enterFadeDown } from "@/components/animations/motion";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { getGuidebook, GuidebookLesson } from "@/data/guidebook-data";
 import type { LessonPathMode } from "@/data/lesson-content";
+import { useI18n } from "@/hooks/useI18n";
 import { useTTS } from "@/hooks/use-tts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -413,11 +414,12 @@ export default function GuidebookScreen() {
   const pathMode = parsePathMode(mode);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { locale } = useI18n();
   const { speak, stop, activeId } = useTTS();
 
   const guidebook = useMemo(
-    () => getGuidebook(pathMode, unitIndex),
-    [pathMode, unitIndex],
+    () => getGuidebook(pathMode, unitIndex, locale),
+    [pathMode, unitIndex, locale],
   );
   const theme = (guidebook?.displayTheme ?? "blue") as keyof typeof BUTTON_FACE_RIM_COLORS;
   const colors = BUTTON_FACE_RIM_COLORS[theme] ?? BUTTON_FACE_RIM_COLORS.blue;

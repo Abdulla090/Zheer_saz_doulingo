@@ -2,8 +2,10 @@
 // Guidebook data — extracted from each unit's lesson banks for quick reference
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { AppLocale } from "@/i18n";
 import type { LessonPathMode } from "./lesson-content";
 import { NORMAL_UNITS, normalSectionConfigs } from "./normal-english";
+import { getPathUnitTitle } from "./path-unit-titles";
 import { ALL_UNITS } from "./units";
 import { sectionConfigs } from "./list-items";
 import type { UnitBank } from "./types";
@@ -32,12 +34,13 @@ export type GuidebookUnit = {
   lessons: GuidebookLesson[];
 };
 
-type SectionConfig = { title: string; displayTheme: string };
+type SectionConfig = { displayTheme: string };
 
 function buildGuidebookFromUnit(
   unitIndex: number,
   unitBank: UnitBank | undefined,
   config: SectionConfig | undefined,
+  title: string,
 ): GuidebookUnit | null {
   if (!unitBank || !config) return null;
 
@@ -70,27 +73,35 @@ function buildGuidebookFromUnit(
 
   return {
     unitIndex,
-    title: config.title,
+    title,
     displayTheme: config.displayTheme,
     lessons,
   };
 }
 
 /** Builds guidebook data for a street-English unit. */
-export function getGuidebookForUnit(unitIndex: number): GuidebookUnit | null {
+export function getGuidebookForUnit(
+  unitIndex: number,
+  locale: AppLocale = "en",
+): GuidebookUnit | null {
   return buildGuidebookFromUnit(
     unitIndex,
     ALL_UNITS[unitIndex],
     sectionConfigs[unitIndex],
+    getPathUnitTitle("street", unitIndex, locale),
   );
 }
 
 /** Builds guidebook data for a normal-English unit. */
-export function getGuidebookForNormalUnit(unitIndex: number): GuidebookUnit | null {
+export function getGuidebookForNormalUnit(
+  unitIndex: number,
+  locale: AppLocale = "en",
+): GuidebookUnit | null {
   return buildGuidebookFromUnit(
     unitIndex,
     NORMAL_UNITS[unitIndex],
     normalSectionConfigs[unitIndex],
+    getPathUnitTitle("normal", unitIndex, locale),
   );
 }
 
@@ -98,14 +109,15 @@ export function getGuidebookForNormalUnit(unitIndex: number): GuidebookUnit | nu
 export function getGuidebook(
   mode: LessonPathMode,
   unitIndex: number,
+  locale: AppLocale = "en",
 ): GuidebookUnit | null {
   if (!Number.isFinite(unitIndex) || unitIndex < 0) return null;
   return mode === "normal"
-    ? getGuidebookForNormalUnit(unitIndex)
-    : getGuidebookForUnit(unitIndex);
+    ? getGuidebookForNormalUnit(unitIndex, locale)
+    : getGuidebookForUnit(unitIndex, locale);
 }
 
-/** Pre-build guidebooks for street-English units */
+/** Pre-build guidebooks for street-English units (English titles by default). */
 export const ALL_GUIDEBOOKS: (GuidebookUnit | null)[] = sectionConfigs.map(
   (_, i) => getGuidebookForUnit(i),
 );

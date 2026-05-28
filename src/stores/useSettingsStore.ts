@@ -29,7 +29,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   ready: false,
   hapticsEnabled: true,
   soundsEnabled: true,
-  pathMode: "street",
+  pathMode: "normal",
 
   setHapticsEnabled: (hapticsEnabled) => {
     set({ hapticsEnabled });
@@ -58,7 +58,7 @@ async function hydrateSettings() {
     useSettingsStore.setState({
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
-      pathMode: parsed.pathMode === "normal" ? "normal" : "street",
+      pathMode: parsed.pathMode === "street" ? "street" : "normal",
       ready: true,
     });
   } catch {

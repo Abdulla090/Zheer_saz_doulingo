@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useLocaleStore } from "@/stores/useLocaleStore";
 import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
@@ -247,6 +248,7 @@ export default function LessonScreen() {
               onPress={() => {
                 if (ok && !Number.isNaN(pathIndex)) {
                   const snap = useProgressStore.getState();
+                  const locale = useLocaleStore.getState().locale;
                   const meta = getCurrentLessonMeta(
                     pathMode,
                     pathMode === "street"
@@ -255,6 +257,7 @@ export default function LessonScreen() {
                     pathMode === "normal"
                       ? pathIndex
                       : snap.normalNextLessonPathIndex,
+                    locale,
                   );
                   const label = meta
                     ? `${meta.sectionTitle} · ${meta.lessonNumber}`

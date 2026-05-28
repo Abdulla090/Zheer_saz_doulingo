@@ -1,6 +1,8 @@
 import { buildSectionData, type LessonListItem, type SectionDataItem } from "@/data/list-items";
 import { buildNormalSectionData } from "@/data/normal-english";
 import type { LessonPathMode } from "@/data/lesson-content";
+import { localizePathSections } from "@/data/path-unit-titles";
+import type { AppLocale } from "@/i18n";
 
 export type LessonRouteParams = {
   pathname: "/lesson";
@@ -43,12 +45,14 @@ export function getCurrentLessonMeta(
   mode: LessonPathMode,
   streetNextIndex: number,
   normalNextIndex: number,
+  locale: AppLocale = "en",
 ): CurrentLessonMeta | null {
   const sections =
     mode === "normal"
       ? buildNormalSectionData(normalNextIndex)
       : buildSectionData(streetNextIndex);
-  const found = findCurrentItem(sections);
+  const localized = localizePathSections(sections, mode, locale);
+  const found = findCurrentItem(localized);
   if (!found) return null;
 
   const { item, sectionTitle } = found;
