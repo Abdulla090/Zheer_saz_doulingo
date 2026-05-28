@@ -1,5 +1,7 @@
 # Duolingo Clone (Expo + React Native)
 
+**UI gallery (all screens):** [open gallery](https://raw.githack.com/Abdulla090/Zheer_saz_doulingo/main/artifacts/screenshots/index.html) · [markdown version](UI_GALLERY.md)
+
 A Duolingo-inspired mobile app built with Expo, React Native, Expo Router, Uniwind, Reanimated, and SVG-based custom UI components.
 
 ## Tech Stack
