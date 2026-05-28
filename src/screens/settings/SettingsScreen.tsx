@@ -119,6 +119,22 @@ export default function SettingsScreen() {
           })}
         </View>
 
+        <PressableScale
+          onPress={() => router.push("/widgets")}
+          scaleDown={0.98}
+          style={[styles.supportRow, styles.card, { marginTop: 16 }]}
+        >
+          <View style={{ flex: 1 }}>
+            <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+              {t("settings.homeWidgets")}
+            </AppText>
+            <AppText style={styles.widgetHint} forceKurdishFont={isKu}>
+              {t("settings.homeWidgetsHint")}
+            </AppText>
+          </View>
+          <Icon3DChevronRight size={20} />
+        </PressableScale>
+
         <View style={styles.toggleCard}>
           <View style={styles.toggleRow}>
             <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
@@ -383,6 +399,13 @@ const styles = StyleSheet.create({
     color: "#1CB0F6",
     marginTop: 4,
     fontFamily: "DINNextRoundedMedium",
+  },
+  widgetHint: {
+    fontSize: 13,
+    color: "#777",
+    marginTop: 4,
+    fontFamily: "DINNextRoundedMedium",
+    lineHeight: 18,
   },
   versionText: {
     fontSize: 13,

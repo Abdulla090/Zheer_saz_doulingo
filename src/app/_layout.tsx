@@ -20,6 +20,7 @@ import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
+import "@/widgets/register-widgets";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -157,6 +158,14 @@ export default function TabLayout() {
               <Tabs.Screen name="privacy-policy" options={{ href: null }} />
               <Tabs.Screen name="ai-safety" options={{ href: null }} />
               <Tabs.Screen name="terms" options={{ href: null }} />
+              <Tabs.Screen
+                name="widgets"
+                options={{
+                  headerShown: false,
+                  href: null,
+                  tabBarStyle: { display: "none" },
+                }}
+              />
             </Tabs>
           </BottomSheetModalProvider>
         </AppErrorBoundary>

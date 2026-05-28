@@ -57,14 +57,54 @@
           "groupIdentifier": "group.com.hewad.mubariz.duolingoclone",
           "widgets": [
             {
-              "name": "PhingoHome",
-              "displayName": "Phingo",
-              "description": "Streak, daily XP, path progress, and your next lesson",
+              "name": "PhingoStreak",
+              "displayName": "Phingo Streak",
+              "description": "Your daily streak and XP progress at a glance",
+              "supportedFamilies": ["systemSmall"],
+              "ios": { "supportedFamilies": ["systemSmall"] },
+              "android": {
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "minWidth": 110,
+                "minHeight": 110
+              }
+            },
+            {
+              "name": "PhingoDailyXp",
+              "displayName": "Phingo Daily XP",
+              "description": "Track today's XP goal and streak",
+              "supportedFamilies": ["systemSmall"],
+              "ios": { "supportedFamilies": ["systemSmall"] },
+              "android": {
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "minWidth": 110,
+                "minHeight": 110
+              }
+            },
+            {
+              "name": "PhingoNextLesson",
+              "displayName": "Phingo Next Lesson",
+              "description": "See your next lesson and jump back in",
               "supportedFamilies": ["systemSmall", "systemMedium"],
-              "ios": {
-                "supportedFamilies": ["systemSmall", "systemMedium"]
-              },
-              "android": null
+              "ios": { "supportedFamilies": ["systemSmall", "systemMedium"] },
+              "android": {
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "horizontal"
+              }
+            },
+            {
+              "name": "PhingoProgress",
+              "displayName": "Phingo Paths",
+              "description": "Dual-path progress for Kurdish and English",
+              "supportedFamilies": ["systemMedium"],
+              "ios": { "supportedFamilies": ["systemMedium"] },
+              "android": {
+                "targetCellWidth": 4,
+                "targetCellHeight": 3,
+                "resizeMode": "vertical"
+              }
             }
           ]
         }

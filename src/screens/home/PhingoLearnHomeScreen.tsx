@@ -296,6 +296,24 @@ export function PhingoLearnHomeScreen() {
           />
         </HomeLiquidCard>
 
+        <Pressable
+          onPress={() => router.push("/widgets")}
+          accessibilityRole="button"
+          accessibilityLabel={t("widgets.homePromo")}
+        >
+          <HomeLiquidCard
+            interactive
+            style={styles.cardSpacer}
+            contentStyle={styles.widgetPromoInner}
+          >
+            <View style={styles.widgetPromoCopy}>
+              <Text style={styles.widgetPromoTitle}>{t("widgets.homePromo")}</Text>
+              <Text style={styles.widgetPromoSub}>{t("widgets.homePromoSub")}</Text>
+            </View>
+            <Text style={styles.widgetPromoChevron}>›</Text>
+          </HomeLiquidCard>
+        </Pressable>
+
         <Text style={styles.sectionLabel}>{t("home.upNext")}</Text>
         <HomeLiquidLessonTile
           onPress={onLessonPress}
@@ -504,6 +522,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: C.gray,
     fontFamily: "DINNextRoundedMedium",
+  },
+  widgetPromoInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    gap: 12,
+  },
+  widgetPromoCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  widgetPromoTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  widgetPromoSub: {
+    fontSize: 13,
+    color: C.gray,
+    fontFamily: "DINNextRoundedMedium",
+    lineHeight: 18,
+  },
+  widgetPromoChevron: {
+    fontSize: 28,
+    fontWeight: "300",
+    color: C.blue,
   },
   lessonTextCol: {
     flex: 1,

@@ -9,10 +9,10 @@ import {
 } from "@/utils/lesson-navigation";
 import {
   WIDGET_SNAPSHOT_KEY,
-  type PhingoHomeWidgetPayload,
-} from "@/widgets/widget-types";
+  type PhingoWidgetPayload,
+} from "@/widgets/widget-payload";
 
-async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> {
+async function persistSnapshot(payload: PhingoWidgetPayload): Promise<void> {
   try {
     await AsyncStorage.setItem(WIDGET_SNAPSHOT_KEY, JSON.stringify(payload));
   } catch {
@@ -20,7 +20,7 @@ async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> 
   }
 }
 
-function buildPayload(): PhingoHomeWidgetPayload {
+export function buildWidgetPayload(): PhingoWidgetPayload {
   const s = useProgressStore.getState();
   const summary = getPathProgressSummary(
     s.nextLessonPathIndex,
@@ -71,22 +71,38 @@ function buildPayload(): PhingoHomeWidgetPayload {
   };
 }
 
-/** Push latest progress to home screen widgets (iOS + Android). */
-export async function syncHomeWidget(): Promise<void> {
-  const payload = buildPayload();
-  await persistSnapshot(payload);
+async function pushNativeWidgets(payload: PhingoWidgetPayload): Promise<void> {
+  if (Platform.OS !== "ios" && Platform.OS !== "android") return;
 
-  if (Platform.OS === "ios") {
-    try {
-      const { PhingoHomeWidget } = await import("@/widgets/PhingoHomeWidget");
-      PhingoHomeWidget.updateSnapshot(payload);
-    } catch {
-      /* expo-widgets requires dev build */
-    }
+  try {
+    const [
+      { PhingoStreakWidget },
+      { PhingoDailyXpWidget },
+      { PhingoNextLessonWidget },
+      { PhingoProgressWidget },
+    ] = await Promise.all([
+      import("@/widgets/PhingoStreakWidget"),
+      import("@/widgets/PhingoDailyXpWidget"),
+      import("@/widgets/PhingoNextLessonWidget"),
+      import("@/widgets/PhingoProgressWidget"),
+    ]);
+
+    PhingoStreakWidget.updateSnapshot(payload);
+    PhingoDailyXpWidget.updateSnapshot(payload);
+    PhingoNextLessonWidget.updateSnapshot(payload);
+    PhingoProgressWidget.updateSnapshot(payload);
+  } catch {
+    /* Native widgets need a dev/production build — not Expo Go */
   }
 }
 
-/** Deep link target for widget taps (lesson if available). */
+/** Push latest progress to all Phingo home screen widgets. */
+export async function syncHomeWidget(): Promise<void> {
+  const payload = buildWidgetPayload();
+  await persistSnapshot(payload);
+  await pushNativeWidgets(payload);
+}
+
 export function getWidgetDeepLinkRoute():
   | ReturnType<typeof buildLessonRouteForMode>
   | null {
