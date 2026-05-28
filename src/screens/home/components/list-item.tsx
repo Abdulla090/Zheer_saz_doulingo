@@ -14,18 +14,18 @@ import { FirstItemSparkles } from "./first-item-sparkles";
 import { LessonProgressRing } from "./lesson-progress-ring";
 import { SVG_BUTTON_COLOR_SETS, SvgButton, SvgButtonVariant } from "./list-button";
 
-const LESSON_BUTTON_SIZE = 80;
-const CHEST_VISUAL_SIZE = 65;
-const PROGRESS_RING_SIZE = 94;
+const LESSON_BUTTON_SIZE = 64;
+const CHEST_VISUAL_SIZE = 52;
+const PROGRESS_RING_SIZE = 76;
 const PROGRESS_RING_OFFSET_X = (LESSON_BUTTON_SIZE - PROGRESS_RING_SIZE) / 2;
 const PROGRESS_RING_OFFSET_Y =
-  (LESSON_BUTTON_SIZE - PROGRESS_RING_SIZE) / 2 - 5;
+  (LESSON_BUTTON_SIZE - PROGRESS_RING_SIZE) / 2 - 4;
 
-const ITEM_SLOT_HEIGHT = 78;
+const ITEM_SLOT_HEIGHT = 66;
 const CURVE_AMPLITUDE_RATIO = 0.18;
 const ARC_FREQUENCY = Math.PI / 4;
 const CURVE_TENSION = 1.25;
-const PATH_ICON_SIZE = 30;
+const PATH_ICON_SIZE = 24;
 
 const getDynamicOffset = (globalIndex: number, amplitude: number) => {
   const baseSine = Math.sin(globalIndex * ARC_FREQUENCY);

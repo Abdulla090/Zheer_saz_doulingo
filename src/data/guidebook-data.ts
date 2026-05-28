@@ -2,8 +2,11 @@
 // Guidebook data — extracted from each unit's lesson banks for quick reference
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { LessonPathMode } from "./lesson-content";
+import { NORMAL_UNITS, normalSectionConfigs } from "./normal-english";
 import { ALL_UNITS } from "./units";
 import { sectionConfigs } from "./list-items";
+import type { UnitBank } from "./types";
 
 export type GuidebookWord = {
   english: string;
@@ -29,39 +32,38 @@ export type GuidebookUnit = {
   lessons: GuidebookLesson[];
 };
 
-/**
- * Builds guidebook data for a specific unit by extracting vocabulary,
- * key phrases from sentences and conversations.
- */
-export function getGuidebookForUnit(unitIndex: number): GuidebookUnit | null {
-  const unitBank = ALL_UNITS[unitIndex];
-  const config = sectionConfigs[unitIndex];
+type SectionConfig = { title: string; displayTheme: string };
+
+function buildGuidebookFromUnit(
+  unitIndex: number,
+  unitBank: UnitBank | undefined,
+  config: SectionConfig | undefined,
+): GuidebookUnit | null {
   if (!unitBank || !config) return null;
 
   const lessons: GuidebookLesson[] = unitBank.map((lesson) => {
-    // Collect key phrases from sentences + conversations
     const phrases: GuidebookPhrase[] = [];
 
-    // Add sentence examples as phrases
-    lesson.sentences.forEach((s) => {
+    for (const s of lesson.sentences ?? []) {
+      if (!s?.english?.length) continue;
       phrases.push({
         english: s.english.join(" "),
-        kurdish: s.kurdish,
+        kurdish: s.kurdish ?? "",
       });
-    });
+    }
 
-    // Add conversation examples
-    lesson.conversations.forEach((c) => {
+    for (const c of lesson.conversations ?? []) {
+      if (!c?.correct) continue;
       phrases.push({
         english: c.correct,
-        kurdish: c.explanation,
+        kurdish: c.explanation ?? "",
       });
-    });
+    }
 
     return {
-      topic: lesson.topic,
-      topicKu: lesson.topicKu,
-      words: [...lesson.words],
+      topic: lesson.topic ?? "",
+      topicKu: lesson.topicKu ?? "",
+      words: [...(lesson.words ?? [])],
       phrases,
     };
   });
@@ -74,7 +76,36 @@ export function getGuidebookForUnit(unitIndex: number): GuidebookUnit | null {
   };
 }
 
-/** Pre-build guidebooks for all units */
+/** Builds guidebook data for a street-English unit. */
+export function getGuidebookForUnit(unitIndex: number): GuidebookUnit | null {
+  return buildGuidebookFromUnit(
+    unitIndex,
+    ALL_UNITS[unitIndex],
+    sectionConfigs[unitIndex],
+  );
+}
+
+/** Builds guidebook data for a normal-English unit. */
+export function getGuidebookForNormalUnit(unitIndex: number): GuidebookUnit | null {
+  return buildGuidebookFromUnit(
+    unitIndex,
+    NORMAL_UNITS[unitIndex],
+    normalSectionConfigs[unitIndex],
+  );
+}
+
+/** Resolves guidebook content for either path mode. */
+export function getGuidebook(
+  mode: LessonPathMode,
+  unitIndex: number,
+): GuidebookUnit | null {
+  if (!Number.isFinite(unitIndex) || unitIndex < 0) return null;
+  return mode === "normal"
+    ? getGuidebookForNormalUnit(unitIndex)
+    : getGuidebookForUnit(unitIndex);
+}
+
+/** Pre-build guidebooks for street-English units */
 export const ALL_GUIDEBOOKS: (GuidebookUnit | null)[] = sectionConfigs.map(
   (_, i) => getGuidebookForUnit(i),
 );

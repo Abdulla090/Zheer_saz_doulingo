@@ -1,144 +1,185 @@
-import React, { useCallback, useMemo } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, { Ellipse } from "react-native-svg";
-import { PATH_NODE_SIMPLE_SHINE } from "@/utils/native-perf";
+import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
+import { Star } from "@/constants/icons";
+import { crossShadow } from "@/utils/shadows";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import { Pressable, View } from "react-native";
+import Animated from "react-native-reanimated";
+import { CurrentLessonIcon } from "./current-lesson-icon";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
+/** Face + rim pairs for path lesson nodes (soft 2.5D, matches header Guidebook). */
 export const SVG_BUTTON_COLOR_SETS = {
-  green: { rim: "#58a700", face: "#58cc02" },
-  purple: { rim: "#a568cc", face: "#ce82ff" },
-  blue: { rim: "#2b70c9", face: "#1cb0f6" },
-  mint: { rim: "#0B8A6C", face: "#08c296" },
-  gray: { rim: "#8A8A8A", face: "#BDBDBD" },
-  yellow: { rim: "#ff9600", face: "#ffc800" },
-  gold: { rim: "#e5a000", face: "#ffc800" },
+  green: { rim: "#0B8A6C", face: "#08c296" },
+  purple: { rim: "#5E35B1", face: "#7E57C2" },
+  blue: { rim: "#0277BD", face: "#039BE5" },
+  mint: { rim: "#00695C", face: "#00897B" },
+  gray: { rim: "#90A4AE", face: "#B0BEC5" },
+  yellow: { rim: "#F57F17", face: "#FBC02D" },
+  gold: { rim: "#E5A000", face: "#FFC800" },
   orange: { rim: "#E65100", face: "#FF9800" },
   red: { rim: "#B71C1C", face: "#F44336" },
 } as const;
 
-type SvgButtonProps = {
+type PathButtonProps = {
   size?: number;
   onPress?: () => void;
   translateX?: number;
   variant?: SvgButtonVariant;
   icon?: React.ReactNode;
+  IconComponent?: React.ComponentType<any>;
+  iconColor?: string;
+  isCurrentLesson?: boolean;
   isLocked?: boolean;
   accessibilityLabel?: string;
 };
 
-const BUTTON_CENTER_X = 50;
-const FACE_BASE_CY = 40;
-const RIM_CY = 53;
-const FACE_PRESSED_CY = 52;
-const RX = 50;
-const RY = 50;
-const SVG_VIEWBOX = "-10 -10 120 130";
+const ICON_RATIO = 0.4;
+const DEPTH_RATIO = 0.055;
 
 export const SvgButton = React.memo(
   ({
-    size = 70,
+    size = 64,
     onPress,
     translateX,
     variant = "green",
     icon,
+    IconComponent = Star,
+    iconColor,
+    isCurrentLesson = false,
     isLocked = false,
-    accessibilityLabel,
-  }: SvgButtonProps) => {
-    const colors = useMemo(() => SVG_BUTTON_COLOR_SETS[variant], [variant]);
-    const offsetY = useSharedValue(0);
+  }: PathButtonProps) => {
+    const colors = SVG_BUTTON_COLOR_SETS[variant];
+    const [pressed, setPressed] = useState(false);
+    const depth = Math.max(3, Math.round(size * DEPTH_RATIO));
+    const iconSize = Math.round(size * ICON_RATIO);
+    const resolvedIconColor =
+      iconColor ?? (variant === "gray" ? "#78909C" : "#FFFFFF");
 
-    const faceAnimStyle = useAnimatedStyle(() => ({
-      transform: [{ translateY: offsetY.value }],
-    }));
+    const glossStrong = !isLocked && variant !== "gray";
+    const topHighlight = isLocked
+      ? "rgba(255,255,255,0.35)"
+      : "rgba(255,255,255,0.72)";
+    const faceBorder = isLocked
+      ? "rgba(255,255,255,0.18)"
+      : "rgba(255,255,255,0.22)";
 
-    const handlePressIn = useCallback(() => {
-      offsetY.value = withTiming(FACE_PRESSED_CY - FACE_BASE_CY, { duration: 100 });
-    }, [offsetY]);
-
-    const handlePressOut = useCallback(() => {
-      offsetY.value = withTiming(0, { duration: 100 });
-    }, [offsetY]);
-
-    const shineOpacity = isLocked ? 0.12 : 0.22;
+    const fallbackIcon = isCurrentLesson ? (
+      <CurrentLessonIcon
+        IconComponent={IconComponent}
+        color={resolvedIconColor}
+        width={iconSize}
+        height={iconSize}
+      />
+    ) : (
+      <IconComponent
+        color={resolvedIconColor}
+        fill={resolvedIconColor}
+        stroke={resolvedIconColor}
+        strokeWidth={1}
+        width={iconSize}
+        height={iconSize}
+      />
+    );
 
     return (
       <Pressable
-        onPressIn={isLocked ? undefined : handlePressIn}
-        onPressOut={isLocked ? undefined : handlePressOut}
         onPress={onPress}
         disabled={isLocked}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked }}
+        onPressIn={isLocked ? undefined : () => setPressed(true)}
+        onPressOut={isLocked ? undefined : () => setPressed(false)}
         style={{
           width: size,
-          height: size,
+          height: size + depth,
           transform: [{ translateX: translateX || 0 }],
         }}
       >
-        <View style={styles.stack}>
-          <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX} pointerEvents="none">
-            <Ellipse
-              cx={BUTTON_CENTER_X}
-              cy={RIM_CY}
-              rx={RX}
-              ry={RY}
-              fill={colors.rim}
-            />
-          </Svg>
-
-          <Animated.View style={[styles.faceLayer, faceAnimStyle]} pointerEvents="none">
-            <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX}
-                ry={RY}
-                fill={colors.face}
-              />
-              {!PATH_NODE_SIMPLE_SHINE ? (
-                <>
-                  <Ellipse
-                    cx={BUTTON_CENTER_X - 8}
-                    cy={FACE_BASE_CY - 12}
-                    rx={RX * 0.55}
-                    ry={RY * 0.35}
-                    fill="rgba(255,255,255,0.28)"
-                  />
-                  <Ellipse
-                    cx={BUTTON_CENTER_X}
-                    cy={FACE_BASE_CY}
-                    rx={RX}
-                    ry={RY}
-                    fill="rgba(255,255,255,0.12)"
-                  />
-                </>
-              ) : (
-                <Ellipse
-                  cx={BUTTON_CENTER_X}
-                  cy={FACE_BASE_CY - 8}
-                  rx={RX * 0.7}
-                  ry={RY * 0.4}
-                  fill={`rgba(255,255,255,${shineOpacity})`}
-                />
-              )}
-            </Svg>
-          </Animated.View>
-
-          {icon ? (
-            <Animated.View
-              style={[styles.iconLayer, faceAnimStyle]}
+        <View
+          style={{
+            width: size,
+            height: size + depth,
+            borderRadius: size / 2,
+            backgroundColor: colors.rim,
+            overflow: "hidden",
+            ...crossShadow({
+              color: colors.rim,
+              offsetY: depth + 2,
+              opacity: isLocked ? 0.14 : 0.28,
+              blur: 14,
+              elevation: 5,
+            }),
+          }}
+        >
+          <Animated.View
+            style={{
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              backgroundColor: colors.face,
+              marginBottom: depth,
+              overflow: "hidden",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1.5,
+              borderColor: faceBorder,
+              borderTopColor: topHighlight,
+              borderLeftColor: "rgba(255,255,255,0.28)",
+              borderRightColor: "rgba(255,255,255,0.2)",
+              transform: [{ translateY: pressed ? depth : 0 }],
+              ...(pressed ? cssPressStyle : cssReleaseStyle),
+            }}
+          >
+            <LinearGradient
+              colors={
+                glossStrong
+                  ? [
+                      "rgba(255,255,255,0.45)",
+                      "rgba(255,255,255,0.1)",
+                      "rgba(0,0,0,0.05)",
+                    ]
+                  : [
+                      "rgba(255,255,255,0.24)",
+                      "rgba(255,255,255,0.05)",
+                      "rgba(0,0,0,0.04)",
+                    ]
+              }
+              locations={[0, 0.42, 1]}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: size / 2,
+              }}
               pointerEvents="none"
-            >
-              {icon}
-            </Animated.View>
-          ) : null}
+            />
+
+            {glossStrong ? (
+              <LinearGradient
+                colors={[
+                  "rgba(255,255,255,0.38)",
+                  "rgba(255,255,255,0)",
+                  "rgba(255,255,255,0)",
+                ]}
+                start={{ x: 0.2, y: 0 }}
+                end={{ x: 0.8, y: 0.55 }}
+                style={{
+                  position: "absolute",
+                  top: size * 0.07,
+                  left: size * 0.14,
+                  width: size * 0.48,
+                  height: size * 0.26,
+                  borderRadius: size * 0.18,
+                  opacity: 0.9,
+                }}
+                pointerEvents="none"
+              />
+            ) : null}
+
+            <View style={{ zIndex: 1 }}>{icon ?? fallbackIcon}</View>
+          </Animated.View>
         </View>
       </Pressable>
     );
@@ -146,19 +187,3 @@ export const SvgButton = React.memo(
 );
 
 SvgButton.displayName = "SvgButton";
-
-const styles = StyleSheet.create({
-  stack: {
-    width: "100%",
-    height: "100%",
-  },
-  faceLayer: {
-    ...StyleSheet.absoluteFill,
-  },
-  iconLayer: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: Platform.OS === "android" ? 4 : 2,
-  },
-});

@@ -1,6 +1,8 @@
 import { AppText } from "@/components/ui/AppText";
+import { enterFadeDown } from "@/components/animations/motion";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { ALL_GUIDEBOOKS, GuidebookLesson } from "@/data/guidebook-data";
+import { getGuidebook, GuidebookLesson } from "@/data/guidebook-data";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { useTTS } from "@/hooks/use-tts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -14,7 +16,6 @@ import {
 } from "@/components/icons/Icon3D";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,13 +23,10 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  FadeInDown,
-  FadeInUp,
   Easing,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -43,6 +41,31 @@ const rgba = (hex: string, a: number) => {
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${a})`;
 };
+
+/** Reanimated interpolateColor only accepts #RRGGBB / #RRGGBBAA — not rgba(). */
+const hexWithAlpha = (hex: string, alpha: number) => {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}${a}`;
+};
+
+function parseSearchParam(raw: string | string[] | undefined): string | undefined {
+  return Array.isArray(raw) ? raw[0] : raw;
+}
+
+function parseUnitIndex(raw: string | string[] | undefined): number {
+  const n = Number.parseInt(parseSearchParam(raw) ?? "0", 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function parsePathMode(raw: string | string[] | undefined): LessonPathMode {
+  return parseSearchParam(raw) === "normal" ? "normal" : "street";
+}
 
 // ─── 3-D TTS Pill Button ──────────────────────────────────────────────────────
 // Matches the exact same 3D architecture as the game chips (shadow layer + face layer + marginBottom)
@@ -108,16 +131,16 @@ function WordCard({
   }, [isActive]);
 
   const cardBg = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#FAFAFA", rgba(faceColor, 0.07)]),
-    transform: [{ translateY: ty.value }],     // ← follows press
+    backgroundColor: interpolateColor(
+      p.value,
+      [0, 1],
+      ["#FAFAFA", hexWithAlpha(faceColor, 0.07)],
+    ),
+    transform: [{ translateY: ty.value }],
   }));
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(300)}
-
-      style={{}}
-    >
+    <Animated.View entering={enterFadeDown(delay)}>
       {/* Rim (depth shadow using face color) */}
       <View style={[styles.wordCardRim, { backgroundColor: isActive ? rgba(faceColor, 0.5) : "#E5E5E5" }]}>
         <Animated.View
@@ -167,14 +190,16 @@ function PhraseCard({
 
   const cardStyle = useAnimatedStyle(() => ({
     borderColor: interpolateColor(p.value, [0, 1], ["#EBEBEB", faceColor]),
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#FFFFFF", rgba(faceColor, 0.05)]),
+    backgroundColor: interpolateColor(
+      p.value,
+      [0, 1],
+      ["#FFFFFF", hexWithAlpha(faceColor, 0.05)],
+    ),
     transform: [{ translateY: ty.value }],
   }));
 
   return (
-    <Animated.View
-      style={{ opacity: 0, transform: [{ scale: 0.95 }] }}
-    >
+    <Animated.View entering={enterFadeDown(delay)}>
       {/* Rim */}
       <View style={[styles.phraseRim, {
         backgroundColor: isActive ? rgba(faceColor, 0.4) : "#E0E0E0",
@@ -255,11 +280,7 @@ function LessonAccordion({
   const headerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: headerTy.value }] }));
 
   return (
-    <Animated.View
-      entering={FadeInDown.duration(300)}
-
-      style={{}}
-    >
+    <Animated.View entering={enterFadeDown(index * 35)}>
       <View style={styles.accordionCard}>
         {/* Header ──────────────────────────────────── */}
         <Pressable
@@ -387,13 +408,17 @@ function StatItem({ value, label, faceColor }: { value: string; label: string; f
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function GuidebookScreen() {
-  const { unit } = useLocalSearchParams<{ unit?: string }>();
-  const unitIndex = parseInt(unit ?? "0", 10);
+  const { unit, mode } = useLocalSearchParams<{ unit?: string; mode?: string }>();
+  const unitIndex = parseUnitIndex(unit);
+  const pathMode = parsePathMode(mode);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { speak, stop, activeId } = useTTS();
 
-  const guidebook = useMemo(() => ALL_GUIDEBOOKS[unitIndex], [unitIndex]);
+  const guidebook = useMemo(
+    () => getGuidebook(pathMode, unitIndex),
+    [pathMode, unitIndex],
+  );
   const theme = (guidebook?.displayTheme ?? "blue") as keyof typeof BUTTON_FACE_RIM_COLORS;
   const colors = BUTTON_FACE_RIM_COLORS[theme] ?? BUTTON_FACE_RIM_COLORS.blue;
 

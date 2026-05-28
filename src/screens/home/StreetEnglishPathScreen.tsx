@@ -1,6 +1,5 @@
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { buildSectionData, SectionTheme } from "@/data/list-items";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { sectionData, SectionTheme } from "@/data/list-items";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -13,8 +12,9 @@ import {
   View,
 } from "react-native";
 import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { tabBarScrollPadding } from "@/constants/layout";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
@@ -30,23 +30,16 @@ const renderSectionHeader = ({ section }: { section: { title: string } }) => (
 export const StreetEnglishPathScreen = () => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const nextLessonPathIndex = useProgressStore((s) => s.nextLessonPathIndex);
-  const progressReady = useProgressStore((s) => s.ready);
-  const sectionData = useMemo(
-    () => buildSectionData(nextLessonPathIndex),
-    [nextLessonPathIndex],
-  );
   const listRef = useRef<SectionList<any>>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
-  const firstSection = sectionData[0];
   const [activeSectionTitle, setActiveSectionTitle] = useState(
-    firstSection?.title ?? "",
+    sectionData[0]?.title ?? "",
   );
   const [activeSectionTheme, setActiveSectionTheme] = useState(
-    firstSection?.displayTheme ?? "green",
+    sectionData[0]?.displayTheme ?? "green",
   );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
@@ -118,10 +111,6 @@ export const StreetEnglishPathScreen = () => {
     }
   }).current;
 
-  if (!progressReady) {
-    return <View style={{ flex: 1, backgroundColor: "#E8F4FC" }} />;
-  }
-
   return (
     <View style={{ flex: 1 }}>
       <HomeMeshBackground />
@@ -137,6 +126,7 @@ export const StreetEnglishPathScreen = () => {
           faceColor={buttonColors.face}
           rimColor={buttonColors.rim}
           unitIndex={activeSectionIndex}
+          pathMode="street"
         />
         <SectionList
           sections={sectionData}
@@ -147,10 +137,13 @@ export const StreetEnglishPathScreen = () => {
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
-          scrollEventThrottle={32}
+          scrollEventThrottle={16}
           style={styles.list}
           ListFooterComponent={ListFooter}
-          contentContainerStyle={[styles.listContainer, { paddingBottom: 0 }]}
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: tabBarScrollPadding(insets.bottom) },
+          ]}
           stickySectionHeadersEnabled={false}
           initialNumToRender={6}
           maxToRenderPerBatch={4}
