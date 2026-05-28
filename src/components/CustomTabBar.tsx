@@ -107,7 +107,15 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeRouteName = state.routes[state.index]?.name;
 
   /* Routes that should NOT show the floating tab bar */
-  const HIDDEN_ROUTES = new Set(["lesson", "guidebook", "roleplay"]);
+  const HIDDEN_ROUTES = new Set([
+    "lesson",
+    "guidebook",
+    "roleplay",
+    "ai-teacher",
+    "privacy-policy",
+    "ai-safety",
+    "terms",
+  ]);
   if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
     return null;
   }
