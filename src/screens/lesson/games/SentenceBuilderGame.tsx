@@ -4,7 +4,7 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -14,12 +14,12 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { SentenceBuilderQuestion } from "@/data/lesson-content";
-import { L, LightMotion } from "./lesson-light-design";
+import { L } from "./lesson-light-design";
 import {
   LightCheckButton,
   LightGameHeading,
   LightHintButton,
-  LightPromptCard,
+  LightQuestionPrompt,
   LightWordTile,
   type LightTileState,
 } from "./lesson-light-primitives";
@@ -34,12 +34,15 @@ type Props = {
   onAnswer: (correct: boolean, explanation?: string) => void;
 };
 
-type Placed = { word: string; id: string };
+type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
 
 export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
   const [sentence, setSentence] = useState<Placed[]>([]);
+  const [usedBank, setUsedBank] = useState(() =>
+    question.wordBank.map(() => false),
+  );
   const [fb, setFb] = useState<FBState>("idle");
   const slotN = useRef(0);
   const completedRef = useRef(false);
@@ -49,37 +52,33 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
     transform: [{ translateX: shakeX.value }],
   }));
 
-  const englishHint = question.correctWords.join(" ");
   const slotCount = question.correctWords.length;
 
-  const supply: Record<string, number> = {};
-  for (const w of question.wordBank) supply[w] = (supply[w] || 0) + 1;
-  const used: Record<string, number> = {};
-  for (const p of sentence) used[p.word] = (used[p.word] || 0) + 1;
-
-  const bankUsed = (() => {
-    const rem = { ...used };
-    return question.wordBank.map((w) => {
-      if ((rem[w] || 0) > 0) {
-        rem[w]--;
-        return true;
-      }
-      return false;
-    });
-  })();
-
-  const addWord = (w: string) => {
+  const addWord = (bankIndex: number) => {
     if (fb === "wrong") setFb("idle");
     if (fb === "correct") return;
-    if ((used[w] || 0) >= (supply[w] || 0)) return;
+    if (usedBank[bankIndex]) return;
     if (sentence.length >= slotCount) return;
+    const w = question.wordBank[bankIndex];
     const id = `s${slotN.current++}`;
-    setSentence((p) => [...p, { word: w, id }]);
+    setUsedBank((prev) => {
+      const next = [...prev];
+      next[bankIndex] = true;
+      return next;
+    });
+    setSentence((p) => [...p, { word: w, id, bankIndex }]);
   };
 
   const removeFromSlot = (index: number) => {
     if (fb === "correct") return;
     if (fb === "wrong") setFb("idle");
+    const placed = sentence[index];
+    if (!placed) return;
+    setUsedBank((prev) => {
+      const next = [...prev];
+      next[placed.bankIndex] = false;
+      return next;
+    });
     setSentence((p) => p.filter((_, i) => i !== index));
   };
 
@@ -119,84 +118,126 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   const canCheck = sentence.length > 0 && fb !== "correct";
 
   return (
-    <GameRoot style={s.root}>
-      <GameHeader>
-        <LightGameHeading
-          title={t("lessons.orderWords")}
-          subtitle={t("lessons.orderWordsSub")}
-        />
-      </GameHeader>
-
-      <LightPromptCard
-        kurdish={question.kurdishSentence}
-        english={englishHint}
-      />
-
-      <View style={s.bank}>
-        {question.wordBank.map((w, i) => (
-          <LightWordTile
-            key={`${w}-${i}`}
-            label={w}
-            state={bankUsed[i] ? "ghost" : "idle"}
-            onPress={() => addWord(w)}
-            disabled={bankUsed[i] || fb !== "idle"}
+    <GameRoot style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <GameHeader>
+          <LightGameHeading
+            title={t("lessons.orderWords")}
+            subtitle={t("lessons.orderWordsSub")}
           />
-        ))}
-      </View>
+        </GameHeader>
 
-      <Animated.View style={[s.slotsWrap, shakeStyle]}>
-        <View style={s.slotsRow}>
-          {Array.from({ length: slotCount }).map((_, i) => {
-            const placed = sentence[i];
-            if (placed) {
+        <LightQuestionPrompt
+          label={t("lessons.questionLabel")}
+          forceKurdishFont
+        >
+          {question.kurdishSentence}
+        </LightQuestionPrompt>
+
+        <Animated.View style={[s.slotsWrap, shakeStyle]}>
+          <View style={s.slotsRow}>
+            {Array.from({ length: slotCount }).map((_, i) => {
+              const placed = sentence[i];
+              if (placed) {
+                return (
+                  <LightWordTile
+                    key={placed.id}
+                    label={placed.word}
+                    state={slotTileState(i)}
+                    onPress={() => removeFromSlot(i)}
+                  />
+                );
+              }
               return (
-                <LightWordTile
-                  key={placed.id}
-                  label={placed.word}
-                  state={slotTileState(i)}
-                  onPress={() => removeFromSlot(i)}
-                />
+                <View key={`slot-${i}`} style={s.emptySlot}>
+                  <Text style={s.emptySlotText}> </Text>
+                </View>
               );
-            }
+            })}
+          </View>
+        </Animated.View>
+
+        <View style={s.bank}>
+          {question.wordBank.map((w, i) => {
+            const taken = usedBank[i];
             return (
-              <View key={`slot-${i}`} style={s.emptySlot}>
-                <Text style={s.emptySlotText}> </Text>
+              <View key={`bank-${i}`} style={s.bankCell}>
+                {taken ? <View style={s.bankPlaceholder} pointerEvents="none" /> : null}
+                <View
+                  style={taken ? s.bankTileHidden : undefined}
+                  pointerEvents={taken ? "none" : "auto"}
+                >
+                  <LightWordTile
+                    label={w}
+                    state="idle"
+                    onPress={() => addWord(i)}
+                    disabled={taken || fb !== "idle"}
+                  />
+                </View>
               </View>
             );
           })}
         </View>
-      </Animated.View>
-
-      <View style={{ flex: 1, minHeight: 8 }} />
+      </ScrollView>
 
       <GameFooter delay={200}>
-        <LightHintButton />
-        <View style={{ height: 12 }} />
-        <LightCheckButton
-          label={t("lessons.check")}
-          onPress={check}
-          disabled={!canCheck}
-        />
+        <View style={s.footerWrap}>
+          <LightHintButton />
+          <View style={{ height: 12 }} />
+          <LightCheckButton
+            label={t("lessons.check")}
+            onPress={check}
+            disabled={!canCheck}
+          />
+        </View>
       </GameFooter>
     </GameRoot>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
+  scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 8,
+    paddingBottom: 24,
     gap: 18,
+  },
+  footerWrap: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 8,
+    backgroundColor: L.bg,
+    borderTopWidth: 1,
+    borderTopColor: L.border,
   },
   bank: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     justifyContent: "center",
+    paddingTop: 4,
+  },
+  bankCell: {
+    position: "relative",
+  },
+  bankTileHidden: {
+    opacity: 0,
+  },
+  bankPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: L.slotDash,
+    backgroundColor: L.bgSoft,
   },
   slotsWrap: {
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   slotsRow: {
     flexDirection: "row",

@@ -2,6 +2,8 @@
 // Shared types for all game questions and lesson/unit banks
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { AnswerTier } from "@/utils/answer-tier";
+
 export type VoiceQuestion = {
   type: "voice";
   prompt: string;
@@ -48,6 +50,7 @@ export type ConversationPickQuestion = {
   theyAsk: string;
   options: string[];
   correctAnswer: string;
+  optionTiers: Record<string, AnswerTier>;
   explanation: string;
   xp: number;
 };

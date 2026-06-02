@@ -26,6 +26,7 @@ export type {
   UnitBank,
 } from "./types";
 
+import { buildConversationOptionTiers } from "@/utils/answer-tier";
 import { GameQuestion, LessonBank } from "./types";
 import { NORMAL_UNITS } from "./normal-english";
 import { ALL_UNITS } from "./units";
@@ -36,20 +37,57 @@ function getUnitsForPath(mode: LessonPathMode) {
   return mode === "normal" ? NORMAL_UNITS : ALL_UNITS;
 }
 
-const distractorPoolCache: Partial<Record<LessonPathMode, string[]>> = {};
+/** English phrases and tokens scoped to one lesson — keeps distractors on-topic. */
+function lessonEnglishPool(lesson: LessonBank): string[] {
+  return [
+    ...lesson.words.map((w) => w.english),
+    ...lesson.sentences.map((s) => s.english.join(" ")),
+  ];
+}
 
-function getDistractorPool(mode: LessonPathMode): string[] {
-  if (!distractorPoolCache[mode]) {
-    const units = getUnitsForPath(mode);
-    distractorPoolCache[mode] = units.flatMap((u) =>
-      u.flatMap((l) => [
-        ...l.words.map((w) => w.english),
-        ...l.sentences.map((s) => s.english.join(" ")),
-        ...l.voices.map((v) => v.target),
-      ]),
-    );
+function lessonSingleWordPool(lesson: LessonBank): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const phrase of lessonEnglishPool(lesson)) {
+    for (const token of phrase.split(/\s+/)) {
+      const key = token.toLowerCase();
+      if (token.length > 0 && !seen.has(key)) {
+        seen.add(key);
+        out.push(token);
+      }
+    }
   }
-  return distractorPoolCache[mode]!;
+  return out;
+}
+
+function pickLessonWrongs(
+  pool: string[],
+  correct: string,
+  count: number,
+  seed: number,
+  filter?: (candidate: string) => boolean,
+): string[] {
+  const wrongs: string[] = [];
+  for (const candidate of shuffle(pool, seed)) {
+    if (candidate === correct) continue;
+    if (filter && !filter(candidate)) continue;
+    if (!wrongs.includes(candidate)) wrongs.push(candidate);
+    if (wrongs.length >= count) break;
+  }
+  return wrongs;
+}
+
+function sanitizeFillWrongs(answer: string, wrongs: string[]): string[] {
+  const seen = new Set<string>([answer.toLowerCase()]);
+  const out: string[] = [];
+  for (const w of wrongs) {
+    const key = w.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(w);
+    }
+  }
+  return out;
 }
 
 // ── Seeded deterministic shuffle ─────────────────────────────────────────────
@@ -86,8 +124,8 @@ export function getLessonQuestions(
   const sentences = shuffle(lesson.sentences,     seed + 2);
   const fills     = shuffle(lesson.fillBlanks,    seed + 3);
   const convos    = shuffle(lesson.conversations, seed + 4);
-  const distractors = shuffle(getDistractorPool(mode), seed + 5);
-  const safeD = (i: number) => distractors[Math.abs(i) % distractors.length];
+  const lessonPool = lessonEnglishPool(lesson);
+  const lessonWords = lessonSingleWordPool(lesson);
 
   const questions: GameQuestion[] = [];
   const isNormal = mode === "normal";
@@ -100,33 +138,14 @@ export function getLessonQuestions(
     xp: 15,
   });
 
-  // 2. Multiple Choice (1×)
-  const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;
-  if (isNormal && mcSource) {
-    const correctSentence = mcSource.english.join(" ");
-    const mcWrongs: string[] = [];
-    for (let i = 0; i < distractors.length && mcWrongs.length < 3; i++) {
-      const d = distractors[i];
-      if (d !== correctSentence && !mcWrongs.includes(d) && d.split(" ").length > 2) {
-        mcWrongs.push(d);
-      }
-    }
-    while (mcWrongs.length < 3) mcWrongs.push(safeD(mcWrongs.length + 40));
-    questions.push({
-      type: "multiple_choice",
-      prompt: `ڕستەی دروست هەڵبژێرە:\n«${mcSource.kurdish}»`,
-      promptLang: "ku",
-      correctAnswer: correctSentence,
-      options: shuffle([correctSentence, ...mcWrongs.slice(0, 3)], seed + 10),
-      xp: 10,
-    });
-  } else {
-    const mcWord = pick(words, 4);
-    const mcWrongs: string[] = [];
-    for (let i = 0; mcWrongs.length < 3; i++) {
-      const d = safeD(i + 20);
-      if (d !== mcWord.english && !mcWrongs.includes(d)) mcWrongs.push(d);
-    }
+  const pushWordMc = (wordIndex: number, optionSeed: number) => {
+    const mcWord = pick(words, wordIndex);
+    const mcWrongs = pickLessonWrongs(
+      words.map((w) => w.english),
+      mcWord.english,
+      3,
+      optionSeed,
+    );
     questions.push({
       type: "multiple_choice",
       prompt: isNormal
@@ -134,9 +153,32 @@ export function getLessonQuestions(
         : `${mcWord.kurdish} بە ئینگلیزی چییە؟`,
       promptLang: "ku",
       correctAnswer: mcWord.english,
-      options: shuffle([mcWord.english, ...mcWrongs], seed + 10),
+      options: shuffle([mcWord.english, ...mcWrongs], optionSeed),
       xp: 10,
     });
+  };
+
+  // 2. Multiple Choice (1×)
+  const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;
+  if (isNormal && mcSource) {
+    const correctSentence = mcSource.english.join(" ");
+    const sentenceWrongs = pickLessonWrongs(
+      lessonPool,
+      correctSentence,
+      3,
+      seed + 10,
+      (d) => d.split(" ").length > 2,
+    );
+    questions.push({
+      type: "multiple_choice",
+      prompt: `ڕستەی دروست هەڵبژێرە:\n«${mcSource.kurdish}»`,
+      promptLang: "ku",
+      correctAnswer: correctSentence,
+      options: shuffle([correctSentence, ...sentenceWrongs], seed + 10),
+      xp: 10,
+    });
+  } else {
+    pushWordMc(4, seed + 10);
   }
 
   // 3. Voice (2×)
@@ -148,12 +190,14 @@ export function getLessonQuestions(
   // 4. Sentence Builder (2×)
   for (let i = 0; i < 2; i++) {
     const s = pick(sentences, i);
-    const sentSet = new Set(s.english.map(w => w.toLowerCase()));
-    const extra: string[] = [];
-    for (let j = 0; extra.length < 2; j++) {
-      const d = safeD(seed + i * 7 + j + 30);
-      if (!sentSet.has(d.toLowerCase()) && !extra.includes(d)) extra.push(d);
-    }
+    const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
+    const extra = pickLessonWrongs(
+      lessonWords,
+      "",
+      2,
+      seed + 20 + i,
+      (d) => !sentSet.has(d.toLowerCase()),
+    );
     questions.push({
       type: "sentence_builder",
       kurdishSentence: s.kurdish,
@@ -166,24 +210,30 @@ export function getLessonQuestions(
   // 5. Fill Blank (2×)
   for (let i = 0; i < 2; i++) {
     const f = pick(fills, i);
+    const fillWrongs = sanitizeFillWrongs(f.answer, f.wrongs);
     questions.push({
       type: "fill_blank",
       sentenceParts: f.parts,
       kurdishHint: f.hint,
       correctAnswer: f.answer,
-      options: shuffle([f.answer, ...f.wrongs], seed + 40 + i),
+      options: shuffle([f.answer, ...fillWrongs], seed + 40 + i),
       xp: 15,
     });
   }
 
-  // 6. Conversation Pick (2×)
+  // 6. Conversation Pick (2×) — fallback to word MC when only one scenario exists
   for (let i = 0; i < 2; i++) {
-    const c = pick(convos, i);
+    const c = convos[i];
+    if (!c) {
+      pushWordMc(6 + i, seed + 50 + i);
+      continue;
+    }
     questions.push({
       type: "conversation_pick",
       situation: c.situation,
       theyAsk: c.theyAsk,
       correctAnswer: c.correct,
+      optionTiers: buildConversationOptionTiers(c),
       options: shuffle([c.correct, c.wrong1, c.wrong2, c.wrong3], seed + 50 + i),
       explanation: c.explanation,
       xp: 25,

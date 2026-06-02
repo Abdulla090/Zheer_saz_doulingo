@@ -32,8 +32,11 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
+import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useLocaleStore } from "@/stores/useLocaleStore";
+import type { AnswerTier } from "@/utils/answer-tier";
+import { tierFeedbackKey, tierLabelKey } from "@/utils/answer-tier";
 import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
@@ -76,6 +79,7 @@ function StatCard({
 }
 
 export default function LessonScreen() {
+  const { t } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -104,7 +108,11 @@ export default function LessonScreen() {
   const [correctN, setCorrectN] = useState(0);
   const [finished, setFinished] = useState(false);
   const [passed, setPassed] = useState(false);
-  const [feedback, setFeedback] = useState<{ correct: boolean; explanation?: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    correct: boolean;
+    tier?: AnswerTier;
+    explanation?: string;
+  } | null>(null);
 
   const nextRef = useRef(0);
 
@@ -139,16 +147,20 @@ export default function LessonScreen() {
   );
 
   const handleAnswer = useCallback(
-    (correct: boolean, explanation?: string) => {
+    (correct: boolean, explanation?: string, tier?: AnswerTier) => {
       const q = questions[current];
       if (!q) return;
+
+      const isConversationPick = q.type === "conversation_pick";
 
       if (correct) {
         xpSc.value = withSequence(
           withTiming(1.4, { duration: 90, easing: Easing.out(Easing.cubic) }),
           withTiming(1.0, { duration: 160, easing: Easing.out(Easing.cubic) }),
         );
-        setXp(v => v + q.xp);
+        const xpGain =
+          isConversationPick && tier === "good" ? Math.round(q.xp * 0.85) : q.xp;
+        setXp(v => v + xpGain);
         setCorrectN(v => v + 1);
       } else {
         const newH = Math.max(0, hearts - 1);
@@ -167,7 +179,11 @@ export default function LessonScreen() {
         easing: Easing.out(Easing.cubic),
       });
 
-      setFeedback({ correct, explanation });
+      setFeedback({
+        correct,
+        tier: isConversationPick ? tier : undefined,
+        explanation,
+      });
       sheetY.value = withTiming(0, {
         duration: 220,
         easing: Easing.out(Easing.cubic),
@@ -275,6 +291,20 @@ export default function LessonScreen() {
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
+  const isConversationPick = questions[current]?.type === "conversation_pick";
+  const feedbackTier = isConversationPick ? feedback?.tier : undefined;
+  const feedbackTitle = feedbackTier
+    ? t(tierLabelKey(feedbackTier))
+    : isCorrect
+      ? t("lessons.feedbackCorrect")
+      : t("lessons.feedbackIncorrect");
+  const feedbackSubtitle = feedback?.explanation
+    ? feedback.explanation
+    : feedbackTier
+      ? t(tierFeedbackKey(feedbackTier))
+      : isCorrect
+        ? t("lessons.feedbackCorrectSub")
+        : t("lessons.feedbackIncorrectSub");
   return (
     <LessonMeshBackdrop>
       <View style={[sL.root, { paddingTop: insets.top }]}>
@@ -304,14 +334,10 @@ export default function LessonScreen() {
           >
             <LessonLiquidFeedback
               correct={isCorrect}
-              title={isCorrect ? "Correct!" : "Incorrect"}
-              subtitle={
-                feedback.explanation
-                  ? feedback.explanation
-                  : isCorrect
-                    ? "Perfect. Keep up the momentum."
-                    : "Not quite. Focus on the structure."
-              }
+              tier={feedbackTier}
+              title={feedbackTitle}
+              subtitle={feedbackSubtitle}
+              buttonLabel={t("common.continue")}
               onContinue={continueToNext}
             />
           </Animated.View>

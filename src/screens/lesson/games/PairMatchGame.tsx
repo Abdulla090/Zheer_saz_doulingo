@@ -3,7 +3,7 @@
  */
 
 import { useI18n } from "@/hooks/useI18n";
-import React, { memo, useRef, useState } from "react";
+import React, { memo, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
@@ -14,12 +14,14 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { PairMatchQuestion } from "@/data/lesson-content";
-import { L } from "./lesson-light-design";
+import { L, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,
+  LightQuestionPrompt,
+  LightSurfaceCard,
   LightWordTile,
 } from "./lesson-light-primitives";
-import { GameHeader, GameRoot } from "./GameAnimatedShell";
+import { GameHeader, GameOption, GameRoot } from "./GameAnimatedShell";
 
 type Props = {
   question: PairMatchQuestion;
@@ -28,8 +30,24 @@ type Props = {
 
 type TileState = "idle" | "selected" | "correct" | "wrong";
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
+function shuffleSeeded<T>(arr: T[], seed: number): T[] {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pairSeed(pairs: PairMatchQuestion["pairs"]): number {
+  let h = 0;
+  const key = pairs.map((p) => `${p.kurdish}|${p.english}`).join(";");
+  for (let i = 0; i < key.length; i++) {
+    h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
 }
 
 const MatchChip = memo(function MatchChip({
@@ -48,7 +66,7 @@ const MatchChip = memo(function MatchChip({
   const shakeX = useSharedValue(0);
   const wrapStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
-    opacity: matched ? 0.55 : 1,
+    opacity: matched ? 0.5 : 1,
   }));
 
   React.useEffect(() => {
@@ -69,6 +87,7 @@ const MatchChip = memo(function MatchChip({
         onPress={onPress}
         disabled={matched}
         rtl={rtl}
+        wide
       />
     </Animated.View>
   );
@@ -76,8 +95,19 @@ const MatchChip = memo(function MatchChip({
 
 export default function PairMatchGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
-  const [left] = useState(() => shuffle(question.pairs.map((p) => p.kurdish)));
-  const [right] = useState(() => shuffle(question.pairs.map((p) => p.english)));
+  const seed = useMemo(() => pairSeed(question.pairs), [question.pairs]);
+  const [left] = useState(() =>
+    shuffleSeeded(
+      question.pairs.map((p) => p.kurdish),
+      seed,
+    ),
+  );
+  const [right] = useState(() =>
+    shuffleSeeded(
+      question.pairs.map((p) => p.english),
+      seed + 1,
+    ),
+  );
 
   const selLRef = useRef<string | null>(null);
   const selRRef = useRef<string | null>(null);
@@ -88,9 +118,10 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   const [wrongR, setWrongR] = useState<string | null>(null);
   const firedRef = useRef(false);
   const total = question.pairs.length;
-  const rowCount = Math.max(left.length, right.length);
+  const matchedCount = matched.size / 2;
 
   const isLocked = wrongL !== null || wrongR !== null;
+  const awaitingPair = (selL !== null) !== (selR !== null);
 
   const tryMatch = (pendL: string | null, pendR: string | null) => {
     if (!pendL || !pendR) return;
@@ -175,68 +206,78 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
+      <LightQuestionPrompt label={t("lessons.questionLabel")} forceKurdishFont>
+        {t("lessons.pairWordsSub")}
+      </LightQuestionPrompt>
+
       <View style={s.progressRow}>
-        {Array.from({ length: total }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              s.progressPip,
-              i < matched.size / 2 && s.progressPipDone,
-            ]}
-          />
-        ))}
+        <View style={s.progressTrack}>
+          {Array.from({ length: total }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                s.progressPip,
+                i < matchedCount && s.progressPipDone,
+              ]}
+            />
+          ))}
+        </View>
+        <Text style={s.progressLabel}>
+          {matchedCount}/{total}
+        </Text>
       </View>
 
-      <View style={s.colLabels}>
-        <Text style={[s.colLabel, { textAlign: "right" }]}>کوردی</Text>
-        <View style={s.colLabelSpacer} />
-        <Text style={s.colLabel}>English</Text>
-      </View>
+      <LightSurfaceCard style={s.boardCard}>
+        <View style={s.colLabels}>
+          <Text style={[LightType.label, s.colLabel, { textAlign: "right" }]}>
+            کوردی
+          </Text>
+          <View style={s.colDivider} />
+          <Text style={[LightType.label, s.colLabel]}>English</Text>
+        </View>
 
-      <View style={s.grid}>
-        {Array.from({ length: rowCount }).map((_, row) => {
-          const lw = left[row];
-          const rw = right[row];
-          return (
-            <View key={row} style={s.row}>
-              <View style={s.side}>
-                {lw ? (
-                  <MatchChip
-                    label={lw}
-                    state={lState(lw)}
-                    onPress={() => handleL(lw)}
-                    matched={matched.has(lw)}
-                    rtl
-                  />
-                ) : (
-                  <View style={s.sidePlaceholder} />
-                )}
-              </View>
-              <View style={s.dotCol}>
-                <View
-                  style={[
-                    s.dot,
-                    (selL === lw || selR === rw) && s.dotActive,
-                    matched.has(lw ?? "") && s.dotMatched,
-                  ]}
+        <View style={s.board}>
+          <View style={s.column}>
+            {left.map((lw, i) => (
+              <GameOption key={`${lw}-${i}`} index={i} baseDelay={80}>
+                <MatchChip
+                  label={lw}
+                  state={lState(lw)}
+                  onPress={() => handleL(lw)}
+                  matched={matched.has(lw)}
+                  rtl
                 />
-              </View>
-              <View style={s.side}>
-                {rw ? (
-                  <MatchChip
-                    label={rw}
-                    state={rState(rw)}
-                    onPress={() => handleR(rw)}
-                    matched={matched.has(rw)}
-                  />
-                ) : (
-                  <View style={s.sidePlaceholder} />
-                )}
-              </View>
-            </View>
-          );
-        })}
-      </View>
+              </GameOption>
+            ))}
+          </View>
+
+          <View style={s.boardDivider} />
+
+          <View style={s.column}>
+            {right.map((rw, i) => (
+              <GameOption key={`${rw}-${i}`} index={i} baseDelay={80}>
+                <MatchChip
+                  label={rw}
+                  state={rState(rw)}
+                  onPress={() => handleR(rw)}
+                  matched={matched.has(rw)}
+                />
+              </GameOption>
+            ))}
+          </View>
+        </View>
+
+        {awaitingPair ? (
+          <View style={s.hintRow}>
+            <View style={s.hintDot} />
+            <Text style={s.hintText}>
+              {selL ? t("lessons.pairPickEnglish") : t("lessons.pairPickKurdish")}
+            </Text>
+          </View>
+        ) : null}
+      </LightSurfaceCard>
+
+      <View style={s.bottomSpacer} />
     </GameRoot>
   );
 }
@@ -244,18 +285,24 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingTop: 8,
+    paddingBottom: 12,
     gap: 14,
   },
   progressRow: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+  progressTrack: {
+    flex: 1,
+    flexDirection: "row",
     gap: 6,
-    justifyContent: "center",
   },
   progressPip: {
     flex: 1,
-    maxWidth: 48,
     height: 6,
     borderRadius: 3,
     backgroundColor: L.track,
@@ -263,45 +310,70 @@ const s = StyleSheet.create({
   progressPipDone: {
     backgroundColor: L.green,
   },
+  progressLabel: {
+    minWidth: 36,
+    fontSize: 13,
+    fontWeight: "800",
+    color: L.gray,
+    fontFamily: "DINNextRoundedBold",
+    textAlign: "right",
+  },
+  boardCard: {
+    flex: 1,
+    minHeight: 0,
+  },
   colLabels: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 4,
+    marginBottom: 12,
+    gap: 12,
   },
   colLabel: {
     flex: 1,
-    fontSize: 11,
-    fontWeight: "800",
-    color: L.grayLight,
-    letterSpacing: 0.5,
-    fontFamily: "DINNextRoundedBold",
-    textTransform: "uppercase",
   },
-  colLabelSpacer: { width: 20 },
-  grid: { flex: 1, gap: 10 },
-  row: {
+  colDivider: { width: 1 },
+  board: {
+    flex: 1,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    gap: 12,
+    alignItems: "stretch",
   },
-  side: { flex: 1 },
-  sidePlaceholder: { height: 48 },
-  dotCol: {
-    width: 20,
-    alignItems: "center",
+  column: {
+    flex: 1,
+    gap: 10,
     justifyContent: "center",
   },
-  dot: {
+  boardDivider: {
+    width: 1,
+    alignSelf: "stretch",
+    backgroundColor: L.trackInner,
+    borderRadius: 1,
+    marginVertical: 4,
+  },
+  hintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: L.border,
+  },
+  hintDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: L.track,
-  },
-  dotActive: {
     backgroundColor: L.blue,
-    transform: [{ scale: 1.25 }],
   },
-  dotMatched: {
-    backgroundColor: L.green,
+  hintText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: L.gray,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  bottomSpacer: {
+    flexGrow: 0,
+    minHeight: 8,
   },
 });

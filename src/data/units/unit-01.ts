@@ -7,11 +7,11 @@ const unit01: UnitBank = [
   {
     topic: "Inviting Friends", topicKu: "بانگهێشتکردنی هاوڕێیان",
     words: [
-      { english: "Wanna hang",      kurdish: "با بچینە دەرەوە"    },
-      { english: "Let's link up",   kurdish: "با یەکتر ببینین"    },
-      { english: "Come through",    kurdish: "سەردانمان بکە"      },
-      { english: "You down",        kurdish: "ئامادەی؟ / ڕازیت؟" },
-      { english: "Let's roll",      kurdish: "کەوتینە ڕێ"         },
+      { english: "Wanna hang out?",   kurdish: "دەتەوێت بچینە دەرەوە؟" },
+      { english: "What time?",        kurdish: "کاتژمێر چەند؟"       },
+      { english: "You down?",         kurdish: "ئامادەی؟"            },
+      { english: "Come through",      kurdish: "سەردانمان بکە"      },
+      { english: "Where at?",         kurdish: "لە کوێ؟"             },
     ],
     voices: [
       { prompt: "بانگهێشتی هاوڕێیەک بکە",    target: "Hey wanna hang tonight?",       targetKurdish: "ئەی، ئەمشەو دەردەچیت؟"   },
@@ -26,7 +26,7 @@ const unit01: UnitBank = [
       { parts: ["You",   "for tonight?"],                  hint: "ئامادەی بۆ ئەمشەو؟",          answer: "down",     wrongs: ["up", "ready", "good"]        },
     ],
     conversations: [
-      { situation: "لە نامەدا لەگەڵ هاوڕێیەک", theyAsk: "Hey, we're all hanging at Jake's place. You down?", correct: "Yeah I'm down! What time should I come through?", wrong1: "Yes I want to come to Jake's.", wrong2: "I will attend the gathering.", wrong3: "Affirmative, I shall be present.", explanation: "'Yeah I'm down! What time should I come through?' — وەڵامێکی گونجاو و باوە" },
+      { situation: "لە نامەدا لەگەڵ هاوڕێیەکت", theyAsk: "Hey, we're all hanging at Jake's place. You down?", correct: "Yeah I'm down! What time should I come through?", wrong1: "Yes, I would like to attend at Jake's house.", wrong2: "I am available to join the gathering.", wrong3: "No thank you, I cannot come tonight.", explanation: "'Yeah I'm down! What time should I come through?' — ڕازیبوون + پرسیار لە کات" },
     ],
   },
 
@@ -34,11 +34,11 @@ const unit01: UnitBank = [
   {
     topic: "Making Plans", topicKu: "دانانی پلان",
     words: [
-      { english: "I'm down",        kurdish: "من ڕازیم"            },
-      { english: "What time",       kurdish: "کاتژمێر چەند؟"       },
-      { english: "Let's meet at",   kurdish: "با یەکتر ببینین لە"   },
-      { english: "Count me in",     kurdish: "حیساب لەسەر منیش بکەن"},
-      { english: "Pencil me in",    kurdish: "ناوم بنووسە"         },
+      { english: "I'm down",            kurdish: "من ڕازیم"                      },
+      { english: "What time?",          kurdish: "کاتژمێر چەند؟"                 },
+      { english: "Let's meet at seven", kurdish: "با کاتژمێر حەوت یەکتر ببینین" },
+      { english: "Sounds good",         kurdish: "باشە"                          },
+      { english: "See you there",       kurdish: "لەوێ دەتبینمەوە"               },
     ],
     voices: [
       { prompt: "پلانێک دابنێ",         target: "Let's meet at seven — sound good?", targetKurdish: "با کاتژمێر حەوت یەکتر ببینین — باشە؟" },
@@ -53,7 +53,7 @@ const unit01: UnitBank = [
       { parts: ["Let's", "at the coffee shop at 3"],     hint: "با یەکتر ببینین لە قاوەخانەکە کاتژمێر ٣", answer: "meet", wrongs: ["go", "be", "eat"]       },
     ],
     conversations: [
-      { situation: "پلانی ئەمشەو", theyAsk: "So when are we meeting?", correct: "How about 7 at that new pizza place downtown?", wrong1: "We can meet at 7 o'clock.", wrong2: "Meeting time is seven in the evening.", wrong3: "I suggest 19:00 hours at the restaurant.", explanation: "'How about 7 at that new pizza place' — وەڵامێکی ئاسایی و سروشتییە" },
+      { situation: "پلانی ئەمشەوت دادەنێیت", theyAsk: "So when are we meeting?", correct: "How about 7 at that new pizza place downtown?", wrong1: "Seven o'clock is acceptable for me.", wrong2: "I am not sure about the meeting time.", wrong3: "We should meet whenever everyone is free.", explanation: "'How about 7 at that new pizza place downtown?' — پێشنیارێکی سروشتی بۆ کات و شوێن" },
     ],
   },
 
@@ -80,7 +80,7 @@ const unit01: UnitBank = [
       { parts: ["Something",      "up — so sorry!"],  hint: "ئیشێکم بۆ دروست بوو",       answer: "came",      wrongs: ["showed", "popped", "turned"] },
     ],
     conversations: [
-      { situation: "پلانی ئەمشەو لەگەڵ هاوڕێیەک", theyAsk: "Hey, we still on for tonight?", correct: "Ugh, I'm so sorry — something came up at work. Rain check?", wrong1: "Sorry I cannot come tonight.", wrong2: "I have to cancel our plans.", wrong3: "Tonight is not possible for me.", explanation: "'Something came up. Rain check?' — کورت، سروشتی، و بەڕێزانەیە" },
+      { situation: "هاوڕێیەکت پرسیاری پلانی ئەمشەو دەکات", theyAsk: "Hey, we still on for tonight?", correct: "Ugh, I'm so sorry — something came up at work. Rain check?", wrong1: "Yes, I am still coming tonight.", wrong2: "Sorry. I will be there at eight.", wrong3: "Tonight works perfectly for me.", explanation: "'Something came up. Rain check?' — هەڵوەشاندنەوەی نەرم بە 'rain check'" },
     ],
   },
 
@@ -107,7 +107,7 @@ const unit01: UnitBank = [
       { parts: ["I'm on","— be there soon!"],      hint: "لە ڕێگام — بەمزووانە دەگەم!",         answer: "my way",    wrongs: ["the road", "it", "foot"]     },
     ],
     conversations: [
-      { situation: "دواکەوتن بۆ قاوەخانە", theyAsk: "Bro, where are you?? We've been here for 20 mins!", correct: "I know I know, so sorry! Running late — be there in 5, I promise!", wrong1: "I am sorry I am running late.", wrong2: "My apologies I will arrive shortly.", wrong3: "Sorry for the delay I come soon.", explanation: "'I know I know, so sorry! Be there in 5!' — وەڵامێکی خێرا و سروشتییە" },
+      { situation: "دواکەوتن بۆ قاوەخانەکە", theyAsk: "Bro, where are you?? We've been here for 20 mins!", correct: "I know I know, so sorry! Running late — be there in 5, I promise!", wrong1: "I apologize for my tardiness this evening.", wrong2: "I will arrive when I am able to.", wrong3: "Traffic is bad. Please wait longer.", explanation: "'I know I know — be there in 5, I promise!' — کورت، دڵنیایی، و هاوچەرخ" },
     ],
   },
 
@@ -134,7 +134,7 @@ const unit01: UnitBank = [
       { parts: ["I'm",    "such a good time!"],       hint: "کاتێکی زۆر خۆش بەسەردەبەم!",        answer: "having",  wrongs: ["getting", "taking", "doing"]  },
     ],
     conversations: [
-      { situation: "لە ئاهەنگێک کەسێکی نوێ دەبینیت", theyAsk: "First time here? What do you think?", correct: "It's amazing! The vibe is great, I'm totally having a blast!", wrong1: "Yes it is good here I like it.", wrong2: "The party is nice and enjoyable.", wrong3: "I am experiencing positive emotions here.", explanation: "'The vibe is great, I'm totally having a blast!' — بەپەرۆش و سروشتییە" },
+      { situation: "لە ئاهەنگێکدا کەسێکی نوێ دەبینیت", theyAsk: "First time here? What do you think?", correct: "It's amazing! The vibe is great, I'm totally having a blast!", wrong1: "Yes, this is my first visit to this location.", wrong2: "The event appears to be satisfactory.", wrong3: "I do not have an opinion yet.", explanation: "'The vibe is great — totally having a blast!' — بەپەرۆش و سروشتی" },
     ],
   },
 
@@ -161,7 +161,7 @@ const unit01: UnitBank = [
       { parts: ["",      ", she's actually right about this!"],   hint: "بۆ ئەوەی ڕاستگۆ بم، ئەو لەمەدا ڕاست دەکات!",    answer: "TBH",    wrongs: ["OMG", "BRB", "NGL"]          },
     ],
     conversations: [
-      { situation: "گرووپی نامەگۆڕینەوەی هاوڕێیان", theyAsk: "Did you see what happened on the show last night?? 😭", correct: "OMG YES I screamed! NGL I did not see that coming at all!", wrong1: "Yes I saw it was very surprising.", wrong2: "I viewed the show and was shocked.", wrong3: "Affirmative, the event was unexpected.", explanation: "'OMG YES I screamed! NGL...' — شێوازی نامەگۆڕینەوەی باو و سروشتی" },
+      { situation: "لە گرووپی نامەگۆڕینەوەی هاوڕێیان", theyAsk: "Did you see what happened on the show last night?? 😭", correct: "OMG YES I screamed! NGL I did not see that coming at all!", wrong1: "Yes, I watched it. It was surprising.", wrong2: "I have not seen that episode yet.", wrong3: "The plot development was quite unexpected.", explanation: "'OMG YES! NGL I did not see that coming!' — شێوازی نامەگۆڕینەوەی باو" },
     ],
   },
 
@@ -188,7 +188,7 @@ const unit01: UnitBank = [
       { parts: ["That",        "at the end blew my mind!"],  hint: "ئەو گۆڕانکارییە چاوەڕواننەکراوەی کۆتایی مێشکی وەستاندم!", answer: "plot twist",wrongs: ["ending", "scene", "part"]     },
     ],
     conversations: [
-      { situation: "هاوڕێیەک پرسیار دەکات", theyAsk: "What are you watching these days?", correct: "I just started The Bear — you gotta watch it, it's insane!", wrong1: "I am watching a show called The Bear.", wrong2: "Currently my viewing is The Bear show.", wrong3: "The Bear is a show I recommend for you.", explanation: "'You gotta watch it, it's insane!' — شێوازێکی باوە بۆ پێشنیارکردن" },
+      { situation: "هاوڕێیەک پرسیار دەکات", theyAsk: "What are you watching these days?", correct: "I just started The Bear — you gotta watch it, it's insane!", wrong1: "I am currently viewing a television program.", wrong2: "The Bear is acceptable entertainment.", wrong3: "I do not watch shows very often.", explanation: "'You gotta watch it, it's insane!' — پێشنیارێکی گەرم و هاندەر" },
     ],
   },
 
@@ -215,7 +215,7 @@ const unit01: UnitBank = [
       { parts: ["Just",          "low key — nothing crazy!"],hint: "تەنها بە هێمنی — هیچ شتێکی سەیر نییە!", answer: "keeping it", wrongs: ["taking it", "going", "doing"]  },
     ],
     conversations: [
-      { situation: "ڕۆژی دووشەممە لە سەر کار", theyAsk: "How was your weekend?", correct: "Honestly, it was much needed — just chilled at home and recharged.", wrong1: "My weekend was good thank you.", wrong2: "I spent the weekend at home resting.", wrong3: "The weekend was relaxing and fine.", explanation: "'It was much needed — just chilled and recharged' — ئینگلیزییەکی هێمنانە و پێگەیشتووانەیە" },
+      { situation: "ڕۆژی دووشەممە لە کاردا", theyAsk: "How was your weekend?", correct: "Honestly, it was much needed — just chilled at home and recharged.", wrong1: "My weekend was adequate. Thank you.", wrong2: "I worked all weekend on a project.", wrong3: "The weekend was uneventful and brief.", explanation: "'Much needed — chilled at home and recharged' — هێمنانە و سروشتی" },
     ],
   },
 
@@ -238,11 +238,11 @@ const unit01: UnitBank = [
       { english: ["Let's",  "definitely","do","this",  "again","soon"],  kurdish: "بە دڵنیاییەوە با بەمزووانە دووبارەی بکەینەوە"},
     ],
     fillBlanks: [
-      { parts: ["I'm",     "out — great seeing everyone!"],  hint: "من دەڕۆم — زۆر خۆشحاڵ بووم بە بینینی هەمووتان!", answer: "heading",    wrongs: ["going", "heading", "walking"] },
+      { parts: ["I'm", "out — great seeing everyone!"], hint: "من دەڕۆم — زۆر خۆشحاڵ بووم بە بینینی هەمووتان!", answer: "heading", wrongs: ["going", "leaving", "walking"] },
       { parts: ["That was","! Let's do it again!"],           hint: "ئەوە زۆر خۆش بوو! با دووبارەی بکەینەوە!",         answer: "so fun",      wrongs: ["nice", "good", "great"]       },
     ],
     conversations: [
-      { situation: "کۆتایی شەو لەگەڵ هاوڕێیان", theyAsk: "This was honestly such a good night.", correct: "Right?! We should do this way more often. Hit me up next week!", wrong1: "Yes it was a good evening.", wrong2: "I agree the night was enjoyable.", wrong3: "The event was positive and successful.", explanation: "'Right?! We should do this more often!' — وزەبەخش و سروشتییە" },
+      { situation: "کۆتایی شەو لەگەڵ هاوڕێیان", theyAsk: "This was honestly such a good night.", correct: "Right?! We should do this way more often. Hit me up next week!", wrong1: "Yes, the evening was satisfactory.", wrong2: "I agree that tonight was pleasant.", wrong3: "I must leave now. Goodbye everyone.", explanation: "'Right?! We should do this more often. Hit me up!' — وزەبەخش و پەیوەندی درێژخایەن" },
     ],
   },
 
@@ -269,7 +269,7 @@ const unit01: UnitBank = [
       { parts: ["Next time",  "— I'll be there!"],    hint: "جاری داهاتوو بە دڵنیاییەوە — لەوێ دەبم!",       answer: "for sure",   wrongs: ["OK", "I promise", "definitely"] },
     ],
     conversations: [
-      { situation: "دواکەوتن لە دەرچوونێک", theyAsk: "Dude you should've been there last night!", correct: "I know, the FOMO is REAL. Fill me in — what happened?", wrong1: "I am sorry I could not attend.", wrong2: "I missed the event unfortunately.", wrong3: "Please tell me the events of last night.", explanation: "'The FOMO is REAL. Fill me in!' — ئینگلیزییەکی باو و هاوچەرخە بۆ گەنجان" },
+      { situation: "نەچوویتە دەرچوونێک کە هاوڕێیەکت بوو", theyAsk: "Dude you should've been there last night!", correct: "I know, the FOMO is REAL. Fill me in — what happened?", wrong1: "I apologize for missing the event.", wrong2: "I was busy and could not attend.", wrong3: "Please provide a summary of the evening.", explanation: "'The FOMO is REAL. Fill me in!' — باو و هاوچەرخ بۆ گەنجان" },
     ],
   },
 ];

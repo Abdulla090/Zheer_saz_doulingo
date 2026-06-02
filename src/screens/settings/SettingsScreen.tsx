@@ -11,6 +11,7 @@ import {
   SUPPORT_EMAIL,
 } from "@/constants/app-meta";
 import { tabBarScrollPadding } from "@/constants/layout";
+import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useI18n } from "@/hooks/useI18n";
 import type { AppLocale } from "@/i18n";
 import { useFontStore } from "@/stores/useFontStore";

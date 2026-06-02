@@ -21,11 +21,11 @@ const unit02: UnitBank = [
       { english: ["Today","actually","went","pretty","well"],             kurdish: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو"    },
     ],
     fillBlanks: [
-      { parts: ["Today",  "actually went pretty well!"],hint: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو!",  answer: "just",    wrongs: ["kind of", "barely", "nearly"]  },
+      { parts: ["Today", "went pretty well!"], hint: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو!", answer: "actually", wrongs: ["just", "barely", "nearly"] },
       { parts: ["Man it's such a", "today!"], hint: "کابرا، ئەمڕۆ ڕۆژێکی زۆر درێژە!", answer: "long day", wrongs: ["good day", "short one", "fine"] },
     ],
     conversations: [
-      { situation: "هاوکارێک پرسیار دەکات", theyAsk: "How was your day?", correct: "Honestly, it was a rough one — but I'm pushing through!", wrong1: "It was not a good day.", wrong2: "My day was difficult.", wrong3: "The day presented many challenges.", explanation: "'Rough one — but I'm pushing through!' وەڵامێکی کورت و باوی ئینگلیزییە" },
+      { situation: "هاوکارێک پرسیار دەکات", theyAsk: "How was your day?", correct: "Honestly, it was a rough one — but I'm pushing through!", wrong1: "My day was fine. Nothing special.", wrong2: "Today was excellent in every way.", wrong3: "I prefer not to discuss my day.", explanation: "'Rough one — but I'm pushing through!' — ڕاستگۆیی + ئومێد" },
     ],
   },
 
@@ -51,7 +51,7 @@ const unit02: UnitBank = [
       { parts: ["Barely", "it out of the house!"],     hint: "بە زەحمەت لە ماڵەوە دەرچووم!",               answer: "made",     wrongs: ["got", "came", "left"]        },
     ],
     conversations: [
-      { situation: "دواکەوتن بەهۆی خەو", theyAsk: "Did you sleep in again?", correct: "Big time. Hit snooze three times and barely made it!", wrong1: "Yes I woke up late today.", wrong2: "I was late because of oversleeping.", wrong3: "My morning routine was disrupted.", explanation: "'Big time. Hit snooze and barely made it!' — وەڵامێکی کورت و خێرایە لە کاتی پەلەیدا" },
+      { situation: "دواکەوتن بەهۆی خەو", theyAsk: "Did you sleep in again?", correct: "Big time. Hit snooze three times and barely made it!", wrong1: "No, I woke up early today.", wrong2: "I always wake up on time.", wrong3: "My alarm did not ring this morning.", explanation: "'Big time. Hit snooze three times!' — ڕوون و سروشتی بۆ دواکەوتن" },
     ],
   },
 
@@ -77,7 +77,7 @@ const unit02: UnitBank = [
       { parts: ["My",   "for forgetting that!"],   hint: "هەڵەی من بوو کە ئەوەم بیرچوو!",         answer: "bad",     wrongs: ["fault", "mistake", "error"]   },
     ],
     conversations: [
-      { situation: "کاتێک هەڵەیەک دەکەیت", theyAsk: "Hey you forgot to send me that file!", correct: "Oh my bad! Sending it right now, one sec.", wrong1: "Sorry I forgot to send the file.", wrong2: "I apologize for my oversight.", wrong3: "I acknowledge my error in forgetting.", explanation: "'Oh my bad! Sending it right now' — کورت، خێرا و سروشتییە بۆ داننان بە هەڵە" },
+      { situation: "کاتێک هەڵەیەک دەکەیت", theyAsk: "Hey you forgot to send me that file!", correct: "Oh my bad! Sending it right now, one sec.", wrong1: "I will send it tomorrow morning.", wrong2: "Which file are you referring to?", wrong3: "I did not forget. Check your inbox.", explanation: "'Oh my bad! Sending it right now' — دانپەدان + چارەسەرێکی خێرا" },
     ],
   },
 
@@ -103,7 +103,7 @@ const unit02: UnitBank = [
       { parts: ["It's",    "the corner — easy!"],     hint: "لەولای پێچەکەیە — زۆر ئاسانە!",             answer: "around",   wrongs: ["beside", "past", "near"]      },
     ],
     conversations: [
-      { situation: "کەسێک ون بووە", theyAsk: "Hey, is there a coffee shop near here?", correct: "Yeah! Head straight, take the first left — it's right around the corner!", wrong1: "Yes there is a coffee shop nearby.", wrong2: "Go straight and turn left to find it.", wrong3: "A coffee establishment is located to the left.", explanation: "'Head straight, take the first left — right around the corner!' ئینگلیزییەکی ئاسان و ڕۆژانەیە" },
+      { situation: "کەسێک ونە و ڕێگامان دەپرسێت", theyAsk: "Hey, is there a coffee shop near here?", correct: "Yeah! Head straight, take the first left — it's right around the corner!", wrong1: "I do not know. I am not from here.", wrong2: "There might be one somewhere downtown.", wrong3: "You should use a maps application.", explanation: "'Head straight, take the first left — right around the corner!' — ئاراستەی ڕۆژانە و ڕوون" },
     ],
   },
 
@@ -112,9 +112,9 @@ const unit02: UnitBank = [
     words: [
       { english: "I'm starving",   kurdish: "لە برسا دەمەرم"     },
       { english: "That hits",      kurdish: "ئەوە زۆر شازە"      },
-      { english: "So good",        kurdish: "زۆر خۆشە"           },
       { english: "Worth it",       kurdish: "هەقی خۆیەتی"        },
       { english: "Must try",       kurdish: "دەبێت تاقی بکەیتەوە"},
+      { english: "So spicy",       kurdish: "زۆر تیژە"           },
     ],
     voices: [
       { prompt: "وەسفی خواردنێک بکە",  target: "This is literally the best thing I've ever eaten!", targetKurdish: "بەڕاستی ئەمە باشترین شتە کە تا ئێستا خواردوومە!" },
@@ -126,10 +126,10 @@ const unit02: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["I'm",  "— when's lunch?!"],           hint: "زۆر برسییمە — کاتی نانی نیوەڕۆ کەیە؟!",   answer: "starving",  wrongs: ["hungry", "dying", "empty"]   },
-      { parts: ["This", "place is absolutely worth it!"],hint: "ئەم شوێنە بەتەواوی هەقی خۆیەتی!", answer: "food",   wrongs: ["restaurant", "place", "dish"] },
+      { parts: ["This", "place is absolutely worth it!"], hint: "ئەم شوێنە بەتەواوی هەقی خۆیەتی!", answer: "local", wrongs: ["street", "random", "unknown"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک خواردنێکی تام کردووە", theyAsk: "How's the pasta?", correct: "Bro, it literally hits different — you HAVE to try this!", wrong1: "The pasta is very good and delicious.", wrong2: "I recommend the pasta, it's nice.", wrong3: "The pasta quality is superior.", explanation: "'It hits different — you HAVE to try this!' — ئینگلیزییەکی باو و پێشکەوتووە بۆ پێشنیارکردنی خواردن" },
+      { situation: "هاوڕێیەک خواردنێکی تام کردووە", theyAsk: "How's the pasta?", correct: "Bro, it literally hits different — you HAVE to try this!", wrong1: "The pasta is acceptable but nothing special.", wrong2: "I would not order it again.", wrong3: "It tastes similar to other restaurants.", explanation: "'It hits different — you HAVE to try this!' — پێشنیارێکی بەپەرۆش" },
     ],
   },
 
@@ -138,7 +138,7 @@ const unit02: UnitBank = [
     words: [
       { english: "Deadline",       kurdish: "دوا مۆڵەت"          },
       { english: "Behind on",      kurdish: "دواکەوتووم لە"      },
-      { english: "On it",          kurdish: "خەریکیم / لەسەریم"  },
+      { english: "On it",          kurdish: "لەسەریم"            },
       { english: "Wrap it up",     kurdish: "تەواوی بکە"         },
       { english: "Run by you",     kurdish: "پێت پیشان بدەم"     },
     ],
@@ -155,7 +155,7 @@ const unit02: UnitBank = [
       { parts: ["Just",  "this for me real quick!"],         hint: "تەنها بە خێرایی بۆم کۆتایی پێ بهێنە!",              answer: "wrap up", wrongs: ["finish", "do", "solve"]       },
     ],
     conversations: [
-      { situation: "هاوکارێک داوای یارمەتی دەکات", theyAsk: "Hey, can I run something by you?", correct: "Of course, I'm on it — what's up?", wrong1: "Yes please speak about your issue.", wrong2: "I am ready to assist you.", wrong3: "You may present your matter to me.", explanation: "'Of course, I'm on it — what's up?' — دەربڕینێکی سروشتییە بۆ ئامادەیی یارمەتیدان" },
+      { situation: "هاوکارێک داوای یارمەتی دەکات", theyAsk: "Hey, can I run something by you?", correct: "Of course, I'm on it — what's up?", wrong1: "I am too busy right now.", wrong2: "Please send me an email instead.", wrong3: "What is the topic you wish to discuss?", explanation: "'Of course, I'm on it — what's up?' — ئامادەیی خێرا و سروشتی" },
     ],
   },
 
@@ -181,7 +181,7 @@ const unit02: UnitBank = [
       { parts: ["That's a really", "deal!"], hint: "ئەوە بەڕاستی مامەڵەیەکی باشە!", answer: "good", wrongs: ["great", "nice", "amazing"] },
     ],
     conversations: [
-      { situation: "کەسێک دوودڵە لە کڕین", theyAsk: "I really want those shoes but they're expensive.", correct: "They're on sale NOW though — honestly just treat yourself!", wrong1: "You should buy them if you want.", wrong2: "It is acceptable to purchase them.", wrong3: "The discount makes them more affordable.", explanation: "'They're on sale — just treat yourself!' دەربڕینێکی هاندەرانەیە بۆ کڕین" },
+      { situation: "کەسێک دوودڵە لە کڕین", theyAsk: "I really want those shoes but they're expensive.", correct: "They're on sale NOW though — honestly just treat yourself!", wrong1: "You should save money and not buy them.", wrong2: "Expensive shoes are never worth it.", wrong3: "I do not care about shoes.", explanation: "'They're on sale — just treat yourself!' — هاندان بە شێوەیەکی گەرم" },
     ],
   },
 
@@ -207,7 +207,7 @@ const unit02: UnitBank = [
       { parts: ["I'm totally","out today!"], hint: "ئەمڕۆ بەتەواوی شەکەت بووم!", answer: "wiped",   wrongs: ["burned", "stressed", "gone"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک نەخۆشی پێوە دیارە", theyAsk: "You look tired today, you okay?", correct: "Honestly not great — been a bit under the weather. Trying to push through.", wrong1: "I am not feeling well today.", wrong2: "My health is not optimal.", wrong3: "I have been experiencing illness.", explanation: "'Under the weather. Trying to push through.' — بەکاربینانی ئیدیۆمێکی سروشتییە بۆ باش نەبوونی تەندروستی" },
+      { situation: "هاوڕێیەک نەخۆشی پێوە دیارە", theyAsk: "You look tired today, you okay?", correct: "Honestly not great — been a bit under the weather. Trying to push through.", wrong1: "I feel wonderful today. Thanks!", wrong2: "I am completely fine. No worries.", wrong3: "I stayed up gaming all night.", explanation: "'Under the weather. Trying to push through.' — ئیدیۆمی سروشتی بۆ نەخۆشی" },
     ],
   },
 
@@ -233,7 +233,7 @@ const unit02: UnitBank = [
       { parts: ["The",  "is absolutely packed!"],    hint: "مەترۆکە بەتەواوی پڕ بووە لە خەڵک!",          answer: "subway",   wrongs: ["bus", "train", "road"]        },
     ],
     conversations: [
-      { situation: "هاوڕێیەک چاوەڕێت دەکات", theyAsk: "Where are you?? I'm at the restaurant!", correct: "Stuck in traffic — just gonna Uber it, be there in 10!", wrong1: "I am in traffic and will arrive soon.", wrong2: "Traffic is causing a delay for me.", wrong3: "I will take an alternative route shortly.", explanation: "'Stuck in traffic — gonna Uber it, be there in 10!' — شێوازێکی ڕۆژانە و خێرایە بۆ باسکردنی دواکەوتن" },
+      { situation: "هاوڕێیەک چاوەڕێت دەکات", theyAsk: "Where are you?? I'm at the restaurant!", correct: "Stuck in traffic — just gonna Uber it, be there in 10!", wrong1: "I am already at the restaurant.", wrong2: "I cannot come tonight. Sorry.", wrong3: "Please wait thirty more minutes.", explanation: "'Stuck in traffic — Uber it, be there in 10!' — کورت و ڕوون بۆ دواکەوتن" },
     ],
   },
 
@@ -256,10 +256,10 @@ const unit02: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["I slept", "till noon this weekend!"],    hint: "ئەم کۆتایی هەفتەیە تا نیوەڕۆ خەوتم!",  answer: "in",      wrongs: ["out", "well", "hard"]        },
-      { parts: ["It was",  "exactly what I needed!"],      hint: "ئەوە ڕێک ئەوە بوو کە پێویستم بوو!",    answer: "exactly", wrongs: ["just", "precisely", "really"] },
+      { parts: ["It was", "what I needed!"], hint: "ئەوە ڕێک ئەوە بوو کە پێویستم بوو!", answer: "exactly", wrongs: ["just", "precisely", "really"] },
     ],
     conversations: [
-      { situation: "کاتی نزیکبوونەوە لە هاوکاران", theyAsk: "Good weekend?", correct: "So good — slept in, recharged, did nothing. Honestly much needed!", wrong1: "Yes my weekend was very restful.", wrong2: "I spent the weekend resting at home.", wrong3: "The weekend was relaxing and recuperative.", explanation: "'Slept in, recharged, did nothing. Much needed!' — کورت و ئینگلیزییەکی خێرا و سەردەمیانەیە" },
+      { situation: "کاتی نزیکبوونەوە لە هاوکاران", theyAsk: "Good weekend?", correct: "So good — slept in, recharged, did nothing. Honestly much needed!", wrong1: "My weekend was extremely busy.", wrong2: "I worked all weekend on a project.", wrong3: "Weekends are not important to me.", explanation: "'Slept in, recharged, did nothing. Much needed!' — کورت و سەردەمی" },
     ],
   },
 ];

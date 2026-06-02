@@ -2,7 +2,6 @@
  * FillBlankGame — Premium light lesson UI.
  */
 
-import { AppText } from "@/components/ui/AppText";
 import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -15,12 +14,13 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { FillBlankQuestion } from "@/data/lesson-content";
-import { ltrText, rtlBlock } from "./game-text";
+import { ltrText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
 import {
   LightCheckButton,
   LightGameHeading,
+  LightQuestionPrompt,
   LightSurfaceCard,
   LightWordTile,
   mapOptionState,
@@ -91,9 +91,9 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <AppText style={s.hint} forceKurdishFont>
+      <LightQuestionPrompt label={t("lessons.questionLabel")} forceKurdishFont>
         {question.kurdishHint}
-      </AppText>
+      </LightQuestionPrompt>
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
@@ -143,13 +143,6 @@ const s = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     gap: 16,
-  },
-  hint: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: L.navy,
-    fontFamily: "DINNextRoundedBold",
-    ...rtlBlock,
   },
   sentenceRow: {
     flexDirection: "row",

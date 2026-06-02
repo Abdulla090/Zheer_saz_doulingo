@@ -7,11 +7,11 @@ const unit00: UnitBank = [
   {
     topic: "Basic Greetings", topicKu: "سڵاوی سەرەکی",
     words: [
-      { english: "Hey", kurdish: "سڵاو" },
-      { english: "Hi", kurdish: "هەلۆ" },
-      { english: "Hello", kurdish: "سڵاو (فەرمی)" },
-      { english: "What's up", kurdish: "چ باسە / چۆنی" },
-      { english: "Yo", kurdish: "چاکیت (نافەرمی)" },
+      { english: "Hello", kurdish: "سڵاو" },
+      { english: "What's up", kurdish: "چ باسە" },
+      { english: "How are you?", kurdish: "چۆنی" },
+      { english: "Good morning", kurdish: "بەیانی باش" },
+      { english: "Nice to meet you", kurdish: "خۆشحاڵم بە ناسینت" },
     ],
     voices: [
       { prompt: "بە شیرینی سڵاو بکە", target: "Hey, how's it going?", targetKurdish: "سڵاو، باشیت؟" },
@@ -26,8 +26,8 @@ const unit00: UnitBank = [
       { parts: ["What's", "?"], hint: "چ باسە / چۆنی؟", answer: "up", wrongs: ["down", "new", "in"] },
     ],
     conversations: [
-      { situation: "لەسەر کوچەی ئاشنایەکت دەبینیت", theyAsk: "Hey! Long time no see!", correct: "I know, right? How've you been?", wrong1: "Yes it has been a while.", wrong2: "Hello I have not seen you.", wrong3: "Greetings, time has passed.", explanation: "'I know, right? How've you been?' ئینگلیزییەکی سروشتی و گەرمە" },
-      { situation: "یەکەم جار کەسێک لە کار دەبینی", theyAsk: "Hey, I'm Alex — new here!", correct: "Oh nice! I'm Sam. Welcome to the team!", wrong1: "I am Sam, hello.", wrong2: "My name is Sam, welcome.", wrong3: "Hello Alex pleased to meet you.", explanation: "'Oh nice! I'm Sam. Welcome to the team!' بەخێرهێنانێکی گەرم و کەسایەتییە" },
+      { situation: "لە کۆڵاندا ئاشنایەکت دەبینیت", theyAsk: "Hey! Long time no see!", correct: "I know, right? How've you been?", wrong1: "Yeah, it's been a while.", wrong2: "Good to see you again. How have you been lately?", wrong3: "Hello. We have not seen each other in some time.", explanation: "وەڵامی گەرم: 'I know, right? How've you been?' — نەک تەنها دانپەدان بە کاتی دووربوون" },
+      { situation: "یەکەم جار کەسێک لە کاردا دەبینیت", theyAsk: "Hey, I'm Alex — new here!", correct: "Oh nice! I'm Sam. Welcome to the team!", wrong1: "Hello. My name is Sam.", wrong2: "Welcome to the office, Alex.", wrong3: "Pleased to make your acquaintance, Alex.", explanation: "'Oh nice! I'm Sam. Welcome to the team!' — خۆت پێناسە بکە و بە گەرمی بەخێر بیهێنە" },
     ],
   },
 
@@ -35,11 +35,11 @@ const unit00: UnitBank = [
   {
     topic: "Saying Goodbye", topicKu: "ماڵئاوایی کردن",
     words: [
-      { english: "Catch you later", kurdish: "دواتر دەتبینمەوە" },
+      { english: "Goodbye", kurdish: "خوات لەگەڵ" },
+      { english: "See you tomorrow", kurdish: "سبەی دەتبینمەوە" },
       { english: "Take care", kurdish: "ئاگات لە خۆت بێت" },
-      { english: "See you around", kurdish: "دەتبینمەوە لەم نزیکانە" },
-      { english: "Peace out", kurdish: "خوات لەگەڵ (نافەرمی)" },
-      { english: "Gotta run", kurdish: "دەبێت بڕۆم" },
+      { english: "I have to go", kurdish: "دەبێت بڕۆم" },
+      { english: "Until next time", kurdish: "تا جارێکی تر" },
     ],
     voices: [
       { prompt: "خوات لەگەڵی گەرم بکە", target: "Catch you later man!", targetKurdish: "دواتر دەتبینمەوە براکە!" },
@@ -54,7 +54,7 @@ const unit00: UnitBank = [
       { parts: ["Take", "everyone!"], hint: "ئاگاتان لە خۆتان بێت هەمووان", answer: "care", wrongs: ["note", "time", "it"] },
     ],
     conversations: [
-      { situation: "ئامادەی بۆ چوونە ماڵەوە", theyAsk: "Alright, I gotta head out.", correct: "Okay! Catch you later, take care!", wrong1: "Okay goodbye please take care.", wrong2: "Farewell, I hope you are well.", wrong3: "Okay see you in the future.", explanation: "'Catch you later, take care!' بە تەواوی ئینگلیزی باو و ڕۆژانەیە" },
+      { situation: "ئامادەیت بۆ گەڕانەوە ماڵەوە", theyAsk: "Alright, I gotta head out.", correct: "Okay! Catch you later, take care!", wrong1: "Okay. Goodbye, and take care.", wrong2: "Farewell. I hope you have a safe journey.", wrong3: "I will see you again at a later date.", explanation: "'Catch you later, take care!' — کورت و ئینگلیزی ڕۆژانەیە بۆ ماڵئاوایی" },
     ],
   },
 
@@ -66,7 +66,7 @@ const unit00: UnitBank = [
       { english: "Pretty good", kurdish: "زۆر باشم" },
       { english: "Could be worse", kurdish: "دەیتوانی خراپتریش بێت" },
       { english: "Living the dream", kurdish: "ژیانێکی شاز دەژیم" },
-      { english: "Hanging in there", kurdish: "خۆم ڕاگرتووە / بەرگە دەگرم" },
+      { english: "Hanging in there", kurdish: "خۆم ڕاگرتووم" },
     ],
     voices: [
       { prompt: "وەڵامی 'چۆنی' بدەرەوە", target: "Not bad at all, thanks for asking!", targetKurdish: "هەرگیز خراپ نیم، سوپاس بۆ پرسینی حاڵم!" },
@@ -81,7 +81,7 @@ const unit00: UnitBank = [
       { parts: ["Pretty", "! And you?"], hint: "زۆر باشم! ئەی تۆ؟", answer: "good", wrongs: ["bad", "okay", "fine"] },
     ],
     conversations: [
-      { situation: "هاوکارێک حاڵت دەپرسێت", theyAsk: "Hey, how are you doing today?", correct: "Honestly, pretty good! Had a great morning.", wrong1: "I am doing fine thank you.", wrong2: "My status is good today.", wrong3: "Quite well, I am functioning correctly.", explanation: "'Honestly, pretty good!' وەڵامێکی ئینگلیزی گەرم و زۆر سروشتییە" },
+      { situation: "هاوکارێک حاڵیت دەپرسێت", theyAsk: "Hey, how are you doing today?", correct: "Honestly, pretty good! Had a great morning.", wrong1: "I am fine, thank you for asking.", wrong2: "My day is proceeding satisfactorily.", wrong3: "I am well. How are you doing?", explanation: "'Honestly, pretty good! Had a great morning.' — گەرم و سروشتی، نەک وەڵامی فەرمی" },
     ],
   },
 
@@ -89,11 +89,11 @@ const unit00: UnitBank = [
   {
     topic: "Introducing Yourself", topicKu: "خۆت پێناسەکردن",
     words: [
-      { english: "I'm from", kurdish: "من خەڵکی..." },
-      { english: "Nice to meet", kurdish: "خۆشحاڵم بە ناسینت" },
-      { english: "Call me", kurdish: "پێم بڵێ بانگم بکە" },
-      { english: "I go by", kurdish: "بە ... بانگم دەکەن" },
-      { english: "Originally", kurdish: "لە بنەڕەتدا" },
+      { english: "I'm from Kurdistan", kurdish: "من خەڵکی کوردستانم" },
+      { english: "Nice to meet you", kurdish: "خۆشحاڵم بە ناسینت" },
+      { english: "Just call me Alex", kurdish: "تەنها پێم بڵێ ئەلێکس" },
+      { english: "I go by Alex", kurdish: "بە ئەلێکس بانگم دەکەن" },
+      { english: "Originally from Spain", kurdish: "لە بنەڕەتدا خەڵکی ئیسپانیام" },
     ],
     voices: [
       { prompt: "خۆت پێناسەبکە", target: "Hey I'm Alex, nice to meet you!", targetKurdish: "سڵاو من ئەلێکسم، خۆشحاڵم بە ناسینت!" },
@@ -104,11 +104,11 @@ const unit00: UnitBank = [
       { english: ["I'm", "originally", "from", "Chicago"], kurdish: "لە بنەڕەتدا من خەڵکی شیکاگۆم" },
     ],
     fillBlanks: [
-      { parts: ["I'm", "originally from Spain"], hint: "لە بنەڕەتدا من خەڵکی ئیسپانیام", answer: "actually", wrongs: ["really", "just", "born"] },
+      { parts: ["I'm originally from", ""], hint: "لە بنەڕەتدا من خەڵکی ئیسپانیام", answer: "Spain", wrongs: ["France", "Italy", "Mexico"] },
       { parts: ["Just", "me Alex"], hint: "تەنها پێم بڵێ ئەلێکس", answer: "call", wrongs: ["say", "name", "tell"] },
     ],
     conversations: [
-      { situation: "لە ئاهەنگێکدا کەسێک ئاشنا دەبیت", theyAsk: "I don't think we've met — I'm Jordan!", correct: "Oh hey! I'm River, great to meet you!", wrong1: "Hello Jordan my name is River.", wrong2: "I am River, pleased to meet you.", wrong3: "Greetings, I have not met you before.", explanation: "'Oh hey! Great to meet you!' زۆر گەرم و سروشتییە لە ناسیندا" },
+      { situation: "لە ئاهەنگێکدا کەسێکی نوێ دەبینیت", theyAsk: "I don't think we've met — I'm Jordan!", correct: "Oh hey! I'm River, great to meet you!", wrong1: "Hello, Jordan. My name is River.", wrong2: "It is a pleasure to meet you, Jordan.", wrong3: "Greetings. I do not believe we have met.", explanation: "'Oh hey! I'm River, great to meet you!' — گەرم و کورت بۆ ناسین لە ئاهەنگدا" },
     ],
   },
 
@@ -118,8 +118,8 @@ const unit00: UnitBank = [
     words: [
       { english: "You're killing it", kurdish: "زۆر شازت کرد" },
       { english: "That's fire", kurdish: "ئەوە زۆر شازە" },
-      { english: "Looks good", kurdish: "جوان دیارە / خۆش دیارە" },
-      { english: "Well done", kurdish: "ئافەرین / دەستخۆش" },
+      { english: "Looks good", kurdish: "جوان دیارە" },
+      { english: "Well done", kurdish: "ئافەرین" },
       { english: "Props to you", kurdish: "دەستخۆشیت لێ دەکەم" },
     ],
     voices: [
@@ -132,10 +132,10 @@ const unit00: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["You're", "it today!"], hint: "ئەمڕۆ زۆر شازت کردووە!", answer: "killing", wrongs: ["doing", "making", "having"] },
-      { parts: ["That", "is absolutely fire!"], hint: "ئەو جلوبەرگە بەڕاستی شازە!", answer: "outfit", wrongs: ["work", "thing", "style"] },
+      { parts: ["That", "is absolutely on fire!"], hint: "ئەو جلوبەرگە بەڕاستی شازە!", answer: "outfit", wrongs: ["hairstyle", "vibe", "look"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەکت یەکەم کتێبی نووسی", theyAsk: "I just finished writing my first book!", correct: "No way! That's insane, props to you!", wrong1: "Congratulations that is very good.", wrong2: "Well done on your achievement.", wrong3: "I am happy for your success.", explanation: "'No way! Props to you!' دەربڕینێکی ئینگلیزی زۆر زیندوو و هاندەرانەیە" },
+      { situation: "هاوڕێیەکت یەکەم کتێبی نووسیوە", theyAsk: "I just finished writing my first book!", correct: "No way! That's insane, props to you!", wrong1: "Congratulations. That is very impressive.", wrong2: "Well done on completing your book.", wrong3: "I am happy to hear about your success.", explanation: "'No way! That's insane, props to you!' — کاردانەوەی بەپەرۆش، نەک تەنها پیرۆزبایی فەرمی" },
     ],
   },
 
@@ -143,7 +143,7 @@ const unit00: UnitBank = [
   {
     topic: "Agree & Disagree", topicKu: "هاوڕابوون و ڕەتکردنەوە",
     words: [
-      { english: "Totally", kurdish: "سەد لە سەد / بەتەواوی" },
+      { english: "Totally", kurdish: "سەد لە سەد" },
       { english: "No way", kurdish: "مەحاڵە" },
       { english: "I hear you", kurdish: "لێت تێدەگەم" },
       { english: "Fair enough", kurdish: "ڕاست دەکەیت" },
@@ -162,7 +162,7 @@ const unit00: UnitBank = [
       { parts: ["Fair", "I'll accept that"], hint: "ڕاست دەکەیت، ئەوەیان قبووڵ دەکەم", answer: "enough", wrongs: ["deal", "point", "game"] },
     ],
     conversations: [
-      { situation: "لە گفتوگۆیەکی گروپیدا", theyAsk: "I think we should just cancel the trip.", correct: "I hear you, but I think we can still make it work.", wrong1: "No we should not cancel it.", wrong2: "I disagree with your cancellation idea.", wrong3: "Your opinion is noted but incorrect.", explanation: "'I hear you, but' ڕەتکردنەوەیەکی ئینگلیزی زۆر بەئاداب و بەڕێزانەیە" },
+      { situation: "لە گفتوگۆیەکی گروپدا", theyAsk: "I think we should just cancel the trip.", correct: "I hear you, but I think we can still make it work.", wrong1: "No. We should definitely not cancel.", wrong2: "I disagree. Canceling is a bad idea.", wrong3: "I understand, but I fully support canceling.", explanation: "'I hear you, but...' — ڕەتکردنەوەی نەرم: سەرەتا گوێ بگرە، دواتر بۆچوونەکەت بڵێ" },
     ],
   },
 
@@ -170,7 +170,7 @@ const unit00: UnitBank = [
   {
     topic: "Asking for Help", topicKu: "داواکردنی یارمەتی",
     words: [
-      { english: "Excuse me", kurdish: "لێم ببورە / ببوورە" },
+      { english: "Excuse me", kurdish: "لێم ببورە" },
       { english: "Could you", kurdish: "دەتوانیت" },
       { english: "Would you mind", kurdish: "پێت ناخۆش نابێت" },
       { english: "Any chance", kurdish: "هیچ ڕێگەیەک هەیە" },
@@ -189,7 +189,7 @@ const unit00: UnitBank = [
       { parts: ["Would you", "showing me around?"], hint: "پێت ناخۆش نابێت بمگەڕێنیت؟", answer: "mind", wrongs: ["care", "help", "like"] },
     ],
     conversations: [
-      { situation: "ونبوویت لە شارێکی نوێ", theyAsk: "Hey, are you lost?", correct: "Kind of! Any chance you know where the subway is?", wrong1: "Yes I am lost please help.", wrong2: "I require directions to subway.", wrong3: "Affirmative, I cannot find my way.", explanation: "'Kind of! Any chance...' داواکارییەکی زۆر ئاسان و نەرمە بۆ یارمەتی" },
+      { situation: "لە شارێکی نوێدا ونبوویت", theyAsk: "Hey, are you lost?", correct: "Kind of! Any chance you know where the subway is?", wrong1: "Yes. Where is the subway station, please?", wrong2: "I am lost. Could you provide directions?", wrong3: "Please assist me. I cannot locate the subway.", explanation: "'Kind of! Any chance you know where the subway is?' — نەرم و سروشتی بۆ داوای یارمەتی" },
     ],
   },
 
@@ -198,7 +198,7 @@ const unit00: UnitBank = [
     topic: "Small Talk", topicKu: "قسەکردنی کورت (دەستپێکی گفتوگۆ)",
     words: [
       { english: "Nice weather", kurdish: "کەشوهەوایەکی خۆشە" },
-      { english: "What's new", kurdish: "چی نوێ هەیە / چ باسە" },
+      { english: "What's new", kurdish: "چی نوێ هەیە" },
       { english: "Been up to much", kurdish: "سەرقاڵی چیت؟" },
       { english: "Same old", kurdish: "وەک هەمیشە" },
       { english: "Can't complain", kurdish: "ناتوانم گلەیی بکەم (زۆر باشم)" },
@@ -216,7 +216,7 @@ const unit00: UnitBank = [
       { parts: ["Can't", ", everything's good!"], hint: "ناتوانم گلەیی بکەم، هەموو شتێک باشە!", answer: "complain", wrongs: ["lie", "say", "talk"] },
     ],
     conversations: [
-      { situation: "ناسیاوێک دەبینیت لە شوێنی کار", theyAsk: "Hey, haven't seen you in a while! How's everything?", correct: "Can't complain! Things are good — been pretty busy actually.", wrong1: "Things are fine thank you.", wrong2: "My situation is acceptable.", wrong3: "Everything is functioning normally.", explanation: "'Can't complain! Things are good' وەڵامێکی زۆر باو و ڕاستەقینەیە" },
+      { situation: "لە شوێنی کار ناسیاوێک دەبینیت", theyAsk: "Hey, haven't seen you in a while! How's everything?", correct: "Can't complain! Things are good — been pretty busy actually.", wrong1: "Everything is fine. Thank you for asking.", wrong2: "My circumstances are satisfactory at present.", wrong3: "I have been occupied with work recently.", explanation: "'Can't complain! Been pretty busy actually.' — وەڵامی گفتوگۆی کورت و باو" },
     ],
   },
 
@@ -226,7 +226,7 @@ const unit00: UnitBank = [
     words: [
       { english: "No way", kurdish: "نەخێر باوەڕ ناکەم" },
       { english: "Oh snap", kurdish: "ئەی وەی" },
-      { english: "Seriously", kurdish: "بەڕاست؟ / بەجدی؟" },
+      { english: "Seriously", kurdish: "بەڕاست؟" },
       { english: "That's wild", kurdish: "ئەوە شێتانەیە" },
       { english: "I can't even", kurdish: "مێشکم نایبڕێت" },
     ],
@@ -243,7 +243,7 @@ const unit00: UnitBank = [
       { parts: ["That's", "! I had no idea!"], hint: "ئەوە شێتانەیە! هیچ زانیاریم لێ نەبوو!", answer: "wild", wrongs: ["crazy", "bad", "good"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک هەواڵێکی سەیرت پێ دەدات", theyAsk: "I just won a free trip to Japan!", correct: "No way! Oh snap, you're so lucky!", wrong1: "Congratulations on winning.", wrong2: "That is a good prize.", wrong3: "I am happy you received the trip.", explanation: "'No way! Oh snap!' کاردانەوەیەکی زۆر زیندوو و پڕ وزەیە" },
+      { situation: "هاوڕێیەک هەواڵێکی سەیرت پێ دەدات", theyAsk: "I just won a free trip to Japan!", correct: "No way! Oh snap, you're so lucky!", wrong1: "Congratulations on winning the trip.", wrong2: "That sounds like a wonderful prize.", wrong3: "I am pleased that you won a vacation.", explanation: "'No way! Oh snap, you're so lucky!' — کاردانەوەی سەرسوڕهێنەر، نەک تەنها پیرۆزبایی فەرمی" },
     ],
   },
 
@@ -270,7 +270,7 @@ const unit00: UnitBank = [
       { parts: ["I'd", "your two cents on this!"], hint: "حەز دەکەم بۆچوونی تۆ لەسەر ئەمە بزانم!", answer: "love", wrongs: ["like", "want", "need"] },
     ],
     conversations: [
-      { situation: "گفتوگۆکردن سەبارەت بە پلانێک", theyAsk: "So, what's your take on the new plan?", correct: "Honestly? I think it could work but we need to iron out a few things.", wrong1: "The plan is good I think.", wrong2: "My opinion is it could work.", wrong3: "I believe the plan has potential areas.", explanation: "'Honestly? I think it could work but...' دەربڕینێکی ئینگلیزی زۆر دروست و پێگەیشتووە" },
+      { situation: "گفتوگۆ دەکەیت دەربارەی پلانێک", theyAsk: "So, what's your take on the new plan?", correct: "Honestly? I think it could work but we need to iron out a few things.", wrong1: "I think the plan is completely perfect.", wrong2: "The plan will not work at all.", wrong3: "I have no opinion about the plan.", explanation: "'Honestly? It could work but we need to iron out a few things.' — بۆچوونێکی هاوسەنگ و سروشتی" },
     ],
   },
 ];

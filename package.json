@@ -28,7 +28,7 @@
     "@rive-app/react-native": "^0.4.0",
     "@shopify/flash-list": "2.0.2",
     "burnt": "^0.13.0",
-    "expo": "^56.0.0",
+    "expo": "^56.0.8",
     "expo-audio": "~56.0.11",
     "expo-blur": "~56.0.3",
     "expo-constants": "~56.0.16",
@@ -70,6 +70,7 @@
     "eslint-config-expo": "~56.0.4",
     "expo-mcp": "~0.2.1",
     "playwright": "^1.49.1",
+    "react-grab": "^0.1.44",
     "react-native-svg-transformer": "^1.5.3",
     "typescript": "~6.0.3"
   },

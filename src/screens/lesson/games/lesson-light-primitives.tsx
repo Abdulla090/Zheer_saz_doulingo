@@ -8,6 +8,7 @@ import {
   HomeLiquidPill,
   HomeMeshBackground,
 } from "@/components/ui/ios-liquid-home";
+import { useI18n } from "@/hooks/useI18n";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,7 +20,6 @@ import {
   StyleProp,
   StyleSheet,
   Text,
-  TextStyle,
   View,
   ViewStyle,
 } from "react-native";
@@ -30,6 +30,8 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 import { L, LightMotion, LightRadius, LightType } from "./lesson-light-design";
+import type { AnswerTier } from "@/utils/answer-tier";
+import { TIER_COLORS } from "@/utils/answer-tier";
 
 export function LightGameHeading({
   title,
@@ -56,7 +58,7 @@ export function LightPromptCard({
   onSpeak,
 }: {
   kurdish: string;
-  english: string;
+  english?: string;
   onSpeak?: () => void;
 }) {
   return (
@@ -80,9 +82,11 @@ export function LightPromptCard({
         <AppText style={LightType.promptKu} forceKurdishFont>
           {kurdish}
         </AppText>
-        <AppText style={LightType.promptEn} forceLatinFont latinRole="medium">
-          {english}
-        </AppText>
+        {english ? (
+          <AppText style={LightType.promptEn} forceLatinFont latinRole="medium">
+            {english}
+          </AppText>
+        ) : null}
       </View>
     </HomeLiquidCard>
   );
@@ -94,6 +98,10 @@ export type LightTileState =
   | "selected"
   | "correct"
   | "wrong"
+  | "great"
+  | "good"
+  | "bad"
+  | "terrible"
   | "ghost";
 
 type TileState = LightTileState;
@@ -109,6 +117,107 @@ export function LightSurfaceCard({
     <HomeLiquidCard contentStyle={[lh.surfaceCardInner, style]} radius={22}>
       {children}
     </HomeLiquidCard>
+  );
+}
+
+/** Speech-bubble card for another speaker's line — distinct from question hero and answer tiles */
+export function LightDialogueCard({
+  label,
+  children,
+  forceLatinFont = true,
+}: {
+  label: string;
+  children: string;
+  forceLatinFont?: boolean;
+}) {
+  return (
+    <View style={lh.dialogueWrap}>
+      <View style={lh.dialogueBubble}>
+        <LinearGradient
+          colors={["#F8F4FF", "#F0E8FF", "#E8DEFF"]}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={lh.dialogueGradient}
+        >
+          <View style={lh.dialogueContent}>
+            <View style={lh.dialogueBadge}>
+              <AppText style={LightType.dialogueBadge} forceKurdishFont>
+                {label}
+              </AppText>
+            </View>
+            <View style={lh.dialogueRow}>
+              <DialogueQuoteIcon />
+              <AppText
+                style={LightType.dialogueText}
+                forceLatinFont={forceLatinFont}
+                latinRole="medium"
+              >
+                {children}
+              </AppText>
+            </View>
+          </View>
+        </LinearGradient>
+        <View style={lh.dialogueTail} pointerEvents="none" />
+      </View>
+    </View>
+  );
+}
+
+function DialogueQuoteIcon() {
+  return (
+    <View style={lh.dialogueQuoteWrap}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M7 11c0-2.2 1.4-4 3.5-5.2L9 3C5.1 4.6 3 8 3 12v5h6v-6H7zm10 0c0-2.2 1.4-4 3.5-5.2L19 3c-3.9 1.6-6 5-6 9v5h6v-6h-2z"
+          fill="rgba(107, 79, 212, 0.35)"
+        />
+      </Svg>
+    </View>
+  );
+}
+
+/** Hero-style question prompt — visually distinct from tappable answer tiles */
+export function LightQuestionPrompt({
+  children,
+  label,
+  forceKurdishFont,
+}: {
+  children: string;
+  label: string;
+  forceKurdishFont?: boolean;
+}) {
+  return (
+    <View style={lh.questionHeroWrap}>
+      <LinearGradient
+        colors={["#152238", "#1E3354", "#2B59F3"]}
+        locations={[0, 0.55, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={lh.questionHeroGradient}
+      >
+        <View style={lh.questionHeroOrb} />
+        <LinearGradient
+          colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0)"]}
+          locations={[0, 0.45, 1]}
+          style={lh.questionHeroSheen}
+          pointerEvents="none"
+        />
+        <View style={lh.questionHeroContent}>
+          <View style={lh.questionHeroBadge}>
+            <AppText style={LightType.questionHeroBadge} forceLatinFont>
+              {label}
+            </AppText>
+          </View>
+          <AppText
+            style={LightType.questionHero}
+            forceKurdishFont={forceKurdishFont}
+          >
+            {children}
+          </AppText>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -129,12 +238,14 @@ export function LightOptionRow({
   onPress,
   disabled,
   rtl,
+  forceLatinFont,
 }: {
   label: string;
   state?: LightTileState;
   onPress?: () => void;
   disabled?: boolean;
   rtl?: boolean;
+  forceLatinFont?: boolean;
 }) {
   return (
     <View style={lh.optionRowWrap}>
@@ -144,6 +255,7 @@ export function LightOptionRow({
         onPress={onPress}
         disabled={disabled}
         rtl={rtl}
+        forceLatinFont={forceLatinFont}
         wide
       />
     </View>
@@ -151,9 +263,12 @@ export function LightOptionRow({
 }
 
 export function mapOptionState(
-  state: "idle" | "pending" | "selected" | "correct" | "wrong",
+  state: "idle" | "pending" | "selected" | "correct" | "wrong" | AnswerTier,
 ): LightTileState {
   if (state === "selected") return "pending";
+  if (state === "great" || state === "good" || state === "bad" || state === "terrible") {
+    return state;
+  }
   return state;
 }
 
@@ -163,6 +278,7 @@ export function LightWordTile({
   onPress,
   disabled,
   rtl,
+  forceLatinFont,
   wide,
 }: {
   label: string;
@@ -170,6 +286,7 @@ export function LightWordTile({
   onPress?: () => void;
   disabled?: boolean;
   rtl?: boolean;
+  forceLatinFont?: boolean;
   wide?: boolean;
 }) {
   const scale = useSharedValue(1);
@@ -178,30 +295,46 @@ export function LightWordTile({
   }));
 
   const bg =
-    state === "correct"
-      ? "#E7F9E0"
-      : state === "wrong"
-        ? "#FFE8E8"
-        : state === "pending"
-          ? "#F8FAFC"
-          : state === "selected"
-            ? "#E8EFFF"
-            : state === "ghost"
-              ? "transparent"
-              : "#FFFFFF";
+    state === "great"
+      ? TIER_COLORS.great.bg
+      : state === "good"
+        ? TIER_COLORS.good.bg
+        : state === "bad"
+          ? TIER_COLORS.bad.bg
+          : state === "terrible"
+            ? TIER_COLORS.terrible.bg
+            : state === "correct"
+              ? "#E7F9E0"
+              : state === "wrong"
+                ? "#FFE8E8"
+                : state === "pending"
+                  ? "#F8FAFC"
+                  : state === "selected"
+                    ? "#E8EFFF"
+                    : state === "ghost"
+                      ? "transparent"
+                      : "#FFFFFF";
 
   const border =
-    state === "correct"
-      ? L.green
-      : state === "wrong"
-        ? L.red
-        : state === "pending"
-          ? "#94A3B8"
-          : state === "selected"
-            ? L.blue
-            : state === "ghost"
-              ? L.slotDash
-              : L.border;
+    state === "great"
+      ? TIER_COLORS.great.accent
+      : state === "good"
+        ? TIER_COLORS.good.accent
+        : state === "bad"
+          ? TIER_COLORS.bad.accent
+          : state === "terrible"
+            ? TIER_COLORS.terrible.accent
+            : state === "correct"
+              ? L.green
+              : state === "wrong"
+                ? L.red
+                : state === "pending"
+                  ? "#94A3B8"
+                  : state === "selected"
+                    ? L.blue
+                    : state === "ghost"
+                      ? L.slotDash
+                      : L.border;
 
   const content = (
     <View
@@ -234,7 +367,8 @@ export function LightWordTile({
       )}
       <AppText
         style={[LightType.tile, { zIndex: 1 }]}
-        forceKurdishFont={rtl}
+        forceKurdishFont={rtl && !forceLatinFont}
+        forceLatinFont={forceLatinFont}
       >
         {label}
       </AppText>
@@ -444,21 +578,33 @@ export function LessonLightHeader({
   );
 }
 
-/** Bottom feedback — liquid glass card (correct / incorrect) */
+/** Bottom feedback — liquid glass card (correct / tiered) */
 export function LessonLiquidFeedback({
   correct,
+  tier,
   title,
   subtitle,
   buttonLabel,
   onContinue,
 }: {
   correct: boolean;
+  tier?: AnswerTier;
   title: string;
   subtitle: string;
   buttonLabel?: string;
   onContinue: () => void;
 }) {
-  const accent = correct ? L.green : L.red;
+  const { t } = useI18n();
+  const accent = tier
+    ? TIER_COLORS[tier].accent
+    : correct
+      ? L.green
+      : L.red;
+  const titleColor = tier
+    ? TIER_COLORS[tier].deep
+    : correct
+      ? L.greenDeep
+      : L.redDeep;
   return (
     <HomeLiquidCard
       style={{ borderColor: accent, borderWidth: 1.5 }}
@@ -466,12 +612,12 @@ export function LessonLiquidFeedback({
       radius={26}
     >
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
-      <Text style={[lh.feedbackTitle, { color: correct ? L.greenDeep : L.redDeep }]}>
+      <Text style={[lh.feedbackTitle, { color: titleColor }]}>
         {title}
       </Text>
       <Text style={lh.feedbackSub}>{subtitle}</Text>
       <HomeLiquidButton
-        label={buttonLabel ?? "CONTINUE"}
+        label={buttonLabel ?? t("common.continue")}
         onPress={onContinue}
         color={accent}
         style={{ marginTop: 4 }}
@@ -554,6 +700,112 @@ const lh = StyleSheet.create({
   promptTextCol: { flex: 1, gap: 4 },
   surfaceCardInner: {
     padding: 18,
+  },
+  dialogueWrap: {
+    marginLeft: 4,
+    marginBottom: 6,
+  },
+  dialogueBubble: {
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: "#D4C4F5",
+    overflow: "visible",
+    ...crossShadow({
+      color: "#6B4FD4",
+      offsetY: 8,
+      blur: 20,
+      opacity: 0.12,
+      elevation: 4,
+    }),
+  },
+  dialogueGradient: {
+    borderRadius: 20.5,
+    overflow: "hidden",
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  dialogueTail: {
+    position: "absolute",
+    left: 22,
+    bottom: -10,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 9,
+    borderRightWidth: 9,
+    borderTopWidth: 11,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#E8DEFF",
+  },
+  dialogueContent: {
+    gap: 10,
+  },
+  dialogueBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(107, 79, 212, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(107, 79, 212, 0.2)",
+  },
+  dialogueRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  dialogueQuoteWrap: {
+    marginTop: 2,
+    opacity: 0.9,
+  },
+  questionHeroWrap: {
+    position: "relative",
+    zIndex: 2,
+    borderRadius: 28,
+    overflow: "hidden",
+    pointerEvents: "none",
+    ...crossShadow({
+      color: L.blue,
+      offsetY: 14,
+      blur: 32,
+      opacity: 0.28,
+      elevation: 8,
+    }),
+  },
+  questionHeroGradient: {
+    position: "relative",
+    paddingVertical: 22,
+    paddingHorizontal: 22,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+  questionHeroOrb: {
+    position: "absolute",
+    top: -36,
+    right: -28,
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    backgroundColor: "rgba(91, 141, 239, 0.35)",
+  },
+  questionHeroSheen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+  },
+  questionHeroContent: {
+    position: "relative",
+    zIndex: 1,
+    gap: 10,
+  },
+  questionHeroBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
   },
   tileSheen: {
     position: "absolute",

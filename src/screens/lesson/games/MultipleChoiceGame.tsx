@@ -2,7 +2,6 @@
  * MultipleChoiceGame — Premium light lesson UI.
  */
 
-import { AppText } from "@/components/ui/AppText";
 import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -18,10 +17,9 @@ import {
   LightCheckButton,
   LightGameHeading,
   LightOptionRow,
-  LightSurfaceCard,
+  LightQuestionPrompt,
   mapOptionState,
 } from "./lesson-light-primitives";
-import { L } from "./lesson-light-design";
 
 type Props = {
   question: MultipleChoiceQuestion;
@@ -68,14 +66,12 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <LightSurfaceCard>
-        <AppText
-          style={s.prompt}
-          forceKurdishFont={isKuPrompt}
-        >
-          {question.prompt}
-        </AppText>
-      </LightSurfaceCard>
+      <LightQuestionPrompt
+        label={t("lessons.questionLabel")}
+        forceKurdishFont={isKuPrompt}
+      >
+        {question.prompt}
+      </LightQuestionPrompt>
 
       <View style={s.options}>
         {question.options.map((opt, i) => (
@@ -109,14 +105,6 @@ const s = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     gap: 16,
-  },
-  prompt: {
-    fontSize: 20,
-    fontWeight: "700",
-    lineHeight: 28,
-    color: L.navy,
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.3,
   },
   options: { gap: 10 },
 });
