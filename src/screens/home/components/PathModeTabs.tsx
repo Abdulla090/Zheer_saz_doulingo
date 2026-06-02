@@ -10,7 +10,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function parseMode(raw: string | string[] | undefined): PathMode {
   const value = Array.isArray(raw) ? raw[0] : raw;
-  return value === "normal" ? "normal" : "street";
+  if (value === "normal") return "normal";
+  if (value === "kids") return "kids";
+  return "street";
 }
 
 export const PATH_SWITCHER_HEIGHT = 48;

@@ -99,23 +99,24 @@ export function PhingoLearnHomeScreen() {
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
   const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
+  const kidsNext = useProgressStore((s) => s.kidsNextLessonPathIndex);
   const lastActivity = useProgressStore((s) => s.lastActivity);
   const pathMode = useSettingsStore((s) => s.pathMode);
   const { width } = useWindowDimensions();
 
   const pathSummary = useMemo(
-    () => getPathProgressSummary(streetNext, normalNext),
-    [streetNext, normalNext],
+    () => getPathProgressSummary(streetNext, normalNext, kidsNext),
+    [streetNext, normalNext, kidsNext],
   );
 
   const nextLessonMeta = useMemo(
-    () => getCurrentLessonMeta(pathMode, streetNext, normalNext, locale),
-    [pathMode, streetNext, normalNext, locale],
+    () => getCurrentLessonMeta(pathMode, streetNext, normalNext, locale, kidsNext),
+    [pathMode, streetNext, normalNext, locale, kidsNext],
   );
 
   useEffect(() => {
     void syncHomeWidget();
-  }, [streetNext, normalNext, lastActivity, dailyXp, streakDays]);
+  }, [streetNext, normalNext, kidsNext, lastActivity, dailyXp, streakDays]);
   const horizontalPad = 20;
   const cardWidth = width - horizontalPad * 2;
 
@@ -156,9 +157,9 @@ export function PhingoLearnHomeScreen() {
   const onLessonPress = useCallback(() => {
     const route = nextLessonMeta
       ? buildLessonRouteFromMeta(nextLessonMeta)
-      : buildLessonRouteForMode(pathMode, streetNext, normalNext);
+      : buildLessonRouteForMode(pathMode, streetNext, normalNext, kidsNext);
     if (route) router.push(route);
-  }, [nextLessonMeta, normalNext, pathMode, router, streetNext]);
+  }, [nextLessonMeta, normalNext, kidsNext, pathMode, router, streetNext]);
 
   const onRecentPress = useCallback(() => {
     if (!lastActivity) return;
@@ -167,6 +168,7 @@ export function PhingoLearnHomeScreen() {
         lastActivity.mode,
         streetNext,
         normalNext,
+        kidsNext,
       );
       if (route) router.push(route);
       return;
@@ -181,7 +183,7 @@ export function PhingoLearnHomeScreen() {
       return;
     }
     router.push("/games");
-  }, [lastActivity, normalNext, router, streetNext]);
+  }, [lastActivity, normalNext, kidsNext, router, streetNext]);
 
   const lessonLabel = nextLessonMeta
     ? `${t("home.nextLesson")} · ${nextLessonMeta.lessonNumber}`

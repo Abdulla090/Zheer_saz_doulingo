@@ -3,58 +3,94 @@ import { UnitBank } from "../types";
 // ── Unit 0: Street Greetings — 10 unique lessons ──────────────────────────────
 const unit00: UnitBank = [
 
-  // Lesson 0: Basic Greetings
+  // Lesson 0: Greetings & Meeting People
+  // Goal: say hello, ask "how are you", answer it, and introduce yourself.
+  // Every game below drills these exact phrases so they stick.
   {
-    topic: "Basic Greetings", topicKu: "سڵاوی سەرەکی",
+    topic: "Greetings", topicKu: "سڵاوکردن",
     words: [
       { english: "Hello", kurdish: "سڵاو" },
-      { english: "What's up", kurdish: "چ باسە" },
-      { english: "How are you?", kurdish: "چۆنی" },
-      { english: "Good morning", kurdish: "بەیانی باش" },
+      { english: "Good morning", kurdish: "بەیانیت باش" },
+      { english: "How are you?", kurdish: "چۆنی؟" },
+      { english: "I'm fine, thanks", kurdish: "باشم، سوپاس" },
       { english: "Nice to meet you", kurdish: "خۆشحاڵم بە ناسینت" },
     ],
     voices: [
-      { prompt: "بە شیرینی سڵاو بکە", target: "Hey, how's it going?", targetKurdish: "سڵاو، باشیت؟" },
-      { prompt: "ئارامانەی سڵاو بکە", target: "Hi there, good to see you", targetKurdish: "سڵاو، خۆشحاڵم بە بینینت" },
+      { prompt: "بڵێ: سڵاو، چۆنی؟", target: "Hello, how are you?", targetKurdish: "سڵاو، چۆنی؟" },
+      { prompt: "بڵێ: باشم، سوپاس", target: "I'm fine, thanks.", targetKurdish: "باشم، سوپاس." },
     ],
     sentences: [
-      { english: ["Hey", "how's", "it", "going"], kurdish: "سڵاو، چۆنی، باشیت؟" },
-      { english: ["Hi", "good", "to", "see", "you"], kurdish: "سڵاو، خۆشحاڵم بە بینینت" },
+      { english: ["Hello", "how", "are", "you"], kurdish: "سڵاو، چۆنی؟" },
+      { english: ["I'm", "fine", "thanks"], kurdish: "باشم، سوپاس" },
     ],
     fillBlanks: [
-      { parts: ["", "there, what's up?"], hint: "سڵاو، چ باسە؟", answer: "Hey", wrongs: ["Bye", "Oh", "No"] },
-      { parts: ["What's", "?"], hint: "چ باسە / چۆنی؟", answer: "up", wrongs: ["down", "new", "in"] },
+      { parts: ["Good", ""], hint: "بەیانیت باش (سڵاوی بەیانی)", answer: "morning", wrongs: ["night", "day", "evening"] },
+      { parts: ["I'm", ", thanks"], hint: "باشم، سوپاس", answer: "fine", wrongs: ["sad", "late", "sorry"] },
     ],
     conversations: [
-      { situation: "لە کۆڵاندا ئاشنایەکت دەبینیت", theyAsk: "Hey! Long time no see!", correct: "I know, right? How've you been?", wrong1: "Yeah, it's been a while.", wrong2: "Good to see you again. How have you been lately?", wrong3: "Hello. We have not seen each other in some time.", explanation: "وەڵامی گەرم: 'I know, right? How've you been?' — نەک تەنها دانپەدان بە کاتی دووربوون" },
-      { situation: "یەکەم جار کەسێک لە کاردا دەبینیت", theyAsk: "Hey, I'm Alex — new here!", correct: "Oh nice! I'm Sam. Welcome to the team!", wrong1: "Hello. My name is Sam.", wrong2: "Welcome to the office, Alex.", wrong3: "Pleased to make your acquaintance, Alex.", explanation: "'Oh nice! I'm Sam. Welcome to the team!' — خۆت پێناسە بکە و بە گەرمی بەخێر بیهێنە" },
+      {
+        situation: "هاوڕێیەک سڵاوت لێ دەکات و دەپرسێت چۆنی",
+        theyAsk: "Hi! How are you?",
+        correct: "I'm good, thanks! How about you?",
+        wrong1: "I'm fine, thank you.",
+        wrong2: "I am very well, thank you for asking.",
+        wrong3: "My condition today is acceptable.",
+        explanation: "لەگەڵ هاوڕێ بە سادەیی وەڵام بدەرەوە و هەمان پرسیار بگەڕێنەرەوە: 'I'm good, thanks! How about you?' — 'I'm fine, thank you' ڕاستە بەڵام پرسیار ناگەڕێنێتەوە؛ ئەوانی تر زۆر فەرمین.",
+      },
+      {
+        situation: "کەسێکی نوێ دەناسیت و خۆی پێناسە دەکات",
+        theyAsk: "Hi, I'm Sara. Nice to meet you!",
+        correct: "Nice to meet you too, Sara! I'm Karwan.",
+        wrong1: "Nice to meet you. I'm Karwan.",
+        wrong2: "The pleasure is mine. My name is Karwan.",
+        wrong3: "I also feel pleasure from this meeting.",
+        explanation: "ناوەکەیان دووبارە بکەرەوە و ناوی خۆت بڵێ: 'Nice to meet you too, Sara! I'm Karwan.' — گەرم و ئاساییە. 'The pleasure is mine' زۆر فەرمییە بۆ قسەی ڕۆژانە.",
+      },
     ],
   },
 
   // Lesson 1: Saying Goodbye
+  // Goal: end a conversation politely and naturally with everyday phrases.
   {
     topic: "Saying Goodbye", topicKu: "ماڵئاوایی کردن",
     words: [
-      { english: "Goodbye", kurdish: "خوات لەگەڵ" },
-      { english: "See you tomorrow", kurdish: "سبەی دەتبینمەوە" },
+      { english: "Goodbye", kurdish: "ماڵئاوا" },
+      { english: "Bye", kurdish: "بای (دۆستانە)" },
+      { english: "See you later", kurdish: "دواتر دەتبینمەوە" },
+      { english: "See you tomorrow", kurdish: "سبەینێ دەتبینمەوە" },
       { english: "Take care", kurdish: "ئاگات لە خۆت بێت" },
-      { english: "I have to go", kurdish: "دەبێت بڕۆم" },
-      { english: "Until next time", kurdish: "تا جارێکی تر" },
     ],
     voices: [
-      { prompt: "خوات لەگەڵی گەرم بکە", target: "Catch you later man!", targetKurdish: "دواتر دەتبینمەوە براکە!" },
-      { prompt: "خوات لەگەڵی ئارامانە بکە", target: "Take care, see you soon!", targetKurdish: "ئاگات لە خۆت بێت، زوو دەتبینمەوە!" },
+      { prompt: "بڵێ: بای، دواتر دەتبینمەوە", target: "Bye, see you later!", targetKurdish: "بای، دواتر دەتبینمەوە!" },
+      { prompt: "بڵێ: ئاگات لە خۆت بێت، سبەینێ دەتبینمەوە", target: "Take care, see you tomorrow!", targetKurdish: "ئاگات لە خۆت بێت، سبەینێ دەتبینمەوە!" },
     ],
     sentences: [
-      { english: ["Catch", "you", "later", "man"], kurdish: "دواتر دەتبینمەوە براکە" },
-      { english: ["Take", "care", "see", "you", "soon"], kurdish: "ئاگات لە خۆت بێت، زوو دەتبینمەوە" },
+      { english: ["See", "you", "later"], kurdish: "دواتر دەتبینمەوە" },
+      { english: ["See", "you", "tomorrow"], kurdish: "سبەینێ دەتبینمەوە" },
     ],
     fillBlanks: [
-      { parts: ["Catch you", "!"], hint: "دواتر دەتبینمەوە!", answer: "later", wrongs: ["soon", "here", "next"] },
-      { parts: ["Take", "everyone!"], hint: "ئاگاتان لە خۆتان بێت هەمووان", answer: "care", wrongs: ["note", "time", "it"] },
+      { parts: ["See you", ""], hint: "سبەینێ دەتبینمەوە", answer: "tomorrow", wrongs: ["yesterday", "morning", "night"] },
+      { parts: ["Take", ""], hint: "ئاگات لە خۆت بێت", answer: "care", wrongs: ["time", "off", "over"] },
     ],
     conversations: [
-      { situation: "ئامادەیت بۆ گەڕانەوە ماڵەوە", theyAsk: "Alright, I gotta head out.", correct: "Okay! Catch you later, take care!", wrong1: "Okay. Goodbye, and take care.", wrong2: "Farewell. I hope you have a safe journey.", wrong3: "I will see you again at a later date.", explanation: "'Catch you later, take care!' — کورت و ئینگلیزی ڕۆژانەیە بۆ ماڵئاوایی" },
+      {
+        situation: "هاوڕێیەک دەڵێت دەبێت بڕوات",
+        theyAsk: "I have to go now. Bye!",
+        correct: "Okay, bye! See you later.",
+        wrong1: "Bye. See you.",
+        wrong2: "Goodbye. Have a pleasant evening.",
+        wrong3: "I accept your departure. Farewell.",
+        explanation: "ماڵئاوایی سادە و گەرم: 'Okay, bye! See you later.' — 'Bye. See you' باشە بەڵام کورتە؛ 'Farewell' و 'I accept your departure' زۆر فەرمی و ناسروشتین.",
+      },
+      {
+        situation: "لە کۆتایی ڕۆژی کاردا ماڵئاوایی لە هاوکارەکەت دەکەیت",
+        theyAsk: "See you tomorrow!",
+        correct: "See you tomorrow! Take care.",
+        wrong1: "Yes, see you tomorrow.",
+        wrong2: "Indeed, I shall see you the following day.",
+        wrong3: "Affirmative. Our next meeting is tomorrow.",
+        explanation: "وەڵامی ئاسایی: 'See you tomorrow! Take care.' — 'Indeed, I shall...' و 'Affirmative' وشەی فەرمی و فەرمانگەیین، لە قسەی هاوڕێیانەدا ناجۆرن.",
+      },
     ],
   },
 

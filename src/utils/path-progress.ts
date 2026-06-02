@@ -1,6 +1,7 @@
 import type { SectionDataItem } from "@/data/list-items";
 import { buildSectionData } from "@/data/list-items";
 import { buildNormalSectionData } from "@/data/normal-english";
+import { buildKidsSectionData } from "@/data/kids-english";
 
 export type PathProgressSummary = {
   streetTotal: number;
@@ -9,6 +10,9 @@ export type PathProgressSummary = {
   normalTotal: number;
   normalCompleted: number;
   normalPercent: number;
+  kidsTotal: number;
+  kidsCompleted: number;
+  kidsPercent: number;
 };
 
 function countLessons(sections: SectionDataItem[]): number {
@@ -17,6 +21,7 @@ function countLessons(sections: SectionDataItem[]): number {
 
 let streetTotalCache: number | null = null;
 let normalTotalCache: number | null = null;
+let kidsTotalCache: number | null = null;
 
 function streetLessonTotal(): number {
   if (streetTotalCache == null) {
@@ -32,14 +37,24 @@ function normalLessonTotal(): number {
   return normalTotalCache;
 }
 
+function kidsLessonTotal(): number {
+  if (kidsTotalCache == null) {
+    kidsTotalCache = countLessons(buildKidsSectionData(999_999));
+  }
+  return kidsTotalCache;
+}
+
 export function getPathProgressSummary(
   streetNextIndex: number,
   normalNextIndex: number,
+  kidsNextIndex = 0,
 ): PathProgressSummary {
   const streetTotal = streetLessonTotal();
   const normalTotal = normalLessonTotal();
+  const kidsTotal = kidsLessonTotal();
   const streetCompleted = Math.min(streetNextIndex, streetTotal);
   const normalCompleted = Math.min(normalNextIndex, normalTotal);
+  const kidsCompleted = Math.min(kidsNextIndex, kidsTotal);
 
   return {
     streetTotal,
@@ -48,5 +63,8 @@ export function getPathProgressSummary(
     normalTotal,
     normalCompleted,
     normalPercent: normalTotal > 0 ? normalCompleted / normalTotal : 0,
+    kidsTotal,
+    kidsCompleted,
+    kidsPercent: kidsTotal > 0 ? kidsCompleted / kidsTotal : 0,
   };
 }

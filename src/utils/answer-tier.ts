@@ -33,9 +33,10 @@ export function tierFeedbackKey(tier: AnswerTier): `lessons.tierFeedback${Capita
   return `lessons.tierFeedback${tier.charAt(0).toUpperCase()}${tier.slice(1)}` as `lessons.tierFeedback${Capitalize<AnswerTier>}`;
 }
 
+/** Best → worst: strong green, light green, amber, red. */
 export const TIER_COLORS = {
-  great: { accent: "#E8A317", deep: "#B87A00", bg: "#FFF8E0" },
-  good: { accent: "#58CC02", deep: "#46A302", bg: "#E7F9E0" },
+  great: { accent: "#58CC02", deep: "#46A302", bg: "#E7F9E0" },
+  good: { accent: "#8FD14F", deep: "#6BA832", bg: "#F0FAE8" },
   bad: { accent: "#F5A623", deep: "#C47D00", bg: "#FFF4E0" },
   terrible: { accent: "#FF4B4B", deep: "#E53838", bg: "#FFE8E8" },
 } as const;

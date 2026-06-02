@@ -27,15 +27,10 @@ export type {
 } from "./types";
 
 import { buildConversationOptionTiers } from "@/utils/answer-tier";
-import { GameQuestion, LessonBank } from "./types";
-import { NORMAL_UNITS } from "./normal-english";
-import { ALL_UNITS } from "./units";
+import { getUnitsForPath } from "./content-access";
+import { GameQuestion, LessonBank, LessonPathMode } from "./types";
 
-export type LessonPathMode = "street" | "normal";
-
-function getUnitsForPath(mode: LessonPathMode) {
-  return mode === "normal" ? NORMAL_UNITS : ALL_UNITS;
-}
+export type { LessonPathMode } from "./types";
 
 /** English phrases and tokens scoped to one lesson — keeps distractors on-topic. */
 function lessonEnglishPool(lesson: LessonBank): string[] {
@@ -106,18 +101,13 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 const pick = <T>(arr: T[], i: number): T => arr[Math.abs(i) % arr.length];
 
 // ── Main Generator ────────────────────────────────────────────────────────────
-// unitIndex:   which unit (0–11 street, 0–5 normal)
-// lessonIndex: which lesson within that unit (0–9), maps to a unique bank
-// mode:        street vs normal english content pool
-export function getLessonQuestions(
+function buildLessonQuestionsFromBank(
+  lesson: LessonBank,
   unitIndex: number,
   lessonIndex: number,
-  mode: LessonPathMode = "street",
+  mode: LessonPathMode,
 ): GameQuestion[] {
-  const units = getUnitsForPath(mode);
-  const unit   = units[Math.abs(unitIndex) % units.length];
-  const lesson: LessonBank = unit[Math.abs(lessonIndex) % unit.length];
-  const seed   = unitIndex * 997 + lessonIndex * 137;
+  const seed = unitIndex * 997 + lessonIndex * 137;
 
   const words     = shuffle(lesson.words,         seed);
   const voices    = shuffle(lesson.voices,        seed + 1);
@@ -241,4 +231,28 @@ export function getLessonQuestions(
   }
 
   return shuffle(questions, seed + 99);
+}
+
+/** Preview games from a draft lesson bank (admin). */
+export function previewLessonQuestions(
+  lesson: LessonBank,
+  unitIndex: number,
+  lessonIndex: number,
+  mode: LessonPathMode = "street",
+): GameQuestion[] {
+  return buildLessonQuestionsFromBank(lesson, unitIndex, lessonIndex, mode);
+}
+
+// unitIndex:   which unit (0–11 street, 0–5 normal)
+// lessonIndex: which lesson within that unit (0–9), maps to a unique bank
+// mode:        street vs normal english content pool
+export function getLessonQuestions(
+  unitIndex: number,
+  lessonIndex: number,
+  mode: LessonPathMode = "street",
+): GameQuestion[] {
+  const units = getUnitsForPath(mode);
+  const unit   = units[Math.abs(unitIndex) % units.length];
+  const lesson: LessonBank = unit[Math.abs(lessonIndex) % unit.length];
+  return buildLessonQuestionsFromBank(lesson, unitIndex, lessonIndex, mode);
 }

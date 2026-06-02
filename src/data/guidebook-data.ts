@@ -3,10 +3,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AppLocale } from "@/i18n";
-import type { LessonPathMode } from "./lesson-content";
-import { NORMAL_UNITS, normalSectionConfigs } from "./normal-english";
+import { getUnitsForPath } from "./content-access";
+import type { LessonPathMode } from "./types";
+import { normalSectionConfigs } from "./normal-english";
+import { kidsSectionConfigs } from "./kids-english";
 import { getPathUnitTitle } from "./path-unit-titles";
-import { ALL_UNITS } from "./units";
 import { sectionConfigs } from "./list-items";
 import type { UnitBank } from "./types";
 
@@ -86,7 +87,7 @@ export function getGuidebookForUnit(
 ): GuidebookUnit | null {
   return buildGuidebookFromUnit(
     unitIndex,
-    ALL_UNITS[unitIndex],
+    getUnitsForPath("street")[unitIndex],
     sectionConfigs[unitIndex],
     getPathUnitTitle("street", unitIndex, locale),
   );
@@ -99,9 +100,22 @@ export function getGuidebookForNormalUnit(
 ): GuidebookUnit | null {
   return buildGuidebookFromUnit(
     unitIndex,
-    NORMAL_UNITS[unitIndex],
+    getUnitsForPath("normal")[unitIndex],
     normalSectionConfigs[unitIndex],
     getPathUnitTitle("normal", unitIndex, locale),
+  );
+}
+
+/** Builds guidebook data for a kids-English unit. */
+export function getGuidebookForKidsUnit(
+  unitIndex: number,
+  locale: AppLocale = "en",
+): GuidebookUnit | null {
+  return buildGuidebookFromUnit(
+    unitIndex,
+    getUnitsForPath("kids")[unitIndex],
+    kidsSectionConfigs[unitIndex],
+    getPathUnitTitle("kids", unitIndex, locale),
   );
 }
 
@@ -112,9 +126,9 @@ export function getGuidebook(
   locale: AppLocale = "en",
 ): GuidebookUnit | null {
   if (!Number.isFinite(unitIndex) || unitIndex < 0) return null;
-  return mode === "normal"
-    ? getGuidebookForNormalUnit(unitIndex, locale)
-    : getGuidebookForUnit(unitIndex, locale);
+  if (mode === "normal") return getGuidebookForNormalUnit(unitIndex, locale);
+  if (mode === "kids") return getGuidebookForKidsUnit(unitIndex, locale);
+  return getGuidebookForUnit(unitIndex, locale);
 }
 
 /** Pre-build guidebooks for street-English units (English titles by default). */

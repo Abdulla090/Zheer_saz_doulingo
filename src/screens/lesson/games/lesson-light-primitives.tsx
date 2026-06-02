@@ -234,6 +234,7 @@ export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) 
 /** Full-width answer row for multiple choice / conversation */
 export function LightOptionRow({
   label,
+  tierLabel,
   state = "idle",
   onPress,
   disabled,
@@ -241,6 +242,7 @@ export function LightOptionRow({
   forceLatinFont,
 }: {
   label: string;
+  tierLabel?: string;
   state?: LightTileState;
   onPress?: () => void;
   disabled?: boolean;
@@ -251,6 +253,7 @@ export function LightOptionRow({
     <View style={lh.optionRowWrap}>
       <LightWordTile
         label={label}
+        tierLabel={tierLabel}
         state={state}
         onPress={onPress}
         disabled={disabled}
@@ -274,6 +277,7 @@ export function mapOptionState(
 
 export function LightWordTile({
   label,
+  tierLabel,
   state = "idle",
   onPress,
   disabled,
@@ -282,6 +286,7 @@ export function LightWordTile({
   wide,
 }: {
   label: string;
+  tierLabel?: string;
   state?: TileState;
   onPress?: () => void;
   disabled?: boolean;
@@ -365,13 +370,42 @@ export function LightWordTile({
           pointerEvents="none"
         />
       )}
-      <AppText
-        style={[LightType.tile, { zIndex: 1 }]}
-        forceKurdishFont={rtl && !forceLatinFont}
-        forceLatinFont={forceLatinFont}
-      >
-        {label}
-      </AppText>
+      {tierLabel ? (
+        <View style={lh.tileRow}>
+          <AppText
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1 }]}
+            forceKurdishFont={rtl && !forceLatinFont}
+            forceLatinFont={forceLatinFont}
+          >
+            {label}
+          </AppText>
+          <AppText
+            style={[
+              lh.tierBadge,
+              {
+                color:
+                  state === "great" ||
+                  state === "good" ||
+                  state === "bad" ||
+                  state === "terrible"
+                    ? TIER_COLORS[state].deep
+                    : L.gray,
+              },
+            ]}
+            forceLatinFont
+          >
+            {tierLabel}
+          </AppText>
+        </View>
+      ) : (
+        <AppText
+          style={[LightType.tile, { zIndex: 1 }]}
+          forceKurdishFont={rtl && !forceLatinFont}
+          forceLatinFont={forceLatinFont}
+        >
+          {label}
+        </AppText>
+      )}
     </View>
   );
 
@@ -852,6 +886,24 @@ const lh = StyleSheet.create({
     fontFamily: "DINNextRoundedMedium",
   },
   optionRowWrap: { width: "100%" },
+  tileRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    zIndex: 1,
+  },
+  tileAnswer: {
+    flex: 1,
+    textAlign: "left",
+  },
+  tierBadge: {
+    fontSize: 13,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    flexShrink: 0,
+  },
   tile: {
     minHeight: 48,
     paddingHorizontal: 16,

@@ -10,6 +10,7 @@ import {
   PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
 } from "@/constants/app-meta";
+import { ENABLE_ADMIN } from "@/constants/feature-flags";
 import { tabBarScrollPadding } from "@/constants/layout";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useI18n } from "@/hooks/useI18n";
@@ -177,6 +178,27 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+
+        {ENABLE_ADMIN ? (
+          <>
+            <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceLatinFont>
+              Content Admin
+            </AppText>
+            <AppText style={styles.sectionHint} forceLatinFont>
+              Edit units, lessons, and game content without code.
+            </AppText>
+            <PressableScale
+              onPress={() => router.push("/admin")}
+              scaleDown={0.98}
+              style={[styles.supportRow, styles.card, { marginTop: 0 }]}
+            >
+              <AppText style={styles.rowLabel} forceLatinFont>
+                Open admin panel
+              </AppText>
+              <Icon3DChevronRight size={20} />
+            </PressableScale>
+          </>
+        ) : null}
 
         <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
           {t("settings.legalSection")}

@@ -7,6 +7,7 @@ import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { useContentAdminStore } from "@/stores/useContentAdminStore";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
@@ -46,10 +47,11 @@ export default function TabLayout() {
   const { selectedFont, ready: fontReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
+  const contentAdminReady = useContentAdminStore((s) => s.ready);
   const onboardingReady = useOnboardingStore((s) => s.ready);
   const onboardingComplete = useOnboardingStore((s) => s.completed);
   const ready =
-    fontReady && progressReady && settingsReady && onboardingReady;
+    fontReady && progressReady && settingsReady && contentAdminReady && onboardingReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
@@ -167,6 +169,30 @@ export default function TabLayout() {
           <Tabs.Screen name="privacy-policy" options={{ href: null }} />
           <Tabs.Screen name="ai-safety" options={{ href: null }} />
           <Tabs.Screen name="terms" options={{ href: null }} />
+          <Tabs.Screen
+            name="admin/index"
+            options={{
+              headerShown: false,
+              href: null,
+              tabBarStyle: { display: "none" },
+            }}
+          />
+          <Tabs.Screen
+            name="admin/unit"
+            options={{
+              headerShown: false,
+              href: null,
+              tabBarStyle: { display: "none" },
+            }}
+          />
+          <Tabs.Screen
+            name="admin/lesson"
+            options={{
+              headerShown: false,
+              href: null,
+              tabBarStyle: { display: "none" },
+            }}
+          />
         </Tabs>
       </BottomSheetModalProvider>
       </AppErrorBoundary>

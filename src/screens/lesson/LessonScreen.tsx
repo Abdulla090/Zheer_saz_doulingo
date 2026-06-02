@@ -5,6 +5,7 @@
  *   2. Game body (frosted cards, glass options)
  *   3. Bottom feedback sheet — frosted glass with tinted accent
  */
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 
 import {
     Icon3DAward,
@@ -16,6 +17,7 @@ import {
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
+    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -35,6 +37,7 @@ import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/le
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useLocaleStore } from "@/stores/useLocaleStore";
+import { useContentAdminStore } from "@/stores/useContentAdminStore";
 import type { AnswerTier } from "@/utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "@/utils/answer-tier";
 import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
@@ -88,18 +91,18 @@ export default function LessonScreen() {
   const startQuestion = parseInt(
     (Array.isArray(params.q) ? params.q[0] : params.q) as string,
   ) || 0;
+  const rawMode = (Array.isArray(params.mode) ? params.mode[0] : params.mode);
   const pathMode: LessonPathMode =
-    (Array.isArray(params.mode) ? params.mode[0] : params.mode) === "normal"
-      ? "normal"
-      : "street";
+    rawMode === "normal" ? "normal" : rawMode === "kids" ? "kids" : "street";
   const pathIndex = parseInt(
     (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
   );
   const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
+  const contentOverride = useContentAdminStore((s) => s.overrides[pathMode]);
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex, pathMode),
-    [lessonId, lessonIndex, pathMode],
+    [lessonId, lessonIndex, pathMode, contentOverride],
   );
 
   const [current, setCurrent] = useState(0);
@@ -123,8 +126,6 @@ export default function LessonScreen() {
   }));
 
   const xpSc = useSharedValue(1);
-  const xpStyle = useAnimatedStyle(() => ({ transform: [{ scale: xpSc.value }] }));
-
   const sheetY = useSharedValue(SHEET_H + insets.bottom);
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
 
@@ -141,7 +142,7 @@ export default function LessonScreen() {
       progressW.value = safeStart / Math.max(questions.length, 1);
       setCorrectN(0); setFinished(false); setPassed(false);
       setFeedback(null); nextRef.current = 0;
-      progressW.value = 0; xpSc.value = 1;
+      xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
     }, [insets.bottom, startQuestion, questions.length]),
   );
@@ -207,6 +208,21 @@ export default function LessonScreen() {
       }
     }, 260);
   }, [questions.length, insets.bottom]);
+
+  const skipCurrentQuestion = useCallback(() => {
+    if (feedback !== null) return;
+    const next = current + 1;
+    progressW.value = withTiming(next / questions.length, {
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+    });
+    if (next >= questions.length) {
+      setPassed(true);
+      setFinished(true);
+      return;
+    }
+    setCurrent(next);
+  }, [current, feedback, questions.length]);
 
   const renderGame = (q: GameQuestion) => {
     switch (q.type) {
@@ -274,6 +290,9 @@ export default function LessonScreen() {
                       ? pathIndex
                       : snap.normalNextLessonPathIndex,
                     locale,
+                    pathMode === "kids"
+                      ? pathIndex
+                      : snap.kidsNextLessonPathIndex,
                   );
                   const label = meta
                     ? `${meta.sectionTitle} · ${meta.lessonNumber}`
@@ -313,6 +332,20 @@ export default function LessonScreen() {
           hearts={hearts}
           onBack={() => router.back()}
         />
+
+        <View style={sL.skipRow}>
+          <Pressable
+            onPress={skipCurrentQuestion}
+            disabled={feedback !== null}
+            style={({ pressed }) => [
+              sL.skipButton,
+              pressed && sL.skipPressed,
+              feedback !== null && sL.skipDisabled,
+            ]}
+          >
+            <Text style={sL.skipText}>{t("lessons.skip")}</Text>
+          </Pressable>
+        </View>
 
         <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <Animated.View
@@ -384,6 +417,34 @@ const sL = StyleSheet.create({
   },
 
   gameArea: { flex: 1 },
+
+  skipRow: {
+    alignItems: "flex-end",
+    paddingHorizontal: 18,
+    marginTop: -8,
+    marginBottom: 4,
+  },
+  skipButton: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.86)",
+    borderWidth: 1,
+    borderColor: "rgba(43,89,243,0.14)",
+    shadowColor: L.blue,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  skipPressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
+  skipDisabled: { opacity: 0.45 },
+  skipText: {
+    color: L.blue,
+    fontSize: 13,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+  },
 
   sheet: {
     position: "absolute",

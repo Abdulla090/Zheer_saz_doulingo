@@ -8,7 +8,7 @@ const DAILY_GOAL_XP = 15;
 export type LastActivity =
   | {
       kind: "lesson";
-      mode: "street" | "normal";
+      mode: "street" | "normal" | "kids";
       label: string;
       at: string;
     }
@@ -24,6 +24,8 @@ export type ProgressSnapshot = {
   nextLessonPathIndex: number;
   /** Normal English path — next lesson path index (0-based). */
   normalNextLessonPathIndex: number;
+  /** Kids English path — next lesson path index (0-based). */
+  kidsNextLessonPathIndex: number;
   totalXp: number;
   dailyXp: number;
   dailyGoalXp: number;
@@ -35,6 +37,7 @@ export type ProgressSnapshot = {
 const DEFAULT_PROGRESS: ProgressSnapshot = {
   nextLessonPathIndex: 0,
   normalNextLessonPathIndex: 0,
+  kidsNextLessonPathIndex: 0,
   totalXp: 0,
   dailyXp: 0,
   dailyGoalXp: DAILY_GOAL_XP,
@@ -113,10 +116,15 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       mode === "normal" && pathIndex >= cur.normalNextLessonPathIndex
         ? pathIndex + 1
         : cur.normalNextLessonPathIndex;
+    const kidsNextLessonPathIndex =
+      mode === "kids" && pathIndex >= cur.kidsNextLessonPathIndex
+        ? pathIndex + 1
+        : cur.kidsNextLessonPathIndex;
 
     const next: ProgressSnapshot = {
       nextLessonPathIndex,
       normalNextLessonPathIndex,
+      kidsNextLessonPathIndex,
       totalXp: cur.totalXp + xpEarned,
       dailyXp,
       dailyGoalXp: DAILY_GOAL_XP,
@@ -124,7 +132,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       lastActiveDate,
       lastActivity: {
         kind: "lesson",
-        mode: mode === "normal" ? "normal" : "street",
+        mode,
         label: label ?? `Lesson ${pathIndex + 1}`,
         at: new Date().toISOString(),
       },
@@ -170,6 +178,8 @@ async function hydrateProgress() {
       ...parsed,
       normalNextLessonPathIndex:
         parsed.normalNextLessonPathIndex ?? DEFAULT_PROGRESS.normalNextLessonPathIndex,
+      kidsNextLessonPathIndex:
+        parsed.kidsNextLessonPathIndex ?? DEFAULT_PROGRESS.kidsNextLessonPathIndex,
       dailyGoalXp: DAILY_GOAL_XP,
     };
     merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);

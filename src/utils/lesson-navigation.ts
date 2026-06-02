@@ -1,5 +1,6 @@
 import { buildSectionData, type LessonListItem, type SectionDataItem } from "@/data/list-items";
 import { buildNormalSectionData } from "@/data/normal-english";
+import { buildKidsSectionData } from "@/data/kids-english";
 import type { LessonPathMode } from "@/data/lesson-content";
 import { localizePathSections } from "@/data/path-unit-titles";
 import type { AppLocale } from "@/i18n";
@@ -46,11 +47,14 @@ export function getCurrentLessonMeta(
   streetNextIndex: number,
   normalNextIndex: number,
   locale: AppLocale = "en",
+  kidsNextIndex = 0,
 ): CurrentLessonMeta | null {
   const sections =
     mode === "normal"
       ? buildNormalSectionData(normalNextIndex)
-      : buildSectionData(streetNextIndex);
+      : mode === "kids"
+        ? buildKidsSectionData(kidsNextIndex)
+        : buildSectionData(streetNextIndex);
   const localized = localizePathSections(sections, mode, locale);
   const found = findCurrentItem(localized);
   if (!found) return null;
@@ -69,8 +73,15 @@ export function buildLessonRouteForMode(
   mode: LessonPathMode,
   streetNextIndex: number,
   normalNextIndex: number,
+  kidsNextIndex = 0,
 ): LessonRouteParams | null {
-  const meta = getCurrentLessonMeta(mode, streetNextIndex, normalNextIndex);
+  const meta = getCurrentLessonMeta(
+    mode,
+    streetNextIndex,
+    normalNextIndex,
+    "en",
+    kidsNextIndex,
+  );
   if (!meta) return null;
 
   return {

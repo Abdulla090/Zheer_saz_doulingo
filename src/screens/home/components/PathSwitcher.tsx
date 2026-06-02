@@ -1,11 +1,15 @@
 /**
- * PathSwitcher — Animated dual-tab pill that sits at the top of the home screen.
- * Switches between "Street English" (light) and "Normal English" (dark).
+ * PathSwitcher — Animated multi-tab pill at the top of the home screen.
+ * Switches between "Street English", "Normal English" and "Kids".
  *
- * Design: sliding indicator under/inside the pill, Reanimated translateX.
+ * Design: sliding indicator under the active tab, Reanimated translateX.
  */
 
-import { Icon3DZapBlue, Icon3DLayers } from "@/components/icons/Icon3D";
+import {
+  Icon3DLayers,
+  Icon3DStar,
+  Icon3DZapBlue,
+} from "@/components/icons/Icon3D";
 import React, { useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { crossShadow } from "@/utils/shadows";
@@ -16,35 +20,52 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-export type PathMode = "street" | "normal";
+export type PathMode = "street" | "normal" | "kids";
 
 type Props = {
   activeMode: PathMode;
   onSwitch: (mode: PathMode) => void;
 };
 
-const TABS: { key: PathMode; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+type TabDef = {
+  key: PathMode;
+  label: string;
+  activeColor: string;
+  icon: (active: boolean) => React.ReactNode;
+};
+
+const TABS: TabDef[] = [
   {
     key: "street",
-    label: "Street English",
+    label: "Street",
+    activeColor: "#1CB0F6",
     icon: (active) => <Icon3DZapBlue size={16} active={active} />,
   },
   {
     key: "normal",
-    label: "Normal English",
+    label: "Normal",
+    activeColor: "#7C3AED",
     icon: (active) => <Icon3DLayers size={16} active={active} />,
   },
+  {
+    key: "kids",
+    label: "Kids",
+    activeColor: "#FF9600",
+    icon: () => <Icon3DStar size={16} />,
+  },
 ];
+
+const TAB_INDEX: Record<PathMode, number> = { street: 0, normal: 1, kids: 2 };
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const { width } = useWindowDimensions();
   const PILL_W = width > 0 ? Math.min(width - 32, 380) : 340;
-  const TAB_W = PILL_W / 2;
+  const TAB_W = PILL_W / TABS.length;
 
-  const slideX = useSharedValue(activeMode === "street" ? 0 : TAB_W);
+  const slideX = useSharedValue(TAB_INDEX[activeMode] * TAB_W);
 
   useEffect(() => {
-    slideX.value = withTiming(activeMode === "street" ? 0 : TAB_W, {
+    slideX.value = withTiming(TAB_INDEX[activeMode] * TAB_W, {
       duration: 260,
       easing: Easing.out(Easing.cubic),
     });
@@ -53,19 +74,17 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const handleSwitch = useCallback(
     (mode: PathMode) => {
       onSwitch(mode);
-      slideX.value = withTiming(mode === "street" ? 0 : TAB_W, {
+      slideX.value = withTiming(TAB_INDEX[mode] * TAB_W, {
         duration: 260,
         easing: Easing.out(Easing.cubic),
       });
     },
-    [TAB_W, onSwitch],
+    [TAB_W, onSwitch, slideX],
   );
 
   const sliderStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideX.value }],
   }));
-
-  const isStreet = activeMode === "street";
 
   return (
     <View style={[styles.container, { width: PILL_W }]}>
@@ -74,7 +93,7 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
         style={[
           styles.slider,
           { width: TAB_W },
-          isStreet ? styles.sliderLight : styles.sliderDark,
+          activeMode === "normal" ? styles.sliderDark : styles.sliderLight,
           sliderStyle,
         ]}
       />
@@ -92,8 +111,9 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
             <Text
               style={[
                 styles.tabLabel,
-                active && (tab.key === "street" ? styles.tabLabelStreetActive : styles.tabLabelNormalActive),
+                active && { color: tab.activeColor },
               ]}
+              numberOfLines={1}
             >
               {tab.label}
             </Text>
@@ -137,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: 5,
     paddingVertical: 10,
     borderRadius: 14,
     zIndex: 1,
@@ -146,11 +166,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#9CA3AF",
-  },
-  tabLabelStreetActive: {
-    color: "#1CB0F6",
-  },
-  tabLabelNormalActive: {
-    color: "#7C3AED",
   },
 });

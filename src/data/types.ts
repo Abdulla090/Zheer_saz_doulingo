@@ -84,3 +84,5 @@ export type LessonBank = {
 
 // ── A full unit = 10 unique lesson banks ─────────────────────────────────────
 export type UnitBank = LessonBank[];
+
+export type LessonPathMode = "street" | "normal" | "kids";

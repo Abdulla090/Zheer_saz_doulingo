@@ -18,7 +18,7 @@ import { ConversationPickQuestion } from "@/data/lesson-content";
 
 import type { AnswerTier } from "@/utils/answer-tier";
 
-import { tierPasses } from "@/utils/answer-tier";
+import { tierLabelKey, tierPasses } from "@/utils/answer-tier";
 
 import {
 
@@ -105,17 +105,14 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
 
 
   const getState = (opt: string) => {
-
     if (!revealed) return opt === selected ? "selected" : "idle";
+    return question.optionTiers[opt] ?? "bad";
+  };
 
-    if (opt === selected) {
-
-      return question.optionTiers[opt] ?? "bad";
-
-    }
-
-    return "idle";
-
+  const getTierLabel = (opt: string) => {
+    if (!revealed) return undefined;
+    const tier = question.optionTiers[opt] ?? "bad";
+    return t(tierLabelKey(tier));
   };
 
 
@@ -175,17 +172,12 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
             <GameOption key={opt} index={i} baseDelay={120}>
 
               <LightOptionRow
-
                 label={opt}
-
+                tierLabel={getTierLabel(opt)}
                 state={mapOptionState(getState(opt))}
-
                 onPress={() => pick(opt)}
-
                 disabled={revealed}
-
                 forceLatinFont
-
               />
 
             </GameOption>

@@ -204,6 +204,10 @@ export const en = {
       unit12: "Unit 12: Real-World Mastery",
       unit13: "Unit 13: Opinions & Confidence",
     },
+    kids: {
+      unit1: "Unit 1: Animals",
+      unit2: "Unit 2: Colors & Numbers",
+    },
   },
 };
 

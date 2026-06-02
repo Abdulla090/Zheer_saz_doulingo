@@ -7,7 +7,8 @@ import { AppText } from "@/components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { tabBarScrollPadding } from "@/constants/layout";
 import type { LessonListItem, SectionDataItem, SectionTheme } from "@/data/list-items";
-import { normalSectionData } from "@/data/normal-english";
+import { buildNormalSectionData } from "@/data/normal-english";
+import { useProgressStore } from "@/stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -71,14 +72,22 @@ export function NormalEnglishPathScreen() {
     minimumViewTime: 100,
   }).current;
 
+  const normalNextLessonPathIndex = useProgressStore(
+    (s) => s.normalNextLessonPathIndex,
+  );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
-    normalSectionData[0]?.displayTheme ?? "blue",
+    "blue",
   );
 
   const localizedSections = useMemo(
-    () => localizePathSections(normalSectionData, "normal", locale),
-    [locale],
+    () =>
+      localizePathSections(
+        buildNormalSectionData(normalNextLessonPathIndex),
+        "normal",
+        locale,
+      ),
+    [locale, normalNextLessonPathIndex],
   );
 
   const activeSectionDisplay = useMemo(() => {

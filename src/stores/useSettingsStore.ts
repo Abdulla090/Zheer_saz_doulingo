@@ -3,14 +3,16 @@ import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.app.settings";
 
+type PathMode = "street" | "normal" | "kids";
+
 interface SettingsState {
   ready: boolean;
   hapticsEnabled: boolean;
   soundsEnabled: boolean;
-  pathMode: "street" | "normal";
+  pathMode: PathMode;
   setHapticsEnabled: (v: boolean) => void;
   setSoundsEnabled: (v: boolean) => void;
-  setPathMode: (mode: "street" | "normal") => void;
+  setPathMode: (mode: PathMode) => void;
 }
 
 function persist(partial: Partial<SettingsState>) {
@@ -55,10 +57,14 @@ async function hydrateSettings() {
       return;
     }
     const parsed = JSON.parse(raw) as Partial<SettingsState>;
+    const savedMode: PathMode =
+      parsed.pathMode === "street" || parsed.pathMode === "kids"
+        ? parsed.pathMode
+        : "normal";
     useSettingsStore.setState({
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
-      pathMode: parsed.pathMode === "street" ? "street" : "normal",
+      pathMode: savedMode,
       ready: true,
     });
   } catch {

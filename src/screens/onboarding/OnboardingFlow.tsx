@@ -58,7 +58,9 @@ export function OnboardingFlow() {
   const localeReady = useLocaleStore((s) => s.ready);
 
   const [index, setIndex] = useState(0);
-  const [selectedPath, setSelectedPath] = useState<"street" | "normal">(pathMode);
+  const [selectedPath, setSelectedPath] = useState<"street" | "normal">(
+    pathMode === "normal" ? "normal" : "street",
+  );
 
   const stepId = STEP_ORDER[index] ?? "welcome";
   const isLast = index === STEP_ORDER.length - 1;

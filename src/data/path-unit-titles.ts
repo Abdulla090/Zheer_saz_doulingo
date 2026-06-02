@@ -34,12 +34,22 @@ const NORMAL_UNIT_KEYS = [
   "path.normal.unit13",
 ] as const satisfies readonly I18nKey[];
 
+const KIDS_UNIT_KEYS = [
+  "path.kids.unit1",
+  "path.kids.unit2",
+] as const satisfies readonly I18nKey[];
+
 export function getPathUnitTitle(
   mode: LessonPathMode,
   unitIndex: number,
   locale: AppLocale,
 ): string {
-  const keys = mode === "normal" ? NORMAL_UNIT_KEYS : STREET_UNIT_KEYS;
+  const keys =
+    mode === "normal"
+      ? NORMAL_UNIT_KEYS
+      : mode === "kids"
+        ? KIDS_UNIT_KEYS
+        : STREET_UNIT_KEYS;
   const key = keys[unitIndex];
   if (!key) return "";
   return translate(locale, key);

@@ -1,12 +1,16 @@
+/**
+ * KidsEnglishPathScreen — playful "Kids" learning path.
+ * Structurally mirrors the Street/Normal path screens, driven by kids progress.
+ */
+
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { tabBarScrollPadding } from "@/constants/layout";
 import {
-  buildSectionData,
   type LessonListItem,
   type SectionDataItem,
   type SectionTheme,
 } from "@/data/list-items";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { buildKidsSectionData } from "@/data/kids-english";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -15,6 +19,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { useProgressStore } from "@/stores/useProgressStore";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -29,13 +34,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
-import { ListFooter } from "./components/list-footer";
 import { ListItem } from "./components/list-item";
-import { ListSectionHeader } from "./components/list-section-header";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
-export const StreetEnglishPathScreen = () => {
+export function KidsEnglishPathScreen() {
   const insets = useSafeAreaInsets();
   const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
@@ -44,7 +47,10 @@ export const StreetEnglishPathScreen = () => {
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
-  const nextLessonPathIndex = useProgressStore((s) => s.nextLessonPathIndex);
+
+  const kidsNextLessonPathIndex = useProgressStore(
+    (s) => s.kidsNextLessonPathIndex,
+  );
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     "green",
@@ -53,15 +59,15 @@ export const StreetEnglishPathScreen = () => {
   const localizedSections = useMemo(
     () =>
       localizePathSections(
-        buildSectionData(nextLessonPathIndex),
-        "street",
+        buildKidsSectionData(kidsNextLessonPathIndex),
+        "kids",
         locale,
       ),
-    [locale, nextLessonPathIndex],
+    [locale, kidsNextLessonPathIndex],
   );
 
   const activeSectionDisplay = useMemo(() => {
-    const fullTitle = getPathUnitTitle("street", activeSectionIndex, locale);
+    const fullTitle = getPathUnitTitle("kids", activeSectionIndex, locale);
     return splitPathUnitTitle(fullTitle);
   }, [activeSectionIndex, locale]);
 
@@ -102,16 +108,9 @@ export const StreetEnglishPathScreen = () => {
 
   const renderItem = useCallback(
     ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
-      <ListItem item={item} screenWidth={windowWidth} pathMode="street" />
+      <ListItem item={item} screenWidth={windowWidth} pathMode="kids" />
     ),
     [windowWidth],
-  );
-
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: SectionDataItem }) => (
-      <ListSectionHeader section={section} />
-    ),
-    [],
   );
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -145,20 +144,18 @@ export const StreetEnglishPathScreen = () => {
           faceColor={buttonColors.face}
           rimColor={buttonColors.rim}
           unitIndex={activeSectionIndex}
-          pathMode="street"
+          pathMode="kids"
         />
         <SectionList<LessonListItem, SectionDataItem>
           sections={localizedSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ref={listRef}
-          renderSectionHeader={renderSectionHeader}
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
           scrollEventThrottle={16}
           style={styles.list}
-          ListFooterComponent={ListFooter}
           contentContainerStyle={[
             styles.listContainer,
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
@@ -174,7 +171,7 @@ export const StreetEnglishPathScreen = () => {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   listContainer: {
@@ -184,6 +181,3 @@ const styles = StyleSheet.create({
   },
   list: { flex: 1, width: "100%", backgroundColor: "transparent" },
 });
-
-/** Re-export for callers that need fresh progress-based sections */
-export { buildSectionData };
