@@ -139,7 +139,15 @@ export function RolePlayScreen() {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis;
     }
-    if (!speech.available) setShowTyping(true);
+    if (!speech.available) {
+      const timer = setTimeout(() => {
+        setShowTyping(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [speech.available]);
+
+  useEffect(() => {
     return () => {
       clearListenTimeout();
       stopSpeaking();
@@ -147,32 +155,32 @@ export function RolePlayScreen() {
     };
   }, [speech]);
 
-  const clearListenTimeout = () => {
+  function clearListenTimeout() {
     if (listenTimeoutRef.current) {
       clearTimeout(listenTimeoutRef.current);
       listenTimeoutRef.current = null;
     }
-  };
+  }
 
-  const stopSpeaking = () => {
+  function stopSpeaking() {
     try {
       synthRef.current?.cancel();
     } catch {
       /* noop */
     }
-  };
+  }
 
-  const stopListening = () => {
+  function stopListening() {
     clearListenTimeout();
     speech.stop();
-  };
+  }
 
-  const stopAll = () => {
+  function stopAll() {
     stopSpeaking();
     stopListening();
-  };
+  }
 
-  const speak = (text: string) => {
+  function speak(text: string) {
     const sc = scenarioRef.current;
     if (synthRef.current && Platform.OS === "web") {
       synthRef.current.cancel();
@@ -204,7 +212,7 @@ export function RolePlayScreen() {
         if (statusRef.current === "speaking") void startListening();
       }, 2200);
     }
-  };
+  }
 
   const handleUserResponse = useCallback((userText: string) => {
     setHistory((p) => [...p, { sender: "user", text: userText }]);
@@ -282,13 +290,13 @@ export function RolePlayScreen() {
     }, 12000);
   }, [handleUserResponse, showTyping, speech]);
 
-  const startSession = () => {
+  function startSession() {
     stopAll();
     hapticImpact();
     const msg = scenarioRef.current.initialMessage;
     setHistory([{ sender: "ai", text: msg }]);
     speak(msg);
-  };
+  }
 
   const handleMicTap = () => {
     hapticImpact();

@@ -24,6 +24,11 @@ const path = require("path");
 
 config.resolver = {
   ...resolver,
+  blockList: [
+    /android\/.*/,
+    /ios\/.*/,
+    /node_modules\/.*\/android\/.*/,
+  ],
   assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
   sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
