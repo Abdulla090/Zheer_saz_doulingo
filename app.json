@@ -12,8 +12,8 @@
       "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
       "supportsTablet": false,
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow PINGO to transcribe your speech for lessons and AI feedback.",
-        "NSMicrophoneUsageDescription": "Allow PINGO to use the microphone for speaking practice."
+        "NSSpeechRecognitionUsageDescription": "Allow Phingo English to transcribe your speech for lessons and AI feedback.",
+        "NSMicrophoneUsageDescription": "Allow Phingo English to use the microphone for speaking practice."
       }
     },
     "android": {
@@ -105,14 +105,23 @@
                       "group.com.hewad.mubariz.duolingoclone"
                     ]
                   }
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.duolingoclone.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.hewad.mubariz.duolingoclone"
+                    ]
+                  }
                 }
               ]
             }
           }
         },
-        "projectId": "ddd179c2-af80-49a4-9bdf-bf85f09294a3"
+        "projectId": "57df22e9-341f-4e45-a08d-fb5ca28d69c5"
       }
     },
-    "owner": "abdullla001"
+    "owner": "abdulla001"
   }
 }
