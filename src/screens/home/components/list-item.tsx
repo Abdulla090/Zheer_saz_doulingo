@@ -145,7 +145,8 @@ function resolveIconColor(
 
   if (isLocked) return "#6B7280";
 
-  if (globalIndex === 0) return "#B26A00";
+  // First item icon color used to be #B26A00, changed to white for better contrast
+  if (globalIndex === 0) return "#FFFFFF";
 
   if (isGrayInProgress) return "#FFFFFF";
 

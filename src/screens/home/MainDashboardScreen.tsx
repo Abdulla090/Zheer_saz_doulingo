@@ -469,7 +469,7 @@ const s = StyleSheet.create({
   },
   mascotWrap: {
     position: "absolute",
-    ...{ right: -16 },
+    right: 0,
     top: -40,
     width: 180,
     height: 180,
@@ -671,7 +671,7 @@ const s = StyleSheet.create({
   journeyCtaText: { color: "#fff", fontSize: 13, fontWeight: "700" },
   journeyMascot: {
     position: "absolute",
-    ...{ right: -16 },
+    right: 0,
     bottom: -8,
     width: 176,
     height: 176,

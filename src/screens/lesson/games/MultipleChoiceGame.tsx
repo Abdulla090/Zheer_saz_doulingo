@@ -7,6 +7,7 @@ import React, { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { MultipleChoiceQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import {
   GameFooter,
   GameHeader,
@@ -24,9 +25,10 @@ import {
 type Props = {
   question: MultipleChoiceQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
+  pathMode?: LessonPathMode;
 };
 
-export default function MultipleChoiceGame({ question, onAnswer }: Props) {
+export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -69,6 +71,7 @@ export default function MultipleChoiceGame({ question, onAnswer }: Props) {
       <LightQuestionPrompt
         label={t("lessons.questionLabel")}
         forceKurdishFont={isKuPrompt}
+        variant={pathMode === "kids" ? "kids" : "default"}
       >
         {question.prompt}
       </LightQuestionPrompt>

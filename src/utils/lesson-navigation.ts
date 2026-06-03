@@ -96,6 +96,13 @@ export function buildLessonRouteForMode(
   };
 }
 
+export function buildPathReturnRoute(pathMode: LessonPathMode) {
+  return {
+    pathname: "/dashboard" as const,
+    params: { mode: pathMode },
+  };
+}
+
 export function buildLessonRouteFromMeta(meta: CurrentLessonMeta): LessonRouteParams {
   return {
     pathname: "/lesson",

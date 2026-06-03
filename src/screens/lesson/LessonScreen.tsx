@@ -17,6 +17,7 @@ import { PingoMascot } from "@/components/mascot/PingoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
+    BackHandler,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -41,7 +42,7 @@ import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useContentAdminStore } from "@/stores/useContentAdminStore";
 import type { AnswerTier } from "@/utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "@/utils/answer-tier";
-import { getCurrentLessonMeta } from "@/utils/lesson-navigation";
+import { getCurrentLessonMeta, buildPathReturnRoute } from "@/utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
@@ -125,6 +126,11 @@ export default function LessonScreen() {
 
   const nextRef = useRef(0);
 
+  const exitToPath = useCallback(() => {
+    setPathMode(pathMode);
+    router.replace(buildPathReturnRoute(pathMode));
+  }, [pathMode, router, setPathMode]);
+
   /* Animations */
   const progressW = useSharedValue(0);
   const progressStyle = useAnimatedStyle(() => ({
@@ -151,6 +157,16 @@ export default function LessonScreen() {
       xpSc.value = 1;
       sheetY.value = SHEET_H + insets.bottom;
     }, [insets.bottom, startQuestion, questions.length]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        exitToPath();
+        return true;
+      });
+      return () => sub.remove();
+    }, [exitToPath]),
   );
 
   const handleAnswer = useCallback(
@@ -215,41 +231,31 @@ export default function LessonScreen() {
     }, 260);
   }, [questions.length, insets.bottom]);
 
-  const skipCurrentQuestion = useCallback(() => {
+  const giveUpQuestion = useCallback(() => {
     if (feedback !== null) return;
-    const next = current + 1;
-    progressW.value = withTiming(next / questions.length, {
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-    });
-    if (next >= questions.length) {
-      setPassed(true);
-      setFinished(true);
-      return;
-    }
-    setCurrent(next);
-  }, [current, feedback, questions.length]);
+    handleAnswer(false, t("lessons.feedbackSkippedSub"));
+  }, [feedback, handleAnswer, t]);
 
   const renderGame = (q: GameQuestion) => {
+    const shared = { onAnswer: handleAnswer, pathMode };
     switch (q.type) {
-      case "multiple_choice":   return <MultipleChoiceGame   key={current} question={q} onAnswer={handleAnswer} />;
-      case "pair_match":        return <PairMatchGame        key={current} question={q} onAnswer={handleAnswer} />;
-      case "sentence_builder":  return <SentenceBuilderGame  key={current} question={q} onAnswer={handleAnswer} />;
-      case "voice":             return <VoiceGame            key={current} question={q} onAnswer={handleAnswer} />;
-      case "fill_blank":        return <FillBlankGame        key={current} question={q} onAnswer={handleAnswer} />;
-      case "conversation_pick": return <ConversationPickGame key={current} question={q} onAnswer={handleAnswer} />;
-      case "kids_play":         return <KidsPlayGame         key={current} question={q} onAnswer={handleAnswer} />;
+      case "multiple_choice":   return <MultipleChoiceGame   {...shared} question={q} />;
+      case "pair_match":        return <PairMatchGame        {...shared} question={q} />;
+      case "sentence_builder":  return <SentenceBuilderGame  {...shared} question={q} />;
+      case "voice":             return <VoiceGame            {...shared} question={q} />;
+      case "fill_blank":        return <FillBlankGame        {...shared} question={q} />;
+      case "conversation_pick": return <ConversationPickGame {...shared} question={q} />;
+      case "kids_play":         return <KidsPlayGame         {...shared} question={q} />;
       default:                  return null;
     }
   };
-
   if (questions.length === 0) {
     return (
       <SafeAreaView style={[sSum.root, { backgroundColor: G.bg, justifyContent: "center", alignItems: "center", padding: 24 }]}>
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <HomeLiquidButton label="Go Back" onPress={() => router.back()} />
+        <HomeLiquidButton label="Go Back" onPress={exitToPath} />
       </SafeAreaView>
     );
   }
@@ -307,11 +313,7 @@ export default function LessonScreen() {
                       : `Lesson ${pathIndex + 1}`;
                   recordLessonComplete(pathIndex, xp, pathMode, label);
                   requestPathScrollAfterLesson(pathMode);
-                  setPathMode(pathMode);
-                  router.replace({
-                    pathname: "/dashboard",
-                    params: { mode: pathMode },
-                  });
+                  exitToPath();
                   return;
                 }
                 if (!ok) {
@@ -325,7 +327,7 @@ export default function LessonScreen() {
                   progressW.value = 0;
                   return;
                 }
-                router.back();
+                exitToPath();
               }}
             />
           </Animated.View>
@@ -356,14 +358,14 @@ export default function LessonScreen() {
         <LessonLightHeader
           progressFillStyle={progressStyle}
           hearts={hearts}
-          onBack={() => router.back()}
+          onBack={exitToPath}
           unitNumber={lessonId + 1}
           lessonNumber={lessonIndex + 1}
         />
 
         <View style={sL.skipRow}>
           <Pressable
-            onPress={skipCurrentQuestion}
+            onPress={giveUpQuestion}
             disabled={feedback !== null}
             style={({ pressed }) => [
               sL.skipButton,
@@ -371,7 +373,7 @@ export default function LessonScreen() {
               feedback !== null && sL.skipDisabled,
             ]}
           >
-            <Text style={sL.skipText}>{t("lessons.skip")}</Text>
+            <Text style={sL.skipText}>{t("lessons.dontKnow")}</Text>
           </Pressable>
         </View>
 
@@ -541,3 +543,4 @@ const sSum = StyleSheet.create({
     fontFamily: "DINNextRoundedMedium",
   },
 });
+

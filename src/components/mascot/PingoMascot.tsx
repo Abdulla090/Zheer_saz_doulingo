@@ -36,10 +36,13 @@ function poseCrop(pose: PingoPose): Crop {
     return { x: (SHEET_W - w) / 2, y: 1, w, h: TOP_ROW_H - 2 };
   }
   const col = POSE_INDEX[pose];
+  // Wave pose: no inset — the wing extends to the cell edge and it's often
+  // displayed flipped (scaleX: -1), so both sides must be fully visible.
+  const inset = pose === "wave" ? 0 : CELL_INSET;
   return {
-    x: col * COL_W + CELL_INSET,
+    x: col * COL_W + inset,
     y: TOP_ROW_H + 1,
-    w: COL_W - CELL_INSET * 2,
+    w: COL_W - inset * 2,
     h: SHEET_H - TOP_ROW_H - 2,
   };
 }

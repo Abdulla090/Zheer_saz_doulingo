@@ -28,6 +28,11 @@ export function tabBarTotalHeight(deviceBottomInset: number): number {
 
 /** Scroll content padding so lists clear the tab bar. */
 export function tabBarScrollPadding(deviceBottomInset: number): number {
+  // iOS NativeTabs handles bottom insets automatically (SDK 55+).
+  if (Platform.OS === "ios") {
+    return 16;
+  }
+  // Android + web use the floating glass tab bar.
   return tabBarTotalHeight(deviceBottomInset) + 12;
 }
 

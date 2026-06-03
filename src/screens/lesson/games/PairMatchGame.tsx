@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { PairMatchQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { L, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,
@@ -25,6 +26,7 @@ import { GameHeader, GameOption, GameRoot } from "./GameAnimatedShell";
 type Props = {
   question: PairMatchQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
+  pathMode?: LessonPathMode;
 };
 
 type TileState = "idle" | "selected" | "correct" | "wrong";

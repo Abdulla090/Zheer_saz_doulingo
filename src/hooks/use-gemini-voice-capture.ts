@@ -264,6 +264,33 @@ export function useGeminiVoiceCapture() {
     ],
   );
 
+  const stopAndGetAudio = useCallback(async () => {
+    if (!listeningRef.current) return null;
+
+    setListeningState(false);
+    try {
+      const audio =
+        Platform.OS === "web"
+          ? await stopWebRecording()
+          : await stopNativeRecording();
+
+      if (!audio?.base64) {
+        const message = "No speech detected — try again.";
+        setError(message);
+        handlersRef.current?.onError?.(message);
+        return null;
+      }
+
+      return audio;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not process recording.";
+      setError(message);
+      handlersRef.current?.onError?.(message);
+      return null;
+    }
+  }, [setListeningState, stopNativeRecording, stopWebRecording]);
+
   const abort = useCallback(async () => {
     handlersRef.current = null;
 
@@ -294,6 +321,7 @@ export function useGeminiVoiceCapture() {
     error,
     start,
     stopAndEvaluate,
+    stopAndGetAudio,
     abort,
   };
 }

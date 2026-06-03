@@ -31,7 +31,7 @@ export function PhingoHomeAndroidWidget(props: PhingoHomeWidgetPayload) {
       <FlexWidget
         style={{
           flexDirection: "row",
-          justifyContent: "space_between",
+          justifyContent: "space-between",
           alignItems: "center",
           width: "match_parent",
         }}
@@ -56,7 +56,7 @@ export function PhingoHomeAndroidWidget(props: PhingoHomeWidgetPayload) {
           flexDirection: "row",
           width: "match_parent",
           marginTop: 10,
-          justifyContent: "space_between",
+          justifyContent: "space-between",
         }}
       >
         <TextWidget
@@ -85,18 +85,19 @@ export function PhingoHomeAndroidWidget(props: PhingoHomeWidgetPayload) {
         />
         <TextWidget
           text={props.nextTitle}
+          maxLines={2}
           style={{
             fontSize: 15,
             fontWeight: "bold",
             color: NAVY,
             marginTop: 2,
             fontFamily: "DIN_BOLD",
-            maxLines: 2,
           }}
         />
         <TextWidget
           text={props.nextSubtitle}
-          style={{ fontSize: 11, color: GRAY, marginTop: 2, fontFamily: "DIN_MEDIUM", maxLines: 2 }}
+          maxLines={2}
+          style={{ fontSize: 11, color: GRAY, marginTop: 2, fontFamily: "DIN_MEDIUM" }}
         />
       </FlexWidget>
 
@@ -108,12 +109,12 @@ export function PhingoHomeAndroidWidget(props: PhingoHomeWidgetPayload) {
           />
           <TextWidget
             text={props.recentTitle}
+            maxLines={1}
             style={{
               fontSize: 13,
               fontWeight: "bold",
               color: NAVY,
               fontFamily: "DIN_BOLD",
-              maxLines: 1,
             }}
           />
         </FlexWidget>

@@ -30,7 +30,7 @@ export type {
 import { buildConversationOptionTiers } from "@/utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
 import { buildKidsFlowQuestions } from "./kids-lesson-builder";
-import { GameQuestion, LessonBank, LessonPathMode } from "./types";
+import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
 
 export type { LessonPathMode } from "./types";
 
@@ -125,14 +125,7 @@ function buildLessonQuestionsFromBank(
 
   const questions: GameQuestion[] = [];
   const isNormal = mode === "normal";
-
-  // 1. Pair Match (1×) — full phrases in normal mode
-  const pairCount = Math.min(4, words.length);
-  questions.push({
-    type: "pair_match",
-    pairs: Array.from({ length: pairCount }, (_, i) => pick(words, i)),
-    xp: 15,
-  });
+  const isKids = mode === "kids";
 
   const pushWordMc = (wordIndex: number, optionSeed: number) => {
     const mcWord = pick(words, wordIndex);
@@ -153,6 +146,83 @@ function buildLessonQuestionsFromBank(
       xp: 10,
     });
   };
+
+  if (isKids) {
+    // 1. Pair Match (1×)
+    const pairCount = Math.min(4, words.length);
+    questions.push({
+      type: "pair_match",
+      pairs: Array.from({ length: pairCount }, (_, i) => pick(words, i)),
+      xp: 15,
+    });
+
+    // 2. Multiple Choice (1×)
+    pushWordMc(0, seed + 10);
+
+    // 3. Sentence Builder (1×)
+    if (sentences.length > 0) {
+      const s = pick(sentences, 0);
+      const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
+      const extra = pickLessonWrongs(
+        lessonWords,
+        "",
+        2,
+        seed + 20,
+        (d) => !sentSet.has(d.toLowerCase()),
+      );
+      questions.push({
+        type: "sentence_builder",
+        kurdishSentence: s.kurdish,
+        wordBank: shuffle([...s.english, ...extra], seed + 20),
+        correctWords: s.english,
+        xp: 20,
+      });
+    }
+
+    // 4. Fill Blank (1×)
+    if (fills.length > 0) {
+      const f = pick(fills, 0);
+      const fillWrongs = sanitizeFillWrongs(f.answer, f.wrongs);
+      questions.push({
+        type: "fill_blank",
+        sentenceParts: f.parts,
+        kurdishHint: f.hint,
+        correctAnswer: f.answer,
+        options: shuffle([f.answer, ...fillWrongs], seed + 40),
+        xp: 15,
+      });
+    } else {
+      pushWordMc(1, seed + 40); // fallback
+    }
+
+    // 5. Voice Games (6×)
+    const allVoices: VoiceQuestion[] = [
+      ...voices.map(v => ({ type: "voice" as const, prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 })),
+      ...words.map(w => ({ type: "voice" as const, prompt: `بڵێ: ${w.kurdish}`, targetWord: w.english, targetKurdish: w.kurdish, xp: 20 })),
+      ...sentences.map(s => ({ type: "voice" as const, prompt: `بڵێ: ${s.kurdish}`, targetWord: s.english.join(" "), targetKurdish: s.kurdish, xp: 20 })),
+    ];
+    
+    // We need 6 questions, if we generated fewer than 4 (excluding voices), we need to fill the gap.
+    // Since we pushed 1 PairMatch, 1 MC, 1 SB, 1 FB, we have 4 questions.
+    // If SB or FB fell back, we still pushed a question. Total is 4.
+    // So we add 6 Voice games.
+    const shuffledVoices = shuffle(allVoices, seed + 50);
+    for (let i = 0; i < 6; i++) {
+      questions.push(pick(shuffledVoices, i));
+    }
+
+    return shuffle(questions, seed + 99);
+  }
+
+  // ── Normal / Street Mode Generator ─────────────────────────────────────────
+
+  // 1. Pair Match (1×)
+  const pairCount = Math.min(4, words.length);
+  questions.push({
+    type: "pair_match",
+    pairs: Array.from({ length: pairCount }, (_, i) => pick(words, i)),
+    xp: 15,
+  });
 
   // 2. Multiple Choice (1×)
   const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;

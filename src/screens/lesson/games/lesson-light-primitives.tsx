@@ -57,13 +57,17 @@ export function LightPromptCard({
   kurdish,
   english,
   onSpeak,
+  variant = "default",
 }: {
   kurdish: string;
   english?: string;
   onSpeak?: () => void;
+  variant?: "default" | "kids";
 }) {
-  return (
-    <HomeLiquidCard contentStyle={lh.promptCardInner} radius={22}>
+  const isKids = variant === "kids";
+
+  const inner = (
+    <>
       <Pressable
         onPress={onSpeak}
         style={({ pressed }) => [lh.speakerBtn, pressed && { opacity: 0.85 }]}
@@ -72,7 +76,7 @@ export function LightPromptCard({
         <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
           <Path
             d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a4 4 0 010 7M18 6a7.5 7.5 0 010 12"
-            stroke={L.blue}
+            stroke={isKids ? "#C2410C" : L.blue}
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -89,6 +93,29 @@ export function LightPromptCard({
           </AppText>
         ) : null}
       </View>
+    </>
+  );
+
+  if (isKids) {
+    return (
+      <View style={lh.kidsPromptWrap}>
+        <LinearGradient
+          colors={["#FFF3E0", "#FFD0A8", "#C8E6FF"]}
+          locations={[0, 0.55, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={lh.kidsPromptGradient}
+        >
+          <View style={lh.kidsPromptOrb} />
+          <View style={lh.kidsPromptContent}>{inner}</View>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  return (
+    <HomeLiquidCard contentStyle={lh.promptCardInner} radius={22}>
+      {inner}
     </HomeLiquidCard>
   );
 }
@@ -183,35 +210,54 @@ export function LightQuestionPrompt({
   children,
   label,
   forceKurdishFont,
+  variant = "default",
 }: {
   children: string;
   label: string;
   forceKurdishFont?: boolean;
+  variant?: "default" | "kids";
 }) {
+  const isKids = variant === "kids";
+
   return (
-    <View style={lh.questionHeroWrap}>
+    <View style={[lh.questionHeroWrap, isKids && lh.questionHeroWrapKids]}>
       <LinearGradient
-        colors={["#152238", "#1E3354", "#2B59F3"]}
-        locations={[0, 0.55, 1]}
+        colors={
+          isKids
+            ? ["#FFF3E0", "#FFD0A8", "#C8E6FF"]
+            : ["#152238", "#1E3354", "#2B59F3"]
+        }
+        locations={isKids ? [0, 0.55, 1] : [0, 0.55, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={lh.questionHeroGradient}
       >
-        <View style={lh.questionHeroOrb} />
+        {isKids ? (
+          <View style={lh.questionHeroOrbKids} />
+        ) : (
+          <View style={lh.questionHeroOrb} />
+        )}
         <LinearGradient
-          colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0)"]}
+          colors={
+            isKids
+              ? ["rgba(255,255,255,0.55)", "rgba(255,255,255,0.12)", "rgba(255,255,255,0)"]
+              : ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0)"]
+          }
           locations={[0, 0.45, 1]}
           style={lh.questionHeroSheen}
           pointerEvents="none"
         />
         <View style={lh.questionHeroContent}>
-          <View style={lh.questionHeroBadge}>
-            <AppText style={LightType.questionHeroBadge} forceLatinFont>
+          <View style={[lh.questionHeroBadge, isKids && lh.questionHeroBadgeKids]}>
+            <AppText
+              style={isKids ? LightType.questionHeroBadgeKids : LightType.questionHeroBadge}
+              forceLatinFont
+            >
               {label}
             </AppText>
           </View>
           <AppText
-            style={LightType.questionHero}
+            style={isKids ? LightType.questionHeroKids : LightType.questionHero}
             forceKurdishFont={forceKurdishFont}
           >
             {children}
@@ -600,7 +646,7 @@ export function LessonLightHeader({
   unitNumber,
   lessonNumber,
 }: {
-  progressFillStyle: StyleProp<ViewStyle>;
+  progressFillStyle: any;
   hearts: number;
   onBack: () => void;
   unitNumber: number;
@@ -824,6 +870,17 @@ const lh = StyleSheet.create({
       elevation: 8,
     }),
   },
+  questionHeroWrapKids: {
+    ...crossShadow({
+      color: "#E86A00",
+      offsetY: 10,
+      blur: 24,
+      opacity: 0.26,
+      elevation: 6,
+    }),
+    borderWidth: 2,
+    borderColor: "rgba(232, 106, 0, 0.55)",
+  },
   questionHeroGradient: {
     position: "relative",
     paddingVertical: 22,
@@ -839,6 +896,15 @@ const lh = StyleSheet.create({
     height: 132,
     borderRadius: 66,
     backgroundColor: "rgba(91, 141, 239, 0.35)",
+  },
+  questionHeroOrbKids: {
+    position: "absolute",
+    top: -32,
+    right: -24,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255, 120, 30, 0.48)",
   },
   questionHeroSheen: {
     position: "absolute",
@@ -858,6 +924,43 @@ const lh = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
     backgroundColor: "rgba(255, 255, 255, 0.92)",
+  },
+  questionHeroBadgeKids: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "rgba(194, 65, 12, 0.45)",
+  },
+  kidsPromptWrap: {
+    borderRadius: 22,
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "rgba(232, 106, 0, 0.5)",
+    ...crossShadow({
+      color: "#E86A00",
+      offsetY: 8,
+      blur: 20,
+      opacity: 0.22,
+      elevation: 5,
+    }),
+  },
+  kidsPromptGradient: {
+    position: "relative",
+    overflow: "hidden",
+  },
+  kidsPromptOrb: {
+    position: "absolute",
+    top: -28,
+    right: -20,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "rgba(255, 120, 30, 0.44)",
+  },
+  kidsPromptContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
   },
   tileSheen: {
     position: "absolute",

@@ -93,6 +93,22 @@ export const LightType = {
     color: "#FFFFFF",
     fontFamily: "DINNextRoundedBold",
   },
+  questionHeroKids: {
+    fontSize: 22,
+    fontWeight: "700" as const,
+    lineHeight: 32,
+    letterSpacing: -0.35,
+    color: L.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  questionHeroBadgeKids: {
+    fontSize: 10,
+    fontWeight: "800" as const,
+    letterSpacing: 1.2,
+    color: "#C2410C",
+    fontFamily: "DINNextRoundedBold",
+    textTransform: "uppercase" as const,
+  },
   tile: {
     fontSize: 16,
     fontWeight: "700" as const,

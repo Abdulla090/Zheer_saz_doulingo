@@ -5,6 +5,7 @@ import {
   PairWordsGameIcon,
   RolePlayGameIcon,
   SpeakUpGameIcon,
+  VoiceTutorGameIcon,
 } from "@/components/icons/GameHubIcons";
 import {
   HomeLiquidCard,
@@ -42,7 +43,7 @@ type GameTile = {
   subtitle: string;
   badge?: string;
   kind?: PracticeGameKind;
-  href?: "/roleplay" | "/ai-teacher";
+  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor";
   featured?: boolean;
   renderIcon: () => React.ReactNode;
 };
@@ -125,6 +126,15 @@ export function GamesScreen() {
   const gameTiles = useMemo<GameTile[]>(
     () => [
       {
+        id: "voice-tutor",
+        title: t("games.voiceTutorTitle"),
+        subtitle: t("games.voiceTutorSub"),
+        badge: t("games.badgeNew"),
+        href: "/voice-tutor",
+        featured: true,
+        renderIcon: () => <VoiceTutorGameIcon size={68} />,
+      },
+      {
         id: "roleplay",
         title: t("games.rolePlayTitle"),
         subtitle: t("games.rolePlaySub"),
@@ -132,6 +142,43 @@ export function GamesScreen() {
         href: "/roleplay",
         featured: true,
         renderIcon: () => <RolePlayGameIcon size={68} />,
+      },
+      {
+        id: "conversation",
+        title: t("games.conversationTitle"),
+        subtitle: t("games.conversationSub"),
+        kind: "conversation_pick",
+        badge: t("games.badgeHot"),
+        featured: true,
+        renderIcon: () => <RolePlayGameIcon size={64} />, // Temporarily re-using icon, will update if needed
+      },
+      {
+        id: "speak",
+        title: t("games.speakTitle"),
+        subtitle: t("games.speakSub"),
+        kind: "voice_speak",
+        renderIcon: () => <SpeakUpGameIcon size={64} />,
+      },
+      {
+        id: "listen",
+        title: t("games.listenTitle"),
+        subtitle: t("games.listenSub"),
+        kind: "voice_listen",
+        renderIcon: () => <SpeakUpGameIcon size={64} />, // Reusing voice icon
+      },
+      {
+        id: "ai-teacher",
+        title: t("games.teacherTitle"),
+        subtitle: t("games.teacherSub"),
+        href: "/ai-teacher",
+        renderIcon: () => <AiTeacherGameIcon size={64} />,
+      },
+      {
+        id: "fill",
+        title: t("games.fillTitle"),
+        subtitle: t("games.fillSub"),
+        kind: "fill_blank",
+        renderIcon: () => <OrderWordsGameIcon size={64} />,
       },
       {
         id: "order",
@@ -146,20 +193,6 @@ export function GamesScreen() {
         subtitle: t("games.pairSub"),
         kind: "pair_match",
         renderIcon: () => <PairWordsGameIcon size={64} />,
-      },
-      {
-        id: "speak",
-        title: t("games.speakTitle"),
-        subtitle: t("games.speakSub"),
-        kind: "voice_speak",
-        renderIcon: () => <SpeakUpGameIcon size={64} />,
-      },
-      {
-        id: "ai-teacher",
-        title: t("games.teacherTitle"),
-        subtitle: t("games.teacherSub"),
-        href: "/ai-teacher",
-        renderIcon: () => <AiTeacherGameIcon size={64} />,
       },
     ],
     [t],

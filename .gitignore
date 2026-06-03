@@ -33,7 +33,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# temporary images
+tmp-onboarding*.png
+tmp-*.png
 
 # typescript
 *.tsbuildinfo

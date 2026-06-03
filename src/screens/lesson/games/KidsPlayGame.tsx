@@ -5,6 +5,7 @@
 import { AppText } from "@/components/ui/AppText";
 import { HomeLiquidButton, HomeLiquidCard } from "@/components/ui/ios-liquid-home";
 import { KidsPlayQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { KidsSceneKey } from "@/data/kids-games";
 import { useI18n } from "@/hooks/useI18n";
 import { useTTS } from "@/hooks/use-tts";
@@ -34,6 +35,7 @@ import {
 type Props = {
   question: KidsPlayQuestion;
   onAnswer: (correct: boolean) => void;
+  pathMode?: LessonPathMode;
 };
 
 const SCENE_GRADIENTS: Record<
@@ -124,7 +126,7 @@ function FloatingBubble({
   );
 }
 
-export default function KidsPlayGame({ question, onAnswer }: Props) {
+export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const { speak } = useTTS();
   const firedRef = useRef(false);
@@ -259,6 +261,7 @@ export default function KidsPlayGame({ question, onAnswer }: Props) {
         kurdish={isKu ? question.prompt : question.prompt}
         english={!isKu ? undefined : question.prompt}
         onSpeak={speakPrompt}
+        variant={pathMode === "kids" ? "kids" : "default"}
       />
 
       {question.variant === "scene" && question.scene ? (

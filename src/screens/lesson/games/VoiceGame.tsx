@@ -18,6 +18,7 @@ import Animated, {
 
 import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
 import { VoiceQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { useGeminiVoiceCapture } from "@/hooks/use-gemini-voice-capture";
 import { useI18n } from "@/hooks/useI18n";
 import { useSpeechCapture } from "@/hooks/use-speech-capture";
@@ -33,7 +34,11 @@ import {
 import { L } from "./lesson-light-design";
 import { ltrText, rtlBlock } from "./game-text";
 
-type Props = { question: VoiceQuestion; onAnswer: (correct: boolean) => void };
+type Props = {
+  question: VoiceQuestion;
+  onAnswer: (correct: boolean) => void;
+  pathMode?: LessonPathMode;
+};
 type ListenState = "idle" | "listening" | "processing" | "success" | "fail";
 type CaptureBackend = "gemini" | "speech" | "manual";
 
@@ -58,7 +63,7 @@ function pickInitialBackend(
   return "manual";
 }
 
-export default function VoiceGame({ question, onAnswer }: Props) {
+export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const { speak } = useTTS();
   const gemini = useGeminiVoiceCapture();
@@ -430,7 +435,11 @@ export default function VoiceGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <LightQuestionPrompt label={t("lessons.questionLabel")} forceKurdishFont>
+      <LightQuestionPrompt
+        label={t("lessons.questionLabel")}
+        forceKurdishFont
+        variant={pathMode === "kids" ? "kids" : "default"}
+      >
         {heroPrompt}
       </LightQuestionPrompt>
 
@@ -505,7 +514,7 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       ) : state === "fail" ? (
         <GameFooter delay={120}>
           <Text style={s.skipLink} onPress={() => fireAnswer(false)}>
-            {t("lessons.skip")}
+            {t("lessons.dontKnow")}
           </Text>
         </GameFooter>
       ) : null}

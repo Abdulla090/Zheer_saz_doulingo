@@ -221,30 +221,30 @@ const normalUnit00: UnitBank = [
     ],
   },
 
-  // Lesson 8: Writing Emails
+  // Lesson 8: Texting & Phone Calls (Casual)
   {
-    topic: "Email Phrases", topicKu: "دەستەواژەکانی ئیمەیڵ",
+    topic: "Texting & Calling", topicKu: "نامەگۆڕینەوە و تەلەفۆن (ڕۆژانە)",
     words: [
-      { english: "I hope this finds you well", kurdish: "هیوادارم باش بیت" },
-      { english: "I am writing to",            kurdish: "مەبەستم لەم ئیمەیڵە ئەوەیە کە" },
-      { english: "Please find attached",       kurdish: "تکایە بڕوانە هاوپێچکراوەکە" },
-      { english: "Looking forward to",         kurdish: "بە تامەزرۆییەوە چاوەڕێی" },
-      { english: "Best regards",              kurdish: "لەگەڵ ڕێزدا" },
+      { english: "Give me a ring",           kurdish: "تەلەفۆنم بۆ بکە" },
+      { english: "My battery is dying",      kurdish: "شەحنی مۆبایلەکەم خەریکە دادەبەزێت" },
+      { english: "Left me on read",          kurdish: "نامەکەی خوێندەوە و وەڵامی نەدایەوە (سین کرد)" },
+      { english: "I'll text you the details",kurdish: "وردەکارییەکانت بە نامە بۆ دەنێرم" },
+      { english: "Drop me a message",        kurdish: "نامەیەکم بۆ بنێرە" },
     ],
     voices: [
-      { prompt: "دەستپێکی ئیمەیڵ", target: "I hope this email finds you well. I am writing to follow up on our meeting.", targetKurdish: "هیوادارم ئەم ئیمەیڵە لە کاتێکدا پێتبگات کە باش بیت. مەبەستم لە نووسینی ئەم ئیمەیڵە بەدواداچوونە بۆ کۆبوونەوەکەمان." },
-      { prompt: "کۆتایی ئیمەیڵ", target: "Looking forward to hearing from you. Best regards.", targetKurdish: "بە تامەزرۆییەوە چاوەڕێی وەڵامتم. لەگەڵ ڕێزدا." },
+      { prompt: "کۆتاییهێنان بە پەیوەندییەک", target: "My battery is dying, I'll text you later.", targetKurdish: "شەحنم خەریکە دادەبەزێت، دواتر نامەت بۆ دەنێرم." },
+      { prompt: "داوای پەیوەندی کردن", target: "Give me a ring when you are free.", targetKurdish: "کاتێک کاتت هەبوو تەلەفۆنم بۆ بکە." },
     ],
     sentences: [
-      { english: ["I", "am", "writing", "to", "request", "a", "meeting"], kurdish: "مەبەستم لەم ئیمەیڵە داواکردنی کۆبوونەوەیەکە" },
-      { english: ["Please", "find", "attached", "the", "document", "you", "requested"], kurdish: "تکایە بڕوانە ئەو بەڵگەنامەیەی کە داوات کردبوو، هاوپێچ کراوە" },
+      { english: ["I", "will", "text", "you", "the", "details", "later"], kurdish: "دواتر وردەکارییەکانت بە نامە بۆ دەنێرم" },
+      { english: ["Why", "did", "you", "leave", "me", "on", "read"], kurdish: "بۆچی نامەکەت سین کرد و وەڵامت نەدامەوە؟" },
     ],
     fillBlanks: [
-      { parts: ["I hope", "email finds you well."], hint: "هیوادارم ئەم ئیمەیڵە لە کاتێکدا پێتبگات کە باش بیت.", answer: "this", wrongs: ["the", "my", "your"] },
-      { parts: ["Looking", "to your response."], hint: "بە تامەزرۆییەوە چاوەڕێی وەڵامتەم.", answer: "forward", wrongs: ["back", "out", "up"] },
+      { parts: ["Drop me a", "when you get home safely."], hint: "کاتێک گەیشتیتەوە ماڵەوە بە سەلامەتی نامەیەکم بۆ بنێرە.", answer: "message", wrongs: ["text", "letter", "call"] },
+      { parts: ["My battery is", ", I have to go."], hint: "شەحنی مۆبایلەکەم خەریکە دادەبەزێت، دەبێت بڕۆم.", answer: "dying", wrongs: ["dead", "low", "ending"] },
     ],
     conversations: [
-      { situation: "ناردنی ئیمەیڵێکی فەرمی", theyAsk: "Write me a professional email opening.", correct: "I hope this email finds you well. I am writing to request your feedback on the attached proposal.", wrong1: "Hello, I want your feedback on this.", wrong2: "Hi, please look at my proposal.", wrong3: "Good morning, can you check this for me?", explanation: "'I hope this finds you well. I am writing to...' — ستانداردی زێڕینە بۆ دەستپێکردنی ئیمەیڵی فەرمی" },
+      { situation: "قسەکردن لەگەڵ هاوڕێیەک کە کاتی نییە ئێستا قسە بکات", theyAsk: "I'm a bit busy right now, can we talk later?", correct: "Sure! Drop me a message or give me a ring when you're free. I'll text you the details in the meantime.", wrong1: "Talk to me now.", wrong2: "Call me fast.", wrong3: "Don't leave me on read.", explanation: "'Drop me a message' و 'Give me a ring' زۆر زۆر باون لە زمانی ڕۆژانەی ئینگلیزیدا" },
     ],
   },
 

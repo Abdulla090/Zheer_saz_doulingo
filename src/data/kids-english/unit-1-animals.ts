@@ -86,11 +86,11 @@ const kidsUnit1: UnitBank = [
     ],
     voices: [
       { prompt: "بڵێ: شێرەکە گەورەیە", target: "The lion is big.", targetKurdish: "شێرەکە گەورەیە." },
-      { prompt: "بڵێ: حەزم لە مەیموونە", target: "I like the monkey.", targetKurdish: "حەزم لە مەیموونە." },
+      { prompt: "بڵێ: کەیفم بە مەیمون دێت", target: "I like the monkey.", targetKurdish: "کەیفم بە مەیمون دێت." },
     ],
     sentences: [
       { english: ["The", "lion", "is", "big"], kurdish: "شێرەکە گەورەیە" },
-      { english: ["I", "like", "the", "monkey"], kurdish: "حەزم لە مەیموونە" },
+      { english: ["I", "like", "the", "monkey"], kurdish: "کەیفم بە مەیمون دێت" },
     ],
     fillBlanks: [
       { parts: ["The", "is the king"], hint: "شێر شای ئاژەڵانە", answer: "lion", wrongs: ["bear", "tiger", "monkey"] },
@@ -175,6 +175,181 @@ const kidsUnit1: UnitBank = [
         wrong2: "My preferred animal is the feline.",
         wrong3: "The animal I favor most is the domestic cat.",
         explanation: "بڵێ: 'My favorite animal is the cat!' — ڕستەیەکی تەواوی ئاسان.",
+      },
+    ],
+  },
+
+  // Lesson 5: Birds
+  {
+    topic: "Birds", topicKu: "باڵندەکان",
+    words: [
+      { english: "Eagle", kurdish: "هەڵۆ" },
+      { english: "Owl", kurdish: "کوندەپەپوو" },
+      { english: "Parrot", kurdish: "تووتی" },
+      { english: "Wing", kurdish: "باڵ" },
+      { english: "Sky", kurdish: "ئاسمان" },
+    ],
+    voices: [
+      { prompt: "بڵێ: هەڵۆکە دەفڕێت", target: "The eagle flies.", targetKurdish: "هەڵۆکە دەفڕێت." },
+      { prompt: "بڵێ: تووتییەکە قسە دەکات", target: "The parrot talks.", targetKurdish: "تووتییەکە قسە دەکات." },
+    ],
+    sentences: [
+      { english: ["The", "eagle", "flies"], kurdish: "هەڵۆکە دەفڕێت" },
+      { english: ["The", "parrot", "talks"], kurdish: "تووتییەکە قسە دەکات" },
+    ],
+    fillBlanks: [
+      { parts: ["A bird has two", ""], hint: "باڵندە دوو باڵی هەیە", answer: "wings", wrongs: ["legs", "eyes", "ears"] },
+      { parts: ["The eagle is in the", ""], hint: "هەڵۆکە لە ئاسمانە", answer: "sky", wrongs: ["water", "house", "tree"] },
+    ],
+    conversations: [
+      {
+        situation: "باڵندەیەک دەبینیت و هاوڕێیەک دەپرسێت ئەوە چییە",
+        theyAsk: "What kind of bird is that?",
+        correct: "It is an eagle!",
+        wrong1: "Eagle flies.",
+        wrong2: "That is a sky.",
+        wrong3: "I observe a predatory avian.",
+        explanation: "وەڵامی ئاسان بۆ منداڵ: 'It is an eagle!'",
+      },
+    ],
+  },
+
+  // Lesson 6: Bugs & Insects
+  {
+    topic: "Bugs", topicKu: "مێرووەکان",
+    words: [
+      { english: "Ant", kurdish: "مێروولە" },
+      { english: "Bee", kurdish: "هەنگ" },
+      { english: "Butterfly", kurdish: "پەپوولە" },
+      { english: "Spider", kurdish: "جاڵجاڵۆکە" },
+      { english: "Small", kurdish: "بچووک" },
+    ],
+    voices: [
+      { prompt: "بڵێ: مێروولەکە بچووکە", target: "The ant is small.", targetKurdish: "مێروولەکە بچووکە." },
+      { prompt: "بڵێ: پەپوولەکە جوانە", target: "The butterfly is pretty.", targetKurdish: "پەپوولەکە جوانە." },
+    ],
+    sentences: [
+      { english: ["The", "ant", "is", "small"], kurdish: "مێروولەکە بچووکە" },
+      { english: ["The", "butterfly", "is", "pretty"], kurdish: "پەپوولەکە جوانە" },
+    ],
+    fillBlanks: [
+      { parts: ["A", "makes honey"], hint: "هەنگ هەنگوین دروست دەکات", answer: "bee", wrongs: ["ant", "spider", "fly"] },
+      { parts: ["The", "has eight legs"], hint: "جاڵجاڵۆکە هەشت قاچی هەیە", answer: "spider", wrongs: ["bee", "ant", "butterfly"] },
+    ],
+    conversations: [
+      {
+        situation: "مێروویەک دەبینیت و هاوڕێیەک دەپرسێت لە چی دەترسیت",
+        theyAsk: "Are you scared of the bug?",
+        correct: "Yes, it is a spider!",
+        wrong1: "Spider is small.",
+        wrong2: "I see a butterfly.",
+        wrong3: "Arachnids induce fear.",
+        explanation: "بڵێ: 'Yes, it is a spider!'",
+      },
+    ],
+  },
+
+  // Lesson 7: Sea Animals
+  {
+    topic: "Sea Animals", topicKu: "ئاژەڵی دەریایی",
+    words: [
+      { english: "Dolphin", kurdish: "دۆلفین" },
+      { english: "Whale", kurdish: "نەهەنگ" },
+      { english: "Shark", kurdish: "قەرش" },
+      { english: "Turtle", kurdish: "کیسەڵ" },
+      { english: "Ocean", kurdish: "زەریا" },
+    ],
+    voices: [
+      { prompt: "بڵێ: نەهەنگەکە زۆر گەورەیە", target: "The whale is very big.", targetKurdish: "نەهەنگەکە زۆر گەورەیە." },
+      { prompt: "بڵێ: کیسەڵەکە هێواشە", target: "The turtle is slow.", targetKurdish: "کیسەڵەکە هێواشە." },
+    ],
+    sentences: [
+      { english: ["The", "whale", "is", "very", "big"], kurdish: "نەهەنگەکە زۆر گەورەیە" },
+      { english: ["The", "turtle", "is", "slow"], kurdish: "کیسەڵەکە هێواشە" },
+    ],
+    fillBlanks: [
+      { parts: ["The", "jumps in the water"], hint: "دۆلفینەکە لە ئاودا بازدەدات", answer: "dolphin", wrongs: ["turtle", "shark", "bird"] },
+      { parts: ["They live in the", ""], hint: "ئەوان لە زەریادا دەژین", answer: "ocean", wrongs: ["sky", "tree", "house"] },
+    ],
+    conversations: [
+      {
+        situation: "لە باخی ئاژەڵان دەچیتە بەشی ماسییەکان",
+        theyAsk: "What is your favorite sea animal?",
+        correct: "I love the dolphin!",
+        wrong1: "Dolphin is sea.",
+        wrong2: "I see a shark.",
+        wrong3: "Marine mammals are my preference.",
+        explanation: "وەڵامی ڕوون: 'I love the dolphin!'",
+      },
+    ],
+  },
+
+  // Lesson 8: Animal Babies
+  {
+    topic: "Animal Babies", topicKu: "بەچکەی ئاژەڵان",
+    words: [
+      { english: "Puppy", kurdish: "بەچکە سەگ" },
+      { english: "Kitten", kurdish: "بەچکە پشیلە" },
+      { english: "Baby", kurdish: "بەچکە (یان منداڵ)" },
+      { english: "Play", kurdish: "یاریکردن" },
+      { english: "Sleep", kurdish: "خەوتن" },
+    ],
+    voices: [
+      { prompt: "بڵێ: بەچکە سەگەکە یاری دەکات", target: "The puppy plays.", targetKurdish: "بەچکە سەگەکە یاری دەکات." },
+      { prompt: "بڵێ: بەچکە پشیلەکە دەخەوێت", target: "The kitten sleeps.", targetKurdish: "بەچکە پشیلەکە دەخەوێت." },
+    ],
+    sentences: [
+      { english: ["The", "puppy", "plays"], kurdish: "بەچکە سەگەکە یاری دەکات" },
+      { english: ["The", "kitten", "sleeps"], kurdish: "بەچکە پشیلەکە دەخەوێت" },
+    ],
+    fillBlanks: [
+      { parts: ["A baby dog is a", ""], hint: "بەچکەی سەگ پێی دەوترێت پۆپی", answer: "puppy", wrongs: ["kitten", "cat", "bird"] },
+      { parts: ["A baby cat is a", ""], hint: "بەچکەی پشیلە پێی دەوترێت کیتن", answer: "kitten", wrongs: ["puppy", "dog", "bear"] },
+    ],
+    conversations: [
+      {
+        situation: "هاوڕێیەک بەچکە سەگێکت پیشان دەدات",
+        theyAsk: "Look at the baby dog!",
+        correct: "It is a cute puppy!",
+        wrong1: "It is a dog.",
+        wrong2: "Puppy sleeps.",
+        wrong3: "That is a juvenile canine.",
+        explanation: "وەڵامێکی دڵخۆشکەر: 'It is a cute puppy!'",
+      },
+    ],
+  },
+
+  // Lesson 9: Zoo Animals
+  {
+    topic: "Zoo Animals", topicKu: "ئاژەڵی باخی ئاژەڵان",
+    words: [
+      { english: "Zoo", kurdish: "باخی ئاژەڵان" },
+      { english: "Zebra", kurdish: "کەرەکێوی" },
+      { english: "Giraffe", kurdish: "زەڕافە" },
+      { english: "Tall", kurdish: "باڵابەرز" },
+      { english: "Look", kurdish: "سەیرکردن" },
+    ],
+    voices: [
+      { prompt: "بڵێ: ئێمە دەچین بۆ باخی ئاژەڵان", target: "We go to the zoo.", targetKurdish: "ئێمە دەچین بۆ باخی ئاژەڵان." },
+      { prompt: "بڵێ: زەڕافەکە باڵابەرزە", target: "The giraffe is tall.", targetKurdish: "زەڕافەکە باڵابەرزە." },
+    ],
+    sentences: [
+      { english: ["We", "go", "to", "the", "zoo"], kurdish: "ئێمە دەچین بۆ باخی ئاژەڵان" },
+      { english: ["The", "giraffe", "is", "tall"], kurdish: "زەڕافەکە باڵابەرزە" },
+    ],
+    fillBlanks: [
+      { parts: ["The", "has black and white stripes"], hint: "کەرەکێوی خەتی ڕەش و سپی هەیە", answer: "zebra", wrongs: ["horse", "lion", "bear"] },
+      { parts: ["Look at the tall", ""], hint: "سەیری زەڕافە باڵابەرزەکە بکە", answer: "giraffe", wrongs: ["zebra", "lion", "monkey"] },
+    ],
+    conversations: [
+      {
+        situation: "لە باخی ئاژەڵان هاوڕێیەک دەپرسێت چیت دەوێت بیبینیت",
+        theyAsk: "What do you want to see?",
+        correct: "I want to see the zebra!",
+        wrong1: "Zebra is black and white.",
+        wrong2: "I want to see.",
+        wrong3: "I desire to observe the striped equine.",
+        explanation: "ڕستەیەکی تەواو بڵێ: 'I want to see the zebra!'",
       },
     ],
   },

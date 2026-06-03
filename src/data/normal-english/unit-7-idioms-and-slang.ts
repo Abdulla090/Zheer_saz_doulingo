@@ -328,7 +328,7 @@ const unit07: UnitBank = [
       { en: "That's on me — I'll pay for dinner.", ku: "ئەوە لە ئەستۆی منە — شەوخواردنەکە من دەدەم." },
       { en: "You're pulling my leg — seriously?", ku: "گاڵتە دەکەیت — بەڕاستی؟" },
       { en: "Let's call it a day and head home.", ku: "با ئەمڕۆ تەواو بکەین و بگەڕێینەوە ماڵ." },
-      { en: "I'm beat — I need to crash early tonight.", ku: "منداڵم لێهات — پێویستە زوو بخەوێم." },
+      { en: "I'm beat — I need to crash early tonight.", ku: "مردوم لە ماندوێتی — پێویستە ئەمشەو زوو بخەوێم." },
       { en: "Keep me posted on how it goes.", ku: "ئاگادارم بکەرەوە چۆن دەڕوات." },
     ],
     {

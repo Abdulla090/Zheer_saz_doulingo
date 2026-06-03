@@ -209,10 +209,9 @@ export function HomeLiquidCard({
           style={[
             StyleSheet.absoluteFill,
             {
-              // @ts-ignore web
               backdropFilter: "blur(18px) saturate(160%)",
               WebkitBackdropFilter: "blur(18px) saturate(160%)",
-            },
+            } as any
           ]}
         />
       )}

@@ -17,8 +17,6 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
-  FadeIn,
-  FadeOut,
   interpolate,
   runOnJS,
   useAnimatedStyle,
@@ -28,6 +26,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { SentenceBuilderQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { L } from "./lesson-light-design";
 import {
   LightCheckButton,
@@ -46,6 +45,7 @@ import {
 type Props = {
   question: SentenceBuilderQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
+  pathMode?: LessonPathMode;
 };
 
 type Placed = { word: string; id: string; bankIndex: number };
@@ -54,6 +54,7 @@ type FBState = "idle" | "correct" | "wrong";
 type FlySession = {
   bankIndex: number;
   word: string;
+  slotIndex: number;
 };
 
 function measureInRoot(
@@ -68,7 +69,7 @@ function measureInRoot(
   });
 }
 
-export default function SentenceBuilderGame({ question, onAnswer }: Props) {
+export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const [sentence, setSentence] = useState<Placed[]>([]);
   const [usedBank, setUsedBank] = useState(() =>
@@ -112,7 +113,7 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
           scale: interpolate(p, [0, 0.55, 1], [1, 1.05, 1]),
         },
       ],
-      opacity: interpolate(p, [0, 0.92, 1], [1, 1, 0.98]),
+      opacity: 1,
     };
   });
 
@@ -135,7 +136,10 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
   const finishFly = useCallback(
     (bankIndex: number) => {
       commitAddWord(bankIndex);
-      setFlySession(null);
+      // Clear the fly overlay on the next frame so the slot tile is painted first.
+      requestAnimationFrame(() => {
+        setFlySession(null);
+      });
     },
     [commitAddWord],
   );
@@ -163,7 +167,7 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
         toW: number,
         toH: number,
       ) => {
-        setFlySession({ bankIndex, word });
+        setFlySession({ bankIndex, word, slotIndex: slotIndex });
         flyFromX.value = fromX;
         flyFromY.value = fromY;
         flyFromW.value = fromW;
@@ -292,6 +296,7 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
           <LightQuestionPrompt
             label={t("lessons.questionLabel")}
             forceKurdishFont
+            variant={pathMode === "kids" ? "kids" : "default"}
           >
             {question.kurdishSentence}
           </LightQuestionPrompt>
@@ -301,21 +306,24 @@ export default function SentenceBuilderGame({ question, onAnswer }: Props) {
               {Array.from({ length: slotCount }).map((_, i) => {
                 const placed = sentence[i];
                 const isFlyTarget =
-                  flySession !== null && i === sentence.length;
+                  flySession !== null && i === flySession.slotIndex;
+                const hideWhileFlying =
+                  flySession !== null &&
+                  placed !== undefined &&
+                  i === flySession.slotIndex &&
+                  placed.bankIndex === flySession.bankIndex;
 
                 return (
                   <View
-                    key={placed?.id ?? `slot-${i}`}
+                    key={`slot-${i}`}
                     ref={(r) => {
                       slotRefs.current[i] = r;
                     }}
                     collapsable={false}
                     style={s.slotCell}
                   >
-                    {placed ? (
+                    {placed && !hideWhileFlying ? (
                       <Animated.View
-                        entering={FadeIn.duration(180)}
-                        exiting={FadeOut.duration(120)}
                         layout={layoutMorph}
                         collapsable={false}
                       >
@@ -434,7 +442,11 @@ const s = StyleSheet.create({
     opacity: 0,
   },
   bankPlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 16,
     borderWidth: 2,
     borderStyle: "dashed",
@@ -468,7 +480,11 @@ const s = StyleSheet.create({
     backgroundColor: "#EEF4FF",
   },
   flyLayer: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 40,
   },
   flyTileFill: {

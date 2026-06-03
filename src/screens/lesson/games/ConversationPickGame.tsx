@@ -15,6 +15,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 
 import { ConversationPickQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 
 import type { AnswerTier } from "@/utils/answer-tier";
 
@@ -58,11 +59,13 @@ type Props = {
 
   onAnswer: (correct: boolean, explanation?: string, tier?: AnswerTier) => void;
 
+  pathMode?: LessonPathMode;
+
 };
 
 
 
-export default function ConversationPickGame({ question, onAnswer }: Props) {
+export default function ConversationPickGame({ question, onAnswer, pathMode }: Props) {
 
   const { t } = useI18n();
 
@@ -145,7 +148,11 @@ export default function ConversationPickGame({ question, onAnswer }: Props) {
 
 
 
-        <LightQuestionPrompt label={t("lessons.situation")} forceKurdishFont>
+        <LightQuestionPrompt
+          label={t("lessons.situation")}
+          forceKurdishFont
+          variant={pathMode === "kids" ? "kids" : "default"}
+        >
 
           {question.situation}
 

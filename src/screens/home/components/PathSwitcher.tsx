@@ -93,7 +93,7 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
         style={[
           styles.slider,
           { width: TAB_W },
-          activeMode === "normal" ? styles.sliderDark : styles.sliderLight,
+          styles.sliderLight,
           sliderStyle,
         ]}
       />
@@ -148,10 +148,6 @@ const styles = StyleSheet.create({
   sliderLight: {
     backgroundColor: "rgba(255,255,255,0.92)",
     ...crossShadow({ color: "#000", offsetY: 1, opacity: 0.08, blur: 4, elevation: 2 }),
-  },
-  sliderDark: {
-    backgroundColor: "#1E2535",
-    ...crossShadow({ color: "#000", offsetY: 2, opacity: 0.2, blur: 6, elevation: 4 }),
   },
   tab: {
     flexDirection: "row",

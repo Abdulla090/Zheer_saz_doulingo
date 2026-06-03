@@ -15,10 +15,15 @@ import {
   TAB_BAR_TOP_PADDING,
 } from "@/constants/layout";
 import { ENABLE_SHOP } from "@/constants/feature-flags";
+import {
+  pathnameHidesTabBar,
+  TAB_BAR_HIDDEN_ROUTES,
+} from "@/constants/tab-navigation";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { hapticSelection } from "@/utils/haptics";
+import { usePathname } from "expo-router";
 import React, { useCallback, useMemo } from "react";
 import {
   Platform,
@@ -77,20 +82,9 @@ const TABS: {
   },
 ];
 
-const HIDDEN_ROUTES = new Set([
-  "lesson",
-  "guidebook",
-  "roleplay",
-  "ai-teacher",
-  "quest",
-  "league",
-  "privacy-policy",
-  "ai-safety",
-  "terms",
-]);
-
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { t } = useI18n();
   const activeRouteName = state.routes[state.index]?.name;
@@ -118,7 +112,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     [navigation],
   );
 
-  if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
+  if (
+    pathnameHidesTabBar(pathname) ||
+    (activeRouteName && TAB_BAR_HIDDEN_ROUTES.has(activeRouteName))
+  ) {
     return null;
   }
 
@@ -192,7 +189,11 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   activePill: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     marginHorizontal: 3,
     marginVertical: 5,
     borderRadius: 18,

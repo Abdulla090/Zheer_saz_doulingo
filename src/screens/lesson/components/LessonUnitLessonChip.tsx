@@ -40,26 +40,26 @@ const styles = StyleSheet.create({
   inner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    gap: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    gap: 7,
   },
   caption: {
-    fontSize: 9,
+    fontSize: 7,
     fontWeight: "700",
     color: "#6B7280",
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },
   value: {
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "900",
     color: "#1A2B48",
-    lineHeight: 20,
+    lineHeight: 16,
   },
   divider: {
     width: 1,
-    height: 28,
+    height: 24,
     backgroundColor: "rgba(26,43,72,0.1)",
   },
 });

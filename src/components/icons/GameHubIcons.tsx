@@ -1,10 +1,12 @@
 import { HomePalette } from "@/components/ui/ios-liquid-home";
+import { crossShadow } from "@/utils/shadows";
 import {
   Bot,
   Link2,
   ListOrdered,
   MessagesSquare,
   Mic,
+  Sparkles,
 } from "lucide-react-native";
 import React from "react";
 import { View, type ViewStyle } from "react-native";
@@ -91,6 +93,25 @@ export function AiTeacherGameIcon({ size = 60 }: GameIconProps) {
   return (
     <GameIconTile size={size} backgroundColor="#FEF3C7">
       <Bot size={glyph} color="#D97706" strokeWidth={2.1} fill="#D9770618" />
+    </GameIconTile>
+  );
+}
+
+export function VoiceTutorGameIcon({ size = 64 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
+  return (
+    <GameIconTile
+      size={size}
+      backgroundColor="#E0E7FF"
+      style={crossShadow({
+        color: C.blue,
+        offsetY: 6,
+        blur: 14,
+        opacity: 0.12,
+        elevation: 4,
+      })}
+    >
+      <Sparkles size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
     </GameIconTile>
   );
 }

@@ -75,6 +75,13 @@ export function TabBarGlassSurface({ children, borderRadius, style }: Props) {
           tint="systemChromeMaterialLight"
           style={[StyleSheet.absoluteFill, { borderRadius }]}
         />
+      ) : IS_ANDROID ? (
+        <BlurView
+          intensity={48}
+          tint="light"
+          experimentalBlurMethod="dimezisBlurView"
+          style={[StyleSheet.absoluteFill, { borderRadius }]}
+        />
       ) : null}
       <View style={styles.borderHairline} pointerEvents="none" />
       <View style={styles.content}>{children}</View>
@@ -90,11 +97,15 @@ const styles = StyleSheet.create({
   },
   fallbackShell: {
     backgroundColor: IS_ANDROID
-      ? "rgba(255,255,255,0.96)"
+      ? "rgba(255,255,255,0.78)"
       : "rgba(255,255,255,0.82)",
   },
   borderHairline: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255,255,255,0.5)",

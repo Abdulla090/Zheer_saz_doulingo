@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { FillBlankQuestion } from "@/data/lesson-content";
+import type { LessonPathMode } from "@/data/lesson-content";
 import { ltrText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
@@ -29,9 +30,10 @@ import {
 type Props = {
   question: FillBlankQuestion;
   onAnswer: (correct: boolean, explanation?: string) => void;
+  pathMode?: LessonPathMode;
 };
 
-export default function FillBlankGame({ question, onAnswer }: Props) {
+export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -91,7 +93,11 @@ export default function FillBlankGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <LightQuestionPrompt label={t("lessons.questionLabel")} forceKurdishFont>
+      <LightQuestionPrompt
+        label={t("lessons.questionLabel")}
+        forceKurdishFont
+        variant={pathMode === "kids" ? "kids" : "default"}
+      >
         {question.kurdishHint}
       </LightQuestionPrompt>
 

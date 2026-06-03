@@ -22,8 +22,8 @@ function read(rel) {
 }
 
 // Routes
-const layout = read("src/app/_layout.tsx");
-const tabBar = read("src/components/CustomTabBar.tsx");
+const layout = read("src/app/(tabs)/_layout.android.tsx");
+const tabNavigation = read("src/constants/tab-navigation.ts");
 const appRoutes = [
   "index",
   "dashboard",
@@ -40,11 +40,11 @@ const appRoutes = [
 ];
 
 for (const route of appRoutes) {
-  const file = join(root, `src/app/${route}.tsx`);
+  const file = join(root, `src/app/(tabs)/${route}.tsx`);
   if (!existsSync(file)) {
-    fail(`Missing route file src/app/${route}.tsx`);
+    fail(`Missing route file src/app/(tabs)/${route}.tsx`);
   } else {
-    ok(`Route file exists: /${route}`);
+    ok(`Route file exists: /(tabs)/${route}`);
   }
 }
 
@@ -57,8 +57,8 @@ for (const hidden of [
   "ai-safety",
   "terms",
 ]) {
-  if (!tabBar.includes(`"${hidden}"`)) {
-    fail(`CustomTabBar should hide tab bar on: ${hidden}`);
+  if (!tabNavigation.includes(`"${hidden}"`)) {
+    fail(`tab-navigation should hide tab bar on: ${hidden}`);
   } else {
     ok(`Tab bar hidden for: ${hidden}`);
   }

@@ -182,7 +182,7 @@ export function PhingoLearnHomeScreen() {
       router.push("/ai-teacher");
       return;
     }
-    router.push("/games");
+    router.push("/feed");
   }, [lastActivity, normalNext, kidsNext, router, streetNext]);
 
   const lessonLabel = nextLessonMeta
@@ -231,18 +231,18 @@ export function PhingoLearnHomeScreen() {
         </View>
 
         <HomeLiquidCard
-          style={styles.cardSpacer}
+          style={[styles.cardSpacer, { overflow: "visible" }]}
           contentStyle={styles.heroInner}
           interactive
         >
           <View style={styles.heroRow}>
-            <View style={styles.heroMascot}>
-              <PingoMascot size={120} pose="wave" />
-            </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
               <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
               <HomeLiquidButton label={t("home.continue")} onPress={onContinue} />
+            </View>
+            <View style={[styles.heroMascot, { transform: [{ scaleX: -1 }] }]}>
+              <PingoMascot size={130} pose="wave" />
             </View>
           </View>
         </HomeLiquidCard>
@@ -469,9 +469,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroMascot: {
-    width: 120,
+    width: 130,
     flexShrink: 0,
     marginTop: -6,
+    overflow: "visible",
   },
   heroCopy: {
     flex: 1,

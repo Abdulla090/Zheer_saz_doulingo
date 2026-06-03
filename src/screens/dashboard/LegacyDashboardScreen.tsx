@@ -121,7 +121,7 @@ export const LegacyDashboardScreen = () => {
       <LinearGradient
         colors={['#E0F2FE', '#F8FAFC', '#F8FAFC']}
         locations={[0, 0.2, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
@@ -224,7 +224,7 @@ export const LegacyDashboardScreen = () => {
             edgeColor="#1899D6"
             depth={8}
           >
-            <LinearGradient colors={['#1CB0F6', '#1CB0F6']} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={['#1CB0F6', '#1CB0F6']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
             <View style={styles.journeyContent}>
               <Text style={styles.journeyTitle}>Continue Your Journey</Text>
               <View style={styles.journeyTopicRow}>
@@ -253,7 +253,7 @@ export const LegacyDashboardScreen = () => {
                   edgeColor="#1899D6"
                   depth={8}
                 >
-                  <LinearGradient colors={['#1CB0F6', '#1CB0F6']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['#1CB0F6', '#1CB0F6']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                   <Image source={{ uri: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Video%20Game.png" }} style={styles.bentoIcon} />
                   <Text style={styles.bentoTitle}>Play Game</Text>
                   <Text style={styles.bentoSub}>Earn 20 XP</Text>
@@ -267,7 +267,7 @@ export const LegacyDashboardScreen = () => {
                   edgeColor="#CC7800"
                   depth={8}
                 >
-                  <LinearGradient colors={['#FF9600', '#FF9600']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['#FF9600', '#FF9600']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                   <Image source={{ uri: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/People%20and%20body/Flexed%20Biceps.png" }} style={styles.bentoIcon} />
                   <Text style={styles.bentoTitle}>Practice</Text>
                   <Text style={styles.bentoSub}>Weak skills</Text>
@@ -283,7 +283,7 @@ export const LegacyDashboardScreen = () => {
                   edgeColor="#A568CC"
                   depth={8}
                 >
-                  <LinearGradient colors={['#CE82FF', '#CE82FF']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['#CE82FF', '#CE82FF']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                   <Image source={{ uri: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Crown.png" }} style={styles.bentoIcon} />
                   <Text style={styles.bentoTitle}>Leaderboard</Text>
                   <Text style={styles.bentoSub}>Rank #12</Text>
@@ -297,7 +297,7 @@ export const LegacyDashboardScreen = () => {
                   edgeColor="#CC3C3C"
                   depth={8}
                 >
-                  <LinearGradient colors={['#FF4B4B', '#FF4B4B']} style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient colors={['#FF4B4B', '#FF4B4B']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
                   <Image source={{ uri: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Books.png" }} style={styles.bentoIcon} />
                   <Text style={styles.bentoTitle}>Quizzes</Text>
                   <Text style={styles.bentoSub}>Review notes</Text>
@@ -320,7 +320,7 @@ export const LegacyDashboardScreen = () => {
             edgeColor="#CBD5E1"
             depth={6}
           >
-            <LinearGradient colors={['#FFFFFF', '#FFFFFF']} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient colors={['#FFFFFF', '#FFFFFF']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
             <View style={styles.recommendedContent}>
               <Text style={styles.recommendedTitle}>{data.recommendation.title}</Text>
               <View style={styles.recommendedMeta}>

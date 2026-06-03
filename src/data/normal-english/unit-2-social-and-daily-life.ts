@@ -248,30 +248,30 @@ const normalUnit01: UnitBank = [
     ],
   },
 
-  // Lesson 9: Expressing Gratitude & Appreciation
+  // Lesson 9: Supermarket & Groceries
   {
-    topic: "Expressing Gratitude", topicKu: "دەربڕینی سوپاسگوزاری",
+    topic: "Supermarket & Groceries", topicKu: "بازاڕکردن لە سوپەرمارکێت",
     words: [
-      { english: "I really appreciate it", kurdish: "بەڕاستی جێگەی پێزانینە" },
-      { english: "That's very kind of you", kurdish: "ئەوە میهرەبانی تۆیە" },
-      { english: "You've been very helpful", kurdish: "زۆر یارمەتیدەر بوویت" },
-      { english: "I can't thank you enough", kurdish: "هەرچەند سوپاست بکەم کەمە" },
-      { english: "Anytime",              kurdish: "لە خزمەتدام / کێشە نییە (وەڵامی سوپاس)" },
+      { english: "Shopping cart",        kurdish: "عەرەبانەی بازاڕکردن" },
+      { english: "Aisle",                kurdish: "ڕاڕەو (لەنێوان ڕەفەکاندا)" },
+      { english: "On sale",              kurdish: "داشکاندنی بۆ کراوە" },
+      { english: "Self-checkout",        kurdish: "ئامێری خۆ-حسابکردن" },
+      { english: "Paper or plastic",     kurdish: "کیسی کاغەز یان پلاستیک؟" },
     ],
     voices: [
-      { prompt: "سوپاسکردنی کەسێک بۆ یارمەتییەکی گەورە", target: "Thank you so much. I really appreciate your help.", targetKurdish: "زۆر زۆر سوپاس. بەڕاستی پێزانینم هەیە بۆ یارمەتییەکەت." },
-      { prompt: "وەڵامدانەوەی سوپاس بە شێوەیەکی دۆستانە", target: "Anytime! I'm glad I could help.", targetKurdish: "لە خزمەتدام! خۆشحاڵم کە توانیم یارمەتیت بدەم." },
+      { prompt: "پرسیارکردن لە شوێنی شتێک", target: "Excuse me, which aisle is the milk in?", targetKurdish: "ببوورە، شیر لە کام ڕاڕەودایە؟" },
+      { prompt: "پرسیارکردن لە نرخ", target: "Is this item on sale? I saw a sign outside.", targetKurdish: "ئایا داشکاندن بۆ ئەمە کراوە؟ لە دەرەوە تابلۆیەکم بینی." },
     ],
     sentences: [
-      { english: ["That's", "very", "kind", "of", "you", "to", "say"], kurdish: "ئەوە میهرەبانی تۆیە کە وا دەڵێیت" },
-      { english: ["I", "can't", "thank", "you", "enough", "for", "this"], kurdish: "بۆ ئەمە هەرچەند سوپاست بکەم کەمە" },
+      { english: ["Could", "you", "tell", "me", "where", "the", "baking", "aisle", "is"], kurdish: "دەتوانیت پێم بڵێیت ڕاڕەوی کەلوپەلی هەویرکاری لە کوێیە؟" },
+      { english: ["I", "will", "use", "the", "self-checkout", "to", "save", "time"], kurdish: "ئامێری خۆ-حسابکردن بەکاردەهێنم بۆ ئەوەی کات بگەڕێنمەوە" },
     ],
     fillBlanks: [
-      { parts: ["I really", "all your hard work."], hint: "بەڕاستی پێزانینم هەیە بۆ هەموو کارە سەختەکەت.", answer: "appreciate", wrongs: ["thank", "love", "like"] },
-      { parts: ["That's very", "of you to offer."], hint: "ئەوە میهرەبانی تۆیە کە پێشنیارت کرد.", answer: "kind", wrongs: ["nice", "good", "sweet"] },
+      { parts: ["Excuse me, which", "is the bread in?"], hint: "ببوورە، نان لە کام ڕاڕەودایە؟", answer: "aisle", wrongs: ["hall", "path", "line"] },
+      { parts: ["I need a shopping", "because I'm buying a lot."], hint: "پێویستم بە عەرەبانەیەکی بازاڕکردنە چونکە شتی زۆر دەکڕم.", answer: "cart", wrongs: ["bag", "box", "car"] },
     ],
     conversations: [
-      { situation: "هاوکارێکت یارمەتی داویت کارێکی قورس تەواو بکەیت", theyAsk: "Here are the final documents. Do you need anything else?", correct: "No, this is perfect. I can't thank you enough, you've been very helpful.", wrong1: "Thanks.", wrong2: "Good work.", wrong3: "I appreciate.", explanation: "دەستەواژەکانی 'I can't thank you enough' و 'You've been very helpful' سوپاسگوزارییەکی زۆر قووڵتر و ڕاستەقینەتر نیشان دەدەن لە تەنها وشەی 'Thanks'" },
+      { situation: "لە سوپەرمارکێت بەدوای شتێکدا دەگەڕێیت", theyAsk: "Do you need help finding anything?", correct: "Yes, please. Which aisle is the milk in? Also, are these apples on sale?", wrong1: "Where is milk? Is apple cheap?", wrong2: "I want milk. Sale for apple?", wrong3: "Which path for milk? Apple discount?", explanation: "وشەی 'aisle' (ڕاڕەو) زۆر گرنگە لە سوپەرمارکێتدا و پیتی (s) تێیدا ناخوێندرێتەوە" },
     ],
   },
 
