@@ -1,9 +1,13 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const { withUniwindConfig } = require("uniwind/metro");
 const fs = require("fs");
+const path = require("path");
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const projectRootPattern = escapeRegExp(__dirname).replace(/[/\\]/g, "[/\\\\]");
 
 // Ensure .expo/types directory exists for uniwind dts output (required for EAS cloud builds)
-const expoTypesDir = require("path").resolve(__dirname, ".expo/types");
+const expoTypesDir = path.resolve(__dirname, ".expo/types");
 if (!fs.existsSync(expoTypesDir)) {
   fs.mkdirSync(expoTypesDir, { recursive: true });
 }
@@ -20,14 +24,13 @@ config.transformer = {
   babelTransformerPath: require.resolve("react-native-svg-transformer/expo"),
 };
 
-const path = require("path");
-
 config.resolver = {
   ...resolver,
+  // Keep generated native projects out of Metro without excluding dependency
+  // internals such as expo-symbols/build/android/index.js.
   blockList: [
-    /android\/.*/,
-    /ios\/.*/,
-    /node_modules\/.*\/android\/.*/,
+    new RegExp(`${projectRootPattern}[/\\\\]android[/\\\\].*`),
+    new RegExp(`${projectRootPattern}[/\\\\]ios[/\\\\].*`),
   ],
   assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
   sourceExts: [...resolver.sourceExts, "svg"],
