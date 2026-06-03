@@ -32,6 +32,7 @@ import Svg, { Path } from "react-native-svg";
 import { L, LightMotion, LightRadius, LightType } from "./lesson-light-design";
 import type { AnswerTier } from "@/utils/answer-tier";
 import { TIER_COLORS } from "@/utils/answer-tier";
+import { LessonUnitLessonChip } from "@/screens/lesson/components/LessonUnitLessonChip";
 
 export function LightGameHeading({
   title,
@@ -284,6 +285,7 @@ export function LightWordTile({
   rtl,
   forceLatinFont,
   wide,
+  wrapLabel,
 }: {
   label: string;
   tierLabel?: string;
@@ -293,6 +295,8 @@ export function LightWordTile({
   rtl?: boolean;
   forceLatinFont?: boolean;
   wide?: boolean;
+  /** Pair-match columns: wrap text, avoid clipping in narrow tiles */
+  wrapLabel?: boolean;
 }) {
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({
@@ -346,11 +350,13 @@ export function LightWordTile({
       style={[
         lh.tile,
         wide && lh.tileWide,
+        wrapLabel && lh.tileWrap,
         {
           backgroundColor: bg,
           borderColor: border,
           borderStyle: state === "ghost" ? "dashed" : "solid",
           opacity: state === "ghost" ? 0.35 : 1,
+          overflow: wrapLabel ? "visible" : "hidden",
         },
         state !== "ghost" &&
           crossShadow({
@@ -399,7 +405,11 @@ export function LightWordTile({
         </View>
       ) : (
         <AppText
-          style={[LightType.tile, { zIndex: 1 }]}
+          style={[
+            LightType.tile,
+            wrapLabel && lh.tileWrapText,
+            { zIndex: 1 },
+          ]}
           forceKurdishFont={rtl && !forceLatinFont}
           forceLatinFont={forceLatinFont}
         >
@@ -587,16 +597,24 @@ export function LessonLightHeader({
   progressFillStyle,
   hearts,
   onBack,
+  unitNumber,
+  lessonNumber,
 }: {
   progressFillStyle: StyleProp<ViewStyle>;
   hearts: number;
   onBack: () => void;
+  unitNumber: number;
+  lessonNumber: number;
 }) {
   return (
     <View style={lh.lessonHeader}>
       <HomeLiquidPill onPress={onBack} size={44}>
         <BackChevron />
       </HomeLiquidPill>
+      <LessonUnitLessonChip
+        unitNumber={unitNumber}
+        lessonNumber={lessonNumber}
+      />
       <HomeLiquidCard style={lh.progressGlass} contentStyle={lh.progressGlassInner} radius={14}>
         <View style={lh.progressTrack}>
           <Animated.View style={[lh.progressFill, progressFillStyle]}>
@@ -918,6 +936,17 @@ const lh = StyleSheet.create({
     width: "100%",
     minHeight: 54,
     paddingHorizontal: 18,
+  },
+  tileWrap: {
+    minHeight: 48,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  tileWrapText: {
+    width: "100%",
+    textAlign: "center",
+    lineHeight: 22,
+    flexShrink: 1,
   },
   slotsRow: {
     flexDirection: "row",

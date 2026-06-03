@@ -22,12 +22,14 @@ export type {
   PairMatchQuestion,
   FillBlankQuestion,
   ConversationPickQuestion,
+  KidsPlayQuestion,
   LessonBank,
   UnitBank,
 } from "./types";
 
 import { buildConversationOptionTiers } from "@/utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
+import { buildKidsFlowQuestions } from "./kids-lesson-builder";
 import { GameQuestion, LessonBank, LessonPathMode } from "./types";
 
 export type { LessonPathMode } from "./types";
@@ -107,6 +109,10 @@ function buildLessonQuestionsFromBank(
   lessonIndex: number,
   mode: LessonPathMode,
 ): GameQuestion[] {
+  if (mode === "kids" && lesson.kidsGames && lesson.kidsGames.length > 0) {
+    return buildKidsFlowQuestions(lesson.kidsGames, unitIndex, lessonIndex);
+  }
+
   const seed = unitIndex * 997 + lessonIndex * 137;
 
   const words     = shuffle(lesson.words,         seed);

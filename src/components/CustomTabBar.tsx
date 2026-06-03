@@ -5,7 +5,11 @@ import {
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
+import { TabBarGlassSurface } from "@/components/TabBarGlassSurface";
 import {
+  TAB_BAR_CORNER_RADIUS,
+  TAB_BAR_FLOAT_MARGIN_H,
+  TAB_BAR_FLOAT_MARGIN_BOTTOM,
   tabBarBottomInset,
   TAB_BAR_INNER_HEIGHT,
   TAB_BAR_TOP_PADDING,
@@ -27,7 +31,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ACTIVE = "#2B59F3";
-const INACTIVE = "#9CA3AF";
+const INACTIVE = "#8E95A3";
 
 type TabKey = "index" | "dashboard" | "feed" | "subscription" | "more";
 
@@ -93,7 +97,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const compact = width < 390;
   const iconSize = compact ? 22 : 24;
-  const labelSize = compact ? 9 : 10;
+  const labelSize = compact ? 10 : 11;
   const bottomPad = tabBarBottomInset(insets.bottom);
 
   const tabs = useMemo(
@@ -103,10 +107,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       ),
     [t],
   );
-
-  if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
-    return null;
-  }
 
   const onTabPress = useCallback(
     (route: TabKey, isFocused: boolean) => {
@@ -118,90 +118,110 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     [navigation],
   );
 
-  return (
-    <View
-      style={[
-        styles.bar,
-        {
-          paddingTop: TAB_BAR_TOP_PADDING,
-          paddingBottom: bottomPad,
-          minHeight: TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT + bottomPad,
-        },
-      ]}
-    >
-      {tabs.map(({ route, label, renderIcon }) => {
-        const routeIndex = state.routes.findIndex((r) => r.name === route);
-        const isFocused =
-          routeIndex >= 0
-            ? state.index === routeIndex
-            : activeRouteName === route;
+  if (activeRouteName && HIDDEN_ROUTES.has(activeRouteName)) {
+    return null;
+  }
 
-        return (
-          <Pressable
-            key={route}
-            onPress={() => onTabPress(route, isFocused)}
-            style={styles.item}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isFocused }}
-            accessibilityLabel={label}
-            hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
-          >
-            {renderIcon(isFocused, iconSize)}
-            <Text
-              style={[
-                styles.label,
-                { fontSize: labelSize },
-                isFocused && styles.labelActive,
-              ]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-            >
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
+  return (
+    <View style={styles.host} pointerEvents="box-none">
+      <View
+        style={[
+          styles.floatWrap,
+          {
+            marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
+            marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM + bottomPad,
+            paddingTop: TAB_BAR_TOP_PADDING,
+            minHeight: TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT,
+          },
+        ]}
+      >
+        <TabBarGlassSurface borderRadius={TAB_BAR_CORNER_RADIUS}>
+          {tabs.map(({ route, label, renderIcon }) => {
+            const routeIndex = state.routes.findIndex((r) => r.name === route);
+            const isFocused =
+              routeIndex >= 0
+                ? state.index === routeIndex
+                : activeRouteName === route;
+
+            return (
+              <Pressable
+                key={route}
+                onPress={() => onTabPress(route, isFocused)}
+                style={styles.item}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={label}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                {isFocused ? <View style={styles.activePill} /> : null}
+                <View style={styles.itemInner}>
+                  {renderIcon(isFocused, iconSize)}
+                  <Text
+                    style={[
+                      styles.label,
+                      { fontSize: labelSize },
+                      isFocused && styles.labelActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </TabBarGlassSurface>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 4,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    ...Platform.select({
-      android: { elevation: 8 },
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-      },
-    }),
+  host: {
+    backgroundColor: "transparent",
+  },
+  floatWrap: {
+    backgroundColor: "transparent",
   },
   item: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     minHeight: TAB_BAR_INNER_HEIGHT,
-    paddingHorizontal: 2,
-    gap: 3,
+    paddingHorizontal: 4,
+    position: "relative",
+  },
+  activePill: {
+    ...StyleSheet.absoluteFillObject,
+    marginHorizontal: 3,
+    marginVertical: 5,
+    borderRadius: 18,
+    backgroundColor: "rgba(43, 89, 243, 0.14)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(43, 89, 243, 0.22)",
+  },
+  itemInner: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    zIndex: 1,
   },
   label: {
-    fontWeight: "800",
+    fontWeight: "600",
     color: INACTIVE,
-    letterSpacing: 0.2,
-    fontFamily: "DINNextRoundedBold",
+    letterSpacing: 0.15,
+    fontFamily: Platform.select({
+      ios: "System",
+      default: "DINNextRoundedMedium",
+    }),
     textAlign: "center",
-    maxWidth: "100%",
   },
   labelActive: {
     color: ACTIVE,
+    fontWeight: "700",
+    fontFamily: Platform.select({
+      ios: "System",
+      default: "DINNextRoundedBold",
+    }),
   },
 });

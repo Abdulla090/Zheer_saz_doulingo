@@ -69,3 +69,15 @@ export const enterStagger = (index: number, baseDelay = 0) =>
 
 /** Smooth layout reflow — preferred over spring layout in lists */
 export const layoutSmooth = LinearTransition.duration(160).easing(enterEasing);
+
+/** Sentence builder — tiles morph into slots (spring layout + fly duration). */
+export const layoutMorph = LinearTransition.springify()
+  .damping(20)
+  .stiffness(240);
+
+export const TILE_FLY_MS = 340;
+
+export const tileFlyTiming: WithTimingConfig = {
+  duration: TILE_FLY_MS,
+  easing: Easing.out(Easing.cubic),
+};

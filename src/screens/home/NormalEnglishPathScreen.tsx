@@ -8,6 +8,7 @@ import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { tabBarScrollPadding } from "@/constants/layout";
 import type { LessonListItem, SectionDataItem, SectionTheme } from "@/data/list-items";
 import { buildNormalSectionData } from "@/data/normal-english";
+import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
 import { useProgressStore } from "@/stores/useProgressStore";
 import {
   getPathUnitTitle,
@@ -89,6 +90,8 @@ export function NormalEnglishPathScreen() {
       ),
     [locale, normalNextLessonPathIndex],
   );
+
+  usePathScrollAfterLesson("normal", localizedSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
     const fullTitle = getPathUnitTitle("normal", activeSectionIndex, locale);

@@ -18,7 +18,7 @@ import {
 } from "@/data/path-unit-titles";
 import { useI18n } from "@/hooks/useI18n";
 import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -34,7 +34,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
-import { ListItem } from "./components/list-item";
+import { KidsPathListRow } from "./components/kids-path-list-row";
+import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
@@ -65,6 +66,8 @@ export function KidsEnglishPathScreen() {
       ),
     [locale, kidsNextLessonPathIndex],
   );
+
+  usePathScrollAfterLesson("kids", localizedSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
     const fullTitle = getPathUnitTitle("kids", activeSectionIndex, locale);
@@ -108,7 +111,7 @@ export function KidsEnglishPathScreen() {
 
   const renderItem = useCallback(
     ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
-      <ListItem item={item} screenWidth={windowWidth} pathMode="kids" />
+      <KidsPathListRow item={item} screenWidth={windowWidth} />
     ),
     [windowWidth],
   );
@@ -164,7 +167,7 @@ export function KidsEnglishPathScreen() {
           initialNumToRender={6}
           maxToRenderPerBatch={4}
           windowSize={3}
-          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
+          removeClippedSubviews={false}
           updateCellsBatchingPeriod={100}
           onViewableItemsChanged={onViewableItemsChanged}
         />

@@ -8,12 +8,12 @@
 /* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 
 import {
-    Icon3DAward,
     Icon3DCheck,
     Icon3DFire,
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
+import { PingoMascot } from "@/components/mascot/PingoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -36,6 +36,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
 import { useI18n } from "@/hooks/useI18n";
 import { useProgressStore } from "@/stores/useProgressStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useContentAdminStore } from "@/stores/useContentAdminStore";
 import type { AnswerTier } from "@/utils/answer-tier";
@@ -56,6 +57,7 @@ import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
 import VoiceGame from "./games/VoiceGame";
+import KidsPlayGame from "./games/KidsPlayGame";
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
@@ -98,6 +100,10 @@ export default function LessonScreen() {
     (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
   );
   const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
+  const requestPathScrollAfterLesson = useProgressStore(
+    (s) => s.requestPathScrollAfterLesson,
+  );
+  const setPathMode = useSettingsStore((s) => s.setPathMode);
   const contentOverride = useContentAdminStore((s) => s.overrides[pathMode]);
 
   const questions = React.useMemo(
@@ -232,6 +238,7 @@ export default function LessonScreen() {
       case "voice":             return <VoiceGame            key={current} question={q} onAnswer={handleAnswer} />;
       case "fill_blank":        return <FillBlankGame        key={current} question={q} onAnswer={handleAnswer} />;
       case "conversation_pick": return <ConversationPickGame key={current} question={q} onAnswer={handleAnswer} />;
+      case "kids_play":         return <KidsPlayGame         key={current} question={q} onAnswer={handleAnswer} />;
       default:                  return null;
     }
   };
@@ -255,9 +262,15 @@ export default function LessonScreen() {
         <SafeAreaView style={sSum.root}>
           <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
             <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
-              <View style={[sSum.iconWrap, { backgroundColor: ok ? L.green : L.red }]}>
-                {ok ? <Icon3DAward size={60} /> : <Icon3DX size={52} />}
-              </View>
+              {ok ? (
+                <View style={sSum.mascotWrap}>
+                  <PingoMascot size={120} pose="party" />
+                </View>
+              ) : (
+                <View style={[sSum.iconWrap, { backgroundColor: L.red }]}>
+                  <Icon3DX size={52} />
+                </View>
+              )}
               <Text style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
                 {ok ? "Lesson Complete!" : "Out of Hearts!"}
               </Text>
@@ -283,21 +296,34 @@ export default function LessonScreen() {
                   const locale = useLocaleStore.getState().locale;
                   const meta = getCurrentLessonMeta(
                     pathMode,
-                    pathMode === "street"
-                      ? pathIndex
-                      : snap.nextLessonPathIndex,
-                    pathMode === "normal"
-                      ? pathIndex
-                      : snap.normalNextLessonPathIndex,
+                    snap.nextLessonPathIndex,
+                    snap.normalNextLessonPathIndex,
                     locale,
-                    pathMode === "kids"
-                      ? pathIndex
-                      : snap.kidsNextLessonPathIndex,
+                    snap.kidsNextLessonPathIndex,
                   );
-                  const label = meta
-                    ? `${meta.sectionTitle} · ${meta.lessonNumber}`
-                    : undefined;
+                  const label =
+                    meta?.pathIndex === pathIndex
+                      ? `${meta.sectionTitle} · ${meta.lessonNumber}`
+                      : `Lesson ${pathIndex + 1}`;
                   recordLessonComplete(pathIndex, xp, pathMode, label);
+                  requestPathScrollAfterLesson(pathMode);
+                  setPathMode(pathMode);
+                  router.replace({
+                    pathname: "/dashboard",
+                    params: { mode: pathMode },
+                  });
+                  return;
+                }
+                if (!ok) {
+                  setFinished(false);
+                  setPassed(false);
+                  setCurrent(0);
+                  setHearts(MAX_HEARTS);
+                  setXp(0);
+                  setCorrectN(0);
+                  setFeedback(null);
+                  progressW.value = 0;
+                  return;
                 }
                 router.back();
               }}
@@ -331,6 +357,8 @@ export default function LessonScreen() {
           progressFillStyle={progressStyle}
           hearts={hearts}
           onBack={() => router.back()}
+          unitNumber={lessonId + 1}
+          lessonNumber={lessonIndex + 1}
         />
 
         <View style={sL.skipRow}>
@@ -463,6 +491,11 @@ const sSum = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 28,
     gap: 14,
+  },
+  mascotWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
   },
   iconWrap: {
     width: 100,

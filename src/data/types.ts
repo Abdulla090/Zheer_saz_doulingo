@@ -3,6 +3,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AnswerTier } from "@/utils/answer-tier";
+import type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";
+
+export type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";
 
 export type VoiceQuestion = {
   type: "voice";
@@ -55,13 +58,34 @@ export type ConversationPickQuestion = {
   xp: number;
 };
 
+/** Kids path — scene, bubbles, feed, shadow, pick, yes/no, treasure chest */
+export type KidsPlayQuestion = {
+  type: "kids_play";
+  variant: "scene" | "bubble" | "feed" | "shadow" | "pick" | "yes_no" | "treasure";
+  prompt: string;
+  promptLang?: "en" | "ku";
+  scene?: KidsSceneKey;
+  mascotEmoji?: string;
+  correctId: string;
+  choices: KidsChoice[];
+  shownEmoji?: string;
+  shownLabel?: string;
+  spokenWord?: string;
+  matches?: boolean;
+  shadowSlotIds?: string[];
+  treasureRevealEmoji?: string;
+  treasureRevealLabel?: string;
+  xp: number;
+};
+
 export type GameQuestion =
   | VoiceQuestion
   | SentenceBuilderQuestion
   | MultipleChoiceQuestion
   | PairMatchQuestion
   | FillBlankQuestion
-  | ConversationPickQuestion;
+  | ConversationPickQuestion
+  | KidsPlayQuestion;
 
 // ── ONE lesson's worth of content (unique per dot) ────────────────────────────
 export type LessonBank = {
@@ -80,6 +104,8 @@ export type LessonBank = {
     wrong3:      string;
     explanation: string;
   }[];
+  /** When set, kids mode runs this 10-step interactive flow instead of the generic mix. */
+  kidsGames?: KidsGameStep[];
 };
 
 // ── A full unit = 10 unique lesson banks ─────────────────────────────────────

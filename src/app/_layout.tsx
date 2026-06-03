@@ -1,9 +1,6 @@
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
-import { CustomTabBar } from "@/components/CustomTabBar";
-import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
-import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
@@ -11,7 +8,7 @@ import { useContentAdminStore } from "@/stores/useContentAdminStore";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useCallback, useEffect } from "react";
 import { Platform, Text } from "react-native";
@@ -38,12 +35,11 @@ function applyGlobalFont(kurdishFontFamily: string) {
       `'${kurdishFontFamily}'`,
     );
   }
-  // Fallback when styles omit fontFamily — AppText picks Rabar vs DIN per string.
   (Text as any).defaultProps = (Text as any).defaultProps ?? {};
   (Text as any).defaultProps.style = { fontFamily: kurdishFontFamily };
 }
 
-export default function TabLayout() {
+export default function RootLayout() {
   const { selectedFont, ready: fontReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
@@ -79,124 +75,28 @@ export default function TabLayout() {
     return null;
   }
 
-  if (!onboardingComplete) {
-    return (
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <AppErrorBoundary>
-            <OnboardingFlow />
-          </AppErrorBoundary>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    );
-  }
-
   const rnWebVars = Platform.OS === "web" ? {} : {
-    "--font-rd-bold":    selectedFont,
-    "--font-rd-medium":  selectedFont,
+    "--font-rd-bold": selectedFont,
+    "--font-rd-medium": selectedFont,
     "--font-rd-regular": selectedFont,
   };
 
   return (
     <SafeAreaProvider>
-    <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
-      <AppErrorBoundary>
-      <BottomSheetModalProvider>
-        <Tabs
-          initialRouteName="index"
-          tabBar={(props) => <CustomTabBar {...props} />}
-          screenOptions={{
-            headerShown: false,
-            tabBarShowLabel: false,
-            tabBarActiveTintColor: "#FFFFFF",
-            tabBarInactiveTintColor: "#B4B8C3",
-            // Fast fade — lighter than morph/shift on low-end devices
-            animation: "fade",
-          }}
-        >
-          <Tabs.Screen name="index" />
-          <Tabs.Screen name="dashboard" />
-          <Tabs.Screen name="feed" />
-          <Tabs.Screen
-            name="subscription"
-            options={{ href: ENABLE_SHOP ? undefined : null }}
-          />
-          <Tabs.Screen name="more" />
-          <Tabs.Screen
-            name="quest"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="league"
-            options={{
-              href: null,
-            }}
-          />
-          <Tabs.Screen
-            name="lesson"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen
-            name="guidebook"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen
-            name="roleplay"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen
-            name="ai-teacher"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen name="privacy-policy" options={{ href: null }} />
-          <Tabs.Screen name="ai-safety" options={{ href: null }} />
-          <Tabs.Screen name="terms" options={{ href: null }} />
-          <Tabs.Screen
-            name="admin/index"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen
-            name="admin/unit"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-          <Tabs.Screen
-            name="admin/lesson"
-            options={{
-              headerShown: false,
-              href: null,
-              tabBarStyle: { display: "none" },
-            }}
-          />
-        </Tabs>
-      </BottomSheetModalProvider>
-      </AppErrorBoundary>
-    </GestureHandlerRootView>
+      <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
+        <AppErrorBoundary>
+          <BottomSheetModalProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Protected guard={onboardingComplete}>
+                <Stack.Screen name="(tabs)" />
+              </Stack.Protected>
+              <Stack.Protected guard={!onboardingComplete}>
+                <Stack.Screen name="onboarding" />
+              </Stack.Protected>
+            </Stack>
+          </BottomSheetModalProvider>
+        </AppErrorBoundary>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }

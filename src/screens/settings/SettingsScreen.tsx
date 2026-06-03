@@ -16,13 +16,14 @@ import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useI18n } from "@/hooks/useI18n";
 import type { AppLocale } from "@/i18n";
 import { useFontStore } from "@/stores/useFontStore";
+import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { confirmAction } from "@/utils/confirm-action";
 import { openHttpsUrl, openMailto } from "@/utils/safe-link";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -49,23 +50,34 @@ export default function SettingsScreen() {
   const { t, locale, setLocale, isKu } = useI18n();
   const { selectedFont, setFont } = useFontStore();
   const resetProgress = useProgressStore((s) => s.resetProgress);
+  const replayOnboarding = useOnboardingStore((s) => s.replayOnboarding);
   const haptics = useSettingsStore((s) => s.hapticsEnabled);
   const sounds = useSettingsStore((s) => s.soundsEnabled);
   const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
 
+  const confirmReplayOnboarding = () => {
+    confirmAction(
+      t("settings.replayOnboarding"),
+      t("settings.replayOnboardingHint"),
+      replayOnboarding,
+      {
+        confirmLabel: t("settings.replayOnboardingConfirm"),
+        cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+      },
+    );
+  };
+
   const confirmReset = () => {
-    Alert.alert(
+    confirmAction(
       t("settings.resetProgress"),
       t("settings.resetProgressHint"),
-      [
-        { text: isKu ? "پاشگەزبوونەوە" : "Cancel", style: "cancel" },
-        {
-          text: t("settings.resetConfirm"),
-          style: "destructive",
-          onPress: resetProgress,
-        },
-      ],
+      resetProgress,
+      {
+        confirmLabel: t("settings.resetConfirm"),
+        cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+        destructive: true,
+      },
     );
   };
 
@@ -255,6 +267,16 @@ export default function SettingsScreen() {
         </Text>
 
         <PressableScale
+          onPress={confirmReplayOnboarding}
+          scaleDown={0.98}
+          style={[styles.replayBtn, styles.card]}
+        >
+          <AppText style={styles.replayLabel} forceKurdishFont={isKu}>
+            {t("settings.replayOnboarding")}
+          </AppText>
+        </PressableScale>
+
+        <PressableScale
           onPress={confirmReset}
           scaleDown={0.98}
           style={[styles.resetBtn, styles.card]}
@@ -414,8 +436,20 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontFamily: "DINNextRoundedMedium",
   },
-  resetBtn: {
+  replayBtn: {
     marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  replayLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#2B59F3",
+    fontFamily: "DINNextRoundedBold",
+  },
+  resetBtn: {
+    marginTop: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
     alignItems: "center",

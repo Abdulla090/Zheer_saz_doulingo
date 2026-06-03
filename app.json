@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Phingo English",
+    "name": "PINGO",
     "slug": "duolingo-clone",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,8 +12,8 @@
       "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
       "supportsTablet": false,
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow Phingo English to transcribe your speech for lessons and AI feedback.",
-        "NSMicrophoneUsageDescription": "Allow Phingo English to use the microphone for speaking practice."
+        "NSSpeechRecognitionUsageDescription": "Allow PINGO to transcribe your speech for lessons and AI feedback.",
+        "NSMicrophoneUsageDescription": "Allow PINGO to use the microphone for speaking practice."
       }
     },
     "android": {

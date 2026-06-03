@@ -48,6 +48,10 @@ const DEFAULT_PROGRESS: ProgressSnapshot = {
 
 interface ProgressState extends ProgressSnapshot {
   ready: boolean;
+  /** After a lesson, scroll the matching path to the new current node. */
+  pathScrollAfterLesson: LessonPathMode | null;
+  requestPathScrollAfterLesson: (mode: LessonPathMode) => void;
+  consumePathScrollAfterLesson: () => void;
   recordLessonComplete: (
     pathIndex: number,
     xpEarned: number,
@@ -99,6 +103,15 @@ async function persistProgress(state: ProgressSnapshot) {
 export const useProgressStore = create<ProgressState>((set, get) => ({
   ...DEFAULT_PROGRESS,
   ready: false,
+  pathScrollAfterLesson: null,
+
+  requestPathScrollAfterLesson: (mode) => {
+    set({ pathScrollAfterLesson: mode });
+  },
+
+  consumePathScrollAfterLesson: () => {
+    set({ pathScrollAfterLesson: null });
+  },
 
   recordLessonComplete: (pathIndex, xpEarned, mode = "street", label) => {
     const cur = get();
@@ -160,7 +173,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 
   resetProgress: () => {
-    set({ ...DEFAULT_PROGRESS });
+    set({ ...DEFAULT_PROGRESS, pathScrollAfterLesson: null });
     void persistProgress(DEFAULT_PROGRESS);
   },
 }));

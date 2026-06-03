@@ -37,6 +37,7 @@ const NORMAL_UNIT_KEYS = [
 const KIDS_UNIT_KEYS = [
   "path.kids.unit1",
   "path.kids.unit2",
+  "path.kids.unit3",
 ] as const satisfies readonly I18nKey[];
 
 export function getPathUnitTitle(

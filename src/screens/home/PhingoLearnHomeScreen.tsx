@@ -1,7 +1,7 @@
+import { PingoMascot } from "@/components/mascot/PingoMascot";
 import {
   ChestFlat,
   CoffeeCupFlat,
-  DolphinFlat,
   QuestHeadphonesFlat,
   QuestTargetFlat,
   QuestZapFlat,
@@ -217,7 +217,7 @@ export function PhingoLearnHomeScreen() {
         }}
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>Phingo</Text>
+          <Text style={styles.logo}>PINGO</Text>
           <View style={styles.headerStats}>
             <View style={styles.statItem}>
               <Fire width={24} height={24} />
@@ -236,7 +236,9 @@ export function PhingoLearnHomeScreen() {
           interactive
         >
           <View style={styles.heroRow}>
-            <DolphinFlat width={72} height={72} />
+            <View style={styles.heroMascot}>
+              <PingoMascot size={120} pose="wave" />
+            </View>
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
               <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
@@ -463,8 +465,13 @@ const styles = StyleSheet.create({
   },
   heroRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  heroMascot: {
+    width: 120,
+    flexShrink: 0,
+    marginTop: -6,
   },
   heroCopy: {
     flex: 1,

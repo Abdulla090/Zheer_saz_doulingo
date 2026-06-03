@@ -1,10 +1,13 @@
 // ── Kids English — section configs, data builder ─────────────────────────────
 
+import { KIDS_UNLOCK_UNITS_2_AND_3_FOR_TEST } from "@/constants/feature-flags";
 import kidsUnit1Animals from "./unit-1-animals";
 import kidsUnit2ColorsAndNumbers from "./unit-2-colors-and-numbers";
+import kidsUnit3DailyRoutines from "./unit-3-daily-routines";
 import {
   resolveLessonStatus,
   type LessonListItem,
+  type LessonStatus,
   type LessonType,
   type SectionDataItem,
   type SectionTheme,
@@ -14,6 +17,7 @@ import type { UnitBank } from "../types";
 export const KIDS_UNITS: UnitBank[] = [
   kidsUnit1Animals,
   kidsUnit2ColorsAndNumbers,
+  kidsUnit3DailyRoutines,
 ];
 
 export const kidsSectionConfigs: Array<{
@@ -22,6 +26,7 @@ export const kidsSectionConfigs: Array<{
 }> = [
   { theme: "green", displayTheme: "green" },
   { theme: "orange", displayTheme: "orange" },
+  { theme: "blue", displayTheme: "blue" },
 ];
 
 // 5 dots per kids unit — one per lesson bank, so each tile is a distinct topic.
@@ -32,6 +37,16 @@ const KIDS_PATTERN: LessonType[] = [
   "conversation",
   "gift",
 ];
+
+function resolveKidsLessonStatus(
+  pathIndex: number,
+  nextLessonPathIndex: number,
+): LessonStatus {
+  if (KIDS_UNLOCK_UNITS_2_AND_3_FOR_TEST && pathIndex >= KIDS_PATTERN.length) {
+    return "completed";
+  }
+  return resolveLessonStatus(pathIndex, nextLessonPathIndex);
+}
 
 /** Build kids-English path sections from persisted progress (0 = first lesson current). */
 export function buildKidsSectionData(
@@ -46,7 +61,10 @@ export function buildKidsSectionData(
       const data: LessonListItem[] = KIDS_PATTERN.map((lessonType, itemIndex) => {
         const currentGlobalIndex = startGlobalIndex + itemIndex;
         const pathIndex = kidsPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+        const itemStatus = resolveKidsLessonStatus(
+          pathIndex,
+          nextLessonPathIndex,
+        );
 
         return {
           id: `kids-level-${currentGlobalIndex}`,

@@ -6,6 +6,7 @@ import {
   type SectionDataItem,
   type SectionTheme,
 } from "@/data/list-items";
+import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
 import { useProgressStore } from "@/stores/useProgressStore";
 import {
   getPathUnitTitle,
@@ -59,6 +60,8 @@ export const StreetEnglishPathScreen = () => {
       ),
     [locale, nextLessonPathIndex],
   );
+
+  usePathScrollAfterLesson("street", localizedSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
     const fullTitle = getPathUnitTitle("street", activeSectionIndex, locale);

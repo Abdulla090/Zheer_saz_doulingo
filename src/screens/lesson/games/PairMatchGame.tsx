@@ -4,7 +4,7 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import React, { memo, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -17,7 +17,6 @@ import { PairMatchQuestion } from "@/data/lesson-content";
 import { L, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,
-  LightQuestionPrompt,
   LightSurfaceCard,
   LightWordTile,
 } from "./lesson-light-primitives";
@@ -80,7 +79,7 @@ const MatchChip = memo(function MatchChip({
   }, [state, shakeX]);
 
   return (
-    <Animated.View style={wrapStyle}>
+    <Animated.View style={[wrapStyle, s.chipWrap]}>
       <LightWordTile
         label={label}
         state={state}
@@ -88,6 +87,7 @@ const MatchChip = memo(function MatchChip({
         disabled={matched}
         rtl={rtl}
         wide
+        wrapLabel
       />
     </Animated.View>
   );
@@ -206,10 +206,6 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         />
       </GameHeader>
 
-      <LightQuestionPrompt label={t("lessons.questionLabel")} forceKurdishFont>
-        {t("lessons.pairWordsSub")}
-      </LightQuestionPrompt>
-
       <View style={s.progressRow}>
         <View style={s.progressTrack}>
           {Array.from({ length: total }).map((_, i) => (
@@ -228,53 +224,60 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
       </View>
 
       <LightSurfaceCard style={s.boardCard}>
-        <View style={s.colLabels}>
-          <Text style={[LightType.label, s.colLabel, { textAlign: "right" }]}>
-            کوردی
-          </Text>
-          <View style={s.colDivider} />
-          <Text style={[LightType.label, s.colLabel]}>English</Text>
-        </View>
-
-        <View style={s.board}>
-          <View style={s.column}>
-            {left.map((lw, i) => (
-              <GameOption key={`${lw}-${i}`} index={i} baseDelay={80}>
-                <MatchChip
-                  label={lw}
-                  state={lState(lw)}
-                  onPress={() => handleL(lw)}
-                  matched={matched.has(lw)}
-                  rtl
-                />
-              </GameOption>
-            ))}
-          </View>
-
-          <View style={s.boardDivider} />
-
-          <View style={s.column}>
-            {right.map((rw, i) => (
-              <GameOption key={`${rw}-${i}`} index={i} baseDelay={80}>
-                <MatchChip
-                  label={rw}
-                  state={rState(rw)}
-                  onPress={() => handleR(rw)}
-                  matched={matched.has(rw)}
-                />
-              </GameOption>
-            ))}
-          </View>
-        </View>
-
-        {awaitingPair ? (
-          <View style={s.hintRow}>
-            <View style={s.hintDot} />
-            <Text style={s.hintText}>
-              {selL ? t("lessons.pairPickEnglish") : t("lessons.pairPickKurdish")}
+        <ScrollView
+          style={s.boardScroll}
+          contentContainerStyle={s.boardScrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <View style={s.colLabels}>
+            <Text style={[LightType.label, s.colLabel, { textAlign: "right" }]}>
+              کوردی
             </Text>
+            <View style={s.colDivider} />
+            <Text style={[LightType.label, s.colLabel]}>English</Text>
           </View>
-        ) : null}
+
+          <View style={s.board}>
+            <View style={s.column}>
+              {left.map((lw, i) => (
+                <GameOption key={`${lw}-${i}`} index={i} baseDelay={80}>
+                  <MatchChip
+                    label={lw}
+                    state={lState(lw)}
+                    onPress={() => handleL(lw)}
+                    matched={matched.has(lw)}
+                    rtl
+                  />
+                </GameOption>
+              ))}
+            </View>
+
+            <View style={s.boardDivider} />
+
+            <View style={s.column}>
+              {right.map((rw, i) => (
+                <GameOption key={`${rw}-${i}`} index={i} baseDelay={80}>
+                  <MatchChip
+                    label={rw}
+                    state={rState(rw)}
+                    onPress={() => handleR(rw)}
+                    matched={matched.has(rw)}
+                  />
+                </GameOption>
+              ))}
+            </View>
+          </View>
+
+          {awaitingPair ? (
+            <View style={s.hintRow}>
+              <View style={s.hintDot} />
+              <Text style={s.hintText}>
+                {selL ? t("lessons.pairPickEnglish") : t("lessons.pairPickKurdish")}
+              </Text>
+            </View>
+          ) : null}
+        </ScrollView>
       </LightSurfaceCard>
 
       <View style={s.bottomSpacer} />
@@ -285,10 +288,14 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 14,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  chipWrap: {
+    width: "100%",
+    alignSelf: "stretch",
   },
   progressRow: {
     flexDirection: "row",
@@ -321,6 +328,14 @@ const s = StyleSheet.create({
   boardCard: {
     flex: 1,
     minHeight: 0,
+    padding: 14,
+  },
+  boardScroll: {
+    flex: 1,
+  },
+  boardScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 4,
   },
   colLabels: {
     flexDirection: "row",
@@ -333,15 +348,14 @@ const s = StyleSheet.create({
   },
   colDivider: { width: 1 },
   board: {
-    flex: 1,
     flexDirection: "row",
-    gap: 12,
-    alignItems: "stretch",
+    gap: 10,
+    alignItems: "flex-start",
   },
   column: {
     flex: 1,
-    gap: 10,
-    justifyContent: "center",
+    gap: 8,
+    justifyContent: "flex-start",
   },
   boardDivider: {
     width: 1,

@@ -437,8 +437,8 @@ export default function VoiceGame({ question, onAnswer }: Props) {
       <Text style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</Text>
 
       <View style={s.targetRow}>
-        <AppText style={s.targetKu} forceKurdishFont>
-          {question.targetKurdish}
+        <AppText style={s.targetEn} forceLatinFont latinRole="bold">
+          {question.targetWord}
         </AppText>
         <Pressable
           onPress={handleHearPhrase}
@@ -536,7 +536,7 @@ const s = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 8,
   },
-  targetKu: {
+  targetEn: {
     flex: 1,
     fontSize: 20,
     fontWeight: "800",
@@ -544,7 +544,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     letterSpacing: -0.3,
     fontFamily: "DINNextRoundedBold",
-    ...rtlBlock,
+    ...ltrText,
   },
   speakerBtn: {
     width: 44,

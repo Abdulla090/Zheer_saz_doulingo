@@ -21,8 +21,8 @@ const kidsUnit2: UnitBank = [
       { english: ["The", "sky", "is", "blue"], kurdish: "ئاسمان شینە" },
     ],
     fillBlanks: [
-      { parts: ["The grass is", ""], hint: "گیا سەوزە", answer: "green", wrongs: ["red", "blue", "black"] },
-      { parts: ["The sun is", ""], hint: "خۆر زەردە", answer: "yellow", wrongs: ["blue", "green", "red"] },
+      { parts: ["The grass is", ""], hint: "گیاکە سەوزە", answer: "green", wrongs: ["red", "blue", "black"] },
+      { parts: ["The sun is", ""], hint: "خۆرەکە زەردە", answer: "yellow", wrongs: ["blue", "green", "red"] },
     ],
     conversations: [
       {
@@ -48,16 +48,16 @@ const kidsUnit2: UnitBank = [
       { english: "Brown", kurdish: "قاوەیی" },
     ],
     voices: [
-      { prompt: "بڵێ: بەفر سپییە", target: "The snow is white.", targetKurdish: "بەفر سپییە." },
-      { prompt: "بڵێ: حەزم لە مۆرە", target: "I like purple.", targetKurdish: "حەزم لە مۆرە." },
+      { prompt: "بڵێ: بەفرەکە سپییە", target: "The snow is white.", targetKurdish: "بەفرەکە سپییە." },
+      { prompt: "بڵێ: حەزم لە ڕەنگی مۆرە", target: "I like purple.", targetKurdish: "حەزم لە ڕەنگی مۆرە." },
     ],
     sentences: [
-      { english: ["The", "snow", "is", "white"], kurdish: "بەفر سپییە" },
-      { english: ["I", "like", "purple"], kurdish: "حەزم لە مۆرە" },
+      { english: ["The", "snow", "is", "white"], kurdish: "بەفرەکە سپییە" },
+      { english: ["I", "like", "purple"], kurdish: "حەزم لە ڕەنگی مۆرە" },
     ],
     fillBlanks: [
-      { parts: ["The snow is", ""], hint: "بەفر سپییە", answer: "white", wrongs: ["black", "brown", "pink"] },
-      { parts: ["The orange is", ""], hint: "پرتەقاڵ پرتەقاڵییە", answer: "orange", wrongs: ["purple", "pink", "white"] },
+      { parts: ["The snow is", ""], hint: "بەفرەکە سپییە", answer: "white", wrongs: ["black", "brown", "pink"] },
+      { parts: ["The orange is", ""], hint: "پرتەقاڵەکە پرتەقاڵییە", answer: "orange", wrongs: ["purple", "pink", "white"] },
     ],
     conversations: [
       {
@@ -92,7 +92,7 @@ const kidsUnit2: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["I have", "apple"], hint: "یەک سێوم هەیە", answer: "one", wrongs: ["two", "five", "four"] },
-      { parts: ["I have", "fingers on one hand"], hint: "پێنج پەنجەم هەیە", answer: "five", wrongs: ["one", "two", "three"] },
+      { parts: ["I have", "fingers on one hand"], hint: "پێنج پەنجەم لە یەک دەستدا هەیە", answer: "five", wrongs: ["one", "two", "three"] },
     ],
     conversations: [
       {
@@ -161,7 +161,7 @@ const kidsUnit2: UnitBank = [
       { english: ["How", "many", "cats"], kurdish: "چەند پشیلە؟" },
     ],
     fillBlanks: [
-      { parts: ["What", "is the ball?"], hint: "تۆپ چ ڕەنگێکە؟", answer: "color", wrongs: ["number", "animal", "name"] },
+      { parts: ["What", "is the ball?"], hint: "تۆپەکە چ ڕەنگێکە؟", answer: "color", wrongs: ["number", "animal", "name"] },
       { parts: ["How", "apples?"], hint: "چەند سێو؟", answer: "many", wrongs: ["much", "old", "big"] },
     ],
     conversations: [

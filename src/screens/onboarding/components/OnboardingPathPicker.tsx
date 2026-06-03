@@ -1,16 +1,23 @@
+import { AppText } from "@/components/ui/AppText";
 import { HomeLiquidCard, HomePalette } from "@/components/ui/ios-liquid-home";
+import type { PathMode } from "@/screens/home/components/PathSwitcher";
 import { Motion } from "@/screens/lesson/games/game-design";
 import { crossShadow } from "@/utils/shadows";
+import * as Haptics from "expo-haptics";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import * as Haptics from "expo-haptics";
-import { Platform } from "react-native";
 
 const C = HomePalette;
+
+const PATH_ACCENTS: Record<PathMode, string> = {
+  street: C.blue,
+  normal: "#58CC02",
+  kids: C.orange,
+};
 
 export function OnboardingPathPicker({
   selected,
@@ -19,30 +26,40 @@ export function OnboardingPathPicker({
   streetSub,
   normalTitle,
   normalSub,
+  kidsTitle,
+  kidsSub,
 }: {
-  selected: "street" | "normal";
-  onSelect: (mode: "street" | "normal") => void;
+  selected: PathMode;
+  onSelect: (mode: PathMode) => void;
   streetTitle: string;
   streetSub: string;
   normalTitle: string;
   normalSub: string;
+  kidsTitle: string;
+  kidsSub: string;
 }) {
+  const items: {
+    mode: PathMode;
+    title: string;
+    subtitle: string;
+  }[] = [
+    { mode: "street", title: streetTitle, subtitle: streetSub },
+    { mode: "normal", title: normalTitle, subtitle: normalSub },
+    { mode: "kids", title: kidsTitle, subtitle: kidsSub },
+  ];
+
   return (
-    <View style={styles.row}>
-      <PathCard
-        title={streetTitle}
-        subtitle={streetSub}
-        accent={C.blue}
-        selected={selected === "street"}
-        onPress={() => onSelect("street")}
-      />
-      <PathCard
-        title={normalTitle}
-        subtitle={normalSub}
-        accent="#58CC02"
-        selected={selected === "normal"}
-        onPress={() => onSelect("normal")}
-      />
+    <View style={styles.list} accessibilityRole="radiogroup">
+      {items.map((item) => (
+        <PathCard
+          key={item.mode}
+          title={item.title}
+          subtitle={item.subtitle}
+          accent={PATH_ACCENTS[item.mode]}
+          selected={selected === item.mode}
+          onPress={() => onSelect(item.mode)}
+        />
+      ))}
     </View>
   );
 }
@@ -61,7 +78,7 @@ function PathCard({
   onPress: () => void;
 }) {
   const ring = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(selected ? 1 : 0.98, Motion.soft) }],
+    transform: [{ scale: withSpring(selected ? 1 : 0.985, Motion.soft) }],
     borderWidth: withSpring(selected ? 2.5 : 1, Motion.soft),
   }));
 
@@ -87,15 +104,24 @@ function PathCard({
               color: accent,
               offsetY: 8,
               blur: 20,
-              opacity: 0.2,
+              opacity: 0.22,
               elevation: 6,
             }),
         ]}
       >
         <HomeLiquidCard contentStyle={styles.cardInner} radius={20} interactive>
-          <View style={[styles.accentBar, { backgroundColor: accent }]} />
-          <Text style={styles.cardTitle}>{title}</Text>
-          <Text style={styles.cardSub}>{subtitle}</Text>
+          <View style={styles.cardTop}>
+            <View style={[styles.accentDot, { backgroundColor: accent }]} />
+            {selected ? (
+              <View style={[styles.check, { backgroundColor: accent }]}>
+                <AppText style={styles.checkMark} forceLatinFont>
+                  ✓
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+          <AppText style={styles.cardTitle}>{title}</AppText>
+          <AppText style={styles.cardSub}>{subtitle}</AppText>
         </HomeLiquidCard>
       </Animated.View>
     </Pressable>
@@ -103,13 +129,12 @@ function PathCard({
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
+  list: {
+    gap: 10,
+    marginTop: 18,
   },
   cardPress: {
-    flex: 1,
+    minHeight: 48,
   },
   cardOuter: {
     borderRadius: 22,
@@ -117,26 +142,45 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   cardInner: {
-    padding: 16,
-    minHeight: 108,
-    gap: 6,
+    padding: 14,
+    minHeight: 72,
+    gap: 4,
   },
-  accentBar: {
-    width: 32,
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  accentDot: {
+    width: 28,
     height: 4,
     borderRadius: 2,
-    marginBottom: 4,
+  },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkMark: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    lineHeight: 14,
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.3,
   },
   cardSub: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 18,
     color: C.gray,
     fontFamily: "DINNextRoundedMedium",
   },

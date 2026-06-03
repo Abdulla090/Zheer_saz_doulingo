@@ -23,8 +23,8 @@ const kidsUnit1: UnitBank = [
       { english: ["I", "have", "a", "cat"], kurdish: "پشیلەم هەیە" },
     ],
     fillBlanks: [
-      { parts: ["The", "says woof"], hint: "سەگ دەنگی دەکات", answer: "dog", wrongs: ["cat", "bird", "fish"] },
-      { parts: ["A", "says meow"], hint: "پشیلە دەنگی دەکات", answer: "cat", wrongs: ["dog", "fish", "bird"] },
+      { parts: ["The", "says woof"], hint: "سەگ دەوەڕێت", answer: "dog", wrongs: ["cat", "bird", "fish"] },
+      { parts: ["A", "says meow"], hint: "پشیلە میاو دەکات", answer: "cat", wrongs: ["dog", "fish", "bird"] },
     ],
     conversations: [
       {
@@ -59,7 +59,7 @@ const kidsUnit1: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["The", "gives milk"], hint: "مانگا شیر دەدات", answer: "cow", wrongs: ["horse", "sheep", "duck"] },
-      { parts: ["A", "says baa"], hint: "مەڕ دەنگی دەکات", answer: "sheep", wrongs: ["cow", "chicken", "horse"] },
+      { parts: ["A", "says baa"], hint: "مەڕ باڕە دەکات", answer: "sheep", wrongs: ["cow", "chicken", "horse"] },
     ],
     conversations: [
       {
@@ -85,11 +85,11 @@ const kidsUnit1: UnitBank = [
       { english: "Tiger", kurdish: "بەبر" },
     ],
     voices: [
-      { prompt: "بڵێ: شێر گەورەیە", target: "The lion is big.", targetKurdish: "شێر گەورەیە." },
+      { prompt: "بڵێ: شێرەکە گەورەیە", target: "The lion is big.", targetKurdish: "شێرەکە گەورەیە." },
       { prompt: "بڵێ: حەزم لە مەیموونە", target: "I like the monkey.", targetKurdish: "حەزم لە مەیموونە." },
     ],
     sentences: [
-      { english: ["The", "lion", "is", "big"], kurdish: "شێر گەورەیە" },
+      { english: ["The", "lion", "is", "big"], kurdish: "شێرەکە گەورەیە" },
       { english: ["I", "like", "the", "monkey"], kurdish: "حەزم لە مەیموونە" },
     ],
     fillBlanks: [
@@ -120,16 +120,16 @@ const kidsUnit1: UnitBank = [
       { english: "Eat", kurdish: "خواردن" },
     ],
     voices: [
-      { prompt: "بڵێ: باڵندە دەتوانێت بفڕێت", target: "The bird can fly.", targetKurdish: "باڵندە دەتوانێت بفڕێت." },
-      { prompt: "بڵێ: ماسی دەتوانێت مەلە بکات", target: "The fish can swim.", targetKurdish: "ماسی دەتوانێت مەلە بکات." },
+      { prompt: "بڵێ: باڵندەکە دەتوانێت بفڕێت", target: "The bird can fly.", targetKurdish: "باڵندەکە دەتوانێت بفڕێت." },
+      { prompt: "بڵێ: ماسییەکە دەتوانێت مەلە بکات", target: "The fish can swim.", targetKurdish: "ماسییەکە دەتوانێت مەلە بکات." },
     ],
     sentences: [
-      { english: ["The", "bird", "can", "fly"], kurdish: "باڵندە دەتوانێت بفڕێت" },
-      { english: ["The", "fish", "can", "swim"], kurdish: "ماسی دەتوانێت مەلە بکات" },
+      { english: ["The", "bird", "can", "fly"], kurdish: "باڵندەکە دەتوانێت بفڕێت" },
+      { english: ["The", "fish", "can", "swim"], kurdish: "ماسییەکە دەتوانێت مەلە بکات" },
     ],
     fillBlanks: [
-      { parts: ["Birds can", "high"], hint: "باڵندە دەفڕێت", answer: "fly", wrongs: ["swim", "run", "eat"] },
-      { parts: ["Fish can", "in water"], hint: "ماسی مەلە دەکات", answer: "swim", wrongs: ["fly", "jump", "run"] },
+      { parts: ["Birds can", "high"], hint: "باڵندەکان دەتوانن بەرز بفڕن", answer: "fly", wrongs: ["swim", "run", "eat"] },
+      { parts: ["Fish can", "in water"], hint: "ماسییەکان دەتوانن لە ئاودا مەلە بکەن", answer: "swim", wrongs: ["fly", "jump", "run"] },
     ],
     conversations: [
       {
@@ -156,15 +156,15 @@ const kidsUnit1: UnitBank = [
     ],
     voices: [
       { prompt: "بڵێ: ئاژەڵی دڵخوازم پشیلەیە", target: "My favorite animal is the cat.", targetKurdish: "ئاژەڵی دڵخوازم پشیلەیە." },
-      { prompt: "بڵێ: کەروێشک نازدارە", target: "The rabbit is cute.", targetKurdish: "کەروێشک نازدارە." },
+      { prompt: "بڵێ: کەروێشکەکە نازدارە", target: "The rabbit is cute.", targetKurdish: "کەروێشکەکە نازدارە." },
     ],
     sentences: [
-      { english: ["The", "dog", "is", "big"], kurdish: "سەگ گەورەیە" },
-      { english: ["The", "cat", "is", "cute"], kurdish: "پشیلە نازدارە" },
+      { english: ["The", "dog", "is", "big"], kurdish: "سەگەکە گەورەیە" },
+      { english: ["The", "cat", "is", "cute"], kurdish: "پشیلەکە نازدارە" },
     ],
     fillBlanks: [
       { parts: ["My favorite", "is the dog"], hint: "ئاژەڵی دڵخوازم سەگە", answer: "animal", wrongs: ["color", "number", "food"] },
-      { parts: ["The cat is very", ""], hint: "پشیلە زۆر نازدارە", answer: "cute", wrongs: ["big", "old", "tall"] },
+      { parts: ["The cat is very", ""], hint: "پشیلەکە زۆر نازدارە", answer: "cute", wrongs: ["big", "old", "tall"] },
     ],
     conversations: [
       {
