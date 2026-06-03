@@ -10,9 +10,13 @@ interface SettingsState {
   hapticsEnabled: boolean;
   soundsEnabled: boolean;
   pathMode: PathMode;
+  nativeLang: string;
+  targetLang: string;
   setHapticsEnabled: (v: boolean) => void;
   setSoundsEnabled: (v: boolean) => void;
   setPathMode: (mode: PathMode) => void;
+  setNativeLang: (lang: string) => void;
+  setTargetLang: (lang: string) => void;
 }
 
 function persist(partial: Partial<SettingsState>) {
@@ -32,6 +36,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   hapticsEnabled: true,
   soundsEnabled: true,
   pathMode: "normal",
+  nativeLang: "ku",
+  targetLang: "en",
 
   setHapticsEnabled: (hapticsEnabled) => {
     set({ hapticsEnabled });
@@ -46,6 +52,16 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setPathMode: (pathMode) => {
     set({ pathMode });
     persist({ pathMode });
+  },
+
+  setNativeLang: (nativeLang) => {
+    set({ nativeLang });
+    persist({ nativeLang });
+  },
+
+  setTargetLang: (targetLang) => {
+    set({ targetLang });
+    persist({ targetLang });
   },
 }));
 
@@ -65,6 +81,8 @@ async function hydrateSettings() {
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
       pathMode: savedMode,
+      nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
+      targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
       ready: true,
     });
   } catch {

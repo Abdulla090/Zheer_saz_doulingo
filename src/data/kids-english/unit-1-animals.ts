@@ -6,21 +6,21 @@ import type { UnitBank } from "../types";
 const kidsUnit1: UnitBank = [
   // Lesson 0: Pets
   {
-    topic: "Pets", topicKu: "ئاژەڵی ماڵی",
+    topic: "Pets", topicKu: "ئاژەڵی ماڵی", topicAr: "الحيوانات الأليفة",
     words: [
-      { english: "Dog", kurdish: "سەگ" },
-      { english: "Cat", kurdish: "پشیلە" },
-      { english: "Bird", kurdish: "باڵندە" },
-      { english: "Fish", kurdish: "ماسی" },
-      { english: "Rabbit", kurdish: "کەروێشک" },
+      { english: "Dog", kurdish: "سەگ", arabic: "كلب" },
+      { english: "Cat", kurdish: "پشیلە", arabic: "قطة" },
+      { english: "Bird", kurdish: "باڵندە", arabic: "طائر" },
+      { english: "Fish", kurdish: "ماسی", arabic: "سمكة" },
+      { english: "Rabbit", kurdish: "کەروێشک", arabic: "أرنب" },
     ],
     voices: [
       { prompt: "بڵێ: ئەمە سەگە", target: "It is a dog.", targetKurdish: "ئەمە سەگە." },
       { prompt: "بڵێ: پشیلەم هەیە", target: "I have a cat.", targetKurdish: "پشیلەم هەیە." },
     ],
     sentences: [
-      { english: ["It", "is", "a", "dog"], kurdish: "ئەمە سەگە" },
-      { english: ["I", "have", "a", "cat"], kurdish: "پشیلەم هەیە" },
+      { english: ["It", "is", "a", "dog"], kurdish: "ئەمە سەگە", arabic: "هذا كلب" },
+      { english: ["I", "have", "a", "cat"], kurdish: "پشیلەم هەیە", arabic: "لدي قطة" },
     ],
     fillBlanks: [
       { parts: ["The", "says woof"], hint: "سەگ دەوەڕێت", answer: "dog", wrongs: ["cat", "bird", "fish"] },
@@ -41,21 +41,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 1: Farm Animals
   {
-    topic: "Farm Animals", topicKu: "ئاژەڵی کێڵگە",
+    topic: "Farm Animals", topicKu: "ئاژەڵی کێڵگە", topicAr: "حيوانات المزرعة",
     words: [
-      { english: "Cow", kurdish: "مانگا" },
-      { english: "Horse", kurdish: "ئەسپ" },
-      { english: "Sheep", kurdish: "مەڕ" },
-      { english: "Chicken", kurdish: "مریشک" },
-      { english: "Duck", kurdish: "مراوی" },
+      { english: "Cow", kurdish: "مانگا", arabic: "بقرة" },
+      { english: "Horse", kurdish: "ئەسپ", arabic: "حصان" },
+      { english: "Sheep", kurdish: "مەڕ", arabic: "خروف" },
+      { english: "Chicken", kurdish: "مریشک", arabic: "دجاجة" },
+      { english: "Duck", kurdish: "مراوی", arabic: "بطة" },
     ],
     voices: [
       { prompt: "بڵێ: مانگاکە گەورەیە", target: "The cow is big.", targetKurdish: "مانگاکە گەورەیە." },
       { prompt: "بڵێ: ئەسپێک دەبینم", target: "I see a horse.", targetKurdish: "ئەسپێک دەبینم." },
     ],
     sentences: [
-      { english: ["The", "cow", "is", "big"], kurdish: "مانگاکە گەورەیە" },
-      { english: ["I", "see", "a", "horse"], kurdish: "ئەسپێک دەبینم" },
+      { english: ["The", "cow", "is", "big"], kurdish: "مانگاکە گەورەیە", arabic: "البقرة كبيرة" },
+      { english: ["I", "see", "a", "horse"], kurdish: "ئەسپێک دەبینم", arabic: "أرى حصانًا" },
     ],
     fillBlanks: [
       { parts: ["The", "gives milk"], hint: "مانگا شیر دەدات", answer: "cow", wrongs: ["horse", "sheep", "duck"] },
@@ -76,21 +76,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 2: Wild Animals
   {
-    topic: "Wild Animals", topicKu: "ئاژەڵی کێوی",
+    topic: "Wild Animals", topicKu: "ئاژەڵی کێوی", topicAr: "الحيوانات البرية",
     words: [
-      { english: "Lion", kurdish: "شێر" },
-      { english: "Elephant", kurdish: "فیل" },
-      { english: "Monkey", kurdish: "مەیموون" },
-      { english: "Bear", kurdish: "ورچ" },
-      { english: "Tiger", kurdish: "بەبر" },
+      { english: "Lion", kurdish: "شێر", arabic: "أسد" },
+      { english: "Elephant", kurdish: "فیل", arabic: "فيل" },
+      { english: "Monkey", kurdish: "مەیموون", arabic: "قرد" },
+      { english: "Bear", kurdish: "ورچ", arabic: "دب" },
+      { english: "Tiger", kurdish: "بەبر", arabic: "نمر" },
     ],
     voices: [
       { prompt: "بڵێ: شێرەکە گەورەیە", target: "The lion is big.", targetKurdish: "شێرەکە گەورەیە." },
       { prompt: "بڵێ: کەیفم بە مەیمون دێت", target: "I like the monkey.", targetKurdish: "کەیفم بە مەیمون دێت." },
     ],
     sentences: [
-      { english: ["The", "lion", "is", "big"], kurdish: "شێرەکە گەورەیە" },
-      { english: ["I", "like", "the", "monkey"], kurdish: "کەیفم بە مەیمون دێت" },
+      { english: ["The", "lion", "is", "big"], kurdish: "شێرەکە گەورەیە", arabic: "الأسد كبير" },
+      { english: ["I", "like", "the", "monkey"], kurdish: "کەیفم بە مەیمون دێت", arabic: "أحب القرد" },
     ],
     fillBlanks: [
       { parts: ["The", "is the king"], hint: "شێر شای ئاژەڵانە", answer: "lion", wrongs: ["bear", "tiger", "monkey"] },
@@ -111,21 +111,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 3: Animals Can...
   {
-    topic: "Animals Can", topicKu: "ئاژەڵ دەتوانن",
+    topic: "Animals Can", topicKu: "ئاژەڵ دەتوانن", topicAr: "الحيوانات تستطيع",
     words: [
-      { english: "Run", kurdish: "ڕاکردن" },
-      { english: "Jump", kurdish: "بازدان" },
-      { english: "Swim", kurdish: "مەلەکردن" },
-      { english: "Fly", kurdish: "فڕین" },
-      { english: "Eat", kurdish: "خواردن" },
+      { english: "Run", kurdish: "ڕاکردن", arabic: "يجري" },
+      { english: "Jump", kurdish: "بازدان", arabic: "يقفز" },
+      { english: "Swim", kurdish: "مەلەکردن", arabic: "يسبح" },
+      { english: "Fly", kurdish: "فڕین", arabic: "يطير" },
+      { english: "Eat", kurdish: "خواردن", arabic: "يأكل" },
     ],
     voices: [
       { prompt: "بڵێ: باڵندەکە دەتوانێت بفڕێت", target: "The bird can fly.", targetKurdish: "باڵندەکە دەتوانێت بفڕێت." },
       { prompt: "بڵێ: ماسییەکە دەتوانێت مەلە بکات", target: "The fish can swim.", targetKurdish: "ماسییەکە دەتوانێت مەلە بکات." },
     ],
     sentences: [
-      { english: ["The", "bird", "can", "fly"], kurdish: "باڵندەکە دەتوانێت بفڕێت" },
-      { english: ["The", "fish", "can", "swim"], kurdish: "ماسییەکە دەتوانێت مەلە بکات" },
+      { english: ["The", "bird", "can", "fly"], kurdish: "باڵندەکە دەتوانێت بفڕێت", arabic: "الطائر يستطيع الطيران" },
+      { english: ["The", "fish", "can", "swim"], kurdish: "ماسییەکە دەتوانێت مەلە بکات", arabic: "السمكة تستطيع السباحة" },
     ],
     fillBlanks: [
       { parts: ["Birds can", "high"], hint: "باڵندەکان دەتوانن بەرز بفڕن", answer: "fly", wrongs: ["swim", "run", "eat"] },
@@ -146,21 +146,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 4: My Favorite Animal
   {
-    topic: "Favorite Animal", topicKu: "ئاژەڵی دڵخواز",
+    topic: "Favorite Animal", topicKu: "ئاژەڵی دڵخواز", topicAr: "الحيوان المفضل",
     words: [
-      { english: "Favorite", kurdish: "دڵخواز" },
-      { english: "Big", kurdish: "گەورە" },
-      { english: "Small", kurdish: "بچووک" },
-      { english: "Cute", kurdish: "نازدار" },
-      { english: "Animal", kurdish: "ئاژەڵ" },
+      { english: "Favorite", kurdish: "دڵخواز", arabic: "مفضل" },
+      { english: "Big", kurdish: "گەورە", arabic: "كبير" },
+      { english: "Small", kurdish: "بچووک", arabic: "صغير" },
+      { english: "Cute", kurdish: "نازدار", arabic: "لطيف" },
+      { english: "Animal", kurdish: "ئاژەڵ", arabic: "حيوان" },
     ],
     voices: [
       { prompt: "بڵێ: ئاژەڵی دڵخوازم پشیلەیە", target: "My favorite animal is the cat.", targetKurdish: "ئاژەڵی دڵخوازم پشیلەیە." },
       { prompt: "بڵێ: کەروێشکەکە نازدارە", target: "The rabbit is cute.", targetKurdish: "کەروێشکەکە نازدارە." },
     ],
     sentences: [
-      { english: ["The", "dog", "is", "big"], kurdish: "سەگەکە گەورەیە" },
-      { english: ["The", "cat", "is", "cute"], kurdish: "پشیلەکە نازدارە" },
+      { english: ["The", "dog", "is", "big"], kurdish: "سەگەکە گەورەیە", arabic: "الكلب كبير" },
+      { english: ["The", "cat", "is", "cute"], kurdish: "پشیلەکە نازدارە", arabic: "القطة لطيفة" },
     ],
     fillBlanks: [
       { parts: ["My favorite", "is the dog"], hint: "ئاژەڵی دڵخوازم سەگە", answer: "animal", wrongs: ["color", "number", "food"] },
@@ -181,21 +181,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 5: Birds
   {
-    topic: "Birds", topicKu: "باڵندەکان",
+    topic: "Birds", topicKu: "باڵندەکان", topicAr: "الطيور",
     words: [
-      { english: "Eagle", kurdish: "هەڵۆ" },
-      { english: "Owl", kurdish: "کوندەپەپوو" },
-      { english: "Parrot", kurdish: "تووتی" },
-      { english: "Wing", kurdish: "باڵ" },
-      { english: "Sky", kurdish: "ئاسمان" },
+      { english: "Eagle", kurdish: "هەڵۆ", arabic: "نسر" },
+      { english: "Owl", kurdish: "کوندەپەپوو", arabic: "بومة" },
+      { english: "Parrot", kurdish: "تووتی", arabic: "ببغاء" },
+      { english: "Wing", kurdish: "باڵ", arabic: "جناح" },
+      { english: "Sky", kurdish: "ئاسمان", arabic: "سماء" },
     ],
     voices: [
       { prompt: "بڵێ: هەڵۆکە دەفڕێت", target: "The eagle flies.", targetKurdish: "هەڵۆکە دەفڕێت." },
       { prompt: "بڵێ: تووتییەکە قسە دەکات", target: "The parrot talks.", targetKurdish: "تووتییەکە قسە دەکات." },
     ],
     sentences: [
-      { english: ["The", "eagle", "flies"], kurdish: "هەڵۆکە دەفڕێت" },
-      { english: ["The", "parrot", "talks"], kurdish: "تووتییەکە قسە دەکات" },
+      { english: ["The", "eagle", "flies"], kurdish: "هەڵۆکە دەفڕێت", arabic: "النسر يطير" },
+      { english: ["The", "parrot", "talks"], kurdish: "تووتییەکە قسە دەکات", arabic: "الببغاء يتحدث" },
     ],
     fillBlanks: [
       { parts: ["A bird has two", ""], hint: "باڵندە دوو باڵی هەیە", answer: "wings", wrongs: ["legs", "eyes", "ears"] },
@@ -216,21 +216,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 6: Bugs & Insects
   {
-    topic: "Bugs", topicKu: "مێرووەکان",
+    topic: "Bugs", topicKu: "مێرووەکان", topicAr: "الحشرات",
     words: [
-      { english: "Ant", kurdish: "مێروولە" },
-      { english: "Bee", kurdish: "هەنگ" },
-      { english: "Butterfly", kurdish: "پەپوولە" },
-      { english: "Spider", kurdish: "جاڵجاڵۆکە" },
-      { english: "Small", kurdish: "بچووک" },
+      { english: "Ant", kurdish: "مێروولە", arabic: "نملة" },
+      { english: "Bee", kurdish: "هەنگ", arabic: "نحلة" },
+      { english: "Butterfly", kurdish: "پەپوولە", arabic: "فراشة" },
+      { english: "Spider", kurdish: "جاڵجاڵۆکە", arabic: "عنكبوت" },
+      { english: "Small", kurdish: "بچووک", arabic: "صغير" },
     ],
     voices: [
       { prompt: "بڵێ: مێروولەکە بچووکە", target: "The ant is small.", targetKurdish: "مێروولەکە بچووکە." },
       { prompt: "بڵێ: پەپوولەکە جوانە", target: "The butterfly is pretty.", targetKurdish: "پەپوولەکە جوانە." },
     ],
     sentences: [
-      { english: ["The", "ant", "is", "small"], kurdish: "مێروولەکە بچووکە" },
-      { english: ["The", "butterfly", "is", "pretty"], kurdish: "پەپوولەکە جوانە" },
+      { english: ["The", "ant", "is", "small"], kurdish: "مێروولەکە بچووکە", arabic: "النملة صغيرة" },
+      { english: ["The", "butterfly", "is", "pretty"], kurdish: "پەپوولەکە جوانە", arabic: "الفراشة جميلة" },
     ],
     fillBlanks: [
       { parts: ["A", "makes honey"], hint: "هەنگ هەنگوین دروست دەکات", answer: "bee", wrongs: ["ant", "spider", "fly"] },
@@ -251,21 +251,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 7: Sea Animals
   {
-    topic: "Sea Animals", topicKu: "ئاژەڵی دەریایی",
+    topic: "Sea Animals", topicKu: "ئاژەڵی دەریایی", topicAr: "حيوانات البحر",
     words: [
-      { english: "Dolphin", kurdish: "دۆلفین" },
-      { english: "Whale", kurdish: "نەهەنگ" },
-      { english: "Shark", kurdish: "قەرش" },
-      { english: "Turtle", kurdish: "کیسەڵ" },
-      { english: "Ocean", kurdish: "زەریا" },
+      { english: "Dolphin", kurdish: "دۆلفین", arabic: "دلفين" },
+      { english: "Whale", kurdish: "نەهەنگ", arabic: "حوت" },
+      { english: "Shark", kurdish: "قەرش", arabic: "قرش" },
+      { english: "Turtle", kurdish: "کیسەڵ", arabic: "سلحفاة" },
+      { english: "Ocean", kurdish: "زەریا", arabic: "محيط" },
     ],
     voices: [
       { prompt: "بڵێ: نەهەنگەکە زۆر گەورەیە", target: "The whale is very big.", targetKurdish: "نەهەنگەکە زۆر گەورەیە." },
       { prompt: "بڵێ: کیسەڵەکە هێواشە", target: "The turtle is slow.", targetKurdish: "کیسەڵەکە هێواشە." },
     ],
     sentences: [
-      { english: ["The", "whale", "is", "very", "big"], kurdish: "نەهەنگەکە زۆر گەورەیە" },
-      { english: ["The", "turtle", "is", "slow"], kurdish: "کیسەڵەکە هێواشە" },
+      { english: ["The", "whale", "is", "very", "big"], kurdish: "نەهەنگەکە زۆر گەورەیە", arabic: "الحوت كبير جدًا" },
+      { english: ["The", "turtle", "is", "slow"], kurdish: "کیسەڵەکە هێواشە", arabic: "السلحفاة بطيئة" },
     ],
     fillBlanks: [
       { parts: ["The", "jumps in the water"], hint: "دۆلفینەکە لە ئاودا بازدەدات", answer: "dolphin", wrongs: ["turtle", "shark", "bird"] },
@@ -286,21 +286,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 8: Animal Babies
   {
-    topic: "Animal Babies", topicKu: "بەچکەی ئاژەڵان",
+    topic: "Animal Babies", topicKu: "بەچکەی ئاژەڵان", topicAr: "صغار الحيوانات",
     words: [
-      { english: "Puppy", kurdish: "بەچکە سەگ" },
-      { english: "Kitten", kurdish: "بەچکە پشیلە" },
-      { english: "Baby", kurdish: "بەچکە (یان منداڵ)" },
-      { english: "Play", kurdish: "یاریکردن" },
-      { english: "Sleep", kurdish: "خەوتن" },
+      { english: "Puppy", kurdish: "بەچکە سەگ", arabic: "جرو" },
+      { english: "Kitten", kurdish: "بەچکە پشیلە", arabic: "هريرة" },
+      { english: "Baby", kurdish: "بەچکە (یان منداڵ)", arabic: "طفل" },
+      { english: "Play", kurdish: "یاریکردن", arabic: "يلعب" },
+      { english: "Sleep", kurdish: "خەوتن", arabic: "ينام" },
     ],
     voices: [
       { prompt: "بڵێ: بەچکە سەگەکە یاری دەکات", target: "The puppy plays.", targetKurdish: "بەچکە سەگەکە یاری دەکات." },
       { prompt: "بڵێ: بەچکە پشیلەکە دەخەوێت", target: "The kitten sleeps.", targetKurdish: "بەچکە پشیلەکە دەخەوێت." },
     ],
     sentences: [
-      { english: ["The", "puppy", "plays"], kurdish: "بەچکە سەگەکە یاری دەکات" },
-      { english: ["The", "kitten", "sleeps"], kurdish: "بەچکە پشیلەکە دەخەوێت" },
+      { english: ["The", "puppy", "plays"], kurdish: "بەچکە سەگەکە یاری دەکات", arabic: "الجرو يلعب" },
+      { english: ["The", "kitten", "sleeps"], kurdish: "بەچکە پشیلەکە دەخەوێت", arabic: "الهريرة تنام" },
     ],
     fillBlanks: [
       { parts: ["A baby dog is a", ""], hint: "بەچکەی سەگ پێی دەوترێت پۆپی", answer: "puppy", wrongs: ["kitten", "cat", "bird"] },
@@ -321,21 +321,21 @@ const kidsUnit1: UnitBank = [
 
   // Lesson 9: Zoo Animals
   {
-    topic: "Zoo Animals", topicKu: "ئاژەڵی باخی ئاژەڵان",
+    topic: "Zoo Animals", topicKu: "ئاژەڵی باخی ئاژەڵان", topicAr: "حيوانات حديقة الحيوان",
     words: [
-      { english: "Zoo", kurdish: "باخی ئاژەڵان" },
-      { english: "Zebra", kurdish: "کەرەکێوی" },
-      { english: "Giraffe", kurdish: "زەڕافە" },
-      { english: "Tall", kurdish: "باڵابەرز" },
-      { english: "Look", kurdish: "سەیرکردن" },
+      { english: "Zoo", kurdish: "باخی ئاژەڵان", arabic: "حديقة الحيوان" },
+      { english: "Zebra", kurdish: "کەرەکێوی", arabic: "حمار وحشي" },
+      { english: "Giraffe", kurdish: "زەڕافە", arabic: "زرافة" },
+      { english: "Tall", kurdish: "باڵابەرز", arabic: "طويل" },
+      { english: "Look", kurdish: "سەیرکردن", arabic: "ينظر" },
     ],
     voices: [
       { prompt: "بڵێ: ئێمە دەچین بۆ باخی ئاژەڵان", target: "We go to the zoo.", targetKurdish: "ئێمە دەچین بۆ باخی ئاژەڵان." },
       { prompt: "بڵێ: زەڕافەکە باڵابەرزە", target: "The giraffe is tall.", targetKurdish: "زەڕافەکە باڵابەرزە." },
     ],
     sentences: [
-      { english: ["We", "go", "to", "the", "zoo"], kurdish: "ئێمە دەچین بۆ باخی ئاژەڵان" },
-      { english: ["The", "giraffe", "is", "tall"], kurdish: "زەڕافەکە باڵابەرزە" },
+      { english: ["We", "go", "to", "the", "zoo"], kurdish: "ئێمە دەچین بۆ باخی ئاژەڵان", arabic: "نحن نذهب إلى حديقة الحيوان" },
+      { english: ["The", "giraffe", "is", "tall"], kurdish: "زەڕافەکە باڵابەرزە", arabic: "الزرافة طويلة" },
     ],
     fillBlanks: [
       { parts: ["The", "has black and white stripes"], hint: "کەرەکێوی خەتی ڕەش و سپی هەیە", answer: "zebra", wrongs: ["horse", "lion", "bear"] },

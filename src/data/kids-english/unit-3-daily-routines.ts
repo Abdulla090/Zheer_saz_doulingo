@@ -4,21 +4,21 @@ import type { UnitBank } from "../types";
 const kidsUnit3: UnitBank = [
   // Lesson 0: Good Morning
   {
-    topic: "Good Morning", topicKu: "بەیانی باش",
+    topic: "Good Morning", topicKu: "بەیانی باش", topicAr: "صباح الخير",
     words: [
-      { english: "Wake up", kurdish: "هەستان لە خەو" },
-      { english: "Water", kurdish: "ئاو" },
-      { english: "Face", kurdish: "دەموچاو" },
-      { english: "Happy", kurdish: "دڵخۆش" },
-      { english: "Morning", kurdish: "بەیانی" },
+      { english: "Wake up", kurdish: "هەستان لە خەو", arabic: "استيقظ" },
+      { english: "Water", kurdish: "ئاو", arabic: "ماء" },
+      { english: "Face", kurdish: "دەموچاو", arabic: "وجه" },
+      { english: "Happy", kurdish: "دڵخۆش", arabic: "سعيد" },
+      { english: "Morning", kurdish: "بەیانی", arabic: "صباح" },
     ],
     voices: [
       { prompt: "بڵێ: هەڵسە لە خەو", target: "Wake up.", targetKurdish: "هەڵسە لە خەو." },
       { prompt: "بڵێ: دەموچاوم دەشۆم", target: "I wash my face.", targetKurdish: "دەموچاوم دەشۆم." },
     ],
     sentences: [
-      { english: ["I", "wake", "up"], kurdish: "لە خەو هەڵدەستم" },
-      { english: ["I", "wash", "my", "face"], kurdish: "دەموچاوم دەشۆم" },
+      { english: ["I", "wake", "up"], kurdish: "لە خەو هەڵدەستم", arabic: "أنا أستيقظ" },
+      { english: ["I", "wash", "my", "face"], kurdish: "دەموچاوم دەشۆم", arabic: "أغسل وجهي" },
     ],
     fillBlanks: [
       { parts: ["I drink", "in the morning"], hint: "بەیانیان ئاو دەخۆمەوە", answer: "water", wrongs: ["face", "happy", "sleep"] },
@@ -38,21 +38,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 1: Hungry
   {
-    topic: "Hungry", topicKu: "برسی",
+    topic: "Hungry", topicKu: "برسی", topicAr: "جائع",
     words: [
-      { english: "Hungry", kurdish: "برسیمە" },
-      { english: "Apple", kurdish: "سێو" },
-      { english: "Bread", kurdish: "نان" },
-      { english: "Milk", kurdish: "شیر" },
-      { english: "Eat", kurdish: "خواردن" },
+      { english: "Hungry", kurdish: "برسیمە", arabic: "جائع" },
+      { english: "Apple", kurdish: "سێو", arabic: "تفاحة" },
+      { english: "Bread", kurdish: "نان", arabic: "خبز" },
+      { english: "Milk", kurdish: "شیر", arabic: "حليب" },
+      { english: "Eat", kurdish: "خواردن", arabic: "يأكل" },
     ],
     voices: [
       { prompt: "بڵێ: من برسیمە", target: "I am hungry.", targetKurdish: "من برسیمە." },
       { prompt: "بڵێ: شیر دەخۆمەوە", target: "I drink milk.", targetKurdish: "شیر دەخۆمەوە." },
     ],
     sentences: [
-      { english: ["I", "am", "hungry"], kurdish: "من برسیمە" },
-      { english: ["I", "eat", "an", "apple"], kurdish: "سێوێک دەخۆم" },
+      { english: ["I", "am", "hungry"], kurdish: "من برسیمە", arabic: "أنا جائع" },
+      { english: ["I", "eat", "an", "apple"], kurdish: "سێوێک دەخۆم", arabic: "أنا آكل تفاحة" },
     ],
     fillBlanks: [
       { parts: ["I eat", "for breakfast"], hint: "نان بۆ نانی بەیانی دەخۆم", answer: "bread", wrongs: ["milk", "water", "juice"] },
@@ -72,21 +72,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 2: Play Time
   {
-    topic: "Play Time", topicKu: "کاتی یاری",
+    topic: "Play Time", topicKu: "کاتی یاری", topicAr: "وقت اللعب",
     words: [
-      { english: "Play", kurdish: "یاری" },
-      { english: "Run", kurdish: "ڕاکردن" },
-      { english: "Jump", kurdish: "بازدان" },
-      { english: "Ball", kurdish: "تۆپ" },
-      { english: "Fun", kurdish: "خۆش" },
+      { english: "Play", kurdish: "یاری", arabic: "يلعب" },
+      { english: "Run", kurdish: "ڕاکردن", arabic: "يجري" },
+      { english: "Jump", kurdish: "بازدان", arabic: "يقفز" },
+      { english: "Ball", kurdish: "تۆپ", arabic: "كرة" },
+      { english: "Fun", kurdish: "خۆش", arabic: "ممتع" },
     ],
     voices: [
       { prompt: "بڵێ: یاری دەکەین", target: "We play.", targetKurdish: "یاری دەکەین." },
       { prompt: "بڵێ: تۆپەکە هەڵدەدەم", target: "I throw the ball.", targetKurdish: "تۆپەکە هەڵدەدەم." },
     ],
     sentences: [
-      { english: ["We", "play", "with", "a", "ball"], kurdish: "یاری بە تۆپ دەکەین" },
-      { english: ["I", "can", "run", "fast"], kurdish: "دەتوانم خێرا ڕابکەم" },
+      { english: ["We", "play", "with", "a", "ball"], kurdish: "یاری بە تۆپ دەکەین", arabic: "نلعب بالكرة" },
+      { english: ["I", "can", "run", "fast"], kurdish: "دەتوانم خێرا ڕابکەم", arabic: "أستطيع الجري بسرعة" },
     ],
     fillBlanks: [
       { parts: ["I like to", "high"], hint: "حەزم لە بازدانی بەرزە", answer: "jump", wrongs: ["sleep", "eat", "drink"] },
@@ -106,21 +106,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 3: My Clothes
   {
-    topic: "My Clothes", topicKu: "جلوبەرگم",
+    topic: "My Clothes", topicKu: "جلوبەرگم", topicAr: "ملابسي",
     words: [
-      { english: "Shirt", kurdish: "کراس" },
-      { english: "Pants", kurdish: "پانتۆڵ" },
-      { english: "Shoes", kurdish: "پێڵاو" },
-      { english: "Cold", kurdish: "سەرما" },
-      { english: "Wear", kurdish: "لەبەرکردن" },
+      { english: "Shirt", kurdish: "کراس", arabic: "قميص" },
+      { english: "Pants", kurdish: "پانتۆڵ", arabic: "بنطلون" },
+      { english: "Shoes", kurdish: "پێڵاو", arabic: "حذاء" },
+      { english: "Cold", kurdish: "سەرما", arabic: "برد" },
+      { english: "Wear", kurdish: "لەبەرکردن", arabic: "يلبس" },
     ],
     voices: [
       { prompt: "بڵێ: پێڵاوەکانم لەپێ دەکەم", target: "I wear my shoes.", targetKurdish: "پێڵاوەکانم لەپێ دەکەم." },
       { prompt: "بڵێ: من سەرمامە", target: "I am cold.", targetKurdish: "من سەرمامە." },
     ],
     sentences: [
-      { english: ["I", "wear", "a", "shirt"], kurdish: "کراسێک لەبەر دەکەم" },
-      { english: ["I", "am", "cold"], kurdish: "من سەرمامە" },
+      { english: ["I", "wear", "a", "shirt"], kurdish: "کراسێک لەبەر دەکەم", arabic: "أنا ألبس قميصًا" },
+      { english: ["I", "am", "cold"], kurdish: "من سەرمامە", arabic: "أشعر بالبرد" },
     ],
     fillBlanks: [
       { parts: ["I put on my blue", ""], hint: "پانتۆڵە شینەکەم لەبەر دەکەم", answer: "pants", wrongs: ["apple", "dog", "car"] },
@@ -140,21 +140,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 4: Family House
   {
-    topic: "Family House", topicKu: "خانووی خێزان",
+    topic: "Family House", topicKu: "خانووی خێزان", topicAr: "بيت العائلة",
     words: [
-      { english: "House", kurdish: "خانوو" },
-      { english: "Door", kurdish: "دەرگا" },
-      { english: "Mom", kurdish: "دایک" },
-      { english: "Dad", kurdish: "باوک" },
-      { english: "Home", kurdish: "ماڵەوە" },
+      { english: "House", kurdish: "خانوو", arabic: "منزل" },
+      { english: "Door", kurdish: "دەرگا", arabic: "باب" },
+      { english: "Mom", kurdish: "دایک", arabic: "أمي" },
+      { english: "Dad", kurdish: "باوک", arabic: "أبي" },
+      { english: "Home", kurdish: "ماڵەوە", arabic: "بيت" },
     ],
     voices: [
       { prompt: "بڵێ: ئەمە ماڵی منە", target: "This is my home.", targetKurdish: "ئەمە ماڵی منە." },
       { prompt: "بڵێ: دەرگاکە بکەرەوە", target: "Open the door.", targetKurdish: "دەرگاکە بکەرەوە." },
     ],
     sentences: [
-      { english: ["This", "is", "my", "house"], kurdish: "ئەمە خانووی منە" },
-      { english: ["Open", "the", "door"], kurdish: "دەرگاکە بکەرەوە" },
+      { english: ["This", "is", "my", "house"], kurdish: "ئەمە خانووی منە", arabic: "هذا منزلي" },
+      { english: ["Open", "the", "door"], kurdish: "دەرگاکە بکەرەوە", arabic: "افتح الباب" },
     ],
     fillBlanks: [
       { parts: ["My", "and dad are here"], hint: "دایک و باوکم لێرەن", answer: "mom", wrongs: ["cat", "dog", "car"] },
@@ -174,21 +174,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 5: Bath Time
   {
-    topic: "Bath Time", topicKu: "کاتی خۆشتن",
+    topic: "Bath Time", topicKu: "کاتی خۆشتن", topicAr: "وقت الاستحمام",
     words: [
-      { english: "Bath", kurdish: "خۆشتن" },
-      { english: "Soap", kurdish: "سابوون" },
-      { english: "Water", kurdish: "ئاو" },
-      { english: "Clean", kurdish: "خاوێن" },
-      { english: "Wash", kurdish: "شۆردن" },
+      { english: "Bath", kurdish: "خۆشتن", arabic: "استحمام" },
+      { english: "Soap", kurdish: "سابوون", arabic: "صابون" },
+      { english: "Water", kurdish: "ئاو", arabic: "ماء" },
+      { english: "Clean", kurdish: "خاوێن", arabic: "نظيف" },
+      { english: "Wash", kurdish: "شۆردن", arabic: "يغسل" },
     ],
     voices: [
       { prompt: "بڵێ: دەستەکانم دەشۆم", target: "I wash my hands.", targetKurdish: "دەستەکانم دەشۆم." },
       { prompt: "بڵێ: من خاوێنم", target: "I am clean.", targetKurdish: "من خاوێنم." },
     ],
     sentences: [
-      { english: ["I", "take", "a", "bath"], kurdish: "خۆم دەشۆم" },
-      { english: ["I", "wash", "my", "hands"], kurdish: "دەستەکانم دەشۆم" },
+      { english: ["I", "take", "a", "bath"], kurdish: "خۆم دەشۆم", arabic: "أنا أستحم" },
+      { english: ["I", "wash", "my", "hands"], kurdish: "دەستەکانم دەشۆم", arabic: "أغسل يدي" },
     ],
     fillBlanks: [
       { parts: ["I use", "and water"], hint: "سابوون و ئاو بەکار دەهێنم", answer: "soap", wrongs: ["apple", "bread", "shoe"] },
@@ -208,21 +208,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 6: School Time
   {
-    topic: "School Time", topicKu: "کاتی قوتابخانە",
+    topic: "School Time", topicKu: "کاتی قوتابخانە", topicAr: "وقت المدرسة",
     words: [
-      { english: "School", kurdish: "قوتابخانە" },
-      { english: "Teacher", kurdish: "مامۆستا" },
-      { english: "Book", kurdish: "کتێب" },
-      { english: "Read", kurdish: "خوێندنەوە" },
-      { english: "Learn", kurdish: "فێربوون" },
+      { english: "School", kurdish: "قوتابخانە", arabic: "مدرسة" },
+      { english: "Teacher", kurdish: "مامۆستا", arabic: "معلم" },
+      { english: "Book", kurdish: "کتێب", arabic: "كتاب" },
+      { english: "Read", kurdish: "خوێندنەوە", arabic: "يقرأ" },
+      { english: "Learn", kurdish: "فێربوون", arabic: "يتعلم" },
     ],
     voices: [
       { prompt: "بڵێ: دەچم بۆ قوتابخانە", target: "I go to school.", targetKurdish: "دەچم بۆ قوتابخانە." },
       { prompt: "بڵێ: من کتێبێک دەخوێنمەوە", target: "I read a book.", targetKurdish: "من کتێبێک دەخوێنمەوە." },
     ],
     sentences: [
-      { english: ["I", "go", "to", "school"], kurdish: "دەچم بۆ قوتابخانە" },
-      { english: ["I", "read", "a", "book"], kurdish: "کتێبێک دەخوێنمەوە" },
+      { english: ["I", "go", "to", "school"], kurdish: "دەچم بۆ قوتابخانە", arabic: "أذهب إلى المدرسة" },
+      { english: ["I", "read", "a", "book"], kurdish: "کتێبێک دەخوێنمەوە", arabic: "أقرأ كتابًا" },
     ],
     fillBlanks: [
       { parts: ["My", "is nice"], hint: "مامۆستاکەم باشە", answer: "teacher", wrongs: ["dog", "cat", "car"] },
@@ -242,21 +242,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 7: Helping at Home
   {
-    topic: "Helping at Home", topicKu: "یارمەتیدان لە ماڵەوە",
+    topic: "Helping at Home", topicKu: "یارمەتیدان لە ماڵەوە", topicAr: "المساعدة في المنزل",
     words: [
-      { english: "Help", kurdish: "یارمەتیدان" },
-      { english: "Clean", kurdish: "پاککردنەوە" },
-      { english: "Room", kurdish: "ژوور" },
-      { english: "Toy", kurdish: "یاری" },
-      { english: "Box", kurdish: "سندوق" },
+      { english: "Help", kurdish: "یارمەتیدان", arabic: "يساعد" },
+      { english: "Clean", kurdish: "پاککردنەوە", arabic: "ينظف" },
+      { english: "Room", kurdish: "ژوور", arabic: "غرفة" },
+      { english: "Toy", kurdish: "یاری", arabic: "لعبة" },
+      { english: "Box", kurdish: "سندوق", arabic: "صندوق" },
     ],
     voices: [
       { prompt: "بڵێ: یارمەتی دایکم دەدەم", target: "I help my mom.", targetKurdish: "یارمەتی دایکم دەدەم." },
       { prompt: "بڵێ: ژوورەکەم پاکدەکەمەوە", target: "I clean my room.", targetKurdish: "ژوورەکەم پاکدەکەمەوە." },
     ],
     sentences: [
-      { english: ["I", "help", "my", "mom"], kurdish: "یارمەتی دایکم دەدەم" },
-      { english: ["I", "clean", "my", "room"], kurdish: "ژوورەکەم پاکدەکەمەوە" },
+      { english: ["I", "help", "my", "mom"], kurdish: "یارمەتی دایکم دەدەم", arabic: "أساعد أمي" },
+      { english: ["I", "clean", "my", "room"], kurdish: "ژوورەکەم پاکدەکەمەوە", arabic: "أنظف غرفتي" },
     ],
     fillBlanks: [
       { parts: ["I put my", "in the box"], hint: "یارییەکانم دەخەمە سندوقەکەوە", answer: "toy", wrongs: ["dog", "cat", "apple"] },
@@ -276,21 +276,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 8: Evening Routine
   {
-    topic: "Evening Routine", topicKu: "ڕووتینی ئێوارە",
+    topic: "Evening Routine", topicKu: "ڕووتینی ئێوارە", topicAr: "روتين المساء",
     words: [
-      { english: "Evening", kurdish: "ئێوارە" },
-      { english: "Dinner", kurdish: "نانی ئێوارە" },
-      { english: "Family", kurdish: "خێزان" },
-      { english: "Watch", kurdish: "سەیرکردن" },
-      { english: "TV", kurdish: "تەلەفزیۆن" },
+      { english: "Evening", kurdish: "ئێوارە", arabic: "مساء" },
+      { english: "Dinner", kurdish: "نانی ئێوارە", arabic: "عشاء" },
+      { english: "Family", kurdish: "خێزان", arabic: "عائلة" },
+      { english: "Watch", kurdish: "سەیرکردن", arabic: "يشاهد" },
+      { english: "TV", kurdish: "تەلەفزیۆن", arabic: "تلفاز" },
     ],
     voices: [
       { prompt: "بڵێ: نانی ئێوارە دەخۆین", target: "We eat dinner.", targetKurdish: "نانی ئێوارە دەخۆین." },
       { prompt: "بڵێ: سەیری تەلەفزیۆن دەکەین", target: "We watch TV.", targetKurdish: "سەیری تەلەفزیۆن دەکەین." },
     ],
     sentences: [
-      { english: ["We", "eat", "dinner"], kurdish: "نانی ئێوارە دەخۆین" },
-      { english: ["We", "watch", "TV"], kurdish: "سەیری تەلەفزیۆن دەکەین" },
+      { english: ["We", "eat", "dinner"], kurdish: "نانی ئێوارە دەخۆین", arabic: "نحن نأكل العشاء" },
+      { english: ["We", "watch", "TV"], kurdish: "سەیری تەلەفزیۆن دەکەین", arabic: "نحن نشاهد التلفاز" },
     ],
     fillBlanks: [
       { parts: ["I am with my", ""], hint: "لەگەڵ خێزانەکەمم", answer: "family", wrongs: ["school", "teacher", "car"] },
@@ -310,21 +310,21 @@ const kidsUnit3: UnitBank = [
   },
   // Lesson 9: Good Night
   {
-    topic: "Good Night", topicKu: "شەوباش",
+    topic: "Good Night", topicKu: "شەوباش", topicAr: "تصبح على خير",
     words: [
-      { english: "Night", kurdish: "شەو" },
-      { english: "Bed", kurdish: "جێگا" },
-      { english: "Sleep", kurdish: "خەوتن" },
-      { english: "Tired", kurdish: "ماندوو" },
-      { english: "Dream", kurdish: "خەون" },
+      { english: "Night", kurdish: "شەو", arabic: "ليل" },
+      { english: "Bed", kurdish: "جێگا", arabic: "سرير" },
+      { english: "Sleep", kurdish: "خەوتن", arabic: "ينام" },
+      { english: "Tired", kurdish: "ماندوو", arabic: "متعب" },
+      { english: "Dream", kurdish: "خەون", arabic: "حلم" },
     ],
     voices: [
       { prompt: "بڵێ: من ماندووم", target: "I am tired.", targetKurdish: "من ماندووم." },
       { prompt: "بڵێ: دەچم بۆ جێگاکەم", target: "I go to bed.", targetKurdish: "دەچم بۆ جێگاکەم." },
     ],
     sentences: [
-      { english: ["I", "am", "tired"], kurdish: "من ماندووم" },
-      { english: ["I", "go", "to", "bed"], kurdish: "دەچم بۆ جێگاکەم" },
+      { english: ["I", "am", "tired"], kurdish: "من ماندووم", arabic: "أنا متعب" },
+      { english: ["I", "go", "to", "bed"], kurdish: "دەچم بۆ جێگاکەم", arabic: "أذهب إلى السرير" },
     ],
     fillBlanks: [
       { parts: ["I want to", "now"], hint: "دەمەوێت ئێستا بخەوم", answer: "sleep", wrongs: ["run", "play", "eat"] },

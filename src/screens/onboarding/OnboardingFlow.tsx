@@ -17,12 +17,10 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { FadeIn, FadeOut, runOnJS } from "react-native-reanimated";
 
 import {
-
   OnboardingSlide,
-
   type OnboardingSlideModel,
-
 } from "./components/OnboardingSlide";
+import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
 
 
 
@@ -50,6 +48,7 @@ export function OnboardingFlow() {
 
 
   const [index, setIndex] = useState(0);
+  const [showLangSelection, setShowLangSelection] = useState(false);
 
   const [selectedPath] = useState<PathMode>(
 
@@ -149,18 +148,16 @@ export function OnboardingFlow() {
 
 
 
-  const finish = useCallback(() => {
+  const finishSlides = useCallback(() => {
+    setShowLangSelection(true);
+  }, []);
 
+  const finishAll = useCallback(() => {
     setPathMode(selectedPath);
-
     if (Platform.OS !== "web") {
-
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
     }
-
     completeOnboarding();
-
   }, [completeOnboarding, selectedPath, setPathMode]);
 
 
@@ -198,16 +195,11 @@ export function OnboardingFlow() {
     }
 
     if (isLast) {
-
-      finish();
-
+      finishSlides();
       return;
-
     }
-
     goToIndex(index + 1);
-
-  }, [finish, goToIndex, index, isLast]);
+  }, [finishSlides, goToIndex, index, isLast]);
 
 
 
@@ -240,9 +232,11 @@ export function OnboardingFlow() {
 
 
   if (!localeReady || !activeSlide) {
-
     return <View style={styles.root} />;
+  }
 
+  if (showLangSelection) {
+    return <LanguageSelectionFlow onFinish={finishAll} />;
   }
 
 

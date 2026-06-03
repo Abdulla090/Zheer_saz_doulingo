@@ -7,21 +7,21 @@ const normalUnit00: UnitBank = [
 
   // Lesson 0: Making Requests Politely
   {
-    topic: "Polite Requests", topicKu: "داواکارییە بەئەدەبەکان",
+    topic: "Polite Requests", topicKu: "داواکارییە بەئەدەبەکان", topicAr: "الطلبات المهذبة",
     words: [
-      { english: "Could you please",  kurdish: "تکایە دەتوانیت" },
-      { english: "Would it be possible", kurdish: "ئایا دەکرێت" },
-      { english: "I was wondering if",  kurdish: "دەمویست بزانم ئایا" },
-      { english: "I'd appreciate it",   kurdish: "سوپاسگوزار دەبم" },
-      { english: "If you don't mind",   kurdish: "ئەگەر پێت ناخۆش نەبێت" },
+      { english: "Could you please",  kurdish: "تکایە دەتوانیت", arabic: "هل يمكنك من فضلك" },
+      { english: "Would it be possible", kurdish: "ئایا دەکرێت", arabic: "هل من الممكن" },
+      { english: "I was wondering if",  kurdish: "دەمویست بزانم ئایا", arabic: "كنت أتساءل عما إذا" },
+      { english: "I'd appreciate it",   kurdish: "سوپاسگوزار دەبم", arabic: "سأكون ممتنا" },
+      { english: "If you don't mind",   kurdish: "ئەگەر پێت ناخۆش نەبێت", arabic: "إذا كنت لا تمانع" },
     ],
     voices: [
       { prompt: "داوایەکی بەئەدەب بکە", target: "Could you please send me the file?", targetKurdish: "تکایە دەتوانیت فایلەکەم بۆ بنێریت؟" },
       { prompt: "داوا بە شێوەی فەرمی", target: "I was wondering if you could help me with this.", targetKurdish: "دەمویست بزانم ئایا دەتوانیت لەمەدا یارمەتیم بدەیت." },
     ],
     sentences: [
-      { english: ["Could", "you", "please", "explain", "this"], kurdish: "تکایە دەتوانیت ئەمە ڕوون بکەیتەوە؟" },
-      { english: ["I'd", "appreciate", "it", "if", "you", "helped"], kurdish: "زۆر سوپاسگوزار دەبم ئەگەر یارمەتیم بدەیت" },
+      { english: ["Could", "you", "please", "explain", "this"], kurdish: "تکایە دەتوانیت ئەمە ڕوون بکەیتەوە؟", arabic: "هل يمكنك من فضلك شرح هذا؟" },
+      { english: ["I'd", "appreciate", "it", "if", "you", "helped"], kurdish: "زۆر سوپاسگوزار دەبم ئەگەر یارمەتیم بدەیت", arabic: "سأكون ممتنا جدا إذا ساعدتني" },
     ],
     fillBlanks: [
       { parts: ["Could you", "send me the report?"], hint: "تکایە ڕاپۆرتەکەم بۆ بنێرە؟", answer: "please", wrongs: ["kindly", "just", "maybe"] },

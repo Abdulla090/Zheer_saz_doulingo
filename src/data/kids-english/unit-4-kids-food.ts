@@ -4,21 +4,21 @@ import type { UnitBank } from "../types";
 const kidsUnit4: UnitBank = [
   // Lesson 0: Basic Foods
   {
-    topic: "Basic Foods", topicKu: "خواردنە بنەڕەتییەکان",
+    topic: "Basic Foods", topicKu: "خواردنە بنەڕەتییەکان", topicAr: "الأطعمة الأساسية",
     words: [
-      { english: "Apple", kurdish: "سێو" },
-      { english: "Bread", kurdish: "نان" },
-      { english: "Milk", kurdish: "شیر" },
-      { english: "Egg", kurdish: "هێلکە" },
-      { english: "Banana", kurdish: "مۆز" },
+      { english: "Apple", kurdish: "سێو", arabic: "تفاحة" },
+      { english: "Bread", kurdish: "نان", arabic: "خبز" },
+      { english: "Milk", kurdish: "شیر", arabic: "حليب" },
+      { english: "Egg", kurdish: "هێلکە", arabic: "بيضة" },
+      { english: "Banana", kurdish: "مۆز", arabic: "موز" },
     ],
     voices: [
       { prompt: "بڵێ: سێوێک دەخۆم", target: "I eat an apple.", targetKurdish: "سێوێک دەخۆم." },
       { prompt: "بڵێ: شیر دەخۆمەوە", target: "I drink milk.", targetKurdish: "شیر دەخۆمەوە." },
     ],
     sentences: [
-      { english: ["I", "eat", "an", "apple"], kurdish: "سێوێک دەخۆم" },
-      { english: ["I", "drink", "milk"], kurdish: "شیر دەخۆمەوە" },
+      { english: ["I", "eat", "an", "apple"], kurdish: "سێوێک دەخۆم", arabic: "أنا آكل تفاحة" },
+      { english: ["I", "drink", "milk"], kurdish: "شیر دەخۆمەوە", arabic: "أنا أشرب الحليب" },
     ],
     fillBlanks: [
       { parts: ["I eat", "for breakfast"], hint: "نان دەخۆم بۆ نانی بەیانی", answer: "bread", wrongs: ["milk", "water", "juice"] },
@@ -38,21 +38,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 1: Drinks
   {
-    topic: "Drinks", topicKu: "خواردنەوەکان",
+    topic: "Drinks", topicKu: "خواردنەوەکان", topicAr: "المشروبات",
     words: [
-      { english: "Water", kurdish: "ئاو" },
-      { english: "Juice", kurdish: "شەربەت" },
-      { english: "Tea", kurdish: "چا" },
-      { english: "Drink", kurdish: "خواردنەوە" },
-      { english: "Cold", kurdish: "سارد" },
+      { english: "Water", kurdish: "ئاو", arabic: "ماء" },
+      { english: "Juice", kurdish: "شەربەت", arabic: "عصير" },
+      { english: "Tea", kurdish: "چا", arabic: "شاي" },
+      { english: "Drink", kurdish: "خواردنەوە", arabic: "يشرب" },
+      { english: "Cold", kurdish: "سارد", arabic: "بارد" },
     ],
     voices: [
       { prompt: "بڵێ: ئاو دەخۆمەوە", target: "I drink water.", targetKurdish: "ئاو دەخۆمەوە." },
       { prompt: "بڵێ: شەربەتەکە ساردە", target: "The juice is cold.", targetKurdish: "شەربەتەکە ساردە." },
     ],
     sentences: [
-      { english: ["I", "drink", "water"], kurdish: "ئاو دەخۆمەوە" },
-      { english: ["The", "juice", "is", "cold"], kurdish: "شەربەتەکە ساردە" },
+      { english: ["I", "drink", "water"], kurdish: "ئاو دەخۆمەوە", arabic: "أنا أشرب الماء" },
+      { english: ["The", "juice", "is", "cold"], kurdish: "شەربەتەکە ساردە", arabic: "العصير بارد" },
     ],
     fillBlanks: [
       { parts: ["I like cold", ""], hint: "کەیفم بە ئاوی سارد دێت", answer: "water", wrongs: ["bread", "egg", "banana"] },
@@ -72,21 +72,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 2: Fruits
   {
-    topic: "Fruits", topicKu: "میوەکان",
+    topic: "Fruits", topicKu: "میوەکان", topicAr: "الفواكه",
     words: [
-      { english: "Orange", kurdish: "پرتەقاڵ" },
-      { english: "Grape", kurdish: "ترێ" },
-      { english: "Melon", kurdish: "کاڵەک" },
-      { english: "Sweet", kurdish: "شیرین" },
-      { english: "Fruit", kurdish: "میوە" },
+      { english: "Orange", kurdish: "پرتەقاڵ", arabic: "برتقال" },
+      { english: "Grape", kurdish: "ترێ", arabic: "عنب" },
+      { english: "Melon", kurdish: "کاڵەک", arabic: "بطيخ" },
+      { english: "Sweet", kurdish: "شیرین", arabic: "حلو" },
+      { english: "Fruit", kurdish: "میوە", arabic: "فاكهة" },
     ],
     voices: [
       { prompt: "بڵێ: پرتەقاڵەکە شیرینە", target: "The orange is sweet.", targetKurdish: "پرتەقاڵەکە شیرینە." },
       { prompt: "بڵێ: کەیفم بە میوە دێت", target: "I like fruit.", targetKurdish: "کەیفم بە میوە دێت." },
     ],
     sentences: [
-      { english: ["The", "orange", "is", "sweet"], kurdish: "پرتەقاڵەکە شیرینە" },
-      { english: ["I", "like", "fruit"], kurdish: "کەیفم بە میوە دێت" },
+      { english: ["The", "orange", "is", "sweet"], kurdish: "پرتەقاڵەکە شیرینە", arabic: "البرتقالة حلوة" },
+      { english: ["I", "like", "fruit"], kurdish: "کەیفم بە میوە دێت", arabic: "أحب الفاكهة" },
     ],
     fillBlanks: [
       { parts: ["A", "is a fruit"], hint: "پرتەقاڵ میوەیە", answer: "orange", wrongs: ["water", "tea", "bread"] },
@@ -106,21 +106,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 3: Vegetables
   {
-    topic: "Vegetables", topicKu: "سەوزەکان",
+    topic: "Vegetables", topicKu: "سەوزەکان", topicAr: "الخضروات",
     words: [
-      { english: "Tomato", kurdish: "تەماتە" },
-      { english: "Carrot", kurdish: "گێزەر" },
-      { english: "Potato", kurdish: "پەتاتە" },
-      { english: "Green", kurdish: "سەوز" },
-      { english: "Vegetable", kurdish: "سەوزە" },
+      { english: "Tomato", kurdish: "تەماتە", arabic: "طماطم" },
+      { english: "Carrot", kurdish: "گێزەر", arabic: "جزر" },
+      { english: "Potato", kurdish: "پەتاتە", arabic: "بطاطس" },
+      { english: "Green", kurdish: "سەوز", arabic: "أخضر" },
+      { english: "Vegetable", kurdish: "سەوزە", arabic: "خضار" },
     ],
     voices: [
       { prompt: "بڵێ: تەماتەکە سوورە", target: "The tomato is red.", targetKurdish: "تەماتەکە سوورە." },
       { prompt: "بڵێ: گێزەر دەخۆم", target: "I eat a carrot.", targetKurdish: "گێزەر دەخۆم." },
     ],
     sentences: [
-      { english: ["The", "tomato", "is", "red"], kurdish: "تەماتەکە سوورە" },
-      { english: ["I", "eat", "a", "carrot"], kurdish: "گێزەر دەخۆم" },
+      { english: ["The", "tomato", "is", "red"], kurdish: "تەماتەکە سوورە", arabic: "الطماطم حمراء" },
+      { english: ["I", "eat", "a", "carrot"], kurdish: "گێزەر دەخۆم", arabic: "أنا آكل جزرة" },
     ],
     fillBlanks: [
       { parts: ["Rabbits eat", ""], hint: "کەروێشک گێزەر دەخوات", answer: "carrot", wrongs: ["tomato", "potato", "water"] },
@@ -140,21 +140,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 4: Fast Food
   {
-    topic: "Fast Food", topicKu: "خواردنی خێرا",
+    topic: "Fast Food", topicKu: "خواردنی خێرا", topicAr: "الوجبات السريعة",
     words: [
-      { english: "Pizza", kurdish: "پیتزا" },
-      { english: "Burger", kurdish: "بەرگر" },
-      { english: "Fries", kurdish: "پەتاتەی سورەوەکراو" },
-      { english: "Hot", kurdish: "گەرم" },
-      { english: "Yummy", kurdish: "بەتام" },
+      { english: "Pizza", kurdish: "پیتزا", arabic: "بيتزا" },
+      { english: "Burger", kurdish: "بەرگر", arabic: "برجر" },
+      { english: "Fries", kurdish: "پەتاتەی سورەوەکراو", arabic: "بطاطس مقلية" },
+      { english: "Hot", kurdish: "گەرم", arabic: "ساخن" },
+      { english: "Yummy", kurdish: "بەتام", arabic: "لذيذ" },
     ],
     voices: [
       { prompt: "بڵێ: پیتزاکە بەتامە", target: "The pizza is yummy.", targetKurdish: "پیتزاکە بەتامە." },
       { prompt: "بڵێ: بەرگر دەخۆم", target: "I eat a burger.", targetKurdish: "بەرگر دەخۆم." },
     ],
     sentences: [
-      { english: ["The", "pizza", "is", "yummy"], kurdish: "پیتزاکە بەتامە" },
-      { english: ["The", "fries", "are", "hot"], kurdish: "پەتاتەکان گەرمن" },
+      { english: ["The", "pizza", "is", "yummy"], kurdish: "پیتزاکە بەتامە", arabic: "البيتزا لذيذة" },
+      { english: ["The", "fries", "are", "hot"], kurdish: "پەتاتەکان گەرمن", arabic: "البطاطس المقلية ساخنة" },
     ],
     fillBlanks: [
       { parts: ["I like", "and fries"], hint: "کەیفم بە بەرگر و پەتاتەیە", answer: "burger", wrongs: ["water", "tea", "apple"] },
@@ -174,21 +174,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 5: Meals
   {
-    topic: "Meals", topicKu: "ژەمەکان",
+    topic: "Meals", topicKu: "ژەمەکان", topicAr: "الوجبات",
     words: [
-      { english: "Breakfast", kurdish: "نانی بەیانی" },
-      { english: "Lunch", kurdish: "نانی نیوەڕۆ" },
-      { english: "Dinner", kurdish: "نانی ئێوارە" },
-      { english: "Morning", kurdish: "بەیانی" },
-      { english: "Night", kurdish: "شەو" },
+      { english: "Breakfast", kurdish: "نانی بەیانی", arabic: "إفطار" },
+      { english: "Lunch", kurdish: "نانی نیوەڕۆ", arabic: "غداء" },
+      { english: "Dinner", kurdish: "نانی ئێوارە", arabic: "عشاء" },
+      { english: "Morning", kurdish: "بەیانی", arabic: "صباح" },
+      { english: "Night", kurdish: "شەو", arabic: "ليل" },
     ],
     voices: [
       { prompt: "بڵێ: نانی بەیانی دەخۆم", target: "I eat breakfast.", targetKurdish: "نانی بەیانی دەخۆم." },
       { prompt: "بڵێ: کاتی نانی ئێوارەیە", target: "It is time for dinner.", targetKurdish: "کاتی نانی ئێوارەیە." },
     ],
     sentences: [
-      { english: ["I", "eat", "breakfast"], kurdish: "نانی بەیانی دەخۆم" },
-      { english: ["It", "is", "time", "for", "dinner"], kurdish: "کاتی نانی ئێوارەیە" },
+      { english: ["I", "eat", "breakfast"], kurdish: "نانی بەیانی دەخۆم", arabic: "أنا أتناول الإفطار" },
+      { english: ["It", "is", "time", "for", "dinner"], kurdish: "کاتی نانی ئێوارەیە", arabic: "حان وقت العشاء" },
     ],
     fillBlanks: [
       { parts: ["We eat", "in the morning"], hint: "بەیانیان نانی بەیانی دەخۆین", answer: "breakfast", wrongs: ["dinner", "lunch", "night"] },
@@ -208,21 +208,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 6: Sweets
   {
-    topic: "Sweets", topicKu: "شیرینییەکان",
+    topic: "Sweets", topicKu: "شیرینییەکان", topicAr: "الحلويات",
     words: [
-      { english: "Cake", kurdish: "کێک" },
-      { english: "Candy", kurdish: "نوقڵ" },
-      { english: "Chocolate", kurdish: "چۆکۆلاتە" },
-      { english: "Ice cream", kurdish: "ئایس کرێم" },
-      { english: "Happy", kurdish: "دڵخۆش" },
+      { english: "Cake", kurdish: "کێک", arabic: "كعكة" },
+      { english: "Candy", kurdish: "نوقڵ", arabic: "حلوى" },
+      { english: "Chocolate", kurdish: "چۆکۆلاتە", arabic: "شوكولاتة" },
+      { english: "Ice cream", kurdish: "ئایس کرێم", arabic: "آيس كريم" },
+      { english: "Happy", kurdish: "دڵخۆش", arabic: "سعيد" },
     ],
     voices: [
       { prompt: "بڵێ: کێکەکە شیرینە", target: "The cake is sweet.", targetKurdish: "کێکەکە شیرینە." },
       { prompt: "بڵێ: کەیفم بە ئایس کرێم دێت", target: "I like ice cream.", targetKurdish: "کەیفم بە ئایس کرێم دێت." },
     ],
     sentences: [
-      { english: ["The", "cake", "is", "sweet"], kurdish: "کێکەکە شیرینە" },
-      { english: ["I", "like", "ice", "cream"], kurdish: "کەیفم بە ئایس کرێم دێت" },
+      { english: ["The", "cake", "is", "sweet"], kurdish: "کێکەکە شیرینە", arabic: "الكعكة حلوة" },
+      { english: ["I", "like", "ice", "cream"], kurdish: "کەیفم بە ئایس کرێم دێت", arabic: "أحب الآيس كريم" },
     ],
     fillBlanks: [
       { parts: ["I eat", "on my birthday"], hint: "لە ڕۆژی لەدایکبوونمدا کێک دەخۆم", answer: "cake", wrongs: ["water", "carrot", "egg"] },
@@ -242,21 +242,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 7: Hungry & Thirsty
   {
-    topic: "Hungry & Thirsty", topicKu: "برسی و تینوو",
+    topic: "Hungry & Thirsty", topicKu: "برسی و تینوو", topicAr: "جائع وعطشان",
     words: [
-      { english: "Hungry", kurdish: "برسی" },
-      { english: "Thirsty", kurdish: "تینوو" },
-      { english: "Want", kurdish: "ویستن" },
-      { english: "Need", kurdish: "پێویستبوون" },
-      { english: "Now", kurdish: "ئێستا" },
+      { english: "Hungry", kurdish: "برسی", arabic: "جائع" },
+      { english: "Thirsty", kurdish: "تینوو", arabic: "عطشان" },
+      { english: "Want", kurdish: "ویستن", arabic: "يريد" },
+      { english: "Need", kurdish: "پێویستبوون", arabic: "يحتاج" },
+      { english: "Now", kurdish: "ئێستا", arabic: "الآن" },
     ],
     voices: [
       { prompt: "بڵێ: من برسیمە", target: "I am hungry.", targetKurdish: "من برسیمە." },
       { prompt: "بڵێ: من تینوومە", target: "I am thirsty.", targetKurdish: "من تینوومە." },
     ],
     sentences: [
-      { english: ["I", "am", "hungry"], kurdish: "من برسیمە" },
-      { english: ["I", "want", "food", "now"], kurdish: "ئێستا خواردنم دەوێت" },
+      { english: ["I", "am", "hungry"], kurdish: "من برسیمە", arabic: "أنا جائع" },
+      { english: ["I", "want", "food", "now"], kurdish: "ئێستا خواردنم دەوێت", arabic: "أريد طعامًا الآن" },
     ],
     fillBlanks: [
       { parts: ["I drink water because I am", ""], hint: "ئاو دەخۆمەوە چونکە تینوومە", answer: "thirsty", wrongs: ["hungry", "happy", "cold"] },
@@ -276,21 +276,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 8: Cooking
   {
-    topic: "Cooking", topicKu: "چێشتلێنان",
+    topic: "Cooking", topicKu: "چێشتلێنان", topicAr: "الطبخ",
     words: [
-      { english: "Cook", kurdish: "چێشتلێنان" },
-      { english: "Kitchen", kurdish: "چێشتخانە" },
-      { english: "Make", kurdish: "دروستکردن" },
-      { english: "Help", kurdish: "یارمەتیدان" },
-      { english: "Mom", kurdish: "دایک" },
+      { english: "Cook", kurdish: "چێشتلێنان", arabic: "يطبخ" },
+      { english: "Kitchen", kurdish: "چێشتخانە", arabic: "مطبخ" },
+      { english: "Make", kurdish: "دروستکردن", arabic: "يصنع" },
+      { english: "Help", kurdish: "یارمەتیدان", arabic: "يساعد" },
+      { english: "Mom", kurdish: "دایک", arabic: "أمي" },
     ],
     voices: [
       { prompt: "بڵێ: یارمەتی دایکم دەدەم", target: "I help my mom.", targetKurdish: "یارمەتی دایکم دەدەم." },
       { prompt: "بڵێ: ئێمە خواردن دروست دەکەین", target: "We make food.", targetKurdish: "ئێمە خواردن دروست دەکەین." },
     ],
     sentences: [
-      { english: ["I", "help", "my", "mom"], kurdish: "یارمەتی دایکم دەدەم" },
-      { english: ["We", "make", "food"], kurdish: "ئێمە خواردن دروست دەکەین" },
+      { english: ["I", "help", "my", "mom"], kurdish: "یارمەتی دایکم دەدەم", arabic: "أساعد أمي" },
+      { english: ["We", "make", "food"], kurdish: "ئێمە خواردن دروست دەکەین", arabic: "نحن نصنع الطعام" },
     ],
     fillBlanks: [
       { parts: ["My mom is in the", ""], hint: "دایکم لە چێشتخانەیە", answer: "kitchen", wrongs: ["bedroom", "park", "school"] },
@@ -310,21 +310,21 @@ const kidsUnit4: UnitBank = [
   },
   // Lesson 9: My Favorite Food
   {
-    topic: "Favorite Food", topicKu: "خواردنی دڵخواز",
+    topic: "Favorite Food", topicKu: "خواردنی دڵخواز", topicAr: "الطعام المفضل",
     words: [
-      { english: "Favorite", kurdish: "دڵخواز" },
-      { english: "Best", kurdish: "باشترین" },
-      { english: "Love", kurdish: "خۆشویستن" },
-      { english: "Chicken", kurdish: "مریشک" },
-      { english: "Rice", kurdish: "برنج" },
+      { english: "Favorite", kurdish: "دڵخواز", arabic: "مفضل" },
+      { english: "Best", kurdish: "باشترین", arabic: "أفضل" },
+      { english: "Love", kurdish: "خۆشویستن", arabic: "يحب" },
+      { english: "Chicken", kurdish: "مریشک", arabic: "دجاج" },
+      { english: "Rice", kurdish: "برنج", arabic: "أرز" },
     ],
     voices: [
       { prompt: "بڵێ: خواردنی دڵخوازم پیتزایە", target: "My favorite food is pizza.", targetKurdish: "خواردنی دڵخوازم پیتزایە." },
       { prompt: "بڵێ: من برنجم خۆش دەوێت", target: "I love rice.", targetKurdish: "من برنجم خۆش دەوێت." },
     ],
     sentences: [
-      { english: ["My", "favorite", "food", "is", "pizza"], kurdish: "خواردنی دڵخوازم پیتزایە" },
-      { english: ["I", "love", "chicken", "and", "rice"], kurdish: "کەیفم بە مریشک و برنج دێت" },
+      { english: ["My", "favorite", "food", "is", "pizza"], kurdish: "خواردنی دڵخوازم پیتزایە", arabic: "طعامي المفضل هو البيتزا" },
+      { english: ["I", "love", "chicken", "and", "rice"], kurdish: "کەیفم بە مریشک و برنج دێت", arabic: "أحب الدجاج والأرز" },
     ],
     fillBlanks: [
       { parts: ["My", "food is cake"], hint: "خواردنی دڵخوازم کێکە", answer: "favorite", wrongs: ["sad", "bad", "hot"] },

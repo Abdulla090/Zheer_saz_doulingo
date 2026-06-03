@@ -31,6 +31,7 @@ import { buildConversationOptionTiers } from "@/utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
 import { buildKidsFlowQuestions } from "./kids-lesson-builder";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 
 export type { LessonPathMode } from "./types";
 
@@ -102,13 +103,71 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 // ── Safe circular accessor (never throws) ───────────────────────────────────
 const pick = <T>(arr: T[], i: number): T => arr[Math.abs(i) % arr.length];
 
-// ── Main Generator ────────────────────────────────────────────────────────────
+function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, targetLang: string): LessonBank {
+  if (nativeLang === "ku" && targetLang === "en") return lesson; // Default, no need to map
+
+  const getStr = (obj: any, lang: string, fallbackField: string): string => {
+    if (lang === "en") return obj.english || obj.target || obj.targetWord || obj.topic || obj.answer || obj[fallbackField] || "";
+    if (lang === "ar") return obj.arabic || obj.topicAr || obj.targetArabic || obj.arabicHint || getStr(obj, "ku", fallbackField);
+    return obj.kurdish || obj.targetKurdish || obj.topicKu || obj.kurdishHint || obj.hint || obj[fallbackField] || "";
+  };
+
+  const getArr = (obj: any, lang: string): string[] => {
+    if (lang === "en") return Array.isArray(obj.english) ? obj.english : (typeof obj.english === "string" ? obj.english.split(" ") : []);
+    if (lang === "ar") return typeof obj.arabic === "string" ? obj.arabic.split(" ") : (typeof obj.kurdish === "string" ? obj.kurdish.split(" ") : []);
+    return typeof obj.kurdish === "string" ? obj.kurdish.split(" ") : [];
+  };
+
+  return {
+    topic: getStr(lesson, targetLang, "topic"),
+    topicKu: getStr(lesson, nativeLang, "topicKu"),
+    topicAr: lesson.topicAr,
+    words: lesson.words.map((w) => ({
+      english: getStr(w, targetLang, "english"),
+      kurdish: getStr(w, nativeLang, "kurdish"),
+      arabic: w.arabic,
+    })),
+    voices: lesson.voices.map((v) => ({
+      prompt: getStr(v, nativeLang, "prompt"),
+      target: getStr(v, targetLang, "target"),
+      targetKurdish: getStr(v, nativeLang, "targetKurdish"),
+      targetArabic: v.targetArabic,
+    })),
+    sentences: lesson.sentences.map((s) => ({
+      english: getArr(s, targetLang),
+      kurdish: getStr(s, nativeLang, "kurdish"),
+      arabic: s.arabic,
+    })),
+    fillBlanks: lesson.fillBlanks.map((f) => {
+      return {
+        ...f,
+        hint: getStr(f, nativeLang, "hint"),
+        answer: targetLang === "en" ? f.answer : getStr(f, targetLang, "hint") || f.answer,
+      };
+    }),
+    conversations: lesson.conversations.map((c) => ({
+      ...c,
+      situation: getStr(c, nativeLang, "situation"),
+      theyAsk: targetLang === "en" ? c.theyAsk : c.correct,
+      correct: targetLang === "en" ? c.correct : c.theyAsk,
+      wrong1: targetLang === "en" ? c.wrong1 : getStr(c, targetLang, "wrong1"),
+      wrong2: targetLang === "en" ? c.wrong2 : getStr(c, targetLang, "wrong2"),
+      wrong3: targetLang === "en" ? c.wrong3 : getStr(c, targetLang, "wrong3"),
+      explanation: getStr(c, nativeLang, "explanation"),
+    })),
+    kidsGames: lesson.kidsGames,
+  };
+}
+
 function buildLessonQuestionsFromBank(
-  lesson: LessonBank,
+  rawLesson: LessonBank,
   unitIndex: number,
   lessonIndex: number,
   mode: LessonPathMode,
 ): GameQuestion[] {
+  const { nativeLang, targetLang } = useSettingsStore.getState();
+  const lesson = mapLessonBankGenerically(rawLesson, nativeLang, targetLang);
+
   if (mode === "kids" && lesson.kidsGames && lesson.kidsGames.length > 0) {
     return buildKidsFlowQuestions(lesson.kidsGames, unitIndex, lessonIndex);
   }

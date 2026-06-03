@@ -91,10 +91,11 @@ export type GameQuestion =
 export type LessonBank = {
   topic: string;           // short English topic name, e.g. "Basic Greetings"
   topicKu: string;         // Kurdish, e.g. "سڵاوی سەرەکی"
-  words:         { english: string; kurdish: string }[];
-  voices:        { prompt: string; target: string; targetKurdish: string }[];
-  sentences:     { english: string[]; kurdish: string }[];
-  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string] }[];
+  topicAr?: string;        // Arabic topic
+  words:         { english: string; kurdish: string; arabic?: string }[];
+  voices:        { prompt: string; target: string; targetKurdish: string; targetArabic?: string }[];
+  sentences:     { english: string[]; kurdish: string; arabic?: string }[];
+  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string]; arabicHint?: string }[];
   conversations: {
     situation:   string;
     theyAsk:     string;
