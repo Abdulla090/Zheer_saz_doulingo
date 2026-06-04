@@ -96,13 +96,7 @@
           ]
         }
       ],
-      "@sentry/react-native",
-      [
-        "expo-insights",
-        {
-          "dispatchInDebug": false
-        }
-      ]
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,
