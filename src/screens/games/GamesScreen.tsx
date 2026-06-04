@@ -12,8 +12,8 @@ import {
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette as C,
-  HomeType,
 } from "@/components/ui/ios-liquid-home";
+import { Mic2 } from "lucide-react-native";
 import {
   buildPracticeLessonParams,
   type PracticeGameKind,
@@ -42,7 +42,7 @@ type GameTile = {
   subtitle: string;
   badge?: string;
   kind?: PracticeGameKind;
-  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang";
+  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang" | "/podcast";
   featured?: boolean;
   renderIcon: (size?: number) => React.ReactNode;
   colorTheme?: string;
@@ -140,6 +140,16 @@ export function GamesScreen() {
 
   const gameTiles = useMemo<GameTile[]>(
     () => [
+      {
+        id: "podcast",
+        title: "AI Podcast",
+        subtitle: "Learn English & Arabic by listening",
+        badge: "NEW",
+        href: "/podcast",
+        featured: true,
+        colorTheme: "#10B981", // Emerald Green
+        renderIcon: (size) => <Mic2 size={size || 68} color="#10B981" />,
+      },
       {
         id: "slang",
         title: t("games.slangTitle"),
