@@ -1,12 +1,12 @@
 import { Platform } from "react-native";
 
-/** CustomTabBar inner row: icon + label + vertical padding (excludes home indicator). */
-export const TAB_BAR_INNER_HEIGHT = 52;
-export const TAB_BAR_TOP_PADDING = 6;
-/** iOS 26–style floating bar inset from screen edges. */
-export const TAB_BAR_FLOAT_MARGIN_H = 14;
-export const TAB_BAR_FLOAT_MARGIN_BOTTOM = 4;
-export const TAB_BAR_CORNER_RADIUS = 30;
+/** CustomTabBar inner row: icon + label (excludes home indicator). */
+export const TAB_BAR_INNER_HEIGHT = Platform.OS === "android" ? 56 : 52;
+export const TAB_BAR_TOP_PADDING = Platform.OS === "android" ? 8 : 6;
+/** Floating bar inset from screen edges — match iOS 26 compact width. */
+export const TAB_BAR_FLOAT_MARGIN_H = Platform.OS === "android" ? 16 : 14;
+export const TAB_BAR_FLOAT_MARGIN_BOTTOM = Platform.OS === "android" ? 6 : 4;
+export const TAB_BAR_CORNER_RADIUS = 28;
 /** Extra scroll clearance above the floating bar. */
 export const TAB_BAR_FLOAT_CLEARANCE = 10;
 
@@ -28,11 +28,12 @@ export function tabBarTotalHeight(deviceBottomInset: number): number {
 
 /** Scroll content padding so lists clear the tab bar. */
 export function tabBarScrollPadding(deviceBottomInset: number): number {
-  // iOS NativeTabs handles bottom insets automatically (SDK 55+).
-  if (Platform.OS === "ios") {
-    return 16;
+  // NativeTabs (iOS + Android) — system bar handles safe area.
+  if (Platform.OS === "ios" || Platform.OS === "android") {
+    return process.env.EXPO_PUBLIC_ANDROID_JS_TABS === "1"
+      ? tabBarTotalHeight(deviceBottomInset) + 12
+      : 20;
   }
-  // Android + web use the floating glass tab bar.
   return tabBarTotalHeight(deviceBottomInset) + 12;
 }
 

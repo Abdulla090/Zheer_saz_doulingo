@@ -54,9 +54,11 @@ export default function SettingsScreen() {
   const haptics = useSettingsStore((s) => s.hapticsEnabled);
   const sounds = useSettingsStore((s) => s.soundsEnabled);
   const targetLang = useSettingsStore((s) => s.targetLang);
+  const nativeLang = useSettingsStore((s) => s.nativeLang);
   const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
   const setTargetLang = useSettingsStore((s) => s.setTargetLang);
+  const setNativeLang = useSettingsStore((s) => s.setNativeLang);
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -124,6 +126,77 @@ export default function SettingsScreen() {
                   forceKurdishFont={opt.id === "ku" || isKu}
                 >
                   {t(opt.labelKey)}
+                </AppText>
+                {selected ? (
+                  <Icon3DCheckCircle size={22} />
+                ) : (
+                  <View style={styles.radioEmpty} />
+                )}
+              </PressableScale>
+            );
+          })}
+        </View>
+
+        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
+          {isKu ? "زمانی دایک" : "Native Language"}
+        </AppText>
+        <View style={styles.card}>
+          {[
+            { id: "en", label: "English" },
+            { id: "ku", label: "Kurdish (Sorani)" },
+            { id: "ar", label: "Arabic" },
+          ].map((opt, index) => {
+            const selected = nativeLang === opt.id;
+            return (
+              <PressableScale
+                key={opt.id}
+                onPress={() => setNativeLang(opt.id)}
+                scaleDown={0.98}
+                style={[
+                  styles.row,
+                  index < 2 && styles.rowBorder,
+                ]}
+              >
+                <AppText
+                  style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                  forceKurdishFont={opt.id === "ku" || isKu}
+                >
+                  {opt.label}
+                </AppText>
+                {selected ? (
+                  <Icon3DCheckCircle size={22} />
+                ) : (
+                  <View style={styles.radioEmpty} />
+                )}
+              </PressableScale>
+            );
+          })}
+        </View>
+
+        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
+          {isKu ? "زمانی فێربوون" : "Learning Language"}
+        </AppText>
+        <View style={styles.card}>
+          {[
+            { id: "en", label: "English" },
+            { id: "ku", label: "Kurdish (Sorani)" },
+          ].map((opt, index) => {
+            const selected = targetLang === opt.id;
+            return (
+              <PressableScale
+                key={opt.id}
+                onPress={() => setTargetLang(opt.id)}
+                scaleDown={0.98}
+                style={[
+                  styles.row,
+                  index < 1 && styles.rowBorder,
+                ]}
+              >
+                <AppText
+                  style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                  forceKurdishFont={opt.id === "ku" || isKu}
+                >
+                  {opt.label}
                 </AppText>
                 {selected ? (
                   <Icon3DCheckCircle size={22} />

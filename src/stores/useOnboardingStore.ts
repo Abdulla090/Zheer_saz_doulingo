@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { router } from "expo-router";
 import { create } from "zustand";
 
@@ -21,12 +21,12 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   completeOnboarding: () => {
     set({ completed: true });
-    void AsyncStorage.setItem(STORAGE_KEY, "1").catch(() => {});
+    void appStorage.setItem(STORAGE_KEY, "1").catch(() => {});
     router.replace("/(tabs)");
   },
 
   replayOnboarding: async () => {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    await appStorage.removeItem(STORAGE_KEY);
     set((s) => ({
       completed: false,
       replayNonce: s.replayNonce + 1,
@@ -41,7 +41,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
 async function hydrateOnboarding() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await appStorage.getItem(STORAGE_KEY);
     useOnboardingStore.setState({
       completed: raw === "1",
       ready: true,

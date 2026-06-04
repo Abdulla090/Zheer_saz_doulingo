@@ -1,5 +1,5 @@
 import type { LessonPathMode } from "@/data/lesson-content";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.app.progress";
@@ -95,7 +95,7 @@ function rollDailyXp(dailyXp: number, lastActiveDate: string | null): number {
 
 async function persistProgress(state: ProgressSnapshot) {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    await appStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
     /* noop */
   }
@@ -206,7 +206,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
 async function hydrateProgress() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await appStorage.getItem(STORAGE_KEY);
     if (!raw) {
       useProgressStore.setState({ ready: true });
       return;

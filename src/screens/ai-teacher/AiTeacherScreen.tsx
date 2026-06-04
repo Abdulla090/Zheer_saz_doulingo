@@ -19,7 +19,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { evaluateEnglish } from "@/services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { hapticImpact, hapticNotification } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -109,7 +109,7 @@ export function AiTeacherScreen() {
   );
 
   useEffect(() => {
-    AsyncStorage.getItem(HISTORY_KEY)
+    appStorage.getItem(HISTORY_KEY)
       .then((raw) => {
         if (raw) setLastSaved(JSON.parse(raw) as AiTeacherAttempt);
       })
@@ -163,7 +163,7 @@ export function AiTeacherScreen() {
       promptId: prompt.id,
       excerpt: answer.trim().slice(0, 120),
     };
-    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(attempt));
+    await appStorage.setItem(HISTORY_KEY, JSON.stringify(attempt));
     setLastSaved(attempt);
     hapticNotification(Haptics.NotificationFeedbackType.Success);
   }, [answer, mode, prompt.id, result]);

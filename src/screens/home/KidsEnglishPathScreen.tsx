@@ -32,7 +32,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
+import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { KidsPathListRow } from "./components/kids-path-list-row";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
@@ -138,7 +138,7 @@ export function KidsEnglishPathScreen() {
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
+          paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT + 4,
         }}
       >
         <HomeMainButton

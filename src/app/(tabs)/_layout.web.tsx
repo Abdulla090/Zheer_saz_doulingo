@@ -12,7 +12,7 @@ export default function TabsLayoutWeb() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: "#2B59F3",
         tabBarInactiveTintColor: "#8E95A3",
-        animation: "fade",
+        animation: "shift",
         tabBarStyle: {
           position: "absolute",
           backgroundColor: "transparent",
@@ -23,7 +23,7 @@ export default function TabsLayoutWeb() {
       }}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="dashboard" />
+      <Tabs.Screen name="dashboard" options={{ href: null }} />
       <Tabs.Screen name="feed" />
       <Tabs.Screen
         name="subscription"

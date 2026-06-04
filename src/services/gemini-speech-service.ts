@@ -95,39 +95,53 @@ export async function evaluateSpeechWithGemini(input: {
   ].join("\n");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  const fetchPromise = fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: input.audioBase64,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 256,
+        },
+      }),
+      signal: controller.signal,
+    },
+  );
+
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error("Network timeout: Gemini request took too long."));
+    }, API_TIMEOUT_MS);
+  });
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                {
-                  inline_data: {
-                    mime_type: mimeType,
-                    data: input.audioBase64,
-                  },
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 256,
-          },
-        }),
-        signal: controller.signal,
-      },
-    );
+    const res = (await Promise.race([
+      fetchPromise,
+      timeoutPromise,
+    ])) as Response;
+    clearTimeout(timeoutId!);
 
     const data = (await res.json()) as GeminiGenerateResponse;
     if (!res.ok) {
@@ -148,6 +162,6 @@ export async function evaluateSpeechWithGemini(input: {
 
     return parseEvaluationPayload(text, input.targetPhrase);
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timeoutId!);
   }
 }

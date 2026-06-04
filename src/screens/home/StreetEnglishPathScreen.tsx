@@ -28,7 +28,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
+import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
 import { ListItem } from "./components/list-item";
@@ -139,7 +139,7 @@ export const StreetEnglishPathScreen = () => {
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
+          paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT + 4,
         }}
       >
         <HomeMainButton

@@ -26,22 +26,16 @@ import {
   X,
   XCircle,
 } from "lucide-react-native";
+import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  FlatList,
   Modal,
   Platform,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
-  LayoutAnimation,
-  UIManager,
 } from "react-native";
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Premium styling overrides
@@ -127,7 +121,6 @@ export function SlangDictionaryScreen() {
 
   const toggleExpand = useCallback((id: string) => {
     if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
@@ -421,13 +414,18 @@ export function SlangDictionaryScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
+      <FlashList
+        data={filteredSlang}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSlangItem}
+        extraData={expandedId}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + 80 },
         ]}
-      >
+        ListHeaderComponent={
+          <>
         {/* Slang of the Day Spotlight */}
         <HomeLiquidCard
           style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
@@ -492,34 +490,28 @@ export function SlangDictionaryScreen() {
           ) : null}
         </View>
 
-        {/* Category Filters */}
-        <FlatList
-          data={categoriesList}
-          renderItem={renderCategoryChip}
-          keyExtractor={(item) => item}
+        {/* Category Filters — small set; avoid nested FlashList */}
+        <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsContainer}
           style={styles.chipsList}
-        />
-
-        {/* Slang Items List */}
-        <View style={styles.slangList}>
-          {filteredSlang.map((item) => (
-            <React.Fragment key={item.id}>
-              {renderSlangItem({ item })}
-            </React.Fragment>
+        >
+          {categoriesList.map((item) => (
+            <View key={item}>{renderCategoryChip({ item })}</View>
           ))}
-          {filteredSlang.length === 0 && (
-            <View style={styles.emptyState}>
-              <BookOpen size={48} color={ThemeColors.lightSlate} />
-              <AppText style={styles.emptyText} forceKurdishFont>
-                هیچ ئەنجامێک نەدۆزرایەوە
-              </AppText>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+          </>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <BookOpen size={48} color={ThemeColors.lightSlate} />
+            <AppText style={styles.emptyText} forceKurdishFont>
+              هیچ ئەنجامێک نەدۆزرایەوە
+            </AppText>
+          </View>
+        }
+      />
 
       {/* Floating Mini Game Banner */}
       <View style={[styles.bottomFloatingPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>

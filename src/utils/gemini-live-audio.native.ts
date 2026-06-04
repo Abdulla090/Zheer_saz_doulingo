@@ -2,7 +2,7 @@
  * Native: play Gemini Live PCM chunks via WAV data URIs.
  */
 
-import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import { createAudioPlayer, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
 import { GEMINI_LIVE_OUTPUT_RATE } from "@/constants/gemini";
 
 export type MicStreamHandle = {
@@ -128,8 +128,40 @@ export class LivePcmPlayer {
   }
 }
 
-export async function startMicPcmStream(): Promise<MicStreamHandle> {
-  throw new Error("Use hook mic streaming on native.");
+export async function startMicPcmStream(
+  onData: (base64: string) => void
+): Promise<MicStreamHandle> {
+  const perm = await requestRecordingPermissionsAsync();
+  if (!perm.granted) {
+    throw new Error("Microphone permission denied.");
+  }
+
+  await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+
+  const stream = new AudioModule.AudioStream({
+    sampleRate: 16000,
+    channels: 1,
+    encoding: "int16",
+  });
+
+  const subscription = stream.addListener("audioStreamBuffer", (event) => {
+    const bytes = new Uint8Array(event.data);
+    const b64 = encodeBase64(bytes);
+    onData(b64);
+  });
+
+  await stream.start();
+
+  return {
+    stop: () => {
+      try {
+        stream.stop();
+      } catch {
+        /* ignore */
+      }
+      subscription.remove();
+    },
+  };
 }
 
 export function isLiveAudioSupported(): boolean {

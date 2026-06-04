@@ -7,11 +7,15 @@ import React, { memo, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import Svg, { Line } from "react-native-svg";
+
+const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 import { PairMatchQuestion } from "@/data/lesson-content";
 import type { LessonPathMode } from "@/data/lesson-content";
@@ -25,7 +29,7 @@ import { GameHeader, GameOption, GameRoot } from "./GameAnimatedShell";
 
 type Props = {
   question: PairMatchQuestion;
-  onAnswer: (correct: boolean, explanation?: string) => void;
+  onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
 };
 
@@ -57,12 +61,14 @@ const MatchChip = memo(function MatchChip({
   onPress,
   matched,
   rtl,
+  onLayoutCenter,
 }: {
   label: string;
   state: TileState;
   onPress: () => void;
   matched: boolean;
   rtl?: boolean;
+  onLayoutCenter?: (y: number) => void;
 }) {
   const shakeX = useSharedValue(0);
   const wrapStyle = useAnimatedStyle(() => ({
@@ -81,7 +87,15 @@ const MatchChip = memo(function MatchChip({
   }, [state, shakeX]);
 
   return (
-    <Animated.View style={[wrapStyle, s.chipWrap]}>
+    <Animated.View
+      style={[wrapStyle, s.chipWrap]}
+      onLayout={(e) => {
+        if (onLayoutCenter) {
+          const { y, height } = e.nativeEvent.layout;
+          onLayoutCenter(y + height / 2);
+        }
+      }}
+    >
       <LightWordTile
         label={label}
         state={state}
@@ -94,6 +108,44 @@ const MatchChip = memo(function MatchChip({
     </Animated.View>
   );
 });
+
+function WireLine({
+  ly,
+  ry,
+}: {
+  ly: number;
+  ry: number;
+}) {
+  const progress = useSharedValue(0);
+  React.useEffect(() => {
+    progress.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+  }, []);
+
+  const lx = 0;
+  const rx = 40;
+
+  const len = Math.sqrt((rx - lx) ** 2 + (ry - ly) ** 2);
+
+  const animatedProps = useAnimatedProps(() => {
+    return {
+      strokeDashoffset: len - len * progress.value,
+    };
+  });
+
+  return (
+    <AnimatedLine
+      x1={lx}
+      y1={ly}
+      x2={rx}
+      y2={ry}
+      stroke={L.blue}
+      strokeWidth={3}
+      strokeLinecap="round"
+      strokeDasharray={len}
+      animatedProps={animatedProps}
+    />
+  );
+}
 
 export default function PairMatchGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
@@ -119,6 +171,10 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   const [wrongL, setWrongL] = useState<string | null>(null);
   const [wrongR, setWrongR] = useState<string | null>(null);
   const firedRef = useRef(false);
+
+  const leftYs = useRef<{ [k: string]: number }>({});
+  const rightYs = useRef<{ [k: string]: number }>({});
+  const [wires, setWires] = useState<Array<{ id: string; ly: number; ry: number }>>([]);
   const total = question.pairs.length;
   const matchedCount = matched.size / 2;
 
@@ -135,10 +191,15 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         const next = new Set(cur).add(pendL).add(pendR);
         if (next.size / 2 === total && !firedRef.current) {
           firedRef.current = true;
-          setTimeout(() => onAnswer(true), 480);
+          setTimeout(() => onAnswer(true), 600);
         }
         return next;
       });
+      const ly = leftYs.current[pendL];
+      const ry = rightYs.current[pendR];
+      if (ly !== undefined && ry !== undefined) {
+        setWires((w) => [...w, { id: `${pendL}-${pendR}`, ly, ry }]);
+      }
       setSelL(null);
       setSelR(null);
       selLRef.current = null;
@@ -250,12 +311,22 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
                     onPress={() => handleL(lw)}
                     matched={matched.has(lw)}
                     rtl
+                    onLayoutCenter={(y) => {
+                      // Add base padding to match absolute SVG positioning
+                      leftYs.current[lw] = y;
+                    }}
                   />
                 </GameOption>
               ))}
             </View>
 
-            <View style={s.boardDivider} />
+            <View style={s.wireContainer}>
+              <Svg style={StyleSheet.absoluteFill}>
+                {wires.map((w) => (
+                  <WireLine key={w.id} ly={w.ly} ry={w.ry} />
+                ))}
+              </Svg>
+            </View>
 
             <View style={s.column}>
               {right.map((rw, i) => (
@@ -265,6 +336,9 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
                     state={rState(rw)}
                     onPress={() => handleR(rw)}
                     matched={matched.has(rw)}
+                    onLayoutCenter={(y) => {
+                      rightYs.current[rw] = y;
+                    }}
                   />
                 </GameOption>
               ))}
@@ -359,12 +433,10 @@ const s = StyleSheet.create({
     gap: 8,
     justifyContent: "flex-start",
   },
-  boardDivider: {
-    width: 1,
+  wireContainer: {
+    width: 40,
     alignSelf: "stretch",
-    backgroundColor: L.trackInner,
-    borderRadius: 1,
-    marginVertical: 4,
+    position: "relative",
   },
   hintRow: {
     flexDirection: "row",

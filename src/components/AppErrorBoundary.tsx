@@ -1,3 +1,4 @@
+import { captureError } from "@/lib/sentry";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,9 +14,7 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    if (__DEV__) {
-      console.error("AppErrorBoundary", error, info.componentStack);
-    }
+    captureError(error, { componentStack: info.componentStack });
   }
 
   private reset = () => {
@@ -24,13 +23,19 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return <ErrorFallback onRetry={this.reset} />;
+      return <ErrorFallback onRetry={this.reset} error={this.state.error} />;
     }
     return this.props.children;
   }
 }
 
-function ErrorFallback({ onRetry }: { onRetry: () => void }) {
+function ErrorFallback({
+  onRetry,
+  error,
+}: {
+  onRetry: () => void;
+  error: Error | null;
+}) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -46,6 +51,11 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
         Please restart the app. If this keeps happening, contact support from
         Settings.
       </Text>
+      {__DEV__ && error?.message ? (
+        <Text style={styles.devError} selectable>
+          {error.message}
+        </Text>
+      ) : null}
       <Pressable
         onPress={onRetry}
         style={styles.btn}
@@ -80,6 +90,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 20,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  devError: {
+    fontSize: 12,
+    color: "#B42318",
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 16,
+    paddingHorizontal: 8,
     fontFamily: "DINNextRoundedMedium",
   },
   btn: {

@@ -1,7 +1,6 @@
 import {
   GamesTabIcon,
   HomeTabIconFlat,
-  PathTabIcon,
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
@@ -21,10 +20,11 @@ import {
 } from "@/constants/tab-navigation";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
-import type { BottomTabBarProps } from "expo-router/js-tabs";
+import { Motion } from "@/screens/lesson/games/game-design";
 import { hapticSelection } from "@/utils/haptics";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   Platform,
   Pressable,
@@ -33,12 +33,17 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ACTIVE = "#2B59F3";
 const INACTIVE = "#8E95A3";
 
-type TabKey = "index" | "dashboard" | "feed" | "subscription" | "more";
+type TabKey = "index" | "feed" | "subscription" | "more";
 
 const TABS: {
   route: TabKey;
@@ -46,24 +51,17 @@ const TABS: {
   renderIcon: (active: boolean, size: number) => React.ReactNode;
 }[] = [
   {
-    route: "index",
-    labelKey: "tabs.home",
-    renderIcon: (active, size) => (
-      <HomeTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
-  {
-    route: "dashboard",
-    labelKey: "tabs.path",
-    renderIcon: (active, size) => (
-      <PathTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
-  {
     route: "feed",
     labelKey: "tabs.games",
     renderIcon: (active, size) => (
       <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    route: "index",
+    labelKey: "tabs.home",
+    renderIcon: (active, size) => (
+      <HomeTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
@@ -89,11 +87,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useI18n();
   const activeRouteName = state.routes[state.index]?.name;
 
-  const compact = width < 390;
-  const iconSize = compact ? 22 : 24;
-  const labelSize = compact ? 10 : 11;
-  const bottomPad = tabBarBottomInset(insets.bottom);
-
   const tabs = useMemo(
     () =>
       TABS.filter((tab) => ENABLE_SHOP || tab.route !== "subscription").map(
@@ -101,6 +94,33 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       ),
     [t],
   );
+
+  const tabCount = tabs.length;
+  const barWidth = width - TAB_BAR_FLOAT_MARGIN_H * 2;
+  const slotWidth = barWidth / tabCount;
+  const pillInset = 4;
+  const pillWidth = slotWidth - pillInset * 2;
+
+  const pillX = useSharedValue(0);
+
+  const focusedIndex = useMemo(() => {
+    const name = state.routes[state.index]?.name;
+    const idx = tabs.findIndex((tab) => tab.route === name);
+    return idx >= 0 ? idx : 0;
+  }, [tabs, state.index, state.routes]);
+
+  useEffect(() => {
+    pillX.value = withSpring(focusedIndex * slotWidth + pillInset, Motion.soft);
+  }, [focusedIndex, pillInset, pillX, slotWidth]);
+
+  const pillStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: pillX.value }],
+    width: pillWidth,
+  }));
+
+  const iconSize = width < 390 ? 22 : 24;
+  const labelSize = width < 390 ? 10 : 11;
+  const bottomPad = tabBarBottomInset(insets.bottom);
 
   const onTabPress = useCallback(
     (route: TabKey, isFocused: boolean) => {
@@ -127,46 +147,53 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           {
             marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
             marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM + bottomPad,
+            width: barWidth,
+            alignSelf: "center",
             paddingTop: TAB_BAR_TOP_PADDING,
             minHeight: TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT,
           },
         ]}
       >
         <TabBarGlassSurface borderRadius={TAB_BAR_CORNER_RADIUS}>
-          {tabs.map(({ route, label, renderIcon }) => {
-            const routeIndex = state.routes.findIndex((r) => r.name === route);
-            const isFocused =
-              routeIndex >= 0
-                ? state.index === routeIndex
-                : activeRouteName === route;
+          <View style={[styles.row, { height: TAB_BAR_INNER_HEIGHT }]}>
+            <Animated.View
+              style={[styles.activePill, pillStyle]}
+              pointerEvents="none"
+            />
+            {tabs.map(({ route, label, renderIcon }) => {
+              const routeIndex = state.routes.findIndex((r) => r.name === route);
+              const isFocused =
+                routeIndex >= 0
+                  ? state.index === routeIndex
+                  : activeRouteName === route;
 
-            return (
-              <Pressable
-                key={route}
-                onPress={() => onTabPress(route, isFocused)}
-                style={styles.item}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isFocused }}
-                accessibilityLabel={label}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              >
-                {isFocused ? <View style={styles.activePill} /> : null}
-                <View style={styles.itemInner}>
-                  {renderIcon(isFocused, iconSize)}
-                  <Text
-                    style={[
-                      styles.label,
-                      { fontSize: labelSize },
-                      isFocused && styles.labelActive,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {label}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
+              return (
+                <Pressable
+                  key={route}
+                  onPress={() => onTabPress(route, isFocused)}
+                  style={[styles.item, { width: slotWidth }]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isFocused }}
+                  accessibilityLabel={label}
+                  hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }}
+                >
+                  <View style={styles.itemInner}>
+                    {renderIcon(isFocused, iconSize)}
+                    <Text
+                      style={[
+                        styles.label,
+                        { fontSize: labelSize },
+                        isFocused && styles.labelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
         </TabBarGlassSurface>
       </View>
     </View>
@@ -180,23 +207,22 @@ const styles = StyleSheet.create({
   floatWrap: {
     backgroundColor: "transparent",
   },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
   item: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: TAB_BAR_INNER_HEIGHT,
-    paddingHorizontal: 4,
-    position: "relative",
+    zIndex: 1,
   },
   activePill: {
     position: "absolute",
-    top: 0,
+    top: 5,
+    bottom: 5,
     left: 0,
-    right: 0,
-    bottom: 0,
-    marginHorizontal: 3,
-    marginVertical: 5,
-    borderRadius: 18,
+    borderRadius: 20,
     backgroundColor: "rgba(43, 89, 243, 0.14)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(43, 89, 243, 0.22)",
@@ -204,8 +230,7 @@ const styles = StyleSheet.create({
   itemInner: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    zIndex: 1,
+    gap: 3,
   },
   label: {
     fontWeight: "600",

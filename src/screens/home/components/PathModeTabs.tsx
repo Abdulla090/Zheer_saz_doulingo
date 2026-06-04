@@ -16,6 +16,11 @@ function parseMode(raw: string | string[] | undefined): PathMode {
 }
 
 export const PATH_SWITCHER_HEIGHT = 48;
+/** Switcher + CONTINUE banner (see PathContinueBanner). */
+import { PATH_CONTINUE_BANNER_HEIGHT } from "./PathContinueBanner";
+
+export const PATH_TOP_CHROME_HEIGHT =
+  PATH_SWITCHER_HEIGHT + PATH_CONTINUE_BANNER_HEIGHT;
 
 export function PathModeTabs() {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();

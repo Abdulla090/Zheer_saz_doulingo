@@ -24,7 +24,7 @@ import {
 
 type Props = {
   question: MultipleChoiceQuestion;
-  onAnswer: (correct: boolean, explanation?: string) => void;
+  onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
 };
 

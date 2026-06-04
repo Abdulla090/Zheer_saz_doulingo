@@ -10,7 +10,7 @@ export function isGeminiConfigured(): boolean {
 
 /** REST model for speech grading in lessons. */
 export const GEMINI_SPEECH_MODEL =
-  process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || "gemini-2.0-flash";
+  process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 
 /**
  * Gemini Live native-audio model (voice-in / voice-out over WebSocket).

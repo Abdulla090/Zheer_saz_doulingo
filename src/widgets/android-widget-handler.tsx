@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { registerWidgetTaskHandler } from "react-native-android-widget";
 
 import { PhingoHomeAndroidWidget } from "./PhingoHomeAndroidWidget";
@@ -24,7 +24,7 @@ const DEFAULT_PAYLOAD: PhingoHomeWidgetPayload = {
 
 async function readPayload(): Promise<PhingoHomeWidgetPayload> {
   try {
-    const raw = await AsyncStorage.getItem(WIDGET_SNAPSHOT_KEY);
+    const raw = await appStorage.getItem(WIDGET_SNAPSHOT_KEY);
     if (!raw) return DEFAULT_PAYLOAD;
     return { ...DEFAULT_PAYLOAD, ...JSON.parse(raw) };
   } catch {

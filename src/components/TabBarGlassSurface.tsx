@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   fallbackShell: {
     backgroundColor: IS_ANDROID
-      ? "rgba(255,255,255,0.78)"
+      ? "rgba(255,255,255,0.92)"
       : "rgba(255,255,255,0.82)",
   },
   borderHairline: {

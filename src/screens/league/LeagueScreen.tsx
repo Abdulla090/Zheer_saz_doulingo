@@ -102,7 +102,7 @@ export const LeagueScreen = () => {
         data={LEAGUE_ENTRIES}
         keyExtractor={keyExtractor}
         renderItem={renderLeagueItem}
-        estimatedItemSize={74}
+        recycleItems
         contentContainerStyle={{ paddingBottom: 20 }}
       />
     </View>

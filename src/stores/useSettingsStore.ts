@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.app.settings";
@@ -20,10 +20,11 @@ interface SettingsState {
 }
 
 function persist(partial: Partial<SettingsState>) {
-  AsyncStorage.getItem(STORAGE_KEY)
+  appStorage
+    .getItem(STORAGE_KEY)
     .then((raw) => {
       const prev = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
-      return AsyncStorage.setItem(
+      return appStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({ ...prev, ...partial }),
       );
@@ -67,7 +68,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
 async function hydrateSettings() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await appStorage.getItem(STORAGE_KEY);
     if (!raw) {
       useSettingsStore.setState({ ready: true });
       return;

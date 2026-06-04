@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "uniwind";
+@source "./";
 
 @theme {
   --font-rd-bold: "DINNextRoundedBold";

@@ -1,18 +1,22 @@
 import { HomePalette } from "@/components/ui/ios-liquid-home";
-import { crossShadow } from "@/utils/shadows";
 import {
   Bot,
   BookOpen,
+  Headphones,
   Link2,
   ListOrdered,
   MessagesSquare,
   Mic,
-  Sparkles,
+  Radio,
 } from "lucide-react-native";
 import React from "react";
 import { View, type ViewStyle } from "react-native";
 
 const C = HomePalette;
+
+/** Brand-consistent icon wells — avoid per-card rainbow fills */
+const TILE_BLUE = "#E8F0FE";
+const TILE_NAVY = "#EEF2F6";
 
 type GameIconProps = {
   size?: number;
@@ -51,7 +55,7 @@ function GameIconTile({
 export function RolePlayGameIcon({ size = 64 }: GameIconProps) {
   const glyph = Math.round(size * 0.48);
   return (
-    <GameIconTile size={size} backgroundColor="#DBEAFE">
+    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
       <MessagesSquare
         size={glyph}
         color={C.blue}
@@ -65,7 +69,7 @@ export function RolePlayGameIcon({ size = 64 }: GameIconProps) {
 export function OrderWordsGameIcon({ size = 60 }: GameIconProps) {
   const glyph = Math.round(size * 0.48);
   return (
-    <GameIconTile size={size} backgroundColor="#EEF2FF">
+    <GameIconTile size={size} backgroundColor={TILE_NAVY}>
       <ListOrdered size={glyph} color={C.blue} strokeWidth={2.1} />
     </GameIconTile>
   );
@@ -74,8 +78,8 @@ export function OrderWordsGameIcon({ size = 60 }: GameIconProps) {
 export function PairWordsGameIcon({ size = 60 }: GameIconProps) {
   const glyph = Math.round(size * 0.48);
   return (
-    <GameIconTile size={size} backgroundColor="#D1FAE5">
-      <Link2 size={glyph} color="#059669" strokeWidth={2.1} />
+    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
+      <Link2 size={glyph} color={C.blue} strokeWidth={2.1} />
     </GameIconTile>
   );
 }
@@ -83,8 +87,8 @@ export function PairWordsGameIcon({ size = 60 }: GameIconProps) {
 export function SpeakUpGameIcon({ size = 60 }: GameIconProps) {
   const glyph = Math.round(size * 0.48);
   return (
-    <GameIconTile size={size} backgroundColor="#EDE9FE">
-      <Mic size={glyph} color="#7C3AED" strokeWidth={2.1} fill="#7C3AED22" />
+    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
+      <Mic size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
     </GameIconTile>
   );
 }
@@ -92,8 +96,8 @@ export function SpeakUpGameIcon({ size = 60 }: GameIconProps) {
 export function AiTeacherGameIcon({ size = 60 }: GameIconProps) {
   const glyph = Math.round(size * 0.48);
   return (
-    <GameIconTile size={size} backgroundColor="#FEF3C7">
-      <Bot size={glyph} color="#D97706" strokeWidth={2.1} fill="#D9770618" />
+    <GameIconTile size={size} backgroundColor={TILE_NAVY}>
+      <Bot size={glyph} color={C.navy} strokeWidth={2.1} fill={`${C.navy}14`} />
     </GameIconTile>
   );
 }
@@ -103,16 +107,9 @@ export function VoiceTutorGameIcon({ size = 64 }: GameIconProps) {
   return (
     <GameIconTile
       size={size}
-      backgroundColor="#E0E7FF"
-      style={crossShadow({
-        color: C.blue,
-        offsetY: 6,
-        blur: 14,
-        opacity: 0.12,
-        elevation: 4,
-      })}
+      backgroundColor={TILE_BLUE}
     >
-      <Sparkles size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
+      <Radio size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
     </GameIconTile>
   );
 }
@@ -122,21 +119,23 @@ export function SlangDictionaryGameIcon({ size = 64 }: GameIconProps) {
   return (
     <GameIconTile
       size={size}
-      backgroundColor="#FFEBE0"
-      style={crossShadow({
-        color: "#FF6B00",
-        offsetY: 6,
-        blur: 14,
-        opacity: 0.08,
-        elevation: 3,
-      })}
+      backgroundColor={TILE_NAVY}
     >
       <BookOpen
         size={glyph}
-        color="#FF6B00"
+        color={C.navy}
         strokeWidth={2.1}
-        fill="#FF6B0018"
+        fill={`${C.navy}12`}
       />
+    </GameIconTile>
+  );
+}
+
+export function PodcastGameIcon({ size = 52 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
+  return (
+    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
+      <Headphones size={glyph} color={C.blue} strokeWidth={2.1} />
     </GameIconTile>
   );
 }

@@ -14,6 +14,7 @@ import Animated, {
   useSharedValue,
   withSequence,
   withTiming,
+  FadeInUp,
 } from "react-native-reanimated";
 
 import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
@@ -36,7 +37,7 @@ import { ltrText, rtlBlock } from "./game-text";
 
 type Props = {
   question: VoiceQuestion;
-  onAnswer: (correct: boolean) => void;
+  onAnswer: (correct: boolean | "skip") => void;
   pathMode?: LessonPathMode;
 };
 type ListenState = "idle" | "listening" | "processing" | "success" | "fail";
@@ -75,6 +76,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
   const [statusDetail, setStatusDetail] = useState<string | null>(null);
+  const [hasHintRevealed, setHasHintRevealed] = useState(false);
 
   const firedRef = useRef(false);
   const stateRef = useRef<ListenState>("idle");
@@ -115,7 +117,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const fireAnswer = useCallback(
-    (correct: boolean) => {
+    (correct: boolean | "skip") => {
       if (firedRef.current) return;
       firedRef.current = true;
       onAnswer(correct);
@@ -391,6 +393,11 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     void speak(question.targetWord, "en", question.targetWord);
   };
 
+  const handleRevealHint = () => {
+    setHasHintRevealed(true);
+    handleHearPhrase();
+  };
+
   const micColor =
     state === "listening" ||
     gemini.listening ||
@@ -443,22 +450,37 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         {heroPrompt}
       </LightQuestionPrompt>
 
-      <Text style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</Text>
+      {!hasHintRevealed ? (
+        <Animated.View entering={FadeInUp.duration(300)}>
+          <Pressable
+            onPress={handleRevealHint}
+            style={({ pressed }) => [s.hintButton, pressed && s.hintButtonPressed]}
+          >
+            <SpeakerIcon size={24} />
+            <Text style={s.hintText}>Tap for hint</Text>
+          </Pressable>
+        </Animated.View>
+      ) : (
+        <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
+          <Text style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</Text>
 
-      <View style={s.targetRow}>
-        <AppText style={s.targetEn} forceLatinFont latinRole="bold">
-          {question.targetWord}
-        </AppText>
-        <Pressable
-          onPress={handleHearPhrase}
-          style={({ pressed }) => [s.speakerBtn, pressed && { opacity: 0.85 }]}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t("lessons.voiceListenHint")}
-        >
-          <SpeakerIcon size={20} />
-        </Pressable>
-      </View>
+          <View style={s.targetRow}>
+            <AppText style={s.targetEn} forceLatinFont latinRole="bold">
+              {question.targetWord}
+            </AppText>
+            <Pressable
+              onPress={handleHearPhrase}
+              style={({ pressed }) => [s.speakerBtn, pressed && { opacity: 0.85 }]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t("lessons.voiceListenHint")}
+            >
+              <SpeakerIcon size={20} />
+            </Pressable>
+          </View>
+        </Animated.View>
+      )}
+
       <Text style={s.listenHint}>{t("lessons.voiceListenHint")}</Text>
 
       {showGeminiKeyHint ? (
@@ -513,7 +535,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </GameFooter>
       ) : state === "fail" ? (
         <GameFooter delay={120}>
-          <Text style={s.skipLink} onPress={() => fireAnswer(false)}>
+          <Text style={s.skipLink} onPress={() => fireAnswer("skip")}>
             {t("lessons.dontKnow")}
           </Text>
         </GameFooter>
@@ -624,5 +646,35 @@ const s = StyleSheet.create({
     color: L.gray,
     fontFamily: "DINNextRoundedBold",
     paddingVertical: 12,
+  },
+  hintButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    borderWidth: 1.5,
+    borderColor: "rgba(43,89,243,0.15)",
+    borderRadius: 20,
+    marginTop: 8,
+    marginBottom: 8,
+    shadowColor: L.blue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  hintButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
+  hintText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: L.blue,
+    fontFamily: "DINNextRoundedBold",
   },
 });

@@ -34,7 +34,7 @@ import {
 
 type Props = {
   question: KidsPlayQuestion;
-  onAnswer: (correct: boolean) => void;
+  onAnswer: (correct: boolean | "skip") => void;
   pathMode?: LessonPathMode;
 };
 

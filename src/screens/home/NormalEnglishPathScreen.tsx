@@ -32,7 +32,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
-import { PATH_SWITCHER_HEIGHT } from "./components/PathModeTabs";
+import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
@@ -169,7 +169,7 @@ export function NormalEnglishPathScreen() {
         style={[
           darkStyles.root,
           {
-            paddingTop: insets.top + PATH_SWITCHER_HEIGHT + 4,
+            paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT + 4,
           },
         ]}
       >

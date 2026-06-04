@@ -23,7 +23,9 @@ import {
     StyleSheet,
     Text,
     View,
+    Platform,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import Animated, {
     Easing,
     FadeInUp,
@@ -170,13 +172,13 @@ export default function LessonScreen() {
   );
 
   const handleAnswer = useCallback(
-    (correct: boolean, explanation?: string, tier?: AnswerTier) => {
+    (correct: boolean | "skip", explanation?: string, tier?: AnswerTier) => {
       const q = questions[current];
       if (!q) return;
 
       const isConversationPick = q.type === "conversation_pick";
 
-      if (correct) {
+      if (correct === true) {
         xpSc.value = withSequence(
           withTiming(1.4, { duration: 90, easing: Easing.out(Easing.cubic) }),
           withTiming(1.0, { duration: 160, easing: Easing.out(Easing.cubic) }),
@@ -185,13 +187,15 @@ export default function LessonScreen() {
           isConversationPick && tier === "good" ? Math.round(q.xp * 0.85) : q.xp;
         setXp(v => v + xpGain);
         setCorrectN(v => v + 1);
-      } else {
-        const newH = Math.max(0, hearts - 1);
-        setHearts(newH);
-        if (newH === 0) {
-          setPassed(false);
-          setFinished(true);
-          return;
+      } else if (correct === false || correct === "skip") {
+        if (correct === false) {
+          const newH = Math.max(0, hearts - 1);
+          setHearts(newH);
+          if (newH === 0) {
+            setPassed(false);
+            setFinished(true);
+            return;
+          }
         }
       }
 
@@ -203,7 +207,7 @@ export default function LessonScreen() {
       });
 
       setFeedback({
-        correct,
+        correct: correct === "skip" ? false : correct,
         tier: isConversationPick ? tier : undefined,
         explanation,
       });
@@ -252,6 +256,7 @@ export default function LessonScreen() {
   if (questions.length === 0) {
     return (
       <SafeAreaView style={[sSum.root, { backgroundColor: G.bg, justifyContent: "center", alignItems: "center", padding: 24 }]}>
+        <StatusBar hidden />
         <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
@@ -265,6 +270,7 @@ export default function LessonScreen() {
     const ok = passed;
     return (
       <LessonMeshBackdrop>
+        <StatusBar hidden />
         <SafeAreaView style={sSum.root}>
           <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
             <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
@@ -354,6 +360,7 @@ export default function LessonScreen() {
         : t("lessons.feedbackIncorrectSub");
   return (
     <LessonMeshBackdrop>
+      <StatusBar hidden />
       <View style={[sL.root, { paddingTop: insets.top }]}>
         <LessonLightHeader
           progressFillStyle={progressStyle}

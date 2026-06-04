@@ -1,4 +1,6 @@
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { initSentry, Sentry } from "@/lib/sentry";
 import { fontMap } from "@/fontMap";
 import { useFontStore } from "@/stores/useFontStore";
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
@@ -17,6 +19,8 @@ import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
+
+initSentry();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,7 +43,7 @@ function applyGlobalFont(kurdishFontFamily: string) {
   (Text as any).defaultProps.style = { fontFamily: kurdishFontFamily };
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const { selectedFont, ready: fontReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
@@ -83,6 +87,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <OfflineBanner />
       <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
         <AppErrorBoundary>
           <BottomSheetModalProvider>
@@ -100,3 +105,6 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+export default sentryDsn ? Sentry.wrap(RootLayout) : RootLayout;

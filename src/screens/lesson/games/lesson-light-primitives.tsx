@@ -142,7 +142,7 @@ export function LightSurfaceCard({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <HomeLiquidCard contentStyle={[lh.surfaceCardInner, style]} radius={22}>
+    <HomeLiquidCard style={style} contentStyle={lh.surfaceCardInner} radius={22}>
       {children}
     </HomeLiquidCard>
   );

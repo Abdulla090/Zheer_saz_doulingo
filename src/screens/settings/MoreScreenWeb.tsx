@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, FlatList, SafeAreaView } from "react-native";
+import { View, Text, SafeAreaView } from "react-native";
+import { FlashList } from "@shopify/flash-list";
 import { PressableScale } from "@/components/animations";
 import { useFontStore } from "@/stores/useFontStore";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
@@ -31,7 +32,7 @@ export default function MoreScreenWeb() {
         </Text>
       </View>
 
-      <FlatList
+      <FlashList
         data={ALL_RABAR_FONTS}
         keyExtractor={(item) => item}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}

@@ -7,11 +7,20 @@ export default function DashboardRoute() {
   return (
     <View style={styles.root}>
       <LearningPathScreen />
-      <PathModeTabs />
+      <View style={styles.topChrome} pointerEvents="box-none">
+        <PathModeTabs />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  topChrome: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
+  },
 });

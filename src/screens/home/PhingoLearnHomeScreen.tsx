@@ -147,7 +147,7 @@ export function PhingoLearnHomeScreen() {
     [t],
   );
 
-  const onContinue = useCallback(() => {
+  const onOpenPath = useCallback(() => {
     router.push({
       pathname: "/dashboard",
       params: { mode: pathMode },
@@ -155,11 +155,8 @@ export function PhingoLearnHomeScreen() {
   }, [pathMode, router]);
 
   const onLessonPress = useCallback(() => {
-    const route = nextLessonMeta
-      ? buildLessonRouteFromMeta(nextLessonMeta)
-      : buildLessonRouteForMode(pathMode, streetNext, normalNext, kidsNext);
-    if (route) router.push(route);
-  }, [nextLessonMeta, normalNext, kidsNext, pathMode, router, streetNext]);
+    onOpenPath();
+  }, [onOpenPath]);
 
   const onRecentPress = useCallback(() => {
     if (!lastActivity) return;
@@ -239,7 +236,6 @@ export function PhingoLearnHomeScreen() {
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
               <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
-              <HomeLiquidButton label={t("home.continue")} onPress={onContinue} />
             </View>
             <View style={[styles.heroMascot, { transform: [{ scaleX: -1 }] }]}>
               <PingoMascot size={130} pose="wave" />
@@ -269,7 +265,16 @@ export function PhingoLearnHomeScreen() {
           </View>
         </HomeLiquidCard>
 
-        <HomeLiquidCard style={styles.cardSpacer} contentStyle={styles.pathProgressInner}>
+        <Pressable
+          onPress={onOpenPath}
+          accessibilityRole="button"
+          accessibilityLabel={t("tabs.path")}
+        >
+          <HomeLiquidCard
+            interactive
+            style={styles.cardSpacer}
+            contentStyle={styles.pathProgressInner}
+          >
           <Text style={styles.cardHeading}>{t("home.pathProgress")}</Text>
           <View style={styles.pathRow}>
             <Text style={styles.pathLabel}>{t("home.streetPath")}</Text>
@@ -299,7 +304,9 @@ export function PhingoLearnHomeScreen() {
             height={8}
             style={styles.pathBar}
           />
+          <Text style={styles.pathOpenHint}>{t("home.tapToOpenPath")}</Text>
         </HomeLiquidCard>
+        </Pressable>
 
         <Text style={styles.sectionLabel}>{t("home.upNext")}</Text>
         <HomeLiquidLessonTile
@@ -425,6 +432,13 @@ const styles = StyleSheet.create({
   },
   pathBar: {
     marginTop: 6,
+  },
+  pathOpenHint: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: C.blue,
+    fontFamily: "DINNextRoundedMedium",
+    marginTop: 12,
   },
   lessonTapHint: {
     fontSize: 13,

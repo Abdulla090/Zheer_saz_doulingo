@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import { Platform } from "react-native";
 
 import { useProgressStore } from "@/stores/useProgressStore";
@@ -15,7 +15,7 @@ import {
 
 async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> {
   try {
-    await AsyncStorage.setItem(WIDGET_SNAPSHOT_KEY, JSON.stringify(payload));
+    await appStorage.setItem(WIDGET_SNAPSHOT_KEY, JSON.stringify(payload));
   } catch {
     /* noop */
   }

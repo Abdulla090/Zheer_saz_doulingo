@@ -57,7 +57,7 @@ type Props = {
 
   question: ConversationPickQuestion;
 
-  onAnswer: (correct: boolean, explanation?: string, tier?: AnswerTier) => void;
+  onAnswer: (correct: boolean | "skip", explanation?: string, tier?: AnswerTier) => void;
 
   pathMode?: LessonPathMode;
 

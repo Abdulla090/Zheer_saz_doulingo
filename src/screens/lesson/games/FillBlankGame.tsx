@@ -29,7 +29,7 @@ import {
 
 type Props = {
   question: FillBlankQuestion;
-  onAnswer: (correct: boolean, explanation?: string) => void;
+  onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
 };
 

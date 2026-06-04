@@ -1,8 +1,8 @@
-import { PressableScale } from "@/components/animations";
 import {
   AiTeacherGameIcon,
   OrderWordsGameIcon,
   PairWordsGameIcon,
+  PodcastGameIcon,
   RolePlayGameIcon,
   SlangDictionaryGameIcon,
   SpeakUpGameIcon,
@@ -10,24 +10,26 @@ import {
 } from "@/components/icons/GameHubIcons";
 import {
   HomeLiquidCard,
+  HomeLiquidLessonTile,
   HomeMeshBackground,
   HomePalette as C,
+  HomeType,
 } from "@/components/ui/ios-liquid-home";
-import { Mic2 } from "lucide-react-native";
+import { tabBarScrollPadding } from "@/constants/layout";
 import {
   buildPracticeLessonParams,
   type PracticeGameKind,
 } from "@/data/game-practice";
 import { useI18n } from "@/hooks/useI18n";
+import type { I18nKey } from "@/i18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
-import { tabBarScrollPadding } from "@/constants/layout";
+import { hapticSelection } from "@/utils/haptics";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
-import { crossShadow } from "@/utils/shadows";
 import { useRouter } from "expo-router";
-import { Sparkles, ArrowRight } from "lucide-react-native";
-import React, { useCallback, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,92 +38,116 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type GameTile = {
+type HubTile = {
   id: string;
+  titleKey: I18nKey;
+  subtitleKey: I18nKey;
+  badgeKey?: I18nKey;
+  kind?: PracticeGameKind;
+  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang" | "/podcast";
+  renderIcon: (size: number) => React.ReactNode;
+};
+
+function StatusPill({
+  label,
+  onDark = false,
+}: {
+  label: string;
+  onDark?: boolean;
+}) {
+  return (
+    <View style={[styles.pill, onDark && styles.pillOnDark]}>
+      <Text style={[styles.pillText, onDark && styles.pillTextOnDark]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+const HubRow = memo(function HubRow({
+  title,
+  subtitle,
+  badge,
+  renderIcon,
+  onPress,
+  isLast,
+}: {
   title: string;
   subtitle: string;
   badge?: string;
-  kind?: PracticeGameKind;
-  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang" | "/podcast";
-  featured?: boolean;
-  renderIcon: (size?: number) => React.ReactNode;
-  colorTheme?: string;
-};
-
-function GameHubCard({
-  tile,
-  onPress,
-  cardWidth,
-}: {
-  tile: GameTile;
+  renderIcon: (size: number) => React.ReactNode;
   onPress: () => void;
-  cardWidth: number;
+  isLast?: boolean;
 }) {
-  const isFullWidth = tile.featured;
-
-  if (isFullWidth) {
-    return (
-      <PressableScale onPress={onPress} scaleDown={0.98} style={{ width: cardWidth }}>
-        <HomeLiquidCard
-          interactive
-          style={[
-            styles.featuredCardShell,
-            crossShadow({
-              color: tile.colorTheme || C.blue,
-              offsetY: 10,
-              blur: 24,
-              opacity: 0.15,
-              elevation: 8,
-            }),
-          ]}
-          contentStyle={[styles.featuredCardContent, { borderColor: tile.colorTheme ? `${tile.colorTheme}40` : "rgba(43,89,243,0.3)" }]}
-        >
-          <View style={styles.featuredIconArea}>
-            <View style={[styles.featuredIconGlow, { backgroundColor: tile.colorTheme ? `${tile.colorTheme}15` : "rgba(43,89,243,0.15)" }]}>
-              {tile.renderIcon(60)}
-            </View>
-          </View>
-          <View style={styles.featuredCopyArea}>
-            <View style={styles.titleRow}>
-              <Text style={[styles.featuredTitle, { color: tile.colorTheme || C.blue }]} numberOfLines={1}>
-                {tile.title}
-              </Text>
-              {tile.badge ? (
-                <View style={[styles.badge, { backgroundColor: tile.colorTheme || C.blue }]}>
-                  <Sparkles size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
-                  <Text style={styles.badgeText}>{tile.badge}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.featuredSubtitle} numberOfLines={2}>
-              {tile.subtitle}
-            </Text>
-            <View style={styles.featuredAction}>
-              <Text style={[styles.featuredActionText, { color: tile.colorTheme || C.blue }]}>{tile.badge === "NEW" ? "Play Now" : "Continue"}</Text>
-              <ArrowRight size={14} color={tile.colorTheme || C.blue} strokeWidth={2.5} />
-            </View>
-          </View>
-        </HomeLiquidCard>
-      </PressableScale>
-    );
-  }
-
   return (
-    <PressableScale onPress={onPress} scaleDown={0.97} style={{ width: cardWidth }}>
-      <HomeLiquidCard interactive style={styles.gridCardShell} contentStyle={styles.gridCardContent}>
-        <View style={styles.gridIconWrap}>
-          {tile.renderIcon(48)}
+    <Pressable
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
+      style={[styles.hubRow, !isLast && styles.hubRowBorder]}
+      accessibilityRole="button"
+    >
+      <View style={styles.hubRowIcon}>{renderIcon(44)}</View>
+      <View style={styles.hubRowCopy}>
+        <View style={styles.hubRowTitleLine}>
+          <Text style={styles.hubRowTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          {badge ? <StatusPill label={badge} /> : null}
         </View>
-        <Text style={styles.gridTitle} numberOfLines={1}>
-          {tile.title}
+        <Text style={styles.hubRowSub} numberOfLines={2}>
+          {subtitle}
         </Text>
-        <Text style={styles.gridSubtitle} numberOfLines={2}>
-          {tile.subtitle}
-        </Text>
-      </HomeLiquidCard>
-    </PressableScale>
+      </View>
+      <Text style={styles.chevron} accessibilityElementsHidden>
+        ›
+      </Text>
+    </Pressable>
   );
-}
+});
+
+const ExperienceCard = memo(function ExperienceCard({
+  title,
+  subtitle,
+  badge,
+  renderIcon,
+  onPress,
+  width,
+}: {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  renderIcon: (size: number) => React.ReactNode;
+  onPress: () => void;
+  width: number;
+}) {
+  return (
+    <Pressable
+      onPress={() => {
+        hapticSelection();
+        onPress();
+      }}
+      style={{ width }}
+      accessibilityRole="button"
+    >
+      <HomeLiquidCard interactive contentStyle={styles.experienceInner}>
+        {renderIcon(48)}
+        <View style={styles.experienceCopy}>
+          <View style={styles.hubRowTitleLine}>
+            <Text style={styles.experienceTitle} numberOfLines={2}>
+              {title}
+            </Text>
+            {badge ? <StatusPill label={badge} /> : null}
+          </View>
+          <Text style={styles.experienceSub} numberOfLines={2}>
+            {subtitle}
+          </Text>
+        </View>
+      </HomeLiquidCard>
+    </Pressable>
+  );
+});
 
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
@@ -132,105 +158,107 @@ export function GamesScreen() {
   const pathMode = useSettingsStore((s) => s.pathMode);
   const recordGamePlayed = useProgressStore((s) => s.recordGamePlayed);
   const { width } = useWindowDimensions();
-  
-  const horizontalPad = 16;
-  const gap = 12;
-  const fullWidth = width - horizontalPad * 2;
-  const halfWidth = (fullWidth - gap) / 2;
 
-  const gameTiles = useMemo<GameTile[]>(
+  const horizontalPad = 20;
+  const gap = 12;
+  const contentWidth = width - horizontalPad * 2;
+  const halfWidth = (contentWidth - gap) / 2;
+
+  const immersiveTile = useMemo<HubTile>(
+    () => ({
+      id: "voice-tutor",
+      titleKey: "games.voiceTutorTitle",
+      subtitleKey: "games.voiceTutorSub",
+      badgeKey: "games.badgeNew",
+      href: "/voice-tutor",
+      renderIcon: (size) => <VoiceTutorGameIcon size={size} />,
+    }),
+    [],
+  );
+
+  const experienceTiles = useMemo<HubTile[]>(
     () => [
       {
-        id: "podcast",
-        title: "AI Podcast",
-        subtitle: "Learn English & Arabic by listening",
-        badge: "NEW",
-        href: "/podcast",
-        featured: true,
-        colorTheme: "#10B981", // Emerald Green
-        renderIcon: (size) => <Mic2 size={size || 68} color="#10B981" />,
+        id: "roleplay",
+        titleKey: "games.rolePlayTitle",
+        subtitleKey: "games.rolePlaySub",
+        badgeKey: "games.badgeHot",
+        href: "/roleplay",
+        renderIcon: (size) => <RolePlayGameIcon size={size} />,
       },
       {
         id: "slang",
-        title: t("games.slangTitle"),
-        subtitle: t("games.slangSub"),
-        badge: t("games.badgeNew"),
+        titleKey: "games.slangTitle",
+        subtitleKey: "games.slangSub",
+        badgeKey: "games.badgeNew",
         href: "/slang",
-        featured: true,
-        colorTheme: "#8B5CF6", // Vibrant Purple
-        renderIcon: (size) => <SlangDictionaryGameIcon size={size || 68} />,
+        renderIcon: (size) => <SlangDictionaryGameIcon size={size} />,
       },
       {
-        id: "voice-tutor",
-        title: t("games.voiceTutorTitle"),
-        subtitle: t("games.voiceTutorSub"),
-        badge: t("games.badgeNew"),
-        href: "/voice-tutor",
-        featured: true,
-        colorTheme: "#2B59F3", // Brand Blue
-        renderIcon: (size) => <VoiceTutorGameIcon size={size || 68} />,
-      },
-      {
-        id: "roleplay",
-        title: t("games.rolePlayTitle"),
-        subtitle: t("games.rolePlaySub"),
-        badge: t("games.badgeHot"),
-        href: "/roleplay",
-        featured: true,
-        colorTheme: "#F59E0B", // Amber/Gold
-        renderIcon: (size) => <RolePlayGameIcon size={size || 68} />,
-      },
-      {
-        id: "conversation",
-        title: t("games.conversationTitle"),
-        subtitle: t("games.conversationSub"),
-        kind: "conversation_pick",
-        renderIcon: (size) => <RolePlayGameIcon size={size || 52} />,
-      },
-      {
-        id: "speak",
-        title: t("games.speakTitle"),
-        subtitle: t("games.speakSub"),
-        kind: "voice_speak",
-        renderIcon: (size) => <SpeakUpGameIcon size={size || 52} />,
-      },
-      {
-        id: "listen",
-        title: t("games.listenTitle"),
-        subtitle: t("games.listenSub"),
-        kind: "voice_listen",
-        renderIcon: (size) => <SpeakUpGameIcon size={size || 52} />,
+        id: "podcast",
+        titleKey: "games.podcastTitle",
+        subtitleKey: "games.podcastSub",
+        badgeKey: "games.badgeNew",
+        href: "/podcast",
+        renderIcon: (size) => <PodcastGameIcon size={size} />,
       },
       {
         id: "ai-teacher",
-        title: t("games.teacherTitle"),
-        subtitle: t("games.teacherSub"),
+        titleKey: "games.teacherTitle",
+        subtitleKey: "games.teacherSub",
         href: "/ai-teacher",
-        renderIcon: (size) => <AiTeacherGameIcon size={size || 52} />,
+        renderIcon: (size) => <AiTeacherGameIcon size={size} />,
+      },
+    ],
+    [],
+  );
+
+  const drillTiles = useMemo<HubTile[]>(
+    () => [
+      {
+        id: "conversation",
+        titleKey: "games.conversationTitle",
+        subtitleKey: "games.conversationSub",
+        kind: "conversation_pick",
+        renderIcon: (size) => <RolePlayGameIcon size={size} />,
+      },
+      {
+        id: "speak",
+        titleKey: "games.speakTitle",
+        subtitleKey: "games.speakSub",
+        kind: "voice_speak",
+        renderIcon: (size) => <SpeakUpGameIcon size={size} />,
+      },
+      {
+        id: "listen",
+        titleKey: "games.listenTitle",
+        subtitleKey: "games.listenSub",
+        kind: "voice_listen",
+        renderIcon: (size) => <SpeakUpGameIcon size={size} />,
       },
       {
         id: "fill",
-        title: t("games.fillTitle"),
-        subtitle: t("games.fillSub"),
+        titleKey: "games.fillTitle",
+        subtitleKey: "games.fillSub",
         kind: "fill_blank",
-        renderIcon: (size) => <OrderWordsGameIcon size={size || 52} />,
+        renderIcon: (size) => <OrderWordsGameIcon size={size} />,
       },
       {
         id: "order",
-        title: t("games.orderTitle"),
-        subtitle: t("games.orderSub"),
+        titleKey: "games.orderTitle",
+        subtitleKey: "games.orderSub",
         kind: "sentence_builder",
-        renderIcon: (size) => <OrderWordsGameIcon size={size || 52} />,
+        renderIcon: (size) => <OrderWordsGameIcon size={size} />,
       },
       {
         id: "pair",
-        title: t("games.pairTitle"),
-        subtitle: t("games.pairSub"),
+        titleKey: "games.pairTitle",
+        subtitleKey: "games.pairSub",
         kind: "pair_match",
-        renderIcon: (size) => <PairWordsGameIcon size={size || 52} />,
+        renderIcon: (size) => <PairWordsGameIcon size={size} />,
       },
     ],
-    [t],
+    [],
   );
 
   const openPractice = useCallback(
@@ -242,16 +270,19 @@ export function GamesScreen() {
   );
 
   const openTile = useCallback(
-    (tile: GameTile) => {
-      recordGamePlayed(tile.title, tile.id);
+    (tile: HubTile) => {
+      recordGamePlayed(t(tile.titleKey), tile.id);
       if (tile.href) {
         router.push(tile.href as any);
         return;
       }
       if (tile.kind) openPractice(tile.kind);
     },
-    [openPractice, recordGamePlayed, router],
+    [openPractice, recordGamePlayed, router, t],
   );
+
+  const heroTitle = t(immersiveTile.titleKey);
+  const heroSub = t(immersiveTile.subtitleKey);
 
   return (
     <View style={styles.root}>
@@ -261,26 +292,69 @@ export function GamesScreen() {
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
-          paddingTop: insets.top + 16,
-          paddingBottom: tabBarScrollPadding(insets.bottom) + 20,
+          paddingTop: insets.top + 12,
+          paddingBottom: tabBarScrollPadding(insets.bottom) + 16,
           paddingHorizontal: horizontalPad,
         }}
       >
-        <View style={styles.headerArea}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>PINGO</Text>
           <Text style={styles.pageTitle}>{t("games.title")}</Text>
           <Text style={styles.pageSub}>{t("games.subtitle")}</Text>
         </View>
 
-        <View style={[styles.masonryContainer, { gap }]}>
-          {gameTiles.map((tile) => (
-            <GameHubCard
+        <Text style={styles.sectionLabel}>{t("games.sectionImmersive")}</Text>
+        <HomeLiquidLessonTile
+          onPress={() => openTile(immersiveTile)}
+          style={styles.sectionBlock}
+        >
+          <View style={styles.heroRow}>
+            <View style={styles.heroCopy}>
+              <View style={styles.heroTitleRow}>
+                <Text style={styles.heroLabel} numberOfLines={1}>
+                  {heroTitle}
+                </Text>
+                {immersiveTile.badgeKey ? (
+                  <StatusPill label={t(immersiveTile.badgeKey)} onDark />
+                ) : null}
+              </View>
+              <Text style={styles.heroSub} numberOfLines={2}>
+                {heroSub}
+              </Text>
+              <Text style={styles.heroHint}>{t("home.tapToContinue")}</Text>
+            </View>
+            <View style={styles.heroIcon}>{immersiveTile.renderIcon(72)}</View>
+          </View>
+        </HomeLiquidLessonTile>
+
+        <Text style={styles.sectionLabel}>{t("games.sectionExperiences")}</Text>
+        <View style={[styles.experienceGrid, { gap, marginBottom: 8 }]}>
+          {experienceTiles.map((tile) => (
+            <ExperienceCard
               key={tile.id}
-              tile={tile}
-              cardWidth={tile.featured ? fullWidth : halfWidth}
+              width={halfWidth}
+              title={t(tile.titleKey)}
+              subtitle={t(tile.subtitleKey)}
+              badge={tile.badgeKey ? t(tile.badgeKey) : undefined}
+              renderIcon={tile.renderIcon}
               onPress={() => openTile(tile)}
             />
           ))}
         </View>
+
+        <Text style={styles.sectionLabel}>{t("games.sectionDrills")}</Text>
+        <HomeLiquidCard contentStyle={styles.drillsCard}>
+          {drillTiles.map((tile, index) => (
+            <HubRow
+              key={tile.id}
+              title={t(tile.titleKey)}
+              subtitle={t(tile.subtitleKey)}
+              renderIcon={tile.renderIcon}
+              onPress={() => openTile(tile)}
+              isLast={index === drillTiles.length - 1}
+            />
+          ))}
+        </HomeLiquidCard>
       </ScrollView>
     </View>
   );
@@ -291,131 +365,169 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.meshBottom,
   },
-  headerArea: {
-    alignItems: "flex-start",
-    marginBottom: 24,
-    paddingHorizontal: 4,
+  header: {
+    marginBottom: 8,
+  },
+  logo: {
+    ...HomeType.logo,
+    fontSize: 26,
+    color: C.blue,
+    marginBottom: 4,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#0F1A30",
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.5,
-    marginBottom: 6,
+    ...HomeType.heading,
+    color: C.navy,
+    marginBottom: 4,
   },
   pageSub: {
-    fontSize: 15,
-    color: "#4B5563",
-    fontWeight: "500",
-    lineHeight: 22,
+    ...HomeType.body,
+    color: C.gray,
   },
-  masonryContainer: {
+  sectionLabel: {
+    ...HomeType.section,
+    color: C.navy,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  sectionBlock: {
+    marginTop: 0,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  heroCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  heroTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+  },
+  heroLabel: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.3,
+  },
+  heroSub: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 20,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  heroHint: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.72)",
+    marginTop: 10,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  heroIcon: {
+    flexShrink: 0,
+  },
+  experienceGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  
-  // Featured (Full Width) Card Styles
-  featuredCardShell: {
-    borderRadius: 20,
+  experienceInner: {
+    padding: 14,
+    minHeight: 148,
+    justifyContent: "space-between",
   },
-  featuredCardContent: {
-    flexDirection: "row",
-    padding: 18,
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderWidth: 1.5,
-    borderRadius: 20,
-  },
-  featuredIconArea: {
-    marginRight: 16,
-  },
-  featuredIconGlow: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featuredCopyArea: {
+  experienceCopy: {
+    marginTop: 12,
     flex: 1,
   },
-  titleRow: {
+  experienceTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: -0.2,
+  },
+  experienceSub: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: "500",
+    color: C.gray,
+    lineHeight: 17,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  drillsCard: {
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+  },
+  hubRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    gap: 12,
+  },
+  hubRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.divider,
+  },
+  hubRowIcon: {
+    flexShrink: 0,
+  },
+  hubRowCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  hubRowTitleLine: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 4,
   },
-  featuredTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  featuredSubtitle: {
-    fontSize: 13,
-    color: "#4B5563",
-    fontWeight: "500",
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  featuredAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  featuredActionText: {
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  // Grid (Half Width) Card Styles
-  gridCardShell: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
-    backgroundColor: "rgba(255,255,255,0.85)",
-  },
-  gridCardContent: {
-    padding: 16,
-    alignItems: "center",
-  },
-  gridIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(0,0,0,0.03)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  gridTitle: {
+  hubRowTitle: {
+    flex: 1,
     fontSize: 16,
     fontWeight: "700",
-    color: "#0F1A30",
-    textAlign: "center",
-    marginBottom: 4,
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
   },
-  gridSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    textAlign: "center",
+  hubRowSub: {
+    marginTop: 3,
+    fontSize: 13,
     fontWeight: "500",
-    lineHeight: 16,
+    color: C.gray,
+    lineHeight: 18,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  chevron: {
+    fontSize: 22,
+    fontWeight: "300",
+    color: C.grayLight,
+    marginLeft: 4,
+  },
+  pill: {
+    backgroundColor: "rgba(43, 89, 243, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  pillText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: C.blue,
+    letterSpacing: 0.5,
+    fontFamily: "DINNextRoundedBold",
+  },
+  pillOnDark: {
+    backgroundColor: "rgba(255,255,255,0.22)",
+  },
+  pillTextOnDark: {
+    color: "#FFFFFF",
   },
 });

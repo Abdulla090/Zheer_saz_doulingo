@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { appStorage } from "@/lib/app-storage";
 import {
   createEmptyLesson,
   getBundledUnits,
@@ -47,7 +47,7 @@ interface ContentAdminState {
 }
 
 function persist(overrides: ContentOverrides) {
-  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ overrides })).catch(() => {});
+  appStorage.setItem(STORAGE_KEY, JSON.stringify({ overrides })).catch(() => {});
 }
 
 function cloneBundled(mode: LessonPathMode): UnitBank[] {
@@ -183,7 +183,7 @@ export const useContentAdminStore = create<ContentAdminState>((set, get) => ({
 
 async function hydrateContentAdmin() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await appStorage.getItem(STORAGE_KEY);
     if (!raw) {
       useContentAdminStore.setState({ ready: true });
       return;

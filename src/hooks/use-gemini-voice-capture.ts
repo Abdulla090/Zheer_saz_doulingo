@@ -6,6 +6,7 @@ import {
   setAudioModeAsync,
   useAudioRecorder,
 } from "expo-audio";
+import * as FileSystem from "expo-file-system";
 import { useCallback, useRef, useState } from "react";
 import { Platform } from "react-native";
 
@@ -26,11 +27,11 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-async function uriToBase64(uri: string) {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const mimeType = blob.type || "audio/mp4";
-  return { base64: await blobToBase64(blob), mimeType };
+async function uriToBase64Native(uri: string) {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return { base64, mimeType: "audio/mp4" };
 }
 
 /** Strip codec suffixes so Gemini receives a supported MIME type. */
@@ -168,11 +169,14 @@ export function useGeminiVoiceCapture() {
 
   const stopNativeRecording = useCallback(async () => {
     if (recorder.isRecording) {
-      await recorder.stop();
+      await Promise.race([
+        recorder.stop(),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
     }
     const uri = recorder.uri;
     if (!uri) return null;
-    const audio = await uriToBase64(uri);
+    const audio = await uriToBase64Native(uri);
     return {
       ...audio,
       mimeType: normalizeAudioMimeType(audio.mimeType),
