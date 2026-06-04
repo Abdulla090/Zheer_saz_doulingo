@@ -49,6 +49,9 @@ function NativeTabsLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <NativeTabs
         hidden={hideTabBar}
+        backgroundColor="transparent"
+        blurEffect={Platform.OS === "ios" ? "systemChromeMaterialLight" : undefined}
+        shadowColor="transparent"
         minimizeBehavior={Platform.OS === "ios" ? "onScrollDown" : "never"}
         tintColor={BRAND_TINT}
         iconColor={{ default: INACTIVE_TINT, selected: BRAND_TINT }}
@@ -73,20 +76,20 @@ function NativeTabsLayout() {
           },
         }}
       >
-        <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
-          <NativeTabs.Trigger.Icon
-            sf={{ default: "house", selected: "house.fill" }}
-            md={{ default: "home", selected: "home" }}
-          />
-          <NativeTabs.Trigger.Label>{t("tabs.home")}</NativeTabs.Trigger.Label>
-        </NativeTabs.Trigger>
-
         <NativeTabs.Trigger name="feed" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon
             sf={{ default: "gamecontroller", selected: "gamecontroller.fill" }}
             md={{ default: "sports_esports", selected: "sports_esports" }}
           />
           <NativeTabs.Trigger.Label>{t("tabs.games")}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+
+        <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "house", selected: "house.fill" }}
+            md={{ default: "home", selected: "home" }}
+          />
+          <NativeTabs.Trigger.Label>{t("tabs.home")}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
         <NativeTabs.Trigger

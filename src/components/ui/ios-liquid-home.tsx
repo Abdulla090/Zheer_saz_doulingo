@@ -401,9 +401,10 @@ export function HomeMeshBackground() {
         colors={[HomePalette.meshTop, HomePalette.meshMid, HomePalette.meshBottom]}
         locations={[0, 0.42, 1]}
         style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
-      <View style={styles.meshOrbBlue} />
-      <View style={styles.meshOrbTeal} />
+      <View style={styles.meshOrbBlue} pointerEvents="none" />
+      <View style={styles.meshOrbTeal} pointerEvents="none" />
     </>
   );
 }

@@ -21,6 +21,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import { Motion } from "@/screens/lesson/games/game-design";
+import { useTabTransition } from "@/context/TabTransitionContext";
 import { hapticSelection } from "@/utils/haptics";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
@@ -85,6 +86,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { t } = useI18n();
+  const { prepareTransition } = useTabTransition();
   const activeRouteName = state.routes[state.index]?.name;
 
   const tabs = useMemo(
@@ -118,18 +120,19 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     width: pillWidth,
   }));
 
-  const iconSize = width < 390 ? 22 : 24;
-  const labelSize = width < 390 ? 10 : 11;
+  const iconSize = width < 390 ? 24 : 26;
+  const labelSize = width < 390 ? 11 : 12;
   const bottomPad = tabBarBottomInset(insets.bottom);
 
   const onTabPress = useCallback(
     (route: TabKey, isFocused: boolean) => {
       if (!isFocused) {
         hapticSelection();
+        prepareTransition(activeRouteName ?? "index", route);
         navigation.navigate(route);
       }
     },
-    [navigation],
+    [activeRouteName, navigation, prepareTransition],
   );
 
   if (
@@ -140,13 +143,16 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
 
   return (
-    <View style={styles.host} pointerEvents="box-none">
+    <View
+      style={[styles.host, { paddingBottom: bottomPad }]}
+      pointerEvents="box-none"
+    >
       <View
         style={[
           styles.floatWrap,
           {
             marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
-            marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM + bottomPad,
+            marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
             width: barWidth,
             alignSelf: "center",
             paddingTop: TAB_BAR_TOP_PADDING,
@@ -202,7 +208,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   host: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: "transparent",
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   floatWrap: {
     backgroundColor: "transparent",
@@ -219,8 +232,8 @@ const styles = StyleSheet.create({
   },
   activePill: {
     position: "absolute",
-    top: 5,
-    bottom: 5,
+    top: 6,
+    bottom: 6,
     left: 0,
     borderRadius: 20,
     backgroundColor: "rgba(43, 89, 243, 0.14)",
@@ -230,7 +243,8 @@ const styles = StyleSheet.create({
   itemInner: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
+    gap: 4,
+    paddingVertical: 2,
   },
   label: {
     fontWeight: "600",

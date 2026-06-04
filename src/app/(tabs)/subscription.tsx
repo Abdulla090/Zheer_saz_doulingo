@@ -1,7 +1,10 @@
+import { TabScreenTransition } from "@/components/TabScreenTransition";
 import { SubscriptionScreen } from "@/screens/subscriptions/SubscriptionScreen";
 
-const subscription = () => {
-  return <SubscriptionScreen />;
-};
-
-export default subscription;
+export default function SubscriptionRoute() {
+  return (
+    <TabScreenTransition>
+      <SubscriptionScreen />
+    </TabScreenTransition>
+  );
+}

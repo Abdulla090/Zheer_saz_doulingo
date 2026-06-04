@@ -270,6 +270,16 @@ export const ku = {
     readyTitle: "ئامادەیت",
     readySubtitle:
       "داشبۆردەکەت ئامادەیە. دابگرە — وانەی داهاتوو چاوەڕێ دەکات.",
+    langStepNative: "هەنگاو ١ لە ٢",
+    langStepTarget: "هەنگاو ٢ لە ٢",
+    langNativeTitle: "چ زمانێک قسە دەکەیت؟",
+    langNativeSubtitle: "وانەکان بە شێوەیەکی سروشتت بۆ ڕوون دەکەینەوە.",
+    langTargetTitle: "دەتەوێت چ فێربیت؟",
+    langTargetSubtitle: "دواتر دەتوانیت زمان زیاتر لە ڕێکخستن زیاد بکەیت.",
+    langEnglish: "ئینگلیزی",
+    langKurdish: "کوردی (سۆرانی)",
+    langArabic: "عەرەبی",
+    langBack: "گەڕانەوە",
   },
   common: {
     continue: "بەردەوامبە",

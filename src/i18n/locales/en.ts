@@ -267,6 +267,16 @@ export const en = {
     readyTitle: "You're ready",
     readySubtitle:
       "Your dashboard is set. Tap below — the next lesson is waiting.",
+    langStepNative: "Step 1 of 2",
+    langStepTarget: "Step 2 of 2",
+    langNativeTitle: "What language do you speak?",
+    langNativeSubtitle: "We'll explain lessons in a way that feels natural to you.",
+    langTargetTitle: "What do you want to learn?",
+    langTargetSubtitle: "You can add more languages later in settings.",
+    langEnglish: "English",
+    langKurdish: "Kurdish (Sorani)",
+    langArabic: "Arabic",
+    langBack: "Back",
   },
   common: {
     continue: "CONTINUE",
