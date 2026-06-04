@@ -344,6 +344,21 @@ export function PhingoLearnHomeScreen() {
           </>
         ) : null}
 
+        <Text style={styles.sectionLabel}>AI Features</Text>
+        <Pressable onPress={() => router.push("/role-play")} accessibilityRole="button">
+          <HomeLiquidCard
+            interactive
+            style={styles.cardSpacerTight}
+            contentStyle={styles.recentInner}
+          >
+            <View style={styles.recentCopy}>
+              <Text style={styles.recentHint}>Immersive Practice</Text>
+              <Text style={styles.recentTitle}>Voice Role Play</Text>
+            </View>
+            <Text style={styles.recentChevron}>›</Text>
+          </HomeLiquidCard>
+        </Pressable>
+
         <Text style={styles.questsSectionTitle}>{t("home.todaysQuests")}</Text>
         <HomeLiquidCard contentStyle={styles.questsInner}>
           {quests.map((q, i) => (

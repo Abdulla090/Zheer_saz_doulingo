@@ -94,6 +94,7 @@ function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Protected guard={onboardingComplete}>
                 <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="role-play" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
               </Stack.Protected>
               <Stack.Protected guard={!onboardingComplete}>
                 <Stack.Screen name="onboarding" />

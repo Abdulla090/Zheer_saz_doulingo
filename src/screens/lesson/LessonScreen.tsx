@@ -372,6 +372,21 @@ export default function LessonScreen() {
 
         <View style={sL.skipRow}>
           <Pressable
+            onPress={() => {
+              // Mock Tutor flow
+              router.push("/role-play");
+            }}
+            disabled={feedback !== null}
+            style={({ pressed }) => [
+              sL.skipButton,
+              { backgroundColor: "rgba(139, 92, 246, 0.2)", borderColor: "rgba(139, 92, 246, 0.4)", marginRight: 8 },
+              pressed && sL.skipPressed,
+              feedback !== null && sL.skipDisabled,
+            ]}
+          >
+            <Text style={[sL.skipText, { color: "#A78BFA" }]}>Ask Tutor</Text>
+          </Pressable>
+          <Pressable
             onPress={giveUpQuestion}
             disabled={feedback !== null}
             style={({ pressed }) => [
