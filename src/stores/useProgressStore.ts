@@ -59,6 +59,7 @@ interface ProgressState extends ProgressSnapshot {
     label?: string,
   ) => void;
   recordGamePlayed: (label: string, gameId?: string) => void;
+  awardXp: (xpEarned: number, label: string) => void;
   resetProgress: () => void;
 }
 
@@ -164,6 +165,31 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
         kind: "game",
         label,
         gameId,
+        at: new Date().toISOString(),
+      },
+    };
+    set(next);
+    void persistProgress(next);
+    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
+  },
+
+  awardXp: (xpEarned, label) => {
+    const cur = get();
+    const { streakDays, lastActiveDate } = applyStreak(
+      cur.lastActiveDate,
+      cur.streakDays,
+    );
+    const dailyXp = rollDailyXp(cur.dailyXp, cur.lastActiveDate) + xpEarned;
+    const next: ProgressSnapshot = {
+      ...cur,
+      totalXp: cur.totalXp + xpEarned,
+      dailyXp,
+      streakDays,
+      lastActiveDate,
+      lastActivity: {
+        kind: "game",
+        label,
+        gameId: "slang_quiz",
         at: new Date().toISOString(),
       },
     };

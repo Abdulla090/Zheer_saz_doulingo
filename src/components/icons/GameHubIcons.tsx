@@ -2,6 +2,7 @@ import { HomePalette } from "@/components/ui/ios-liquid-home";
 import { crossShadow } from "@/utils/shadows";
 import {
   Bot,
+  BookOpen,
   Link2,
   ListOrdered,
   MessagesSquare,
@@ -112,6 +113,30 @@ export function VoiceTutorGameIcon({ size = 64 }: GameIconProps) {
       })}
     >
       <Sparkles size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
+    </GameIconTile>
+  );
+}
+
+export function SlangDictionaryGameIcon({ size = 64 }: GameIconProps) {
+  const glyph = Math.round(size * 0.48);
+  return (
+    <GameIconTile
+      size={size}
+      backgroundColor="#FFEBE0"
+      style={crossShadow({
+        color: "#FF6B00",
+        offsetY: 6,
+        blur: 14,
+        opacity: 0.08,
+        elevation: 3,
+      })}
+    >
+      <BookOpen
+        size={glyph}
+        color="#FF6B00"
+        strokeWidth={2.1}
+        fill="#FF6B0018"
+      />
     </GameIconTile>
   );
 }

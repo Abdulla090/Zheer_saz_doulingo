@@ -65,6 +65,14 @@ function AndroidTabsLayout() {
           tabBarStyle: { display: "none" },
         }}
       />
+      <Tabs.Screen
+        name="slang"
+        options={{
+          headerShown: false,
+          href: null,
+          tabBarStyle: { display: "none" },
+        }}
+      />
       <Tabs.Screen name="privacy-policy" options={{ href: null }} />
       <Tabs.Screen name="ai-safety" options={{ href: null }} />
       <Tabs.Screen name="terms" options={{ href: null }} />

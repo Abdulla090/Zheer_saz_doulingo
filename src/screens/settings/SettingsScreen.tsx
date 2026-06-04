@@ -53,8 +53,10 @@ export default function SettingsScreen() {
   const replayOnboarding = useOnboardingStore((s) => s.replayOnboarding);
   const haptics = useSettingsStore((s) => s.hapticsEnabled);
   const sounds = useSettingsStore((s) => s.soundsEnabled);
+  const targetLang = useSettingsStore((s) => s.targetLang);
   const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
+  const setTargetLang = useSettingsStore((s) => s.setTargetLang);
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -145,6 +147,26 @@ export default function SettingsScreen() {
               {t("settings.sounds")}
             </AppText>
             <Switch value={sounds} onValueChange={setSounds} />
+          </View>
+        </View>
+
+        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
+          {isKu ? "ڕێڕەوی منداڵان" : "Kids Path Configuration"}
+        </AppText>
+        <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+          {t("settings.kidsArabicHint")}
+        </AppText>
+        <View style={styles.toggleCard}>
+          <View style={[styles.toggleRow, styles.toggleRowLast]}>
+            <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
+              {t("settings.kidsArabic")}
+            </AppText>
+            <Switch
+              value={targetLang === "ar"}
+              onValueChange={(val) => {
+                setTargetLang(val ? "ar" : "en");
+              }}
+            />
           </View>
         </View>
 
