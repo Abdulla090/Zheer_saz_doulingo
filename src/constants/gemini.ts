@@ -1,4 +1,7 @@
-/** Client-side Gemini config (Expo requires EXPO_PUBLIC_ prefix). */
+/**
+ * Client-side Gemini config (Expo requires EXPO_PUBLIC_ prefix).
+ * Production: proxy Live + REST through your HTTPS backend — keys in the APK are extractable.
+ */
 export function getGeminiApiKey(): string | undefined {
   const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim();
   return key || undefined;

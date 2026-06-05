@@ -52,7 +52,9 @@ for (const hidden of [
   "lesson",
   "guidebook",
   "roleplay",
+  "voice-tutor",
   "ai-teacher",
+  "podcast",
   "privacy-policy",
   "ai-safety",
   "terms",
@@ -64,13 +66,59 @@ for (const hidden of [
   }
 }
 
-if (!layout.includes('name="ai-teacher"')) {
-  fail("_layout missing ai-teacher screen");
-} else {
-  ok("_layout registers ai-teacher");
+const jsTabs = read("src/navigation/JsTabsLayout.tsx");
+for (const screen of ["ai-teacher", "podcast", "voice-tutor"]) {
+  if (!jsTabs.includes(`name="${screen}"`)) {
+    fail(`JsTabsLayout missing ${screen} screen`);
+  } else {
+    ok(`JsTabsLayout registers ${screen}`);
+  }
 }
 
 // Security
+const boson = read("src/lib/boson-ai.ts");
+if (boson.includes("bai-") || boson.match(/Bearer [a-zA-Z0-9_-]{20,}/)) {
+  fail("boson-ai.ts must not contain hardcoded API keys");
+} else {
+  ok("No hardcoded Boson API key");
+}
+
+const homeScreen = read("src/screens/home/PhingoLearnHomeScreen.tsx");
+if (homeScreen.includes("hapticSelection()") && !homeScreen.includes("hapticSelection")) {
+  fail("PhingoLearnHomeScreen uses hapticSelection without import");
+} else if (homeScreen.includes('router.push("/games")')) {
+  fail('PhingoLearnHomeScreen links to dead route "/games" — use "/feed"');
+} else {
+  ok("Home screen haptics import and games route");
+}
+
+const appJson = JSON.parse(read("app.json"));
+if (appJson.expo?.plugins) {
+  const buildProps = appJson.expo.plugins.find(
+    (p) => Array.isArray(p) && p[0] === "expo-build-properties",
+  );
+  if (buildProps?.[1]?.android?.usesCleartextTraffic === true) {
+    fail("usesCleartextTraffic must be false for production");
+  } else {
+    ok("Android cleartext traffic disabled");
+  }
+  const extensions =
+    appJson.expo?.extra?.eas?.build?.experimental?.ios?.appExtensions ?? [];
+  const widgetTargets = extensions.filter((e) => e.targetName === "ExpoWidgetsTarget");
+  if (widgetTargets.length > 1) {
+    fail("Duplicate ExpoWidgetsTarget app extension entries");
+  } else {
+    ok("Single ExpoWidgetsTarget extension");
+  }
+}
+
+const rootLayout = read("src/app/_layout.tsx");
+if (!rootLayout.includes("Sentry.wrap(RootLayout)")) {
+  fail("Root layout must Sentry.wrap for production");
+} else {
+  ok("Root layout wrapped with Sentry");
+}
+
 const teacherService = read("src/services/ai-teacher-service.ts");
 if (!teacherService.includes("isAllowedTeacherApiUrl")) {
   fail("AI teacher service missing HTTPS URL guard");
@@ -161,7 +209,6 @@ if (!existsSync(join(root, "src/utils/safe-link.ts"))) {
   ok("Safe link helpers present");
 }
 
-const appJson = JSON.parse(read("app.json"));
 if (!appJson.expo?.extra?.eas?.projectId) {
   fail("app.json missing EAS projectId");
 } else {

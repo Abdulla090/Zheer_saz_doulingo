@@ -1,4 +1,4 @@
-import * as NavigationBar from "expo-navigation-bar";
+import { NavigationBar } from "expo-navigation-bar";
 import { setStatusBarHidden } from "expo-status-bar";
 import { Platform } from "react-native";
 
@@ -7,7 +7,7 @@ export async function applyAndroidImmersiveChrome(): Promise<void> {
   if (Platform.OS !== "android") return;
 
   try {
-    await NavigationBar.setVisibilityAsync("hidden");
+    NavigationBar.setHidden(true);
     setStatusBarHidden(true, "fade");
   } catch {
     /* Expo Go may not support all APIs */

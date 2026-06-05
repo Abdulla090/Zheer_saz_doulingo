@@ -1,5 +1,6 @@
-import { RolePlayScreen } from "@/screens/role-play/RolePlayScreen";
+import { Redirect } from "expo-router";
 
-export default function RolePlay() {
-  return <RolePlayScreen />;
+/** Legacy route — canonical roleplay lives at /(tabs)/roleplay */
+export default function RolePlayRedirect() {
+  return <Redirect href="/roleplay" />;
 }

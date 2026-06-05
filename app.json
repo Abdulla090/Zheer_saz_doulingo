@@ -57,7 +57,7 @@
         {
           "android": {
             "usePrecompiledHeaders": true,
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": false
           },
           "ios": {
             "useHermesV1": true
@@ -130,15 +130,6 @@
           "experimental": {
             "ios": {
               "appExtensions": [
-                {
-                  "targetName": "ExpoWidgetsTarget",
-                  "bundleIdentifier": "com.hewad.mubariz.duolingoclone.ExpoWidgetsTarget",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.hewad.mubariz.duolingoclone"
-                    ]
-                  }
-                },
                 {
                   "targetName": "ExpoWidgetsTarget",
                   "bundleIdentifier": "com.hewad.mubariz.duolingoclone.ExpoWidgetsTarget",

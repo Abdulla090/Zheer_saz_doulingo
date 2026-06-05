@@ -123,5 +123,4 @@ function RootLayout() {
   );
 }
 
-const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
-export default sentryDsn ? Sentry.wrap(RootLayout) : RootLayout;
+export default Sentry.wrap(RootLayout);

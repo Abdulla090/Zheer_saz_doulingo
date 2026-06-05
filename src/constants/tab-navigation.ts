@@ -10,6 +10,7 @@ export const TAB_BAR_HIDDEN_ROUTES = new Set([
   "ai-safety",
   "terms",
   "slang",
+  "podcast",
 ]);
 
 export function pathnameHidesTabBar(pathname: string): boolean {

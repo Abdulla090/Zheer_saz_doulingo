@@ -25,7 +25,7 @@ import { getPathProgressSummary } from "@/utils/path-progress";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { Fire } from "@/constants/icons";
-import { hapticImpact } from "@/utils/haptics";
+import { hapticImpact, hapticSelection } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
@@ -260,7 +260,7 @@ export function PhingoLearnHomeScreen() {
 
   const onOpenGames = useCallback(() => {
     hapticSelection();
-    router.push("/games");
+    router.push("/feed");
   }, [router]);
 
   const onOpenQuests = useCallback(() => {

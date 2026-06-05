@@ -490,7 +490,7 @@ export default function GuidebookScreen() {
         </View>
       </View>
 
-      {/* ══ LESSONS LIST ════════════════════════════════════════════════════ */}
+      {/* Per-screen lesson count is small (<30); ScrollView OK per rn-expo-stack list audit */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 36 }]}

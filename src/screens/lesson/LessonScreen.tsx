@@ -374,7 +374,7 @@ export default function LessonScreen() {
           <Pressable
             onPress={() => {
               // Mock Tutor flow
-              router.push("/role-play");
+              router.push("/roleplay");
             }}
             disabled={feedback !== null}
             style={({ pressed }) => [

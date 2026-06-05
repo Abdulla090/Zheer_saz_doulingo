@@ -1,5 +1,6 @@
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { useFontStore } from "@/stores/useFontStore";
+import { useSettingsStore } from "@/stores/useSettingsStore";
 import {
   FieldGroup,
   Host,
@@ -12,7 +13,7 @@ import {
   Switch,
   Text,
 } from "@expo/ui";
-import React, { useState } from "react";
+import React from "react";
 import { Text as RNText } from "react-native";
 
 function LabeledRow({
@@ -71,8 +72,10 @@ function FontPreviewRow({
 
 export default function SettingsExpoUIScreen() {
   const { selectedFont, setFont } = useFontStore();
-  const [haptics, setHaptics] = useState(true);
-  const [sounds, setSounds] = useState(true);
+  const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const soundsEnabled = useSettingsStore((s) => s.soundsEnabled);
+  const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
+  const setSoundsEnabled = useSettingsStore((s) => s.setSoundsEnabled);
 
   return (
     <Host
@@ -84,10 +87,10 @@ export default function SettingsExpoUIScreen() {
         <FieldGroup>
           <FieldGroup.Section title="ڕێکخستنەکان">
             <LabeledRow label="لەرزین (Haptics)">
-              <Switch value={haptics} onValueChange={setHaptics} />
+              <Switch value={hapticsEnabled} onValueChange={setHapticsEnabled} />
             </LabeledRow>
             <LabeledRow label="دەنگ">
-              <Switch value={sounds} onValueChange={setSounds} />
+              <Switch value={soundsEnabled} onValueChange={setSoundsEnabled} />
             </LabeledRow>
             <FieldGroup.SectionFooter>
               <Text textStyle={{ fontSize: 13, color: "#6c6c70" }}>
@@ -101,11 +104,11 @@ export default function SettingsExpoUIScreen() {
             <List>
               {ALL_RABAR_FONTS.map((font) => (
                 <FontPreviewRow
-                  key={font}
-                  fontFamily={font}
-                  label={font.replace("Rabar_", "فۆنتی ")}
-                  selected={selectedFont === font}
-                  onSelect={() => setFont(font)}
+                  key={font.family}
+                  fontFamily={font.family}
+                  label={font.label}
+                  selected={selectedFont === font.family}
+                  onSelect={() => setFont(font.family)}
                 />
               ))}
             </List>

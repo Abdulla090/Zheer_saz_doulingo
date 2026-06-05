@@ -1,11 +1,20 @@
 import * as Sentry from "@sentry/react-native";
 
-const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim();
 
 let initialized = false;
 
 export function initSentry(): void {
-  if (initialized || !dsn) return;
+  if (initialized) return;
+
+  if (!dsn) {
+    if (!__DEV__) {
+      console.warn(
+        "[Sentry] EXPO_PUBLIC_SENTRY_DSN is missing — production builds will not report crashes.",
+      );
+    }
+    return;
+  }
 
   const useLegacyRnFetch = process.env.EXPO_PUBLIC_USE_RN_FETCH === "1";
 
