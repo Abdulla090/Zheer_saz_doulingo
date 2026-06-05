@@ -58,8 +58,19 @@ export function AppText({
       ? dirForText("A")
       : dirForText(content);
 
+  // Strip fontFamily from passed styles when forcing a script — LightType.tile
+  // sets DIN which cannot render Kurdish/Arabic (empty tiles on pair-match).
+  const { fontFamily: _ignoredFont, ...restStyle } = flat ?? {};
+
   return (
-    <Text style={[direction, { fontFamily }, style]} {...props}>
+    <Text
+      style={[
+        direction,
+        { fontFamily },
+        forceKurdishFont || forceLatinFont ? restStyle : style,
+      ]}
+      {...props}
+    >
       {children}
     </Text>
   );

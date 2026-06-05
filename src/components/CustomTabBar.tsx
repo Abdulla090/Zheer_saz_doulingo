@@ -1,62 +1,52 @@
 import {
   GamesTabIcon,
   HomeTabIconFlat,
+  PathTabIcon,
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "@/components/icons/HomeDashboardIcons";
 import { TabBarGlassSurface } from "@/components/TabBarGlassSurface";
+import { PremiumPressable } from "@/components/PremiumPressable";
 import {
+  TAB_BAR_ACTIVE_CHIP,
   TAB_BAR_CORNER_RADIUS,
-  TAB_BAR_FLOAT_MARGIN_H,
+  TAB_BAR_FAB_SIZE,
   TAB_BAR_FLOAT_MARGIN_BOTTOM,
-  tabBarBottomInset,
+  TAB_BAR_FLOAT_MARGIN_H,
   TAB_BAR_INNER_HEIGHT,
+  TAB_BAR_ROW_GAP,
   TAB_BAR_TOP_PADDING,
+  tabBarBottomInset,
 } from "@/constants/layout";
 import { ENABLE_SHOP } from "@/constants/feature-flags";
 import {
   pathnameHidesTabBar,
   TAB_BAR_HIDDEN_ROUTES,
 } from "@/constants/tab-navigation";
+import { TAB_FAB_ROUTE } from "@/constants/tab-order";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
-import { Motion } from "@/screens/lesson/games/game-design";
-import { PremiumPressable } from "@/components/PremiumPressable";
 import { useTabTransition } from "@/context/TabTransitionContext";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
-import React, { useCallback, useEffect, useMemo } from "react";
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TAB_BAR_GLASS } from "@/constants/tab-bar-glass";
+import { springMotion } from "@/utils/motion-spring";
+import { crossShadow } from "@/utils/shadows";
 
-const ACTIVE = "#2B59F3";
-const INACTIVE = "#6B7280";
+const ACTIVE = TAB_BAR_GLASS.iconActive;
+const INACTIVE = TAB_BAR_GLASS.iconInactive;
 
-type TabKey = "index" | "feed" | "subscription" | "more";
+type PillRoute = "index" | "feed" | "dashboard" | "subscription";
 
-const TABS: {
-  route: TabKey;
+const PILL_TABS: {
+  route: PillRoute;
   labelKey: I18nKey;
   renderIcon: (active: boolean, size: number) => React.ReactNode;
 }[] = [
-  {
-    route: "feed",
-    labelKey: "tabs.games",
-    renderIcon: (active, size) => (
-      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
   {
     route: "index",
     labelKey: "tabs.home",
@@ -65,17 +55,24 @@ const TABS: {
     ),
   },
   {
+    route: "feed",
+    labelKey: "tabs.games",
+    renderIcon: (active, size) => (
+      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    route: "dashboard",
+    labelKey: "tabs.path",
+    renderIcon: (active, size) => (
+      <PathTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
     route: "subscription",
     labelKey: "tabs.shop",
     renderIcon: (active, size) => (
       <ShopTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
-  {
-    route: "more",
-    labelKey: "tabs.profile",
-    renderIcon: (active, size) => (
-      <ProfileTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
 ];
@@ -88,49 +85,95 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { prepareTransition } = useTabTransition();
   const activeRouteName = state.routes[state.index]?.name;
 
-  const tabs = useMemo(
+  const pillTabs = useMemo(
     () =>
-      TABS.filter((tab) => ENABLE_SHOP || tab.route !== "subscription").map(
+      PILL_TABS.filter((tab) => ENABLE_SHOP || tab.route !== "subscription").map(
         (tab) => ({ ...tab, label: t(tab.labelKey) }),
       ),
     [t],
   );
 
-  const tabCount = tabs.length;
-  const barWidth = width - TAB_BAR_FLOAT_MARGIN_H * 2;
-  const slotWidth = barWidth / tabCount;
-  const pillInset = 4;
-  const pillWidth = slotWidth - pillInset * 2;
+  const tabCount = pillTabs.length;
+  const rowWidth = width - TAB_BAR_FLOAT_MARGIN_H * 2;
+  const pillWidth = rowWidth - TAB_BAR_FAB_SIZE - TAB_BAR_ROW_GAP;
+  const slotWidth = pillWidth / tabCount;
+  const iconSize = width < 390 ? 22 : 24;
+  const bottomPad = tabBarBottomInset(insets.bottom);
 
-  const pillX = useSharedValue(0);
-
-  const focusedIndex = useMemo(() => {
+  const pillFocusedIndex = useMemo(() => {
     const name = state.routes[state.index]?.name;
-    const idx = tabs.findIndex((tab) => tab.route === name);
-    return idx >= 0 ? idx : 0;
-  }, [tabs, state.index, state.routes]);
+    const idx = pillTabs.findIndex((tab) => tab.route === name);
+    return idx >= 0 ? idx : -1;
+  }, [pillTabs, state.index, state.routes]);
+
+  const fabFocused = activeRouteName === TAB_FAB_ROUTE;
+
+  const pillTargetX = useCallback(
+    (index: number) => {
+      if (index < 0 || slotWidth <= 0) return 0;
+      return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+    },
+    [slotWidth],
+  );
+
+  const pillX = useSharedValue(pillTargetX(pillFocusedIndex));
+  const indicatorOpacity = useSharedValue(pillFocusedIndex >= 0 ? 1 : 0);
+  const prevFocusedIndex = useRef(pillFocusedIndex);
+  const optimisticPress = useRef(false);
+
+  const moveIndicator = useCallback(
+    (index: number, animated: boolean) => {
+      if (index < 0 || slotWidth <= 0) return;
+      const x = pillTargetX(index);
+      pillX.value = animated ? springMotion(x) : x;
+    },
+    [pillTargetX, pillX, slotWidth],
+  );
 
   useEffect(() => {
-    pillX.value = withSpring(focusedIndex * slotWidth + pillInset, Motion.soft);
-  }, [focusedIndex, pillInset, pillX, slotWidth]);
+    indicatorOpacity.value = springMotion(pillFocusedIndex >= 0 ? 1 : 0);
+
+    if (optimisticPress.current) {
+      optimisticPress.current = false;
+      prevFocusedIndex.current = pillFocusedIndex;
+      return;
+    }
+
+    const indexChanged = prevFocusedIndex.current !== pillFocusedIndex;
+    prevFocusedIndex.current = pillFocusedIndex;
+    moveIndicator(pillFocusedIndex, indexChanged);
+  }, [pillFocusedIndex, slotWidth, indicatorOpacity, moveIndicator]);
+
+  const activeCircleTop = (TAB_BAR_INNER_HEIGHT - TAB_BAR_ACTIVE_CHIP) / 2;
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: pillX.value }],
-    width: pillWidth,
+    width: TAB_BAR_ACTIVE_CHIP,
+    height: TAB_BAR_ACTIVE_CHIP,
+    opacity: indicatorOpacity.value,
   }));
 
-  const iconSize = width < 390 ? 24 : 26;
-  const labelSize = width < 390 ? 11 : 12;
-  const bottomPad = tabBarBottomInset(insets.bottom);
-
-  const onTabPress = useCallback(
-    (route: TabKey, isFocused: boolean) => {
+  const navigate = useCallback(
+    (route: string, isFocused: boolean) => {
       if (!isFocused) {
+        const nextIdx = pillTabs.findIndex((tab) => tab.route === route);
+        if (nextIdx >= 0) {
+          optimisticPress.current = true;
+          moveIndicator(nextIdx, true);
+          indicatorOpacity.value = 1;
+        }
         prepareTransition(activeRouteName ?? "index", route);
         navigation.navigate(route);
       }
     },
-    [activeRouteName, navigation, prepareTransition],
+    [
+      activeRouteName,
+      indicatorOpacity,
+      moveIndicator,
+      navigation,
+      pillTabs,
+      prepareTransition,
+    ],
   );
 
   if (
@@ -141,65 +184,80 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
 
   return (
-    <View
-      style={[styles.host, { paddingBottom: bottomPad }]}
-      pointerEvents="box-none"
-    >
+    <View style={[styles.host, { paddingBottom: bottomPad, pointerEvents: "box-none" }]}>
       <View
         style={[
-          styles.floatWrap,
+          styles.row,
           {
             marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
             marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
-            width: barWidth,
-            alignSelf: "center",
-            paddingTop: TAB_BAR_TOP_PADDING,
-            minHeight: TAB_BAR_TOP_PADDING + TAB_BAR_INNER_HEIGHT,
+            width: rowWidth,
+            gap: TAB_BAR_ROW_GAP,
           },
         ]}
       >
-        <TabBarGlassSurface borderRadius={TAB_BAR_CORNER_RADIUS}>
-          <View style={[styles.row, { height: TAB_BAR_INNER_HEIGHT }]}>
-            <Animated.View
-              style={[styles.activePill, pillStyle]}
-              pointerEvents="none"
-            />
-            {tabs.map(({ route, label, renderIcon }) => {
-              const routeIndex = state.routes.findIndex((r) => r.name === route);
-              const isFocused =
-                routeIndex >= 0
-                  ? state.index === routeIndex
-                  : activeRouteName === route;
+        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
+          <TabBarGlassSurface
+            borderRadius={TAB_BAR_CORNER_RADIUS}
+            style={styles.pillGlass}
+          >
+            <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT }]}>
+              <Animated.View
+                style={[
+                  styles.activeCircle,
+                  { top: activeCircleTop, pointerEvents: "none" },
+                  pillStyle,
+                ]}
+              />
+              {pillTabs.map(({ route, label, renderIcon }) => {
+                const routeIndex = state.routes.findIndex((r) => r.name === route);
+                const isFocused =
+                  routeIndex >= 0
+                    ? state.index === routeIndex
+                    : activeRouteName === route;
 
-              return (
-                <PremiumPressable
-                  key={route}
-                  onPress={() => onTabPress(route, isFocused)}
-                  style={[styles.item, { width: slotWidth }]}
-                  pressScale={0.94}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isFocused }}
-                  accessibilityLabel={label}
-                  hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }}
-                >
-                  <View style={styles.itemInner}>
+                return (
+                  <PremiumPressable
+                    key={route}
+                    onPress={() => navigate(route, isFocused)}
+                    style={[styles.slot, { width: slotWidth }]}
+                    pressScale={0.92}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: isFocused }}
+                    accessibilityLabel={label}
+                    hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+                  >
                     {renderIcon(isFocused, iconSize)}
-                    <Text
-                      style={[
-                        styles.label,
-                        { fontSize: labelSize },
-                        isFocused && styles.labelActive,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {label}
-                    </Text>
-                  </View>
-                </PremiumPressable>
-              );
-            })}
-          </View>
-        </TabBarGlassSurface>
+                  </PremiumPressable>
+                );
+              })}
+            </View>
+          </TabBarGlassSurface>
+        </View>
+
+        <View style={styles.fabWrap}>
+          <TabBarGlassSurface
+            borderRadius={TAB_BAR_FAB_SIZE / 2}
+            style={styles.fabGlass}
+          >
+            <PremiumPressable
+              onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
+              style={[
+                styles.fabBtn,
+                fabFocused && styles.fabBtnActive,
+              ]}
+              pressScale={0.94}
+              accessibilityRole="button"
+              accessibilityLabel={t("tabs.profile")}
+              hitSlop={8}
+            >
+              <ProfileTabIconFlat
+                size={iconSize}
+                color={fabFocused ? ACTIVE : INACTIVE}
+              />
+            </PremiumPressable>
+          </TabBarGlassSurface>
+        </View>
       </View>
     </View>
   );
@@ -212,55 +270,62 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: "transparent",
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  floatWrap: {
-    backgroundColor: "transparent",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
+  },
+  pillWrap: {
+    minWidth: 0,
+  },
+  pillGlass: {
+    width: "100%",
+    height: TAB_BAR_INNER_HEIGHT,
+  },
+  pillInner: {
+    flexDirection: "row",
+    alignItems: "center",
     position: "relative",
   },
-  item: {
+  slot: {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1,
+    height: "100%",
   },
-  activePill: {
+  activeCircle: {
     position: "absolute",
-    top: 6,
-    bottom: 6,
     left: 0,
-    borderRadius: 20,
-    backgroundColor: "rgba(43, 89, 243, 0.12)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(43, 89, 243, 0.18)",
+    borderRadius: TAB_BAR_ACTIVE_CHIP / 2,
+    backgroundColor: TAB_BAR_GLASS.activeCircle,
+    borderWidth: 1,
+    borderColor: TAB_BAR_GLASS.activeCircleBorder,
+    ...crossShadow({
+      color: "#2B59F3",
+      offsetY: 2,
+      blur: 6,
+      opacity: 0.12,
+      elevation: 2,
+    }),
   },
-  itemInner: {
+  fabWrap: {
+    width: TAB_BAR_FAB_SIZE,
+    height: TAB_BAR_FAB_SIZE,
+    marginBottom: TAB_BAR_TOP_PADDING,
+  },
+  fabGlass: {
+    width: TAB_BAR_FAB_SIZE,
+    height: TAB_BAR_FAB_SIZE,
+  },
+  fabBtn: {
+    width: TAB_BAR_FAB_SIZE,
+    height: TAB_BAR_FAB_SIZE,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingVertical: 2,
+    borderRadius: TAB_BAR_FAB_SIZE / 2,
   },
-  label: {
-    fontWeight: "600",
-    color: "#6B7280",
-    letterSpacing: 0.15,
-    fontFamily: Platform.select({
-      ios: "System",
-      default: "DINNextRoundedMedium",
-    }),
-    textAlign: "center",
-  },
-  labelActive: {
-    color: ACTIVE,
-    fontWeight: "700",
-    fontFamily: Platform.select({
-      ios: "System",
-      default: "DINNextRoundedBold",
-    }),
+  fabBtnActive: {
+    backgroundColor: TAB_BAR_GLASS.activeCircle,
   },
 });

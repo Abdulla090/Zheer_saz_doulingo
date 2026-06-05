@@ -74,6 +74,14 @@ function NativeTabsLayout() {
         }}
         barStyle={Platform.OS === "android" ? "default" : undefined}
       >
+        <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "house", selected: "house.fill" }}
+            md={{ default: "home", selected: "home" }}
+          />
+          <NativeTabs.Trigger.Label>{t("tabs.home")}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+
         <NativeTabs.Trigger name="feed" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon
             sf={{ default: "gamecontroller", selected: "gamecontroller.fill" }}
@@ -82,12 +90,12 @@ function NativeTabsLayout() {
           <NativeTabs.Trigger.Label>{t("tabs.games")}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
+        <NativeTabs.Trigger name="dashboard" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon
-            sf={{ default: "house", selected: "house.fill" }}
-            md={{ default: "home", selected: "home" }}
+            sf={{ default: "map", selected: "map.fill" }}
+            md={{ default: "route", selected: "route" }}
           />
-          <NativeTabs.Trigger.Label>{t("tabs.home")}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>{t("tabs.path")}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
         <NativeTabs.Trigger

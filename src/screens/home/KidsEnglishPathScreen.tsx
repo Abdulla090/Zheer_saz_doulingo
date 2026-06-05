@@ -138,7 +138,7 @@ export function KidsEnglishPathScreen() {
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT + 4,
+          paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT,
         }}
       >
         <HomeMainButton

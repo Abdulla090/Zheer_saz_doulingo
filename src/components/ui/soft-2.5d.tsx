@@ -4,6 +4,8 @@
  */
 
 import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
+import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { prefersLiquidGlass } from "@/utils/liquid-glass-color";
 import { crossShadow } from "@/utils/shadows";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
@@ -138,6 +140,22 @@ export function SoftSurface({
 }: SoftSurfaceProps) {
   const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
   const pressScale = pressed ? 0.98 : 1;
+  const useGlass = prefersLiquidGlass(faceColor);
+
+  if (useGlass) {
+    return (
+      <View
+        style={[
+          { transform: [{ scale: pressScale }], ...(fullWidth ? { width: "100%" } : null) },
+          style,
+        ]}
+      >
+        <LiquidGlassSurface borderRadius={borderRadius} style={fullWidth ? { width: "100%" } : undefined}>
+          <View style={innerStyle}>{children}</View>
+        </LiquidGlassSurface>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -198,6 +216,7 @@ export function SoftPressableButton({
 }: SoftPressableButtonProps) {
   const [pressed, setPressed] = useState(false);
   const shadow = rimColor ?? softRimFromFace(faceColor, 0.12);
+  const useGlass = prefersLiquidGlass(faceColor);
 
   return (
     <Pressable
@@ -229,24 +248,36 @@ export function SoftPressableButton({
         style={[
           {
             borderRadius,
-            backgroundColor: faceColor,
             overflow: "hidden",
             transform: [{ scale: pressed ? 0.97 : 1 }],
-            ...softFaceBorders(),
-            ...crossShadow({
-              color: shadow,
-              offsetY: depthProp ?? 8,
-              opacity: 0.26,
-              blur: 18,
-              elevation: 5,
-            }),
+            ...(useGlass
+              ? null
+              : {
+                  backgroundColor: faceColor,
+                  ...softFaceBorders(),
+                  ...crossShadow({
+                    color: shadow,
+                    offsetY: depthProp ?? 8,
+                    opacity: 0.26,
+                    blur: 18,
+                    elevation: 5,
+                  }),
+                }),
           },
           pressed ? cssPressStyle : cssReleaseStyle,
           contentStyle,
         ]}
       >
-        <SoftGloss borderRadius={borderRadius} />
-        <View style={{ zIndex: 1 }}>{children}</View>
+        {useGlass ? (
+          <LiquidGlassSurface borderRadius={borderRadius} style={fullWidth ? { width: "100%" } : undefined}>
+            {children}
+          </LiquidGlassSurface>
+        ) : (
+          <>
+            <SoftGloss borderRadius={borderRadius} />
+            <View style={{ zIndex: 1 }}>{children}</View>
+          </>
+        )}
       </Animated.View>
     </Pressable>
   );
@@ -276,6 +307,7 @@ export function SoftCircleButton({
   const isPath = preset === "path";
   const shadow = rimColor ?? softRimFromFace(faceColor, isPath ? 0.08 : 0.12);
   const r = size / 2;
+  const useGlass = prefersLiquidGlass(faceColor);
   const pathBorders = isPath
     ? {
         borderWidth: 1,
@@ -292,29 +324,50 @@ export function SoftCircleButton({
         width: size,
         height: size,
         borderRadius: r,
-        backgroundColor: faceColor,
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
         transform: [{ scale: pressed ? (isPath ? 0.96 : 0.94) : 1 }],
-        ...pathBorders,
+        ...(useGlass
+          ? null
+          : {
+              backgroundColor: faceColor,
+              ...pathBorders,
+              ...crossShadow({
+                color: shadow,
+                offsetY: isPath ? 3 : 6,
+                opacity: disabled ? 0.08 : isPath ? 0.14 : 0.22,
+                blur: isPath ? 10 : 14,
+                elevation: isPath ? 2 : 4,
+              }),
+            }),
         ...(pressed ? cssPressStyle : cssReleaseStyle),
-        ...crossShadow({
-          color: shadow,
-          offsetY: isPath ? 3 : 6,
-          opacity: disabled ? 0.08 : isPath ? 0.14 : 0.22,
-          blur: isPath ? 10 : 14,
-          elevation: isPath ? 2 : 4,
-        }),
       }}
     >
-      <SoftGloss
-        borderRadius={r}
-        width={size}
-        height={size}
-        strong={!disabled && preset === "default"}
-      />
-      <View style={{ zIndex: 1 }}>{children}</View>
+      {useGlass ? (
+        <LiquidGlassSurface
+          borderRadius={r}
+          style={{ width: size, height: size }}
+          contentStyle={{
+            width: size,
+            height: size,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {children}
+        </LiquidGlassSurface>
+      ) : (
+        <>
+          <SoftGloss
+            borderRadius={r}
+            width={size}
+            height={size}
+            strong={!disabled && preset === "default"}
+          />
+          <View style={{ zIndex: 1 }}>{children}</View>
+        </>
+      )}
     </Animated.View>
   );
 

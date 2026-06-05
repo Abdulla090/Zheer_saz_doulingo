@@ -4,6 +4,7 @@
  * @see https://docs.expo.dev/versions/latest/sdk/glass-effect/
  */
 
+import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
 import { Glass, Motion, Radius } from "@/screens/lesson/games/game-design";
 import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
@@ -72,43 +73,18 @@ export function HomeLiquidPill({
   style?: StyleProp<ViewStyle>;
 }) {
   const inner = (
-    <View
-      style={[
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: Glass.border,
-          backgroundColor: IS_ANDROID ? "rgba(255,255,255,0.94)" : Glass.surface,
-        },
-        crossShadow({
-          color: "#1A2B48",
-          offsetY: 6,
-          blur: 14,
-          opacity: 0.06,
-          elevation: 4,
-        }),
-        style,
-      ]}
+    <LiquidGlassSurface
+      borderRadius={size / 2}
+      style={[{ width: size, height: size }, style]}
+      contentStyle={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      {Platform.OS !== "web" && !IS_ANDROID && (
-        <BlurView
-          intensity={Glass.blurLight}
-          tint="light"
-          style={[StyleSheet.absoluteFill, { borderRadius: size / 2 }]}
-        />
-      )}
-      <LinearGradient
-        colors={[...Glass.sheen]}
-        style={[styles.cardSheen, { height: size * 0.45, borderTopLeftRadius: size / 2, borderTopRightRadius: size / 2 }]}
-        pointerEvents="none"
-      />
-      <View style={{ zIndex: 1 }}>{children}</View>
-    </View>
+      {children}
+    </LiquidGlassSurface>
   );
 
   const scale = useSharedValue(1);

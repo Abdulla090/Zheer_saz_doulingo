@@ -3,6 +3,7 @@
  * @see animating-react-native-expo skill — CSS transitions for state-driven style changes.
  */
 
+import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
 import React, { useState } from "react";
 import { Pressable, StyleProp, ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
@@ -19,6 +20,9 @@ export type PressableScaleProps = {
   haptic?: boolean;
   hapticStyle?: Haptics.ImpactFeedbackStyle;
   disabled?: boolean;
+  /** Neutral buttons — liquid glass + iOS edge shading */
+  glass?: boolean;
+  glassRadius?: number;
 };
 
 function fireHaptic(style: Haptics.ImpactFeedbackStyle) {
@@ -34,8 +38,30 @@ export function PressableScale({
   haptic = true,
   hapticStyle = Haptics.ImpactFeedbackStyle.Light,
   disabled = false,
+  glass = false,
+  glassRadius = 16,
 }: PressableScaleProps) {
   const [pressed, setPressed] = useState(false);
+
+  const animatedShell = (
+    <Animated.View
+      style={[
+        glass ? undefined : style,
+        {
+          transform: [{ scale: pressed ? scaleDown : 1 }],
+          ...(pressed ? cssPressStyle : cssReleaseStyle),
+        },
+      ]}
+    >
+      {glass ? (
+        <LiquidGlassSurface borderRadius={glassRadius} style={style}>
+          {children}
+        </LiquidGlassSurface>
+      ) : (
+        children
+      )}
+    </Animated.View>
+  );
 
   return (
     <Pressable
@@ -52,17 +78,7 @@ export function PressableScale({
       }}
       style={disabled ? { opacity: 0.5 } : undefined}
     >
-      <Animated.View
-        style={[
-          style,
-          {
-            transform: [{ scale: pressed ? scaleDown : 1 }],
-            ...(pressed ? cssPressStyle : cssReleaseStyle),
-          },
-        ]}
-      >
-        {children}
-      </Animated.View>
+      {animatedShell}
     </Pressable>
   );
 }

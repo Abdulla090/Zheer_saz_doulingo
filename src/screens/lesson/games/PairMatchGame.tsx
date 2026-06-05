@@ -25,7 +25,7 @@ import {
   LightSurfaceCard,
   LightWordTile,
 } from "./lesson-light-primitives";
-import { GameHeader, GameOption, GameRoot } from "./GameAnimatedShell";
+import { GameHeader, GameRoot } from "./GameAnimatedShell";
 
 type Props = {
   question: PairMatchQuestion;
@@ -61,6 +61,7 @@ const MatchChip = memo(function MatchChip({
   onPress,
   matched,
   rtl,
+  forceLatinFont,
   onLayoutCenter,
 }: {
   label: string;
@@ -68,6 +69,7 @@ const MatchChip = memo(function MatchChip({
   onPress: () => void;
   matched: boolean;
   rtl?: boolean;
+  forceLatinFont?: boolean;
   onLayoutCenter?: (y: number) => void;
 }) {
   const shakeX = useSharedValue(0);
@@ -102,6 +104,7 @@ const MatchChip = memo(function MatchChip({
         onPress={onPress}
         disabled={matched}
         rtl={rtl}
+        forceLatinFont={forceLatinFont}
         wide
         wrapLabel
       />
@@ -304,19 +307,17 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
           <View style={s.board}>
             <View style={s.column}>
               {left.map((lw, i) => (
-                <GameOption key={`${lw}-${i}`} index={i} baseDelay={80}>
-                  <MatchChip
-                    label={lw}
-                    state={lState(lw)}
-                    onPress={() => handleL(lw)}
-                    matched={matched.has(lw)}
-                    rtl
-                    onLayoutCenter={(y) => {
-                      // Add base padding to match absolute SVG positioning
-                      leftYs.current[lw] = y;
-                    }}
-                  />
-                </GameOption>
+                <MatchChip
+                  key={`${lw}-${i}`}
+                  label={lw}
+                  state={lState(lw)}
+                  onPress={() => handleL(lw)}
+                  matched={matched.has(lw)}
+                  rtl
+                  onLayoutCenter={(y) => {
+                    leftYs.current[lw] = y;
+                  }}
+                />
               ))}
             </View>
 
@@ -330,17 +331,17 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
 
             <View style={s.column}>
               {right.map((rw, i) => (
-                <GameOption key={`${rw}-${i}`} index={i} baseDelay={80}>
-                  <MatchChip
-                    label={rw}
-                    state={rState(rw)}
-                    onPress={() => handleR(rw)}
-                    matched={matched.has(rw)}
-                    onLayoutCenter={(y) => {
-                      rightYs.current[rw] = y;
-                    }}
-                  />
-                </GameOption>
+                <MatchChip
+                  key={`${rw}-${i}`}
+                  label={rw}
+                  state={rState(rw)}
+                  onPress={() => handleR(rw)}
+                  matched={matched.has(rw)}
+                  forceLatinFont
+                  onLayoutCenter={(y) => {
+                    rightYs.current[rw] = y;
+                  }}
+                />
               ))}
             </View>
           </View>

@@ -1,8 +1,5 @@
 /**
- * PathSwitcher — Animated multi-tab pill at the top of the home screen.
- * Switches between "Street English", "Normal English" and "Kids".
- *
- * Design: sliding indicator under the active tab, Reanimated translateX.
+ * PathSwitcher — Street / Normal / Kids pill with sliding active chip.
  */
 
 import {
@@ -10,15 +7,19 @@ import {
   Icon3DStar,
   Icon3DZapBlue,
 } from "@/components/icons/Icon3D";
-import React, { useCallback, useEffect } from "react";
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { springMotion } from "@/utils/motion-spring";
 import { crossShadow } from "@/utils/shadows";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import React, { useCallback, useEffect, useRef } from "react";
+import {
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 
 export type PathMode = "street" | "normal" | "kids";
 
@@ -56,105 +57,120 @@ const TABS: TabDef[] = [
 ];
 
 const TAB_INDEX: Record<PathMode, number> = { street: 0, normal: 1, kids: 2 };
+const PILL_PAD = 4;
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const { width } = useWindowDimensions();
-  const PILL_W = width > 0 ? Math.min(width - 32, 380) : 340;
-  const TAB_W = PILL_W / TABS.length;
+  const pillW = width > 0 ? Math.min(width - 32, 380) : 340;
+  const pressedSwitch = useRef(false);
 
-  const slideX = useSharedValue(TAB_INDEX[activeMode] * TAB_W);
+  const tabWidthSV = useSharedValue((pillW - PILL_PAD * 2) / TABS.length);
+  const slideX = useSharedValue(TAB_INDEX[activeMode] * tabWidthSV.value);
+
+  const springTo = useCallback(
+    (index: number) => {
+      slideX.value = springMotion(index * tabWidthSV.value);
+    },
+    [slideX, tabWidthSV],
+  );
+
+  const onTrackLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const w = e.nativeEvent.layout.width;
+      const nextTabW = (w - PILL_PAD * 2) / TABS.length;
+      if (nextTabW <= 0) return;
+      tabWidthSV.value = nextTabW;
+      slideX.value = TAB_INDEX[activeMode] * nextTabW;
+    },
+    [activeMode, slideX, tabWidthSV],
+  );
 
   useEffect(() => {
-    slideX.value = withTiming(TAB_INDEX[activeMode] * TAB_W, {
-      duration: 260,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [activeMode, TAB_W, slideX]);
+    if (pressedSwitch.current) {
+      pressedSwitch.current = false;
+      return;
+    }
+    springTo(TAB_INDEX[activeMode]);
+  }, [activeMode, springTo]);
 
   const handleSwitch = useCallback(
     (mode: PathMode) => {
+      if (mode === activeMode) return;
+      pressedSwitch.current = true;
+      springTo(TAB_INDEX[mode]);
       onSwitch(mode);
-      slideX.value = withTiming(TAB_INDEX[mode] * TAB_W, {
-        duration: 260,
-        easing: Easing.out(Easing.cubic),
-      });
     },
-    [TAB_W, onSwitch, slideX],
+    [activeMode, onSwitch, springTo],
   );
 
   const sliderStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideX.value }],
+    width: tabWidthSV.value,
   }));
 
   return (
-    <View style={[styles.container, { width: PILL_W }]}>
-      {/* Sliding indicator */}
-      <Animated.View
-        style={[
-          styles.slider,
-          { width: TAB_W },
-          styles.sliderLight,
-          sliderStyle,
-        ]}
-      />
-
-      {/* Tab buttons */}
-      {TABS.map((tab) => {
-        const active = activeMode === tab.key;
-        return (
-          <Pressable
-            key={tab.key}
-            onPress={() => handleSwitch(tab.key)}
-            style={[styles.tab, { width: TAB_W }]}
-          >
-            {tab.icon(active)}
-            <Text
-              style={[
-                styles.tabLabel,
-                active && { color: tab.activeColor },
-              ]}
-              numberOfLines={1}
+    <View style={[styles.outer, { width: pillW }]} onLayout={onTrackLayout}>
+      <LiquidGlassSurface
+        borderRadius={18}
+        style={styles.glass}
+        contentStyle={styles.track}
+      >
+        <Animated.View
+          style={[styles.slider, { pointerEvents: "none" }, sliderStyle]}
+        />
+        {TABS.map((tab) => {
+          const active = activeMode === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => handleSwitch(tab.key)}
+              style={styles.tab}
             >
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+              {tab.icon(active)}
+              <Text
+                style={[styles.tabLabel, active && { color: tab.activeColor }]}
+                numberOfLines={1}
+              >
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </LiquidGlassSurface>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
+  outer: {
     alignSelf: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 18,
-    padding: 4,
     marginBottom: 4,
+  },
+  glass: {
+    width: "100%",
+  },
+  track: {
+    flexDirection: "row",
     position: "relative",
-    overflow: "hidden",
     minHeight: 44,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
+    padding: PILL_PAD,
   },
   slider: {
     position: "absolute",
-    top: 4,
-    bottom: 4,
-    left: 4,
+    top: PILL_PAD,
+    bottom: PILL_PAD,
+    left: PILL_PAD,
     borderRadius: 14,
-  },
-  sliderLight: {
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: "rgba(255,255,255,0.94)",
     ...crossShadow({ color: "#000", offsetY: 1, opacity: 0.08, blur: 4, elevation: 2 }),
   },
   tab: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 5,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 14,
     zIndex: 1,
   },

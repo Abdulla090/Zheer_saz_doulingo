@@ -425,9 +425,9 @@ export function LightWordTile({
       {tierLabel ? (
         <View style={lh.tileRow}>
           <AppText
-            style={[LightType.tile, lh.tileAnswer, { zIndex: 1 }]}
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }]}
             forceKurdishFont={rtl && !forceLatinFont}
-            forceLatinFont={forceLatinFont}
+            forceLatinFont={forceLatinFont || !rtl}
           >
             {label}
           </AppText>
@@ -454,10 +454,10 @@ export function LightWordTile({
           style={[
             LightType.tile,
             wrapLabel && lh.tileWrapText,
-            { zIndex: 1 },
+            { zIndex: 1, color: L.navy },
           ]}
           forceKurdishFont={rtl && !forceLatinFont}
-          forceLatinFont={forceLatinFont}
+          forceLatinFont={forceLatinFont || !rtl}
         >
           {label}
         </AppText>
@@ -1046,10 +1046,12 @@ const lh = StyleSheet.create({
     paddingVertical: 10,
   },
   tileWrapText: {
+    alignSelf: "stretch",
     width: "100%",
     textAlign: "center",
     lineHeight: 22,
-    flexShrink: 1,
+    fontSize: 16,
+    includeFontPadding: false,
   },
   slotsRow: {
     flexDirection: "row",

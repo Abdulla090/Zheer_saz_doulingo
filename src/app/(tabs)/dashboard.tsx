@@ -7,7 +7,7 @@ export default function DashboardRoute() {
   return (
     <View style={styles.root}>
       <LearningPathScreen />
-      <View style={styles.topChrome} pointerEvents="box-none">
+      <View style={[styles.topChrome, { pointerEvents: "box-none" }]}>
         <PathModeTabs />
       </View>
     </View>

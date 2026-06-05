@@ -1,12 +1,13 @@
 import { NoteBook } from "@/constants/icons";
 import { AppText } from "@/components/ui/AppText";
-import { SoftPressableButton, SoftSurface } from "@/components/ui/soft-2.5d";
+import { SoftSurface } from "@/components/ui/soft-2.5d";
 import type { LessonPathMode } from "@/data/lesson-content";
 import { useI18n } from "@/hooks/useI18n";
 import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
+import { hapticSelection } from "@/utils/haptics";
 import { useRouter } from "expo-router";
-import React from "react";
-import { useWindowDimensions, View } from "react-native";
+import React, { useCallback } from "react";
+import { Pressable, useWindowDimensions, View } from "react-native";
 
 type HomeMainButtonProps = {
   unitLabel: string;
@@ -17,50 +18,69 @@ type HomeMainButtonProps = {
   pathMode?: LessonPathMode;
 };
 
+/** Solid frosted chip — liquid glass clips/misaligns on small controls over saturated headers. */
 function GuidebookBtn({
-  rimColor,
   label,
   isKu,
+  compact,
   onPress,
 }: {
-  rimColor: string;
   label: string;
   isKu: boolean;
+  compact: boolean;
   onPress: () => void;
 }) {
   const direction = isKu ? rtlText : ltrText;
 
   return (
-    <SoftPressableButton
+    <Pressable
       onPress={onPress}
-      faceColor="rgba(255,255,255,0.24)"
-      rimColor={rimColor}
-      borderRadius={14}
-      style={{ flexShrink: 0, alignSelf: "center" }}
-      contentStyle={{
-        flexDirection: isKu ? "row-reverse" : "row",
-        alignItems: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        gap: 6,
-      }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      android_ripple={{ color: "rgba(255,255,255,0.22)", borderless: false }}
+      style={({ pressed }) => ({
+        flexShrink: 0,
+        alignSelf: "center",
+        opacity: pressed ? 0.9 : 1,
+        transform: [{ scale: pressed ? 0.97 : 1 }],
+      })}
     >
-      <NoteBook width={20} height={20} />
-      <AppText
+      <View
         style={{
-          color: "#FFFFFF",
-          fontWeight: "800",
-          fontSize: 13,
-          letterSpacing: 0.3,
-          zIndex: 1,
-          ...direction,
+          flexDirection: isKu ? "row-reverse" : "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: compact ? 0 : 6,
+          minHeight: 40,
+          minWidth: compact ? 40 : 112,
+          paddingHorizontal: compact ? 10 : 12,
+          paddingVertical: 8,
+          borderRadius: 14,
+          backgroundColor: "rgba(255,255,255,0.34)",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.5)",
         }}
-        forceKurdishFont={isKu}
-        forceLatinFont={!isKu}
       >
-        {label}
-      </AppText>
-    </SoftPressableButton>
+        <NoteBook width={18} height={18} color="#FFFFFF" fill="#FFFFFF" />
+        {!compact ? (
+          <AppText
+            style={{
+              color: "#FFFFFF",
+              fontWeight: "800",
+              fontSize: 13,
+              letterSpacing: 0.2,
+              flexShrink: 0,
+              ...direction,
+            }}
+            forceKurdishFont={isKu}
+            forceLatinFont={!isKu}
+            numberOfLines={1}
+          >
+            {label}
+          </AppText>
+        ) : null}
+      </View>
+    </Pressable>
   );
 }
 
@@ -76,10 +96,19 @@ export const HomeMainButton = React.memo(({
   const router = useRouter();
   const { t, isKu } = useI18n();
   const barWidth = Math.min(width - 48, 320);
+  const guidebookCompact = width < 360;
   const direction = isKu ? rtlText : ltrText;
 
+  const openGuidebook = useCallback(() => {
+    hapticSelection();
+    router.push({
+      pathname: "/guidebook",
+      params: { unit: String(unitIndex), mode: pathMode },
+    });
+  }, [pathMode, router, unitIndex]);
+
   return (
-    <View style={{ alignSelf: "center", marginVertical: 12, width: barWidth }}>
+    <View style={{ alignSelf: "center", marginTop: 2, marginBottom: 10, width: barWidth }}>
       <SoftSurface
         faceColor={faceColor}
         rimColor={rimColor}
@@ -112,7 +141,7 @@ export const HomeMainButton = React.memo(({
               paddingHorizontal: 10,
               paddingVertical: 3,
               borderRadius: 10,
-              marginBottom: 6,
+              marginBottom: 2,
             }}
           >
             <AppText
@@ -150,15 +179,10 @@ export const HomeMainButton = React.memo(({
 
         <View style={{ flexShrink: 0, flexGrow: 0 }}>
           <GuidebookBtn
-            rimColor={rimColor}
             label={t("path.guidebook")}
             isKu={isKu}
-            onPress={() =>
-              router.push({
-                pathname: "/guidebook",
-                params: { unit: String(unitIndex), mode: pathMode },
-              })
-            }
+            compact={guidebookCompact}
+            onPress={openGuidebook}
           />
         </View>
       </SoftSurface>

@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/immutability -- Reanimated SharedValue writes in press handlers */
+import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
 import { Motion } from "@/screens/lesson/games/game-design";
 import React from "react";
 import {
@@ -18,6 +19,9 @@ type Props = PressableProps & {
   style?: StyleProp<ViewStyle>;
   /** 0.96 default — physical press without overshoot */
   pressScale?: number;
+  /** iOS liquid glass shell with edge shading */
+  glass?: boolean;
+  glassRadius?: number;
 };
 
 /** Spring press feedback for custom controls (tabs, rows, chips). No haptic. */
@@ -25,6 +29,8 @@ export function PremiumPressable({
   children,
   style,
   pressScale = 0.96,
+  glass = false,
+  glassRadius = 14,
   onPressIn,
   onPressOut,
   android_ripple,
@@ -36,8 +42,8 @@ export function PremiumPressable({
     transform: [{ scale: scale.value }],
   }));
 
-  return (
-    <Animated.View style={animStyle}>
+  const body = glass ? (
+    <LiquidGlassSurface borderRadius={glassRadius} style={style}>
       <Pressable
         {...rest}
         onPressIn={(e) => {
@@ -49,12 +55,32 @@ export function PremiumPressable({
           onPressOut?.(e);
         }}
         android_ripple={
-          android_ripple ?? { color: "rgba(43, 89, 243, 0.12)", borderless: false }
+          android_ripple ?? { color: "rgba(148, 163, 184, 0.2)", borderless: false }
         }
-        style={style}
+        style={{ alignItems: "center", justifyContent: "center" }}
       >
         {children}
       </Pressable>
-    </Animated.View>
+    </LiquidGlassSurface>
+  ) : (
+    <Pressable
+      {...rest}
+      onPressIn={(e) => {
+        scale.value = withSpring(pressScale, Motion.soft);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        scale.value = withSpring(1, Motion.soft);
+        onPressOut?.(e);
+      }}
+      android_ripple={
+        android_ripple ?? { color: "rgba(43, 89, 243, 0.12)", borderless: false }
+      }
+      style={style}
+    >
+      {children}
+    </Pressable>
   );
+
+  return <Animated.View style={animStyle}>{body}</Animated.View>;
 }

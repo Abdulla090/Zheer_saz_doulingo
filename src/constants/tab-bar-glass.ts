@@ -1,27 +1,21 @@
-import { DynamicColorIOS, Platform } from "react-native";
+import {
+  LIQUID_GLASS,
+  liquidFrostBase,
+  liquidGlassShellShadow,
+} from "@/constants/liquid-glass";
+import { DynamicColorIOS, Platform, type ViewStyle } from "react-native";
 
-/**
- * Phingo tab bar = always light frosted glass (matches home mesh UI).
- * Do not follow system dark mode — Android BlurView + dark = solid black bar.
- */
-
+/** Tab bar tokens — extends shared liquid glass. */
 export const TAB_BAR_GLASS = {
-  frost: "rgba(255, 255, 255, 0.88)",
-  frostAndroid: "rgba(252, 254, 255, 0.94)",
-  frostUnderlay: "rgba(248, 250, 255, 0.78)",
-  sheen: [
-    "rgba(255, 255, 255, 0.55)",
-    "rgba(236, 242, 255, 0.28)",
-    "rgba(255, 255, 255, 0)",
-  ] as const,
-  border: "rgba(255, 255, 255, 0.85)",
-  borderInner: "rgba(43, 89, 243, 0.12)",
-  tintBrand: "rgba(43, 89, 243, 0.05)",
-  shadow: "#1A2B48",
+  ...LIQUID_GLASS,
+  iconActive: "#2B59F3",
+  iconInactive: "#64748B",
 } as const;
 
-export function tabBarFrostBase(): string {
-  return Platform.OS === "android" ? TAB_BAR_GLASS.frostAndroid : TAB_BAR_GLASS.frost;
+export const tabBarFrostBase = liquidFrostBase;
+
+export function tabBarShellShadow(): ViewStyle {
+  return liquidGlassShellShadow("tab");
 }
 
 export function nativeTabBarBackground(): string | ReturnType<typeof DynamicColorIOS> {

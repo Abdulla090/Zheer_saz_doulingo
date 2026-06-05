@@ -45,15 +45,15 @@ function JsTabsLayoutInner() {
             },
       }}
     >
-      {/* Screen order matches tab bar: Games (left) → Home → Shop? → Profile (right) */}
-      <Tabs.Screen name="feed" />
+      {/* Pill: Home · Games · Path · Shop? — FAB: Profile */}
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="feed" />
+      <Tabs.Screen name="dashboard" />
       <Tabs.Screen
         name="subscription"
         options={{ href: ENABLE_SHOP ? undefined : null }}
       />
       <Tabs.Screen name="more" />
-      <Tabs.Screen name="dashboard" options={{ href: null }} />
       <Tabs.Screen name="quest" options={{ href: null }} />
       <Tabs.Screen name="league" options={{ href: null }} />
       <Tabs.Screen
@@ -62,7 +62,12 @@ function JsTabsLayoutInner() {
       />
       <Tabs.Screen
         name="guidebook"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
+        options={{
+          headerShown: false,
+          href: null,
+          tabBarStyle: { display: "none" },
+          animation: "fade",
+        }}
       />
       <Tabs.Screen
         name="roleplay"

@@ -15,12 +15,10 @@ function parseMode(raw: string | string[] | undefined): PathMode {
   return "street";
 }
 
-export const PATH_SWITCHER_HEIGHT = 48;
-/** Switcher + CONTINUE banner (see PathContinueBanner). */
-import { PATH_CONTINUE_BANNER_HEIGHT } from "./PathContinueBanner";
+/** PathSwitcher pill + bar padding (continue CTA is not in this chrome). */
+export const PATH_SWITCHER_HEIGHT = 56;
 
-export const PATH_TOP_CHROME_HEIGHT =
-  PATH_SWITCHER_HEIGHT + PATH_CONTINUE_BANNER_HEIGHT;
+export const PATH_TOP_CHROME_HEIGHT = PATH_SWITCHER_HEIGHT;
 
 export function PathModeTabs() {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
@@ -43,10 +41,7 @@ export function PathModeTabs() {
   );
 
   return (
-    <View
-      style={[styles.bar, { paddingTop: insets.top + 6 }]}
-      pointerEvents="box-none"
-    >
+    <View style={[styles.bar, { paddingTop: insets.top + 6, pointerEvents: "box-none" }]}>
       <PathSwitcher activeMode={activeMode} onSwitch={handleSwitch} />
     </View>
   );

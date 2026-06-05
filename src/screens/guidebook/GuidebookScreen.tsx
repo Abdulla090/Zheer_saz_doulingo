@@ -65,7 +65,10 @@ function parseUnitIndex(raw: string | string[] | undefined): number {
 }
 
 function parsePathMode(raw: string | string[] | undefined): LessonPathMode {
-  return parseSearchParam(raw) === "normal" ? "normal" : "street";
+  const mode = parseSearchParam(raw);
+  if (mode === "normal") return "normal";
+  if (mode === "kids") return "kids";
+  return "street";
 }
 
 // ─── 3-D TTS Pill Button ──────────────────────────────────────────────────────

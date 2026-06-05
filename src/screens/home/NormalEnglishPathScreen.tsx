@@ -169,7 +169,7 @@ export function NormalEnglishPathScreen() {
         style={[
           darkStyles.root,
           {
-            paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT + 4,
+            paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT,
           },
         ]}
       >
