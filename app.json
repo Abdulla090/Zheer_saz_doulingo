@@ -7,6 +7,11 @@
     "icon": "./assets/images/app-icon.png",
     "scheme": "duolingoclone",
     "userInterfaceStyle": "automatic",
+    "androidStatusBar": {
+      "hidden": true,
+      "translucent": true,
+      "backgroundColor": "#00000000"
+    },
     "ios": {
       "icon": "./assets/images/app-icon.png",
       "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
@@ -39,11 +44,23 @@
       "expo-dev-client",
       "expo-router",
       [
+        "expo-navigation-bar",
+        {
+          "position": "absolute",
+          "hidden": true,
+          "behavior": "inset-swipe",
+          "enforceContrast": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
             "usePrecompiledHeaders": true,
             "usesCleartextTraffic": true
+          },
+          "ios": {
+            "useHermesV1": true
           }
         }
       ],

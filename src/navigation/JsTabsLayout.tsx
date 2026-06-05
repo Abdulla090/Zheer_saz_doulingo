@@ -9,7 +9,7 @@ import { pathnameHidesTabBar } from "@/constants/tab-navigation";
 import { usePathname } from "expo-router";
 import { Tabs } from "expo-router";
 import React from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 
 function JsTabsLayoutInner() {
   const pathname = usePathname();
@@ -25,7 +25,7 @@ function JsTabsLayoutInner() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: "#2B59F3",
         tabBarInactiveTintColor: "#8E95A3",
-        animation: "fade",
+        animation: Platform.OS === "android" ? "shift" : "fade",
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: "transparent" }} />
         ),
@@ -95,7 +95,7 @@ function JsTabsLayoutInner() {
   );
 }
 
-/** JS floating tab bar (Expo Go, web, Android when EXPO_PUBLIC_ANDROID_JS_TABS=1). */
+/** JS floating frosted glass tab bar (Android default, Expo Go, web). */
 export default function JsTabsLayout() {
   return (
     <TabTransitionProvider>

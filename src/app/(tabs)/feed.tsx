@@ -1,10 +1,10 @@
-import { TabScreenTransition } from "@/components/TabScreenTransition";
+import { TabScreenChrome } from "@/components/TabScreenChrome";
 import { GamesScreen } from "@/screens/games/GamesScreen";
 
 export default function FeedRoute() {
   return (
-    <TabScreenTransition>
+    <TabScreenChrome>
       <GamesScreen />
-    </TabScreenTransition>
+    </TabScreenChrome>
   );
 }

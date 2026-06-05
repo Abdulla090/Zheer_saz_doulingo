@@ -1,16 +1,12 @@
+import { PremiumPressable } from "@/components/PremiumPressable";
 import { PingoMascot } from "@/components/mascot/PingoMascot";
 import {
-  ChestFlat,
-  CoffeeCupFlat,
   QuestHeadphonesFlat,
   QuestTargetFlat,
   QuestZapFlat,
 } from "@/components/icons/HomeDashboardIcons";
 import {
   HomeLiquidButton,
-  HomeLiquidCard,
-  HomeLiquidLessonTile,
-  HomeLiquidXpChip,
   HomeMeshBackground,
   HomePalette,
   HomeType,
@@ -29,7 +25,8 @@ import { getPathProgressSummary } from "@/utils/path-progress";
 import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { Fire } from "@/constants/icons";
-import { hapticSelection } from "@/utils/haptics";
+import { hapticImpact } from "@/utils/haptics";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import {
@@ -38,7 +35,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { tabBarScrollPadding } from "@/constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -73,7 +69,7 @@ function DiamondIcon({ size = 10 }: { size?: number }) {
   );
 }
 
-function questIcon(id: HomeQuestId, size = 40) {
+function questIcon(id: HomeQuestId, size = 36) {
   switch (id) {
     case "dailyXp":
       return <QuestZapFlat size={size} />;
@@ -83,6 +79,70 @@ function questIcon(id: HomeQuestId, size = 40) {
       return <QuestTargetFlat size={size} />;
   }
 }
+
+const PathProgressRow = memo(function PathProgressRow({
+  label,
+  completed,
+  total,
+  progress,
+  fillColor,
+}: {
+  label: string;
+  completed: number;
+  total: number;
+  progress: number;
+  fillColor: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <View style={styles.pathStripRow}>
+      <View style={styles.pathStripHead}>
+        <Text style={styles.pathStripLabel}>{label}</Text>
+        <Text style={styles.pathStripCount}>
+          {completed}/{total} {t("home.lessonsComplete")}
+        </Text>
+      </View>
+      <ThinProgressBar
+        progress={progress}
+        fillColor={fillColor}
+        trackColor={C.track}
+        height={6}
+      />
+    </View>
+  );
+});
+
+const InlineLinkRow = memo(function InlineLinkRow({
+  hint,
+  title,
+  onPress,
+  isLast,
+}: {
+  hint: string;
+  title: string;
+  onPress: () => void;
+  isLast?: boolean;
+}) {
+  return (
+    <PremiumPressable
+      onPress={() => {
+        hapticImpact(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      style={[styles.linkRow, !isLast && styles.linkRowBorder]}
+      accessibilityRole="button"
+      pressScale={0.98}
+    >
+      <View style={styles.linkRowCopy}>
+        <Text style={styles.linkRowHint}>{hint}</Text>
+        <Text style={styles.linkRowTitle} numberOfLines={2}>
+          {title}
+        </Text>
+      </View>
+      <Text style={styles.linkRowChevron}>›</Text>
+    </PremiumPressable>
+  );
+});
 
 const QuestRow = memo(function QuestRow({
   title,
@@ -94,10 +154,11 @@ const QuestRow = memo(function QuestRow({
   onPress,
 }: QuestDef & { isLast?: boolean; onPress: () => void }) {
   return (
-    <Pressable
+    <PremiumPressable
       onPress={onPress}
       accessibilityRole="button"
       style={[styles.questRow, !isLast && styles.questRowBorder]}
+      pressScale={0.98}
     >
       <View style={styles.questLeft}>
         {renderIcon()}
@@ -108,7 +169,7 @@ const QuestRow = memo(function QuestRow({
             progress={progress}
             fillColor={done ? "#58CC02" : C.blue}
             trackColor={C.track}
-            height={6}
+            height={5}
             style={styles.questBar}
           />
         </View>
@@ -117,10 +178,8 @@ const QuestRow = memo(function QuestRow({
         <Text style={styles.questDoneMark} accessibilityLabel="Done">
           ✓
         </Text>
-      ) : (
-        <HomeLiquidXpChip />
-      )}
-    </Pressable>
+      ) : null}
+    </PremiumPressable>
   );
 });
 
@@ -137,7 +196,6 @@ export function PhingoLearnHomeScreen() {
   const kidsNext = useProgressStore((s) => s.kidsNextLessonPathIndex);
   const lastActivity = useProgressStore((s) => s.lastActivity);
   const pathMode = useSettingsStore((s) => s.pathMode);
-  const { width } = useWindowDimensions();
 
   const pathSummary = useMemo(
     () => getPathProgressSummary(streetNext, normalNext, kidsNext),
@@ -152,9 +210,6 @@ export function PhingoLearnHomeScreen() {
   useEffect(() => {
     void syncHomeWidget();
   }, [streetNext, normalNext, kidsNext, lastActivity, dailyXp, streakDays]);
-
-  const horizontalPad = 20;
-  const cardWidth = width - horizontalPad * 2;
 
   const quests = useMemo<QuestDef[]>(() => {
     const rows = buildHomeDailyQuests({ dailyXp, dailyGoalXp, lastActivity });
@@ -238,10 +293,9 @@ export function PhingoLearnHomeScreen() {
     router.push("/feed");
   }, [lastActivity, normalNext, kidsNext, router, streetNext]);
 
-  const lessonLabel = nextLessonMeta
-    ? `${t("home.nextLesson")} · ${nextLessonMeta.lessonNumber}`
-    : t("home.nextLesson");
-  const lessonTitle = nextLessonMeta?.sectionTitle ?? t("home.tapToContinue");
+  const lessonCaption = nextLessonMeta
+    ? `${t("home.nextLesson")} · ${nextLessonMeta.lessonNumber} — ${nextLessonMeta.sectionTitle}`
+    : t("home.tapToContinue");
 
   const recentTitle =
     lastActivity?.kind === "game"
@@ -256,6 +310,23 @@ export function PhingoLearnHomeScreen() {
         ? t("home.nextLesson")
         : null;
 
+  const linkRows: { key: string; hint: string; title: string; onPress: () => void }[] =
+    [];
+  if (recentTitle && recentHint) {
+    linkRows.push({
+      key: "recent",
+      hint: recentHint,
+      title: recentTitle,
+      onPress: onRecentPress,
+    });
+  }
+  linkRows.push({
+    key: "games",
+    hint: t("games.subtitle"),
+    title: t("games.title"),
+    onPress: onOpenGames,
+  });
+
   return (
     <View style={styles.root}>
       <HomeMeshBackground />
@@ -266,7 +337,7 @@ export function PhingoLearnHomeScreen() {
         contentContainerStyle={{
           paddingTop: insets.top + 12,
           paddingBottom: tabBarScrollPadding(insets.bottom),
-          paddingHorizontal: horizontalPad,
+          paddingHorizontal: 20,
         }}
       >
         <View style={styles.header}>
@@ -283,143 +354,92 @@ export function PhingoLearnHomeScreen() {
           </View>
         </View>
 
-        <HomeLiquidCard
-          style={[styles.cardSpacer, { overflow: "visible" }]}
-          contentStyle={styles.heroInner}
-          interactive
-        >
-          <View style={styles.heroRow}>
-            <View style={styles.heroCopy}>
-              <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
-              <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
-            </View>
-            <View style={[styles.heroMascot, { transform: [{ scaleX: -1 }] }]}>
-              <PingoMascot size={130} pose="wave" />
-            </View>
+        <View style={styles.heroStrip}>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
+            <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
           </View>
-        </HomeLiquidCard>
+          <View style={[styles.heroMascot, { transform: [{ scaleX: -1 }] }]}>
+            <PingoMascot size={88} pose="wave" />
+          </View>
+        </View>
 
         <HomeLiquidButton
           label={t("home.continue")}
           onPress={onStartLesson}
           style={styles.continueBtn}
         />
+        <Text style={styles.lessonCaption} numberOfLines={2}>
+          {lessonCaption}
+        </Text>
 
-        <HomeLiquidCard style={styles.cardSpacer} contentStyle={styles.dailyInner}>
-          <Text style={styles.cardHeading}>{t("home.dailyGoal")}</Text>
-          <View style={styles.dailyRow}>
-            <View style={styles.dailyCopy}>
-              <View style={styles.dailyXpRow}>
-                <DiamondIcon />
-                <Text style={styles.dailyXp}>
-                  {dailyXp} / {dailyGoalXp} XP
-                </Text>
-              </View>
-              <ThinProgressBar
-                progress={dailyGoalXp > 0 ? dailyXp / dailyGoalXp : 0}
-                fillColor={C.blue}
-                trackColor={C.track}
-                height={8}
-                style={{ marginTop: 10, maxWidth: cardWidth * 0.55 }}
-              />
-            </View>
-            <ChestFlat width={64} height={64} />
+        <View style={styles.stripBlock}>
+          <Text style={styles.sectionLabel}>{t("home.dailyGoal")}</Text>
+          <View style={styles.dailyStrip}>
+            <DiamondIcon size={11} />
+            <Text style={styles.dailyXpText}>
+              {dailyXp} / {dailyGoalXp} XP
+            </Text>
           </View>
-        </HomeLiquidCard>
+          <ThinProgressBar
+            progress={dailyGoalXp > 0 ? dailyXp / dailyGoalXp : 0}
+            fillColor={C.blue}
+            trackColor={C.track}
+            height={8}
+            style={styles.dailyBar}
+          />
+        </View>
+
+        <View style={styles.divider} />
 
         <Pressable
           onPress={onOpenPath}
           accessibilityRole="button"
           accessibilityLabel={t("home.viewPath")}
         >
-          <HomeLiquidCard
-            interactive
-            style={styles.cardSpacer}
-            contentStyle={styles.pathProgressInner}
-          >
-            <Text style={styles.cardHeading}>{t("home.pathProgress")}</Text>
-            <View style={styles.pathRow}>
-              <Text style={styles.pathLabel}>{t("home.streetPath")}</Text>
-              <Text style={styles.pathPct}>
-                {pathSummary.streetCompleted}/{pathSummary.streetTotal}{" "}
-                {t("home.lessonsComplete")}
-              </Text>
+          <View style={styles.stripBlock}>
+            <View style={styles.pathSectionHead}>
+              <Text style={styles.sectionLabel}>{t("home.pathProgress")}</Text>
+              <Text style={styles.pathLink}>{t("home.viewPath")} ›</Text>
             </View>
-            <ThinProgressBar
+            <PathProgressRow
+              label={t("home.streetPath")}
+              completed={pathSummary.streetCompleted}
+              total={pathSummary.streetTotal}
               progress={pathSummary.streetPercent}
               fillColor={C.blue}
-              trackColor={C.track}
-              height={8}
-              style={styles.pathBar}
             />
-            <View style={[styles.pathRow, styles.pathRowSpaced]}>
-              <Text style={styles.pathLabel}>{t("home.normalPath")}</Text>
-              <Text style={styles.pathPct}>
-                {pathSummary.normalCompleted}/{pathSummary.normalTotal}{" "}
-                {t("home.lessonsComplete")}
-              </Text>
-            </View>
-            <ThinProgressBar
+            <PathProgressRow
+              label={t("home.normalPath")}
+              completed={pathSummary.normalCompleted}
+              total={pathSummary.normalTotal}
               progress={pathSummary.normalPercent}
               fillColor="#58CC02"
-              trackColor={C.track}
-              height={8}
-              style={styles.pathBar}
             />
-            <Text style={styles.pathOpenHint}>{t("home.tapToOpenPath")}</Text>
-          </HomeLiquidCard>
+          </View>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>{t("home.upNext")}</Text>
-        <HomeLiquidLessonTile onPress={onStartLesson} style={styles.cardSpacerTight}>
-          <View style={styles.lessonTextCol}>
-            <Text style={styles.lessonLabel}>{lessonLabel}</Text>
-            <Text style={styles.lessonTitle} numberOfLines={2}>
-              {lessonTitle}
-            </Text>
-            <Text style={styles.lessonTapHint}>{t("home.startLesson")}</Text>
-          </View>
-          <CoffeeCupFlat width={84} height={84} />
-        </HomeLiquidLessonTile>
-
-        {recentTitle ? (
+        {linkRows.length > 0 ? (
           <>
-            <Text style={styles.sectionLabel}>{t("home.recentActivity")}</Text>
-            <Pressable onPress={onRecentPress} accessibilityRole="button">
-              <HomeLiquidCard
-                interactive
-                style={styles.cardSpacerTight}
-                contentStyle={styles.recentInner}
-              >
-                <View style={styles.recentCopy}>
-                  <Text style={styles.recentHint}>{recentHint}</Text>
-                  <Text style={styles.recentTitle} numberOfLines={2}>
-                    {recentTitle}
-                  </Text>
-                </View>
-                <Text style={styles.recentChevron}>›</Text>
-              </HomeLiquidCard>
-            </Pressable>
+            <View style={styles.divider} />
+            <View style={styles.linkList}>
+              {linkRows.map((row, i) => (
+                <InlineLinkRow
+                  key={row.key}
+                  hint={row.hint}
+                  title={row.title}
+                  onPress={row.onPress}
+                  isLast={i === linkRows.length - 1}
+                />
+              ))}
+            </View>
           </>
         ) : null}
 
-        <Text style={styles.sectionLabel}>{t("home.practiceHub")}</Text>
-        <Pressable onPress={onOpenGames} accessibilityRole="button">
-          <HomeLiquidCard
-            interactive
-            style={styles.cardSpacerTight}
-            contentStyle={styles.recentInner}
-          >
-            <View style={styles.recentCopy}>
-              <Text style={styles.recentHint}>{t("games.subtitle")}</Text>
-              <Text style={styles.recentTitle}>{t("games.title")}</Text>
-            </View>
-            <Text style={styles.recentChevron}>›</Text>
-          </HomeLiquidCard>
-        </Pressable>
+        <View style={styles.divider} />
 
         <View style={styles.questsHeaderRow}>
-          <Text style={styles.questsSectionTitle}>{t("home.todaysQuests")}</Text>
+          <Text style={styles.sectionLabel}>{t("home.todaysQuests")}</Text>
           <Pressable
             onPress={onOpenQuests}
             hitSlop={8}
@@ -429,7 +449,7 @@ export function PhingoLearnHomeScreen() {
             <Text style={styles.questsLink}>{t("home.viewAllQuests")}</Text>
           </Pressable>
         </View>
-        <HomeLiquidCard contentStyle={styles.questsInner}>
+        <View style={styles.questList}>
           {quests.map((q, i) => (
             <QuestRow
               key={q.id}
@@ -438,7 +458,7 @@ export function PhingoLearnHomeScreen() {
               onPress={onOpenQuests}
             />
           ))}
-        </HomeLiquidCard>
+        </View>
       </ScrollView>
     </View>
   );
@@ -453,7 +473,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   logo: {
     ...HomeType.logo,
@@ -481,176 +501,140 @@ const styles = StyleSheet.create({
     color: C.blue,
     fontFamily: "DINNextRoundedBold",
   },
-  continueBtn: {
-    marginTop: 12,
+  heroStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
   },
-  cardSpacer: {
+  heroMascot: {
+    width: 88,
+    flexShrink: 0,
+  },
+  heroCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  heroTitle: {
+    ...HomeType.heading,
+    color: C.navy,
+    fontSize: 26,
+  },
+  heroSub: {
+    ...HomeType.body,
+    color: C.gray,
+    lineHeight: 21,
+  },
+  continueBtn: {
     marginTop: 16,
   },
-  cardSpacerTight: {
+  lessonCaption: {
+    ...HomeType.caption,
+    color: C.gray,
+    textAlign: "center",
     marginTop: 10,
+    paddingHorizontal: 8,
+    lineHeight: 18,
+  },
+  stripBlock: {
+    marginTop: 22,
+    gap: 10,
   },
   sectionLabel: {
     ...HomeType.section,
     color: C.navy,
-    marginTop: 20,
-    marginBottom: 8,
+    marginBottom: 0,
   },
-  pathProgressInner: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+  dailyStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  pathRow: {
+  dailyXpText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: C.gray,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  dailyBar: {
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: C.divider,
+    marginTop: 22,
+  },
+  pathSectionHead: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  pathLink: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.blue,
+    fontFamily: "DINNextRoundedBold",
+  },
+  pathStripRow: {
+    gap: 6,
     marginTop: 10,
+  },
+  pathStripHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
   },
-  pathRowSpaced: {
-    marginTop: 14,
-  },
-  pathLabel: {
+  pathStripLabel: {
     fontSize: 14,
     fontWeight: "700",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
     flex: 1,
   },
-  pathPct: {
+  pathStripCount: {
     ...HomeType.caption,
     color: C.grayLight,
-    textAlign: "right",
   },
-  pathBar: {
-    marginTop: 6,
+  linkList: {
+    marginTop: 4,
   },
-  pathOpenHint: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: C.blue,
-    fontFamily: "DINNextRoundedMedium",
-    marginTop: 12,
-  },
-  lessonTapHint: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.78)",
-    fontFamily: "DINNextRoundedMedium",
-    marginTop: 8,
-  },
-  recentInner: {
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+  linkRow: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 14,
+    gap: 8,
   },
-  recentCopy: {
+  linkRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: C.divider,
+  },
+  linkRowCopy: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
-  recentHint: {
+  linkRowHint: {
     ...HomeType.caption,
     color: C.grayLight,
   },
-  recentTitle: {
-    fontSize: 17,
-    fontWeight: "800",
+  linkRowTitle: {
+    fontSize: 16,
+    fontWeight: "700",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.2,
   },
-  recentChevron: {
-    fontSize: 28,
+  linkRowChevron: {
+    fontSize: 26,
     fontWeight: "300",
     color: C.blue,
-    marginLeft: 8,
-  },
-  heroInner: {
-    padding: 18,
-  },
-  heroRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  heroMascot: {
-    width: 130,
-    flexShrink: 0,
-    marginTop: -6,
-    overflow: "visible",
-  },
-  heroCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  heroTitle: {
-    ...HomeType.heading,
-    color: C.navy,
-  },
-  heroSub: {
-    ...HomeType.body,
-    color: C.gray,
-    marginTop: 2,
-  },
-  dailyInner: {
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-  },
-  dailyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  dailyCopy: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  dailyXpRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  cardHeading: {
-    ...HomeType.section,
-    color: C.navy,
-  },
-  dailyXp: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: C.gray,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  lessonTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  lessonLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.92)",
-    fontFamily: "DINNextRoundedMedium",
-    letterSpacing: -0.1,
-  },
-  lessonTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.5,
   },
   questsHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  questsSectionTitle: {
-    ...HomeType.section,
-    color: C.navy,
-    marginBottom: 0,
+    marginTop: 4,
+    marginBottom: 4,
   },
   questsLink: {
     fontSize: 14,
@@ -658,15 +642,14 @@ const styles = StyleSheet.create({
     color: C.blue,
     fontFamily: "DINNextRoundedBold",
   },
-  questsInner: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+  questList: {
+    marginTop: 4,
   },
   questRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 10,
   },
   questRowBorder: {
@@ -684,11 +667,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   questTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.2,
   },
   questProgressLabel: {
     ...HomeType.caption,
@@ -696,13 +678,12 @@ const styles = StyleSheet.create({
   },
   questBar: {
     marginTop: 4,
-    maxWidth: "100%",
   },
   questDoneMark: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: "#58CC02",
-    width: 36,
+    width: 28,
     textAlign: "center",
   },
 });

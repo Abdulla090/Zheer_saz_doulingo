@@ -21,14 +21,13 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import { Motion } from "@/screens/lesson/games/game-design";
+import { PremiumPressable } from "@/components/PremiumPressable";
 import { useTabTransition } from "@/context/TabTransitionContext";
-import { hapticSelection } from "@/utils/haptics";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo } from "react";
 import {
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -42,7 +41,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ACTIVE = "#2B59F3";
-const INACTIVE = "#8E95A3";
+const INACTIVE = "#6B7280";
 
 type TabKey = "index" | "feed" | "subscription" | "more";
 
@@ -127,7 +126,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const onTabPress = useCallback(
     (route: TabKey, isFocused: boolean) => {
       if (!isFocused) {
-        hapticSelection();
         prepareTransition(activeRouteName ?? "index", route);
         navigation.navigate(route);
       }
@@ -174,10 +172,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                   : activeRouteName === route;
 
               return (
-                <Pressable
+                <PremiumPressable
                   key={route}
                   onPress={() => onTabPress(route, isFocused)}
                   style={[styles.item, { width: slotWidth }]}
+                  pressScale={0.94}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isFocused }}
                   accessibilityLabel={label}
@@ -196,7 +195,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                       {label}
                     </Text>
                   </View>
-                </Pressable>
+                </PremiumPressable>
               );
             })}
           </View>
@@ -236,9 +235,9 @@ const styles = StyleSheet.create({
     bottom: 6,
     left: 0,
     borderRadius: 20,
-    backgroundColor: "rgba(43, 89, 243, 0.14)",
+    backgroundColor: "rgba(43, 89, 243, 0.12)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(43, 89, 243, 0.22)",
+    borderColor: "rgba(43, 89, 243, 0.18)",
   },
   itemInner: {
     alignItems: "center",
@@ -248,7 +247,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: "600",
-    color: INACTIVE,
+    color: "#6B7280",
     letterSpacing: 0.15,
     fontFamily: Platform.select({
       ios: "System",

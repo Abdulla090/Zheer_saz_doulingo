@@ -1,7 +1,9 @@
 /**
- * iOS 26–style floating tab bar surface (Liquid Glass on iOS 26+, blur fallback).
+ * Floating tab bar — light frosted glass on all platforms.
+ * Android: no BlurView (renders solid black on many devices); frost + sheen layers instead.
  */
 
+import { TAB_BAR_GLASS, tabBarFrostBase } from "@/constants/tab-bar-glass";
 import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { BlurView } from "expo-blur";
@@ -26,8 +28,39 @@ try {
   /* optional native module */
 }
 
-function useTabBarGlass(): boolean {
-  return Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
+function FrostLayers({ borderRadius }: { borderRadius: number }) {
+  const frost = tabBarFrostBase();
+  return (
+    <>
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { borderRadius, backgroundColor: TAB_BAR_GLASS.frostUnderlay },
+        ]}
+        pointerEvents="none"
+      />
+      <View
+        style={[StyleSheet.absoluteFill, { borderRadius, backgroundColor: frost }]}
+        pointerEvents="none"
+      />
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { borderRadius, backgroundColor: TAB_BAR_GLASS.tintBrand },
+        ]}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={[...TAB_BAR_GLASS.sheen]}
+        locations={[0, 0.4, 1]}
+        style={[
+          styles.topSheen,
+          { borderTopLeftRadius: borderRadius, borderTopRightRadius: borderRadius },
+        ]}
+        pointerEvents="none"
+      />
+    </>
+  );
 }
 
 type Props = {
@@ -37,69 +70,57 @@ type Props = {
 };
 
 export function TabBarGlassSurface({ children, borderRadius, style }: Props) {
-  const nativeGlass = useTabBarGlass();
+  const nativeGlass =
+    Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
   const GlassView = GlassViewComponent;
 
   const shellStyle = [
     styles.shell,
-    { borderRadius },
-    !IS_ANDROID &&
-      crossShadow({
-        color: "#1A2B48",
-        offsetY: 8,
-        blur: 24,
-        opacity: Platform.OS === "ios" ? 0.1 : 0.14,
-        elevation: 12,
-      }),
-    IS_ANDROID && styles.shellAndroid,
+    { borderRadius, borderColor: TAB_BAR_GLASS.border },
+    crossShadow({
+      color: TAB_BAR_GLASS.shadow,
+      offsetY: IS_ANDROID ? 6 : 8,
+      blur: IS_ANDROID ? 16 : 22,
+      opacity: IS_ANDROID ? 0.08 : 0.11,
+      elevation: IS_ANDROID ? 8 : 12,
+    }),
     style,
   ];
 
-  if (nativeGlass && GlassView) {
-    return (
-      <View style={shellStyle}>
-        <GlassView
-          style={[StyleSheet.absoluteFill, { borderRadius }]}
-          glassEffectStyle="regular"
-          colorScheme="light"
-          isInteractive
-        />
-        <View style={[styles.borderHairline, { borderRadius }]} pointerEvents="none" />
-        <View style={styles.content}>{children}</View>
-      </View>
-    );
-  }
-
   return (
     <View style={shellStyle}>
-      {Platform.OS === "ios" ? (
-        <BlurView
-          intensity={72}
-          tint="systemChromeMaterialLight"
-          style={[StyleSheet.absoluteFill, { borderRadius }]}
-        />
+      {nativeGlass && GlassView ? (
+        <>
+          <FrostLayers borderRadius={borderRadius} />
+          <GlassView
+            style={[StyleSheet.absoluteFill, { borderRadius }]}
+            glassEffectStyle="regular"
+            colorScheme="light"
+            isInteractive
+          />
+        </>
       ) : IS_ANDROID ? (
-        <BlurView
-          intensity={55}
-          tint="light"
-          experimentalBlurMethod="dimezisBlurView"
-          style={[StyleSheet.absoluteFill, { borderRadius }]}
-        />
+        <FrostLayers borderRadius={borderRadius} />
+      ) : Platform.OS === "ios" ? (
+        <>
+          <FrostLayers borderRadius={borderRadius} />
+          <BlurView
+            intensity={76}
+            tint="systemChromeMaterialLight"
+            style={[StyleSheet.absoluteFill, { borderRadius }]}
+          />
+        </>
       ) : (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            { borderRadius, backgroundColor: "rgba(255,255,255,0.72)" },
-          ]}
-        />
+        <FrostLayers borderRadius={borderRadius} />
       )}
-      <LinearGradient
-        colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0.06)", "rgba(255,255,255,0)"]}
-        locations={[0, 0.42, 1]}
-        style={[styles.topSheen, { borderTopLeftRadius: borderRadius, borderTopRightRadius: borderRadius }]}
+
+      <View
+        style={[
+          styles.borderHairline,
+          { borderRadius, borderColor: TAB_BAR_GLASS.borderInner },
+        ]}
         pointerEvents="none"
       />
-      <View style={[styles.borderHairline, { borderRadius }]} pointerEvents="none" />
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -109,12 +130,6 @@ const styles = StyleSheet.create({
   shell: {
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.65)",
-    backgroundColor: "transparent",
-  },
-  shellAndroid: {
-    elevation: 0,
-    shadowOpacity: 0,
     backgroundColor: "transparent",
   },
   topSheen: {
@@ -122,7 +137,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: "48%",
+    height: "54%",
   },
   borderHairline: {
     position: "absolute",
@@ -131,7 +146,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.5)",
   },
   content: {
     flexDirection: "row",

@@ -1,10 +1,10 @@
-import { TabScreenTransition } from "@/components/TabScreenTransition";
+import { TabScreenChrome } from "@/components/TabScreenChrome";
 import { SubscriptionScreen } from "@/screens/subscriptions/SubscriptionScreen";
 
 export default function SubscriptionRoute() {
   return (
-    <TabScreenTransition>
+    <TabScreenChrome>
       <SubscriptionScreen />
-    </TabScreenTransition>
+    </TabScreenChrome>
   );
 }

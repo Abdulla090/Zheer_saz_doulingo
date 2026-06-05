@@ -1,3 +1,4 @@
+import { usesJsTabBar } from "@/constants/tab-mode";
 import { Platform } from "react-native";
 
 /** CustomTabBar inner row: icon + label (excludes home indicator). */
@@ -28,13 +29,11 @@ export function tabBarTotalHeight(deviceBottomInset: number): number {
 
 /** Scroll content padding so lists clear the tab bar. */
 export function tabBarScrollPadding(deviceBottomInset: number): number {
-  // NativeTabs (iOS + Android) — system bar handles safe area.
-  if (Platform.OS === "ios" || Platform.OS === "android") {
-    return process.env.EXPO_PUBLIC_ANDROID_JS_TABS === "1"
-      ? tabBarTotalHeight(deviceBottomInset) + 12
-      : 20;
+  if (usesJsTabBar()) {
+    return tabBarTotalHeight(deviceBottomInset) + 12;
   }
-  return tabBarTotalHeight(deviceBottomInset) + 12;
+  // NativeTabs — system chrome + safe area; light bottom breathing room.
+  return Platform.OS === "web" ? tabBarTotalHeight(deviceBottomInset) + 12 : 24;
 }
 
 /** @deprecated Use tabBarTotalHeight — old floating bar constant */

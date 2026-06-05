@@ -7,16 +7,19 @@ import { useOnboardingStore } from "@/stores/useOnboardingStore";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
 import { useContentAdminStore } from "@/stores/useContentAdminStore";
+import { useAndroidImmersiveChrome } from "@/hooks/use-android-immersive-chrome";
+import { NavigationBar } from "expo-navigation-bar";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect } from "react";
 import { Platform, Text } from "react-native";
-import "react-native-gesture-handler";
-import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
@@ -44,6 +47,8 @@ function applyGlobalFont(kurdishFontFamily: string) {
 }
 
 function RootLayout() {
+  useAndroidImmersiveChrome();
+
   const { selectedFont, ready: fontReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
@@ -87,22 +92,33 @@ function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <OfflineBanner />
-      <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
-        <AppErrorBoundary>
-          <BottomSheetModalProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Protected guard={onboardingComplete}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="role-play" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
-              </Stack.Protected>
-              <Stack.Protected guard={!onboardingComplete}>
-                <Stack.Screen name="onboarding" />
-              </Stack.Protected>
-            </Stack>
-          </BottomSheetModalProvider>
-        </AppErrorBoundary>
-      </GestureHandlerRootView>
+      <KeyboardProvider>
+        <StatusBar
+          hidden={Platform.OS === "android"}
+          style="auto"
+          translucent
+        />
+        {Platform.OS === "android" ? <NavigationBar hidden /> : null}
+        <OfflineBanner />
+        <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
+          <AppErrorBoundary>
+            <BottomSheetModalProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Protected guard={onboardingComplete}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen
+                    name="role-play"
+                    options={{ presentation: "fullScreenModal", animation: "fade" }}
+                  />
+                </Stack.Protected>
+                <Stack.Protected guard={!onboardingComplete}>
+                  <Stack.Screen name="onboarding" />
+                </Stack.Protected>
+              </Stack>
+            </BottomSheetModalProvider>
+          </AppErrorBoundary>
+        </GestureHandlerRootView>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }

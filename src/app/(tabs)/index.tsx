@@ -2,13 +2,13 @@
  * Home tab — Duolingo-style learn dashboard (Phingo).
  */
 
-import { TabScreenTransition } from "@/components/TabScreenTransition";
+import { TabScreenChrome } from "@/components/TabScreenChrome";
 import { PhingoLearnHomeScreen } from "@/screens/home/PhingoLearnHomeScreen";
 
 export default function HomeIndex() {
   return (
-    <TabScreenTransition>
+    <TabScreenChrome>
       <PhingoLearnHomeScreen />
-    </TabScreenTransition>
+    </TabScreenChrome>
   );
 }

@@ -23,11 +23,10 @@ import { appStorage } from "@/lib/app-storage";
 import { hapticImpact, hapticNotification } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Sparkles } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -36,6 +35,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -210,20 +210,18 @@ export function AiTeacherScreen() {
     <View style={styles.root}>
       <HomeMeshBackground />
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        bottomOffset={insets.bottom + 20}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
+        contentContainerStyle={{
+          paddingTop: insets.top + 8,
+          paddingBottom: insets.bottom + 32,
+          paddingHorizontal: 20,
+        }}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          contentContainerStyle={{
-            paddingTop: insets.top + 8,
-            paddingBottom: insets.bottom + 32,
-            paddingHorizontal: 20,
-          }}
-          keyboardShouldPersistTaps="handled"
-        >
           <View style={styles.topBar}>
             <Pressable
               onPress={() => router.back()}
@@ -286,13 +284,10 @@ export function AiTeacherScreen() {
                 ))}
               </ScrollView>
 
-              <HomeLiquidCard contentStyle={styles.promptBody}>
-                <View style={styles.promptHeader}>
-                  <Sparkles size={18} color={C.blue} />
-                  <Text style={styles.promptScenarioLabel}>{t("aiTeacher.yourTask")}</Text>
-                </View>
+              <View style={styles.promptStrip}>
+                <Text style={styles.promptScenarioLabel}>{t("aiTeacher.yourTask")}</Text>
                 <Text style={styles.promptScenario}>{prompt.scenario}</Text>
-              </HomeLiquidCard>
+              </View>
 
               <Text style={styles.sectionTitle}>{t("aiTeacher.yourAnswer")}</Text>
               {mode === "speaking" && !showTyping ? (
@@ -377,20 +372,16 @@ export function AiTeacherScreen() {
                 </HomeLiquidCard>
               ) : null}
 
-              <HomeLiquidCard
-                style={styles.tipCard}
-                contentStyle={styles.tipInner}
-              >
-                <DolphinFlat width={56} height={56} />
+              <View style={styles.tipStrip}>
+                <DolphinFlat width={48} height={48} />
                 <Text style={styles.tipText}>
                   Indicative bands only — practice tool, not an official IELTS
-                  score. See AI & practice info in Settings for details. 💙
+                  score. See AI & practice info in Settings.
                 </Text>
-              </HomeLiquidCard>
+              </View>
             </>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }
@@ -548,12 +539,12 @@ const styles = StyleSheet.create({
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
   },
-  promptBody: { padding: 16, marginBottom: 16 },
-  promptHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+  promptStrip: {
+    marginBottom: 16,
+    paddingVertical: 12,
     gap: 8,
-    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: C.divider,
   },
   promptScenarioLabel: {
     ...HomeType.caption,
@@ -661,12 +652,14 @@ const styles = StyleSheet.create({
     color: C.gray,
     marginTop: 6,
   },
-  tipCard: { marginTop: 16 },
-  tipInner: {
+  tipStrip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 14,
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: C.divider,
   },
   tipText: {
     flex: 1,

@@ -8,6 +8,7 @@ import { Glass, Motion, Radius } from "@/screens/lesson/games/game-design";
 import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
 import { BlurView } from "expo-blur";
+import { hapticImpact } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -246,9 +247,7 @@ export function HomeLiquidButton({
     <Animated.View style={[{ width: "100%" }, anim, style]}>
       <Pressable
         onPress={() => {
-          if (Platform.OS !== "web") {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
+          hapticImpact(Haptics.ImpactFeedbackStyle.Medium);
           onPress();
         }}
         onPressIn={() => {

@@ -1,10 +1,10 @@
-import Constants from "expo-constants";
-import React from "react";
-
+import { usesJsTabBar } from "@/constants/tab-mode";
 import JsTabsLayout from "@/navigation/JsTabsLayout";
 import NativeTabsShell from "@/navigation/NativeTabsShell";
 
-// Force JS tabs on Android for stability (unstable-native-tabs often breaks touches in ScrollViews)
-const USE_JS_TABS = true;
-
-export default USE_JS_TABS ? JsTabsLayout : NativeTabsShell;
+/**
+ * Default: JS floating frosted glass tab bar (fluid glass on Android).
+ * EXPO_PUBLIC_ANDROID_NATIVE_TABS=1: system Material 3 bar.
+ * Expo Go: always JS glass.
+ */
+export default usesJsTabBar() ? JsTabsLayout : NativeTabsShell;

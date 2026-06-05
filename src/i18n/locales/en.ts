@@ -149,8 +149,8 @@ export const en = {
   },
   voiceTutor: {
     title: "Live Voice Tutor",
-    subtitle: "Powered by Gemini",
-    liveSubtitle: "Gemini Live · voice only",
+    subtitle: "Practice English out loud with voice replies",
+    liveSubtitle: "Voice-only conversation",
     phaseKurdish: "Kurdish intro",
     phaseEnglish: "English live",
     tapStart: "Tap to start a live voice session",
@@ -163,7 +163,7 @@ export const en = {
     listening: "Listening…",
     speaking: "Tutor is speaking…",
     thinking: "Connecting…",
-    connecting: "Connecting to Gemini Live…",
+    connecting: "Starting session…",
     voiceOnlyHint: "Speak naturally — tutor replies by voice",
     error: "Connection issue — tap to retry",
     ready: "I'm ready — start English",
@@ -171,7 +171,7 @@ export const en = {
     learning: "Learning",
     note: "In Kurdish",
     typePlaceholder: "Type a message…",
-    demoMode: "Add EXPO_PUBLIC_GEMINI_API_KEY for Gemini Live",
+    demoMode: "Add EXPO_PUBLIC_GEMINI_API_KEY in .env to enable live voice",
     disclaimer:
       "Voice-only AI practice — not a substitute for professional instruction.",
   },

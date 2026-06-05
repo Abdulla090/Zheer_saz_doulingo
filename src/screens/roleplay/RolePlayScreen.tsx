@@ -30,15 +30,16 @@ import { AppText } from "@/components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import {
+  KeyboardAwareScrollView,
+  KeyboardStickyView,
+} from "react-native-keyboard-controller";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -114,7 +115,7 @@ export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ElementRef<typeof KeyboardAwareScrollView>>(null);
   const speech = useSpeechCapture("en-US");
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
@@ -345,10 +346,7 @@ export function RolePlayScreen() {
     <View style={styles.root}>
       <HomeMeshBackground />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={styles.flex}>
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
             <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} />
@@ -363,8 +361,9 @@ export function RolePlayScreen() {
           <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView
+        <KeyboardAwareScrollView
           ref={scrollRef}
+          bottomOffset={sessionStarted ? 120 : 24}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 20,
@@ -496,9 +495,10 @@ export function RolePlayScreen() {
               ) : null}
             </View>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         {sessionStarted ? (
+          <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
           <View
             style={[
               styles.bottomBar,
@@ -542,8 +542,9 @@ export function RolePlayScreen() {
               </Pressable>
             )}
           </View>
+          </KeyboardStickyView>
         ) : null}
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }

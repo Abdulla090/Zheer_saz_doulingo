@@ -1,3 +1,4 @@
+import { nativeTabBarBackground } from "@/constants/tab-bar-glass";
 import { Colors } from "@/constants/theme";
 import { pathnameHidesTabBar } from "@/constants/tab-navigation";
 import {
@@ -7,7 +8,6 @@ import {
 import { ENABLE_SHOP } from "@/constants/feature-flags";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useI18n } from "@/hooks/useI18n";
-import { hapticSelection } from "@/utils/haptics";
 import {
   DarkTheme,
   DefaultTheme,
@@ -45,13 +45,15 @@ function NativeTabsLayout() {
     [theme.background],
   );
 
+  const tabBarBackground = useMemo(() => nativeTabBarBackground(), []);
+
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <NativeTabs
         hidden={hideTabBar}
-        backgroundColor="transparent"
+        backgroundColor={tabBarBackground}
         blurEffect={Platform.OS === "ios" ? "systemChromeMaterialLight" : undefined}
-        shadowColor="transparent"
+        shadowColor={Platform.OS === "ios" ? "rgba(26, 43, 72, 0.12)" : undefined}
         minimizeBehavior={Platform.OS === "ios" ? "onScrollDown" : "never"}
         tintColor={BRAND_TINT}
         iconColor={{ default: INACTIVE_TINT, selected: BRAND_TINT }}
@@ -61,20 +63,16 @@ function NativeTabsLayout() {
         labelStyle={{
           default: {
             color: INACTIVE_TINT,
-            fontSize: 10,
+            fontSize: Platform.OS === "android" ? 11 : 10,
             fontWeight: "600",
           },
           selected: {
             color: BRAND_TINT,
-            fontSize: 10,
+            fontSize: Platform.OS === "android" ? 11 : 10,
             fontWeight: "700",
           },
         }}
-        screenListeners={{
-          tabPress: () => {
-            hapticSelection();
-          },
-        }}
+        barStyle={Platform.OS === "android" ? "default" : undefined}
       >
         <NativeTabs.Trigger name="feed" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon
