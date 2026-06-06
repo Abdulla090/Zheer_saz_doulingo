@@ -101,7 +101,12 @@ export function useGeminiLiveTutor() {
       throw new Error("Microphone permission is required.");
     }
 
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    try {
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    } catch (e) {
+      console.warn("setAudioModeAsync failed:", e);
+    }
+    
     micActiveRef.current = true;
     nativeLoopRef.current = true;
     setStatus("listening");
@@ -109,7 +114,6 @@ export function useGeminiLiveTutor() {
     const loop = async () => {
       while (nativeLoopRef.current && micActiveRef.current) {
         try {
-          await nativeRecorder.prepareToRecordAsync();
           nativeRecorder.record();
           await new Promise((r) => setTimeout(r, 650));
           if (!nativeLoopRef.current) break;

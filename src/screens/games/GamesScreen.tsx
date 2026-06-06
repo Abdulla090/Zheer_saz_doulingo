@@ -37,6 +37,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppText } from "@/components/ui/AppText";
 
 type HubTile = {
   id: string;
@@ -91,14 +92,14 @@ const HubRow = memo(function HubRow({
       <View style={styles.hubRowIcon}>{renderIcon(44)}</View>
       <View style={styles.hubRowCopy}>
         <View style={styles.hubRowTitleLine}>
-          <Text style={styles.hubRowTitle} numberOfLines={1}>
+          <AppText style={styles.hubRowTitle} numberOfLines={1} forceKurdishFont>
             {title}
-          </Text>
+          </AppText>
           {badge ? <StatusPill label={badge} /> : null}
         </View>
-        <Text style={styles.hubRowSub} numberOfLines={2}>
+        <AppText style={styles.hubRowSub} numberOfLines={2} forceKurdishFont>
           {subtitle}
-        </Text>
+        </AppText>
       </View>
       <Text style={styles.chevron} accessibilityElementsHidden>
         ›
@@ -135,14 +136,14 @@ const ExperienceCard = memo(function ExperienceCard({
         {renderIcon(48)}
         <View style={styles.experienceCopy}>
           <View style={styles.hubRowTitleLine}>
-            <Text style={styles.experienceTitle} numberOfLines={2}>
+            <AppText style={styles.experienceTitle} numberOfLines={2} forceKurdishFont>
               {title}
-            </Text>
+            </AppText>
             {badge ? <StatusPill label={badge} /> : null}
           </View>
-          <Text style={styles.experienceSub} numberOfLines={2}>
+          <AppText style={styles.experienceSub} numberOfLines={2} forceKurdishFont>
             {subtitle}
-          </Text>
+          </AppText>
         </View>
       </HomeLiquidCard>
     </Pressable>
@@ -299,11 +300,11 @@ export function GamesScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.logo}>PINGO</Text>
-          <Text style={styles.pageTitle}>{t("games.title")}</Text>
-          <Text style={styles.pageSub}>{t("games.subtitle")}</Text>
+          <AppText style={styles.pageTitle} forceKurdishFont>{t("games.title")}</AppText>
+          <AppText style={styles.pageSub} forceKurdishFont>{t("games.subtitle")}</AppText>
         </View>
 
-        <Text style={styles.sectionLabel}>{t("games.sectionImmersive")}</Text>
+        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionImmersive")}</AppText>
         <HomeLiquidLessonTile
           onPress={() => openTile(immersiveTile)}
           style={styles.sectionBlock}
@@ -311,23 +312,23 @@ export function GamesScreen() {
           <View style={styles.heroRow}>
             <View style={styles.heroCopy}>
               <View style={styles.heroTitleRow}>
-                <Text style={styles.heroLabel} numberOfLines={1}>
+                <AppText style={styles.heroLabel} numberOfLines={1} forceKurdishFont>
                   {heroTitle}
-                </Text>
+                </AppText>
                 {immersiveTile.badgeKey ? (
                   <StatusPill label={t(immersiveTile.badgeKey)} onDark />
                 ) : null}
               </View>
-              <Text style={styles.heroSub} numberOfLines={2}>
+              <AppText style={styles.heroSub} numberOfLines={2} forceKurdishFont>
                 {heroSub}
-              </Text>
-              <Text style={styles.heroHint}>{t("home.tapToContinue")}</Text>
+              </AppText>
+              <AppText style={styles.heroHint} forceKurdishFont>{t("home.tapToContinue")}</AppText>
             </View>
             <View style={styles.heroIcon}>{immersiveTile.renderIcon(72)}</View>
           </View>
         </HomeLiquidLessonTile>
 
-        <Text style={styles.sectionLabel}>{t("games.sectionExperiences")}</Text>
+        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionExperiences")}</AppText>
         <View style={[styles.experienceGrid, { gap, marginBottom: 8 }]}>
           {experienceTiles.map((tile) => (
             <ExperienceCard
@@ -342,7 +343,7 @@ export function GamesScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>{t("games.sectionDrills")}</Text>
+        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionDrills")}</AppText>
         <HomeLiquidCard contentStyle={styles.drillsCard}>
           {drillTiles.map((tile, index) => (
             <HubRow

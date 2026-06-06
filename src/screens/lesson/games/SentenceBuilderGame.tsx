@@ -331,17 +331,14 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                   collapsable={false}
                   style={s.bankCell}
                 >
-                  <View style={s.bankPlaceholder} pointerEvents="none" />
-                  {!taken ? (
-                    <View style={{ zIndex: 10 }}>
-                      <LightWordTile
-                        label={w}
-                        state="idle"
-                        onPress={() => addWord(i)}
-                        disabled={taken || fb !== "idle"}
-                      />
-                    </View>
-                  ) : null}
+                  <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
+                    <LightWordTile
+                      label={w}
+                      state="idle"
+                      onPress={() => addWord(i)}
+                      disabled={taken || fb !== "idle"}
+                    />
+                  </View>
                 </View>
               );
             })}
@@ -409,18 +406,6 @@ const s = StyleSheet.create({
   },
   bankTileHidden: {
     opacity: 0,
-  },
-  bankPlaceholder: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: L.slotDash,
-    backgroundColor: L.bgSoft,
   },
   slotsWrap: {
     paddingVertical: 6,

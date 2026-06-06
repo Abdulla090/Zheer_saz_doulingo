@@ -5,8 +5,11 @@
 import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { layoutMorph, tileFlyTiming } from "@/components/animations/motion";
 import Animated, {
   Easing,
+  interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -27,6 +30,61 @@ import {
   mapOptionState,
 } from "./lesson-light-primitives";
 
+type FlySession = {
+  id: string;
+  word: string;
+  fromX: number;
+  fromY: number;
+  fromW: number;
+  fromH: number;
+  toX: number;
+  toY: number;
+  toW: number;
+  toH: number;
+};
+
+function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id: string, word: string) => void }) {
+  const flyProgress = useSharedValue(0);
+  const flyStyle = useAnimatedStyle(() => {
+    const p = flyProgress.value;
+    return {
+      position: "absolute",
+      left: interpolate(p, [0, 1], [session.fromX, session.toX]),
+      top: interpolate(p, [0, 1], [session.fromY, session.toY]),
+      width: interpolate(p, [0, 1], [session.fromW, session.toW]),
+      height: interpolate(p, [0, 1], [session.fromH, session.toH]),
+      transform: [{ scale: interpolate(p, [0, 0.55, 1], [1, 1.05, 1]) }],
+      opacity: 1,
+    };
+  });
+
+  React.useEffect(() => {
+    flyProgress.value = withTiming(1, tileFlyTiming, (finished) => {
+      if (finished) runOnJS(onFinish)(session.id, session.word);
+    });
+  }, [session, onFinish, flyProgress]);
+
+  return (
+    <Animated.View style={flyStyle}>
+      <View style={{ flex: 1, justifyContent: "center" }}>
+        <LightWordTile label={session.word} state="pending" />
+      </View>
+    </Animated.View>
+  );
+}
+
+function measureInRoot(
+  view: View,
+  root: View,
+  onResult: (x: number, y: number, w: number, h: number) => void,
+) {
+  view.measureInWindow((vx, vy, vw, vh) => {
+    root.measureInWindow((rx, ry) => {
+      onResult(vx - rx, vy - ry, vw, vh);
+    });
+  });
+}
+
 type Props = {
   question: FillBlankQuestion;
   onAnswer: (correct: boolean | "skip", explanation?: string) => void;
@@ -36,16 +94,47 @@ type Props = {
 export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
+  const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
+  
+  const rootRef = useRef<View>(null);
+  const blankRef = useRef<View>(null);
+  const bankRefs = useRef<Record<string, View | null>>({});
+
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
 
+  const finishFly = (id: string, word: string) => {
+    setSelected(word);
+    setFlySession(null);
+  };
+
   const pick = (word: string) => {
     if (revealed) return;
-    setSelected(word);
+    if (selected === word) return;
+
+    const bankView = bankRefs.current[word];
+    const targetView = blankRef.current;
+    const root = rootRef.current;
+
+    if (!bankView || !targetView || !root) {
+      setSelected(word);
+      return;
+    }
+
+    measureInRoot(bankView, root, (fromX, fromY, fromW, fromH) => {
+      measureInRoot(targetView, root, (toX, toY, toW, toH) => {
+        setFlySession({
+          id: Math.random().toString(),
+          word,
+          fromX, fromY, fromW, fromH,
+          toX, toY, toW, toH
+        });
+      });
+    });
   };
 
   const check = () => {
@@ -80,12 +169,13 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       ? selected === question.correctAnswer
         ? L.green
         : L.red
-      : selected
+      : selected || flySession
         ? L.blue
         : L.slotDash;
 
   return (
     <GameRoot style={s.root}>
+      <View ref={rootRef} style={{ flex: 1 }} collapsable={false}>
       <GameHeader>
         <LightGameHeading
           title={t("lessons.fillBlank")}
@@ -107,8 +197,8 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
             {question.sentenceParts[0] ? (
               <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
             ) : null}
-            <View style={[s.blank, { borderColor: blankBorder }]}>
-              <Text style={s.blankText}>{selected || "____"}</Text>
+            <View ref={blankRef} collapsable={false} style={[s.blank, { borderColor: blankBorder }]}>
+              <Text style={s.blankText}>{flySession ? "" : (selected || "____")}</Text>
             </View>
             {question.sentenceParts[1] ? (
               <Text style={s.sentenceText}> {question.sentenceParts[1]}</Text>
@@ -118,26 +208,56 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       </Animated.View>
 
       <View style={s.chipsWrap}>
-        {question.options.map((w) => (
-          <LightWordTile
-            key={w}
-            label={w}
-            state={mapOptionState(getState(w))}
-            onPress={() => pick(w)}
-            disabled={revealed}
-          />
-        ))}
+        {question.options.map((w) => {
+          const isFlying = flySession?.word === w;
+          const isSelected = selected === w;
+          // Hide the chip if it is currently flying, OR if it's selected and not revealed yet
+          // Wait, if it's revealed, we want to show it? No, selected chips in FillBlankGame usually stay in the slot, 
+          // or we can make them disappear from the bank just like SentenceBuilderGame.
+          // Let's make it disappear from the bank to match.
+          const isTaken = isFlying || isSelected;
+
+          return (
+            <View
+              key={w}
+              ref={(el) => { bankRefs.current[w] = el; }}
+              collapsable={false}
+              style={{ opacity: isTaken ? 0 : 1 }}
+              pointerEvents={isTaken ? "none" : "auto"}
+            >
+              <LightWordTile
+                label={w}
+                state={mapOptionState(getState(w))}
+                onPress={() => pick(w)}
+                disabled={revealed}
+              />
+            </View>
+          );
+        })}
       </View>
 
       <View style={{ flex: 1 }} />
+
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
+        {flySession ? (
+          <Animated.View
+            pointerEvents="none"
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
+            collapsable={false}
+          >
+            <FlyingTile session={flySession} onFinish={finishFly} />
+          </Animated.View>
+        ) : null}
+      </View>
 
       <GameFooter>
         <LightCheckButton
           label={t("lessons.check")}
           onPress={check}
-          disabled={!selected || revealed}
+          disabled={!selected || revealed || !!flySession}
         />
       </GameFooter>
+      </View>
     </GameRoot>
   );
 }

@@ -47,12 +47,12 @@ function JsTabsLayoutInner() {
     >
       {/* Pill: Home · Games · Path · Shop? — FAB: Profile */}
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="feed" />
-      <Tabs.Screen name="dashboard" />
       <Tabs.Screen
         name="subscription"
         options={{ href: ENABLE_SHOP ? undefined : null }}
       />
+      <Tabs.Screen name="dashboard" />
+      <Tabs.Screen name="feed" />
       <Tabs.Screen name="more" />
       <Tabs.Screen name="quest" options={{ href: null }} />
       <Tabs.Screen name="league" options={{ href: null }} />

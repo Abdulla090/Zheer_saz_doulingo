@@ -158,12 +158,22 @@ export function useGeminiVoiceCapture() {
       return false;
     }
 
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-    });
-    await recorder.prepareToRecordAsync();
-    recorder.record();
+    try {
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+      });
+    } catch (e) {
+      console.warn("setAudioModeAsync failed:", e);
+    }
+    
+    try {
+      recorder.record();
+    } catch (e) {
+      setError("Failed to start recording on Android.");
+      return false;
+    }
+    
     return true;
   }, [recorder]);
 

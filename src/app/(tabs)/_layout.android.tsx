@@ -7,4 +7,4 @@ import NativeTabsShell from "@/navigation/NativeTabsShell";
  * EXPO_PUBLIC_ANDROID_NATIVE_TABS=1: system Material 3 bar.
  * Expo Go: always JS glass.
  */
-export default usesJsTabBar() ? JsTabsLayout : NativeTabsShell;
+export default JsTabsLayout;

@@ -55,10 +55,10 @@ const PILL_TABS: {
     ),
   },
   {
-    route: "feed",
-    labelKey: "tabs.games",
+    route: "subscription",
+    labelKey: "tabs.shop",
     renderIcon: (active, size) => (
-      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+      <ShopTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
@@ -69,10 +69,10 @@ const PILL_TABS: {
     ),
   },
   {
-    route: "subscription",
-    labelKey: "tabs.shop",
+    route: "feed",
+    labelKey: "tabs.games",
     renderIcon: (active, size) => (
-      <ShopTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
 ];
@@ -100,54 +100,66 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const iconSize = width < 390 ? 22 : 24;
   const bottomPad = tabBarBottomInset(insets.bottom);
 
-  const pillFocusedIndex = useMemo(() => {
+  const focusedIndex = useMemo(() => {
     const name = state.routes[state.index]?.name;
     const idx = pillTabs.findIndex((tab) => tab.route === name);
-    return idx >= 0 ? idx : -1;
-  }, [pillTabs, state.index, state.routes]);
+    if (idx >= 0) return idx;
+    if (name === TAB_FAB_ROUTE) return tabCount;
+    return -1;
+  }, [pillTabs, state.index, state.routes, tabCount]);
 
   const fabFocused = activeRouteName === TAB_FAB_ROUTE;
 
-  const pillTargetX = useCallback(
+  const indicatorTargetX = useCallback(
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
-      return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+      if (index < tabCount) {
+        return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+      }
+      return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
     },
-    [slotWidth],
+    [slotWidth, tabCount, pillWidth]
   );
 
-  const pillX = useSharedValue(pillTargetX(pillFocusedIndex));
-  const indicatorOpacity = useSharedValue(pillFocusedIndex >= 0 ? 1 : 0);
-  const prevFocusedIndex = useRef(pillFocusedIndex);
+  const indicatorX = useSharedValue(indicatorTargetX(focusedIndex));
+  const indicatorOpacity = useSharedValue(focusedIndex >= 0 ? 1 : 0);
+  const prevFocusedIndex = useRef(focusedIndex);
   const optimisticPress = useRef(false);
 
   const moveIndicator = useCallback(
     (index: number, animated: boolean) => {
       if (index < 0 || slotWidth <= 0) return;
-      const x = pillTargetX(index);
-      pillX.value = animated ? springMotion(x) : x;
+      const x = indicatorTargetX(index);
+      indicatorX.value = animated ? springMotion(x) : x;
     },
-    [pillTargetX, pillX, slotWidth],
+    [indicatorTargetX, indicatorX, slotWidth],
   );
 
   useEffect(() => {
-    indicatorOpacity.value = springMotion(pillFocusedIndex >= 0 ? 1 : 0);
+    indicatorOpacity.value = springMotion(focusedIndex >= 0 ? 1 : 0);
 
     if (optimisticPress.current) {
       optimisticPress.current = false;
-      prevFocusedIndex.current = pillFocusedIndex;
+      prevFocusedIndex.current = focusedIndex;
       return;
     }
 
-    const indexChanged = prevFocusedIndex.current !== pillFocusedIndex;
-    prevFocusedIndex.current = pillFocusedIndex;
-    moveIndicator(pillFocusedIndex, indexChanged);
-  }, [pillFocusedIndex, slotWidth, indicatorOpacity, moveIndicator]);
+    const indexChanged = prevFocusedIndex.current !== focusedIndex;
+    prevFocusedIndex.current = focusedIndex;
+    moveIndicator(focusedIndex, indexChanged);
+  }, [focusedIndex, slotWidth, indicatorOpacity, moveIndicator]);
 
   const activeCircleTop = (TAB_BAR_INNER_HEIGHT - TAB_BAR_ACTIVE_CHIP) / 2;
 
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: pillX.value }],
+  const pillIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value }],
+    width: TAB_BAR_ACTIVE_CHIP,
+    height: TAB_BAR_ACTIVE_CHIP,
+    opacity: indicatorOpacity.value,
+  }));
+
+  const fabIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: indicatorX.value - (pillWidth + TAB_BAR_ROW_GAP) }],
     width: TAB_BAR_ACTIVE_CHIP,
     height: TAB_BAR_ACTIVE_CHIP,
     opacity: indicatorOpacity.value,
@@ -156,7 +168,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const navigate = useCallback(
     (route: string, isFocused: boolean) => {
       if (!isFocused) {
-        const nextIdx = pillTabs.findIndex((tab) => tab.route === route);
+        let nextIdx = pillTabs.findIndex((tab) => tab.route === route);
+        if (nextIdx < 0 && route === TAB_FAB_ROUTE) {
+          nextIdx = tabCount;
+        }
         if (nextIdx >= 0) {
           optimisticPress.current = true;
           moveIndicator(nextIdx, true);
@@ -173,6 +188,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
       navigation,
       pillTabs,
       prepareTransition,
+      tabCount,
     ],
   );
 
@@ -206,7 +222,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                 style={[
                   styles.activeCircle,
                   { top: activeCircleTop, pointerEvents: "none" },
-                  pillStyle,
+                  pillIndicatorStyle,
                 ]}
               />
               {pillTabs.map(({ route, label, renderIcon }) => {
@@ -240,22 +256,31 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             borderRadius={TAB_BAR_FAB_SIZE / 2}
             style={styles.fabGlass}
           >
-            <PremiumPressable
-              onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
-              style={[
-                styles.fabBtn,
-                fabFocused && styles.fabBtnActive,
-              ]}
-              pressScale={0.94}
-              accessibilityRole="button"
-              accessibilityLabel={t("tabs.profile")}
-              hitSlop={8}
-            >
-              <ProfileTabIconFlat
-                size={iconSize}
-                color={fabFocused ? ACTIVE : INACTIVE}
+            <View style={{ width: TAB_BAR_FAB_SIZE, height: TAB_BAR_FAB_SIZE, position: "relative" }}>
+              <Animated.View
+                style={[
+                  styles.activeCircle,
+                  { 
+                    top: (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2, 
+                    pointerEvents: "none",
+                  },
+                  fabIndicatorStyle,
+                ]}
               />
-            </PremiumPressable>
+              <PremiumPressable
+                onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
+                style={[styles.fabBtn]}
+                pressScale={0.94}
+                accessibilityRole="button"
+                accessibilityLabel={t("tabs.profile")}
+                hitSlop={8}
+              >
+                <ProfileTabIconFlat
+                  size={iconSize}
+                  color={fabFocused ? ACTIVE : INACTIVE}
+                />
+              </PremiumPressable>
+            </View>
           </TabBarGlassSurface>
         </View>
       </View>

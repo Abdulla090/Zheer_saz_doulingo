@@ -265,8 +265,8 @@ export function PhingoHomeScreen({
               source={require("../../../assets/images/characters/dolphin-mascot.jpg")}
               contentFit="contain"
               style={{
-                width: Math.min(width * 0.52, 210),
-                height: Math.min(width * 0.52, 210),
+                width: Math.min(width * 0.68, 260),
+                height: Math.min(width * 0.68, 260),
               }}
             />
           </Animated.View>
@@ -294,6 +294,23 @@ export function PhingoHomeScreen({
               <Text style={styles.talkLabel}>Tap to talk</Text>
             </LinearGradient>
           </PressableScale>
+        </Animated.View>
+
+        {/* Custom SVG Banner Widget */}
+        <Animated.View entering={enterFadeDown(90)} style={styles.svgWidgetWrap}>
+          <View style={[styles.svgWidgetCard, crossShadow({
+            color: C.blue,
+            offsetY: 6,
+            blur: 16,
+            opacity: 0.12,
+            elevation: 5,
+          })]}>
+            <Image
+              source={require("../../../assets/images/home/home svg also widget svg.svg")}
+              contentFit="contain"
+              style={{ width: "100%", height: 110 }}
+            />
+          </View>
         </Animated.View>
 
         {/* Suggestions */}
@@ -443,6 +460,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     letterSpacing: 0.3,
+  },
+  svgWidgetWrap: {
+    paddingHorizontal: 22,
+    marginBottom: 24,
+  },
+  svgWidgetCard: {
+    backgroundColor: "#F4F9FF",
+    borderRadius: 24,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.15)",
+    overflow: "hidden",
   },
   section: {
     marginTop: 4,

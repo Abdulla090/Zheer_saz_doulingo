@@ -1,1 +1,1 @@
-export { default } from "@/navigation/NativeTabsShell";
+export { default } from "@/navigation/JsTabsLayout";
