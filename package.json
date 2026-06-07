@@ -96,6 +96,7 @@
   "private": true,
   "trustedDependencies": [
     "@rive-app/react-native",
+    "@shopify/react-native-skia",
     "react-native-mmkv",
     "react-native-nitro-modules",
     "react-native-reanimated",
