@@ -1,13 +1,14 @@
 import { useI18n } from "@/hooks/useI18n";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import React, { useEffect } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppText } from "@/components/ui/AppText";
 
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
@@ -36,7 +37,7 @@ export function OfflineBanner() {
       ]}
     >
       <View style={styles.inner}>
-        <Text style={styles.text}>{t("common.offline")}</Text>
+        <AppText style={styles.text}>{t("common.offline")}</AppText>
       </View>
     </Animated.View>
   );

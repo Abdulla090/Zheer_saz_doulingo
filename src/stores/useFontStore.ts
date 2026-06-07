@@ -10,25 +10,14 @@ interface FontState {
   setFont: (font: string) => void;
 }
 
+const savedFont = appStorage.getItemSync(STORAGE_KEY) ?? DEFAULT_FONT;
+
 export const useFontStore = create<FontState>((set) => ({
-  selectedFont: DEFAULT_FONT,
-  ready: false,
+  selectedFont: savedFont,
+  ready: true,
   setFont: (font: string) => {
-    void appStorage.setItem(STORAGE_KEY, font);
+    appStorage.setItemSync(STORAGE_KEY, font);
     set({ selectedFont: font });
   },
 }));
 
-async function hydrate() {
-  try {
-    const saved = await appStorage.getItem(STORAGE_KEY);
-    useFontStore.setState({
-      selectedFont: saved ?? DEFAULT_FONT,
-      ready: true,
-    });
-  } catch {
-    useFontStore.setState({ ready: true });
-  }
-}
-
-void hydrate();

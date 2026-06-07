@@ -10,7 +10,8 @@ import { useI18n } from "@/hooks/useI18n";
 
 import React, { useRef, useState } from "react";
 
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "@/components/ui/AppText";
 
 
 
@@ -75,7 +76,11 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
   const firedRef = useRef(false);
 
-
+  React.useEffect(() => {
+    setSelected(null);
+    setRevealed(false);
+    firedRef.current = false;
+  }, [question]);
 
   const pick = (opt: string) => {
 
@@ -168,7 +173,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
 
 
-        <Text style={s.chooseLabel}>{t("lessons.chooseResponse")}</Text>
+        <AppText style={s.chooseLabel}>{t("lessons.chooseResponse")}</AppText>
 
 
 

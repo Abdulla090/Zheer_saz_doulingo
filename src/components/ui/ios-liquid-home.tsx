@@ -5,6 +5,7 @@
  */
 
 import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { AppText } from "@/components/ui/AppText";
 import { Glass, Motion, Radius } from "@/screens/lesson/games/game-design";
 import { IS_ANDROID } from "@/utils/native-perf";
 import { crossShadow } from "@/utils/shadows";
@@ -253,7 +254,7 @@ export function HomeLiquidButton({
           style={styles.primarySheen}
           pointerEvents="none"
         />
-        <Text style={styles.primaryLabel}>{label}</Text>
+        <AppText style={styles.primaryLabel}>{label}</AppText>
       </Pressable>
     </Animated.View>
   );
@@ -354,7 +355,7 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
           colorScheme="light"
           tintColor="#BFDBFE"
         />
-        <Text style={styles.xpText}>{label}</Text>
+        <AppText style={styles.xpText}>{label}</AppText>
       </View>
     );
   }
@@ -364,7 +365,7 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
       {!IS_ANDROID && (
         <BlurView intensity={Glass.blurLight} tint="light" style={StyleSheet.absoluteFill} />
       )}
-      <Text style={styles.xpText}>{label}</Text>
+      <AppText style={styles.xpText}>{label}</AppText>
     </View>
   );
 }

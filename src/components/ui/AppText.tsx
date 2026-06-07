@@ -1,7 +1,7 @@
 import { FontLatin } from "@/constants/typography";
 import { useKurdishFont } from "@/hooks/useKurdishFont";
 import { dirForText } from "@/screens/lesson/games/game-text";
-import { latinRoleFromWeight, pickFontFamily } from "@/utils/pickFontFamily";
+import { latinRoleFromWeight } from "@/utils/pickFontFamily";
 import React, { useMemo } from "react";
 import {
   StyleSheet,
@@ -10,12 +10,16 @@ import {
   type TextStyle,
 } from "react-native";
 
-function textFromChildren(children: React.ReactNode): string {
+function getFirstChar(children: React.ReactNode): string {
   if (typeof children === "string" || typeof children === "number") {
-    return String(children);
+    const s = String(children).trim();
+    return s ? s.charAt(0) : "";
   }
   if (Array.isArray(children)) {
-    return children.map(textFromChildren).join("");
+    for (const child of children) {
+      const char = getFirstChar(child);
+      if (char) return char;
+    }
   }
   return "";
 }
@@ -40,34 +44,47 @@ export function AppText({
   ...props
 }: AppTextProps) {
   const kurdishFont = useKurdishFont();
-  const flat = useMemo(() => StyleSheet.flatten(style), [style]);
-  const content = textFromChildren(children);
 
-  const role =
-    latinRole ?? latinRoleFromWeight(flat?.fontWeight as TextStyle["fontWeight"]);
+  // Optimize: Avoid unnecessary StyleSheet.flatten calls unless style is an array
+  const flat = useMemo(() => {
+    if (!style) return undefined;
+    return Array.isArray(style) ? StyleSheet.flatten(style) : (style as TextStyle);
+  }, [style]);
 
-  const fontFamily = forceLatinFont
-    ? FontLatin[role]
-    : forceKurdishFont
-      ? kurdishFont
-      : pickFontFamily(content, kurdishFont, role);
+  // Optimize: Get only the first character to detect language direction, rather than stringifying the whole tree
+  const firstChar = useMemo(() => {
+    if (forceKurdishFont || forceLatinFont) return "";
+    return getFirstChar(children);
+  }, [forceKurdishFont, forceLatinFont, children]);
 
-  const direction = forceKurdishFont
-    ? dirForText("ک")
-    : forceLatinFont
-      ? dirForText("A")
-      : dirForText(content);
+  const role = useMemo(() => {
+    return latinRole ?? latinRoleFromWeight(flat?.fontWeight);
+  }, [latinRole, flat?.fontWeight]);
 
-  // Strip fontFamily from passed styles when forcing a script — LightType.tile
-  // sets DIN which cannot render Kurdish/Arabic (empty tiles on pair-match).
-  const { fontFamily: _ignoredFont, ...restStyle } = flat ?? {};
+  const fontFamily = useMemo(() => {
+    return forceLatinFont ? FontLatin[role] : kurdishFont;
+  }, [forceLatinFont, role, kurdishFont]);
+
+  const direction = useMemo(() => {
+    if (forceKurdishFont) return dirForText("ک");
+    if (forceLatinFont) return dirForText("A");
+    return dirForText(firstChar);
+  }, [forceKurdishFont, forceLatinFont, firstChar]);
+
+  // Clean style: Strip fontFamily from passed styles when forcing Kurdish script
+  // so that hardcoded Latin fonts in style sheets (like DIN) don't override the selected Kurdish font.
+  const restStyle = useMemo(() => {
+    if (forceLatinFont) return style;
+    const { fontFamily: _ignoredFont, ...rest } = flat ?? {};
+    return rest;
+  }, [forceLatinFont, flat, style]);
 
   return (
     <Text
       style={[
+        restStyle,
         direction,
         { fontFamily },
-        forceKurdishFont || forceLatinFont ? restStyle : style,
       ]}
       {...props}
     >

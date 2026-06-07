@@ -51,6 +51,229 @@ const ThemeColors = {
   quizBg: "#0B0F19",
 };
 
+const getTypeBadgeStyle = (type: string) => {
+  switch (type) {
+    case "Gen Z Slang":
+      return { backgroundColor: "rgba(139, 92, 246, 0.15)", borderColor: "rgba(139, 92, 246, 0.3)" };
+    case "Idiom":
+      return { backgroundColor: "rgba(245, 158, 11, 0.15)", borderColor: "rgba(245, 158, 11, 0.3)" };
+    case "Everyday Phrase":
+      return { backgroundColor: "rgba(16, 185, 129, 0.15)", borderColor: "rgba(16, 185, 129, 0.3)" };
+    case "Street Slang":
+      return { backgroundColor: "rgba(239, 68, 68, 0.15)", borderColor: "rgba(239, 68, 68, 0.3)" };
+    case "Business/Formal":
+      return { backgroundColor: "rgba(59, 130, 246, 0.15)", borderColor: "rgba(59, 130, 246, 0.3)" };
+    default:
+      return { backgroundColor: "rgba(107, 114, 128, 0.15)", borderColor: "rgba(107, 114, 128, 0.3)" };
+  }
+};
+
+const getTypeBadgeTextStyle = (type: string) => {
+  switch (type) {
+    case "Gen Z Slang": return { color: "#8B5CF6" }; // Purple
+    case "Idiom": return { color: "#D97706" }; // Amber/Orange
+    case "Everyday Phrase": return { color: "#059669" }; // Emerald
+    case "Street Slang": return { color: "#DC2626" }; // Red
+    case "Business/Formal": return { color: "#2563EB" }; // Blue
+    default: return { color: "#4B5563" }; // Gray
+  }
+};
+
+const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
+  categoriesList,
+  selectedCategory,
+  onSelectCategory,
+  isKurdish,
+}: {
+  categoriesList: string[];
+  selectedCategory: string;
+  onSelectCategory: (category: string) => void;
+  isKurdish: boolean;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.chipsContainer}
+      style={styles.chipsList}
+    >
+      {categoriesList.map((item) => {
+        const cat = SLANG_CATEGORIES[item as keyof typeof SLANG_CATEGORIES];
+        const labelText = isKurdish ? cat.ku : cat.en;
+        const isSelected = selectedCategory === item;
+
+        return (
+          <View key={item}>
+            <PressableScale
+              onPress={() => {
+                if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onSelectCategory(item);
+              }}
+              style={[styles.chip, isSelected && styles.chipSelected]}
+            >
+              <AppText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                {labelText}
+              </AppText>
+            </PressableScale>
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+});
+
+const SlangItemRow = React.memo(function SlangItemRow({
+  item,
+  isExpanded,
+  isItemSpeaking,
+  onToggleExpand,
+  onSpeak,
+  isKurdish,
+  t,
+  speaking,
+  activeId,
+}: {
+  item: SlangItem;
+  isExpanded: boolean;
+  isItemSpeaking: boolean;
+  onToggleExpand: (id: string) => void;
+  onSpeak: (phrase: string, id: string) => void;
+  isKurdish: boolean;
+  t: any;
+  speaking: boolean;
+  activeId: string | null;
+}) {
+  return (
+    <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
+      <PressableScale onPress={() => onToggleExpand(item.id)} scaleDown={0.99}>
+        <View style={styles.itemHeader}>
+          <View style={styles.phraseCol}>
+            <View style={styles.badgeRow}>
+              <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
+                <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
+                  {item.type}
+                </AppText>
+              </View>
+            </View>
+            <AppText style={styles.slangPhrase} forceLatinFont>
+              {item.phrase}
+            </AppText>
+            <AppText style={styles.slangSubtitle} forceKurdishFont numberOfLines={1}>
+              {item.pronunciation}
+            </AppText>
+          </View>
+
+          <View style={styles.actionRow}>
+            <PressableScale
+              onPress={() => onSpeak(item.phrase, item.id)}
+              style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
+            >
+              <Volume2
+                size={20}
+                color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
+              />
+            </PressableScale>
+            {isExpanded ? (
+              <ChevronUp size={20} color={ThemeColors.slate} />
+            ) : (
+              <ChevronDown size={20} color={ThemeColors.slate} />
+            )}
+          </View>
+        </View>
+      </PressableScale>
+
+      {isExpanded && (
+        <View style={styles.itemExpanded}>
+          <View style={styles.divider} />
+
+          <View style={styles.detailRow}>
+            <AppText style={styles.detailLabel} forceKurdishFont>
+              {isKurdish ? "خوێندنەوە" : "Pronunciation"}
+            </AppText>
+            <AppText style={styles.detailValue} forceKurdishFont>
+              {item.pronunciation}
+            </AppText>
+          </View>
+
+          <View style={styles.detailRow}>
+            <AppText style={styles.detailLabel} forceKurdishFont>
+              {isKurdish ? "واتا" : "Meaning"}
+            </AppText>
+            <AppText style={[styles.detailValue, styles.detailFigurative]} forceKurdishFont>
+              {item.kuMeaning}
+            </AppText>
+          </View>
+
+          <View style={styles.detailRow}>
+            <AppText style={styles.detailLabel} forceKurdishFont>
+              {t("slang.example")}
+            </AppText>
+            <View style={styles.dialogueBox}>
+              {/* Dialogue Bubble A */}
+              <View style={styles.dialogueLine}>
+                <View style={styles.dialogueMarkerA}>
+                  <AppText style={styles.dialogueMarkerText} forceLatinFont>
+                    A
+                  </AppText>
+                </View>
+                <View style={styles.dialogueContent}>
+                  <AppText style={styles.dialogueEn} forceLatinFont>
+                    {item.example.speakerA}
+                  </AppText>
+                  <AppText style={styles.dialogueKu} forceKurdishFont>
+                    {item.example.kuA}
+                  </AppText>
+                </View>
+                <PressableScale
+                  onPress={() => onSpeak(item.example.speakerA, `${item.id}_a`)}
+                  style={[
+                    styles.miniSpeakerBtn,
+                    speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
+                  ]}
+                >
+                  <Volume2
+                    size={14}
+                    color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
+                  />
+                </PressableScale>
+              </View>
+
+              {/* Dialogue Bubble B */}
+              <View style={styles.dialogueLine}>
+                <View style={styles.dialogueMarkerB}>
+                  <AppText style={styles.dialogueMarkerText} forceLatinFont>
+                    B
+                  </AppText>
+                </View>
+                <View style={styles.dialogueContent}>
+                  <AppText style={styles.dialogueEn} forceLatinFont>
+                    {item.example.speakerB}
+                  </AppText>
+                  <AppText style={styles.dialogueKu} forceKurdishFont>
+                    {item.example.kuB}
+                  </AppText>
+                </View>
+                <PressableScale
+                  onPress={() => onSpeak(item.example.speakerB, `${item.id}_b`)}
+                  style={[
+                    styles.miniSpeakerBtn,
+                    speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
+                  ]}
+                >
+                  <Volume2
+                    size={14}
+                    color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
+                  />
+                </PressableScale>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+    </HomeLiquidCard>
+  );
+});
+
 export function SlangDictionaryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -208,196 +431,7 @@ export function SlangDictionaryScreen() {
     setQuizVisible(false);
   }, [awardXp]);
 
-  const renderCategoryChip = useCallback(
-    ({ item }: { item: string }) => {
-      const cat = SLANG_CATEGORIES[item as keyof typeof SLANG_CATEGORIES];
-      const labelText = isKurdish ? cat.ku : cat.en;
-      const isSelected = selectedCategory === item;
-
-      return (
-        <PressableScale
-          onPress={() => {
-            if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedCategory(item);
-          }}
-          style={[styles.chip, isSelected && styles.chipSelected]}
-        >
-          <AppText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-            {labelText}
-          </AppText>
-        </PressableScale>
-      );
-    },
-    [selectedCategory, isKurdish]
-  );
-
-  const renderSlangItem = useCallback(
-    ({ item }: { item: SlangItem }) => {
-      const isExpanded = expandedId === item.id;
-      const isItemSpeaking = speaking && activeId === item.id;
-
-      return (
-        <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
-          <PressableScale onPress={() => toggleExpand(item.id)} scaleDown={0.99}>
-            <View style={styles.itemHeader}>
-              <View style={styles.phraseCol}>
-                <View style={styles.badgeRow}>
-                  <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
-                    <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
-                      {item.type}
-                    </AppText>
-                  </View>
-                </View>
-                <AppText style={styles.slangPhrase} forceLatinFont>
-                  {item.phrase}
-                </AppText>
-                <AppText style={styles.slangSubtitle} forceKurdishFont numberOfLines={1}>
-                  {item.pronunciation}
-                </AppText>
-              </View>
-
-              <View style={styles.actionRow}>
-                <PressableScale
-                  onPress={() => handleSpeak(item.phrase, item.id)}
-                  style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
-                >
-                  <Volume2
-                    size={20}
-                    color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
-                  />
-                </PressableScale>
-                {isExpanded ? (
-                  <ChevronUp size={20} color={ThemeColors.slate} />
-                ) : (
-                  <ChevronDown size={20} color={ThemeColors.slate} />
-                )}
-              </View>
-            </View>
-          </PressableScale>
-
-          {isExpanded && (
-            <View style={styles.itemExpanded}>
-              <View style={styles.divider} />
-
-              <View style={styles.detailRow}>
-                <AppText style={styles.detailLabel} forceKurdishFont>
-                  {isKurdish ? "خوێندنەوە" : "Pronunciation"}
-                </AppText>
-                <AppText style={styles.detailValue} forceKurdishFont>
-                  {item.pronunciation}
-                </AppText>
-              </View>
-
-              <View style={styles.detailRow}>
-                <AppText style={styles.detailLabel} forceKurdishFont>
-                  {isKurdish ? "واتا" : "Meaning"}
-                </AppText>
-                <AppText style={[styles.detailValue, styles.detailFigurative]} forceKurdishFont>
-                  {item.kuMeaning}
-                </AppText>
-              </View>
-
-              <View style={styles.detailRow}>
-                <AppText style={styles.detailLabel} forceKurdishFont>
-                  {t("slang.example")}
-                </AppText>
-                <View style={styles.dialogueBox}>
-                  {/* Dialogue Bubble A */}
-                  <View style={styles.dialogueLine}>
-                    <View style={styles.dialogueMarkerA}>
-                      <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                        A
-                      </AppText>
-                    </View>
-                    <View style={styles.dialogueContent}>
-                      <AppText style={styles.dialogueEn} forceLatinFont>
-                        {item.example.speakerA}
-                      </AppText>
-                      <AppText style={styles.dialogueKu} forceKurdishFont>
-                        {item.example.kuA}
-                      </AppText>
-                    </View>
-                    <PressableScale
-                      onPress={() => handleSpeak(item.example.speakerA, `${item.id}_a`)}
-                      style={[
-                        styles.miniSpeakerBtn,
-                        speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
-                      ]}
-                    >
-                      <Volume2
-                        size={14}
-                        color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
-                      />
-                    </PressableScale>
-                  </View>
-
-                  {/* Dialogue Bubble B */}
-                  <View style={styles.dialogueLine}>
-                    <View style={styles.dialogueMarkerB}>
-                      <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                        B
-                      </AppText>
-                    </View>
-                    <View style={styles.dialogueContent}>
-                      <AppText style={styles.dialogueEn} forceLatinFont>
-                        {item.example.speakerB}
-                      </AppText>
-                      <AppText style={styles.dialogueKu} forceKurdishFont>
-                        {item.example.kuB}
-                      </AppText>
-                    </View>
-                    <PressableScale
-                      onPress={() => handleSpeak(item.example.speakerB, `${item.id}_b`)}
-                      style={[
-                        styles.miniSpeakerBtn,
-                        speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
-                      ]}
-                    >
-                      <Volume2
-                        size={14}
-                        color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
-                      />
-                    </PressableScale>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
-        </HomeLiquidCard>
-      );
-    },
-    [expandedId, speaking, activeId, handleSpeak, toggleExpand, t]
-  );
-
   const categoriesList = useMemo(() => Object.keys(SLANG_CATEGORIES), []);
-
-  const getTypeBadgeStyle = (type: string) => {
-    switch (type) {
-      case "Gen Z Slang":
-        return { backgroundColor: "rgba(139, 92, 246, 0.15)", borderColor: "rgba(139, 92, 246, 0.3)" };
-      case "Idiom":
-        return { backgroundColor: "rgba(245, 158, 11, 0.15)", borderColor: "rgba(245, 158, 11, 0.3)" };
-      case "Everyday Phrase":
-        return { backgroundColor: "rgba(16, 185, 129, 0.15)", borderColor: "rgba(16, 185, 129, 0.3)" };
-      case "Street Slang":
-        return { backgroundColor: "rgba(239, 68, 68, 0.15)", borderColor: "rgba(239, 68, 68, 0.3)" };
-      case "Business/Formal":
-        return { backgroundColor: "rgba(59, 130, 246, 0.15)", borderColor: "rgba(59, 130, 246, 0.3)" };
-      default:
-        return { backgroundColor: "rgba(107, 114, 128, 0.15)", borderColor: "rgba(107, 114, 128, 0.3)" };
-    }
-  };
-
-  const getTypeBadgeTextStyle = (type: string) => {
-    switch (type) {
-      case "Gen Z Slang": return { color: "#8B5CF6" }; // Purple
-      case "Idiom": return { color: "#D97706" }; // Amber/Orange
-      case "Everyday Phrase": return { color: "#059669" }; // Emerald
-      case "Street Slang": return { color: "#DC2626" }; // Red
-      case "Business/Formal": return { color: "#2563EB" }; // Blue
-      default: return { color: "#4B5563" }; // Gray
-    }
-  };
 
   return (
     <View style={styles.root}>
@@ -417,8 +451,20 @@ export function SlangDictionaryScreen() {
       <FlashList
         data={filteredSlang}
         keyExtractor={(item) => item.id}
-        renderItem={renderSlangItem}
-        extraData={expandedId}
+        renderItem={({ item }) => (
+          <SlangItemRow
+            item={item}
+            isExpanded={expandedId === item.id}
+            isItemSpeaking={speaking && activeId === item.id}
+            onToggleExpand={toggleExpand}
+            onSpeak={handleSpeak}
+            isKurdish={isKurdish}
+            t={t}
+            speaking={speaking}
+            activeId={activeId}
+          />
+        )}
+        extraData={{ expandedId, activeId, speaking }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
@@ -426,81 +472,77 @@ export function SlangDictionaryScreen() {
         ]}
         ListHeaderComponent={
           <>
-        {/* Slang of the Day Spotlight */}
-        <HomeLiquidCard
-          style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
-          contentStyle={styles.spotlightContent}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <View style={styles.spotlightBadge}>
-              <Sparkles size={14} color="#FFFFFF" />
-              <AppText style={styles.spotlightBadgeText} forceKurdishFont>
-                {t("slang.slangOfTheDay")}
-              </AppText>
-            </View>
-            <View style={[styles.typeBadge, getTypeBadgeStyle(slangOfTheDay.type), { backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }]}>
-              <AppText style={[styles.typeBadgeText, { color: "#FFFFFF" }]} forceLatinFont>
-                {slangOfTheDay.type}
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.spotlightMain}>
-            <View style={{ flex: 1 }}>
-              <AppText style={styles.spotlightPhrase} forceLatinFont>
-                {slangOfTheDay.phrase}
-              </AppText>
-              <AppText style={styles.spotlightTranslation} forceKurdishFont>
-                {slangOfTheDay.pronunciation}
-              </AppText>
-            </View>
-            <PressableScale
-              onPress={() => handleSpeak(slangOfTheDay.phrase, `spotlight_${slangOfTheDay.id}`)}
-              style={[
-                styles.spotlightSpeakBtn,
-                speaking && activeId === `spotlight_${slangOfTheDay.id}` && styles.speakerBtnSpeaking,
-              ]}
+            {/* Slang of the Day Spotlight */}
+            <HomeLiquidCard
+              style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
+              contentStyle={styles.spotlightContent}
             >
-              <Volume2
-                size={22}
-                color={speaking && activeId === `spotlight_${slangOfTheDay.id}` ? "#FFFFFF" : "#FFFFFF"}
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <View style={styles.spotlightBadge}>
+                  <Sparkles size={14} color="#FFFFFF" />
+                  <AppText style={styles.spotlightBadgeText} forceKurdishFont>
+                    {t("slang.slangOfTheDay")}
+                  </AppText>
+                </View>
+                <View style={[styles.typeBadge, getTypeBadgeStyle(slangOfTheDay.type), { backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }]}>
+                  <AppText style={[styles.typeBadgeText, { color: "#FFFFFF" }]} forceLatinFont>
+                    {slangOfTheDay.type}
+                  </AppText>
+                </View>
+              </View>
+
+              <View style={styles.spotlightMain}>
+                <View style={{ flex: 1 }}>
+                  <AppText style={styles.spotlightPhrase} forceLatinFont>
+                    {slangOfTheDay.phrase}
+                  </AppText>
+                  <AppText style={styles.spotlightTranslation} forceKurdishFont>
+                    {slangOfTheDay.pronunciation}
+                  </AppText>
+                </View>
+                <PressableScale
+                  onPress={() => handleSpeak(slangOfTheDay.phrase, `spotlight_${slangOfTheDay.id}`)}
+                  style={[
+                    styles.spotlightSpeakBtn,
+                    speaking && activeId === `spotlight_${slangOfTheDay.id}` && styles.speakerBtnSpeaking,
+                  ]}
+                >
+                  <Volume2
+                    size={22}
+                    color={speaking && activeId === `spotlight_${slangOfTheDay.id}` ? "#FFFFFF" : "#FFFFFF"}
+                  />
+                </PressableScale>
+              </View>
+
+              <AppText style={styles.spotlightDescription} forceKurdishFont>
+                {slangOfTheDay.kuMeaning}
+              </AppText>
+            </HomeLiquidCard>
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <Search size={18} color={ThemeColors.lightSlate} style={styles.searchIcon} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={t("slang.searchPlaceholder")}
+                placeholderTextColor={ThemeColors.lightSlate}
+                style={[styles.searchInput, isKurdish && styles.searchInputRtl]}
               />
-            </PressableScale>
-          </View>
+              {searchQuery ? (
+                <PressableScale onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
+                  <X size={16} color={ThemeColors.slate} />
+                </PressableScale>
+              ) : null}
+            </View>
 
-          <AppText style={styles.spotlightDescription} forceKurdishFont>
-            {slangOfTheDay.kuMeaning}
-          </AppText>
-        </HomeLiquidCard>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Search size={18} color={ThemeColors.lightSlate} style={styles.searchIcon} />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder={t("slang.searchPlaceholder")}
-            placeholderTextColor={ThemeColors.lightSlate}
-            style={[styles.searchInput, isKurdish && styles.searchInputRtl]}
-          />
-          {searchQuery ? (
-            <PressableScale onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
-              <X size={16} color={ThemeColors.slate} />
-            </PressableScale>
-          ) : null}
-        </View>
-
-        {/* Category Filters — small set; avoid nested FlashList */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsContainer}
-          style={styles.chipsList}
-        >
-          {categoriesList.map((item) => (
-            <View key={item}>{renderCategoryChip({ item })}</View>
-          ))}
-        </ScrollView>
+            {/* Category Filters — small set; avoid nested FlashList */}
+            <SlangCategoryHeader
+              categoriesList={categoriesList}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              isKurdish={isKurdish}
+            />
           </>
         }
         ListEmptyComponent={

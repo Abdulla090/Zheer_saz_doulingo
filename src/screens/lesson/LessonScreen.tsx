@@ -13,6 +13,7 @@ import {
     Icon3DX,
     Icon3DZap,
 } from "@/components/icons/Icon3D";
+import { AppText } from "@/components/ui/AppText";
 import { PingoMascot } from "@/components/mascot/PingoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
@@ -237,19 +238,20 @@ export default function LessonScreen() {
 
   const giveUpQuestion = useCallback(() => {
     if (feedback !== null) return;
-    handleAnswer(false, t("lessons.feedbackSkippedSub"));
+    handleAnswer("skip", t("lessons.feedbackSkippedSub"));
   }, [feedback, handleAnswer, t]);
 
   const renderGame = (q: GameQuestion) => {
     const shared = { onAnswer: handleAnswer, pathMode };
+    const key = q.type;
     switch (q.type) {
-      case "multiple_choice":   return <MultipleChoiceGame   {...shared} question={q} />;
-      case "pair_match":        return <PairMatchGame        {...shared} question={q} />;
-      case "sentence_builder":  return <SentenceBuilderGame  {...shared} question={q} />;
-      case "voice":             return <VoiceGame            {...shared} question={q} />;
-      case "fill_blank":        return <FillBlankGame        {...shared} question={q} />;
-      case "conversation_pick": return <ConversationPickGame {...shared} question={q} />;
-      case "kids_play":         return <KidsPlayGame         {...shared} question={q} />;
+      case "multiple_choice":   return <MultipleChoiceGame   key={key} {...shared} question={q} />;
+      case "pair_match":        return <PairMatchGame        key={key} {...shared} question={q} />;
+      case "sentence_builder":  return <SentenceBuilderGame  key={key} {...shared} question={q} />;
+      case "voice":             return <VoiceGame            key={key} {...shared} question={q} />;
+      case "fill_blank":        return <FillBlankGame        key={key} {...shared} question={q} />;
+      case "conversation_pick": return <ConversationPickGame key={key} {...shared} question={q} />;
+      case "kids_play":         return <KidsPlayGame         key={key} {...shared} question={q} />;
       default:                  return null;
     }
   };
@@ -283,12 +285,12 @@ export default function LessonScreen() {
                   <Icon3DX size={52} />
                 </View>
               )}
-              <Text style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
+              <AppText style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
                 {ok ? "Lesson Complete!" : "Out of Hearts!"}
-              </Text>
-              <Text style={sSum.sub}>
+              </AppText>
+              <AppText style={sSum.sub}>
                 {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
-              </Text>
+              </AppText>
             </HomeLiquidCard>
 
             {ok ? (
@@ -371,21 +373,7 @@ export default function LessonScreen() {
         />
 
         <View style={sL.skipRow}>
-          <Pressable
-            onPress={() => {
-              // Mock Tutor flow
-              router.push("/roleplay");
-            }}
-            disabled={feedback !== null}
-            style={({ pressed }) => [
-              sL.skipButton,
-              { backgroundColor: "rgba(139, 92, 246, 0.2)", borderColor: "rgba(139, 92, 246, 0.4)", marginRight: 8 },
-              pressed && sL.skipPressed,
-              feedback !== null && sL.skipDisabled,
-            ]}
-          >
-            <Text style={[sL.skipText, { color: "#A78BFA" }]}>Ask Tutor</Text>
-          </Pressable>
+
           <Pressable
             onPress={giveUpQuestion}
             disabled={feedback !== null}
@@ -395,13 +383,12 @@ export default function LessonScreen() {
               feedback !== null && sL.skipDisabled,
             ]}
           >
-            <Text style={sL.skipText}>{t("lessons.dontKnow")}</Text>
+            <AppText style={sL.skipText}>{t("lessons.dontKnow")}</AppText>
           </Pressable>
         </View>
 
         <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <Animated.View
-            key={`${pathMode}-${current}`}
             entering={enterGame}
             style={{ flex: 1 }}
           >

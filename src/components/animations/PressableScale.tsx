@@ -1,15 +1,18 @@
 /**
- * PressableScale — Reanimated v4 CSS transition press (UI-thread, no spring bounce).
- * @see animating-react-native-expo skill — CSS transitions for state-driven style changes.
+ * PressableScale — Reanimated v4 scale feedback (UI-thread, no spring bounce).
  */
 
 import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
-import React, { useState } from "react";
+import React from "react";
 import { Pressable, StyleProp, ViewStyle } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { hapticImpact } from "@/utils/haptics";
 import * as Haptics from "expo-haptics";
-import { cssPressStyle, cssReleaseStyle } from "./motion";
+import { CSS_PRESS_MS, CSS_RELEASE_MS } from "./motion";
 
 export type PressableScaleProps = {
   children: React.ReactNode;
@@ -41,16 +44,17 @@ export function PressableScale({
   glass = false,
   glassRadius = 16,
 }: PressableScaleProps) {
-  const [pressed, setPressed] = useState(false);
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const animatedShell = (
     <Animated.View
       style={[
         glass ? undefined : style,
-        {
-          transform: [{ scale: pressed ? scaleDown : 1 }],
-          ...(pressed ? cssPressStyle : cssReleaseStyle),
-        },
+        animatedStyle,
       ]}
     >
       {glass ? (
@@ -66,8 +70,12 @@ export function PressableScale({
   return (
     <Pressable
       disabled={disabled}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
+      onPressIn={() => {
+        scale.value = withTiming(scaleDown, { duration: CSS_PRESS_MS });
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: CSS_RELEASE_MS });
+      }}
       onPress={() => {
         if (haptic) fireHaptic(hapticStyle);
         onPress?.();

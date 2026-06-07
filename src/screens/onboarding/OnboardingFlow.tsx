@@ -1,11 +1,9 @@
 import type { PathMode } from "@/screens/home/components/PathSwitcher";
 
 import { useLocaleStore } from "@/stores/useLocaleStore";
-
 import { useOnboardingStore } from "@/stores/useOnboardingStore";
-
 import { useSettingsStore } from "@/stores/useSettingsStore";
-
+import { useI18n } from "@/hooks/useI18n";
 import * as Haptics from "expo-haptics";
 
 import React, { useCallback, useMemo, useState } from "react";
@@ -50,6 +48,7 @@ export function OnboardingFlow() {
   const [index, setIndex] = useState(0);
   const [showLangSelection, setShowLangSelection] = useState(false);
 
+  const { isKu } = useI18n();
   const [selectedPath] = useState<PathMode>(
 
     pathMode === "street" || pathMode === "kids" ? pathMode : "normal",
@@ -204,29 +203,19 @@ export function OnboardingFlow() {
 
 
   const swipeGesture = useMemo(
-
     () =>
-
       Gesture.Pan()
-
         .activeOffsetX([-16, 16])
-
         .onEnd((e) => {
-
+          const nextIndex = isKu ? index - 1 : index + 1;
+          const prevIndex = isKu ? index + 1 : index - 1;
           if (e.translationX < -48 && e.velocityX <= 0) {
-
-            runOnJS(goToIndex)(index + 1);
-
+            runOnJS(goToIndex)(nextIndex);
           } else if (e.translationX > 48 && e.velocityX >= 0) {
-
-            runOnJS(goToIndex)(index - 1);
-
+            runOnJS(goToIndex)(prevIndex);
           }
-
         }),
-
-    [goToIndex, index],
-
+    [goToIndex, index, isKu],
   );
 
 

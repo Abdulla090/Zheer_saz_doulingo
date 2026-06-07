@@ -116,6 +116,11 @@ export function KidsEnglishPathScreen() {
     [windowWidth],
   );
 
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 100,
+  }).current;
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     const firstVisible = viewableItems?.[0]?.section;
     const nextIndex = firstVisible?.unitIndex;
@@ -169,6 +174,7 @@ export function KidsEnglishPathScreen() {
           windowSize={3}
           removeClippedSubviews={false}
           updateCellsBatchingPeriod={100}
+          viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>

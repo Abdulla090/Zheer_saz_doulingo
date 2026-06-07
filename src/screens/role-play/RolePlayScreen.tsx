@@ -16,6 +16,7 @@ import Animated, {
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { Mic, Square, X } from "lucide-react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -98,13 +99,17 @@ export function RolePlayScreen() {
       <View style={s.orbContainer}>
         <Animated.View style={[s.orb, animatedOrbStyle]}>
           <LinearGradient
-            colors={["#3B82F6", "#8B5CF6"]}
+            colors={["#3B82F6", "#10B981"]}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           />
         </Animated.View>
-        <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+        {Platform.OS === "ios" ? (
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(10,11,16,0.88)" }]} />
+        )}
       </View>
 
       {/* Header */}
@@ -125,13 +130,19 @@ export function RolePlayScreen() {
       {/* Controls */}
       <View style={s.footer}>
         <TouchableOpacity style={s.endButton} onPress={handleEnd} activeOpacity={0.8}>
-          <Text style={s.endButtonIcon}>✖</Text>
+          <X color="#EF4444" size={24} />
         </TouchableOpacity>
 
         <TouchableOpacity style={[s.micButton, isListening && s.micButtonActive]} onPress={toggleMic} activeOpacity={0.9}>
-          <BlurView intensity={50} tint="light" style={s.micBlur}>
-            <Text style={s.micIcon}>{isListening ? "⏹" : "🎙"}</Text>
-          </BlurView>
+          {Platform.OS === "ios" ? (
+            <BlurView intensity={50} tint="light" style={s.micBlur}>
+              {isListening ? <Square color="#FFFFFF" size={28} fill="#FFFFFF" /> : <Mic color="#FFFFFF" size={28} />}
+            </BlurView>
+          ) : (
+            <View style={[s.micBlur, { backgroundColor: "rgba(255,255,255,0.22)" }]}>
+              {isListening ? <Square color="#FFFFFF" size={28} fill="#FFFFFF" /> : <Mic color="#FFFFFF" size={28} />}
+            </View>
+          )}
         </TouchableOpacity>
 
         <View style={s.spacer} />
@@ -175,7 +186,7 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.15)",
   },
   badgeText: {
-    color: "#A78BFA",
+    color: "#38BDF8",
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.5,

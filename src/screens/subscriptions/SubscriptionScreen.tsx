@@ -56,8 +56,8 @@ const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
       {plan.isRecommended && (
         <View className="absolute top-0 -left-[3px]  -right-[3px]">
           <LinearGradient
-            colors={["#904DF9", "#497FFE", "#26C09A"]}
-            locations={[0, 0.68, 1]}
+            colors={["#1CB0F6", "#10B981"]}
+            locations={[0, 1]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{

@@ -31,7 +31,9 @@ const TUTOR_SYSTEM = [
 
 function parseServerMessage(raw: string): LiveServerMessage | null {
   try {
-    return JSON.parse(raw) as LiveServerMessage;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed[0] as LiveServerMessage;
+    return parsed as LiveServerMessage;
   } catch {
     return null;
   }
@@ -85,8 +87,18 @@ export class GeminiLiveSession {
         this.sendSetup();
       };
 
-      ws.onmessage = (event) => {
-        const data = typeof event.data === "string" ? event.data : null;
+      ws.onmessage = async (event) => {
+        let data: string | null = null;
+        if (typeof event.data === "string") {
+          data = event.data;
+        } else if (event.data instanceof Blob) {
+          data = await event.data.text();
+        } else if (event.data instanceof ArrayBuffer) {
+          data = new TextDecoder().decode(event.data);
+        } else if (event.data?.text) {
+          data = await event.data.text();
+        }
+        console.log("WS MESSAGE:", data?.substring(0, 500));
         if (!data) return;
 
         const msg = parseServerMessage(data);
@@ -125,7 +137,8 @@ export class GeminiLiveSession {
         }
       };
 
-      ws.onerror = () => {
+      ws.onerror = (event) => {
+        console.error("WS ERROR:", event);
         const err = new Error("Live connection failed.");
         this.callbacks.onError?.(err.message);
         if (!settled) {
@@ -135,6 +148,7 @@ export class GeminiLiveSession {
       };
 
       ws.onclose = (event) => {
+        console.warn("WS CLOSE:", event.code, event.reason);
         this.callbacks.onClose?.(event.reason || undefined);
         if (!settled) {
           settled = true;
@@ -157,9 +171,6 @@ export class GeminiLiveSession {
         model: `models/${GEMINI_LIVE_MODEL}`,
         generation_config: {
           response_modalities: ["AUDIO"],
-          thinking_config: {
-            thinking_level: "minimal",
-          },
           speech_config: {
             voice_config: {
               prebuilt_voice_config: { voice_name: "Kore" },

@@ -93,17 +93,39 @@ function rollDailyXp(dailyXp: number, lastActiveDate: string | null): number {
   return lastActiveDate === todayIso() ? dailyXp : 0;
 }
 
-async function persistProgress(state: ProgressSnapshot) {
+function persistProgress(state: ProgressSnapshot) {
   try {
-    await appStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    appStorage.setItemSync(STORAGE_KEY, JSON.stringify(state));
   } catch {
     /* noop */
   }
 }
 
+const savedRaw = appStorage.getItemSync(STORAGE_KEY);
+const initialProgress: ProgressSnapshot = (() => {
+  if (!savedRaw) return DEFAULT_PROGRESS;
+  try {
+    const parsed = JSON.parse(savedRaw) as Partial<ProgressSnapshot>;
+    const merged: ProgressSnapshot = {
+      ...DEFAULT_PROGRESS,
+      ...parsed,
+      normalNextLessonPathIndex:
+        parsed.normalNextLessonPathIndex ?? DEFAULT_PROGRESS.normalNextLessonPathIndex,
+      kidsNextLessonPathIndex:
+        parsed.kidsNextLessonPathIndex ?? DEFAULT_PROGRESS.kidsNextLessonPathIndex,
+      dailyGoalXp: DAILY_GOAL_XP,
+    };
+    merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);
+    merged.lastActivity = merged.lastActivity ?? null;
+    return merged;
+  } catch {
+    return DEFAULT_PROGRESS;
+  }
+})();
+
 export const useProgressStore = create<ProgressState>((set, get) => ({
-  ...DEFAULT_PROGRESS,
-  ready: false,
+  ...initialProgress,
+  ready: true,
   pathScrollAfterLesson: null,
 
   requestPathScrollAfterLesson: (mode) => {
@@ -153,7 +175,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     };
 
     set(next);
-    void persistProgress(next);
+    persistProgress(next);
     void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
@@ -169,7 +191,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       },
     };
     set(next);
-    void persistProgress(next);
+    persistProgress(next);
     void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
@@ -194,39 +216,13 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       },
     };
     set(next);
-    void persistProgress(next);
+    persistProgress(next);
     void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
   resetProgress: () => {
     set({ ...DEFAULT_PROGRESS, pathScrollAfterLesson: null });
-    void persistProgress(DEFAULT_PROGRESS);
+    persistProgress(DEFAULT_PROGRESS);
   },
 }));
 
-async function hydrateProgress() {
-  try {
-    const raw = await appStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      useProgressStore.setState({ ready: true });
-      return;
-    }
-    const parsed = JSON.parse(raw) as Partial<ProgressSnapshot>;
-    const merged: ProgressSnapshot = {
-      ...DEFAULT_PROGRESS,
-      ...parsed,
-      normalNextLessonPathIndex:
-        parsed.normalNextLessonPathIndex ?? DEFAULT_PROGRESS.normalNextLessonPathIndex,
-      kidsNextLessonPathIndex:
-        parsed.kidsNextLessonPathIndex ?? DEFAULT_PROGRESS.kidsNextLessonPathIndex,
-      dailyGoalXp: DAILY_GOAL_XP,
-    };
-    merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);
-    merged.lastActivity = merged.lastActivity ?? null;
-    useProgressStore.setState({ ...merged, ready: true });
-  } catch {
-    useProgressStore.setState({ ready: true });
-  }
-}
-
-void hydrateProgress();

@@ -42,12 +42,6 @@ import {
   GameRoot,
 } from "./GameAnimatedShell";
 
-type Props = {
-  question: SentenceBuilderQuestion;
-  onAnswer: (correct: boolean | "skip", explanation?: string) => void;
-  pathMode?: LessonPathMode;
-};
-
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
 
@@ -64,6 +58,12 @@ type FlySession = {
   toY: number;
   toW: number;
   toH: number;
+};
+
+type Props = {
+  question: SentenceBuilderQuestion;
+  onAnswer: (correct: boolean | "skip", explanation?: string) => void;
+  pathMode?: LessonPathMode;
 };
 
 function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void }) {
@@ -96,20 +96,8 @@ function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id:
   );
 }
 
-function measureInRoot(
-  view: RNView,
-  root: RNView,
-  onResult: (x: number, y: number, w: number, h: number) => void,
-) {
-  view.measureInWindow((vx, vy, vw, vh) => {
-    root.measureInWindow((rx, ry) => {
-      onResult(vx - rx, vy - ry, vw, vh);
-    });
-  });
-}
-
 export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Props) {
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const [sentence, setSentence] = useState<Placed[]>([]);
   const [usedBank, setUsedBank] = useState(() =>
     question.wordBank.map(() => false),
@@ -120,15 +108,33 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const slotN = useRef(0);
   const completedRef = useRef(false);
   const wrongSentRef = useRef(false);
+  
   const rootRef = useRef<RNView>(null);
   const bankRefs = useRef<(RNView | null)[]>([]);
   const slotRefs = useRef<(RNView | null)[]>([]);
+
+  // Coordinate caching refs to execute fly animations synchronously on click
+  const rootCoords = useRef<{ x: number; y: number } | null>(null);
+  const bankCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
+  const slotCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
 
   const shakeX = useSharedValue(0);
 
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
+
+  React.useEffect(() => {
+    setSentence([]);
+    setUsedBank(question.wordBank.map(() => false));
+    setFb("idle");
+    setFlySessions([]);
+    slotN.current = 0;
+    completedRef.current = false;
+    wrongSentRef.current = false;
+    bankCoords.current = {};
+    slotCoords.current = {};
+  }, [question]);
 
   const slotCount = question.correctWords.length;
 
@@ -164,43 +170,40 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       const slotIndex = sentence.length + flySessions.length;
       if (slotIndex >= slotCount) return;
 
+      const word = question.wordBank[bankIndex];
+      const root = rootCoords.current;
+      const bank = bankCoords.current[bankIndex];
+      const slot = slotCoords.current[slotIndex];
+
+      // If coordinates are not cached yet, fallback to synchronous add
+      if (!root || !bank || !slot) {
+        commitAddWord(bankIndex);
+        return;
+      }
+
       setUsedBank((prev) => {
         const next = [...prev];
         next[bankIndex] = true;
         return next;
       });
 
-      const word = question.wordBank[bankIndex];
-      const bankView = bankRefs.current[bankIndex];
-      const slotView = slotRefs.current[slotIndex];
-      const root = rootRef.current;
-
-      if (!bankView || !slotView || !root) {
-        commitAddWord(bankIndex);
-        return;
-      }
-
-      measureInRoot(bankView, root, (fromX, fromY, fromW, fromH) => {
-        measureInRoot(slotView, root, (toX, toY, toW, toH) => {
-          setFlySessions((prev) => [
-            ...prev,
-            {
-              id: Math.random().toString(),
-              bankIndex,
-              word,
-              slotIndex,
-              fromX,
-              fromY,
-              fromW,
-              fromH,
-              toX,
-              toY,
-              toW,
-              toH,
-            },
-          ]);
-        });
-      });
+      setFlySessions((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(),
+          bankIndex,
+          word,
+          slotIndex,
+          fromX: bank.x - root.x,
+          fromY: bank.y - root.y,
+          fromW: bank.w,
+          fromH: bank.h,
+          toX: slot.x - root.x,
+          toY: slot.y - root.y,
+          toW: slot.w,
+          toH: slot.h,
+        },
+      ]);
     },
     [fb, usedBank, sentence.length, flySessions.length, slotCount, question.wordBank, commitAddWord],
   );
@@ -263,7 +266,16 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
   return (
     <GameRoot style={{ flex: 1 }}>
-      <View ref={rootRef} style={s.root} collapsable={false}>
+      <View
+        ref={rootRef}
+        style={s.root}
+        collapsable={false}
+        onLayout={() => {
+          rootRef.current?.measureInWindow((x, y) => {
+            rootCoords.current = { x, y };
+          });
+        }}
+      >
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={s.scrollContent}
@@ -283,69 +295,79 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               forceKurdishFont
               variant={pathMode === "kids" ? "kids" : "default"}
             >
-            {question.kurdishSentence}
-          </LightQuestionPrompt>
+              {question.kurdishSentence}
+            </LightQuestionPrompt>
 
-          <Animated.View style={[s.slotsWrap, shakeStyle]} layout={layoutMorph}>
-            <Animated.View style={s.slotsRow} layout={layoutMorph}>
-              {Array.from({ length: slotCount }).map((_, i) => {
-                const placed = sentence[i];
-                const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
+            <Animated.View style={[s.slotsWrap, shakeStyle]} layout={layoutMorph}>
+              <Animated.View style={[s.slotsRow, { flexDirection: isKu ? "row-reverse" : "row" }]} layout={layoutMorph}>
+                {Array.from({ length: slotCount }).map((_, i) => {
+                  const placed = sentence[i];
+                  const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
 
+                  return (
+                    <View
+                      key={`slot-${i}`}
+                      ref={(r) => {
+                        slotRefs.current[i] = r;
+                      }}
+                      onLayout={() => {
+                        slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                          slotCoords.current[i] = { x, y, w, h };
+                        });
+                      }}
+                      collapsable={false}
+                      style={s.slotCell}
+                    >
+                      {placed && !hideWhileFlying ? (
+                        <Animated.View
+                          layout={layoutMorph}
+                          collapsable={false}
+                        >
+                          <LightWordTile
+                            label={placed.word}
+                            state={slotTileState(i)}
+                            onPress={() => removeFromSlot(i)}
+                          />
+                        </Animated.View>
+                      ) : (
+                        <View style={s.emptySlot} />
+                      )}
+                    </View>
+                  );
+                })}
+              </Animated.View>
+            </Animated.View>
+
+            <Animated.View style={[s.bank, { flexDirection: isKu ? "row-reverse" : "row" }]} layout={layoutMorph}>
+              {question.wordBank.map((w, i) => {
+                const taken = usedBank[i];
                 return (
                   <View
-                    key={`slot-${i}`}
-                    ref={(r) => {
-                      slotRefs.current[i] = r;
+                    key={`bank-${i}`}
+                    ref={(el) => { bankRefs.current[i] = el; }}
+                    onLayout={() => {
+                      bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                        bankCoords.current[i] = { x, y, w, h };
+                      });
                     }}
                     collapsable={false}
-                    style={s.slotCell}
+                    style={s.bankCell}
                   >
-                    {placed && !hideWhileFlying ? (
-                      <Animated.View
-                        layout={layoutMorph}
-                        collapsable={false}
-                      >
-                        <LightWordTile
-                          label={placed.word}
-                          state={slotTileState(i)}
-                          onPress={() => removeFromSlot(i)}
-                        />
-                      </Animated.View>
-                    ) : (
-                      <View style={s.emptySlot} />
-                    )}
+                    <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
+                      <LightWordTile
+                        label={w}
+                        state="idle"
+                        onPress={() => addWord(i)}
+                        disabled={taken || fb !== "idle"}
+                      />
+                    </View>
                   </View>
                 );
               })}
             </Animated.View>
-          </Animated.View>
-
-          <Animated.View style={s.bank} layout={layoutMorph}>
-            {question.wordBank.map((w, i) => {
-              const taken = usedBank[i];
-              return (
-                <View
-                  key={`bank-${i}`}
-                  ref={(el) => { bankRefs.current[i] = el; }}
-                  collapsable={false}
-                  style={s.bankCell}
-                >
-                  <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
-                    <LightWordTile
-                      label={w}
-                      state="idle"
-                      onPress={() => addWord(i)}
-                      disabled={taken || fb !== "idle"}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </Animated.View>
-        </View>
-      </ScrollView>
-    </View>
+          </View>
+        </ScrollView>
+      </View>
 
       <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
         {flySessions.length > 0 ? (

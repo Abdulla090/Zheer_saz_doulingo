@@ -11,11 +11,13 @@ interface LocaleState {
   setLocale: (locale: AppLocale) => void;
 }
 
+const savedLocale = (appStorage.getItemSync(STORAGE_KEY) === "ku" ? "ku" : "en") as AppLocale;
+
 export const useLocaleStore = create<LocaleState>((set) => ({
-  locale: "en",
-  ready: false,
+  locale: savedLocale,
+  ready: true,
   setLocale: (locale) => {
-    void appStorage.setItem(STORAGE_KEY, locale);
+    appStorage.setItemSync(STORAGE_KEY, locale);
     set({ locale });
     
     const isRTL = locale === "ku";
@@ -36,14 +38,3 @@ export const useLocaleStore = create<LocaleState>((set) => ({
   },
 }));
 
-async function hydrateLocale() {
-  try {
-    const saved = await appStorage.getItem(STORAGE_KEY);
-    const locale: AppLocale = saved === "ku" ? "ku" : "en";
-    useLocaleStore.setState({ locale, ready: true });
-  } catch {
-    useLocaleStore.setState({ ready: true });
-  }
-}
-
-void hydrateLocale();

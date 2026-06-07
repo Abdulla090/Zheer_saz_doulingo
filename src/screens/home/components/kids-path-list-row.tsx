@@ -17,7 +17,10 @@ type Props = {
   screenWidth: number;
 };
 
-export function KidsPathListRow({ item, screenWidth }: Props) {
+export const KidsPathListRow = React.memo(function KidsPathListRow({
+  item,
+  screenWidth,
+}: Props) {
   const showMascot = item.sectionItemIndex === KIDS_CURVE_MASCOT_ROW_INDEX;
   const unitBase = item.lessonId * LESSONS_PER_UNIT;
   const rowOffset = getPathCurveOffset(
@@ -45,4 +48,4 @@ export function KidsPathListRow({ item, screenWidth }: Props) {
       <ListItem item={item} screenWidth={screenWidth} pathMode="kids" />
     </View>
   );
-}
+});

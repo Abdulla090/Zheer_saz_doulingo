@@ -11,7 +11,6 @@ type MmkvInstance = {
 
 let mmkv: MmkvInstance | null = null;
 let mmkvUnavailable = false;
-let migrationPromise: Promise<void> | null = null;
 
 function getMmkv(): MmkvInstance | null {
   if (Platform.OS === "web" || mmkvUnavailable) return null;
@@ -34,18 +33,19 @@ function getMmkv(): MmkvInstance | null {
   }
 }
 
-async function ensureReady(): Promise<void> {
-  if (Platform.OS === "web") return;
+// Trigger migration in the background on startup, without blocking hot-path execution
+if (Platform.OS !== "web") {
   const instance = getMmkv();
-  if (!instance) return;
-  if (!migrationPromise) {
-    migrationPromise = migrateLegacyAsyncStorageOnce(instance);
+  if (instance) {
+    void migrateLegacyAsyncStorageOnce(instance).catch((err) => {
+      if (__DEV__) {
+        console.warn("[app-storage] Legacy storage migration failed:", err);
+      }
+    });
   }
-  await migrationPromise;
 }
 
 async function nativeGetItem(key: string): Promise<string | null> {
-  await ensureReady();
   const instance = getMmkv();
   if (instance) {
     return instance.getString(key) ?? null;
@@ -54,7 +54,6 @@ async function nativeGetItem(key: string): Promise<string | null> {
 }
 
 async function nativeSetItem(key: string, value: string): Promise<void> {
-  await ensureReady();
   const instance = getMmkv();
   if (instance) {
     instance.set(key, value);
@@ -64,7 +63,6 @@ async function nativeSetItem(key: string, value: string): Promise<void> {
 }
 
 async function nativeRemoveItem(key: string): Promise<void> {
-  await ensureReady();
   const instance = getMmkv();
   if (instance) {
     instance.remove(key);
@@ -75,6 +73,48 @@ async function nativeRemoveItem(key: string): Promise<void> {
 
 /** Fast key-value storage: MMKV on iOS/Android, localStorage/AsyncStorage on web. */
 export const appStorage = {
+  // Synchronous API
+  getItemSync(key: string): string | null {
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        return localStorage.getItem(key);
+      }
+      return null;
+    }
+    const instance = getMmkv();
+    if (instance) {
+      return instance.getString(key) ?? null;
+    }
+    return null;
+  },
+
+  setItemSync(key: string, value: string): void {
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(key, value);
+      }
+      return;
+    }
+    const instance = getMmkv();
+    if (instance) {
+      instance.set(key, value);
+    }
+  },
+
+  removeItemSync(key: string): void {
+    if (Platform.OS === "web") {
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem(key);
+      }
+      return;
+    }
+    const instance = getMmkv();
+    if (instance) {
+      instance.remove(key);
+    }
+  },
+
+  // Asynchronous API (kept for backward compatibility where needed)
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === "web") {
       if (typeof localStorage !== "undefined") {
@@ -109,3 +149,4 @@ export const appStorage = {
     await nativeRemoveItem(key);
   },
 };
+

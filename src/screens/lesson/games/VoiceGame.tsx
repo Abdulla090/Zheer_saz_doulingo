@@ -65,7 +65,7 @@ function pickInitialBackend(
 }
 
 export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const { speak } = useTTS();
   const gemini = useGeminiVoiceCapture();
   const speech = useSpeechCapture("en-US");
@@ -91,6 +91,33 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
+
+  React.useEffect(() => {
+    // Abort active session
+    if (backend === "gemini") {
+      void gemini.abort();
+    } else if (backend === "speech") {
+      speech.abort();
+    }
+
+    setBackend(pickInitialBackend(gemini.available, speech.available));
+    setState("idle");
+    setTranscript("");
+    setStatusDetail(null);
+    setHasHintRevealed(false);
+    firedRef.current = false;
+    stateRef.current = "idle";
+    transcriptRef.current = "";
+    
+    if (listenTimeoutRef.current) {
+      clearTimeout(listenTimeoutRef.current);
+      listenTimeoutRef.current = null;
+    }
+    if (speechEvalTimeoutRef.current) {
+      clearTimeout(speechEvalTimeoutRef.current);
+      speechEvalTimeoutRef.current = null;
+    }
+  }, [question]);
 
   const manualMode = backend === "manual";
   const useGemini = backend === "gemini";
@@ -464,7 +491,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
           <Text style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</Text>
 
-          <View style={s.targetRow}>
+          <View style={[s.targetRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <AppText style={s.targetEn} forceLatinFont latinRole="bold">
               {question.targetWord}
             </AppText>

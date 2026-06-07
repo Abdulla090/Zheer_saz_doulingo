@@ -3,6 +3,7 @@
  */
 
 import { createAudioPlayer, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
+import { PermissionsAndroid, Platform } from "react-native";
 import { GEMINI_LIVE_OUTPUT_RATE } from "@/constants/gemini";
 
 export type MicStreamHandle = {
@@ -131,9 +132,30 @@ export class LivePcmPlayer {
 export async function startMicPcmStream(
   onData: (base64: string) => void
 ): Promise<MicStreamHandle> {
-  const perm = await requestRecordingPermissionsAsync();
+  let perm = await requestRecordingPermissionsAsync();
+
+  if (!perm.granted && Platform.OS === "android") {
+    try {
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: "Microphone Permission",
+          message: "Phingo English needs access to your microphone to talk to the AI Tutor.",
+          buttonNeutral: "Ask Me Later",
+          buttonNegative: "Cancel",
+          buttonPositive: "OK",
+        }
+      );
+      if (result === PermissionsAndroid.RESULTS.GRANTED) {
+        perm = { granted: true, status: "granted" as any, canAskAgain: true, expires: "never" } as any;
+      }
+    } catch (err) {
+      console.warn("PermissionsAndroid failed", err);
+    }
+  }
+
   if (!perm.granted) {
-    throw new Error("Microphone permission denied.");
+    throw new Error("Microphone permission required.");
   }
 
   await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });

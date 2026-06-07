@@ -72,7 +72,6 @@ function NativeTabsLayout() {
             fontWeight: "700",
           },
         }}
-        barStyle={Platform.OS === "android" ? "default" : undefined}
       >
         <NativeTabs.Trigger name="index" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon

@@ -13,18 +13,20 @@
     },
     "preview": {
       "distribution": "internal",
-      "node": "22.14.0",
       "env": {
-        "EAS_GRADLE_CACHE": "1"
+        "EAS_GRADLE_CACHE": "1",
+        "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
+        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview"
       },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
-      "node": "22.14.0",
       "env": {
-        "EAS_GRADLE_CACHE": "1"
+        "EAS_GRADLE_CACHE": "1",
+        "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
+        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview"
       },
       "android": {
         "buildType": "app-bundle"

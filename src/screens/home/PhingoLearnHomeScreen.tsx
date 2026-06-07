@@ -16,6 +16,7 @@ import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import { useProgressStore } from "@/stores/useProgressStore";
 import { useSettingsStore } from "@/stores/useSettingsStore";
+import { useContentPackStore } from "@/stores/useContentPackStore";
 import {
   buildLessonRouteForMode,
   buildLessonRouteFromMeta,
@@ -196,6 +197,8 @@ export function PhingoLearnHomeScreen() {
   const kidsNext = useProgressStore((s) => s.kidsNextLessonPathIndex);
   const lastActivity = useProgressStore((s) => s.lastActivity);
   const pathMode = useSettingsStore((s) => s.pathMode);
+  const streetStatus = useContentPackStore((s) => s.streetStatus);
+  const kidsStatus = useContentPackStore((s) => s.kidsStatus);
 
   const pathSummary = useMemo(
     () => getPathProgressSummary(streetNext, normalNext, kidsNext),
@@ -402,13 +405,28 @@ export function PhingoLearnHomeScreen() {
               <Text style={styles.sectionLabel}>{t("home.pathProgress")}</Text>
               <Text style={styles.pathLink}>{t("home.viewPath")} ›</Text>
             </View>
-            <PathProgressRow
-              label={t("home.streetPath")}
-              completed={pathSummary.streetCompleted}
-              total={pathSummary.streetTotal}
-              progress={pathSummary.streetPercent}
-              fillColor={C.blue}
-            />
+            {streetStatus === "downloaded" ? (
+              <PathProgressRow
+                label={t("home.streetPath")}
+                completed={pathSummary.streetCompleted}
+                total={pathSummary.streetTotal}
+                progress={pathSummary.streetPercent}
+                fillColor={C.blue}
+              />
+            ) : (
+              <View style={styles.pathStripRow}>
+                <View style={styles.pathStripHead}>
+                  <Text style={styles.pathStripLabel}>{t("home.streetPath")}</Text>
+                  <Text style={[styles.pathStripCount, { color: "#1CB0F6" }]}>Download</Text>
+                </View>
+                <ThinProgressBar
+                  progress={0}
+                  fillColor="#1CB0F6"
+                  trackColor={C.track}
+                  height={6}
+                />
+              </View>
+            )}
             <PathProgressRow
               label={t("home.normalPath")}
               completed={pathSummary.normalCompleted}
@@ -416,6 +434,28 @@ export function PhingoLearnHomeScreen() {
               progress={pathSummary.normalPercent}
               fillColor="#58CC02"
             />
+            {kidsStatus === "downloaded" ? (
+              <PathProgressRow
+                label="Kids English"
+                completed={pathSummary.kidsCompleted}
+                total={pathSummary.kidsTotal}
+                progress={pathSummary.kidsPercent}
+                fillColor="#FF9600"
+              />
+            ) : (
+              <View style={styles.pathStripRow}>
+                <View style={styles.pathStripHead}>
+                  <Text style={styles.pathStripLabel}>Kids English</Text>
+                  <Text style={[styles.pathStripCount, { color: "#FF9600" }]}>Download</Text>
+                </View>
+                <ThinProgressBar
+                  progress={0}
+                  fillColor="#FF9600"
+                  trackColor={C.track}
+                  height={6}
+                />
+              </View>
+            )}
           </View>
         </Pressable>
 

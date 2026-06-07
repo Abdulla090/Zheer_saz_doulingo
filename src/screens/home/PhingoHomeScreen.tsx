@@ -31,6 +31,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useContentPackStore } from "@/stores/useContentPackStore";
 
 const C = {
   bgTop: "#F4F9FF",
@@ -175,11 +176,13 @@ export function PhingoHomeScreen({
     transform: [{ scale: 0.97 + glow.value * 0.03 }],
   }));
 
+  const streetAvailable = useContentPackStore((s) => s.isAvailable("street"));
+
   const suggestions: Suggestion[] = [
     {
       id: "street-path",
-      title: "Street English",
-      subtitle: "Daily path",
+      title: streetAvailable ? "Street English" : "Street English",
+      subtitle: streetAvailable ? "Daily path" : "Download to unlock",
       Icon: ({ size }) => <Icon3DZapBlue size={size ?? 36} active />,
       onPress: () => router.push("/dashboard?mode=street"),
     },

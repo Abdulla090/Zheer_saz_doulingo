@@ -137,12 +137,14 @@ type TileState = LightTileState;
 export function LightSurfaceCard({
   children,
   style,
+  contentStyle,
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    <HomeLiquidCard style={style} contentStyle={lh.surfaceCardInner} radius={22}>
+    <HomeLiquidCard style={style} contentStyle={[lh.surfaceCardInner, contentStyle]} radius={22}>
       {children}
     </HomeLiquidCard>
   );
@@ -162,7 +164,7 @@ export function LightDialogueCard({
     <View style={lh.dialogueWrap}>
       <View style={lh.dialogueBubble}>
         <LinearGradient
-          colors={["#F8F4FF", "#F0E8FF", "#E8DEFF"]}
+          colors={["#F0F9FF", "#E0F2FE", "#BAE6FD"]}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -512,6 +514,20 @@ export function LightAnswerSlots({
   );
 }
 
+function SvgLightbulb({ size = 16, color = "#FF9600" }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 21H15M9 18H15M12 2C7.58 2 4 5.58 4 10C4 12.89 5.53 15.42 7.82 16.82C8.56 17.27 9 18.06 9 18.91V19C9 20.1 9.9 21 11 21H13C14.1 21 15 20.1 15 19V18.91C15 18.06 15.44 17.27 16.18 16.82C18.47 15.42 20 12.89 20 10C20 5.58 16.42 2 12 2Z"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function LightHintButton({
   onPress,
   label = "Hint",
@@ -524,7 +540,7 @@ export function LightHintButton({
   return (
     <Pressable onPress={onPress}>
       <HomeLiquidCard contentStyle={lh.hintBtn} radius={LightRadius.btn}>
-        {showBulb ? <Text style={lh.hintEmoji}>💡</Text> : null}
+        {showBulb ? <SvgLightbulb size={18} color="#FF9600" /> : null}
         <Text style={lh.hintLabel}>{label}</Text>
       </HomeLiquidCard>
     </Pressable>
@@ -710,10 +726,10 @@ export function LessonLiquidFeedback({
       radius={26}
     >
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
-      <Text style={[lh.feedbackTitle, { color: titleColor }]}>
+      <AppText style={[lh.feedbackTitle, { color: titleColor }]} forceKurdishFont>
         {title}
-      </Text>
-      <Text style={lh.feedbackSub}>{subtitle}</Text>
+      </AppText>
+      <AppText style={lh.feedbackSub} forceKurdishFont>{subtitle}</AppText>
       <HomeLiquidButton
         label={buttonLabel ?? t("common.continue")}
         onPress={onContinue}

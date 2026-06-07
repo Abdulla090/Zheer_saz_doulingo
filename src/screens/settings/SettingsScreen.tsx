@@ -23,6 +23,8 @@ import { confirmAction } from "@/utils/confirm-action";
 import { openHttpsUrl, openMailto } from "@/utils/safe-link";
 import { useRouter } from "expo-router";
 import React from "react";
+import * as Font from "expo-font";
+import { fontMap } from "@/fontMap";
 import {
   ScrollView,
   StyleSheet,
@@ -43,6 +45,41 @@ const LEGAL_LINKS = [
   { route: "/ai-safety" as const, labelKey: "settings.aiSafety" as const },
   { route: "/terms" as const, labelKey: "settings.termsOfUse" as const },
 ];
+
+const FontPreviewText = React.memo(
+  ({
+    font,
+    style,
+    children,
+  }: {
+    font: string;
+    style: any;
+    children: React.ReactNode;
+  }) => {
+    const [loaded, setLoaded] = React.useState(false);
+
+    React.useEffect(() => {
+      if (Font.isLoaded(font)) {
+        setLoaded(true);
+        return;
+      }
+      const fontFile = fontMap[font as keyof typeof fontMap];
+      if (fontFile) {
+        Font.loadAsync({
+          [font]: fontFile,
+        })
+          .then(() => setLoaded(true))
+          .catch(() => {});
+      }
+    }, [font]);
+
+    return (
+      <Text style={[style, loaded ? { fontFamily: font } : {}]}>
+        {children}
+      </Text>
+    );
+  },
+);
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -270,15 +307,15 @@ export default function SettingsScreen() {
                   ) : (
                     <View style={styles.radioEmpty} />
                   )}
-                  <Text
+                  <FontPreviewText
+                    font={font}
                     style={[
                       styles.fontPreview,
-                      { fontFamily: font },
                       selected && styles.fontPreviewOn,
                     ]}
                   >
                     {t("settings.previewSample")}
-                  </Text>
+                  </FontPreviewText>
                 </View>
                 <Icon3DChevronRight size={20} />
               </PressableScale>

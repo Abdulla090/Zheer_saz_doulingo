@@ -43,9 +43,9 @@ export function PathCircleShine({ size }: PathCircleShineProps) {
       pointerEvents="none"
       style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}
     >
-      {Platform.OS !== "web" ? (
+      {Platform.OS === "ios" ? (
         <BlurView
-          intensity={Platform.OS === "android" ? 8 : 14}
+          intensity={14}
           tint="light"
           style={[StyleSheet.absoluteFill, { borderRadius: radius, opacity: 0.42 }]}
         />

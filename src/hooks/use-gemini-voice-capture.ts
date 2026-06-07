@@ -8,7 +8,7 @@ import {
 } from "expo-audio";
 import * as FileSystem from "expo-file-system";
 import { useCallback, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { PermissionsAndroid, Platform } from "react-native";
 
 export type GeminiVoiceHandlers = {
   onResult: (text: string, matches: boolean) => void;
@@ -152,7 +152,29 @@ export function useGeminiVoiceCapture() {
   }, [cleanupWebStream]);
 
   const startNativeRecording = useCallback(async (): Promise<boolean> => {
-    const perm = await requestRecordingPermissionsAsync();
+    let perm = await requestRecordingPermissionsAsync();
+    
+    // Fallback to explicit PermissionsAndroid request if not granted
+    if (!perm.granted && Platform.OS === "android") {
+      try {
+        const result = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: "Microphone Permission",
+            message: "Phingo English needs access to your microphone for speaking practice.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+        if (result === PermissionsAndroid.RESULTS.GRANTED) {
+          perm = { granted: true, status: "granted" as any, canAskAgain: true, expires: "never" };
+        }
+      } catch (err) {
+        console.warn("PermissionsAndroid failed", err);
+      }
+    }
+
     if (!perm.granted) {
       setError("Microphone permission is required for speaking practice.");
       return false;

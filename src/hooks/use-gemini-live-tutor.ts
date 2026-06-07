@@ -15,7 +15,7 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
+import { PermissionsAndroid, Platform } from "react-native";
 
 export type LiveTutorStatus =
   | "idle"
@@ -96,11 +96,34 @@ export function useGeminiLiveTutor() {
   const startNativeMicLoop = useCallback(async () => {
     if (Platform.OS === "web" || micActiveRef.current) return;
 
-    const perm = await requestRecordingPermissionsAsync();
-    if (!perm.granted) {
-      throw new Error("Microphone permission is required.");
+    let perm = await requestRecordingPermissionsAsync();
+    
+    // Fallback to explicit PermissionsAndroid request if not granted
+    if (!perm.granted && Platform.OS === "android") {
+      try {
+        const result = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: "Microphone Permission",
+            message: "Phingo English needs access to your microphone to talk to the AI Tutor.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+        if (result === PermissionsAndroid.RESULTS.GRANTED) {
+          perm = { granted: true, status: "granted" as any, canAskAgain: true, expires: "never" };
+        }
+      } catch (err) {
+        console.warn("PermissionsAndroid failed", err);
+      }
     }
 
+    if (!perm.granted) {
+      setError("Microphone permission is required to speak with the tutor.");
+      return;
+    }
+    
     try {
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     } catch (e) {
@@ -141,11 +164,16 @@ export function useGeminiLiveTutor() {
     if (micActiveRef.current) return;
 
     if (Platform.OS === "web") {
-      micRef.current = await startMicPcmStream((chunk: string) => {
-        sessionRef.current?.sendPcmChunk(chunk);
-      });
-      micActiveRef.current = true;
-      setStatus("listening");
+      try {
+        micRef.current = await startMicPcmStream((chunk: string) => {
+          sessionRef.current?.sendPcmChunk(chunk);
+        });
+        micActiveRef.current = true;
+        setStatus("listening");
+      } catch (err) {
+        setError("Microphone permission is required to speak with the tutor.");
+        console.warn("Web Mic Stream failed:", err);
+      }
       return;
     }
 

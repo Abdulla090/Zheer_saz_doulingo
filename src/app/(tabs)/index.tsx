@@ -7,7 +7,7 @@ import { PhingoLearnHomeScreen } from "@/screens/home/PhingoLearnHomeScreen";
 
 export default function HomeIndex() {
   return (
-    <TabScreenChrome>
+    <TabScreenChrome lazy={false}>
       <PhingoLearnHomeScreen />
     </TabScreenChrome>
   );

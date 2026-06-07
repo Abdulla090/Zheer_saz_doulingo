@@ -110,14 +110,17 @@ export function Icon3DCheck({ size = 22 }: { size?: number }) {
 }
 
 /** ⭐ Golden 3D Star coin */
-export function Icon3DStar({ size = 22 }: { size?: number }) {
+export function Icon3DStar({ size = 22, active = false }: { size?: number; active?: boolean }) {
   const id = useId("star");
   const h = size / 2;
   const s = `M${h} ${h * 0.45}l${h * 0.28} ${h * 0.83}h${h * 0.9}l-${h * 0.72} ${h * 0.56}${h * 0.28} ${h * 0.87}-${h * 0.74}-${h * 0.55}-${h * 0.74} ${h * 0.55}${h * 0.28}-${h * 0.87}-${h * 0.72}-${h * 0.56}h${h * 0.9}z`;
   return (
     <Sphere size={size} id={id}
-      bright="#FCD34D" mid="#F59E0B" shade="#D97706" sheen="#FEF9C3">
-      <IconFill d={s} rim="#FBBF24" />
+      bright={active ? "#FCD34D" : "#E2E8F0"}
+      mid={active ? "#F59E0B" : "#94A3B8"}
+      shade={active ? "#D97706" : "#64748B"}
+      sheen={active ? "#FEF9C3" : "#FFFFFF"}>
+      <IconFill d={s} rim={active ? "#FBBF24" : undefined} />
     </Sphere>
   );
 }

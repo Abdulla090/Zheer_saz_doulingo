@@ -11,7 +11,9 @@ import { useAndroidImmersiveChrome } from "@/hooks/use-android-immersive-chrome"
 import { NavigationBar } from "expo-navigation-bar";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
+import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useFonts } from "expo-font";
+import * as Font from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -49,26 +51,64 @@ function applyGlobalFont(kurdishFontFamily: string) {
 function RootLayout() {
   useAndroidImmersiveChrome();
 
-  const { selectedFont, ready: fontReady } = useFontStore();
+  const { selectedFont, ready: fontStoreReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
   const contentAdminReady = useContentAdminStore((s) => s.ready);
   const onboardingReady = useOnboardingStore((s) => s.ready);
   const onboardingComplete = useOnboardingStore((s) => s.completed);
+  const locale = useLocaleStore((s) => s.locale);
+
+  const [kurdishFontLoaded, setKurdishFontLoaded] = React.useState(false);
+
+  useEffect(() => {
+    if (fontStoreReady && selectedFont) {
+      if (Font.isLoaded(selectedFont)) {
+        setKurdishFontLoaded(true);
+        return;
+      }
+      setKurdishFontLoaded(false);
+      const fontFile = fontMap[selectedFont as keyof typeof fontMap];
+      if (fontFile) {
+        Font.loadAsync({
+          [selectedFont]: fontFile,
+        })
+          .then(() => {
+            setKurdishFontLoaded(true);
+          })
+          .catch((err) => {
+            console.error("Failed to load Kurdish font dynamically:", selectedFont, err);
+            setKurdishFontLoaded(true);
+          });
+      } else {
+        setKurdishFontLoaded(true);
+      }
+    }
+  }, [selectedFont, fontStoreReady]);
+
   const ready =
-    fontReady && progressReady && settingsReady && contentAdminReady && onboardingReady;
+    fontStoreReady &&
+    kurdishFontLoaded &&
+    progressReady &&
+    settingsReady &&
+    contentAdminReady &&
+    onboardingReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
   }, [selectedFont]);
 
-  const [fontsLoaded] = useFonts(fontMap);
+  const [coreFontsLoaded] = useFonts({
+    DINNextRoundedBold: require("@/assets/fonts/DIN_BOLD.ttf"),
+    DINNextRoundedMedium: require("@/assets/fonts/DIN_MEDIUM.ttf"),
+    DINNextRoundedRegular: require("@/assets/fonts/DIN_REGULAR.ttf"),
+  });
 
   const onLayoutReady = useCallback(async () => {
-    if (fontsLoaded && ready) {
+    if (coreFontsLoaded && ready) {
       await SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, ready]);
+  }, [coreFontsLoaded, ready]);
 
   useEffect(() => {
     onLayoutReady();
@@ -80,7 +120,7 @@ function RootLayout() {
     }
   }, [ready]);
 
-  if (!fontsLoaded || !ready) {
+  if (!coreFontsLoaded || !ready) {
     return null;
   }
 
@@ -96,14 +136,19 @@ function RootLayout() {
         <StatusBar
           hidden={Platform.OS === "android"}
           style="auto"
-          translucent
+          {...({ translucent: true } as any)}
         />
         {Platform.OS === "android" ? <NavigationBar hidden /> : null}
         <OfflineBanner />
-        <GestureHandlerRootView style={[{ flex: 1 }, rnWebVars as any]}>
+        <GestureHandlerRootView style={[{ flex: 1, direction: locale === "ku" ? "rtl" : "ltr" }, rnWebVars as any]}>
           <AppErrorBoundary>
             <BottomSheetModalProvider>
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: "fade",
+                }}
+              >
                 <Stack.Protected guard={onboardingComplete}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen

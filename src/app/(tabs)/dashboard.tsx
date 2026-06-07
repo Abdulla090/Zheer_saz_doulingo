@@ -1,3 +1,4 @@
+import { TabScreenChrome } from "@/components/TabScreenChrome";
 import { PathModeTabs } from "@/screens/home/components/PathModeTabs";
 import { LearningPathScreen } from "@/screens/home/LearningPathScreen";
 import React from "react";
@@ -5,12 +6,14 @@ import { StyleSheet, View } from "react-native";
 
 export default function DashboardRoute() {
   return (
-    <View style={styles.root}>
-      <LearningPathScreen />
-      <View style={[styles.topChrome, { pointerEvents: "box-none" }]}>
-        <PathModeTabs />
+    <TabScreenChrome>
+      <View style={styles.root}>
+        <LearningPathScreen />
+        <View style={[styles.topChrome, { pointerEvents: "box-none" }]}>
+          <PathModeTabs />
+        </View>
       </View>
-    </View>
+    </TabScreenChrome>
   );
 }
 

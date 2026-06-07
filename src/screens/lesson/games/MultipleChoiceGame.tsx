@@ -34,6 +34,12 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Pro
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
 
+  React.useEffect(() => {
+    setSelected(null);
+    setRevealed(false);
+    firedRef.current = false;
+  }, [question]);
+
   const pick = (opt: string) => {
     if (revealed) return;
     setSelected(opt);

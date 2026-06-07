@@ -73,18 +73,6 @@ function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id:
   );
 }
 
-function measureInRoot(
-  view: View,
-  root: View,
-  onResult: (x: number, y: number, w: number, h: number) => void,
-) {
-  view.measureInWindow((vx, vy, vw, vh) => {
-    root.measureInWindow((rx, ry) => {
-      onResult(vx - rx, vy - ry, vw, vh);
-    });
-  });
-}
-
 type Props = {
   question: FillBlankQuestion;
   onAnswer: (correct: boolean | "skip", explanation?: string) => void;
@@ -92,7 +80,7 @@ type Props = {
 };
 
 export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -102,10 +90,23 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
   const blankRef = useRef<View>(null);
   const bankRefs = useRef<Record<string, View | null>>({});
 
+  const rootCoords = useRef<{ x: number; y: number } | null>(null);
+  const bankCoords = useRef<Record<string, { x: number; y: number; w: number; h: number }>>({});
+  const blankCoords = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
+
+  React.useEffect(() => {
+    setSelected(null);
+    setFlySession(null);
+    setRevealed(false);
+    firedRef.current = false;
+    bankCoords.current = {};
+    blankCoords.current = null;
+  }, [question]);
 
   const finishFly = (id: string, word: string) => {
     setSelected(word);
@@ -116,24 +117,26 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
     if (revealed) return;
     if (selected === word) return;
 
-    const bankView = bankRefs.current[word];
-    const targetView = blankRef.current;
-    const root = rootRef.current;
+    const root = rootCoords.current;
+    const bank = bankCoords.current[word];
+    const target = blankCoords.current;
 
-    if (!bankView || !targetView || !root) {
+    if (!root || !bank || !target) {
       setSelected(word);
       return;
     }
 
-    measureInRoot(bankView, root, (fromX, fromY, fromW, fromH) => {
-      measureInRoot(targetView, root, (toX, toY, toW, toH) => {
-        setFlySession({
-          id: Math.random().toString(),
-          word,
-          fromX, fromY, fromW, fromH,
-          toX, toY, toW, toH
-        });
-      });
+    setFlySession({
+      id: Math.random().toString(),
+      word,
+      fromX: bank.x - root.x,
+      fromY: bank.y - root.y,
+      fromW: bank.w,
+      fromH: bank.h,
+      toX: target.x - root.x,
+      toY: target.y - root.y,
+      toW: target.w,
+      toH: target.h,
     });
   };
 
@@ -175,7 +178,16 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
 
   return (
     <GameRoot style={s.root}>
-      <View ref={rootRef} style={{ flex: 1 }} collapsable={false}>
+      <View
+        ref={rootRef}
+        style={{ flex: 1 }}
+        collapsable={false}
+        onLayout={() => {
+          rootRef.current?.measureInWindow((x, y) => {
+            rootCoords.current = { x, y };
+          });
+        }}
+      >
       <GameHeader>
         <LightGameHeading
           title={t("lessons.fillBlank")}
@@ -193,11 +205,20 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <View style={s.sentenceRow}>
+          <View style={[s.sentenceRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             {question.sentenceParts[0] ? (
               <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
             ) : null}
-            <View ref={blankRef} collapsable={false} style={[s.blank, { borderColor: blankBorder }]}>
+            <View
+              ref={blankRef}
+              collapsable={false}
+              style={[s.blank, { borderColor: blankBorder }]}
+              onLayout={() => {
+                blankRef.current?.measureInWindow((x, y, w, h) => {
+                  blankCoords.current = { x, y, w, h };
+                });
+              }}
+            >
               <Text style={s.blankText}>{flySession ? "" : (selected || "____")}</Text>
             </View>
             {question.sentenceParts[1] ? (
@@ -207,7 +228,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
         </LightSurfaceCard>
       </Animated.View>
 
-      <View style={s.chipsWrap}>
+      <View style={[s.chipsWrap, { flexDirection: isKu ? "row-reverse" : "row" }]}>
         {question.options.map((w) => {
           const isFlying = flySession?.word === w;
           const isSelected = selected === w;
@@ -224,6 +245,11 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
               collapsable={false}
               style={{ opacity: isTaken ? 0 : 1 }}
               pointerEvents={isTaken ? "none" : "auto"}
+              onLayout={() => {
+                bankRefs.current[w]?.measureInWindow((x, y, w, h) => {
+                  bankCoords.current[w] = { x, y, w, h };
+                });
+              }}
             >
               <LightWordTile
                 label={w}

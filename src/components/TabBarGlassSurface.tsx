@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 
 type Props = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   borderRadius: number;
   style?: StyleProp<ViewStyle>;
 };

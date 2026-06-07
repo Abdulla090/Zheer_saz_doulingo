@@ -8,6 +8,8 @@ import {
   Icon3DZapBlue,
 } from "@/components/icons/Icon3D";
 import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { useI18n } from "@/hooks/useI18n";
+import { useContentPackStore } from "@/stores/useContentPackStore";
 import { springMotion } from "@/utils/motion-spring";
 import { crossShadow } from "@/utils/shadows";
 import React, { useCallback, useEffect, useRef } from "react";
@@ -52,7 +54,7 @@ const TABS: TabDef[] = [
     key: "kids",
     label: "Kids",
     activeColor: "#FF9600",
-    icon: () => <Icon3DStar size={16} />,
+    icon: (active) => <Icon3DStar size={16} active={active} />,
   },
 ];
 
@@ -61,17 +63,47 @@ const PILL_PAD = 4;
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const { width } = useWindowDimensions();
+  const { isKu } = useI18n();
+  const streetStatus = useContentPackStore((s) => s.streetStatus);
+  const kidsStatus = useContentPackStore((s) => s.kidsStatus);
+
+  const isDownloaded = useCallback(
+    (mode: PathMode) => {
+      if (mode === "normal") return true;
+      if (mode === "street") return streetStatus === "downloaded";
+      if (mode === "kids") return kidsStatus === "downloaded";
+      return false;
+    },
+    [streetStatus, kidsStatus],
+  );
+
   const pillW = width > 0 ? Math.min(width - 32, 380) : 340;
   const pressedSwitch = useRef(false);
+  const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
+    };
+  }, []);
+
+  const getVisualIndex = useCallback(
+    (mode: PathMode) => {
+      const idx = TAB_INDEX[mode];
+      return isKu ? TABS.length - 1 - idx : idx;
+    },
+    [isKu],
+  );
 
   const tabWidthSV = useSharedValue((pillW - PILL_PAD * 2) / TABS.length);
-  const slideX = useSharedValue(TAB_INDEX[activeMode] * tabWidthSV.value);
+  const slideX = useSharedValue(getVisualIndex(activeMode) * tabWidthSV.value);
 
   const springTo = useCallback(
-    (index: number) => {
-      slideX.value = springMotion(index * tabWidthSV.value);
+    (mode: PathMode) => {
+      const vIdx = getVisualIndex(mode);
+      slideX.value = springMotion(vIdx * tabWidthSV.value);
     },
-    [slideX, tabWidthSV],
+    [slideX, tabWidthSV, getVisualIndex],
   );
 
   const onTrackLayout = useCallback(
@@ -80,9 +112,9 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
       const nextTabW = (w - PILL_PAD * 2) / TABS.length;
       if (nextTabW <= 0) return;
       tabWidthSV.value = nextTabW;
-      slideX.value = TAB_INDEX[activeMode] * nextTabW;
+      slideX.value = getVisualIndex(activeMode) * nextTabW;
     },
-    [activeMode, slideX, tabWidthSV],
+    [activeMode, slideX, tabWidthSV, getVisualIndex],
   );
 
   useEffect(() => {
@@ -90,15 +122,18 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
       pressedSwitch.current = false;
       return;
     }
-    springTo(TAB_INDEX[activeMode]);
+    springTo(activeMode);
   }, [activeMode, springTo]);
 
   const handleSwitch = useCallback(
     (mode: PathMode) => {
       if (mode === activeMode) return;
       pressedSwitch.current = true;
-      springTo(TAB_INDEX[mode]);
-      onSwitch(mode);
+      springTo(mode);
+      if (switchTimerRef.current) clearTimeout(switchTimerRef.current);
+      switchTimerRef.current = setTimeout(() => {
+        onSwitch(mode);
+      }, 160);
     },
     [activeMode, onSwitch, springTo],
   );
@@ -120,6 +155,7 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
         />
         {TABS.map((tab) => {
           const active = activeMode === tab.key;
+          const downloaded = isDownloaded(tab.key);
           return (
             <Pressable
               key={tab.key}
@@ -133,6 +169,14 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
               >
                 {tab.label}
               </Text>
+              {!downloaded && (
+                <View
+                  style={[
+                    styles.downloadDot,
+                    { backgroundColor: tab.activeColor },
+                  ]}
+                />
+              )}
             </Pressable>
           );
         })}
@@ -178,5 +222,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#9CA3AF",
+  },
+  downloadDot: {
+    position: "absolute",
+    top: 6,
+    right: 10,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.9)",
   },
 });

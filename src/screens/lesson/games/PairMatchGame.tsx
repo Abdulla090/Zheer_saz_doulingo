@@ -4,7 +4,7 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import React, { memo, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -153,17 +153,19 @@ function WireLine({
 export default function PairMatchGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
   const seed = useMemo(() => pairSeed(question.pairs), [question.pairs]);
-  const [left] = useState(() =>
+  const left = useMemo(() =>
     shuffleSeeded(
       question.pairs.map((p) => p.kurdish),
       seed,
     ),
+    [question.pairs, seed]
   );
-  const [right] = useState(() =>
+  const right = useMemo(() =>
     shuffleSeeded(
       question.pairs.map((p) => p.english),
       seed + 1,
     ),
+    [question.pairs, seed]
   );
 
   const selLRef = useRef<string | null>(null);
@@ -178,6 +180,20 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   const leftYs = useRef<{ [k: string]: number }>({});
   const rightYs = useRef<{ [k: string]: number }>({});
   const [wires, setWires] = useState<Array<{ id: string; ly: number; ry: number }>>([]);
+
+  React.useEffect(() => {
+    selLRef.current = null;
+    selRRef.current = null;
+    setSelL(null);
+    setSelR(null);
+    setMatched(new Set());
+    setWrongL(null);
+    setWrongR(null);
+    firedRef.current = false;
+    leftYs.current = {};
+    rightYs.current = {};
+    setWires([]);
+  }, [question]);
   const total = question.pairs.length;
   const matchedCount = matched.size / 2;
 
@@ -289,13 +305,8 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         </Text>
       </View>
 
-      <LightSurfaceCard style={s.boardCard}>
-        <ScrollView
-          style={s.boardScroll}
-          contentContainerStyle={s.boardScrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
+      <LightSurfaceCard style={s.boardCard} contentStyle={{ flex: 1 }}>
+        <View style={[s.boardScroll, s.boardScrollContent]}>
           <View style={s.colLabels}>
             <Text style={[LightType.label, s.colLabel, { textAlign: "right" }]}>
               کوردی
@@ -354,7 +365,7 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
               </Text>
             </View>
           ) : null}
-        </ScrollView>
+        </View>
       </LightSurfaceCard>
 
       <View style={s.bottomSpacer} />

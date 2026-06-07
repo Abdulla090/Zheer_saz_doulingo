@@ -47,16 +47,35 @@ interface ContentAdminState {
 }
 
 function persist(overrides: ContentOverrides) {
-  appStorage.setItem(STORAGE_KEY, JSON.stringify({ overrides })).catch(() => {});
+  try {
+    appStorage.setItemSync(STORAGE_KEY, JSON.stringify({ overrides }));
+  } catch {
+    /* noop */
+  }
 }
 
 function cloneBundled(mode: LessonPathMode): UnitBank[] {
   return deepClone(getBundledUnits(mode));
 }
 
+const savedAdminContent = appStorage.getItemSync(STORAGE_KEY);
+const initialAdminContent: ContentOverrides = (() => {
+  if (!savedAdminContent) return { street: null, normal: null, kids: null };
+  try {
+    const parsed = JSON.parse(savedAdminContent) as { overrides?: ContentOverrides };
+    return {
+      street: parsed.overrides?.street ?? null,
+      normal: parsed.overrides?.normal ?? null,
+      kids: parsed.overrides?.kids ?? null,
+    };
+  } catch {
+    return { street: null, normal: null, kids: null };
+  }
+})();
+
 export const useContentAdminStore = create<ContentAdminState>((set, get) => ({
-  ready: false,
-  overrides: { street: null, normal: null, kids: null },
+  ready: true,
+  overrides: initialAdminContent,
 
   hasOverride: (mode) => get().overrides[mode] !== null,
 
@@ -180,26 +199,3 @@ export const useContentAdminStore = create<ContentAdminState>((set, get) => ({
     get().setUnits(mode, units);
   },
 }));
-
-async function hydrateContentAdmin() {
-  try {
-    const raw = await appStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      useContentAdminStore.setState({ ready: true });
-      return;
-    }
-    const parsed = JSON.parse(raw) as { overrides?: ContentOverrides };
-    useContentAdminStore.setState({
-      overrides: {
-        street: parsed.overrides?.street ?? null,
-        normal: parsed.overrides?.normal ?? null,
-        kids: parsed.overrides?.kids ?? null,
-      },
-      ready: true,
-    });
-  } catch {
-    useContentAdminStore.setState({ ready: true });
-  }
-}
-
-void hydrateContentAdmin();

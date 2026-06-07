@@ -30,6 +30,7 @@ import { AppText } from "@/components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  Platform,
   Pressable,
   StyleSheet,
   Text,

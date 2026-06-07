@@ -1,6 +1,5 @@
 import { NoteBook } from "@/constants/icons";
 import { AppText } from "@/components/ui/AppText";
-import { SoftSurface } from "@/components/ui/soft-2.5d";
 import type { LessonPathMode } from "@/data/lesson-content";
 import { useI18n } from "@/hooks/useI18n";
 import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
@@ -56,9 +55,7 @@ function GuidebookBtn({
           paddingHorizontal: compact ? 10 : 12,
           paddingVertical: 8,
           borderRadius: 14,
-          backgroundColor: "rgba(255,255,255,0.34)",
-          borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.5)",
+          backgroundColor: "rgba(255,255,255,0.22)",
         }}
       >
         <NoteBook width={18} height={18} color="#FFFFFF" fill="#FFFFFF" />
@@ -109,11 +106,10 @@ export const HomeMainButton = React.memo(({
 
   return (
     <View style={{ alignSelf: "center", marginTop: 2, marginBottom: 10, width: barWidth }}>
-      <SoftSurface
-        faceColor={faceColor}
-        rimColor={rimColor}
-        borderRadius={24}
-        innerStyle={{
+      <View
+        style={{
+          borderRadius: 24,
+          backgroundColor: faceColor,
           flexDirection: isKu ? "row-reverse" : "row",
           alignItems: "center",
           justifyContent: "space-between",
@@ -185,7 +181,7 @@ export const HomeMainButton = React.memo(({
             onPress={openGuidebook}
           />
         </View>
-      </SoftSurface>
+      </View>
     </View>
   );
 });

@@ -42,16 +42,16 @@ const SCENE_GRADIENTS: Record<
   KidsSceneKey,
   readonly [string, string, string]
 > = {
-  bedroom: ["#FFE8D6", "#FFD6E8", "#E8F4FF"],
+  bedroom: ["#FFE8D6", "#FFF3C4", "#E8F4FF"],
   kitchen: ["#FFF4E0", "#FFE8C8", "#FFF0DB"],
   playground: ["#D8F5E4", "#B8EBD4", "#E8FFF4"],
-  closet: ["#EDE4FF", "#E0D4F8", "#F5EEFF"],
+  closet: ["#FFF5EB", "#FFE5CC", "#FAD8B5"],
   yard: ["#DFF5D0", "#C8EBB8", "#F0FFE8"],
-  art: ["#FFE0F0", "#E0E8FF", "#FFF8D0"],
+  art: ["#E0F7FA", "#E0E8FF", "#FFF8D0"],
   backyard: ["#D4F0C8", "#B8E8A8", "#E8FFD8"],
   living: ["#F5EDE4", "#EDE0D4", "#FFF8F0"],
   street: ["#D8E8F8", "#C0D8F0", "#E8F0FF"],
-  night: ["#2A2848", "#3D3560", "#1E1C38"],
+  night: ["#0B132B", "#1C2541", "#3A506B"],
 };
 
 function variantHeading(
@@ -127,7 +127,7 @@ function FloatingBubble({
 }
 
 export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
-  const { t } = useI18n();
+  const { t, isKu: isSystemKu } = useI18n();
   const { speak } = useTTS();
   const firedRef = useRef(false);
   const heading = variantHeading(question.variant, t);
@@ -137,6 +137,15 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const [treasureOpen, setTreasureOpen] = useState(false);
   const [shadowPicks, setShadowPicks] = useState<Record<string, string>>({});
   const [activeChip, setActiveChip] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedId(null);
+    setRevealed(false);
+    setTreasureOpen(false);
+    setShadowPicks({});
+    setActiveChip(null);
+    firedRef.current = false;
+  }, [question]);
 
   const isKu = question.promptLang === "ku";
   const sceneColors = question.scene ? SCENE_GRADIENTS[question.scene] : SCENE_GRADIENTS.bedroom;
@@ -214,7 +223,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const renderChoicesGrid = (floating?: boolean) => (
-    <View style={[kb.grid, floating && kb.bubbleRow]}>
+    <View style={[kb.grid, floating && kb.bubbleRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
       {question.choices.map((c, i) =>
         floating ? (
           <FloatingBubble
@@ -296,7 +305,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
 
       {question.variant === "shadow" ? (
         <View style={kb.shadowArea}>
-          <View style={kb.chipRow}>
+          <View style={[kb.chipRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
             {question.choices.map((c) => {
               const used = Object.values(shadowPicks).includes(c.id);
               return (
@@ -311,7 +320,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               );
             })}
           </View>
-          <View style={kb.slotRow}>
+          <View style={[kb.slotRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
             {slots.map((slotId) => {
               const chip = question.choices.find((c) => c.id === slotId);
               const placed = shadowPicks[slotId];
@@ -353,7 +362,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               Mascot says: &quot;{question.spokenWord}&quot;
             </AppText>
           </HomeLiquidCard>
-          <View style={kb.trickBtns}>
+          <View style={[kb.trickBtns, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
             <HomeLiquidButton
               label="✓  Match!"
               color={L.green}
@@ -391,7 +400,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                 <Pressable
                   key={c.id}
                   onPress={() => pickChoice(c.id)}
-                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }]}
+                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}
                 >
                   <AppText style={kb.audioEmoji}>{c.emoji}</AppText>
                   <AppText style={kb.audioLabel} forceLatinFont>

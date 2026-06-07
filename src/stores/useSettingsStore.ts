@@ -20,25 +20,56 @@ interface SettingsState {
 }
 
 function persist(partial: Partial<SettingsState>) {
-  appStorage
-    .getItem(STORAGE_KEY)
-    .then((raw) => {
-      const prev = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
-      return appStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ ...prev, ...partial }),
-      );
-    })
-    .catch(() => {});
+  try {
+    const raw = appStorage.getItemSync(STORAGE_KEY);
+    const prev = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    appStorage.setItemSync(
+      STORAGE_KEY,
+      JSON.stringify({ ...prev, ...partial }),
+    );
+  } catch {
+    /* noop */
+  }
 }
 
+const savedSettingsRaw = appStorage.getItemSync(STORAGE_KEY);
+const initialSettings = (() => {
+  if (!savedSettingsRaw) {
+    return {
+      hapticsEnabled: true,
+      soundsEnabled: true,
+      pathMode: "normal" as PathMode,
+      nativeLang: "ku",
+      targetLang: "en",
+    };
+  }
+  try {
+    const parsed = JSON.parse(savedSettingsRaw) as Partial<SettingsState>;
+    const savedMode: PathMode =
+      parsed.pathMode === "street" || parsed.pathMode === "kids"
+        ? parsed.pathMode
+        : "normal";
+    return {
+      hapticsEnabled: parsed.hapticsEnabled !== false,
+      soundsEnabled: parsed.soundsEnabled !== false,
+      pathMode: savedMode,
+      nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
+      targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
+    };
+  } catch {
+    return {
+      hapticsEnabled: true,
+      soundsEnabled: true,
+      pathMode: "normal" as PathMode,
+      nativeLang: "ku",
+      targetLang: "en",
+    };
+  }
+})();
+
 export const useSettingsStore = create<SettingsState>((set) => ({
-  ready: false,
-  hapticsEnabled: true,
-  soundsEnabled: true,
-  pathMode: "normal",
-  nativeLang: "ku",
-  targetLang: "en",
+  ...initialSettings,
+  ready: true,
 
   setHapticsEnabled: (hapticsEnabled) => {
     set({ hapticsEnabled });
@@ -66,29 +97,3 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 }));
 
-async function hydrateSettings() {
-  try {
-    const raw = await appStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      useSettingsStore.setState({ ready: true });
-      return;
-    }
-    const parsed = JSON.parse(raw) as Partial<SettingsState>;
-    const savedMode: PathMode =
-      parsed.pathMode === "street" || parsed.pathMode === "kids"
-        ? parsed.pathMode
-        : "normal";
-    useSettingsStore.setState({
-      hapticsEnabled: parsed.hapticsEnabled !== false,
-      soundsEnabled: parsed.soundsEnabled !== false,
-      pathMode: savedMode,
-      nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
-      targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
-      ready: true,
-    });
-  } catch {
-    useSettingsStore.setState({ ready: true });
-  }
-}
-
-void hydrateSettings();

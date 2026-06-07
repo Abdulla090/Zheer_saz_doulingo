@@ -117,6 +117,11 @@ export const StreetEnglishPathScreen = () => {
     [],
   );
 
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 100,
+  }).current;
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     const firstVisible = viewableItems?.[0]?.section;
     const nextIndex = firstVisible?.unitIndex;
@@ -172,6 +177,7 @@ export const StreetEnglishPathScreen = () => {
           windowSize={3}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
           updateCellsBatchingPeriod={100}
+          viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>

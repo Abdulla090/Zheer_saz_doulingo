@@ -25,7 +25,7 @@ function JsTabsLayoutInner() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: "#2B59F3",
         tabBarInactiveTintColor: "#8E95A3",
-        animation: Platform.OS === "android" ? "shift" : "fade",
+        animation: "none",
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: "transparent" }} />
         ),

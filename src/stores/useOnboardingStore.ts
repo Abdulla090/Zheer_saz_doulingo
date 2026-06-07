@@ -14,19 +14,21 @@ interface OnboardingState {
   resetOnboarding: () => Promise<void>;
 }
 
+const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) === "1";
+
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
-  ready: false,
-  completed: false,
+  ready: true,
+  completed: savedOnboarding,
   replayNonce: 0,
 
   completeOnboarding: () => {
     set({ completed: true });
-    void appStorage.setItem(STORAGE_KEY, "1").catch(() => {});
+    appStorage.setItemSync(STORAGE_KEY, "1");
     router.replace("/(tabs)");
   },
 
   replayOnboarding: async () => {
-    await appStorage.removeItem(STORAGE_KEY);
+    appStorage.removeItemSync(STORAGE_KEY);
     set((s) => ({
       completed: false,
       replayNonce: s.replayNonce + 1,
@@ -39,16 +41,3 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   },
 }));
 
-async function hydrateOnboarding() {
-  try {
-    const raw = await appStorage.getItem(STORAGE_KEY);
-    useOnboardingStore.setState({
-      completed: raw === "1",
-      ready: true,
-    });
-  } catch {
-    useOnboardingStore.setState({ ready: true });
-  }
-}
-
-void hydrateOnboarding();

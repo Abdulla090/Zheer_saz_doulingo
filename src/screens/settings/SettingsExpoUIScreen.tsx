@@ -104,11 +104,11 @@ export default function SettingsExpoUIScreen() {
             <List>
               {ALL_RABAR_FONTS.map((font) => (
                 <FontPreviewRow
-                  key={font.family}
-                  fontFamily={font.family}
-                  label={font.label}
-                  selected={selectedFont === font.family}
-                  onSelect={() => setFont(font.family)}
+                  key={font}
+                  fontFamily={font}
+                  label={font}
+                  selected={selectedFont === font}
+                  onSelect={() => setFont(font)}
                 />
               ))}
             </List>

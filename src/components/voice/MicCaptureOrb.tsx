@@ -1,7 +1,7 @@
 import { crossShadow } from "@/utils/shadows";
 import { Mic } from "lucide-react-native";
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -10,6 +10,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
+import { AppText } from "@/components/ui/AppText";
 
 type Props = {
   listening: boolean;
@@ -94,7 +95,7 @@ export function MicCaptureOrb({
           <Mic size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
       </View>
-      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {hint ? <AppText style={styles.hint}>{hint}</AppText> : null}
     </View>
   );
 }

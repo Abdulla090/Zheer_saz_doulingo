@@ -81,7 +81,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const { prepareTransition } = useTabTransition();
   const activeRouteName = state.routes[state.index]?.name;
 
@@ -114,11 +114,18 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
       if (index < tabCount) {
+        if (isKu) {
+          const slotIndexFromLeft = tabCount - 1 - index;
+          return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + slotIndexFromLeft * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+        }
         return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+      }
+      if (isKu) {
+        return (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       }
       return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
     },
-    [slotWidth, tabCount, pillWidth]
+    [slotWidth, tabCount, pillWidth, isKu]
   );
 
   const indicatorX = useSharedValue(indicatorTargetX(focusedIndex));
@@ -212,76 +219,73 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           },
         ]}
       >
-        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
+        {/* Layer 1: Glass Backgrounds */}
+        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
           <TabBarGlassSurface
             borderRadius={TAB_BAR_CORNER_RADIUS}
-            style={styles.pillGlass}
-          >
-            <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT }]}>
-              <Animated.View
-                style={[
-                  styles.activeCircle,
-                  { top: activeCircleTop, pointerEvents: "none" },
-                  pillIndicatorStyle,
-                ]}
-              />
-              {pillTabs.map(({ route, label, renderIcon }) => {
-                const routeIndex = state.routes.findIndex((r) => r.name === route);
-                const isFocused =
-                  routeIndex >= 0
-                    ? state.index === routeIndex
-                    : activeRouteName === route;
+            style={{ width: pillWidth, height: TAB_BAR_INNER_HEIGHT }}
+          />
+          <TabBarGlassSurface
+            borderRadius={TAB_BAR_FAB_SIZE / 2}
+            style={{ width: TAB_BAR_FAB_SIZE, height: TAB_BAR_FAB_SIZE, marginTop: TAB_BAR_INNER_HEIGHT - TAB_BAR_FAB_SIZE }}
+          />
+        </View>
 
-                return (
-                  <PremiumPressable
-                    key={route}
-                    onPress={() => navigate(route, isFocused)}
-                    style={[styles.slot, { width: slotWidth }]}
-                    pressScale={0.92}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: isFocused }}
-                    accessibilityLabel={label}
-                    hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
-                  >
-                    {renderIcon(isFocused, iconSize)}
-                  </PremiumPressable>
-                );
-              })}
-            </View>
-          </TabBarGlassSurface>
+        {/* Layer 2: Seamless Active Indicator */}
+        <Animated.View
+          style={[
+            styles.activeCircle,
+            { top: activeCircleTop, pointerEvents: "none" },
+            pillIndicatorStyle
+          ]}
+        />
+
+        {/* Layer 3: Interactive Icons */}
+        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
+          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT }]}>
+            {pillTabs.map(({ route, label, renderIcon }) => {
+              const routeIndex = state.routes.findIndex((r) => r.name === route);
+              const isFocused =
+                routeIndex >= 0
+                  ? state.index === routeIndex
+                  : activeRouteName === route;
+
+              return (
+                <PremiumPressable
+                  key={route}
+                  android_ripple={{ color: "transparent" }}
+                  onPress={() => navigate(route, isFocused)}
+                  style={[styles.slot, { width: slotWidth }]}
+                  pressScale={0.92}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isFocused }}
+                  accessibilityLabel={label}
+                  hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+                >
+                  {renderIcon(isFocused, iconSize)}
+                </PremiumPressable>
+              );
+            })}
+          </View>
         </View>
 
         <View style={styles.fabWrap}>
-          <TabBarGlassSurface
-            borderRadius={TAB_BAR_FAB_SIZE / 2}
-            style={styles.fabGlass}
-          >
-            <View style={{ width: TAB_BAR_FAB_SIZE, height: TAB_BAR_FAB_SIZE, position: "relative" }}>
-              <Animated.View
-                style={[
-                  styles.activeCircle,
-                  { 
-                    top: (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2, 
-                    pointerEvents: "none",
-                  },
-                  fabIndicatorStyle,
-                ]}
+          <View style={{ width: TAB_BAR_FAB_SIZE, height: TAB_BAR_FAB_SIZE, position: "relative" }}>
+            <PremiumPressable
+              android_ripple={{ color: "transparent" }}
+              onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
+              style={[styles.fabBtn]}
+              pressScale={0.94}
+              accessibilityRole="button"
+              accessibilityLabel={t("tabs.profile")}
+              hitSlop={8}
+            >
+              <ProfileTabIconFlat
+                size={iconSize}
+                color={fabFocused ? ACTIVE : INACTIVE}
               />
-              <PremiumPressable
-                onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
-                style={[styles.fabBtn]}
-                pressScale={0.94}
-                accessibilityRole="button"
-                accessibilityLabel={t("tabs.profile")}
-                hitSlop={8}
-              >
-                <ProfileTabIconFlat
-                  size={iconSize}
-                  color={fabFocused ? ACTIVE : INACTIVE}
-                />
-              </PremiumPressable>
-            </View>
-          </TabBarGlassSurface>
+            </PremiumPressable>
+          </View>
         </View>
       </View>
     </View>

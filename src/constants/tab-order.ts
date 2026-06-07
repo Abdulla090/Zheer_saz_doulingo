@@ -20,6 +20,6 @@ export type TabPillRoute = (typeof TAB_PILL_ROUTES)[number];
 export type TabVisualRoute = (typeof TAB_VISUAL_ROUTES)[number];
 
 export function getTabVisualIndex(routeName: string): number {
-  const idx = TAB_VISUAL_ROUTES.indexOf(routeName as TabVisualRoute);
+  const idx = (TAB_VISUAL_ROUTES as any).indexOf(routeName);
   return idx >= 0 ? idx : 0;
 }

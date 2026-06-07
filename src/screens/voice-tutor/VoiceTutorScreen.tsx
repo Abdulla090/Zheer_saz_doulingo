@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   mascotLoader: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.35)",

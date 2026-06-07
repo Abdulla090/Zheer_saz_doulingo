@@ -26,18 +26,20 @@ export const CSS_STAGGER_MS = 35;
 
 const enterEasing = Easing.out(Easing.cubic);
 
+import { Platform } from "react-native";
+
 /** Reanimated 4 CSS transition styles for transform press feedback */
-export const cssPressStyle = {
+export const cssPressStyle = Platform.OS === "web" ? {
   transitionProperty: "transform" as const,
   transitionDuration: CSS_PRESS_MS,
   transitionTimingFunction: "ease-out" as const,
-};
+} : {};
 
-export const cssReleaseStyle = {
+export const cssReleaseStyle = Platform.OS === "web" ? {
   transitionProperty: "transform" as const,
   transitionDuration: CSS_RELEASE_MS,
   transitionTimingFunction: "ease-out" as const,
-};
+} : {};
 
 export const pressTiming: WithTimingConfig = {
   duration: CSS_PRESS_MS,
