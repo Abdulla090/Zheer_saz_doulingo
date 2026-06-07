@@ -94,6 +94,7 @@
         }
       ],
       "./plugins/with-normalize-android-receivers.js",
+      "./plugins/with-align-workmanager.js",
       [
         "expo-widgets",
         {
