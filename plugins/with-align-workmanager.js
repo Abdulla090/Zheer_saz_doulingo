@@ -7,13 +7,13 @@ const withAlignWorkManager = (config) => {
       let buildGradle = modConfig.modResults.contents;
 
       const searchString = "allprojects {";
-      if (buildGradle.includes(searchString) && !buildGradle.includes("androidx.work:work-runtime")) {
+      if (buildGradle.includes(searchString) && !buildGradle.includes("androidx.work")) {
         const insertion = `
   configurations.all {
     resolutionStrategy {
       force 'androidx.work:work-runtime:2.8.1'
-      force 'androidx.work:work-runtime-ktx:2.8.1'
     }
+    exclude group: 'androidx.work', module: 'work-runtime-ktx'
   }`;
         // Insert after 'allprojects {'
         buildGradle = buildGradle.replace(
