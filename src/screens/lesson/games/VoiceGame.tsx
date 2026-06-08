@@ -174,10 +174,14 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const stopSession = useCallback(() => {
     clearListenTimeout();
     clearSpeechEvalTimeout();
-    if (useGemini) {
-      void gemini.abort();
-    } else if (useSpeech) {
-      speech.stop();
+    try {
+      if (useGemini) {
+        void gemini.abort();
+      } else if (useSpeech) {
+        speech.stop();
+      }
+    } catch (e) {
+      console.warn("stopSession: failed to stop speech", e);
     }
   }, [gemini, speech, useGemini, useSpeech]);
 
@@ -185,8 +189,16 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     () => () => {
       clearListenTimeout();
       clearSpeechEvalTimeout();
-      void gemini.abort();
-      speech.abort();
+      try {
+        void gemini.abort();
+      } catch (e) {
+        /* noop */
+      }
+      try {
+        speech.abort();
+      } catch (e) {
+        /* noop */
+      }
     },
     [gemini, speech],
   );
@@ -291,10 +303,18 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       }
     }, LISTEN_TIMEOUT_MS);
 
-    const started = await speech.start(buildSpeechHandlers(), {
-      continuous: Platform.OS !== "web",
-    });
-    if (!started) {
+    try {
+      const started = await speech.start(buildSpeechHandlers(), {
+        continuous: false,
+      });
+      if (!started) {
+        clearListenTimeout();
+        updateState("idle");
+        setBackend("manual");
+        return;
+      }
+    } catch (err) {
+      console.warn("speech.start failed:", err);
       clearListenTimeout();
       updateState("idle");
       setBackend("manual");
@@ -308,7 +328,11 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (stateRef.current !== "listening") return;
     clearListenTimeout();
     updateState("processing");
-    speech.stop();
+    try {
+      speech.stop();
+    } catch (e) {
+      console.warn("finishSpeechCapture: speech.stop failed", e);
+    }
     scheduleSpeechEvaluation();
   }, [scheduleSpeechEvaluation, speech]);
 
@@ -316,8 +340,13 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (stateRef.current !== "listening") return;
     clearListenTimeout();
     updateState("processing");
-    await gemini.stopAndEvaluate(question.targetWord);
-  }, [gemini, question.targetWord]);
+    try {
+      await gemini.stopAndEvaluate(question.targetWord);
+    } catch (e) {
+      console.warn("finishGeminiCapture: stopAndEvaluate failed", e);
+      onFail("AI evaluation failed.");
+    }
+  }, [gemini, question.targetWord, onFail]);
 
   const startGeminiListening = useCallback(async () => {
     firedRef.current = false;
@@ -516,22 +545,36 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       <View style={s.micStage}>
         {!manualMode ? (
-          <Animated.View style={shakeStyle}>
-            <MicCaptureOrb
-              listening={
-                state === "listening" ||
-                state === "processing" ||
-                gemini.listening ||
-                gemini.processing ||
-                speech.listening
-              }
-              disabled={state === "success"}
-              color={micColor}
-              size={108}
-              hint={statusText}
-              onPress={handleMicPress}
-            />
-          </Animated.View>
+          <>
+            <Animated.View style={shakeStyle}>
+              <MicCaptureOrb
+                listening={
+                  state === "listening" ||
+                  state === "processing" ||
+                  gemini.listening ||
+                  gemini.processing ||
+                  speech.listening
+                }
+                disabled={state === "success"}
+                color={micColor}
+                size={108}
+                hint={statusText}
+                onPress={handleMicPress}
+              />
+            </Animated.View>
+            {(state === "idle" || state === "listening" || state === "processing" || state === "fail") && (
+              <Pressable
+                onPress={() => {
+                  stopSession();
+                  setBackend("manual");
+                  updateState("idle");
+                }}
+                style={({ pressed }) => [s.fallbackLink, pressed && { opacity: 0.75 }]}
+              >
+                <Text style={s.fallbackLinkText}>{t("lessons.voiceManualFallback")}</Text>
+              </Pressable>
+            )}
+          </>
         ) : (
           <View style={s.manualWrap}>
             {speech.error || gemini.error ? (
@@ -703,5 +746,18 @@ const s = StyleSheet.create({
     fontWeight: "800",
     color: L.blue,
     fontFamily: "DINNextRoundedBold",
+  },
+  fallbackLink: {
+    marginTop: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  fallbackLinkText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: L.blue,
+    fontFamily: "DINNextRoundedBold",
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
 });

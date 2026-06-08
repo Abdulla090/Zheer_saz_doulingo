@@ -218,6 +218,7 @@ export const en = {
     voiceSaidIt: "I said it",
     voiceListenHint: "Tap 🔊 to hear the phrase",
     voiceUnavailable: "Speech recognition is not available here",
+    voiceManualFallback: "Can't speak right now? Switch to self-check",
     voiceGeminiKeyHint:
       "Optional: add EXPO_PUBLIC_GEMINI_API_KEY to .env for AI speech grading",
     listening: "Listening…",

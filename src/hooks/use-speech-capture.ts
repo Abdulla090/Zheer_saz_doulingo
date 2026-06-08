@@ -65,21 +65,25 @@ export function useSpeechCapture(lang = "en-US") {
         return false;
       }
 
-      const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      if (!perm.granted) {
-        setError("Microphone permission is required for speaking practice.");
+      try {
+        const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        if (!perm.granted) {
+          setError("Microphone permission is required for speaking practice.");
+          return false;
+        }
+
+        setError(null);
+        ExpoSpeechRecognitionModule.start({
+          lang,
+          interimResults: true,
+          continuous: options?.continuous ?? false,
+        });
+        return true;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError("Failed to start speech recognition: " + message);
         return false;
       }
-
-      setError(null);
-      ExpoSpeechRecognitionModule.start({
-        lang,
-        interimResults: true,
-        continuous:
-          options?.continuous ??
-          (Platform.OS === "android" || Platform.OS === "ios"),
-      });
-      return true;
     },
     [available, lang],
   );

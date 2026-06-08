@@ -2,7 +2,7 @@ import { usesJsTabBar } from "@/constants/tab-mode";
 import { Platform } from "react-native";
 
 /** CustomTabBar icon row height (icon-only, no labels). */
-export const TAB_BAR_INNER_HEIGHT = Platform.OS === "android" ? 52 : 50;
+export const TAB_BAR_INNER_HEIGHT = Platform.OS === "android" ? 66 : 64;
 /** @deprecated No longer used — pill and FAB share TAB_BAR_INNER_HEIGHT. */
 export const TAB_BAR_TOP_PADDING = 0;
 /** Detached profile FAB — same outer height as the pill glass. */
@@ -12,7 +12,7 @@ export const TAB_BAR_FLOAT_MARGIN_H = Platform.OS === "android" ? 16 : 14;
 export const TAB_BAR_FLOAT_MARGIN_BOTTOM = Platform.OS === "android" ? 6 : 4;
 export const TAB_BAR_CORNER_RADIUS = TAB_BAR_INNER_HEIGHT / 2;
 export const TAB_BAR_ROW_GAP = 10;
-export const TAB_BAR_ACTIVE_CHIP = 44;
+export const TAB_BAR_ACTIVE_CHIP = 56;
 /** Extra scroll clearance above the floating bar. */
 export const TAB_BAR_FLOAT_CLEARANCE = 10;
 

@@ -221,6 +221,7 @@ export const ku = {
     voiceSaidIt: "پێم وتی",
     voiceListenHint: "🔊 دابگرە بۆ گوێگرتن لە دەستەواژەکە",
     voiceUnavailable: "ناسینەوەی دەنگ لەم ئامێرەدا بەردەست نییە",
+    voiceManualFallback: "ناتوانی ئێستا قسە بکەیت؟ بیگۆڕە بۆ پشکنینی خۆیی",
     voiceGeminiKeyHint:
       "ئارەزوومەندانە: EXPO_PUBLIC_GEMINI_API_KEY لە .env زیاد بکە بۆ پشکنینی دەنگ بە AI",
     listening: "گوێم لێیە…",

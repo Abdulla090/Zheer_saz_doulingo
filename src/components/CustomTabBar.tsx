@@ -97,7 +97,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const rowWidth = width - TAB_BAR_FLOAT_MARGIN_H * 2;
   const pillWidth = rowWidth - TAB_BAR_FAB_SIZE - TAB_BAR_ROW_GAP;
   const slotWidth = pillWidth / tabCount;
-  const iconSize = width < 390 ? 22 : 24;
+  const iconSize = width < 390 ? 25 : 29;
   const bottomPad = tabBarBottomInset(insets.bottom);
 
   const focusedIndex = useMemo(() => {
