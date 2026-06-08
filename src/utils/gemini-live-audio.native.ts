@@ -33,8 +33,7 @@ function encodeBase64(bytes: Uint8Array): string {
   throw new Error("Base64 encode unavailable.");
 }
 
-function pcmBase64ToWavBase64(pcmBase64: string, sampleRate: number): string {
-  const pcmBytes = decodeBase64(pcmBase64);
+function pcmBytesToWavBase64(pcmBytes: Uint8Array, sampleRate: number): string {
   const header = new ArrayBuffer(44);
   const view = new DataView(header);
   const dataSize = pcmBytes.length;
@@ -66,37 +65,86 @@ function pcmBase64ToWavBase64(pcmBase64: string, sampleRate: number): string {
 }
 
 export class LivePcmPlayer {
-  private queue: string[] = [];
+  private pendingBytes = new Uint8Array(0);
+  private flushTimeout: ReturnType<typeof setTimeout> | null = null;
+  private wavQueue: { uri: string; durationMs: number }[] = [];
   private playing = false;
   private player: ReturnType<typeof createAudioPlayer> | null = null;
   private destroyed = false;
 
   enqueueBase64Pcm(base64: string) {
     if (this.destroyed) return;
-    this.queue.push(base64);
-    void this.drain();
+
+    try {
+      const newBytes = decodeBase64(base64);
+      if (newBytes.length === 0) return;
+
+      const merged = new Uint8Array(this.pendingBytes.length + newBytes.length);
+      merged.set(this.pendingBytes, 0);
+      merged.set(newBytes, this.pendingBytes.length);
+      this.pendingBytes = merged;
+    } catch (e) {
+      console.warn("LivePcmPlayer: decode failed", e);
+      return;
+    }
+
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
+    }
+
+    // Buffer ~0.8s of audio: 24000 Hz * 2 bytes/sample * 0.8s = 38400 bytes
+    if (this.pendingBytes.length >= 38400) {
+      this.flushBuffer();
+    } else {
+      this.flushTimeout = setTimeout(() => {
+        this.flushBuffer();
+      }, 150);
+    }
+  }
+
+  private flushBuffer() {
+    if (this.destroyed || this.pendingBytes.length === 0) return;
+
+    try {
+      const pcmBytes = this.pendingBytes;
+      this.pendingBytes = new Uint8Array(0);
+
+      const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
+      const uri = `data:audio/wav;base64,${wavB64}`;
+
+      const samples = pcmBytes.length / 2;
+      const durationMs = (samples / GEMINI_LIVE_OUTPUT_RATE) * 1000;
+
+      this.wavQueue.push({ uri, durationMs });
+      void this.drain();
+    } catch (e) {
+      console.warn("LivePcmPlayer: flush failed", e);
+    }
   }
 
   private async drain() {
-    if (this.playing || this.destroyed || this.queue.length === 0) return;
+    if (this.playing || this.destroyed || this.wavQueue.length === 0) return;
     this.playing = true;
 
-    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    try {
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    } catch (e) {
+      console.warn("LivePcmPlayer: setAudioModeAsync failed", e);
+    }
 
-    while (this.queue.length > 0 && !this.destroyed) {
-      const chunk = this.queue.shift()!;
+    while (this.wavQueue.length > 0 && !this.destroyed) {
+      const item = this.wavQueue.shift()!;
       try {
-        const wavB64 = pcmBase64ToWavBase64(chunk, GEMINI_LIVE_OUTPUT_RATE);
-        const uri = `data:audio/wav;base64,${wavB64}`;
         this.player?.remove();
-        this.player = createAudioPlayer(uri);
+        this.player = createAudioPlayer(item.uri);
         this.player.play();
 
-        const samples = decodeBase64(chunk).length / 2;
-        const durationMs = Math.max(300, (samples / GEMINI_LIVE_OUTPUT_RATE) * 1000);
-        await new Promise((r) => setTimeout(r, durationMs + 80));
-      } catch {
-        /* skip chunk */
+        // Overlap play time slightly to prevent stutters, min 200ms
+        const playTime = Math.max(200, item.durationMs - (Platform.OS === "android" ? 15 : 5));
+        await new Promise((r) => setTimeout(r, playTime));
+      } catch (err) {
+        console.warn("LivePcmPlayer: play chunk failed", err);
       }
     }
 
@@ -104,7 +152,12 @@ export class LivePcmPlayer {
   }
 
   stop() {
-    this.queue = [];
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
+    }
+    this.pendingBytes = new Uint8Array(0);
+    this.wavQueue = [];
     try {
       this.player?.pause();
     } catch {
