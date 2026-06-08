@@ -295,7 +295,7 @@ export function RolePlayScreen() {
         setStatus("idle");
       }
     }, 12000);
-  }, [handleUserResponse, speech]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [handleUserResponse, speech]);
 
   function startSession() {
     stopAll();

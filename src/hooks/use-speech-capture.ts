@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from "react";
-import { Platform } from "react-native";
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,

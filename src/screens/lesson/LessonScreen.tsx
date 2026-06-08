@@ -24,7 +24,6 @@ import {
     StyleSheet,
     Text,
     View,
-    Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Animated, {

@@ -16,6 +16,7 @@ function getMmkv(): MmkvInstance | null {
   if (Platform.OS === "web" || mmkvUnavailable) return null;
   if (mmkv) return mmkv;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createMMKV } = require("react-native-mmkv") as {
       createMMKV: (opts: { id: string }) => MmkvInstance;
     };

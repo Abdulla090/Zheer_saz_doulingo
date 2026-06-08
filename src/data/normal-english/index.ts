@@ -38,10 +38,10 @@ export const NORMAL_UNITS: UnitBank[] = [
   unit13OpinionsAndConfidence,
 ];
 
-export const normalSectionConfigs: Array<{
+export const normalSectionConfigs: {
   theme: SectionTheme;
   displayTheme: SectionTheme;
-}> = [
+}[] = [
   { theme: "blue", displayTheme: "blue" },
   { theme: "green", displayTheme: "green" },
   { theme: "purple", displayTheme: "purple" },

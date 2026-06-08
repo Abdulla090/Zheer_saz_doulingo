@@ -24,10 +24,10 @@ export const KIDS_UNITS: UnitBank[] = [
   kidsUnit5Family,
 ];
 
-export const kidsSectionConfigs: Array<{
+export const kidsSectionConfigs: {
   theme: SectionTheme;
   displayTheme: SectionTheme;
-}> = [
+}[] = [
   { theme: "green", displayTheme: "green" },
   { theme: "orange", displayTheme: "orange" },
   { theme: "blue", displayTheme: "blue" },

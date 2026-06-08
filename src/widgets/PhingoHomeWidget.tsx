@@ -14,7 +14,6 @@ import type { PhingoHomeWidgetPayload } from "./widget-types";
 const BLUE = "#2B59F3";
 const NAVY = "#1B2B4B";
 const GRAY = "#6B7A99";
-const TRACK = "#E8EDF7";
 const GOLD = "#FFB020";
 
 function ProgressRow({
@@ -67,10 +66,7 @@ const PhingoHomeWidgetView = (
   "widget";
 
   const small = environment.widgetFamily === "systemSmall";
-  const dailyPct =
-    props.dailyGoalXp > 0
-      ? Math.min(1, props.dailyXp / props.dailyGoalXp)
-      : 0;
+
 
   if (small) {
     return (

@@ -98,7 +98,7 @@ export const HomeHeader = () => {
   };
   useEffect(() => {
     translateY.value = -windoHeight / 2;
-  }, []);
+  }, [translateY, windoHeight]);
   const animatedOverlayStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
       translateY.value,

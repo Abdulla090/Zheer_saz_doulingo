@@ -14,6 +14,7 @@ import {
   LinearTransition,
   type WithTimingConfig,
 } from "react-native-reanimated";
+import { Platform } from "react-native";
 
 /** Press in — 90ms (under 300ms Expo UI guideline) */
 export const CSS_PRESS_MS = 90;
@@ -25,8 +26,6 @@ export const CSS_ENTER_MS = 180;
 export const CSS_STAGGER_MS = 35;
 
 const enterEasing = Easing.out(Easing.cubic);
-
-import { Platform } from "react-native";
 
 /** Reanimated 4 CSS transition styles for transform press feedback */
 export const cssPressStyle = Platform.OS === "web" ? {

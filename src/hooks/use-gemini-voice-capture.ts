@@ -191,7 +191,7 @@ export function useGeminiVoiceCapture() {
     
     try {
       recorder.record();
-    } catch (e) {
+    } catch {
       setError("Failed to start recording on Android.");
       return false;
     }

@@ -235,6 +235,7 @@ export function useGeminiVoiceTutor() {
     if (!ok) setStatus("idle");
   }, [
     sessionActive,
+    speechEn.available,
     startGeminiListening,
     startSpeechListening,
     stopListening,

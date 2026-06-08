@@ -1,4 +1,4 @@
-import ProgressBar from "@/components/shared/progress-bar";
+import { ProgressBar } from "@/components/shared/progress-bar";
 import SafeContainer from "@/components/shared/safe-container";
 import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "@/constants/icons";

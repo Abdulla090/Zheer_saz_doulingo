@@ -1,6 +1,4 @@
-import { usesJsTabBar } from "@/constants/tab-mode";
 import JsTabsLayout from "@/navigation/JsTabsLayout";
-import NativeTabsShell from "@/navigation/NativeTabsShell";
 
 /**
  * Default: JS floating frosted glass tab bar (fluid glass on Android).

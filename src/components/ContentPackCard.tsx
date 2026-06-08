@@ -6,7 +6,6 @@
 import { PressableScale } from "@/components/animations";
 import {
   type ContentPackMeta,
-  type PackId,
   useContentPackStore,
 } from "@/stores/useContentPackStore";
 import { crossShadow } from "@/utils/shadows";

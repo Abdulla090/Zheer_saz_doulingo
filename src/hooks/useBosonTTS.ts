@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { generateSpeech, playBosonSpeech } from "../lib/boson-ai";
+import { playBosonSpeech } from "../lib/boson-ai";
 
 export function useBosonTTS() {
   const [isPlaying, setIsPlaying] = useState(false);

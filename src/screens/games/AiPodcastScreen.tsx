@@ -3,7 +3,6 @@ import {
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette as C,
-  HomeType,
 } from "@/components/ui/ios-liquid-home";
 import { crossShadow } from "@/utils/shadows";
 import * as Haptics from "expo-haptics";

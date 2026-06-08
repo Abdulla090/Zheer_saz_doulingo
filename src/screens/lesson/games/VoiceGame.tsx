@@ -154,7 +154,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   );
 
   const triggerFailShake = useCallback(() => {
-    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value animation
     shakeX.value = withSequence(
       withTiming(-6, { duration: 40 }),
       withTiming(6, { duration: 40 }),

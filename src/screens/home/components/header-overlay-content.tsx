@@ -15,7 +15,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 
-import ProgressBar from "@/components/shared/progress-bar";
+import { ProgressBar } from "@/components/shared/progress-bar";
 import { useI18n } from "@/hooks/useI18n";
 import { AppText } from "@/components/ui/AppText";
 

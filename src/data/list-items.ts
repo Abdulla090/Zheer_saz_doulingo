@@ -59,10 +59,10 @@ const BASE_PATTERN: LessonType[] = [
 ];
 
 // ── 12 units: first is BLUE, second uses GREEN, rest follow  ──────────────
-export const sectionConfigs: Array<{
+export const sectionConfigs: {
   theme: SectionTheme;
   displayTheme: SectionTheme;
-}> = [
+}[] = [
   { theme: "blue", displayTheme: "blue" },
   { theme: "green", displayTheme: "green" },
   { theme: "purple", displayTheme: "purple" },

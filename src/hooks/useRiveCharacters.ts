@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { useRiveFile } from "@rive-app/react-native";
 
 const useRiveCharacters = () => {
@@ -15,3 +16,4 @@ const useRiveCharacters = () => {
 };
 
 export default useRiveCharacters;
+

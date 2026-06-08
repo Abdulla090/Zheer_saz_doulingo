@@ -6,10 +6,9 @@ import {
 } from "@/context/tab-bar-visibility";
 import { TabTransitionProvider } from "@/context/TabTransitionContext";
 import { pathnameHidesTabBar } from "@/constants/tab-navigation";
-import { usePathname } from "expo-router";
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import React from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 
 function JsTabsLayoutInner() {
   const pathname = usePathname();

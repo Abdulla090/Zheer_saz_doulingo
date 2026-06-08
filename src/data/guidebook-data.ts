@@ -4,12 +4,11 @@
 
 import type { AppLocale } from "@/i18n";
 import { getUnitsForPath } from "./content-access";
-import type { LessonPathMode } from "./types";
+import type { LessonPathMode, UnitBank } from "./types";
 import { normalSectionConfigs } from "./normal-english";
 import { kidsSectionConfigs } from "./kids-english";
 import { getPathUnitTitle } from "./path-unit-titles";
 import { sectionConfigs } from "./list-items";
-import type { UnitBank } from "./types";
 
 export type GuidebookWord = {
   english: string;

@@ -4,7 +4,6 @@ import {
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette as C,
-  HomeType,
 } from "@/components/ui/ios-liquid-home";
 import { SLANG_CATEGORIES, SLANG_DATA, type SlangItem } from "@/data/slang-dictionary";
 import { useTTS } from "@/hooks/use-tts";

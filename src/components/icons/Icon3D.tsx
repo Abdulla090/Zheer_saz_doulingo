@@ -13,7 +13,6 @@ import Svg, {
   Stop,
   Path,
   Rect,
-  G,
 } from "react-native-svg";
 
 // ----- ID factory (unique per mount) ----------------------------------------

@@ -12,7 +12,6 @@ import React, { useState } from "react";
 import {
   Pressable,
   StyleProp,
-  StyleSheet,
   View,
   ViewStyle,
 } from "react-native";
