@@ -8,7 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EAS_GRADLE_CACHE": "1"
+        "EAS_GRADLE_CACHE": "1",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "preview": {
@@ -16,7 +17,8 @@
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
-        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview"
+        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "android": {
         "buildType": "apk"
@@ -26,7 +28,8 @@
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
-        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview"
+        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "android": {
         "buildType": "app-bundle"
