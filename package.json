@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "packageManager": "npm@10.9.2",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "start:go": "expo start --go",
     "start:go:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/clear-metro-cache.ps1 && expo start --go --clear",
@@ -86,6 +87,7 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
     "expo-mcp": "~0.2.1",
+    "patch-package": "^8.0.1",
     "playwright": "^1.49.1",
     "react-grab": "^0.1.44",
     "react-native-svg-transformer": "^1.5.3",

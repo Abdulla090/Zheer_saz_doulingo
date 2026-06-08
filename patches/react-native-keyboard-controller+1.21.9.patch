@@ -1,0 +1,18 @@
+diff --git a/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/background/Skins.kt b/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/background/Skins.kt
+index da2d185..a82129f 100644
+--- a/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/background/Skins.kt
++++ b/node_modules/react-native-keyboard-controller/android/src/main/java/com/reactnativekeyboardcontroller/views/background/Skins.kt
+@@ -79,9 +79,11 @@ fun ThemedReactContext.getInputMethodColor(): Int {
+ 
+   Logger.i(TAG, "Current IME: $imePackage")
+ 
+-  val (lightColorRes, darkColorRes) =
++  val colors: Pair<Int, Int> =
+     imeColorMap[imePackage]
+-      ?: (R.style.gboard_light to R.style.gboard_dark)
++      ?: Pair(R.style.gboard_light, R.style.gboard_dark)
++  val lightColorRes = colors.first
++  val darkColorRes = colors.second
+ 
+   // on Android 10 dark theme doesn't affect keyboard color
+   val resId = if (isDark && Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) darkColorRes else lightColorRes
