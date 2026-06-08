@@ -12,6 +12,7 @@ import {
   HomeType,
 } from "@/components/ui/ios-liquid-home";
 import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
+import { AppText } from "@/components/ui/AppText";
 import { useI18n } from "@/hooks/useI18n";
 import type { I18nKey } from "@/i18n";
 import { useProgressStore } from "@/stores/useProgressStore";
@@ -34,7 +35,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { tabBarScrollPadding } from "@/constants/layout";
@@ -94,14 +94,14 @@ const PathProgressRow = memo(function PathProgressRow({
   progress: number;
   fillColor: string;
 }) {
-  const { t } = useI18n();
+  const { isKu } = useI18n();
   return (
     <View style={styles.pathStripRow}>
-      <View style={styles.pathStripHead}>
-        <Text style={styles.pathStripLabel}>{label}</Text>
-        <Text style={styles.pathStripCount}>
-          {completed}/{total} {t("home.lessonsComplete")}
-        </Text>
+      <View style={[styles.pathStripHead, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <AppText style={[styles.pathStripLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{label}</AppText>
+        <AppText style={styles.pathStripCount} forceLatinFont latinRole="bold">
+          {completed}/{total}
+        </AppText>
       </View>
       <ThinProgressBar
         progress={progress}
@@ -124,23 +124,24 @@ const InlineLinkRow = memo(function InlineLinkRow({
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const { isKu } = useI18n();
   return (
     <PremiumPressable
       onPress={() => {
         hapticImpact(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
-      style={[styles.linkRow, !isLast && styles.linkRowBorder]}
+      style={[styles.linkRow, !isLast && styles.linkRowBorder, { flexDirection: isKu ? "row-reverse" : "row" }]}
       accessibilityRole="button"
       pressScale={0.98}
     >
-      <View style={styles.linkRowCopy}>
-        <Text style={styles.linkRowHint}>{hint}</Text>
-        <Text style={styles.linkRowTitle} numberOfLines={2}>
+      <View style={[styles.linkRowCopy, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+        <AppText style={[styles.linkRowHint, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{hint}</AppText>
+        <AppText style={[styles.linkRowTitle, { textAlign: isKu ? "right" : "left" }]} numberOfLines={2} forceKurdishFont={isKu}>
           {title}
-        </Text>
+        </AppText>
       </View>
-      <Text style={styles.linkRowChevron}>›</Text>
+      <AppText style={styles.linkRowChevron} forceLatinFont>{isKu ? "‹" : "›"}</AppText>
     </PremiumPressable>
   );
 });
@@ -154,18 +155,19 @@ const QuestRow = memo(function QuestRow({
   isLast,
   onPress,
 }: QuestDef & { isLast?: boolean; onPress: () => void }) {
+  const { isKu } = useI18n();
   return (
     <PremiumPressable
       onPress={onPress}
       accessibilityRole="button"
-      style={[styles.questRow, !isLast && styles.questRowBorder]}
+      style={[styles.questRow, !isLast && styles.questRowBorder, { flexDirection: isKu ? "row-reverse" : "row" }]}
       pressScale={0.98}
     >
-      <View style={styles.questLeft}>
+      <View style={[styles.questLeft, { flexDirection: isKu ? "row-reverse" : "row" }]}>
         {renderIcon()}
-        <View style={styles.questTextCol}>
-          <Text style={styles.questTitle}>{title}</Text>
-          <Text style={styles.questProgressLabel}>{progressLabel}</Text>
+        <View style={[styles.questTextCol, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+          <AppText style={[styles.questTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{title}</AppText>
+          <AppText style={[styles.questProgressLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{progressLabel}</AppText>
           <ThinProgressBar
             progress={progress}
             fillColor={done ? "#58CC02" : C.blue}
@@ -176,9 +178,9 @@ const QuestRow = memo(function QuestRow({
         </View>
       </View>
       {done ? (
-        <Text style={styles.questDoneMark} accessibilityLabel="Done">
+        <AppText style={styles.questDoneMark} accessibilityLabel="Done" forceLatinFont>
           ✓
-        </Text>
+        </AppText>
       ) : null}
     </PremiumPressable>
   );
@@ -187,7 +189,7 @@ const QuestRow = memo(function QuestRow({
 export function PhingoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, locale } = useI18n();
+  const { t, locale, isKu } = useI18n();
   const streakDays = useProgressStore((s) => s.streakDays);
   const dailyXp = useProgressStore((s) => s.dailyXp);
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
@@ -343,27 +345,26 @@ export function PhingoLearnHomeScreen() {
           paddingHorizontal: 20,
         }}
       >
-        <View style={styles.header}>
-          <Text style={styles.logo}>PINGO</Text>
-          <View style={styles.headerStats}>
-            <View style={styles.statItem}>
+        <View style={[styles.header, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <AppText style={styles.logo} forceLatinFont latinRole="bold">PINGO</AppText>
+          <View style={[styles.headerStats, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <View style={[styles.statItem, { flexDirection: isKu ? "row-reverse" : "row" }]}>
               <Fire width={24} height={24} />
-              <Text style={styles.statFire}>{Math.max(streakDays, 0)}</Text>
+              <AppText style={styles.statFire} forceLatinFont latinRole="bold">{Math.max(streakDays, 0)}</AppText>
             </View>
-            <View style={styles.statItem}>
+            <View style={[styles.statItem, { flexDirection: isKu ? "row-reverse" : "row" }]}>
               <DiamondIcon size={12} />
-              <Text style={styles.statXp}>{Math.max(totalXp, 0)}</Text>
+              <AppText style={styles.statXp} forceLatinFont latinRole="bold">{Math.max(totalXp, 0)}</AppText>
             </View>
           </View>
         </View>
 
-        <View style={styles.heroStrip}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>{t("home.greeting")}</Text>
-            <Text style={styles.heroSub}>{t("home.subtitle")}</Text>
+        <View style={[styles.heroStrip, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[styles.heroCopy, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+            <AppText style={[styles.heroTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{t("home.greeting")}</AppText>
           </View>
-          <View style={[styles.heroMascot, { transform: [{ scaleX: -1 }] }]}>
-            <PingoMascot size={88} pose="wave" />
+          <View style={[styles.heroMascot, { transform: [{ scaleX: isKu ? 1 : -1 }] }]}>
+            <PingoMascot size={80} pose="wave" />
           </View>
         </View>
 
@@ -372,24 +373,24 @@ export function PhingoLearnHomeScreen() {
           onPress={onStartLesson}
           style={styles.continueBtn}
         />
-        <Text style={styles.lessonCaption} numberOfLines={2}>
+        <AppText style={[styles.lessonCaption, { textAlign: "center" }]} numberOfLines={2} forceKurdishFont={isKu}>
           {lessonCaption}
-        </Text>
+        </AppText>
 
-        <View style={styles.stripBlock}>
-          <Text style={styles.sectionLabel}>{t("home.dailyGoal")}</Text>
-          <View style={styles.dailyStrip}>
-            <DiamondIcon size={11} />
-            <Text style={styles.dailyXpText}>
-              {dailyXp} / {dailyGoalXp} XP
-            </Text>
+        <View style={styles.dailySection}>
+          <View style={[styles.dailyRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <View style={[styles.dailyLabelRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+              <DiamondIcon size={11} />
+              <AppText style={styles.dailyXpText} forceLatinFont latinRole="bold">
+                {dailyXp}/{dailyGoalXp} XP
+              </AppText>
+            </View>
           </View>
           <ThinProgressBar
             progress={dailyGoalXp > 0 ? dailyXp / dailyGoalXp : 0}
             fillColor={C.blue}
             trackColor={C.track}
-            height={8}
-            style={styles.dailyBar}
+            height={6}
           />
         </View>
 
@@ -400,10 +401,10 @@ export function PhingoLearnHomeScreen() {
           accessibilityRole="button"
           accessibilityLabel={t("home.viewPath")}
         >
-          <View style={styles.stripBlock}>
-            <View style={styles.pathSectionHead}>
-              <Text style={styles.sectionLabel}>{t("home.pathProgress")}</Text>
-              <Text style={styles.pathLink}>{t("home.viewPath")} ›</Text>
+          <View style={styles.pathSection}>
+            <View style={[styles.pathSectionHead, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+              <AppText style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{t("home.pathProgress")}</AppText>
+              <AppText style={styles.pathLink} forceKurdishFont={isKu}>{isKu ? `‹ ${t("home.viewPath")}` : `${t("home.viewPath")} ›`}</AppText>
             </View>
             {streetStatus === "downloaded" ? (
               <PathProgressRow
@@ -415,9 +416,9 @@ export function PhingoLearnHomeScreen() {
               />
             ) : (
               <View style={styles.pathStripRow}>
-                <View style={styles.pathStripHead}>
-                  <Text style={styles.pathStripLabel}>{t("home.streetPath")}</Text>
-                  <Text style={[styles.pathStripCount, { color: "#1CB0F6" }]}>Download</Text>
+                <View style={[styles.pathStripHead, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                  <AppText style={[styles.pathStripLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{t("home.streetPath")}</AppText>
+                  <AppText style={[styles.pathStripCount, { color: "#1CB0F6" }]} forceLatinFont latinRole="bold">Download</AppText>
                 </View>
                 <ThinProgressBar
                   progress={0}
@@ -444,9 +445,9 @@ export function PhingoLearnHomeScreen() {
               />
             ) : (
               <View style={styles.pathStripRow}>
-                <View style={styles.pathStripHead}>
-                  <Text style={styles.pathStripLabel}>Kids English</Text>
-                  <Text style={[styles.pathStripCount, { color: "#FF9600" }]}>Download</Text>
+                <View style={[styles.pathStripHead, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                  <AppText style={[styles.pathStripLabel, { textAlign: isKu ? "right" : "left" }]} forceLatinFont latinRole="bold">Kids English</AppText>
+                  <AppText style={[styles.pathStripCount, { color: "#FF9600" }]} forceLatinFont latinRole="bold">Download</AppText>
                 </View>
                 <ThinProgressBar
                   progress={0}
@@ -478,15 +479,15 @@ export function PhingoLearnHomeScreen() {
 
         <View style={styles.divider} />
 
-        <View style={styles.questsHeaderRow}>
-          <Text style={styles.sectionLabel}>{t("home.todaysQuests")}</Text>
+        <View style={[styles.questsHeaderRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <AppText style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{t("home.todaysQuests")}</AppText>
           <Pressable
             onPress={onOpenQuests}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={t("home.viewAllQuests")}
           >
-            <Text style={styles.questsLink}>{t("home.viewAllQuests")}</Text>
+            <AppText style={styles.questsLink} forceKurdishFont={isKu}>{t("home.viewAllQuests")}</AppText>
           </Pressable>
         </View>
         <View style={styles.questList}>
@@ -545,25 +546,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 4,
+    marginTop: 2,
   },
   heroMascot: {
-    width: 88,
+    width: 80,
     flexShrink: 0,
   },
   heroCopy: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   heroTitle: {
     ...HomeType.heading,
     color: C.navy,
-    fontSize: 26,
-  },
-  heroSub: {
-    ...HomeType.body,
-    color: C.gray,
-    lineHeight: 21,
+    fontSize: 24,
   },
   continueBtn: {
     marginTop: 16,
@@ -576,33 +572,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     lineHeight: 18,
   },
-  stripBlock: {
-    marginTop: 22,
-    gap: 10,
-  },
   sectionLabel: {
     ...HomeType.section,
     color: C.navy,
     marginBottom: 0,
   },
-  dailyStrip: {
+  dailySection: {
+    marginTop: 18,
+    gap: 6,
+  },
+  dailyRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+  },
+  dailyLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   dailyXpText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
     color: C.gray,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  dailyBar: {
-    marginTop: 2,
+    fontFamily: "DINNextRoundedBold",
   },
   divider: {
     height: 1,
     backgroundColor: C.divider,
-    marginTop: 22,
+    marginTop: 16,
+  },
+  pathSection: {
+    marginTop: 16,
+    gap: 8,
   },
   pathSectionHead: {
     flexDirection: "row",

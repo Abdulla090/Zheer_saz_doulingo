@@ -49,3 +49,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# skill dirs
+goat-expo-skill/
+goat-expo-skill-fixed/

@@ -19,7 +19,8 @@ import Svg, {
 // ----- ID factory (unique per mount) ----------------------------------------
 let _uid = 0;
 function useId(prefix: string) {
-  return React.useRef(`${prefix}-${_uid++}`).current;
+  const [id] = React.useState(() => `${prefix}-${_uid++}`);
+  return id;
 }
 
 // ----- Core icon builder -------------------------------------------------------

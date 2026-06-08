@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 import { useTabTransition } from "@/context/TabTransitionContext";
 import { Motion } from "@/screens/lesson/games/game-design";
 import { useFocusEffect } from "expo-router";

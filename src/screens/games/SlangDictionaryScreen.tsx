@@ -94,10 +94,10 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipsContainer}
+      contentContainerStyle={[styles.chipsContainer, { paddingRight: isKurdish ? 0 : 16, paddingLeft: isKurdish ? 16 : 0, flexDirection: isKurdish ? "row-reverse" : "row" }]}
       style={styles.chipsList}
     >
-      {categoriesList.map((item) => {
+      {(isKurdish ? [...categoriesList].reverse() : categoriesList).map((item) => {
         const cat = SLANG_CATEGORIES[item as keyof typeof SLANG_CATEGORIES];
         const labelText = isKurdish ? cat.ku : cat.en;
         const isSelected = selectedCategory === item;
@@ -146,9 +146,9 @@ const SlangItemRow = React.memo(function SlangItemRow({
   return (
     <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
       <PressableScale onPress={() => onToggleExpand(item.id)} scaleDown={0.99}>
-        <View style={styles.itemHeader}>
-          <View style={styles.phraseCol}>
-            <View style={styles.badgeRow}>
+        <View style={[styles.itemHeader, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+          <View style={[styles.phraseCol, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
+            <View style={[styles.badgeRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
               <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
                 <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
                   {item.type}
@@ -163,7 +163,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
             </AppText>
           </View>
 
-          <View style={styles.actionRow}>
+          <View style={[styles.actionRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
             <PressableScale
               onPress={() => onSpeak(item.phrase, item.id)}
               style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
@@ -210,13 +210,13 @@ const SlangItemRow = React.memo(function SlangItemRow({
             </AppText>
             <View style={styles.dialogueBox}>
               {/* Dialogue Bubble A */}
-              <View style={styles.dialogueLine}>
+              <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
                 <View style={styles.dialogueMarkerA}>
                   <AppText style={styles.dialogueMarkerText} forceLatinFont>
                     A
                   </AppText>
                 </View>
-                <View style={styles.dialogueContent}>
+                <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
                   <AppText style={styles.dialogueEn} forceLatinFont>
                     {item.example.speakerA}
                   </AppText>
@@ -239,13 +239,13 @@ const SlangItemRow = React.memo(function SlangItemRow({
               </View>
 
               {/* Dialogue Bubble B */}
-              <View style={styles.dialogueLine}>
+              <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
                 <View style={styles.dialogueMarkerB}>
                   <AppText style={styles.dialogueMarkerText} forceLatinFont>
                     B
                   </AppText>
                 </View>
-                <View style={styles.dialogueContent}>
+                <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
                   <AppText style={styles.dialogueEn} forceLatinFont>
                     {item.example.speakerB}
                   </AppText>
@@ -438,9 +438,11 @@ export function SlangDictionaryScreen() {
       <HomeMeshBackground />
 
       {/* Screen Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKurdish ? "row-reverse" : "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
-          <ArrowLeft size={22} color={ThemeColors.darkNavy} />
+          <View style={{ transform: [{ scaleX: isKurdish ? -1 : 1 }] }}>
+            <ArrowLeft size={22} color={ThemeColors.darkNavy} />
+          </View>
         </PressableScale>
         <AppText style={styles.headerTitle} forceKurdishFont>
           {t("slang.title")}
@@ -477,8 +479,8 @@ export function SlangDictionaryScreen() {
               style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
               contentStyle={styles.spotlightContent}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <View style={styles.spotlightBadge}>
+              <View style={{ flexDirection: isKurdish ? "row-reverse" : "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <View style={[styles.spotlightBadge, { flexDirection: isKurdish ? "row-reverse" : "row", alignSelf: isKurdish ? "flex-end" : "flex-start" }]}>
                   <Sparkles size={14} color="#FFFFFF" />
                   <AppText style={styles.spotlightBadgeText} forceKurdishFont>
                     {t("slang.slangOfTheDay")}
@@ -491,8 +493,8 @@ export function SlangDictionaryScreen() {
                 </View>
               </View>
 
-              <View style={styles.spotlightMain}>
-                <View style={{ flex: 1 }}>
+              <View style={[styles.spotlightMain, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                <View style={{ flex: 1, alignItems: isKurdish ? "flex-end" : "flex-start" }}>
                   <AppText style={styles.spotlightPhrase} forceLatinFont>
                     {slangOfTheDay.phrase}
                   </AppText>
@@ -520,8 +522,8 @@ export function SlangDictionaryScreen() {
             </HomeLiquidCard>
 
             {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <Search size={18} color={ThemeColors.lightSlate} style={styles.searchIcon} />
+            <View style={[styles.searchContainer, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+              <Search size={18} color={ThemeColors.lightSlate} style={[styles.searchIcon, { marginRight: isKurdish ? 0 : 8, marginLeft: isKurdish ? 8 : 0 }]} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -559,9 +561,9 @@ export function SlangDictionaryScreen() {
       <View style={[styles.bottomFloatingPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <PressableScale
           onPress={startQuiz}
-          style={[styles.gameLaunchBtn, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.25, offsetY: 6, blur: 16, elevation: 4 })]}
+          style={[styles.gameLaunchBtn, { flexDirection: isKurdish ? "row-reverse" : "row" }, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.25, offsetY: 6, blur: 16, elevation: 4 })]}
         >
-          <Trophy size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+          <Trophy size={18} color="#FFFFFF" style={{ marginRight: isKurdish ? 0 : 6, marginLeft: isKurdish ? 6 : 0 }} />
           <AppText style={styles.gameLaunchBtnLabel} forceKurdishFont>
             {t("slang.quizStart")}
           </AppText>

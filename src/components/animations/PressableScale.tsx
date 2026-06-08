@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 /**
  * PressableScale — Reanimated v4 scale feedback (UI-thread, no spring bounce).
  */

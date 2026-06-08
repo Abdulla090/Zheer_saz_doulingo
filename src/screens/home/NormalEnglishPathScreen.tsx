@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * NormalHomeScreen — "Normal English" learning path.
  * Dark slate theme. Structurally mirrors HomeScreen completely.

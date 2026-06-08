@@ -114,6 +114,7 @@ export const LightType = {
     fontWeight: "700" as const,
     color: L.navy,
     fontFamily: "DINNextRoundedBold",
+    backgroundColor: "transparent",
   },
   label: {
     fontSize: 11,

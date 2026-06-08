@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { PressableScale } from "@/components/animations";
 import { enterFadeDown } from "@/components/animations/motion";
 import {

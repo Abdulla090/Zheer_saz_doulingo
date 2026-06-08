@@ -11,11 +11,11 @@ type Props = {
 
 /** Header chip — current unit & lesson (1-based). */
 export function LessonUnitLessonChip({ unitNumber, lessonNumber }: Props) {
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
 
   return (
-    <HomeLiquidCard contentStyle={styles.inner} radius={14}>
-      <View accessibilityLabel={`Unit ${unitNumber}, lesson ${lessonNumber}`}>
+    <HomeLiquidCard contentStyle={[styles.inner, { flexDirection: isKu ? "row-reverse" : "row" }]} radius={14}>
+      <View accessibilityLabel={`Unit ${unitNumber}, lesson ${lessonNumber}`} style={{ alignItems: "center" }}>
         <AppText style={styles.caption} forceLatinFont latinRole="medium">
           {t("path.unitShort")}
         </AppText>
@@ -24,7 +24,7 @@ export function LessonUnitLessonChip({ unitNumber, lessonNumber }: Props) {
         </AppText>
       </View>
       <View style={styles.divider} />
-      <View>
+      <View style={{ alignItems: "center" }}>
         <AppText style={styles.caption} forceLatinFont latinRole="medium">
           {t("path.lessonShort")}
         </AppText>

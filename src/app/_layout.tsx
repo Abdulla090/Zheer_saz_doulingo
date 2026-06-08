@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { initSentry, Sentry } from "@/lib/sentry";

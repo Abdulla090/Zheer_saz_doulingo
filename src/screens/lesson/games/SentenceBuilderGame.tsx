@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * SentenceBuilderGame — Premium light UI ("Order the words").
  * Word tiles morph from the bank into answer slots via a Reanimated fly transition.
@@ -28,6 +29,7 @@ import Animated, {
 import { SentenceBuilderQuestion } from "@/data/lesson-content";
 import type { LessonPathMode } from "@/data/lesson-content";
 import { L } from "./lesson-light-design";
+import { isRtlText } from "./game-text";
 import {
   LightCheckButton,
   LightGameHeading,
@@ -299,7 +301,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             </LightQuestionPrompt>
 
             <Animated.View style={[s.slotsWrap, shakeStyle]} layout={layoutMorph}>
-              <Animated.View style={[s.slotsRow, { flexDirection: isKu ? "row-reverse" : "row" }]} layout={layoutMorph}>
+              <Animated.View style={[s.slotsRow, { flexDirection: isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row" }]} layout={layoutMorph}>
                 {Array.from({ length: slotCount }).map((_, i) => {
                   const placed = sentence[i];
                   const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);

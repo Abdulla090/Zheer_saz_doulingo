@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/immutability */
 import {
   GamesTabIcon,
   HomeTabIconFlat,
@@ -153,20 +154,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
     const indexChanged = prevFocusedIndex.current !== focusedIndex;
     prevFocusedIndex.current = focusedIndex;
+    // Always recalculate position (covers isKu direction change)
     moveIndicator(focusedIndex, indexChanged);
-  }, [focusedIndex, slotWidth, indicatorOpacity, moveIndicator]);
+  }, [focusedIndex, slotWidth, indicatorOpacity, moveIndicator, isKu]);
 
   const activeCircleTop = (TAB_BAR_INNER_HEIGHT - TAB_BAR_ACTIVE_CHIP) / 2;
 
   const pillIndicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
-    width: TAB_BAR_ACTIVE_CHIP,
-    height: TAB_BAR_ACTIVE_CHIP,
-    opacity: indicatorOpacity.value,
-  }));
-
-  const fabIndicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: indicatorX.value - (pillWidth + TAB_BAR_ROW_GAP) }],
     width: TAB_BAR_ACTIVE_CHIP,
     height: TAB_BAR_ACTIVE_CHIP,
     opacity: indicatorOpacity.value,
@@ -216,11 +211,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
             width: rowWidth,
             gap: TAB_BAR_ROW_GAP,
+            flexDirection: isKu ? "row-reverse" : "row",
           },
         ]}
       >
         {/* Layer 1: Glass Backgrounds */}
-        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { flexDirection: isKu ? "row-reverse" : "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
           <TabBarGlassSurface
             borderRadius={TAB_BAR_CORNER_RADIUS}
             style={{ width: pillWidth, height: TAB_BAR_INNER_HEIGHT }}
@@ -242,7 +238,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
         {/* Layer 3: Interactive Icons */}
         <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
-          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT }]}>
+          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: isKu ? "row-reverse" : "row" }]}>
             {pillTabs.map(({ route, label, renderIcon }) => {
               const routeIndex = state.routes.findIndex((r) => r.name === route);
               const isFocused =

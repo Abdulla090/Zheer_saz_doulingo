@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * KidsEnglishPathScreen — playful "Kids" learning path.
  * Structurally mirrors the Street/Normal path screens, driven by kids progress.

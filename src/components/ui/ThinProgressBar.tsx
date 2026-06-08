@@ -1,3 +1,4 @@
+import { useI18n } from "@/hooks/useI18n";
 import React, { memo } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
@@ -16,12 +17,13 @@ function ThinProgressBarInner({
   fillColor = "#1CB0F6",
   height = 8,
 }: ThinProgressBarProps) {
+  const { isKu } = useI18n();
   const p = Math.max(0, Math.min(1, progress));
   return (
     <View
       style={[
         styles.track,
-        { height, borderRadius: height / 2, backgroundColor: trackColor },
+        { height, borderRadius: height / 2, backgroundColor: trackColor, alignItems: isKu ? "flex-end" : "flex-start" },
         style,
       ]}
     >

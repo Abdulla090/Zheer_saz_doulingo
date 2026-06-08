@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   LayoutChangeEvent,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -17,12 +16,18 @@ import Animated, {
 } from "react-native-reanimated";
 
 import ProgressBar from "@/components/shared/progress-bar";
+import { useI18n } from "@/hooks/useI18n";
+import { AppText } from "@/components/ui/AppText";
+
 const AnimatedPath = Animated.createAnimatedComponent(Path);
+
 type HeaderOverlayContentProps = {
   translateY: SharedValue<number>;
 };
+
 const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
   const { width } = useWindowDimensions();
+  const { isKu } = useI18n();
   const [scoreBarWidth, setScoreBarWidth] = useState(180);
 
   const handleScoreBarLayout = (event: LayoutChangeEvent) => {
@@ -31,11 +36,13 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
       setScoreBarWidth(nextWidth);
     }
   };
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
     };
   });
+
   return (
     <Animated.View className="bg-white w-full  pb-3" style={[animatedStyle]}>
       <Svg
@@ -59,64 +66,62 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
         />
       </Svg>
       <View className="px-4 pt-6">
-        <View className="flex-row items-start  gap-3">
+        <View className="flex-row items-start  gap-3" style={{ flexDirection: isKu ? "row-reverse" : "row" }}>
           <View className="items-center gap-1 ">
             <View className="h-[70px] w-[85px] items-center justify-center rounded-[14px] border-[3px] border-[#1CB0F6]">
               <Flag width={70} height={70} />
             </View>
-            <Text
+            <AppText
               className="text-base font-bold text-text-primary"
-              style={{ fontFamily: "DINNextRoundedBold" }}
+              forceKurdishFont={isKu}
             >
               ئەڵمانی
-            </Text>
+            </AppText>
           </View>
           <View className="items-center gap-1  ">
             <View className="h-[70px] w-[85px] scale-[0.75] items-center justify-center rounded-[14px] border-[3px] border-[#AFAFAF] ">
               <Icon3DPlus size={22} />
             </View>
-            <Text className="text-base font-bold text-gray-3 font-rd-bold">
+            <AppText className="text-base font-bold text-gray-3" forceKurdishFont={isKu}>
               کۆرس
-            </Text>
+            </AppText>
           </View>
         </View>
+
         <View className="mt-3 w-full items-center gap-3 rounded-[10px] border border-[#E5E5E5] py-4">
-          <View className="w-full flex-row items-center px-5">
-            <Text className="text-lg font-bold text-text-primary font-rd-bold">
+          <View className="w-full flex-row items-center px-5" style={{ flexDirection: isKu ? "row-reverse" : "row" }}>
+            <AppText className="text-lg font-bold text-text-primary" forceLatinFont>
               13
-            </Text>
+            </AppText>
             <View className="mx-3 flex-1" onLayout={handleScoreBarLayout}>
               <ProgressBar progress={0.72} width={scoreBarWidth} />
             </View>
-            <Text
-              className="text-lg font-bold text-text-primary font-rd-bold"
-              style={{ fontFamily: "DINNextRoundedBold" }}
-            >
+            <AppText className="text-lg font-bold text-text-primary" forceLatinFont>
               14
-            </Text>
+            </AppText>
           </View>
-          <Text className="text-xl  text-text-secondary font-rd-regular">
+          <AppText className="text-xl  text-text-secondary" forceKurdishFont={isKu}>
             خاڵیی ئەڵمانیت ١٣
-          </Text>
-          <Text
+          </AppText>
+          <AppText
             className="text-base uppercase text-[#1CB0F6]"
             style={{
-              fontFamily: "DINNextRoundedBold",
               fontSize: 16,
               fontWeight: "bold",
             }}
+            forceKurdishFont={isKu}
           >
             زیاتر دەربارەی خاڵ
-          </Text>
+          </AppText>
         </View>
         <View className="mt-3 gap-3 ">
-          <Text
+          <AppText
             className="text-[24px] font-bold text-text-primary"
-            style={{ fontFamily: "DINNextRoundedBold" }}
+            forceKurdishFont={isKu}
           >
             کۆرسی نوێ
-          </Text>
-          <View className="flex-row flex-wrap gap-3">
+          </AppText>
+          <View className="flex-row flex-wrap gap-3" style={{ flexDirection: isKu ? "row-reverse" : "row" }}>
             {newCourses.map((course) => (
               <View key={course.id} className="items-center gap-3">
                 <View
@@ -125,19 +130,19 @@ const HeaderOverlayContent = ({ translateY }: HeaderOverlayContentProps) => {
                 >
                   {course.isNew ? (
                     <View className="absolute -right-5 -top-4 z-2 rounded-[8] border-white border-[3] bg-[#FF4B4B] px-[6] py-[6]">
-                      <Text className="text-xs font-bold leading-3 text-white">
+                      <AppText className="text-xs font-bold leading-3 text-white" forceKurdishFont={isKu}>
                         نوێ
-                      </Text>
+                      </AppText>
                     </View>
                   ) : null}
                   <course.image color={"white"} width={40} height={40} />
                 </View>
-                <Text
+                <AppText
                   className="text-base font-bold text-text-primary"
-                  style={{ fontFamily: "DINNextRoundedBold" }}
+                  forceKurdishFont={isKu}
                 >
                   {course.title}
-                </Text>
+                </AppText>
               </View>
             ))}
           </View>

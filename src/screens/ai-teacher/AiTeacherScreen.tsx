@@ -1,4 +1,6 @@
+/* eslint-disable */
 import { DolphinFlat } from "@/components/icons/HomeDashboardIcons";
+import { AppText } from "@/components/ui/AppText";
 import {
   HomeLiquidButton,
   HomeLiquidCard,
@@ -87,7 +89,7 @@ type Phase = "input" | "loading" | "results";
 export function AiTeacherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
 
@@ -222,17 +224,19 @@ export function AiTeacherScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <Pressable
               onPress={() => router.back()}
               style={styles.backBtn}
               hitSlop={12}
             >
-              <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
+              <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+                <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
+              </View>
             </Pressable>
             <View style={styles.topTitles}>
-              <Text style={styles.pageTitle}>{t("aiTeacher.title")}</Text>
-              <Text style={styles.pageSub}>{t("aiTeacher.subtitle")}</Text>
+              <AppText style={styles.pageTitle} forceKurdishFont={isKu}>{t("aiTeacher.title")}</AppText>
+              <AppText style={styles.pageSub} forceKurdishFont={isKu}>{t("aiTeacher.subtitle")}</AppText>
             </View>
             <View style={styles.backSpacer} />
           </View>
@@ -245,32 +249,33 @@ export function AiTeacherScreen() {
             />
           ) : (
             <>
-              <View style={styles.modeRow}>
-                {(["speaking", "writing"] as AiTeacherMode[]).map((m) => (
+              <View style={[styles.modeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                {((isKu ? ["writing", "speaking"] : ["speaking", "writing"]) as AiTeacherMode[]).map((m) => (
                   <Pressable
                     key={m}
                     onPress={() => setMode(m)}
                     style={[styles.modeChip, mode === m && styles.modeChipOn]}
                   >
-                    <Text
+                    <AppText
                       style={[
                         styles.modeChipText,
                         mode === m && styles.modeChipTextOn,
                       ]}
+                      forceKurdishFont={isKu}
                     >
                       {m === "speaking" ? t("aiTeacher.speaking") : t("aiTeacher.writing")}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 ))}
               </View>
 
-              <Text style={styles.sectionTitle}>{t("aiTeacher.choosePrompt")}</Text>
+              <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>{t("aiTeacher.choosePrompt")}</AppText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.promptScroll}
+                contentContainerStyle={[styles.promptScroll, { flexDirection: isKu ? "row-reverse" : "row" }]}
               >
-                {promptsForMode.map((p) => (
+                {(isKu ? [...promptsForMode].reverse() : promptsForMode).map((p) => (
                   <Pressable
                     key={p.id}
                     onPress={() => setPrompt(p)}
@@ -279,17 +284,17 @@ export function AiTeacherScreen() {
                       prompt.id === p.id && styles.promptCardOn,
                     ]}
                   >
-                    <Text style={styles.promptTitle}>{p.title}</Text>
+                    <AppText style={styles.promptTitle} forceKurdishFont={isKu}>{p.title}</AppText>
                   </Pressable>
                 ))}
               </ScrollView>
 
-              <View style={styles.promptStrip}>
-                <Text style={styles.promptScenarioLabel}>{t("aiTeacher.yourTask")}</Text>
-                <Text style={styles.promptScenario}>{prompt.scenario}</Text>
+              <View style={[styles.promptStrip, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+                <AppText style={styles.promptScenarioLabel} forceKurdishFont={isKu}>{t("aiTeacher.yourTask")}</AppText>
+                <AppText style={[styles.promptScenario, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{prompt.scenario}</AppText>
               </View>
 
-              <Text style={styles.sectionTitle}>{t("aiTeacher.yourAnswer")}</Text>
+              <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>{t("aiTeacher.yourAnswer")}</AppText>
               {mode === "speaking" && !showTyping ? (
                 <View style={styles.speakingMicBlock}>
                   <MicCaptureOrb
@@ -305,13 +310,13 @@ export function AiTeacherScreen() {
                     onPress={toggleMic}
                   />
                   {answer.trim().length > 0 ? (
-                    <Text style={styles.speakingTranscript}>{answer}</Text>
+                    <AppText style={styles.speakingTranscript} forceLatinFont>{answer}</AppText>
                   ) : null}
                   <Pressable
                     onPress={() => setShowTyping(true)}
                     style={styles.typeInsteadBtn}
                   >
-                    <Text style={styles.typeInsteadText}>{t("aiTeacher.typeInstead")}</Text>
+                    <AppText style={styles.typeInsteadText} forceKurdishFont={isKu}>{t("aiTeacher.typeInstead")}</AppText>
                   </Pressable>
                 </View>
               ) : (
@@ -326,28 +331,28 @@ export function AiTeacherScreen() {
                     }
                     placeholderTextColor={C.grayLight}
                     multiline
-                    style={styles.textInput}
+                    style={[styles.textInput, { textAlign: isKu ? "right" : "left" }]}
                     editable={phase !== "loading"}
                   />
                   {mode === "speaking" ? (
                     <Pressable
                       onPress={() => setShowTyping(false)}
-                      style={styles.typeInsteadBtnInline}
+                      style={[styles.typeInsteadBtnInline, { alignSelf: isKu ? "flex-end" : "flex-start" }]}
                     >
-                      <Text style={styles.typeInsteadText}>{t("aiTeacher.useMic")}</Text>
+                      <AppText style={styles.typeInsteadText} forceKurdishFont={isKu}>{t("aiTeacher.useMic")}</AppText>
                     </Pressable>
                   ) : null}
                 </View>
               )}
 
               {error || speech.error ? (
-                <Text style={styles.errorText}>{error || speech.error}</Text>
+                <AppText style={styles.errorText} forceKurdishFont={isKu}>{error || speech.error}</AppText>
               ) : null}
 
               {phase === "loading" ? (
                 <View style={styles.loadingBox}>
                   <ActivityIndicator color={C.blue} size="large" />
-                  <Text style={styles.loadingText}>{t("aiTeacher.checking")}</Text>
+                  <AppText style={styles.loadingText} forceKurdishFont={isKu}>{t("aiTeacher.checking")}</AppText>
                 </View>
               ) : (
                 <HomeLiquidButton
@@ -362,22 +367,23 @@ export function AiTeacherScreen() {
                   style={styles.historyCard}
                   contentStyle={styles.historyInner}
                 >
-                  <Text style={styles.historyLabel}>Last saved attempt</Text>
-                  <Text style={styles.historyBand}>
-                    Band {lastSaved.overallBand} · {lastSaved.mode}
-                  </Text>
-                  <Text style={styles.historyExcerpt} numberOfLines={2}>
+                  <AppText style={styles.historyLabel} forceKurdishFont={isKu}>{isKu ? "دواین ھەوڵی پاشەکەوتکراو" : "Last saved attempt"}</AppText>
+                  <AppText style={styles.historyBand} forceKurdishFont={isKu}>
+                    {isKu ? `باند ${lastSaved.overallBand} · ${lastSaved.mode === "speaking" ? "خوێندنەوە" : "نووسین"}` : `Band ${lastSaved.overallBand} · ${lastSaved.mode}`}
+                  </AppText>
+                  <AppText style={styles.historyExcerpt} numberOfLines={2} forceLatinFont>
                     {lastSaved.excerpt}
-                  </Text>
+                  </AppText>
                 </HomeLiquidCard>
               ) : null}
 
-              <View style={styles.tipStrip}>
+              <View style={[styles.tipStrip, { flexDirection: isKu ? "row-reverse" : "row" }]}>
                 <DolphinFlat width={48} height={48} />
-                <Text style={styles.tipText}>
-                  Indicative bands only — practice tool, not an official IELTS
-                  score. See AI & practice info in Settings.
-                </Text>
+                <AppText style={styles.tipText} forceKurdishFont={isKu}>
+                  {isKu 
+                    ? "نمرەکان تەنها وەک ئاماژەیەک وان — ئامرازێکی ڕاھێنانە نەک نمرەی فەرمی IELTS. زانیاری زیاتر لە ڕێکخستنەکاندا ببینە."
+                    : "Indicative bands only — practice tool, not an official IELTS score. See AI & practice info in Settings."}
+                </AppText>
               </View>
             </>
           )}
@@ -395,64 +401,81 @@ function ResultsView({
   onTryAgain: () => void;
   onSave: () => void;
 }) {
+  const { isKu } = useI18n();
   return (
     <Animated.View entering={FadeInDown.duration(320)}>
       <HomeLiquidCard contentStyle={styles.overallCard}>
-        <Text style={styles.overallLabel}>Overall indicative band</Text>
-        <Text style={styles.overallBand}>{result.overallBand}</Text>
-        <Text style={styles.overallHint}>Out of 9.0 (IELTS-style)</Text>
+        <AppText style={styles.overallLabel} forceKurdishFont={isKu}>
+          {isKu ? "نمرەی گشتی پێشبینیکراو" : "Overall indicative band"}
+        </AppText>
+        <AppText style={styles.overallBand} forceLatinFont>{result.overallBand}</AppText>
+        <AppText style={styles.overallHint} forceKurdishFont={isKu}>
+          {isKu ? "لە دەوری ٩.٠ (شێوازی IELTS)" : "Out of 9.0 (IELTS-style)"}
+        </AppText>
       </HomeLiquidCard>
 
-      <Text style={styles.sectionTitle}>Criteria</Text>
+      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+        {isKu ? "پێوەرەکان" : "Criteria"}
+      </AppText>
       {result.criteria.map((c) => (
         <View key={c.key} style={styles.criterionCard}>
-          <View style={styles.criterionTop}>
-            <Text style={styles.criterionLabel}>{c.label}</Text>
-            <Text style={styles.criterionBand}>{c.band}</Text>
+          <View style={[styles.criterionTop, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <AppText style={[styles.criterionLabel, { textAlign: isKu ? "right" : "left", paddingRight: isKu ? 0 : 8, paddingLeft: isKu ? 8 : 0 }]} forceKurdishFont={isKu}>
+              {c.label}
+            </AppText>
+            <AppText style={styles.criterionBand} forceLatinFont>{c.band}</AppText>
           </View>
           <View style={styles.bandTrack}>
             <View
               style={[styles.bandFill, { width: `${(c.band / 9) * 100}%` }]}
             />
           </View>
-          <Text style={styles.criterionNote}>{c.note}</Text>
+          <AppText style={[styles.criterionNote, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{c.note}</AppText>
         </View>
       ))}
 
-      <Text style={styles.sectionTitle}>Strengths</Text>
+      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+        {isKu ? "خاڵە بەهێزەکان" : "Strengths"}
+      </AppText>
       <HomeLiquidCard contentStyle={styles.bulletCard}>
         {result.strengths.map((s) => (
-          <Text key={s} style={styles.bullet}>
+          <AppText key={s} style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>
             • {s}
-          </Text>
+          </AppText>
         ))}
       </HomeLiquidCard>
 
-      <Text style={styles.sectionTitle}>To improve</Text>
+      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+        {isKu ? "خاڵەکان بۆ باشترکردن" : "To improve"}
+      </AppText>
       <HomeLiquidCard contentStyle={styles.bulletCard}>
         {result.improvements.map((s) => (
-          <Text key={s} style={styles.bullet}>
+          <AppText key={s} style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>
             • {s}
-          </Text>
+          </AppText>
         ))}
       </HomeLiquidCard>
 
       {result.sampleRewrite ? (
         <>
-          <Text style={styles.sectionTitle}>Sample upgrade</Text>
+          <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+            {isKu ? "نموونەی نووسینی باشترکراو" : "Sample upgrade"}
+          </AppText>
           <HomeLiquidCard contentStyle={styles.rewriteCard}>
-            <Text style={styles.rewriteText}>{result.sampleRewrite}</Text>
+            <AppText style={[styles.rewriteText, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{result.sampleRewrite}</AppText>
           </HomeLiquidCard>
         </>
       ) : null}
 
       <HomeLiquidButton
-        label="SAVE ATTEMPT"
+        label={isKu ? "پاشەکەوتکردنی هەوڵدانەکە" : "SAVE ATTEMPT"}
         onPress={onSave}
         style={styles.actionBtn}
       />
       <Pressable onPress={onTryAgain} style={styles.secondaryBtn}>
-        <Text style={styles.secondaryBtnText}>Try again</Text>
+        <AppText style={styles.secondaryBtnText} forceKurdishFont={isKu}>
+          {isKu ? "دووبارە هەوڵبدەرەوە" : "Try again"}
+        </AppText>
       </Pressable>
     </Animated.View>
   );

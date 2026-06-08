@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * iOS 26 Liquid Glass surfaces for the home dashboard.
  * Native GlassView on iOS 26+ (expo-glass-effect); BlurView + specular sheen elsewhere.

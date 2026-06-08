@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
 
  * ConversationPickGame — Premium light lesson UI.

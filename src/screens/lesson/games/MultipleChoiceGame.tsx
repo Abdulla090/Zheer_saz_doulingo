@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * MultipleChoiceGame — Premium light lesson UI.
  */

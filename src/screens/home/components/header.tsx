@@ -10,6 +10,7 @@ import { SvgProps } from "react-native-svg";
 
 import { Battery, Fire, Flag, Gem } from "@/constants/icons";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/hooks/useI18n";
 import Animated, {
   FadeOut,
   interpolate,
@@ -60,9 +61,10 @@ const HeaderButton = ({
   title: string;
   textColor: string;
 }) => {
+  const { isKu } = useI18n();
   return (
     <Pressable onPress={onPress}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <View style={{ flexDirection: isKu ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
         <Icon width={30} height={30} />
         <Text style={{ color: textColor, fontWeight: "bold", fontSize: 16 }}>
           {title}
@@ -108,9 +110,10 @@ export const HomeHeader = () => {
     };
   });
   const insets = useSafeAreaInsets();
+  const { isKu } = useI18n();
   return (
     <View
-      style={[styles.headerContainer]}
+      style={[styles.headerContainer, { flexDirection: isKu ? "row-reverse" : "row" }]}
       onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
     >
       {Buttons.map((button) => (

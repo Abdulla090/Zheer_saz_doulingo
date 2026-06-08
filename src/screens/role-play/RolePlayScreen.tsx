@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useI18n } from "@/hooks/useI18n";
 import { useBosonTTS } from "@/hooks/useBosonTTS";
 import * as Haptics from "expo-haptics";

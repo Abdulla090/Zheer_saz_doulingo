@@ -82,6 +82,7 @@ export function AppText({
   return (
     <Text
       style={[
+        { backgroundColor: "transparent" },
         restStyle,
         direction,
         { fontFamily },

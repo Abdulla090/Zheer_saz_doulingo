@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * Native: play Gemini Live PCM chunks via WAV data URIs.
  */

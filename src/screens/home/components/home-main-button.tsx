@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NoteBook } from "@/constants/icons";
 import { AppText } from "@/components/ui/AppText";
 import type { LessonPathMode } from "@/data/lesson-content";

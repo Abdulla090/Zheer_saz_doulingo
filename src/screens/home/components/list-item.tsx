@@ -8,6 +8,7 @@ import type { LessonPathMode } from "@/data/lesson-content";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, View } from "react-native";
+import { useI18n } from "@/hooks/useI18n";
 import { CompletedCheckIcon } from "./completed-check-icon";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 import { FirstItemSparkles } from "./first-item-sparkles";
@@ -87,10 +88,12 @@ type ListItemProps = {
 export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: ListItemProps) => {
   const router = useRouter();
   const metrics = pathMetrics(pathMode);
+  const { isKu } = useI18n();
 
   const { globalIndex, type, isCurrent, progressSegments, status } = item;
 
-  const xOffset = getPathCurveOffset(globalIndex, screenWidth);
+  const rawOffset = getPathCurveOffset(globalIndex, screenWidth);
+  const xOffset = isKu ? -rawOffset : rawOffset;
   const isCompleted = status === "completed";
   const isLocked = status === "locked";
   const isGrayInProgress = isCurrent && item.sectionTheme === "gray";

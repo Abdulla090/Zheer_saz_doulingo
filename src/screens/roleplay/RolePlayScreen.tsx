@@ -23,7 +23,6 @@ import {
   Briefcase,
   Coffee,
   Rocket,
-  Send,
   Store,
 } from "lucide-react-native";
 import { AppText } from "@/components/ui/AppText";
@@ -31,18 +30,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
-  Pressable,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
 import {
   KeyboardAwareScrollView,
-  KeyboardStickyView,
 } from "react-native-keyboard-controller";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Speech from "expo-speech";
 
 const C = HomePalette;
 const { width: SW } = Dimensions.get("window");
@@ -115,15 +110,13 @@ type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const scrollRef = useRef<React.ElementRef<typeof KeyboardAwareScrollView>>(null);
   const speech = useSpeechCapture("en-US");
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
   const [status, setStatus] = useState<Status>("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
-  const [textInput, setTextInput] = useState("");
-  const [showTyping, setShowTyping] = useState(false);
 
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const statusRef = useRef(status);
@@ -141,13 +134,7 @@ export function RolePlayScreen() {
     if (Platform.OS === "web" && typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis;
     }
-    if (!speech.available) {
-      const timer = setTimeout(() => {
-        setShowTyping(true);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [speech.available]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -166,7 +153,11 @@ export function RolePlayScreen() {
 
   function stopSpeaking() {
     try {
-      synthRef.current?.cancel();
+      if (Platform.OS === "web") {
+        synthRef.current?.cancel();
+      } else {
+        Speech.stop();
+      }
     } catch {
       /* noop */
     }
@@ -184,35 +175,50 @@ export function RolePlayScreen() {
 
   function speak(text: string) {
     const sc = scenarioRef.current;
-    if (synthRef.current && Platform.OS === "web") {
-      synthRef.current.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = sc.voicePitch;
-      utterance.rate = sc.voiceRate;
-      utterance.lang = "en-US";
-      const voices = synthRef.current.getVoices();
-      const pref = voices.find(
-        (v) =>
-          v.lang.startsWith("en") &&
-          (v.name.includes("Google") ||
-            v.name.includes("Natural") ||
-            v.name.includes("Samantha")),
-      );
-      if (pref) utterance.voice = pref;
-      utterance.onstart = () => setStatus("speaking");
-      utterance.onend = () => {
-        if (statusRef.current === "speaking") void startListening();
-      };
-      utterance.onerror = () => {
-        if (statusRef.current === "speaking") setStatus("idle");
-      };
-      synthRef.current.speak(utterance);
-      setStatus("speaking");
+    if (Platform.OS === "web") {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.pitch = sc.voicePitch;
+        utterance.rate = sc.voiceRate;
+        utterance.lang = "en-US";
+        const voices = synthRef.current.getVoices();
+        const pref = voices.find(
+          (v) =>
+            v.lang.startsWith("en") &&
+            (v.name.includes("Google") ||
+              v.name.includes("Natural") ||
+              v.name.includes("Samantha")),
+        );
+        if (pref) utterance.voice = pref;
+        utterance.onstart = () => setStatus("speaking");
+        utterance.onend = () => {
+          if (statusRef.current === "speaking") void startListening();
+        };
+        utterance.onerror = () => {
+          if (statusRef.current === "speaking") setStatus("idle");
+        };
+        synthRef.current.speak(utterance);
+        setStatus("speaking");
+      }
     } else {
       setStatus("speaking");
-      setTimeout(() => {
-        if (statusRef.current === "speaking") void startListening();
-      }, 2200);
+      Speech.stop();
+      Speech.speak(text, {
+        language: "en-US",
+        pitch: sc.voicePitch,
+        rate: sc.voiceRate,
+        onStart: () => setStatus("speaking"),
+        onDone: () => {
+          if (statusRef.current === "speaking") void startListening();
+        },
+        onStopped: () => {
+          if (statusRef.current === "speaking") setStatus("idle");
+        },
+        onError: () => {
+          if (statusRef.current === "speaking") setStatus("idle");
+        },
+      });
     }
   }
 
@@ -254,10 +260,10 @@ export function RolePlayScreen() {
       speak(r);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
     }, 1100);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startListening = useCallback(async () => {
-    if (showTyping || !speech.available) {
+    if (!speech.available) {
       setStatus("idle");
       return;
     }
@@ -278,7 +284,6 @@ export function RolePlayScreen() {
     });
 
     if (!started) {
-      setShowTyping(true);
       setStatus("idle");
       return;
     }
@@ -290,7 +295,7 @@ export function RolePlayScreen() {
         setStatus("idle");
       }
     }, 12000);
-  }, [handleUserResponse, showTyping, speech]);
+  }, [handleUserResponse, speech]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function startSession() {
     stopAll();
@@ -322,13 +327,7 @@ export function RolePlayScreen() {
     }
   };
 
-  const handleTextSubmit = () => {
-    const trimmed = textInput.trim();
-    if (!trimmed) return;
-    setTextInput("");
-    setStatus("thinking");
-    handleUserResponse(trimmed);
-  };
+
 
   const sessionStarted = history.length > 0;
   const accent = activeScenario.accent;
@@ -348,15 +347,15 @@ export function RolePlayScreen() {
       <HomeMeshBackground />
 
       <View style={styles.flex}>
-        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-            <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} />
+            <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
           </HomeLiquidPill>
-          <View style={styles.headerCenter}>
+          <View style={[styles.headerCenter, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={40} />
-            <View>
-              <Text style={styles.headerTitle}>{t("rolePlay.headerTitle")}</Text>
-              <Text style={styles.headerSub}>{t("rolePlay.headerSub")}</Text>
+            <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
+              <AppText style={[styles.headerTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.headerTitle")}</AppText>
+              <AppText style={[styles.headerSub, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.headerSub")}</AppText>
             </View>
           </View>
           <View style={{ width: 44 }} />
@@ -374,11 +373,11 @@ export function RolePlayScreen() {
         >
           {!sessionStarted ? (
             <>
-              <Text style={styles.pickerLabel}>{t("rolePlay.chooseScene")}</Text>
-              <Text style={styles.disclaimer}>
+              <AppText style={[styles.pickerLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.chooseScene")}</AppText>
+              <AppText style={[styles.disclaimer, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
                 {t("rolePlay.practiceDisclaimer")}
-              </Text>
-              <View style={styles.scenarioGrid}>
+              </AppText>
+              <View style={[styles.scenarioGrid, { flexDirection: isKu ? "row-reverse" : "row" }]}>
                 {SCENARIOS.map((sc) => {
                   const sel = activeScenario.id === sc.id;
                   const ScIcon = sc.icon;
@@ -424,7 +423,7 @@ export function RolePlayScreen() {
                         >
                           {sc.titleKu}
                         </AppText>
-                        <Text style={styles.scenarioEn}>{sc.title}</Text>
+                        <AppText style={styles.scenarioEn} forceLatinFont latinRole="medium">{sc.title}</AppText>
                       </HomeLiquidCard>
                     </PressableScale>
                   );
@@ -452,98 +451,53 @@ export function RolePlayScreen() {
               </HomeLiquidCard>
             </>
           ) : (
-            <View style={styles.chatSection}>
-              <View style={[styles.activeChip, { borderColor: accent + "35" }]}>
-                <Icon size={14} color={accent} strokeWidth={2.5} />
-                <Text style={[styles.activeChipText, { color: accent }]}>
+            <View style={styles.voiceOnlyContainer}>
+              <View style={[styles.activeChip, { borderColor: accent + "35", alignSelf: "center", marginBottom: 12, flexDirection: isKu ? "row-reverse" : "row" }]}>
+                <Icon size={16} color={accent} strokeWidth={2.5} />
+                <AppText style={[styles.activeChipText, { color: accent, fontSize: 14 }]} forceLatinFont latinRole="bold">
                   {activeScenario.title}
-                </Text>
+                </AppText>
               </View>
 
-              {history.map((msg, i) => (
-                <Animated.View
-                  key={`${i}-${msg.text.slice(0, 12)}`}
-                  entering={FadeInUp.duration(260)}
-                >
-                  <View style={msg.sender === "ai" ? styles.aiRow : styles.userRow}>
-                    {msg.sender === "ai" ? (
-                      <View
-                        style={[
-                          styles.avatar,
-                          { backgroundColor: accent + "16" },
-                        ]}
-                      >
-                        <Icon size={16} color={accent} strokeWidth={2.5} />
-                      </View>
-                    ) : null}
-                    <HomeLiquidCard
-                      style={[
-                        styles.bubble,
-                        msg.sender === "user" && styles.userBubble,
-                      ]}
-                      contentStyle={styles.bubbleInner}
-                    >
-                      <Text style={styles.msgText}>{msg.text}</Text>
-                    </HomeLiquidCard>
-                  </View>
-                </Animated.View>
-              ))}
+              <View style={styles.voiceOrbWrapper}>
+                <View style={[styles.orbPulseRing, { borderColor: accent + "30" }]} />
+                <View style={[styles.orbPulseRing2, { borderColor: accent + "15" }]} />
+                <View style={[styles.voiceOrb, { backgroundColor: accent }]}>
+                  <Icon size={44} color="#FFF" strokeWidth={2} />
+                </View>
+              </View>
 
-              {status === "thinking" ? (
-                <Animated.View entering={FadeInUp.duration(200)}>
-                  <Text style={styles.thinking}>{t("rolePlay.thinking")}</Text>
-                </Animated.View>
-              ) : null}
+              <View style={styles.voiceStatusWrap}>
+                <AppText style={[styles.voiceStatusText, { color: accent, textAlign: "center" }]} forceKurdishFont={isKu}>
+                  {status === "listening"
+                    ? t("rolePlay.listening")
+                    : status === "thinking"
+                      ? t("rolePlay.thinking")
+                      : status === "speaking"
+                        ? (isKu ? "AI قسە دەکات..." : "AI IS SPEAKING...")
+                        : (isKu ? "بۆ قسەکردن دەست بنێ بە مایکەکەدا" : "TAP MIC TO INTERRUPT OR SPEAK")}
+                </AppText>
+              </View>
             </View>
           )}
         </KeyboardAwareScrollView>
 
         {sessionStarted ? (
-          <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
           <View
             style={[
-              styles.bottomBar,
-              { paddingBottom: Math.max(insets.bottom, 16) },
+              styles.bottomBarVoiceOnly,
+              { paddingBottom: Math.max(insets.bottom, 24) },
             ]}
           >
             <MicCaptureOrb
               listening={status === "listening" || speech.listening}
               disabled={status === "thinking"}
               color={status === "listening" ? C.red : accent}
-              size={100}
+              size={110}
               hint={micHint}
               onPress={handleMicTap}
             />
-
-            {showTyping || speech.error ? (
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.textField}
-                  placeholder="Type in English…"
-                  placeholderTextColor={C.grayLight}
-                  value={textInput}
-                  onChangeText={setTextInput}
-                  onSubmitEditing={handleTextSubmit}
-                  returnKeyType="send"
-                />
-                <Pressable
-                  onPress={handleTextSubmit}
-                  disabled={!textInput.trim()}
-                  style={[
-                    styles.sendBtn,
-                    { backgroundColor: accent, opacity: textInput.trim() ? 1 : 0.4 },
-                  ]}
-                >
-                  <Send size={18} color="#FFF" strokeWidth={2.5} />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable onPress={() => setShowTyping(true)}>
-                <Text style={styles.typeLink}>{t("rolePlay.typeInstead")}</Text>
-              </Pressable>
-            )}
           </View>
-          </KeyboardStickyView>
         ) : null}
       </View>
     </View>
@@ -761,5 +715,71 @@ const styles = StyleSheet.create({
     color: C.blue,
     fontFamily: "DINNextRoundedBold",
     paddingVertical: 4,
+  },
+  voiceOnlyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    gap: 40,
+  },
+  voiceOrbWrapper: {
+    width: 220,
+    height: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  orbPulseRing: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    borderWidth: 2.5,
+    opacity: 0.28,
+  },
+  orbPulseRing2: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 1.5,
+    opacity: 0.14,
+  },
+  voiceOrb: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    alignItems: "center",
+    justifyContent: "center",
+    ...crossShadow({
+      color: "#000",
+      offsetY: 8,
+      blur: 24,
+      opacity: 0.15,
+      elevation: 6,
+    }),
+  },
+  voiceStatusWrap: {
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  voiceStatusText: {
+    fontSize: 16,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: 0.8,
+    textAlign: "center",
+  },
+  bottomBarVoiceOnly: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "transparent",
+    gap: 10,
   },
 });

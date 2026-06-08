@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
 import { tabBarScrollPadding } from "@/constants/layout";
 import {

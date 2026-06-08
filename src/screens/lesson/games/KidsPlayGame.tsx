@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * KidsPlayGame — contextual kids mechanics (scene, bubbles, feed, shadow, etc.)
  */

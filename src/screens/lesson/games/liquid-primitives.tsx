@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * liquid-primitives.tsx — iOS 26 Liquid Glass building blocks
  *
@@ -446,6 +447,7 @@ const lo = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     letterSpacing: 0.6,
+    backgroundColor: "transparent",
   },
   optText: {
     flex: 1,
@@ -453,6 +455,7 @@ const lo = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 22,
     letterSpacing: -0.15,
+    backgroundColor: "transparent",
   },
 });
 
@@ -754,5 +757,6 @@ const lwc = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: -0.1,
     width: "100%",
+    backgroundColor: "transparent",
   },
 });

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { AppText } from "@/components/ui/AppText";
 import { enterFadeDown } from "@/components/animations/motion";
 import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";

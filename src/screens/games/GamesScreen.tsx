@@ -67,41 +67,37 @@ function StatusPill({
 
 const HubRow = memo(function HubRow({
   title,
-  subtitle,
   badge,
   renderIcon,
   onPress,
   isLast,
 }: {
   title: string;
-  subtitle: string;
   badge?: string;
   renderIcon: (size: number) => React.ReactNode;
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const { isKu } = useI18n();
   return (
     <Pressable
       onPress={() => {
         hapticSelection();
         onPress();
       }}
-      style={[styles.hubRow, !isLast && styles.hubRowBorder]}
+      style={[styles.hubRow, !isLast && styles.hubRowBorder, { flexDirection: isKu ? "row-reverse" : "row" }]}
       accessibilityRole="button"
     >
-      <View style={styles.hubRowIcon}>{renderIcon(44)}</View>
+      <View style={styles.hubRowIcon}>{renderIcon(36)}</View>
       <View style={styles.hubRowCopy}>
-        <View style={styles.hubRowTitleLine}>
-          <AppText style={styles.hubRowTitle} numberOfLines={1} forceKurdishFont>
+        <View style={[styles.hubRowTitleLine, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <AppText style={[styles.hubRowTitle, { textAlign: isKu ? "right" : "left" }]} numberOfLines={1} forceKurdishFont>
             {title}
           </AppText>
           {badge ? <StatusPill label={badge} /> : null}
         </View>
-        <AppText style={styles.hubRowSub} numberOfLines={2} forceKurdishFont>
-          {subtitle}
-        </AppText>
       </View>
-      <Text style={styles.chevron} accessibilityElementsHidden>
+      <Text style={[styles.chevron, { transform: [{ scaleX: isKu ? -1 : 1 }] }]} accessibilityElementsHidden>
         ›
       </Text>
     </Pressable>
@@ -110,19 +106,18 @@ const HubRow = memo(function HubRow({
 
 const ExperienceCard = memo(function ExperienceCard({
   title,
-  subtitle,
   badge,
   renderIcon,
   onPress,
   width,
 }: {
   title: string;
-  subtitle: string;
   badge?: string;
   renderIcon: (size: number) => React.ReactNode;
   onPress: () => void;
   width: number;
 }) {
+  const { isKu } = useI18n();
   return (
     <Pressable
       onPress={() => {
@@ -133,18 +128,13 @@ const ExperienceCard = memo(function ExperienceCard({
       accessibilityRole="button"
     >
       <HomeLiquidCard interactive contentStyle={styles.experienceInner}>
-        {renderIcon(48)}
-        <View style={styles.experienceCopy}>
-          <View style={styles.hubRowTitleLine}>
-            <AppText style={styles.experienceTitle} numberOfLines={2} forceKurdishFont>
-              {title}
-            </AppText>
-            {badge ? <StatusPill label={badge} /> : null}
-          </View>
-          <AppText style={styles.experienceSub} numberOfLines={2} forceKurdishFont>
-            {subtitle}
-          </AppText>
+        <View style={[styles.experienceTopRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          {renderIcon(40)}
+          {badge ? <StatusPill label={badge} /> : null}
         </View>
+        <AppText style={[styles.experienceTitle, { textAlign: isKu ? "right" : "left" }]} numberOfLines={2} forceKurdishFont>
+          {title}
+        </AppText>
       </HomeLiquidCard>
     </Pressable>
   );
@@ -153,7 +143,7 @@ const ExperienceCard = memo(function ExperienceCard({
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
   const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
   const pathMode = useSettingsStore((s) => s.pathMode);
@@ -283,7 +273,6 @@ export function GamesScreen() {
   );
 
   const heroTitle = t(immersiveTile.titleKey);
-  const heroSub = t(immersiveTile.subtitleKey);
 
   return (
     <View style={styles.root}>
@@ -298,44 +287,37 @@ export function GamesScreen() {
           paddingHorizontal: horizontalPad,
         }}
       >
-        <View style={styles.header}>
-          <Text style={styles.logo}>PINGO</Text>
-          <AppText style={styles.pageTitle} forceKurdishFont>{t("games.title")}</AppText>
-          <AppText style={styles.pageSub} forceKurdishFont>{t("games.subtitle")}</AppText>
+        <View style={[styles.header, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+          <AppText style={[styles.pageTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("games.title")}</AppText>
         </View>
 
-        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionImmersive")}</AppText>
+        <AppText style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("games.sectionImmersive")}</AppText>
         <HomeLiquidLessonTile
           onPress={() => openTile(immersiveTile)}
           style={styles.sectionBlock}
         >
-          <View style={styles.heroRow}>
+          <View style={[styles.heroRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <View style={styles.heroCopy}>
-              <View style={styles.heroTitleRow}>
-                <AppText style={styles.heroLabel} numberOfLines={1} forceKurdishFont>
+              <View style={[styles.heroTitleRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                <AppText style={[styles.heroLabel, { textAlign: isKu ? "right" : "left" }]} numberOfLines={1} forceKurdishFont>
                   {heroTitle}
                 </AppText>
                 {immersiveTile.badgeKey ? (
                   <StatusPill label={t(immersiveTile.badgeKey)} onDark />
                 ) : null}
               </View>
-              <AppText style={styles.heroSub} numberOfLines={2} forceKurdishFont>
-                {heroSub}
-              </AppText>
-              <AppText style={styles.heroHint} forceKurdishFont>{t("home.tapToContinue")}</AppText>
             </View>
-            <View style={styles.heroIcon}>{immersiveTile.renderIcon(72)}</View>
+            <View style={styles.heroIcon}>{immersiveTile.renderIcon(60)}</View>
           </View>
         </HomeLiquidLessonTile>
 
-        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionExperiences")}</AppText>
-        <View style={[styles.experienceGrid, { gap, marginBottom: 8 }]}>
+        <AppText style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("games.sectionExperiences")}</AppText>
+        <View style={[styles.experienceGrid, { gap, marginBottom: 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
           {experienceTiles.map((tile) => (
             <ExperienceCard
               key={tile.id}
               width={halfWidth}
               title={t(tile.titleKey)}
-              subtitle={t(tile.subtitleKey)}
               badge={tile.badgeKey ? t(tile.badgeKey) : undefined}
               renderIcon={tile.renderIcon}
               onPress={() => openTile(tile)}
@@ -343,13 +325,12 @@ export function GamesScreen() {
           ))}
         </View>
 
-        <AppText style={styles.sectionLabel} forceKurdishFont>{t("games.sectionDrills")}</AppText>
+        <AppText style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("games.sectionDrills")}</AppText>
         <HomeLiquidCard contentStyle={styles.drillsCard}>
           {drillTiles.map((tile, index) => (
             <HubRow
               key={tile.id}
               title={t(tile.titleKey)}
-              subtitle={t(tile.subtitleKey)}
               renderIcon={tile.renderIcon}
               onPress={() => openTile(tile)}
               isLast={index === drillTiles.length - 1}
@@ -378,16 +359,11 @@ const styles = StyleSheet.create({
   pageTitle: {
     ...HomeType.heading,
     color: C.navy,
-    marginBottom: 4,
-  },
-  pageSub: {
-    ...HomeType.body,
-    color: C.gray,
   },
   sectionLabel: {
     ...HomeType.section,
     color: C.navy,
-    marginTop: 20,
+    marginTop: 18,
     marginBottom: 10,
   },
   sectionBlock: {
@@ -407,7 +383,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   heroLabel: {
     flex: 1,
@@ -417,18 +393,11 @@ const styles = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.3,
   },
-  heroSub: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "rgba(255,255,255,0.88)",
-    lineHeight: 20,
-    fontFamily: "DINNextRoundedMedium",
-  },
   heroHint: {
     fontSize: 13,
     fontWeight: "600",
     color: "rgba(255,255,255,0.72)",
-    marginTop: 10,
+    marginTop: 6,
     fontFamily: "DINNextRoundedMedium",
   },
   heroIcon: {
@@ -441,28 +410,22 @@ const styles = StyleSheet.create({
   },
   experienceInner: {
     padding: 14,
-    minHeight: 148,
+    minHeight: 104,
     justifyContent: "space-between",
   },
-  experienceCopy: {
-    marginTop: 12,
-    flex: 1,
+  experienceTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
   },
   experienceTitle: {
-    flex: 1,
     fontSize: 15,
     fontWeight: "800",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.2,
-  },
-  experienceSub: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: "500",
-    color: C.gray,
-    lineHeight: 17,
-    fontFamily: "DINNextRoundedMedium",
+    marginTop: 8,
   },
   drillsCard: {
     paddingVertical: 4,
@@ -471,7 +434,7 @@ const styles = StyleSheet.create({
   hubRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     gap: 12,
   },
@@ -497,14 +460,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
-  },
-  hubRowSub: {
-    marginTop: 3,
-    fontSize: 13,
-    fontWeight: "500",
-    color: C.gray,
-    lineHeight: 18,
-    fontFamily: "DINNextRoundedMedium",
   },
   chevron: {
     fontSize: 22,

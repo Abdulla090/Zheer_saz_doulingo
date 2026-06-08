@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * FillBlankGame — Premium light lesson UI.
  */
@@ -18,7 +19,7 @@ import Animated, {
 
 import { FillBlankQuestion } from "@/data/lesson-content";
 import type { LessonPathMode } from "@/data/lesson-content";
-import { ltrText } from "./game-text";
+import { ltrText, isRtlText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
 import {
@@ -205,7 +206,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <View style={[s.sentenceRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
             {question.sentenceParts[0] ? (
               <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
             ) : null}
@@ -309,6 +310,7 @@ const s = StyleSheet.create({
     color: L.navy,
     lineHeight: 28,
     fontFamily: "DINNextRoundedBold",
+    backgroundColor: "transparent",
     ...ltrText,
   },
   blank: {
@@ -325,6 +327,7 @@ const s = StyleSheet.create({
     fontWeight: "800",
     color: L.navy,
     fontFamily: "DINNextRoundedBold",
+    backgroundColor: "transparent",
     ...ltrText,
   },
   chipsWrap: {

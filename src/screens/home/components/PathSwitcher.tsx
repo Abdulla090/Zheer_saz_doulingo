@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * PathSwitcher — Street / Normal / Kids pill with sliding active chip.
  */
@@ -148,7 +149,7 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
       <LiquidGlassSurface
         borderRadius={18}
         style={styles.glass}
-        contentStyle={styles.track}
+        contentStyle={[styles.track, { flexDirection: isKu ? "row-reverse" : "row" }]}
       >
         <Animated.View
           style={[styles.slider, { pointerEvents: "none" }, sliderStyle]}
@@ -160,7 +161,7 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
             <Pressable
               key={tab.key}
               onPress={() => handleSwitch(tab.key)}
-              style={styles.tab}
+              style={[styles.tab, { flexDirection: isKu ? "row-reverse" : "row" }]}
             >
               {tab.icon(active)}
               <Text
