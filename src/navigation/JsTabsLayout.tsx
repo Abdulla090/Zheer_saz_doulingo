@@ -53,56 +53,6 @@ function JsTabsLayoutInner() {
       <Tabs.Screen name="dashboard" />
       <Tabs.Screen name="feed" />
       <Tabs.Screen name="more" />
-      <Tabs.Screen name="quest" options={{ href: null }} />
-      <Tabs.Screen name="league" options={{ href: null }} />
-      <Tabs.Screen
-        name="lesson"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="guidebook"
-        options={{
-          headerShown: false,
-          href: null,
-          tabBarStyle: { display: "none" },
-          animation: "fade",
-        }}
-      />
-      <Tabs.Screen
-        name="roleplay"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="ai-teacher"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="slang"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="podcast"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="voice-tutor"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen name="privacy-policy" options={{ href: null }} />
-      <Tabs.Screen name="ai-safety" options={{ href: null }} />
-      <Tabs.Screen name="terms" options={{ href: null }} />
-      <Tabs.Screen
-        name="admin/index"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="admin/unit"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
-      <Tabs.Screen
-        name="admin/lesson"
-        options={{ headerShown: false, href: null, tabBarStyle: { display: "none" } }}
-      />
     </Tabs>
   );
 }

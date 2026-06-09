@@ -1,11 +1,7 @@
-/* eslint-disable */
-/**
- * FillBlankGame — Premium light lesson UI.
- */
-
 import { useI18n } from "@/hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View, Pressable, Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 import { layoutMorph, tileFlyTiming } from "@/components/animations/motion";
 import Animated, {
   Easing,
@@ -16,6 +12,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { AppText } from "@/components/ui/AppText";
 
 import { FillBlankQuestion } from "@/data/lesson-content";
 import type { LessonPathMode } from "@/data/lesson-content";
@@ -192,7 +189,6 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       <GameHeader>
         <LightGameHeading
           title={t("lessons.fillBlank")}
-          subtitle={t("lessons.fillBlankSub")}
         />
       </GameHeader>
 
@@ -206,26 +202,38 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <View style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
+          <Animated.View layout={layoutMorph} style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
             {question.sentenceParts[0] ? (
-              <Text style={s.sentenceText}>{question.sentenceParts[0]} </Text>
+              <AppText style={s.sentenceText}>{question.sentenceParts[0]} </AppText>
             ) : null}
-            <View
+            <Pressable
               ref={blankRef}
               collapsable={false}
-              style={[s.blank, { borderColor: blankBorder }]}
+              style={({ pressed }) => [
+                s.blank,
+                { borderColor: blankBorder },
+                pressed && selected && { opacity: 0.8, transform: [{ scale: 0.96 }] }
+              ]}
+              onPress={() => {
+                if (revealed || !selected) return;
+                if (Platform.OS !== "web") {
+                  void Haptics.selectionAsync();
+                }
+                setSelected(null);
+              }}
               onLayout={() => {
                 blankRef.current?.measureInWindow((x, y, w, h) => {
                   blankCoords.current = { x, y, w, h };
                 });
               }}
+              disabled={revealed || !selected}
             >
-              <Text style={s.blankText}>{flySession ? "" : (selected || "____")}</Text>
-            </View>
+              <AppText style={s.blankText}>{flySession ? "" : (selected || "____")}</AppText>
+            </Pressable>
             {question.sentenceParts[1] ? (
-              <Text style={s.sentenceText}> {question.sentenceParts[1]}</Text>
+              <AppText style={s.sentenceText}> {question.sentenceParts[1]}</AppText>
             ) : null}
-          </View>
+          </Animated.View>
         </LightSurfaceCard>
       </Animated.View>
 
@@ -295,7 +303,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 12,
-    gap: 16,
+    gap: 24,
   },
   sentenceRow: {
     flexDirection: "row",
@@ -333,7 +341,8 @@ const s = StyleSheet.create({
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 12,
     justifyContent: "center",
+    marginTop: 20,
   },
 });

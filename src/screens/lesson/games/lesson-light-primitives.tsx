@@ -39,16 +39,18 @@ export function LightGameHeading({
   subtitle,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
 }) {
   return (
     <View style={lh.headingWrap}>
       <AppText style={LightType.title} forceLatinFont>
         {title}
       </AppText>
-      <AppText style={LightType.subtitle} forceLatinFont latinRole="regular">
-        {subtitle}
-      </AppText>
+      {subtitle ? (
+        <AppText style={LightType.subtitle} forceLatinFont latinRole="regular">
+          {subtitle}
+        </AppText>
+      ) : null}
     </View>
   );
 }

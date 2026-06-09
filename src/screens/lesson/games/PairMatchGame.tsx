@@ -5,7 +5,7 @@
 
 import { useI18n } from "@/hooks/useI18n";
 import React, { memo, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedProps,
@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Line } from "react-native-svg";
+import { AppText } from "@/components/ui/AppText";
 
 const AnimatedLine = Animated.createAnimatedComponent(Line);
 
@@ -49,11 +50,15 @@ function shuffleSeeded<T>(arr: T[], seed: number): T[] {
 
 function pairSeed(pairs: PairMatchQuestion["pairs"]): number {
   let h = 0;
-  const key = pairs.map((p) => `${p.kurdish}|${p.english}`).join(";");
+  const key = plans_key(pairs);
   for (let i = 0; i < key.length; i++) {
     h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
   }
   return Math.abs(h);
+}
+
+function plans_key(pairs: PairMatchQuestion["pairs"]): string {
+  return pairs.map((p) => `${p.kurdish}|${p.english}`).join(";");
 }
 
 const MatchChip = memo(function MatchChip({
@@ -286,7 +291,6 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
       <GameHeader>
         <LightGameHeading
           title={t("lessons.pairWords")}
-          subtitle={t("lessons.pairWordsSub")}
         />
       </GameHeader>
 
@@ -302,19 +306,19 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
             />
           ))}
         </View>
-        <Text style={[s.progressLabel, { textAlign: isKu ? "left" : "right" }]}>
+        <AppText style={[s.progressLabel, { textAlign: isKu ? "left" : "right" }]}>
           {matchedCount}/{total}
-        </Text>
+        </AppText>
       </View>
 
       <LightSurfaceCard style={s.boardCard} contentStyle={{ flex: 1 }}>
         <View style={[s.boardScroll, s.boardScrollContent]}>
           <View style={[s.colLabels, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <Text style={[LightType.label, s.colLabel, { textAlign: isKu ? "left" : "right" }]}>
+            <AppText style={[LightType.label, s.colLabel, { textAlign: isKu ? "left" : "right" }]} forceKurdishFont>
               کوردی
-            </Text>
+            </AppText>
             <View style={s.colDivider} />
-            <Text style={[LightType.label, s.colLabel, { textAlign: isKu ? "right" : "left" }]}>English</Text>
+            <AppText style={[LightType.label, s.colLabel, { textAlign: isKu ? "right" : "left" }]} forceLatinFont>English</AppText>
           </View>
 
           <View style={[s.board, { flexDirection: isKu ? "row-reverse" : "row" }]}>
@@ -358,15 +362,6 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
               ))}
             </View>
           </View>
-
-          {awaitingPair ? (
-            <View style={[s.hintRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-              <View style={s.hintDot} />
-              <Text style={s.hintText}>
-                {selL ? t("lessons.pairPickEnglish") : t("lessons.pairPickKurdish")}
-              </Text>
-            </View>
-          ) : null}
         </View>
       </LightSurfaceCard>
 

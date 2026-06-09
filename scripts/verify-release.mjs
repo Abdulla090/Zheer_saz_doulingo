@@ -24,12 +24,16 @@ function read(rel) {
 // Routes
 const layout = read("src/app/(tabs)/_layout.android.tsx");
 const tabNavigation = read("src/constants/tab-navigation.ts");
-const appRoutes = [
+
+const tabRoutes = [
   "index",
   "dashboard",
   "feed",
   "subscription",
   "more",
+];
+
+const stackRoutes = [
   "lesson",
   "guidebook",
   "roleplay",
@@ -39,12 +43,21 @@ const appRoutes = [
   "terms",
 ];
 
-for (const route of appRoutes) {
+for (const route of tabRoutes) {
   const file = join(root, `src/app/(tabs)/${route}.tsx`);
   if (!existsSync(file)) {
-    fail(`Missing route file src/app/(tabs)/${route}.tsx`);
+    fail(`Missing tab route file src/app/(tabs)/${route}.tsx`);
   } else {
-    ok(`Route file exists: /(tabs)/${route}`);
+    ok(`Tab route file exists: /(tabs)/${route}`);
+  }
+}
+
+for (const route of stackRoutes) {
+  const file = join(root, `src/app/${route}.tsx`);
+  if (!existsSync(file)) {
+    fail(`Missing stack route file src/app/${route}.tsx`);
+  } else {
+    ok(`Stack route file exists: /${route}`);
   }
 }
 
@@ -66,12 +79,12 @@ for (const hidden of [
   }
 }
 
-const jsTabs = read("src/navigation/JsTabsLayout.tsx");
+const rootLayoutContent = read("src/app/_layout.tsx");
 for (const screen of ["ai-teacher", "podcast", "voice-tutor"]) {
-  if (!jsTabs.includes(`name="${screen}"`)) {
-    fail(`JsTabsLayout missing ${screen} screen`);
+  if (!rootLayoutContent.includes(`name="${screen}"`)) {
+    fail(`Root layout missing ${screen} screen`);
   } else {
-    ok(`JsTabsLayout registers ${screen}`);
+    ok(`Root layout registers ${screen}`);
   }
 }
 

@@ -37,7 +37,7 @@ const C = HomePalette;
 export function VoiceTutorScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useI18n();
+  const { t, isKu } = useI18n();
   const tutor = useGeminiLiveTutor();
 
   const mascotPose = useMemo(() => {
@@ -86,14 +86,16 @@ export function VoiceTutorScreen() {
     <View style={styles.root}>
       <HomeMeshBackground />
 
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
         <Pressable
           onPress={handleBack}
           style={styles.backBtn}
           hitSlop={12}
           accessibilityRole="button"
         >
-          <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
+          <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+            <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
+          </View>
         </Pressable>
         <View style={styles.headerTitles}>
           <Text style={styles.pageTitle}>{t("voiceTutor.title")}</Text>

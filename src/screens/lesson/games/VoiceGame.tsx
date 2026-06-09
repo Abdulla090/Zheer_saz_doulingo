@@ -8,7 +8,7 @@
 import { AppText } from "@/components/ui/AppText";
 import { isGeminiConfigured } from "@/constants/gemini";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View, TextInput } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -78,6 +78,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const [transcript, setTranscript] = useState("");
   const [statusDetail, setStatusDetail] = useState<string | null>(null);
   const [hasHintRevealed, setHasHintRevealed] = useState(false);
+  const [inputText, setInputText] = useState("");
 
   const firedRef = useRef(false);
   const stateRef = useRef<ListenState>("idle");
@@ -106,6 +107,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     setTranscript("");
     setStatusDetail(null);
     setHasHintRevealed(false);
+    setInputText("");
     firedRef.current = false;
     stateRef.current = "idle";
     transcriptRef.current = "";
@@ -441,8 +443,16 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const handleManualConfirm = () => {
     if (firedRef.current) return;
-    updateState("success");
-    setTimeout(() => fireAnswer(true), 400);
+
+    const cleanStr = (s: string) =>
+      s.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+
+    if (cleanStr(inputText) === cleanStr(question.targetWord)) {
+      updateState("success");
+      setTimeout(() => fireAnswer(true), 400);
+    } else {
+      triggerFailShake();
+    }
   };
 
   const handleHearPhrase = () => {
@@ -494,7 +504,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       <GameHeader>
         <LightGameHeading
           title={t("lessons.sayOutLoud")}
-          subtitle={t("lessons.sayOutLoudSub")}
         />
       </GameHeader>
 
@@ -513,12 +522,12 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             style={({ pressed }) => [s.hintButton, pressed && s.hintButtonPressed]}
           >
             <SpeakerIcon size={24} />
-            <Text style={s.hintText}>Tap for hint</Text>
+            <AppText style={s.hintText}>Tap for hint</AppText>
           </Pressable>
         </Animated.View>
       ) : (
         <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
-          <Text style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</Text>
+          <AppText style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</AppText>
 
           <View style={[s.targetRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <AppText style={s.targetEn} forceLatinFont latinRole="bold">
@@ -536,12 +545,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           </View>
         </Animated.View>
       )}
-
-      <Text style={s.listenHint}>{t("lessons.voiceListenHint")}</Text>
-
-      {showGeminiKeyHint ? (
-        <Text style={s.devHint}>{t("lessons.voiceGeminiKeyHint")}</Text>
-      ) : null}
 
       <View style={s.micStage}>
         {!manualMode ? (
@@ -571,25 +574,39 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
                 }}
                 style={({ pressed }) => [s.fallbackLink, pressed && { opacity: 0.75 }]}
               >
-                <Text style={s.fallbackLinkText}>{t("lessons.voiceManualFallback")}</Text>
+                <AppText style={s.fallbackLinkText}>{t("lessons.voiceManualFallback")}</AppText>
               </Pressable>
             )}
           </>
         ) : (
           <View style={s.manualWrap}>
             {speech.error || gemini.error ? (
-              <Text style={s.unavailable}>{speech.error || gemini.error}</Text>
+              <AppText style={s.unavailable}>{speech.error || gemini.error}</AppText>
             ) : (
-              <Text style={s.unavailable}>{t("lessons.voiceUnavailable")}</Text>
+              <AppText style={s.unavailable}>{t("lessons.voiceUnavailable")}</AppText>
             )}
-            <Text style={s.manualHint}>{t("lessons.voiceManualHint")}</Text>
+            <AppText style={s.manualHint}>Type the English sentence below to verify:</AppText>
+            <Animated.View style={[s.inputWrapper, shakeStyle]}>
+              <TextInput
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Type target phrase..."
+                placeholderTextColor="#A0AEC0"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[
+                  s.inputField,
+                  state === "fail" && { borderColor: "#EF4444", backgroundColor: "#FEF2F2" }
+                ]}
+              />
+            </Animated.View>
           </View>
         )}
 
         {showTranscript ? (
-          <Text style={s.transcript} numberOfLines={2}>
+          <AppText style={s.transcript} numberOfLines={2}>
             {transcript}
-          </Text>
+          </AppText>
         ) : null}
       </View>
 
@@ -605,9 +622,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </GameFooter>
       ) : state === "fail" ? (
         <GameFooter delay={120}>
-          <Text style={s.skipLink} onPress={() => fireAnswer("skip")}>
+          <AppText style={s.skipLink} onPress={() => fireAnswer("skip")}>
             {t("lessons.dontKnow")}
-          </Text>
+          </AppText>
         </GameFooter>
       ) : null}
     </GameRoot>
@@ -725,7 +742,7 @@ const s = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 24,
-    backgroundColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(43,89,243,0.06)",
     borderWidth: 1.5,
     borderColor: "rgba(43,89,243,0.15)",
     borderRadius: 20,
@@ -759,5 +776,23 @@ const s = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     textAlign: "center",
     textDecorationLine: "underline",
+  },
+  inputWrapper: {
+    width: "100%",
+    minWidth: 280,
+    marginTop: 8,
+  },
+  inputField: {
+    width: "100%",
+    height: 52,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    fontSize: 16,
+    color: L.navy,
+    fontFamily: "DINNextRoundedRegular",
+    borderWidth: 1.5,
+    borderColor: L.border,
+    textAlign: "center",
   },
 });

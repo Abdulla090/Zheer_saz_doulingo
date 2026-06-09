@@ -12,6 +12,7 @@ import { useAndroidImmersiveChrome } from "@/hooks/use-android-immersive-chrome"
 import { NavigationBar } from "expo-navigation-bar";
 import { syncHomeWidget } from "@/services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
+import { fetchRemoteCurriculum } from "@/services/curriculum-loader";
 import { useLocaleStore } from "@/stores/useLocaleStore";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
@@ -45,8 +46,6 @@ function applyGlobalFont(kurdishFontFamily: string) {
       `'${kurdishFontFamily}'`,
     );
   }
-  (Text as any).defaultProps = (Text as any).defaultProps ?? {};
-  (Text as any).defaultProps.style = { fontFamily: kurdishFontFamily };
 }
 
 function RootLayout() {
@@ -118,6 +117,9 @@ function RootLayout() {
   useEffect(() => {
     if (ready) {
       void syncHomeWidget();
+      void fetchRemoteCurriculum("street");
+      void fetchRemoteCurriculum("normal");
+      void fetchRemoteCurriculum("kids");
     }
   }, [ready]);
 
@@ -153,9 +155,23 @@ function RootLayout() {
                 <Stack.Protected guard={onboardingComplete}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen
-                    name="role-play"
+                    name="roleplay"
                     options={{ presentation: "fullScreenModal", animation: "fade" }}
                   />
+                  <Stack.Screen name="lesson" />
+                  <Stack.Screen name="guidebook" options={{ animation: "fade" }} />
+                  <Stack.Screen name="ai-teacher" />
+                  <Stack.Screen name="voice-tutor" />
+                  <Stack.Screen name="podcast" />
+                  <Stack.Screen name="slang" />
+                  <Stack.Screen name="quest" />
+                  <Stack.Screen name="league" />
+                  <Stack.Screen name="privacy-policy" />
+                  <Stack.Screen name="ai-safety" />
+                  <Stack.Screen name="terms" />
+                  <Stack.Screen name="admin/index" />
+                  <Stack.Screen name="admin/unit" />
+                  <Stack.Screen name="admin/lesson" />
                 </Stack.Protected>
                 <Stack.Protected guard={!onboardingComplete}>
                   <Stack.Screen name="onboarding" />

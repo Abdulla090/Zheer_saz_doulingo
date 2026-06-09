@@ -27,6 +27,7 @@ import {
 } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
+import Animated, { FadeInUp, FadeOutDown, LinearTransition } from "react-native-reanimated";
 import {
   Modal,
   Platform,
@@ -143,133 +144,141 @@ const SlangItemRow = React.memo(function SlangItemRow({
   activeId: string | null;
 }) {
   return (
-    <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
-      <PressableScale onPress={() => onToggleExpand(item.id)} scaleDown={0.99}>
-        <View style={[styles.itemHeader, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-          <View style={[styles.phraseCol, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-            <View style={[styles.badgeRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-              <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
-                <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
-                  {item.type}
-                </AppText>
+    <Animated.View layout={LinearTransition.duration(220)}>
+      <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
+        <PressableScale onPress={() => onToggleExpand(item.id)} scaleDown={0.99}>
+          <View style={[styles.itemHeader, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+            <View style={[styles.phraseCol, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
+              <View style={[styles.badgeRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
+                  <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
+                    {item.type}
+                  </AppText>
+                </View>
               </View>
+              <AppText style={styles.slangPhrase} forceLatinFont>
+                {item.phrase}
+              </AppText>
+              <AppText style={styles.slangSubtitle} forceKurdishFont numberOfLines={1}>
+                {item.pronunciation}
+              </AppText>
             </View>
-            <AppText style={styles.slangPhrase} forceLatinFont>
-              {item.phrase}
-            </AppText>
-            <AppText style={styles.slangSubtitle} forceKurdishFont numberOfLines={1}>
-              {item.pronunciation}
-            </AppText>
-          </View>
 
-          <View style={[styles.actionRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-            <PressableScale
-              onPress={() => onSpeak(item.phrase, item.id)}
-              style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
-            >
-              <Volume2
-                size={20}
-                color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
-              />
-            </PressableScale>
-            {isExpanded ? (
-              <ChevronUp size={20} color={ThemeColors.slate} />
-            ) : (
-              <ChevronDown size={20} color={ThemeColors.slate} />
-            )}
-          </View>
-        </View>
-      </PressableScale>
-
-      {isExpanded && (
-        <View style={styles.itemExpanded}>
-          <View style={styles.divider} />
-
-          <View style={styles.detailRow}>
-            <AppText style={styles.detailLabel} forceKurdishFont>
-              {isKurdish ? "خوێندنەوە" : "Pronunciation"}
-            </AppText>
-            <AppText style={styles.detailValue} forceKurdishFont>
-              {item.pronunciation}
-            </AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText style={styles.detailLabel} forceKurdishFont>
-              {isKurdish ? "واتا" : "Meaning"}
-            </AppText>
-            <AppText style={[styles.detailValue, styles.detailFigurative]} forceKurdishFont>
-              {item.kuMeaning}
-            </AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText style={styles.detailLabel} forceKurdishFont>
-              {t("slang.example")}
-            </AppText>
-            <View style={styles.dialogueBox}>
-              {/* Dialogue Bubble A */}
-              <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-                <View style={styles.dialogueMarkerA}>
-                  <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                    A
-                  </AppText>
-                </View>
-                <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-                  <AppText style={styles.dialogueEn} forceLatinFont>
-                    {item.example.speakerA}
-                  </AppText>
-                  <AppText style={styles.dialogueKu} forceKurdishFont>
-                    {item.example.kuA}
-                  </AppText>
-                </View>
-                <PressableScale
-                  onPress={() => onSpeak(item.example.speakerA, `${item.id}_a`)}
-                  style={[
-                    styles.miniSpeakerBtn,
-                    speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
-                  ]}
-                >
-                  <Volume2
-                    size={14}
-                    color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
-                  />
-                </PressableScale>
-              </View>
-
-              {/* Dialogue Bubble B */}
-              <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-                <View style={styles.dialogueMarkerB}>
-                  <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                    B
-                  </AppText>
-                </View>
-                <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-                  <AppText style={styles.dialogueEn} forceLatinFont>
-                    {item.example.speakerB}
-                  </AppText>
-                  <AppText style={styles.dialogueKu} forceKurdishFont>
-                    {item.example.kuB}
-                  </AppText>
-                </View>
-                <PressableScale
-                  onPress={() => onSpeak(item.example.speakerB, `${item.id}_b`)}
-                  style={[
-                    styles.miniSpeakerBtn,
-                    speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
-                  ]}
-                >
-                  <Volume2
-                    size={14}
-                    color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
-                  />
-                </PressableScale>
-              </View>
+            <View style={[styles.actionRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+              <PressableScale
+                onPress={() => onSpeak(item.phrase, item.id)}
+                style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
+              >
+                <Volume2
+                  size={20}
+                  color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
+                />
+              </PressableScale>
+              {isExpanded ? (
+                <ChevronUp size={20} color={ThemeColors.slate} />
+              ) : (
+                <ChevronDown size={20} color={ThemeColors.slate} />
+              )}
             </View>
           </View>
-        </View>
-      )}
-    </HomeLiquidCard>
+        </PressableScale>
+
+        {isExpanded && (
+          <Animated.View
+            entering={FadeInUp.duration(220).springify().damping(18)}
+            exiting={FadeOutDown.duration(160)}
+            style={styles.itemExpanded}
+          >
+            <View style={styles.divider} />
+
+            <View style={styles.detailRow}>
+              <AppText style={styles.detailLabel} forceKurdishFont>
+                {isKurdish ? "خوێندنەوە" : "Pronunciation"}
+              </AppText>
+              <AppText style={styles.detailValue} forceKurdishFont>
+                {item.pronunciation}
+              </AppText>
+            </View>
+
+            <View style={styles.detailRow}>
+              <AppText style={styles.detailLabel} forceKurdishFont>
+                {isKurdish ? "واتا" : "Meaning"}
+              </AppText>
+              <AppText style={[styles.detailValue, styles.detailFigurative]} forceKurdishFont>
+                {item.kuMeaning}
+              </AppText>
+            </View>
+
+            <View style={styles.detailRow}>
+              <AppText style={styles.detailLabel} forceKurdishFont>
+                {t("slang.example")}
+              </AppText>
+              <View style={styles.dialogueBox}>
+                {/* Dialogue Bubble A */}
+                <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                  <View style={styles.dialogueMarkerA}>
+                    <AppText style={styles.dialogueMarkerText} forceLatinFont>
+                      A
+                    </AppText>
+                  </View>
+                  <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
+                    <AppText style={styles.dialogueEn} forceLatinFont>
+                      {item.example.speakerA}
+                    </AppText>
+                    <AppText style={styles.dialogueKu} forceKurdishFont>
+                      {item.example.kuA}
+                    </AppText>
+                  </View>
+                  <PressableScale
+                    onPress={() => onSpeak(item.example.speakerA, `${item.id}_a`)}
+                    style={[
+                      styles.miniSpeakerBtn,
+                      speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
+                    ]}
+                  >
+                    <Volume2
+                      size={14}
+                      color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
+                    />
+                  </PressableScale>
+                </View>
+
+                <View style={styles.divider} />
+
+                {/* Dialogue Bubble B */}
+                <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                  <View style={styles.dialogueMarkerB}>
+                    <AppText style={styles.dialogueMarkerText} forceLatinFont>
+                      B
+                    </AppText>
+                  </View>
+                  <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
+                    <AppText style={styles.dialogueEn} forceLatinFont>
+                      {item.example.speakerB}
+                    </AppText>
+                    <AppText style={styles.dialogueKu} forceKurdishFont>
+                      {item.example.kuB}
+                    </AppText>
+                  </View>
+                  <PressableScale
+                    onPress={() => onSpeak(item.example.speakerB, `${item.id}_b`)}
+                    style={[
+                      styles.miniSpeakerBtn,
+                      speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
+                    ]}
+                  >
+                    <Volume2
+                      size={14}
+                      color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
+                    />
+                  </PressableScale>
+                </View>
+              </View>
+            </View>
+          </Animated.View>
+        )}
+      </HomeLiquidCard>
+    </Animated.View>
   );
 });
 
@@ -904,6 +913,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: C.divider,
+    marginBottom: 12,
   },
   cardContent: {
     padding: 16,

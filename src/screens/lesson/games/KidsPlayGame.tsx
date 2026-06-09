@@ -264,7 +264,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   return (
     <GameRoot style={kb.root}>
       <GameHeader>
-        <LightGameHeading title={heading.title} subtitle={heading.subtitle} />
+        <LightGameHeading title={heading.title} />
       </GameHeader>
 
       <LightPromptCard

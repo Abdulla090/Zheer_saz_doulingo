@@ -165,3 +165,90 @@ export async function evaluateSpeechWithGemini(input: {
     clearTimeout(timeoutId!);
   }
 }
+
+export async function generateRolePlayResponse(
+  scenarioId: string,
+  userText: string,
+  history: { sender: "user" | "ai"; text: string }[]
+): Promise<string> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  const scenarioDetails: Record<string, { role: string; instructions: string }> = {
+    cafe: {
+      role: "a polite French café barista",
+      instructions: "The user is a customer ordering a coffee or croissant. Keep it light, offer pastries, and respond in character."
+    },
+    space: {
+      role: "a strict Mars transit flight gate agent",
+      instructions: "The user is a space traveler whose baggage exceeds weight limits. Demand justifications in a robotic but amusing gate agent persona."
+    },
+    job: {
+      role: "an AI Engineering hiring manager",
+      instructions: "The user is an applicant. Ask questions about optimizing small language models, quantization, or mobile AI deployment."
+    },
+    market: {
+      role: "a persistent bazaar merchant bargaining over a high-quality rug",
+      instructions: "The user is trying to bargain. Start high (500 gold coins), be dramatic, and bargain back-and-forth."
+    }
+  };
+
+  const sc = scenarioDetails[scenarioId] ?? {
+    role: "a conversational partner",
+    instructions: "Engage in a friendly roleplay scenario."
+  };
+
+  const historyPrompt = history
+    .map((h) => `${h.sender === "user" ? "Learner" : "You (AI roleplayer)"}: ${h.text}`)
+    .join("\n");
+
+  const prompt = [
+    `You are roleplaying as ${sc.role}.`,
+    `Scenario Context & Instructions: ${sc.instructions}`,
+    `Keep your response simple (A2-B1 English), warm, and concise (1-2 sentences).`,
+    `Do not include any translations, explanations, or metadata. Reply ONLY with your in-character spoken line.`,
+    `\nHistory:`,
+    historyPrompt,
+    `Learner: ${userText}`,
+    `You (AI roleplayer):`
+  ].join("\n");
+
+  const controller = new AbortController();
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 128,
+        }
+      }),
+      signal: controller.signal
+    }
+  );
+
+  const data = (await res.json()) as GeminiGenerateResponse;
+  if (!res.ok) {
+    throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
+  }
+
+  const text =
+    data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim() ?? "";
+
+  return text || "Of course! Let's continue.";
+}

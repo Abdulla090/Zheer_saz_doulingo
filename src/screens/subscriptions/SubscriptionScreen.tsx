@@ -3,148 +3,329 @@ import { SvgAppButton } from "@/components/shared/svg-app-button";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Icon3DCheck } from "@/components/icons/Icon3D";
-import { ScrollView, Text, View } from "react-native";
-const plans = [
-  {
-    id: 1,
-    name: "Super",
-    price: 10,
-    isRecommended: true,
-    description: "فێربە بەبێ بێزارکردن",
-    features: ["پشووی بێ سنوور", "بەبێ ڕیکلام"],
-  },
-  {
-    id: 2,
-    name: "Super Family",
-    description: "شەریکایەتی سوپەر و پاشەکەوت بکە",
-    price: 20,
-    isRecommended: false,
-    features: ["بۆ تۆ و ٥ کەسی تر", "تەنها ٣€ زیاترە لە مانگێکدا "],
-  },
-  {
-    id: 3,
-    name: "Max",
-    price: 20,
-    isRecommended: false,
-    features: [
-      "پەیوەندی ڤیدیۆیی لەگەڵ لیلی",
-      "نواندنی ڕۆڵ",
-      "فیدباکی ڕاستەوخۆ",
-      "پشووی بێ سنوور",
-      "بەبێ ڕیکلام",
-    ],
-    description: "بەرزترین ئاستی فێربوون",
-  },
-  {
-    id: 4,
-    name: "Max Family",
-    price: 20,
-    isRecommended: false,
-    description: "بەرزترین ئاستی فێربوون",
-    features: ["بۆ تۆ و ٥ کەسی تر", "تەنها ٥€ زیاترە لە مانگێکدا "],
-  },
-];
-const PlanCard = ({ plan }: { plan: (typeof plans)[0] }) => {
+import { ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "@/components/ui/AppText";
+import { useI18n } from "@/hooks/useI18n";
+import React, { useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { tabBarScrollPadding } from "@/constants/layout";
+import { hapticImpact } from "@/utils/haptics";
+
+export const SubscriptionScreen = () => {
+  const { t, isKu } = useI18n();
+  const insets = useSafeAreaInsets();
+
+  const plans = useMemo(() => [
+    {
+      id: 1,
+      name: "Super",
+      price: 10,
+      isRecommended: true,
+      description: t("subscription.superDesc"),
+      features: [
+        t("subscription.featureUnlimited"),
+        t("subscription.featureNoAds"),
+      ],
+      image: require("@/assets/images/characters/zari.png"),
+      buttonColors: { face: "#1CB0F6", rim: "#0F8FCF" },
+    },
+    {
+      id: 2,
+      name: "Super Family",
+      price: 15,
+      isRecommended: false,
+      description: t("subscription.superFamilyDesc"),
+      features: [
+        t("subscription.featureFamily"),
+        t("subscription.featureSuperFamilyExtra"),
+      ],
+      image: require("@/assets/images/characters/boys.png"),
+      buttonColors: { face: "#58CC02", rim: "#3B8E00" },
+    },
+    {
+      id: 3,
+      name: "Max",
+      price: 20,
+      isRecommended: false,
+      description: t("subscription.maxDesc"),
+      features: [
+        t("subscription.featureVideoCall"),
+        t("subscription.featureRolePlay"),
+        t("subscription.featureLiveFeedback"),
+        t("subscription.featureUnlimited"),
+        t("subscription.featureNoAds"),
+      ],
+      image: require("@/assets/images/characters/character1.png"),
+      buttonColors: { face: "#FFC800", rim: "#D9A066" },
+    },
+    {
+      id: 4,
+      name: "Max Family",
+      price: 25,
+      isRecommended: false,
+      description: t("subscription.maxDesc"),
+      features: [
+        t("subscription.featureFamily"),
+        t("subscription.featureMaxFamilyExtra"),
+      ],
+      image: require("@/assets/images/characters/dolphin-mascot.jpg"),
+      buttonColors: { face: "#FF9600", rim: "#CC7800" },
+    },
+  ], [t]);
+
   return (
-    <View
-      className={`relative mb-4 mt-4 w-[90%] self-center justify-center bg-white gap-4 rounded-lg  ${
-        plan.isRecommended
-          ? "border-gray-5 border-x-2 border-b-2 overflow-visible py-8 px-4"
-          : "border-gray-5 border-2 overflow-hidden py-4 px-4"
-      }`}
-    >
-      {plan.isRecommended && (
-        <View className="absolute top-0 -left-[3px]  -right-[3px]">
-          <LinearGradient
-            colors={["#1CB0F6", "#10B981"]}
-            locations={[0, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{
-              width: "100%",
-              height: 35,
-              borderTopLeftRadius: 10,
-              borderTopRightRadius: 10,
-              justifyContent: "center",
-            }}
-          >
-            <Text className="text-white px-4 text-lg font-rd-medium">
-              پێشنیارکراو
-            </Text>
-          </LinearGradient>
-        </View>
-      )}
-      <View className="flex-row items-center justify-between">
-        <View>
-          <Text className="text-text-primary text-2xl font-rd-bold">
-            {plan.name}
-          </Text>
-          <Text className="text-text-secondary text-sm font-rd-medium">
-            {plan.description}
-          </Text>
-          {plan.features.map((feature) => (
-            <View key={feature} className="flex-row items-center gap-2">
-              <Icon3DCheck size={22} />
-              <Text
-                key={feature}
-                className="text-text-secondary text-sm font-rd-medium"
-              >
-                {feature}
-              </Text>
-            </View>
-          ))}
-        </View>
-        <Image
-          source={require("@/assets/images/characters/zari.png")}
-          contentFit="contain"
-          style={{ width: 100, height: 100 }}
+    <View style={styles.root}>
+      {/* Premium Gradient Header */}
+      <SafeContainer style={styles.safeHeader} accessibilityRole="header">
+        <LinearGradient
+          colors={["#0E3270", "#0A1F44"]}
+          style={StyleSheet.absoluteFillObject}
         />
-      </View>
-      <SvgAppButton
-        width="100%"
-        height={40}
-        style={{
-          marginTop: 10,
-        }}
-        color="#FFFFFF"
-        backgroundColor="#E5E5E5"
-        leftRadius={10}
-        rightRadius={10}
-        pressDepth={3}
-        onPress={() => {}}
+        <View style={styles.headerContent}>
+          <AppText style={styles.headerTitle} forceKurdishFont={isKu}>
+            {t("subscription.title")}
+          </AppText>
+          <AppText style={styles.headerSub} forceKurdishFont={isKu}>
+            {t("subscription.comparePlans")}
+          </AppText>
+          <Image
+            source={require("@/assets/images/Cry_Super.png")}
+            style={styles.mascotBanner}
+            contentFit="contain"
+          />
+        </View>
+      </SafeContainer>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          alignItems: "center",
-          justifyContent: "center",
-          borderWidth: 1,
-          borderColor: "#E5E5E5",
-          borderRadius: 10,
+          paddingTop: 16,
+          paddingHorizontal: 20,
+          paddingBottom: tabBarScrollPadding(insets.bottom),
         }}
       >
-        <Text className="text-blue-500 text-base font-rd-bold">
-          تابیکەرەوە بە ٠٫٠٠ €
-        </Text>
-      </SvgAppButton>
-    </View>
-  );
-};
-export const SubscriptionScreen = () => {
-  return (
-    <View className="flex-1  bg-white">
-      <SafeContainer className="px-4 pt-2 pb-2 bg-[#0E3270]">
-        <Text className="text-white text-2xl font-rd-bold">بەشداریکردن</Text>
-        <Text className="text-text-quaternary text-sm font-rd-medium">
-          بەراوردکردنی پلانەکان
-        </Text>
-        <Image
-          source={require("@/assets/images/Cry_Super.png")}
-          style={{ width: 150, height: 150, alignSelf: "center" }}
-        />
-      </SafeContainer>
-      <ScrollView>
-        {plans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} />
-        ))}
+        {plans.map((plan) => {
+          return (
+            <View
+              key={plan.id}
+              style={[
+                styles.card,
+                plan.isRecommended ? styles.cardRecommended : styles.cardNormal,
+              ]}
+            >
+              {plan.isRecommended && (
+                <View style={styles.recommendedBadgeContainer}>
+                  <LinearGradient
+                    colors={["#1CB0F6", "#10B981"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.recommendedBadgeGrad}
+                  >
+                    <AppText style={styles.recommendedBadgeText} forceKurdishFont={isKu}>
+                      {t("subscription.recommended")}
+                    </AppText>
+                  </LinearGradient>
+                </View>
+              )}
+
+              <View style={[styles.cardHeader, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                <View style={styles.cardHeaderInfo}>
+                  <AppText style={styles.planName} forceLatinFont>
+                    {plan.name}
+                  </AppText>
+                  <AppText style={[styles.planDesc, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>
+                    {plan.description}
+                  </AppText>
+                </View>
+                <Image
+                  source={plan.image}
+                  contentFit="contain"
+                  style={styles.cardMascot}
+                />
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.featuresList}>
+                {plan.features.map((feature, idx) => (
+                  <View
+                    key={idx}
+                    style={[styles.featureRow, { flexDirection: isKu ? "row-reverse" : "row" }]}
+                  >
+                    <Icon3DCheck size={20} />
+                    <AppText
+                      style={[styles.featureText, { textAlign: isKu ? "right" : "left" }]}
+                      forceKurdishFont={isKu}
+                    >
+                      {feature}
+                    </AppText>
+                  </View>
+                ))}
+              </View>
+
+              <SvgAppButton
+                width="100%"
+                height={46}
+                style={styles.planBtn}
+                color={plan.buttonColors.face}
+                backgroundColor={plan.buttonColors.rim}
+                leftRadius={14}
+                rightRadius={14}
+                pressDepth={4}
+                onPress={() => {
+                  hapticImpact();
+                }}
+                contentContainerStyle={styles.planBtnContent}
+              >
+                <AppText style={styles.planBtnText} forceKurdishFont={isKu}>
+                  {t("subscription.unlockBtn").replace("{price}", String(plan.price))}
+                </AppText>
+              </SvgAppButton>
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#F8FAF8",
+  },
+  safeHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: "hidden",
+  },
+  headerContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  headerTitle: {
+    color: "#FFFFFF",
+    fontSize: 26,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    textAlign: "center",
+  },
+  headerSub: {
+    color: "#A5B4FC",
+    fontSize: 15,
+    fontFamily: "DINNextRoundedMedium",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  mascotBanner: {
+    width: 130,
+    height: 130,
+    marginTop: 16,
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "#E5E5E5",
+    padding: 20,
+    marginBottom: 20,
+    position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  cardNormal: {
+    marginTop: 4,
+  },
+  cardRecommended: {
+    marginTop: 16,
+    borderColor: "#1CB0F6",
+  },
+  recommendedBadgeContainer: {
+    position: "absolute",
+    top: -16,
+    left: 20,
+    right: 20,
+    height: 32,
+    borderRadius: 999,
+    overflow: "hidden",
+    alignItems: "center",
+  },
+  recommendedBadgeGrad: {
+    paddingHorizontal: 20,
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  recommendedBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  cardHeaderInfo: {
+    flex: 1,
+  },
+  planName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1A2B48",
+    fontFamily: "DINNextRoundedBold",
+  },
+  planDesc: {
+    fontSize: 14,
+    color: "#777777",
+    fontFamily: "DINNextRoundedMedium",
+    marginTop: 4,
+  },
+  cardMascot: {
+    width: 80,
+    height: 80,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEF0F2",
+    marginVertical: 16,
+  },
+  featuresList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  featureText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#4B4B4B",
+    fontFamily: "DINNextRoundedMedium",
+  },
+  planBtn: {
+    marginTop: 8,
+  },
+  planBtnContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  planBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+  },
+});

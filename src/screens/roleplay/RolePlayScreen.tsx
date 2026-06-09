@@ -38,6 +38,7 @@ import {
 } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Speech from "expo-speech";
+import { isGeminiConfigured, generateRolePlayResponse } from "@/services/gemini-speech-service";
 
 const C = HomePalette;
 const { width: SW } = Dimensions.get("window");
@@ -122,6 +123,11 @@ export function RolePlayScreen() {
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const historyRef = useRef(history);
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
 
   useEffect(() => {
     statusRef.current = status;
@@ -222,9 +228,24 @@ export function RolePlayScreen() {
     }
   }
 
-  const handleUserResponse = useCallback((userText: string) => {
+  const handleUserResponse = useCallback(async (userText: string) => {
     setHistory((p) => [...p, { sender: "user", text: userText }]);
+    setStatus("thinking");
 
+    if (isGeminiConfigured()) {
+      try {
+        const currentHistory = historyRef.current;
+        const r = await generateRolePlayResponse(scenarioRef.current.id, userText, currentHistory);
+        setHistory((p) => [...p, { sender: "ai", text: r }]);
+        speak(r);
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
+        return;
+      } catch (err) {
+        console.warn("Gemini RolePlay failed, falling back to mock:", err);
+      }
+    }
+
+    // Fallback Mock logic
     setTimeout(() => {
       const sc = scenarioRef.current;
       let r = "";

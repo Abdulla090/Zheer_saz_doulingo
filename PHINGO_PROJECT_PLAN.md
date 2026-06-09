@@ -44,12 +44,12 @@
 | Native Modules | react-native-nitro-modules | ^0.35.3 |
 | Worklets | react-native-worklets | 0.7.2 |
 | Build | EAS Build (Expo Application Services) | CLI >= 18.0 |
-| Package Manager | **bun** (NOT npm/yarn) | 1.3.11 |
+| Package Manager | **npm** | 10.9.2 |
 | Language | TypeScript | ~5.9.2 |
 
 ### Package Manager Rules
-- Always use `bun add`, `bun remove`, `bun install`
-- NEVER use `npm install` or `yarn add`
+- Always use `npm install` and standard npm commands
+- DO NOT use bun or yarn to install dependencies to avoid lockfile conflicts with EAS
 - `trustedDependencies` in package.json must include any native package with postinstall scripts
 
 ### Architecture Pattern
@@ -140,8 +140,8 @@ Theme: **"Street English"** — practical, real-world English for daily life sit
 
 ## Key Technical Gotchas
 
-### Bun Package Manager
-- Project uses **bun**, NOT npm/yarn
+### NPM Package Manager
+- Project uses **npm**, with `package-lock.json` (npm-only for EAS compatibility)
 - Packages with postinstall scripts MUST be in `"trustedDependencies"` in package.json
 - Currently trusted: `@rive-app/react-native`, `react-native-reanimated`, `react-native-worklets`
 - `@shopify/react-native-skia` was REMOVED — it was never used and caused EAS build failures

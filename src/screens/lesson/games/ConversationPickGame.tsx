@@ -146,8 +146,6 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
             title={t("lessons.conversation")}
 
-            subtitle={t("lessons.conversationSub")}
-
           />
 
         </GameHeader>
@@ -171,10 +169,6 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
           {question.theyAsk}
 
         </LightDialogueCard>
-
-
-
-        <AppText style={s.chooseLabel}>{t("lessons.chooseResponse")}</AppText>
 
 
 

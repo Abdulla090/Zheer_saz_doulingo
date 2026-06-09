@@ -31,7 +31,7 @@ import { useTabTransition } from "@/context/TabTransitionContext";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TAB_BAR_GLASS } from "@/constants/tab-bar-glass";
@@ -114,17 +114,30 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const indicatorTargetX = useCallback(
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
-      if (index < tabCount) {
-        if (isKu) {
+      
+      // On web under RTL layout, elements with position: absolute and left: 0 are relative to the physical left,
+      // and translateX moves left-to-right. Thus, we must calculate the coordinate from the physical left.
+      // On native, Yoga automatically mirrors both start/left coordinates and translateX directions,
+      // so the standard LTR coordinate formulas are mirrored automatically.
+      const isWebRTL = Platform.OS === "web" && isKu;
+      
+      if (isWebRTL) {
+        if (index < tabCount) {
+          // RTL layout on web: FAB is on the left, pill is on the right.
+          // Inside the pill, slots are laid out from right to left (index 0 is on the right, index tabCount-1 is on the left)
           const slotIndexFromLeft = tabCount - 1 - index;
           return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + slotIndexFromLeft * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
         }
-        return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
-      }
-      if (isKu) {
+        // FAB is on the far left
         return (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
+      } else {
+        // LTR layout (or native RTL layout which Yoga handles automatically)
+        if (index < tabCount) {
+          return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+        }
+        // FAB is on the far right
+        return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       }
-      return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
     },
     [slotWidth, tabCount, pillWidth, isKu]
   );
@@ -211,12 +224,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
             width: rowWidth,
             gap: TAB_BAR_ROW_GAP,
-            flexDirection: isKu ? "row-reverse" : "row",
+            flexDirection: "row",
           },
         ]}
       >
         {/* Layer 1: Glass Backgrounds */}
-        <View style={[StyleSheet.absoluteFill, { flexDirection: isKu ? "row-reverse" : "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
           <TabBarGlassSurface
             borderRadius={TAB_BAR_CORNER_RADIUS}
             style={{ width: pillWidth, height: TAB_BAR_INNER_HEIGHT }}
@@ -238,7 +251,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
         {/* Layer 3: Interactive Icons */}
         <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
-          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: "row" }]}>
             {pillTabs.map(({ route, label, renderIcon }) => {
               const routeIndex = state.routes.findIndex((r) => r.name === route);
               const isFocused =

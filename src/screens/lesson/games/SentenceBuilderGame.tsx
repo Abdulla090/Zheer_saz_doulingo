@@ -287,7 +287,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           <GameHeader>
             <LightGameHeading
               title={t("lessons.orderWords")}
-              subtitle={t("lessons.orderWordsSub")}
             />
           </GameHeader>
 

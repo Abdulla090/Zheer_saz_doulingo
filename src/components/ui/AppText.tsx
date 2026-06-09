@@ -45,10 +45,10 @@ export function AppText({
 }: AppTextProps) {
   const kurdishFont = useKurdishFont();
 
-  // Optimize: Avoid unnecessary StyleSheet.flatten calls unless style is an array
+  // Fix: Call StyleSheet.flatten on style (handles IDs, objects, and arrays correctly)
   const flat = useMemo(() => {
     if (!style) return undefined;
-    return Array.isArray(style) ? StyleSheet.flatten(style) : (style as TextStyle);
+    return StyleSheet.flatten(style);
   }, [style]);
 
   // Optimize: Get only the first character to detect language direction, rather than stringifying the whole tree
@@ -71,22 +71,23 @@ export function AppText({
     return dirForText(firstChar);
   }, [forceKurdishFont, forceLatinFont, firstChar]);
 
-  // Clean style: Strip fontFamily from passed styles when forcing Kurdish script
-  // so that hardcoded Latin fonts in style sheets (like DIN) don't override the selected Kurdish font.
-  const restStyle = useMemo(() => {
-    if (forceLatinFont) return style;
-    const { fontFamily: _ignoredFont, ...rest } = flat ?? {};
-    return rest;
-  }, [forceLatinFont, flat, style]);
+  // Robust style flattening to prevent leaks (such as white text background boxes on Android)
+  const combinedStyle = useMemo(() => {
+    const flattened = StyleSheet.flatten([
+      style,
+      direction,
+      { backgroundColor: "transparent" },
+    ]);
+    const { fontFamily: _ignoredFont, ...rest } = flattened;
+    return {
+      ...rest,
+      fontFamily,
+    };
+  }, [style, direction, fontFamily]);
 
   return (
     <Text
-      style={[
-        { backgroundColor: "transparent" },
-        restStyle,
-        direction,
-        { fontFamily },
-      ]}
+      style={combinedStyle}
       {...props}
     >
       {children}

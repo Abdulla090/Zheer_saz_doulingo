@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, SafeAreaView } from "react-native";
+import { View, SafeAreaView } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { PressableScale } from "@/components/animations";
 import { useFontStore } from "@/stores/useFontStore";
 import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
 import { Icon3DSettings, Icon3DChevronRight, Icon3DCheckCircle } from "@/components/icons/Icon3D";
+import { AppText } from "@/components/ui/AppText";
 
 export default function MoreScreenWeb() {
   const { selectedFont, setFont } = useFontStore();
@@ -23,13 +24,13 @@ export default function MoreScreenWeb() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
           <Icon3DSettings size={28} />
-          <Text className="font-rd-bold" style={{ fontSize: 24, color: "#4B4B4B" }}>
+          <AppText className="font-rd-bold" style={{ fontSize: 24, color: "#4B4B4B" }}>
             ڕێکخستنەکان (Settings)
-          </Text>
+          </AppText>
         </View>
-        <Text className="font-rd-medium" style={{ fontSize: 16, color: "#777" }}>
+        <AppText className="font-rd-medium" style={{ fontSize: 16, color: "#777" }}>
           جۆری فۆنتی دڵخوازت لێرە هەڵبژێرە. گۆڕانکارییەکان یەکسەر جێبەجێ دەبن!
-        </Text>
+        </AppText>
       </View>
 
       <FlashList
@@ -69,7 +70,7 @@ export default function MoreScreenWeb() {
                   }}
                 />
               )}
-              <Text
+              <AppText
                 style={{
                   fontFamily: item,
                   fontSize: 22,
@@ -78,7 +79,7 @@ export default function MoreScreenWeb() {
                 }}
               >
                 فێربوونی زمان - {item.replace("Rabar_", "فۆنتی ")}
-              </Text>
+              </AppText>
             </View>
             <Icon3DChevronRight size={22} />
           </PressableScale>

@@ -18,10 +18,10 @@ import React, { useEffect } from "react";
 import {
     ScrollView,
     StyleSheet,
-    Text,
     View,
     useWindowDimensions,
 } from "react-native";
+import { AppText } from "@/components/ui/AppText";
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -239,11 +239,11 @@ export function PhingoHomeScreen({
 
         {/* Hero copy */}
         <Animated.View entering={enterFadeDown(40)} style={styles.heroCopy}>
-          <Text style={styles.eyebrow}>Your AI Language Partner</Text>
-          <Text style={styles.headline}>
-            I'm <Text style={styles.headlineAccent}>Phingo.</Text>
-          </Text>
-          <Text style={styles.subline}>Let's talk, learn and grow together.</Text>
+          <AppText style={styles.eyebrow}>Your AI Language Partner</AppText>
+          <AppText style={styles.headline}>
+            I'm <AppText style={styles.headlineAccent}>Phingo.</AppText>
+          </AppText>
+          <AppText style={styles.subline}>Let's talk, learn and grow together.</AppText>
         </Animated.View>
 
         {/* Mascot stage with floating bubbles & layered glows */}
@@ -295,7 +295,7 @@ export function PhingoHomeScreen({
               ]}
             >
               <WaveformIcon size={20} color="#FFFFFF" />
-              <Text style={styles.talkLabel}>Tap to talk</Text>
+              <AppText style={styles.talkLabel}>Tap to talk</AppText>
             </LinearGradient>
           </PressableScale>
         </Animated.View>
@@ -319,7 +319,7 @@ export function PhingoHomeScreen({
 
         {/* Suggestions */}
         <Animated.View entering={enterFadeDown(100)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Suggested for you</Text>
+          <AppText style={styles.sectionTitle}>Suggested for you</AppText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -344,8 +344,8 @@ export function PhingoHomeScreen({
                 ]}
               >
                 <View>
-                  <Text style={styles.cardTitle}>{item.title}</Text>
-                  <Text style={styles.cardSub}>{item.subtitle}</Text>
+                  <AppText style={styles.cardTitle}>{item.title}</AppText>
+                  <AppText style={styles.cardSub}>{item.subtitle}</AppText>
                 </View>
                 <View style={styles.cardIconSlot}>
                   <item.Icon size={36} />

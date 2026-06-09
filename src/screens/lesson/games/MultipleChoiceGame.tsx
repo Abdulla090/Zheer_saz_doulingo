@@ -71,7 +71,6 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Pro
       <GameHeader>
         <LightGameHeading
           title={t("lessons.chooseAnswer")}
-          subtitle={t("lessons.chooseAnswerSub")}
         />
       </GameHeader>
 
