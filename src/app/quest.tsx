@@ -1,4 +1,4 @@
-import QuestScreen from "@/screens/quest/QuestScreen";
+import QuestScreen from "../screens/quest/QuestScreen";
 
 const quest = () => <QuestScreen />;
 

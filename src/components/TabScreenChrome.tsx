@@ -1,5 +1,5 @@
-import { TabScreenTransition } from "@/components/TabScreenTransition";
-import { usesJsTabBar } from "@/constants/tab-mode";
+import { TabScreenTransition } from "./TabScreenTransition";
+import { usesJsTabBar } from "../constants/tab-mode";
 import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 

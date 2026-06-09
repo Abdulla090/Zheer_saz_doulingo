@@ -1,4 +1,4 @@
-import type { AppLocale } from "@/i18n";
+import type { AppLocale } from "../../i18n";
 import { aiSafetyEn } from "./ai-safety-en";
 import { aiSafetyKu } from "./ai-safety-ku";
 import { privacyEn } from "./privacy-en";

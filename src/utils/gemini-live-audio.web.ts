@@ -2,7 +2,7 @@
  * Web: stream mic as 16 kHz PCM + play 24 kHz PCM from Gemini Live.
  */
 
-import { GEMINI_LIVE_INPUT_RATE, GEMINI_LIVE_OUTPUT_RATE } from "@/constants/gemini";
+import { GEMINI_LIVE_INPUT_RATE, GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
 
 export type MicStreamHandle = {
   stop: () => void;

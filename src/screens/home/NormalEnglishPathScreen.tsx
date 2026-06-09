@@ -4,22 +4,22 @@
  * Dark slate theme. Structurally mirrors HomeScreen completely.
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { tabBarScrollPadding } from "@/constants/layout";
-import type { LessonListItem, SectionDataItem, SectionTheme } from "@/data/list-items";
-import { buildNormalSectionData } from "@/data/normal-english";
-import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "@/stores/useProgressStore";
+import { AppText } from "../../components/ui/AppText";
+import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
+import { tabBarScrollPadding } from "../../constants/layout";
+import type { LessonListItem, SectionDataItem, SectionTheme } from "../../data/list-items";
+import { buildNormalSectionData } from "../../data/normal-english";
+import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
+import { useProgressStore } from "../../stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
   splitPathUnitTitle,
-} from "@/data/path-unit-titles";
-import { useI18n } from "@/hooks/useI18n";
-import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+} from "../../data/path-unit-titles";
+import { useI18n } from "../../hooks/useI18n";
+import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
+import { ltrText, rtlText } from "../lesson/games/game-text";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,

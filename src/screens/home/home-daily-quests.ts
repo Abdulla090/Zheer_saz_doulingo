@@ -1,4 +1,4 @@
-import type { LastActivity } from "@/stores/useProgressStore";
+import type { LastActivity } from "../../stores/useProgressStore";
 
 export type HomeQuestId = "dailyXp" | "lessonToday" | "practiceToday";
 

@@ -1,17 +1,17 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import { Platform } from "react-native";
 
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useLocaleStore } from "@/stores/useLocaleStore";
-import { getPathProgressSummary } from "@/utils/path-progress";
+import { useProgressStore } from "../stores/useProgressStore";
+import { useLocaleStore } from "../stores/useLocaleStore";
+import { getPathProgressSummary } from "../utils/path-progress";
 import {
   buildLessonRouteForMode,
   getCurrentLessonMeta,
-} from "@/utils/lesson-navigation";
+} from "../utils/lesson-navigation";
 import {
   WIDGET_SNAPSHOT_KEY,
   type PhingoHomeWidgetPayload,
-} from "@/widgets/widget-types";
+} from "../widgets/widget-types";
 
 async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> {
   try {
@@ -82,7 +82,7 @@ export async function syncHomeWidget(): Promise<void> {
 
   if (Platform.OS === "ios") {
     try {
-      const { PhingoHomeWidget } = await import("@/widgets/PhingoHomeWidget");
+      const { PhingoHomeWidget } = await import("../widgets/PhingoHomeWidget");
       PhingoHomeWidget.updateSnapshot(payload);
     } catch {
       /* expo-widgets requires dev build */

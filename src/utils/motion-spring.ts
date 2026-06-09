@@ -1,4 +1,4 @@
-import { Motion } from "@/screens/lesson/games/game-design";
+import { Motion } from "../screens/lesson/games/game-design";
 import { Platform } from "react-native";
 import {
   Easing,

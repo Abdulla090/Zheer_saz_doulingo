@@ -1,13 +1,13 @@
 /* eslint-disable */
-import { ContentPackCard } from "@/components/ContentPackCard";
-import { KidsEnglishPathScreen } from "@/screens/home/KidsEnglishPathScreen";
-import { NormalEnglishPathScreen } from "@/screens/home/NormalEnglishPathScreen";
-import { StreetEnglishPathScreen } from "@/screens/home/StreetEnglishPathScreen";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+import { ContentPackCard } from "../../components/ContentPackCard";
+import { KidsEnglishPathScreen } from "./KidsEnglishPathScreen";
+import { NormalEnglishPathScreen } from "./NormalEnglishPathScreen";
+import { StreetEnglishPathScreen } from "./StreetEnglishPathScreen";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   CONTENT_PACKS,
   useContentPackStore,
-} from "@/stores/useContentPackStore";
+} from "../../stores/useContentPackStore";
 import { useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";

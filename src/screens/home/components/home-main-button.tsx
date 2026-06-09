@@ -1,10 +1,10 @@
 /* eslint-disable */
-import { NoteBook } from "@/constants/icons";
-import { AppText } from "@/components/ui/AppText";
-import type { LessonPathMode } from "@/data/lesson-content";
-import { useI18n } from "@/hooks/useI18n";
-import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
-import { hapticSelection } from "@/utils/haptics";
+import { NoteBook } from "../../../constants/icons";
+import { AppText } from "../../../components/ui/AppText";
+import type { LessonPathMode } from "../../../data/lesson-content";
+import { useI18n } from "../../../hooks/useI18n";
+import { ltrText, rtlText } from "../../lesson/games/game-text";
+import { hapticSelection } from "../../../utils/haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";

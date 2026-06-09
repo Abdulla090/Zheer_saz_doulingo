@@ -1,22 +1,22 @@
 /* eslint-disable */
-import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { tabBarScrollPadding } from "@/constants/layout";
+import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
+import { tabBarScrollPadding } from "../../constants/layout";
 import {
   buildSectionData,
   type LessonListItem,
   type SectionDataItem,
   type SectionTheme,
-} from "@/data/list-items";
-import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "@/stores/useProgressStore";
+} from "../../data/list-items";
+import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
+import { useProgressStore } from "../../stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
   splitPathUnitTitle,
-} from "@/data/path-unit-titles";
-import { useI18n } from "@/hooks/useI18n";
-import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+} from "../../data/path-unit-titles";
+import { useI18n } from "../../hooks/useI18n";
+import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,

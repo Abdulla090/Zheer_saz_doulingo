@@ -1,4 +1,4 @@
-import { PingoMascot, type PingoPose } from "@/components/mascot/PingoMascot";
+import { PingoMascot, type PingoPose } from "../../../components/mascot/PingoMascot";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 

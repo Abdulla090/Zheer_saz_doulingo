@@ -1,15 +1,15 @@
 /* eslint-disable */
-import { PressableScale } from "@/components/animations";
-import { enterFadeDown } from "@/components/animations/motion";
+import { PressableScale } from "../../components/animations";
+import { enterFadeDown } from "../../components/animations/motion";
 import {
     CardWaveMini,
     HeroAuraRing,
     PhingoWordmark,
     SettingsTuneIcon,
     WaveformIcon,
-} from "@/components/icons/PhingoHomeIcons";
-import { Icon3DLayers, Icon3DZapBlue } from "@/components/icons/Icon3D";
-import { crossShadow } from "@/utils/shadows";
+} from "../../components/icons/PhingoHomeIcons";
+import { Icon3DLayers, Icon3DZapBlue } from "../../components/icons/Icon3D";
+import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,7 +21,7 @@ import {
     View,
     useWindowDimensions,
 } from "react-native";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../components/ui/AppText";
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -32,7 +32,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useContentPackStore } from "@/stores/useContentPackStore";
+import { useContentPackStore } from "../../stores/useContentPackStore";
 
 const C = {
   bgTop: "#F4F9FF",

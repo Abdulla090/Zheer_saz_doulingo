@@ -5,8 +5,8 @@
  */
 /* eslint-disable react-hooks/immutability */
 
-import { layoutMorph, tileFlyTiming } from "@/components/animations/motion";
-import { useI18n } from "@/hooks/useI18n";
+import { layoutMorph, tileFlyTiming } from "../../../components/animations/motion";
+import { useI18n } from "../../../hooks/useI18n";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -26,8 +26,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { SentenceBuilderQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
+import { SentenceBuilderQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
 import { L } from "./lesson-light-design";
 import { isRtlText } from "./game-text";
 import {

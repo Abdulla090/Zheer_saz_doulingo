@@ -1,17 +1,17 @@
-import { ProgressBar } from "@/components/shared/progress-bar";
-import SafeContainer from "@/components/shared/safe-container";
-import { SvgAppButton } from "@/components/shared/svg-app-button";
-import { ChestUnlockedV2 } from "@/constants/icons";
+import { ProgressBar } from "../../components/shared/progress-bar";
+import SafeContainer from "../../components/shared/safe-container";
+import { SvgAppButton } from "../../components/shared/svg-app-button";
+import { ChestUnlockedV2 } from "../../constants/icons";
 import { Image } from "expo-image";
-import { Icon3DClock, Icon3DGift, Icon3DBell } from "@/components/icons/Icon3D";
+import { Icon3DClock, Icon3DGift, Icon3DBell } from "../../components/icons/Icon3D";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { AnimatedCard } from "@/components/animations";
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
-import { HomeMeshBackground, HomePalette as C } from "@/components/ui/ios-liquid-home";
+import { AnimatedCard } from "../../components/animations";
+import { AppText } from "../../components/ui/AppText";
+import { useI18n } from "../../hooks/useI18n";
+import { HomeMeshBackground, HomePalette as C } from "../../components/ui/ios-liquid-home";
 import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { hapticImpact } from "@/utils/haptics";
+import { hapticImpact } from "../../utils/haptics";
 
 const TRACK_COLOR = "#E5E5E5";
 const HERO_FILL_COLOR = "#1CB0F5";
@@ -177,7 +177,7 @@ const QuestScreen = () => {
             </View>
           </View>
           <Image
-            source={require("@/assets/images/characters/zari.png")}
+            source={require("../../../assets/images/characters/zari.png")}
             contentFit="contain"
             style={styles.zariMascot}
           />
@@ -218,7 +218,7 @@ const QuestScreen = () => {
 
           <View style={styles.boysCard}>
             <Image
-              source={require("@/assets/images/characters/boys.png")}
+              source={require("../../../assets/images/characters/boys.png")}
               contentFit="contain"
               style={styles.boysImage}
             />

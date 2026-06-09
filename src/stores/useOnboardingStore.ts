@@ -1,4 +1,4 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import { router } from "expo-router";
 import { create } from "zustand";
 

@@ -1,10 +1,10 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import {
   createEmptyLesson,
   getBundledUnits,
-} from "@/data/content-registry";
-import type { LessonBank, LessonPathMode, UnitBank } from "@/data/types";
-import { deepClone } from "@/utils/deep-clone";
+} from "../data/content-registry";
+import type { LessonBank, LessonPathMode, UnitBank } from "../data/types";
+import { deepClone } from "../utils/deep-clone";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.admin.content";

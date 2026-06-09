@@ -40,7 +40,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Check, X } from "lucide-react-native";
-import { crossShadow } from "@/utils/shadows";
+import { crossShadow } from "../../../utils/shadows";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
 /* ════════════════════════════════════════════════════════════════════

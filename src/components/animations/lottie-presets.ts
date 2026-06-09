@@ -3,7 +3,7 @@
  * Each entry is a public, free-to-use Lottie JSON URL.
  *
  * If you want offline-only animations, download any of these JSONs into
- * `assets/lottie/<name>.json` and swap the URL for `require('@/assets/lottie/<name>.json')`.
+ * `assets/lottie/<name>.json` and swap the URL for `require("../../../assets/lottie/<name>.json")`.
  *
  * To browse more: https://lottiefiles.com/free-animations
  */

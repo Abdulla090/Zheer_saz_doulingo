@@ -14,11 +14,11 @@
 //   2× SentenceBuilder · 2× FillBlank · 2× ConversationPick
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { buildConversationOptionTiers } from "@/utils/answer-tier";
+import { buildConversationOptionTiers } from "../utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
 import { buildKidsFlowQuestions } from "./kids-lesson-builder";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export type {
   GameQuestion,

@@ -3,10 +3,10 @@
  * Matches path lesson nodes and Phingo home CTAs.
  */
 
-import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
-import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
-import { prefersLiquidGlass } from "@/utils/liquid-glass-color";
-import { crossShadow } from "@/utils/shadows";
+import { cssPressStyle, cssReleaseStyle } from "../animations/motion";
+import { LiquidGlassSurface } from "../LiquidGlassSurface";
+import { prefersLiquidGlass } from "../../utils/liquid-glass-color";
+import { crossShadow } from "../../utils/shadows";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {

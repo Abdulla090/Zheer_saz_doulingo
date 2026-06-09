@@ -6,7 +6,7 @@
  * overflow:hidden sized to the cell), so neighbouring poses can never bleed in.
  */
 
-import PingoMascotSheet from "@/assets/images/svg/pingo-mascot-sheet.svg";
+import PingoMascotSheet from "../../../assets/images/svg/pingo-mascot-sheet.svg";
 import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 

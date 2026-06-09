@@ -1,20 +1,20 @@
-import SafeContainer from "@/components/shared/safe-container";
-import { Medal1, Medal2, Medal3 } from "@/constants/icons";
+import SafeContainer from "../../components/shared/safe-container";
+import { Medal1, Medal2, Medal3 } from "../../constants/icons";
 import {
   LEAGUE_ENTRIES,
   LeagueEntry,
-} from "@/data/league-items";
+} from "../../data/league-items";
 import {
   LegendList,
   LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
-import { Icon3DClock } from "@/components/icons/Icon3D";
+import { Icon3DClock } from "../../components/icons/Icon3D";
 import { StyleSheet, View } from "react-native";
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
-import { PressableScale } from "@/components/animations";
-import { hapticImpact } from "@/utils/haptics";
+import { AppText } from "../../components/ui/AppText";
+import { useI18n } from "../../hooks/useI18n";
+import { PressableScale } from "../../components/animations";
+import { hapticImpact } from "../../utils/haptics";
 import React from "react";
 
 const getAvatarUrl = (seed: string) =>

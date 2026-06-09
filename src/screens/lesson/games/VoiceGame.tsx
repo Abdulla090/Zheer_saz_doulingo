@@ -5,8 +5,8 @@
  * falls back to expo-speech-recognition (Web Speech API on web), then manual self-check.
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { isGeminiConfigured } from "@/constants/gemini";
+import { AppText } from "../../../components/ui/AppText";
+import { isGeminiConfigured } from "../../../constants/gemini";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View, TextInput } from "react-native";
 import Animated, {
@@ -18,14 +18,14 @@ import Animated, {
   FadeInUp,
 } from "react-native-reanimated";
 
-import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
-import { VoiceQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
-import { useGeminiVoiceCapture } from "@/hooks/use-gemini-voice-capture";
-import { useI18n } from "@/hooks/useI18n";
-import { useSpeechCapture } from "@/hooks/use-speech-capture";
-import { useTTS } from "@/hooks/use-tts";
-import { matchesTarget } from "@/utils/speech-match";
+import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
+import { VoiceQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
+import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
+import { useI18n } from "../../../hooks/useI18n";
+import { useSpeechCapture } from "../../../hooks/use-speech-capture";
+import { useTTS } from "../../../hooks/use-tts";
+import { matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import {
   LightCheckButton,

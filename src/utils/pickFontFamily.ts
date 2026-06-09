@@ -1,5 +1,5 @@
-import { FontLatin, type FontLatinRole } from "@/constants/typography";
-import { isRtlText } from "@/screens/lesson/games/game-text";
+import { FontLatin, type FontLatinRole } from "../constants/typography";
+import { isRtlText } from "../screens/lesson/games/game-text";
 import type { TextStyle } from "react-native";
 
 /** Kurdish (Arabic script) → user-selected Rabar; Latin UI → DIN. */

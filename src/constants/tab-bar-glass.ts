@@ -2,7 +2,7 @@ import {
   LIQUID_GLASS,
   liquidFrostBase,
   liquidGlassShellShadow,
-} from "@/constants/liquid-glass";
+} from "./liquid-glass";
 import { DynamicColorIOS, Platform, type ViewStyle } from "react-native";
 
 /** Tab bar tokens — extends shared liquid glass. */

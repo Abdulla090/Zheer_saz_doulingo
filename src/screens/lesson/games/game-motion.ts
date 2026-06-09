@@ -11,7 +11,7 @@ import {
   layoutSmooth,
   pressTiming,
   releaseTiming,
-} from "@/components/animations/motion";
+} from "../../../components/animations/motion";
 import { Easing, FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
 
 export {

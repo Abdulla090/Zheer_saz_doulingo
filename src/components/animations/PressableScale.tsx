@@ -3,7 +3,7 @@
  * PressableScale — Reanimated v4 scale feedback (UI-thread, no spring bounce).
  */
 
-import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { LiquidGlassSurface } from "../LiquidGlassSurface";
 import React from "react";
 import { Pressable, StyleProp, ViewStyle } from "react-native";
 import Animated, {
@@ -11,7 +11,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { hapticImpact } from "@/utils/haptics";
+import { hapticImpact } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import { CSS_PRESS_MS, CSS_RELEASE_MS } from "./motion";
 

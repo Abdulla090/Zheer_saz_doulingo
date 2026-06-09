@@ -1,7 +1,7 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import { Alert, DevSettings, I18nManager } from "react-native";
 import { create } from "zustand";
-import type { AppLocale } from "@/i18n";
+import type { AppLocale } from "../i18n";
 
 const STORAGE_KEY = "phingo.app.locale";
 

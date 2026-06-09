@@ -1,4 +1,4 @@
-import { crossShadow } from "@/utils/shadows";
+import { crossShadow } from "../../utils/shadows";
 import { Mic } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -10,7 +10,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../ui/AppText";
 
 type Props = {
   listening: boolean;

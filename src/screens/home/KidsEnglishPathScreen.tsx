@@ -4,23 +4,23 @@
  * Structurally mirrors the Street/Normal path screens, driven by kids progress.
  */
 
-import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { tabBarScrollPadding } from "@/constants/layout";
+import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
+import { tabBarScrollPadding } from "../../constants/layout";
 import {
   type LessonListItem,
   type SectionDataItem,
   type SectionTheme,
-} from "@/data/list-items";
-import { buildKidsSectionData } from "@/data/kids-english";
+} from "../../data/list-items";
+import { buildKidsSectionData } from "../../data/kids-english";
 import {
   getPathUnitTitle,
   localizePathSections,
   splitPathUnitTitle,
-} from "@/data/path-unit-titles";
-import { useI18n } from "@/hooks/useI18n";
-import { HomeMeshBackground } from "@/components/ui/ios-liquid-home";
-import { usePathScrollAfterLesson } from "@/hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "@/stores/useProgressStore";
+} from "../../data/path-unit-titles";
+import { useI18n } from "../../hooks/useI18n";
+import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
+import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
+import { useProgressStore } from "../../stores/useProgressStore";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -36,7 +36,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { KidsPathListRow } from "./components/kids-path-list-row";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 

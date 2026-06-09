@@ -5,9 +5,9 @@ import {
   PathTabIcon,
   ProfileTabIconFlat,
   ShopTabIcon,
-} from "@/components/icons/HomeDashboardIcons";
-import { TabBarGlassSurface } from "@/components/TabBarGlassSurface";
-import { PremiumPressable } from "@/components/PremiumPressable";
+} from "./icons/HomeDashboardIcons";
+import { TabBarGlassSurface } from "./TabBarGlassSurface";
+import { PremiumPressable } from "./PremiumPressable";
 import {
   TAB_BAR_ACTIVE_CHIP,
   TAB_BAR_CORNER_RADIUS,
@@ -18,25 +18,25 @@ import {
   TAB_BAR_ROW_GAP,
   TAB_BAR_TOP_PADDING,
   tabBarBottomInset,
-} from "@/constants/layout";
-import { ENABLE_SHOP } from "@/constants/feature-flags";
+} from "../constants/layout";
+import { ENABLE_SHOP } from "../constants/feature-flags";
 import {
   pathnameHidesTabBar,
   TAB_BAR_HIDDEN_ROUTES,
-} from "@/constants/tab-navigation";
-import { TAB_FAB_ROUTE } from "@/constants/tab-order";
-import { useI18n } from "@/hooks/useI18n";
-import type { I18nKey } from "@/i18n";
-import { useTabTransition } from "@/context/TabTransitionContext";
+} from "../constants/tab-navigation";
+import { TAB_FAB_ROUTE } from "../constants/tab-order";
+import { useI18n } from "../hooks/useI18n";
+import type { I18nKey } from "../i18n";
+import { useTabTransition } from "../context/TabTransitionContext";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { TAB_BAR_GLASS } from "@/constants/tab-bar-glass";
-import { springMotion } from "@/utils/motion-spring";
-import { crossShadow } from "@/utils/shadows";
+import { TAB_BAR_GLASS } from "../constants/tab-bar-glass";
+import { springMotion } from "../utils/motion-spring";
+import { crossShadow } from "../utils/shadows";
 
 const ACTIVE = TAB_BAR_GLASS.iconActive;
 const INACTIVE = TAB_BAR_GLASS.iconInactive;

@@ -1,14 +1,14 @@
-import { Chest, NavBarChest } from "@/constants/icons";
+import { Chest, NavBarChest } from "../../../constants/icons";
 import {
   LessonPathIcon,
   type LessonPathIconType,
-} from "@/components/icons/LessonPathIcons";
-import { LessonListItem, SectionTheme } from "@/data/list-items";
-import type { LessonPathMode } from "@/data/lesson-content";
+} from "../../../components/icons/LessonPathIcons";
+import { LessonListItem, SectionTheme } from "../../../data/list-items";
+import type { LessonPathMode } from "../../../data/lesson-content";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, View } from "react-native";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "../../../hooks/useI18n";
 import { CompletedCheckIcon } from "./completed-check-icon";
 import { CurrentLessonIcon } from "./current-lesson-icon";
 import { FirstItemSparkles } from "./first-item-sparkles";

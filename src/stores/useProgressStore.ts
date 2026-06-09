@@ -1,5 +1,5 @@
-import type { LessonPathMode } from "@/data/lesson-content";
-import { appStorage } from "@/lib/app-storage";
+import type { LessonPathMode } from "../data/lesson-content";
+import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.app.progress";
@@ -176,7 +176,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
 
     set(next);
     persistProgress(next);
-    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
+    void import("../services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
   recordGamePlayed: (label, gameId) => {
@@ -192,7 +192,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     };
     set(next);
     persistProgress(next);
-    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
+    void import("../services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
   awardXp: (xpEarned, label) => {
@@ -217,7 +217,7 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     };
     set(next);
     persistProgress(next);
-    void import("@/services/home-widget-sync").then((m) => m.syncHomeWidget());
+    void import("../services/home-widget-sync").then((m) => m.syncHomeWidget());
   },
 
   resetProgress: () => {

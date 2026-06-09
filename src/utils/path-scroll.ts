@@ -1,4 +1,4 @@
-import type { LessonListItem, SectionDataItem } from "@/data/list-items";
+import type { LessonListItem, SectionDataItem } from "../data/list-items";
 import type { RefObject } from "react";
 import type { SectionList } from "react-native";
 

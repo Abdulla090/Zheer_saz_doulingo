@@ -1,9 +1,9 @@
-import { buildSectionData, type LessonListItem, type SectionDataItem } from "@/data/list-items";
-import { buildNormalSectionData } from "@/data/normal-english";
-import { buildKidsSectionData } from "@/data/kids-english";
-import type { LessonPathMode } from "@/data/lesson-content";
-import { localizePathSections } from "@/data/path-unit-titles";
-import type { AppLocale } from "@/i18n";
+import { buildSectionData, type LessonListItem, type SectionDataItem } from "../data/list-items";
+import { buildNormalSectionData } from "../data/normal-english";
+import { buildKidsSectionData } from "../data/kids-english";
+import type { LessonPathMode } from "../data/lesson-content";
+import { localizePathSections } from "../data/path-unit-titles";
+import type { AppLocale } from "../i18n";
 
 export type LessonRouteParams = {
   pathname: "/lesson";

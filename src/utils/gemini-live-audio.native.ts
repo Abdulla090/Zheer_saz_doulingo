@@ -5,7 +5,7 @@
 
 import { createAudioPlayer, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
 import { PermissionsAndroid, Platform } from "react-native";
-import { GEMINI_LIVE_OUTPUT_RATE } from "@/constants/gemini";
+import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
 
 export type MicStreamHandle = {
   stop: () => void;

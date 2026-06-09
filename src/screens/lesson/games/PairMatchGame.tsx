@@ -3,7 +3,7 @@
  * PairMatchGame — Premium light UI ("Pair the words").
  */
 
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "../../../hooks/useI18n";
 import React, { memo, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -15,12 +15,12 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Line } from "react-native-svg";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../../components/ui/AppText";
 
 const AnimatedLine = Animated.createAnimatedComponent(Line);
 
-import { PairMatchQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
+import { PairMatchQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
 import { L, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,

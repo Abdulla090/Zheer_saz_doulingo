@@ -7,25 +7,25 @@ import {
   SlangDictionaryGameIcon,
   SpeakUpGameIcon,
   VoiceTutorGameIcon,
-} from "@/components/icons/GameHubIcons";
+} from "../../components/icons/GameHubIcons";
 import {
   HomeLiquidCard,
   HomeLiquidLessonTile,
   HomeMeshBackground,
   HomePalette as C,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { tabBarScrollPadding } from "@/constants/layout";
+} from "../../components/ui/ios-liquid-home";
+import { tabBarScrollPadding } from "../../constants/layout";
 import {
   buildPracticeLessonParams,
   type PracticeGameKind,
-} from "@/data/game-practice";
-import { useI18n } from "@/hooks/useI18n";
-import type { I18nKey } from "@/i18n";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { hapticSelection } from "@/utils/haptics";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
+} from "../../data/game-practice";
+import { useI18n } from "../../hooks/useI18n";
+import type { I18nKey } from "../../i18n";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { hapticSelection } from "../../utils/haptics";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useMemo } from "react";
 import {
@@ -37,7 +37,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../components/ui/AppText";
 
 type HubTile = {
   id: string;

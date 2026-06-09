@@ -7,21 +7,21 @@
 
 
 
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "../../../hooks/useI18n";
 
 import React, { useRef, useState } from "react";
 
 import { ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../../components/ui/AppText";
 
 
 
-import { ConversationPickQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
+import { ConversationPickQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
 
-import type { AnswerTier } from "@/utils/answer-tier";
+import type { AnswerTier } from "../../../utils/answer-tier";
 
-import { tierLabelKey, tierPasses } from "@/utils/answer-tier";
+import { tierLabelKey, tierPasses } from "../../../utils/answer-tier";
 
 import {
 

@@ -1,16 +1,16 @@
-import { PingoMascot } from "@/components/mascot/PingoMascot";
+import { PingoMascot } from "../../components/mascot/PingoMascot";
 import {
   HomeLiquidButton,
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
-import type { I18nKey } from "@/i18n";
-import { OnboardingProgressBar } from "@/screens/onboarding/components/OnboardingProgressBar";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { hapticSelection } from "@/utils/haptics";
+} from "../../components/ui/ios-liquid-home";
+import { useI18n } from "../../hooks/useI18n";
+import type { I18nKey } from "../../i18n";
+import { OnboardingProgressBar } from "./components/OnboardingProgressBar";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useMemo, useState } from "react";
 import {

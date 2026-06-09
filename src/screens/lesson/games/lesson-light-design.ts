@@ -2,7 +2,7 @@
  * Lesson shell — aligned with home liquid glass (HomePalette).
  */
 
-import { HomePalette } from "@/components/ui/ios-liquid-home";
+import { HomePalette } from "../../../components/ui/ios-liquid-home";
 import { Easing } from "react-native-reanimated";
 
 const H = HomePalette;

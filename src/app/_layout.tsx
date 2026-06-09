@@ -1,26 +1,28 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { AppErrorBoundary } from "@/components/AppErrorBoundary";
-import { OfflineBanner } from "@/components/OfflineBanner";
-import { initSentry, Sentry } from "@/lib/sentry";
-import { fontMap } from "@/fontMap";
-import { useFontStore } from "@/stores/useFontStore";
-import { useOnboardingStore } from "@/stores/useOnboardingStore";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
-import { useAndroidImmersiveChrome } from "@/hooks/use-android-immersive-chrome";
+import { AppErrorBoundary } from "../components/AppErrorBoundary";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { initSentry, Sentry } from "../lib/sentry";
+import { fontMap } from "../fontMap";
+import { useFontStore } from "../stores/useFontStore";
+import { useOnboardingStore } from "../stores/useOnboardingStore";
+import { useProgressStore } from "../stores/useProgressStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
+import { useContentAdminStore } from "../stores/useContentAdminStore";
+import { useAndroidImmersiveChrome } from "../hooks/use-android-immersive-chrome";
 import { NavigationBar } from "expo-navigation-bar";
-import { syncHomeWidget } from "@/services/home-widget-sync";
+import { syncHomeWidget } from "../services/home-widget-sync";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
-import { fetchRemoteCurriculum } from "@/services/curriculum-loader";
-import { useLocaleStore } from "@/stores/useLocaleStore";
+import { fetchRemoteCurriculum } from "../services/curriculum-loader";
+import { useLocaleStore } from "../stores/useLocaleStore";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
+import * as SecureStore from "expo-secure-store";
+import { setRuntimeGeminiApiKey } from "../constants/gemini";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect } from "react";
-import { Platform, Text } from "react-native";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -98,10 +100,31 @@ function RootLayout() {
     applyGlobalFont(selectedFont);
   }, [selectedFont]);
 
+  useEffect(() => {
+    if (Platform.OS !== "web") {
+      SecureStore.getItemAsync("phingo.gemini.apikey")
+        .then((key: string | null) => {
+          if (key) {
+            setRuntimeGeminiApiKey(key);
+          }
+        })
+        .catch(() => {});
+    } else {
+      try {
+        if (typeof localStorage !== "undefined") {
+          const key = localStorage.getItem("phingo.gemini.apikey");
+          if (key) {
+            setRuntimeGeminiApiKey(key);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
   const [coreFontsLoaded] = useFonts({
-    DINNextRoundedBold: require("@/assets/fonts/DIN_BOLD.ttf"),
-    DINNextRoundedMedium: require("@/assets/fonts/DIN_MEDIUM.ttf"),
-    DINNextRoundedRegular: require("@/assets/fonts/DIN_REGULAR.ttf"),
+    DINNextRoundedBold: require("../../assets/fonts/DIN_BOLD.ttf"),
+    DINNextRoundedMedium: require("../../assets/fonts/DIN_MEDIUM.ttf"),
+    DINNextRoundedRegular: require("../../assets/fonts/DIN_REGULAR.ttf"),
   });
 
   const onLayoutReady = useCallback(async () => {

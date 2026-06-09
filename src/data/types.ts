@@ -2,7 +2,7 @@
 // Shared types for all game questions and lesson/unit banks
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AnswerTier } from "@/utils/answer-tier";
+import type { AnswerTier } from "../utils/answer-tier";
 import type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";
 
 export type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";

@@ -1,28 +1,28 @@
 /* eslint-disable */
-import { DolphinFlat } from "@/components/icons/HomeDashboardIcons";
-import { AppText } from "@/components/ui/AppText";
+import { DolphinFlat } from "../../components/icons/HomeDashboardIcons";
+import { AppText } from "../../components/ui/AppText";
 import {
   HomeLiquidButton,
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { AI_TEACHER_PROMPTS } from "@/data/ai-teacher-prompts";
+} from "../../components/ui/ios-liquid-home";
+import { AI_TEACHER_PROMPTS } from "../../data/ai-teacher-prompts";
 import type {
   AiTeacherAttempt,
   AiTeacherMode,
   AiTeacherPrompt,
   AiTeacherResult,
-} from "@/data/ai-teacher-types";
-import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
-import { useSpeechCapture } from "@/hooks/use-speech-capture";
-import { useI18n } from "@/hooks/useI18n";
-import { evaluateEnglish } from "@/services/ai-teacher-service";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
-import { crossShadow } from "@/utils/shadows";
-import { appStorage } from "@/lib/app-storage";
-import { hapticImpact, hapticNotification } from "@/utils/haptics";
+} from "../../data/ai-teacher-types";
+import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
+import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useI18n } from "../../hooks/useI18n";
+import { evaluateEnglish } from "../../services/ai-teacher-service";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import { crossShadow } from "../../utils/shadows";
+import { appStorage } from "../../lib/app-storage";
+import { hapticImpact, hapticNotification } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";

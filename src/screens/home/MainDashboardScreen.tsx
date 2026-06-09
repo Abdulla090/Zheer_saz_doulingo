@@ -13,13 +13,13 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import PhingoMascot from "@/assets/images/svg/phingo charecter.svg";
+import PhingoMascot from "../../../assets/images/svg/phingo charecter.svg";
 import { useRouter } from "expo-router";
 import {
   AnimatedCard,
   PressableScale,
   GlassCard,
-} from "@/components/animations";
+} from "../../components/animations";
 import {
   Icon3DCheck,
   Icon3DStar,
@@ -38,7 +38,7 @@ import {
   Icon3DFlag,
   Icon3DSearch,
   Icon3DMic,
-} from "@/components/icons/Icon3D";
+} from "../../components/icons/Icon3D";
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 const C = {
@@ -53,7 +53,7 @@ const C = {
   streak: "#F97316",
 };
 
-import { crossShadow } from "@/utils/shadows";
+import { crossShadow } from "../../utils/shadows";
 
 const shadow = (elevation = 1) => ({
   borderWidth: 1,
@@ -437,7 +437,7 @@ const s = StyleSheet.create({
   // Hero
   heroWrap: {
     position: "relative",
-    minHeight: 140,
+    minHeight: 170,
     marginBottom: 28,
     zIndex: 20,
   },
@@ -470,10 +470,10 @@ const s = StyleSheet.create({
   },
   mascotWrap: {
     position: "absolute",
-    right: 0,
-    top: -40,
-    width: 180,
-    height: 180,
+    right: -10,
+    top: -55,
+    width: 240,
+    height: 240,
     zIndex: 0,
   },
 

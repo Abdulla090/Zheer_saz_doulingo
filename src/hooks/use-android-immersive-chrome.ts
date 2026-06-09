@@ -1,4 +1,4 @@
-import { applyAndroidImmersiveChrome } from "@/lib/platform-chrome";
+import { applyAndroidImmersiveChrome } from "../lib/platform-chrome";
 import { useEffect } from "react";
 import { AppState, Platform } from "react-native";
 

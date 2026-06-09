@@ -1,36 +1,39 @@
 /* eslint-disable */
-import { PressableScale } from "@/components/animations";
+import { PressableScale } from "../../components/animations";
 import {
   Icon3DCheckCircle,
   Icon3DChevronRight,
   Icon3DSettings,
-} from "@/components/icons/Icon3D";
-import { AppText } from "@/components/ui/AppText";
+} from "../../components/icons/Icon3D";
+import { AppText } from "../../components/ui/AppText";
 import {
   APP_VERSION,
   PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
-} from "@/constants/app-meta";
-import { ENABLE_ADMIN } from "@/constants/feature-flags";
-import { tabBarScrollPadding } from "@/constants/layout";
-import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
-import { useI18n } from "@/hooks/useI18n";
-import type { AppLocale } from "@/i18n";
-import { useFontStore } from "@/stores/useFontStore";
-import { useOnboardingStore } from "@/stores/useOnboardingStore";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { confirmAction } from "@/utils/confirm-action";
-import { openHttpsUrl, openMailto } from "@/utils/safe-link";
+} from "../../constants/app-meta";
+import { ENABLE_ADMIN } from "../../constants/feature-flags";
+import { tabBarScrollPadding } from "../../constants/layout";
+import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
+import { useI18n } from "../../hooks/useI18n";
+import type { AppLocale } from "../../i18n";
+import { useFontStore } from "../../stores/useFontStore";
+import { useOnboardingStore } from "../../stores/useOnboardingStore";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { confirmAction } from "../../utils/confirm-action";
+import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useRouter } from "expo-router";
 import React from "react";
 import * as Font from "expo-font";
-import { fontMap } from "@/fontMap";
+import { fontMap } from "../../fontMap";
 import {
+  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -97,6 +100,64 @@ export default function SettingsScreen() {
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
   const setTargetLang = useSettingsStore((s) => s.setTargetLang);
   const setNativeLang = useSettingsStore((s) => s.setNativeLang);
+
+  const [apiKeyInput, setApiKeyInput] = React.useState("");
+
+  React.useEffect(() => {
+    if (Platform.OS !== "web") {
+      try {
+        const SecureStore = require("expo-secure-store");
+        SecureStore.getItemAsync("phingo.gemini.apikey")
+          .then((key: string | null) => {
+            if (key) setApiKeyInput(key);
+          })
+          .catch(() => {});
+      } catch {}
+    } else {
+      try {
+        if (typeof localStorage !== "undefined") {
+          const key = localStorage.getItem("phingo.gemini.apikey");
+          if (key) setApiKeyInput(key);
+        }
+      } catch {}
+    }
+  }, []);
+
+  const saveApiKey = async () => {
+    try {
+      const { setRuntimeGeminiApiKey } = require("../../constants/gemini");
+      const keyToSave = apiKeyInput.trim();
+      
+      if (Platform.OS !== "web") {
+        const SecureStore = require("expo-secure-store");
+        if (keyToSave) {
+          await SecureStore.setItemAsync("phingo.gemini.apikey", keyToSave);
+        } else {
+          await SecureStore.deleteItemAsync("phingo.gemini.apikey");
+        }
+      } else {
+        if (typeof localStorage !== "undefined") {
+          if (keyToSave) {
+            localStorage.setItem("phingo.gemini.apikey", keyToSave);
+          } else {
+            localStorage.removeItem("phingo.gemini.apikey");
+          }
+        }
+      }
+      
+      setRuntimeGeminiApiKey(keyToSave || undefined);
+      
+      Alert.alert(
+        isKu ? "سەرکەوتوو بوو" : "Success",
+        isKu ? "کلیلی API بە سەرکەوتوویی پاشەکەوت کرا." : "API Key updated successfully."
+      );
+    } catch (err) {
+      Alert.alert(
+        isKu ? "کێشەیەک ڕوویدا" : "Error",
+        isKu ? "پاشەکەوتکردن سەرکەوتوو نەبوو." : "Failed to update API key."
+      );
+    }
+  };
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -328,6 +389,34 @@ export default function SettingsScreen() {
               </PressableScale>
             );
           })}
+        </View>
+
+        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
+          {isKu ? "مفتاحی Gemini API" : "Gemini API Key"}
+        </AppText>
+        <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+          {isKu
+            ? "کلیلەکەت بە شێوەیەکی پارێزراو لەسەر مۆبایلەکەت پاشەکەوت دەکرێت."
+            : "Your key is stored securely in the device's native Keychain/Keystore."}
+        </AppText>
+        <View style={[styles.card, { padding: 16, gap: 12 }]}>
+          <TextInput
+            secureTextEntry
+            placeholder={isKu ? "کلیلەکە لێرە بنووسە..." : "Enter Gemini API key..."}
+            placeholderTextColor="#999"
+            value={apiKeyInput}
+            onChangeText={setApiKeyInput}
+            style={[styles.inputField, isKu && { textAlign: "right" }]}
+          />
+          <PressableScale
+            onPress={saveApiKey}
+            scaleDown={0.98}
+            style={styles.saveBtn}
+          >
+            <AppText style={styles.saveBtnText} forceKurdishFont={isKu}>
+              {isKu ? "پاشەکەوتکردن" : "Save Key"}
+            </AppText>
+          </PressableScale>
         </View>
 
         {ENABLE_ADMIN ? (
@@ -606,6 +695,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#E53935",
+    fontFamily: "DINNextRoundedBold",
+  },
+  inputField: {
+    height: 48,
+    borderWidth: 1.5,
+    borderColor: "#E5E5E5",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: "#4B4B4B",
+    backgroundColor: "#F9F9F9",
+  },
+  saveBtn: {
+    backgroundColor: "#2B59F3",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveBtnText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
     fontFamily: "DINNextRoundedBold",
   },
 });

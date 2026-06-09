@@ -1,7 +1,7 @@
-import { getUnitsFromCacheOrBundle } from "@/services/curriculum-loader";
-import type { LessonBank, LessonPathMode, UnitBank } from "@/data/types";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
-import { useContentPackStore } from "@/stores/useContentPackStore";
+import { getUnitsFromCacheOrBundle } from "../services/curriculum-loader";
+import type { LessonBank, LessonPathMode, UnitBank } from "./types";
+import { useContentAdminStore } from "../stores/useContentAdminStore";
+import { useContentPackStore } from "../stores/useContentPackStore";
 
 /** Effective units for gameplay — admin overrides or cached/bundled defaults. */
 export function getUnitsForPath(mode: LessonPathMode): UnitBank[] {

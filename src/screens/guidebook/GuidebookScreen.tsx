@@ -1,11 +1,11 @@
 /* eslint-disable */
-import { AppText } from "@/components/ui/AppText";
-import { enterFadeDown } from "@/components/animations/motion";
-import { BUTTON_FACE_RIM_COLORS } from "@/constants/button-theme-colors";
-import { getGuidebook, GuidebookLesson } from "@/data/guidebook-data";
-import type { LessonPathMode } from "@/data/lesson-content";
-import { useI18n } from "@/hooks/useI18n";
-import { useTTS } from "@/hooks/use-tts";
+import { AppText } from "../../components/ui/AppText";
+import { enterFadeDown } from "../../components/animations/motion";
+import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
+import { getGuidebook, GuidebookLesson } from "../../data/guidebook-data";
+import type { LessonPathMode } from "../../data/lesson-content";
+import { useI18n } from "../../hooks/useI18n";
+import { useTTS } from "../../hooks/use-tts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Icon3DBook,
@@ -15,7 +15,7 @@ import {
   Icon3DVolume,
   Icon3DChevronDown,
   Icon3DX,
-} from "@/components/icons/Icon3D";
+} from "../../components/icons/Icon3D";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Pressable,
@@ -34,7 +34,7 @@ import Animated, {
 } from "react-native-reanimated";
 // EaseView replaced with Animated.View from reanimated
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { crossShadow } from "@/utils/shadows";
+import { crossShadow } from "../../utils/shadows";
 
 // ─── Color utils ──────────────────────────────────────────────────────────────
 const rgba = (hex: string, a: number) => {

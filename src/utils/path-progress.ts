@@ -1,7 +1,7 @@
-import type { SectionDataItem } from "@/data/list-items";
-import { buildSectionData } from "@/data/list-items";
-import { buildNormalSectionData } from "@/data/normal-english";
-import { buildKidsSectionData } from "@/data/kids-english";
+import type { SectionDataItem } from "../data/list-items";
+import { buildSectionData } from "../data/list-items";
+import { buildNormalSectionData } from "../data/normal-english";
+import { buildKidsSectionData } from "../data/kids-english";
 
 export type PathProgressSummary = {
   streetTotal: number;

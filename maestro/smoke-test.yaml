@@ -1,0 +1,21 @@
+appId: com.hewad.mubariz.duolingoclone
+---
+- launchApp
+- runFlow: onboarding.yaml
+
+# Assert logo on the main dashboard screen
+- assertVisible: "PINGO"
+
+# Navigate to Games/Feed tab
+- tapOn: "Games"
+- assertVisible: "Immersive AI Speaking"
+- assertVisible: "Drills & Practice"
+
+# Navigate to Path/Dashboard tab
+- tapOn: "Path"
+- assertVisible: "Normal English"
+
+# Navigate to Settings/More tab
+- tapOn: "Profile"
+- assertVisible: "Settings"
+- assertVisible: "Kurdish (Sorani)"

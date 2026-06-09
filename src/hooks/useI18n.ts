@@ -1,5 +1,5 @@
-import { translate, type AppLocale, type I18nKey } from "@/i18n";
-import { useLocaleStore } from "@/stores/useLocaleStore";
+import { translate, type AppLocale, type I18nKey } from "../i18n";
+import { useLocaleStore } from "../stores/useLocaleStore";
 import { useCallback } from "react";
 
 export function useI18n() {

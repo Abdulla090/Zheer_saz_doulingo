@@ -1,4 +1,4 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import { registerWidgetTaskHandler } from "react-native-android-widget";
 
 import { PhingoHomeAndroidWidget } from "./PhingoHomeAndroidWidget";

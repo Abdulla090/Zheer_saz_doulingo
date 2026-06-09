@@ -1,13 +1,13 @@
-import { isGeminiConfigured } from "@/constants/gemini";
+import { isGeminiConfigured } from "../constants/gemini";
 import {
   GeminiLiveSession,
   type LiveSessionPhase,
-} from "@/services/gemini-live-client";
+} from "../services/gemini-live-client";
 import {
   LivePcmPlayer,
   startMicPcmStream,
   isLiveAudioSupported,
-} from "@/utils/gemini-live-audio";
+} from "../utils/gemini-live-audio";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,

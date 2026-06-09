@@ -1,8 +1,8 @@
-import { getUnitsForPath } from "@/data/content-access";
-import type { LessonPathMode } from "@/data/types";
-import { AdminButton, AdminCard } from "@/screens/admin/admin-ui";
-import { AppText } from "@/components/ui/AppText";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
+import { getUnitsForPath } from "../../data/content-access";
+import type { LessonPathMode } from "../../data/types";
+import { AdminButton, AdminCard } from "./admin-ui";
+import { AppText } from "../../components/ui/AppText";
+import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";

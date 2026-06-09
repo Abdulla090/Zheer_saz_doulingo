@@ -1,4 +1,4 @@
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "../../hooks/useI18n";
 import React, { memo } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 

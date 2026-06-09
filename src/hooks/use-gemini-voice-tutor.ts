@@ -1,13 +1,13 @@
-import { isGeminiConfigured } from "@/constants/gemini";
-import { useGeminiVoiceCapture } from "@/hooks/use-gemini-voice-capture";
-import { useSpeechCapture } from "@/hooks/use-speech-capture";
-import { useTTS } from "@/hooks/use-tts";
+import { isGeminiConfigured } from "../constants/gemini";
+import { useGeminiVoiceCapture } from "./use-gemini-voice-capture";
+import { useSpeechCapture } from "./use-speech-capture";
+import { useTTS } from "./use-tts";
 import {
   sendTutorTurn,
   type TutorMessage,
   type TutorPhase,
   type TutorTurnResponse,
-} from "@/services/gemini-voice-tutor-service";
+} from "../services/gemini-voice-tutor-service";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type TutorStatus =

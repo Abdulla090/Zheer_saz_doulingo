@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
-import { migrateLegacyAsyncStorageOnce } from "@/lib/migrate-legacy-storage";
+import { migrateLegacyAsyncStorageOnce } from "./migrate-legacy-storage";
 
 type MmkvInstance = {
   getString: (key: string) => string | undefined;

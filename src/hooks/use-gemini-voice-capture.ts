@@ -1,5 +1,5 @@
-import { isGeminiConfigured } from "@/constants/gemini";
-import { evaluateSpeechWithGemini } from "@/services/gemini-speech-service";
+import { isGeminiConfigured } from "../constants/gemini";
+import { evaluateSpeechWithGemini } from "../services/gemini-speech-service";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,

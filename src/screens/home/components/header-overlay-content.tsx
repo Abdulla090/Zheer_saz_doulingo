@@ -7,17 +7,17 @@ import {
 
 import Svg, { Path } from "react-native-svg";
 
-import { Flag } from "@/constants/icons";
-import newCourses from "@/data/newCourses";
-import { Icon3DPlus } from "@/components/icons/Icon3D";
+import { Flag } from "../../../constants/icons";
+import newCourses from "../../../data/newCourses";
+import { Icon3DPlus } from "../../../components/icons/Icon3D";
 import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
 
-import { ProgressBar } from "@/components/shared/progress-bar";
-import { useI18n } from "@/hooks/useI18n";
-import { AppText } from "@/components/ui/AppText";
+import { ProgressBar } from "../../../components/shared/progress-bar";
+import { useI18n } from "../../../hooks/useI18n";
+import { AppText } from "../../../components/ui/AppText";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 

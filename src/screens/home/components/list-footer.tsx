@@ -1,4 +1,4 @@
-import { Icon3DLock } from "@/components/icons/Icon3D";
+import { Icon3DLock } from "../../../components/icons/Icon3D";
 import { StyleSheet, Text, View } from "react-native";
 
 /** Locked-section footer — no dead actions, informational only. */

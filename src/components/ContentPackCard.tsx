@@ -3,12 +3,12 @@
  * is not yet downloaded.  Three states: locked → downloading → done.
  */
 
-import { PressableScale } from "@/components/animations";
+import { PressableScale } from "./animations";
 import {
   type ContentPackMeta,
   useContentPackStore,
-} from "@/stores/useContentPackStore";
-import { crossShadow } from "@/utils/shadows";
+} from "../stores/useContentPackStore";
+import { crossShadow } from "../utils/shadows";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect } from "react";
 import {
@@ -19,7 +19,7 @@ import {
   Platform,
   PermissionsAndroid,
 } from "react-native";
-import { confirmAction } from "@/utils/confirm-action";
+import { confirmAction } from "../utils/confirm-action";
 import Animated, {
   Easing,
   FadeIn,

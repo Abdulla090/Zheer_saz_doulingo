@@ -1,4 +1,4 @@
-import { HomePalette } from "@/components/ui/ios-liquid-home";
+import { HomePalette } from "../ui/ios-liquid-home";
 import {
   Bot,
   BookOpen,

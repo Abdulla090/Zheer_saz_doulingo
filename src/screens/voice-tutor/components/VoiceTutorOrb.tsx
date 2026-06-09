@@ -3,8 +3,8 @@
  * Brand-colored pulse orb (no dark-mode AI sphere).
  */
 
-import { HomePalette } from "@/components/ui/ios-liquid-home";
-import { crossShadow } from "@/utils/shadows";
+import { HomePalette } from "../../../components/ui/ios-liquid-home";
+import { crossShadow } from "../../../utils/shadows";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -17,7 +17,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import type { LiveTutorStatus } from "@/hooks/use-gemini-live-tutor";
+import type { LiveTutorStatus } from "../../../hooks/use-gemini-live-tutor";
 
 const C = HomePalette;
 

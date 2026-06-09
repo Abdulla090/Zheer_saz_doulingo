@@ -1,15 +1,15 @@
-import SafeContainer from "@/components/shared/safe-container";
-import { SvgAppButton } from "@/components/shared/svg-app-button";
+import SafeContainer from "../../components/shared/safe-container";
+import { SvgAppButton } from "../../components/shared/svg-app-button";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Icon3DCheck } from "@/components/icons/Icon3D";
+import { Icon3DCheck } from "../../components/icons/Icon3D";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
+import { AppText } from "../../components/ui/AppText";
+import { useI18n } from "../../hooks/useI18n";
 import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { tabBarScrollPadding } from "@/constants/layout";
-import { hapticImpact } from "@/utils/haptics";
+import { tabBarScrollPadding } from "../../constants/layout";
+import { hapticImpact } from "../../utils/haptics";
 
 export const SubscriptionScreen = () => {
   const { t, isKu } = useI18n();
@@ -26,7 +26,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureUnlimited"),
         t("subscription.featureNoAds"),
       ],
-      image: require("@/assets/images/characters/zari.png"),
+      image: require("../../../assets/images/characters/zari.png"),
       buttonColors: { face: "#1CB0F6", rim: "#0F8FCF" },
     },
     {
@@ -39,7 +39,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureFamily"),
         t("subscription.featureSuperFamilyExtra"),
       ],
-      image: require("@/assets/images/characters/boys.png"),
+      image: require("../../../assets/images/characters/boys.png"),
       buttonColors: { face: "#58CC02", rim: "#3B8E00" },
     },
     {
@@ -55,7 +55,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureUnlimited"),
         t("subscription.featureNoAds"),
       ],
-      image: require("@/assets/images/characters/character1.png"),
+      image: require("../../../assets/images/characters/character1.png"),
       buttonColors: { face: "#FFC800", rim: "#D9A066" },
     },
     {
@@ -68,7 +68,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureFamily"),
         t("subscription.featureMaxFamilyExtra"),
       ],
-      image: require("@/assets/images/characters/dolphin-mascot.jpg"),
+      image: require("../../../assets/images/characters/dolphin-mascot.jpg"),
       buttonColors: { face: "#FF9600", rim: "#CC7800" },
     },
   ], [t]);
@@ -89,7 +89,7 @@ export const SubscriptionScreen = () => {
             {t("subscription.comparePlans")}
           </AppText>
           <Image
-            source={require("@/assets/images/Cry_Super.png")}
+            source={require("../../../assets/images/Cry_Super.png")}
             style={styles.mascotBanner}
             contentFit="contain"
           />

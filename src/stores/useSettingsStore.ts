@@ -1,4 +1,4 @@
-import { appStorage } from "@/lib/app-storage";
+import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.app.settings";

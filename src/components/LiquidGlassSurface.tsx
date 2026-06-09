@@ -2,7 +2,7 @@
  * Reusable iOS 26 light liquid glass — backdrop blur + edge shading.
  */
 
-import { LIQUID_GLASS, liquidFrostBase, liquidGlassShellShadow } from "@/constants/liquid-glass";
+import { LIQUID_GLASS, liquidFrostBase, liquidGlassShellShadow } from "../constants/liquid-glass";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";

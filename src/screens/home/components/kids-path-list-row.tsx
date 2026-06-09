@@ -1,4 +1,4 @@
-import type { LessonListItem } from "@/data/list-items";
+import type { LessonListItem } from "../../../data/list-items";
 import React from "react";
 import { View } from "react-native";
 

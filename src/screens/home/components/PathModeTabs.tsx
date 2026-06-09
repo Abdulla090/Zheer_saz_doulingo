@@ -1,8 +1,8 @@
 import {
   PathSwitcher,
   type PathMode,
-} from "@/screens/home/components/PathSwitcher";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+} from "./PathSwitcher";
+import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";

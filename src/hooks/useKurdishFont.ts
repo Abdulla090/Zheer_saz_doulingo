@@ -1,4 +1,4 @@
-import { useFontStore } from '@/stores/useFontStore';
+import { useFontStore } from "../stores/useFontStore";
 
 /**
  * Returns the currently selected Kurdish font family name.

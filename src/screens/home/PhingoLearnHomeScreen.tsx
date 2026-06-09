@@ -1,33 +1,33 @@
-import { PremiumPressable } from "@/components/PremiumPressable";
-import { PingoMascot } from "@/components/mascot/PingoMascot";
+import { PremiumPressable } from "../../components/PremiumPressable";
+import { PingoMascot } from "../../components/mascot/PingoMascot";
 import {
   QuestHeadphonesFlat,
   QuestTargetFlat,
   QuestZapFlat,
-} from "@/components/icons/HomeDashboardIcons";
+} from "../../components/icons/HomeDashboardIcons";
 import {
   HomeLiquidButton,
   HomeMeshBackground,
   HomePalette,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { ThinProgressBar } from "@/components/ui/ThinProgressBar";
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
-import type { I18nKey } from "@/i18n";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { useContentPackStore } from "@/stores/useContentPackStore";
+} from "../../components/ui/ios-liquid-home";
+import { ThinProgressBar } from "../../components/ui/ThinProgressBar";
+import { AppText } from "../../components/ui/AppText";
+import { useI18n } from "../../hooks/useI18n";
+import type { I18nKey } from "../../i18n";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useContentPackStore } from "../../stores/useContentPackStore";
 import {
   buildLessonRouteForMode,
   buildLessonRouteFromMeta,
   getCurrentLessonMeta,
-} from "@/utils/lesson-navigation";
-import { getPathProgressSummary } from "@/utils/path-progress";
-import { PATH_LIST_REMOVE_CLIPPED } from "@/utils/native-perf";
-import { syncHomeWidget } from "@/services/home-widget-sync";
-import { Fire } from "@/constants/icons";
-import { hapticImpact, hapticSelection } from "@/utils/haptics";
+} from "../../utils/lesson-navigation";
+import { getPathProgressSummary } from "../../utils/path-progress";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import { syncHomeWidget } from "../../services/home-widget-sync";
+import { Fire } from "../../constants/icons";
+import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
@@ -37,13 +37,13 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { tabBarScrollPadding } from "@/constants/layout";
+import { tabBarScrollPadding } from "../../constants/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import {
   buildHomeDailyQuests,
   type HomeQuestId,
-} from "@/screens/home/home-daily-quests";
+} from "./home-daily-quests";
 
 const C = HomePalette;
 

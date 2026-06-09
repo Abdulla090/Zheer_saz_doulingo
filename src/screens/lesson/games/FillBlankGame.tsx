@@ -1,8 +1,10 @@
-import { useI18n } from "@/hooks/useI18n";
+/* eslint-disable react-hooks/immutability */
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, View, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { layoutMorph, tileFlyTiming } from "@/components/animations/motion";
+import { layoutMorph, tileFlyTiming } from "../../../components/animations/motion";
 import Animated, {
   Easing,
   interpolate,
@@ -12,10 +14,10 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../../components/ui/AppText";
 
-import { FillBlankQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
+import { FillBlankQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
 import { ltrText, isRtlText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
@@ -97,6 +99,8 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
     transform: [{ translateX: shakeX.value }],
   }));
 
+  const flyIdCounter = useRef(0);
+
   React.useEffect(() => {
     setSelected(null);
     setFlySession(null);
@@ -124,8 +128,9 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       return;
     }
 
+    flyIdCounter.current += 1;
     setFlySession({
-      id: Math.random().toString(),
+      id: `fly_${flyIdCounter.current}`,
       word,
       fromX: bank.x - root.x,
       fromY: bank.y - root.y,

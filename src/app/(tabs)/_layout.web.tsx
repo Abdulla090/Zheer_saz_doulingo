@@ -1,1 +1,1 @@
-export { default } from "@/navigation/JsTabsLayout";
+export { default } from "../../navigation/JsTabsLayout";

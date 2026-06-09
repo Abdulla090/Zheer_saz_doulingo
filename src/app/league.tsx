@@ -1,4 +1,4 @@
-import { LeagueScreen } from "@/screens/league/LeagueScreen";
+import { LeagueScreen } from "../screens/league/LeagueScreen";
 
 const League = () => {
   return <LeagueScreen />;

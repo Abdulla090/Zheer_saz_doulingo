@@ -1,6 +1,6 @@
-import { TabScreenChrome } from "@/components/TabScreenChrome";
-import { PathModeTabs } from "@/screens/home/components/PathModeTabs";
-import { LearningPathScreen } from "@/screens/home/LearningPathScreen";
+import { TabScreenChrome } from "../../components/TabScreenChrome";
+import { PathModeTabs } from "../../screens/home/components/PathModeTabs";
+import { LearningPathScreen } from "../../screens/home/LearningPathScreen";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 

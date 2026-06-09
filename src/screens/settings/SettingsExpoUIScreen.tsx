@@ -1,6 +1,6 @@
-import { ALL_RABAR_FONTS } from "@/constants/rabar-fonts";
-import { useFontStore } from "@/stores/useFontStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
+import { useFontStore } from "../../stores/useFontStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   FieldGroup,
   Host,

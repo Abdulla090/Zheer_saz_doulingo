@@ -1,9 +1,9 @@
-import type { PathMode } from "@/screens/home/components/PathSwitcher";
+import type { PathMode } from "../home/components/PathSwitcher";
 
-import { useLocaleStore } from "@/stores/useLocaleStore";
-import { useOnboardingStore } from "@/stores/useOnboardingStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { useI18n } from "@/hooks/useI18n";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useOnboardingStore } from "../../stores/useOnboardingStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useI18n } from "../../hooks/useI18n";
 import * as Haptics from "expo-haptics";
 
 import React, { useCallback, useMemo, useState } from "react";

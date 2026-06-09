@@ -7,12 +7,12 @@ import {
   Icon3DLayers,
   Icon3DStar,
   Icon3DZapBlue,
-} from "@/components/icons/Icon3D";
-import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
-import { useI18n } from "@/hooks/useI18n";
-import { useContentPackStore } from "@/stores/useContentPackStore";
-import { springMotion } from "@/utils/motion-spring";
-import { crossShadow } from "@/utils/shadows";
+} from "../../../components/icons/Icon3D";
+import { LiquidGlassSurface } from "../../../components/LiquidGlassSurface";
+import { useI18n } from "../../../hooks/useI18n";
+import { useContentPackStore } from "../../../stores/useContentPackStore";
+import { springMotion } from "../../../utils/motion-spring";
+import { crossShadow } from "../../../utils/shadows";
 import React, { useCallback, useEffect, useRef } from "react";
 import {
   LayoutChangeEvent,

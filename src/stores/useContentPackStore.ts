@@ -6,8 +6,8 @@
  * for a modern app-store-style UX).
  */
 
-import type { LessonPathMode } from "@/data/types";
-import { appStorage } from "@/lib/app-storage";
+import type { LessonPathMode } from "../data/types";
+import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "phingo.content-packs";

@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/immutability */
-import { useTabTransition } from "@/context/TabTransitionContext";
-import { Motion } from "@/screens/lesson/games/game-design";
+import { useTabTransition } from "../context/TabTransitionContext";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, useWindowDimensions } from "react-native";
@@ -32,11 +31,11 @@ export function TabScreenTransition({ children }: Props) {
         return;
       }
 
-      const offset = Math.min(width * 0.28, 120) * direction;
+      const offset = Math.min(width * 0.18, 80) * direction;
       translateX.value = offset;
       opacity.value = 0.92;
-      translateX.value = withSpring(0, Motion.soft);
-      opacity.value = withSpring(1, Motion.soft);
+      translateX.value = withSpring(0, { damping: 22, stiffness: 480, mass: 0.3, overshootClamping: true });
+      opacity.value = withSpring(1, { damping: 22, stiffness: 480, mass: 0.3, overshootClamping: true });
     }, [consumeDirection, opacity, translateX, width]),
   );
 

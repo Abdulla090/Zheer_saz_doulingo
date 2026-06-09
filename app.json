@@ -128,7 +128,8 @@
           "url": "https://sentry.io/",
           "enableSourceMapsUpload": false
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

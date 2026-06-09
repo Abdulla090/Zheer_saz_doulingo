@@ -1,4 +1,4 @@
-import JsTabsLayout from "@/navigation/JsTabsLayout";
+import JsTabsLayout from "../../navigation/JsTabsLayout";
 
 /**
  * Default: JS floating frosted glass tab bar (fluid glass on Android).

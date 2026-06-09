@@ -1,4 +1,4 @@
-import { getTabVisualIndex } from "@/constants/tab-order";
+import { getTabVisualIndex } from "../constants/tab-order";
 import React, {
   createContext,
   useCallback,

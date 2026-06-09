@@ -1,5 +1,5 @@
-import { useKurdishFont } from "@/hooks/useKurdishFont";
-import { rtlBlock } from "@/screens/lesson/games/game-text";
+import { useKurdishFont } from "./useKurdishFont";
+import { rtlBlock } from "../screens/lesson/games/game-text";
 import type { TextStyle } from "react-native";
 
 /** Style fragment for Kurdish copy — Rabar + RTL. */

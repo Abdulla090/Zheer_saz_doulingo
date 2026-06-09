@@ -1,5 +1,5 @@
-import { useI18n } from "@/hooks/useI18n";
-import { useNetworkStatus } from "@/hooks/use-network-status";
+import { useI18n } from "../hooks/useI18n";
+import { useNetworkStatus } from "../hooks/use-network-status";
 import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "./ui/AppText";
 
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();

@@ -1,4 +1,4 @@
-import { Chess, Coding, Maths } from "@/constants/icons";
+import { Chess, Coding, Maths } from "../constants/icons";
 import { SvgProps } from "react-native-svg";
 
 type NewCourse = {

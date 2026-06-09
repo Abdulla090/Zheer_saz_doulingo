@@ -1,12 +1,12 @@
-import { HomeLiquidButton } from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
+import { useI18n } from "../../../hooks/useI18n";
+import { useProgressStore } from "../../../stores/useProgressStore";
+import { useSettingsStore } from "../../../stores/useSettingsStore";
 import {
   buildLessonRouteForMode,
   buildLessonRouteFromMeta,
   getCurrentLessonMeta,
-} from "@/utils/lesson-navigation";
+} from "../../../utils/lesson-navigation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";

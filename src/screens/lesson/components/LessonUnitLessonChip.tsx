@@ -1,6 +1,6 @@
-import { AppText } from "@/components/ui/AppText";
-import { HomeLiquidCard } from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
+import { AppText } from "../../../components/ui/AppText";
+import { HomeLiquidCard } from "../../../components/ui/ios-liquid-home";
+import { useI18n } from "../../../hooks/useI18n";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 

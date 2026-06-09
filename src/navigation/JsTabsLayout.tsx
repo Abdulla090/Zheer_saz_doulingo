@@ -1,11 +1,11 @@
-import { CustomTabBar } from "@/components/CustomTabBar";
-import { ENABLE_SHOP } from "@/constants/feature-flags";
+import { CustomTabBar } from "../components/CustomTabBar";
+import { ENABLE_SHOP } from "../constants/feature-flags";
 import {
   TabBarVisibilityProvider,
   useTabBarVisibility,
-} from "@/context/tab-bar-visibility";
-import { TabTransitionProvider } from "@/context/TabTransitionContext";
-import { pathnameHidesTabBar } from "@/constants/tab-navigation";
+} from "../context/tab-bar-visibility";
+import { TabTransitionProvider } from "../context/TabTransitionContext";
+import { pathnameHidesTabBar } from "../constants/tab-navigation";
 import { Tabs, usePathname } from "expo-router";
 import React from "react";
 import { View } from "react-native";

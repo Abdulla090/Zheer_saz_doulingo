@@ -2,9 +2,9 @@
  * RolePlayScreen — liquid glass + soft 3D hub, native/web speech via expo-speech-recognition.
  */
 
-import { PressableScale } from "@/components/animations";
-import { RolePlayGameIcon } from "@/components/icons/GameHubIcons";
-import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
+import { PressableScale } from "../../components/animations";
+import { RolePlayGameIcon } from "../../components/icons/GameHubIcons";
+import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
 import {
   HomeLiquidButton,
   HomeLiquidCard,
@@ -12,11 +12,11 @@ import {
   HomeMeshBackground,
   HomePalette,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
-import { useSpeechCapture } from "@/hooks/use-speech-capture";
-import { crossShadow } from "@/utils/shadows";
-import { hapticImpact, hapticSelection } from "@/utils/haptics";
+} from "../../components/ui/ios-liquid-home";
+import { useI18n } from "../../hooks/useI18n";
+import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { crossShadow } from "../../utils/shadows";
+import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -25,7 +25,7 @@ import {
   Rocket,
   Store,
 } from "lucide-react-native";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -38,7 +38,7 @@ import {
 } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Speech from "expo-speech";
-import { isGeminiConfigured, generateRolePlayResponse } from "@/services/gemini-speech-service";
+import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
 
 const C = HomePalette;
 const { width: SW } = Dimensions.get("window");

@@ -2,8 +2,8 @@ import {
   GEMINI_SPEECH_MODEL,
   getGeminiApiKey,
   isGeminiConfigured,
-} from "@/constants/gemini";
-import { useSettingsStore } from "@/stores/useSettingsStore";
+} from "../constants/gemini";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export type TutorPhase = "intro_ku" | "english";
 

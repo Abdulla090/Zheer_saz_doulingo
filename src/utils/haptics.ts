@@ -1,4 +1,4 @@
-import { useSettingsStore } from "@/stores/useSettingsStore";
+import { useSettingsStore } from "../stores/useSettingsStore";
 import * as Haptics from "expo-haptics";
 
 function enabled(): boolean {

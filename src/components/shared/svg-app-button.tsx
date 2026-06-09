@@ -16,7 +16,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { pressTiming, releaseTiming } from "@/components/animations/motion";
+import { pressTiming, releaseTiming } from "../animations/motion";
 import Svg, { ClipPath, Defs, Path } from "react-native-svg";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

@@ -1,13 +1,13 @@
-import { nativeTabBarBackground } from "@/constants/tab-bar-glass";
-import { Colors } from "@/constants/theme";
-import { pathnameHidesTabBar } from "@/constants/tab-navigation";
+import { nativeTabBarBackground } from "../constants/tab-bar-glass";
+import { Colors } from "../constants/theme";
+import { pathnameHidesTabBar } from "../constants/tab-navigation";
 import {
   TabBarVisibilityProvider,
   useTabBarVisibility,
-} from "@/context/tab-bar-visibility";
-import { ENABLE_SHOP } from "@/constants/feature-flags";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useI18n } from "@/hooks/useI18n";
+} from "../context/tab-bar-visibility";
+import { ENABLE_SHOP } from "../constants/feature-flags";
+import { useColorScheme } from "../hooks/use-color-scheme";
+import { useI18n } from "../hooks/useI18n";
 import {
   DarkTheme,
   DefaultTheme,

@@ -1,8 +1,8 @@
-import { AppText } from "@/components/ui/AppText";
-import { HomeLiquidCard, HomePalette } from "@/components/ui/ios-liquid-home";
-import type { PathMode } from "@/screens/home/components/PathSwitcher";
-import { Motion } from "@/screens/lesson/games/game-design";
-import { crossShadow } from "@/utils/shadows";
+import { AppText } from "../../../components/ui/AppText";
+import { HomeLiquidCard, HomePalette } from "../../../components/ui/ios-liquid-home";
+import type { PathMode } from "../../home/components/PathSwitcher";
+import { Motion } from "../../lesson/games/game-design";
+import { crossShadow } from "../../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";

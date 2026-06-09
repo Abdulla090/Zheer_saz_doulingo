@@ -1,6 +1,6 @@
-import { getBundledUnits } from "@/data/content-registry";
-import { UnitBank, LessonPathMode } from "@/data/types";
-import { appStorage } from "@/lib/app-storage";
+import { getBundledUnits } from "../data/content-registry";
+import { UnitBank, LessonPathMode } from "../data/types";
+import { appStorage } from "../lib/app-storage";
 
 const API_URL = process.env.EXPO_PUBLIC_CURRICULUM_API_URL;
 const CACHE_PREFIX = "phingo.curriculum.cache.";

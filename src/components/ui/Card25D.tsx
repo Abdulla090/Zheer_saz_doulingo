@@ -3,8 +3,8 @@
  * Uses PressableScale only; no layout animations for scroll performance.
  */
 
-import { PressableScale } from "@/components/animations";
-import { crossShadow } from "@/utils/shadows";
+import { PressableScale } from "../animations";
+import { crossShadow } from "../../utils/shadows";
 import React, { memo } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 

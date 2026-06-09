@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { WIDGET_SNAPSHOT_KEY } from "@/widgets/widget-types";
+import { WIDGET_SNAPSHOT_KEY } from "../widgets/widget-types";
 
 const MIGRATION_FLAG = "phingo.storage.migrated-v1";
 

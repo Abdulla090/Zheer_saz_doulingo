@@ -1,6 +1,6 @@
-import { cssPressStyle, cssReleaseStyle } from "@/components/animations/motion";
-import { Star } from "@/constants/icons";
-import { crossShadow } from "@/utils/shadows";
+import { cssPressStyle, cssReleaseStyle } from "../../../components/animations/motion";
+import { Star } from "../../../constants/icons";
+import { crossShadow } from "../../../utils/shadows";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";

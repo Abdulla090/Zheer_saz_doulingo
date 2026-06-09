@@ -1,4 +1,4 @@
-import { ENABLE_SHOP } from "@/constants/feature-flags";
+import { ENABLE_SHOP } from "./feature-flags";
 
 /** Icons inside the main glass pill (left → right). */
 export const TAB_PILL_ROUTES = (

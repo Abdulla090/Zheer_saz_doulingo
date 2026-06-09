@@ -1,7 +1,7 @@
-import { sectionData, type SectionDataItem } from "@/data/list-items";
-import { AppText } from "@/components/ui/AppText";
-import { useI18n } from "@/hooks/useI18n";
-import { ltrText, rtlText } from "@/screens/lesson/games/game-text";
+import { sectionData, type SectionDataItem } from "../../../data/list-items";
+import { AppText } from "../../../components/ui/AppText";
+import { useI18n } from "../../../hooks/useI18n";
+import { ltrText, rtlText } from "../../lesson/games/game-text";
 import { StyleSheet, View } from "react-native";
 
 export const ListSectionHeader = ({

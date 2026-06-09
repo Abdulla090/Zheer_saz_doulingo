@@ -1,6 +1,6 @@
 // ── Kids English — section configs, data builder ─────────────────────────────
 
-import { KIDS_UNLOCK_UNITS_2_AND_3_FOR_TEST } from "@/constants/feature-flags";
+import { KIDS_UNLOCK_UNITS_2_AND_3_FOR_TEST } from "../../constants/feature-flags";
 import kidsUnit1Animals from "./unit-1-animals";
 import kidsUnit2ColorsAndNumbers from "./unit-2-colors-and-numbers";
 import kidsUnit3DailyRoutines from "./unit-3-daily-routines";

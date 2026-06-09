@@ -1,7 +1,7 @@
-import type { LessonPathMode } from "@/data/lesson-content";
-import type { LessonListItem, SectionDataItem } from "@/data/list-items";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { scrollPathToCurrentLesson } from "@/utils/path-scroll";
+import type { LessonPathMode } from "../data/lesson-content";
+import type { LessonListItem, SectionDataItem } from "../data/list-items";
+import { useProgressStore } from "../stores/useProgressStore";
+import { scrollPathToCurrentLesson } from "../utils/path-scroll";
 import { useFocusEffect } from "expo-router";
 import { useCallback, type RefObject } from "react";
 import type { SectionList } from "react-native";

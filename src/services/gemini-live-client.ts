@@ -2,7 +2,7 @@ import {
   GEMINI_LIVE_INPUT_RATE,
   GEMINI_LIVE_MODEL,
   getGeminiLiveWebSocketUrl,
-} from "@/constants/gemini";
+} from "../constants/gemini";
 
 export type LiveSessionPhase = "intro_ku" | "english";
 

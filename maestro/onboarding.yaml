@@ -1,0 +1,21 @@
+---
+# Automate the 5 welcome slide screens by clicking the Next / Get Started buttons
+- tapOn:
+    accessibilityLabel: "Next"
+- tapOn:
+    accessibilityLabel: "Next"
+- tapOn:
+    accessibilityLabel: "Next"
+- tapOn:
+    accessibilityLabel: "Next"
+- tapOn:
+    accessibilityLabel: "Get Started"
+
+# Select Native Language
+- tapOn: "Kurdish (Sorani)"
+
+# Select Target Language
+- tapOn: "English"
+
+# Complete onboarding
+- tapOn: "Start learning"

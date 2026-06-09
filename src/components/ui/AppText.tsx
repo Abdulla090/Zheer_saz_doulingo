@@ -1,13 +1,12 @@
-import { FontLatin } from "@/constants/typography";
-import { useKurdishFont } from "@/hooks/useKurdishFont";
-import { dirForText } from "@/screens/lesson/games/game-text";
-import { latinRoleFromWeight } from "@/utils/pickFontFamily";
+import { FontLatin } from "../../constants/typography";
+import { useKurdishFont } from "../../hooks/useKurdishFont";
+import { dirForText } from "../../screens/lesson/games/game-text";
+import { latinRoleFromWeight } from "../../utils/pickFontFamily";
 import React, { useMemo } from "react";
 import {
   StyleSheet,
   Text,
   type TextProps,
-  type TextStyle,
 } from "react-native";
 
 function getFirstChar(children: React.ReactNode): string {

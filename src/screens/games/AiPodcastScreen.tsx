@@ -1,10 +1,10 @@
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../components/ui/AppText";
 import {
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette as C,
-} from "@/components/ui/ios-liquid-home";
-import { crossShadow } from "@/utils/shadows";
+} from "../../components/ui/ios-liquid-home";
+import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import {
@@ -19,8 +19,8 @@ import {
 import React, { useState, useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useI18n } from "@/hooks/useI18n";
-import { PressableScale } from "@/components/animations";
+import { useI18n } from "../../hooks/useI18n";
+import { PressableScale } from "../../components/animations";
 import * as Speech from "expo-speech";
 
 const PODCAST_EPISODE = [

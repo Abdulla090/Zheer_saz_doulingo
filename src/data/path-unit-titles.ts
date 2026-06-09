@@ -1,5 +1,5 @@
-import type { AppLocale, I18nKey } from "@/i18n";
-import { translate } from "@/i18n";
+import type { AppLocale, I18nKey } from "../i18n";
+import { translate } from "../i18n";
 import type { LessonPathMode } from "./lesson-content";
 import type { SectionDataItem } from "./list-items";
 

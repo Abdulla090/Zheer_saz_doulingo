@@ -1,9 +1,9 @@
-import { AppText } from "@/components/ui/AppText";
-import type { LegalDocId } from "@/content/legal";
-import { getLegalDocument } from "@/content/legal";
-import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "@/constants/app-meta";
-import { openHttpsUrl, openMailto } from "@/utils/safe-link";
-import { useI18n } from "@/hooks/useI18n";
+import { AppText } from "../../components/ui/AppText";
+import type { LegalDocId } from "../../content/legal";
+import { getLegalDocument } from "../../content/legal";
+import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "../../constants/app-meta";
+import { openHttpsUrl, openMailto } from "../../utils/safe-link";
+import { useI18n } from "../../hooks/useI18n";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React from "react";

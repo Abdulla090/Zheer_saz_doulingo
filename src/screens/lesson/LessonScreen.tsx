@@ -12,9 +12,9 @@ import {
     Icon3DFire,
     Icon3DX,
     Icon3DZap,
-} from "@/components/icons/Icon3D";
-import { AppText } from "@/components/ui/AppText";
-import { PingoMascot } from "@/components/mascot/PingoMascot";
+} from "../../components/icons/Icon3D";
+import { AppText } from "../../components/ui/AppText";
+import { PingoMascot } from "../../components/mascot/PingoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -36,15 +36,15 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { GameQuestion, getLessonQuestions, type LessonPathMode } from "@/data/lesson-content";
-import { useI18n } from "@/hooks/useI18n";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { useSettingsStore } from "@/stores/useSettingsStore";
-import { useLocaleStore } from "@/stores/useLocaleStore";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
-import type { AnswerTier } from "@/utils/answer-tier";
-import { tierFeedbackKey, tierLabelKey } from "@/utils/answer-tier";
-import { getCurrentLessonMeta, buildPathReturnRoute } from "@/utils/lesson-navigation";
+import { GameQuestion, getLessonQuestions, type LessonPathMode } from "../../data/lesson-content";
+import { useI18n } from "../../hooks/useI18n";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import type { AnswerTier } from "../../utils/answer-tier";
+import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
+import { getCurrentLessonMeta, buildPathReturnRoute } from "../../utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
@@ -55,7 +55,7 @@ import {
   LessonLiquidFeedback,
   LessonMeshBackdrop,
 } from "./games/lesson-light-primitives";
-import { HomeLiquidButton, HomeLiquidCard } from "@/components/ui/ios-liquid-home";
+import { HomeLiquidButton, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";

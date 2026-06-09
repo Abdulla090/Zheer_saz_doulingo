@@ -5,13 +5,13 @@
  * @see https://docs.expo.dev/versions/latest/sdk/glass-effect/
  */
 
-import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
-import { AppText } from "@/components/ui/AppText";
-import { Glass, Motion, Radius } from "@/screens/lesson/games/game-design";
-import { IS_ANDROID } from "@/utils/native-perf";
-import { crossShadow } from "@/utils/shadows";
+import { LiquidGlassSurface } from "../LiquidGlassSurface";
+import { AppText } from "./AppText";
+import { Glass, Motion, Radius } from "../../screens/lesson/games/game-design";
+import { IS_ANDROID } from "../../utils/native-perf";
+import { crossShadow } from "../../utils/shadows";
 import { BlurView } from "expo-blur";
-import { hapticImpact } from "@/utils/haptics";
+import { hapticImpact } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";

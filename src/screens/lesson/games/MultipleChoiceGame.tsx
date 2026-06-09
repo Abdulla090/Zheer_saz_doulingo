@@ -3,12 +3,12 @@
  * MultipleChoiceGame — Premium light lesson UI.
  */
 
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { MultipleChoiceQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
+import { MultipleChoiceQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
 import {
   GameFooter,
   GameHeader,

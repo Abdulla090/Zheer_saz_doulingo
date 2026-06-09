@@ -2,12 +2,12 @@ import type {
   AiTeacherCriterion,
   AiTeacherRequest,
   AiTeacherResult,
-} from "@/data/ai-teacher-types";
+} from "../data/ai-teacher-types";
 import {
   getGeminiApiKey,
   GEMINI_SPEECH_MODEL,
-} from "@/constants/gemini";
-import { AI_TEACHER_PROMPTS } from "@/data/ai-teacher-prompts";
+} from "../constants/gemini";
+import { AI_TEACHER_PROMPTS } from "../data/ai-teacher-prompts";
 
 const CRITERION_LABELS: Record<
   AiTeacherCriterion["key"],

@@ -1,4 +1,4 @@
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../components/ui/AppText";
 import React from "react";
 import {
   Pressable,

@@ -2,7 +2,7 @@
 // Guidebook data — extracted from each unit's lesson banks for quick reference
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AppLocale } from "@/i18n";
+import type { AppLocale } from "../i18n";
 import { getUnitsForPath } from "./content-access";
 import type { LessonPathMode, UnitBank } from "./types";
 import { normalSectionConfigs } from "./normal-english";

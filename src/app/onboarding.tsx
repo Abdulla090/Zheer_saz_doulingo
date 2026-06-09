@@ -1,5 +1,5 @@
-import { OnboardingFlow } from "@/screens/onboarding/OnboardingFlow";
-import { useOnboardingStore } from "@/stores/useOnboardingStore";
+import { OnboardingFlow } from "../screens/onboarding/OnboardingFlow";
+import { useOnboardingStore } from "../stores/useOnboardingStore";
 import { Redirect } from "expo-router";
 
 export default function OnboardingRoute() {

@@ -1,4 +1,4 @@
-import { LiquidGlassSurface } from "@/components/LiquidGlassSurface";
+import { LiquidGlassSurface } from "./LiquidGlassSurface";
 import React from "react";
 import { StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 

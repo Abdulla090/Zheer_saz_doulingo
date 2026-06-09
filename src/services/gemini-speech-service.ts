@@ -2,8 +2,8 @@ import {
   GEMINI_SPEECH_MODEL,
   getGeminiApiKey,
   isGeminiConfigured,
-} from "@/constants/gemini";
-import { matchesTarget } from "@/utils/speech-match";
+} from "../constants/gemini";
+import { matchesTarget } from "../utils/speech-match";
 
 export type GeminiSpeechEvaluation = {
   transcript: string;

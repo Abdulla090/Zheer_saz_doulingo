@@ -1,6 +1,6 @@
 import React from "react";
 import Animated from "react-native-reanimated";
-import { CSS_RELEASE_MS } from "@/components/animations/motion";
+import { CSS_RELEASE_MS } from "./animations/motion";
 
 type SvgIconProps = {
   width?: number;

@@ -8,13 +8,13 @@ import {
   HomeLiquidCard,
   HomeLiquidPill,
   HomeMeshBackground,
-} from "@/components/ui/ios-liquid-home";
-import { useI18n } from "@/hooks/useI18n";
-import { crossShadow } from "@/utils/shadows";
+} from "../../../components/ui/ios-liquid-home";
+import { useI18n } from "../../../hooks/useI18n";
+import { crossShadow } from "../../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { AppText } from "@/components/ui/AppText";
+import { AppText } from "../../../components/ui/AppText";
 import {
   Platform,
   Pressable,
@@ -30,9 +30,9 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 import { L, LightMotion, LightRadius, LightType } from "./lesson-light-design";
-import type { AnswerTier } from "@/utils/answer-tier";
-import { TIER_COLORS } from "@/utils/answer-tier";
-import { LessonUnitLessonChip } from "@/screens/lesson/components/LessonUnitLessonChip";
+import type { AnswerTier } from "../../../utils/answer-tier";
+import { TIER_COLORS } from "../../../utils/answer-tier";
+import { LessonUnitLessonChip } from "../components/LessonUnitLessonChip";
 
 export function LightGameHeading({
   title,

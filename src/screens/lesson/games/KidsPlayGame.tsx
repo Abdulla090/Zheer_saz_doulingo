@@ -3,13 +3,13 @@
  * KidsPlayGame — contextual kids mechanics (scene, bubbles, feed, shadow, etc.)
  */
 
-import { AppText } from "@/components/ui/AppText";
-import { HomeLiquidButton, HomeLiquidCard } from "@/components/ui/ios-liquid-home";
-import { KidsPlayQuestion } from "@/data/lesson-content";
-import type { LessonPathMode } from "@/data/lesson-content";
-import { KidsSceneKey } from "@/data/kids-games";
-import { useI18n } from "@/hooks/useI18n";
-import { useTTS } from "@/hooks/use-tts";
+import { AppText } from "../../../components/ui/AppText";
+import { HomeLiquidButton, HomeLiquidCard } from "../../../components/ui/ios-liquid-home";
+import { KidsPlayQuestion } from "../../../data/lesson-content";
+import type { LessonPathMode } from "../../../data/lesson-content";
+import { KidsSceneKey } from "../../../data/kids-games";
+import { useI18n } from "../../../hooks/useI18n";
+import { useTTS } from "../../../hooks/use-tts";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";

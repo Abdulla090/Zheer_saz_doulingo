@@ -1,10 +1,10 @@
-import { getUnitsForPath } from "@/data/content-access";
-import { getPathUnitTitle } from "@/data/path-unit-titles";
-import type { LessonPathMode } from "@/data/types";
-import { AdminButton, AdminCard, AdminSegment } from "@/screens/admin/admin-ui";
-import { AppText } from "@/components/ui/AppText";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
-import { downloadTextFile } from "@/utils/admin-export";
+import { getUnitsForPath } from "../../data/content-access";
+import { getPathUnitTitle } from "../../data/path-unit-titles";
+import type { LessonPathMode } from "../../data/types";
+import { AdminButton, AdminCard, AdminSegment } from "./admin-ui";
+import { AppText } from "../../components/ui/AppText";
+import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import { downloadTextFile } from "../../utils/admin-export";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {

@@ -1,15 +1,15 @@
-import { PressableScale } from "@/components/animations";
-import { AppText } from "@/components/ui/AppText";
+import { PressableScale } from "../../components/animations";
+import { AppText } from "../../components/ui/AppText";
 import {
   HomeLiquidCard,
   HomeMeshBackground,
   HomePalette as C,
-} from "@/components/ui/ios-liquid-home";
-import { SLANG_CATEGORIES, SLANG_DATA, type SlangItem } from "@/data/slang-dictionary";
-import { useTTS } from "@/hooks/use-tts";
-import { useI18n } from "@/hooks/useI18n";
-import { useProgressStore } from "@/stores/useProgressStore";
-import { crossShadow } from "@/utils/shadows";
+} from "../../components/ui/ios-liquid-home";
+import { SLANG_CATEGORIES, SLANG_DATA, type SlangItem } from "../../data/slang-dictionary";
+import { useTTS } from "../../hooks/use-tts";
+import { useI18n } from "../../hooks/useI18n";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import {

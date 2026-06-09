@@ -1,14 +1,14 @@
-import { previewLessonQuestions } from "@/data/lesson-content";
-import { getUnitsForPath } from "@/data/content-access";
-import type { LessonBank, LessonPathMode } from "@/data/types";
-import { deepClone } from "@/utils/deep-clone";
+import { previewLessonQuestions } from "../../data/lesson-content";
+import { getUnitsForPath } from "../../data/content-access";
+import type { LessonBank, LessonPathMode } from "../../data/types";
+import { deepClone } from "../../utils/deep-clone";
 import {
   AdminButton,
   AdminCard,
   AdminField,
-} from "@/screens/admin/admin-ui";
-import { AppText } from "@/components/ui/AppText";
-import { useContentAdminStore } from "@/stores/useContentAdminStore";
+} from "./admin-ui";
+import { AppText } from "../../components/ui/AppText";
+import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {

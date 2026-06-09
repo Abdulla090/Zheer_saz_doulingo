@@ -1,4 +1,4 @@
-import { usesJsTabBar } from "@/constants/tab-mode";
+import { usesJsTabBar } from "./tab-mode";
 import { Platform } from "react-native";
 
 /** CustomTabBar icon row height (icon-only, no labels). */

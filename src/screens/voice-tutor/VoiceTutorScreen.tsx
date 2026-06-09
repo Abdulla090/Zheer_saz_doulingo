@@ -2,17 +2,17 @@
  * Live voice tutor — PINGO brand UI (mesh background, mascot, mic orb).
  */
 
-import { PingoMascot } from "@/components/mascot/PingoMascot";
-import { MicCaptureOrb } from "@/components/voice/MicCaptureOrb";
+import { PingoMascot } from "../../components/mascot/PingoMascot";
+import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
 import {
   HomeLiquidButton,
   HomeMeshBackground,
   HomePalette,
   HomeType,
-} from "@/components/ui/ios-liquid-home";
-import { useGeminiLiveTutor } from "@/hooks/use-gemini-live-tutor";
-import { useI18n } from "@/hooks/useI18n";
-import { hapticImpact } from "@/utils/haptics";
+} from "../../components/ui/ios-liquid-home";
+import { useGeminiLiveTutor } from "../../hooks/use-gemini-live-tutor";
+import { useI18n } from "../../hooks/useI18n";
+import { hapticImpact } from "../../utils/haptics";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
