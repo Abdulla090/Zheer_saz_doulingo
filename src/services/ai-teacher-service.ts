@@ -3,6 +3,11 @@ import type {
   AiTeacherRequest,
   AiTeacherResult,
 } from "@/data/ai-teacher-types";
+import {
+  getGeminiApiKey,
+  GEMINI_SPEECH_MODEL,
+} from "@/constants/gemini";
+import { AI_TEACHER_PROMPTS } from "@/data/ai-teacher-prompts";
 
 const CRITERION_LABELS: Record<
   AiTeacherCriterion["key"],
@@ -38,7 +43,17 @@ function sanitizeRequest(request: AiTeacherRequest): AiTeacherRequest {
   };
 }
 
-/** Local heuristic scorer — replace with API when `EXPO_PUBLIC_AI_TEACHER_URL` is set. */
+function extractJsonObject(text: string): string | null {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced?.[1] ?? trimmed).trim();
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  return candidate.slice(start, end + 1);
+}
+
+/** Local heuristic scorer — fallback when Gemini is unavailable. */
 function mockEvaluateEnglish(req: AiTeacherRequest): AiTeacherResult {
   const text = req.text.trim();
   const words = text.split(/\s+/).filter(Boolean);
@@ -138,9 +153,9 @@ export async function evaluateEnglish(
     throw new Error("Answer too short");
   }
 
-  const url = process.env.EXPO_PUBLIC_AI_TEACHER_URL;
-
-  if (url && isAllowedTeacherApiUrl(url)) {
+  // 1. If custom URL configured, try that first
+  const customUrl = process.env.EXPO_PUBLIC_AI_TEACHER_URL;
+  if (customUrl && isAllowedTeacherApiUrl(customUrl)) {
     try {
       const apiKey = process.env.EXPO_PUBLIC_AI_TEACHER_API_KEY;
       const headers: Record<string, string> = {
@@ -153,7 +168,7 @@ export async function evaluateEnglish(
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-      const res = await fetch(url, {
+      const res = await fetch(customUrl, {
         method: "POST",
         headers,
         body: JSON.stringify(safe),
@@ -171,10 +186,118 @@ export async function evaluateEnglish(
         }
       }
     } catch {
-      /* fall through to mock */
+      // fall through
     }
   }
 
+  // 2. Otherwise, check for local Gemini API key and call Gemini directly
+  const geminiKey = getGeminiApiKey();
+  if (geminiKey) {
+    try {
+      const promptDetails = AI_TEACHER_PROMPTS.find((p) => p.id === safe.promptId);
+      const taskDescription = promptDetails
+        ? `Task: "${promptDetails.title}"\nInstructions: ${promptDetails.scenario}`
+        : `Task ID: ${safe.promptId}`;
+
+      const prompt = [
+        "You are an IELTS expert English examiner and tutor.",
+        "Evaluate the learner's response for the following task:",
+        taskDescription,
+        "",
+        `Learner's response mode: ${safe.mode}`,
+        `Learner's response text: "${safe.text}"`,
+        "",
+        "Evaluate the response and output a detailed IELTS-style evaluation band score between 3.0 and 9.0 in steps of 0.5.",
+        "Evaluate across these 4 criteria:",
+        "1. fluency: Fluency & coherence score (band 3.0 to 9.0) and feedback note.",
+        "2. lexical: Lexical resource score (band 3.0 to 9.0) and feedback note.",
+        "3. grammar: Grammatical range and accuracy score (band 3.0 to 9.0) and feedback note.",
+        "4. pronunciation: Pronunciation score (band 3.0 to 9.0) and feedback note. (If mode is writing, pronunciation note should represent spelling, punctuation, and cohesive layout).",
+        "",
+        "Output a valid JSON object matching the following structure. Do not output any markdown formatting or wrapper tags. Respond with ONLY the raw JSON string:",
+        "{",
+        '  "overallBand": 6.5,',
+        '  "criteria": [',
+        '    {"key": "fluency", "label": "Fluency & coherence", "band": 6.5, "note": "brief feedback note"},',
+        '    {"key": "lexical", "label": "Lexical resource", "band": 6.0, "note": "brief feedback note"},',
+        '    {"key": "grammar", "label": "Grammatical range", "band": 7.0, "note": "brief feedback note"},',
+        '    {"key": "pronunciation", "label": "Pronunciation", "band": 6.5, "note": "brief feedback note"}',
+        "  ],",
+        '  "strengths": ["list 1-2 key strengths in English"],',
+        '  "improvements": ["list 1-2 specific points to improve in English"],',
+        '  "sampleRewrite": "An upgraded, band 8.0-9.0 rewrite of the learner\'s response."',
+        "}"
+      ].join("\n");
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": geminiKey,
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: prompt }]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 1024,
+            }
+          }),
+          signal: controller.signal,
+        }
+      );
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const payload = await res.json();
+        const responseText =
+          payload.candidates?.[0]?.content?.parts
+            ?.map((part: any) => part.text ?? "")
+            .join("")
+            .trim() ?? "";
+
+        const jsonText = extractJsonObject(responseText);
+        if (jsonText) {
+          const parsed = JSON.parse(jsonText);
+          
+          // Validate structure
+          if (
+            typeof parsed.overallBand === "number" &&
+            Array.isArray(parsed.criteria) &&
+            parsed.criteria.length >= 4
+          ) {
+            // Re-map labels to make sure they match expected local labels
+            const criteria = parsed.criteria.map((c: any) => ({
+              key: c.key,
+              label: CRITERION_LABELS[c.key as AiTeacherCriterion["key"]] || c.label,
+              band: clampBand(c.band),
+              note: c.note || "",
+            }));
+
+            return {
+              overallBand: clampBand(parsed.overallBand),
+              criteria,
+              strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+              improvements: Array.isArray(parsed.improvements) ? parsed.improvements : [],
+              sampleRewrite: parsed.sampleRewrite,
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Direct Gemini evaluateEnglish failed, falling back to mock:", err);
+    }
+  }
+
+  // 3. Fallback to mock
   await new Promise((r) => setTimeout(r, 900));
   return mockEvaluateEnglish(safe);
 }

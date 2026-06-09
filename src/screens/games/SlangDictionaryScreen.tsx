@@ -27,7 +27,7 @@ import {
 } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
-import Animated, { FadeInUp, FadeOutDown, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 import {
   Modal,
   Platform,
@@ -185,8 +185,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
 
         {isExpanded && (
           <Animated.View
-            entering={FadeInUp.duration(220).springify().damping(18)}
-            exiting={FadeOutDown.duration(160)}
+            entering={FadeIn.duration(200)}
             style={styles.itemExpanded}
           >
             <View style={styles.divider} />
@@ -914,6 +913,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.divider,
     marginBottom: 12,
+    overflow: "hidden",
   },
   cardContent: {
     padding: 16,
