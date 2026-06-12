@@ -222,6 +222,7 @@ export const en = {
     voiceGeminiKeyHint:
       "Optional: add EXPO_PUBLIC_GEMINI_API_KEY to .env for AI speech grading",
     listening: "Listening…",
+    startingMic: "Starting microphone...",
     nice: "Nice!",
     skip: "Skip",
     dontKnow: "I don't know",

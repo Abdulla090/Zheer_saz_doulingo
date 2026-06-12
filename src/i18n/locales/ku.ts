@@ -225,6 +225,7 @@ export const ku = {
     voiceGeminiKeyHint:
       "ئارەزوومەندانە: EXPO_PUBLIC_GEMINI_API_KEY لە .env زیاد بکە بۆ پشکنینی دەنگ بە AI",
     listening: "گوێم لێیە…",
+    startingMic: "مایک دەستپێدەکات...",
     nice: "زۆر باشە!",
     skip: "تێپەڕاندن",
     dontKnow: "نازانم",

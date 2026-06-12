@@ -31,9 +31,11 @@ export type LessonStatus = "completed" | "current" | "locked";
 export function resolveLessonStatus(
   pathIndex: number,
   nextLessonPathIndex: number,
+  isFirstInUnit: boolean = false
 ): LessonStatus {
   if (pathIndex < nextLessonPathIndex) return "completed";
   if (pathIndex === nextLessonPathIndex) return "current";
+  if (isFirstInUnit) return "current";
   return "locked";
 }
 
@@ -94,7 +96,7 @@ export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[]
       const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
         const currentGlobalIndex = startGlobalIndex + itemIndex;
         const pathIndex = streetPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex, itemIndex === 0);
 
         return {
           id: `level-${currentGlobalIndex}`,

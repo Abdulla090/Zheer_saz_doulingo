@@ -9,6 +9,7 @@ import { AppText } from "../../../components/ui/AppText";
 import { isGeminiConfigured } from "../../../constants/gemini";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View, TextInput } from "react-native";
+import { Image } from "expo-image";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -95,6 +96,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   }));
 
   React.useEffect(() => {
+    console.log("[VoiceGame] useEffect question change running, target:", question.targetWord);
     // Abort active session
     if (backend === "gemini") {
       void gemini.abort();
@@ -120,7 +122,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       clearTimeout(speechEvalTimeoutRef.current);
       speechEvalTimeoutRef.current = null;
     }
-  }, [question]);
+  }, [question.targetWord]);
 
   const manualMode = backend === "manual";
   const useGemini = backend === "gemini";
@@ -187,22 +189,34 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     }
   }, [gemini, speech, useGemini, useSpeech]);
 
+  const geminiAbortRef = useRef(gemini.abort);
+  const speechAbortRef = useRef(speech.abort);
+
+  useEffect(() => {
+    geminiAbortRef.current = gemini.abort;
+  }, [gemini.abort]);
+
+  useEffect(() => {
+    speechAbortRef.current = speech.abort;
+  }, [speech.abort]);
+
   useEffect(
     () => () => {
+      console.log("[VoiceGame] useEffect unmount cleanup running");
       clearListenTimeout();
       clearSpeechEvalTimeout();
       try {
-        void gemini.abort();
+        void geminiAbortRef.current();
       } catch (e) {
         /* noop */
       }
       try {
-        speech.abort();
+        speechAbortRef.current();
       } catch (e) {
         /* noop */
       }
     },
-    [gemini, speech],
+    [],
   );
 
   const onSuccess = useCallback(
@@ -280,7 +294,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       onError: (code: string) => {
         if (stateRef.current !== "listening") return;
         if (BENIGN_SPEECH_ERRORS.has(code)) return;
-        onFail(speech.error);
+        onFail(null);
       },
     }),
     [onFail, onSuccess, question.targetWord, scheduleSpeechEvaluation, speech.error],
@@ -328,6 +342,10 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const finishSpeechCapture = useCallback(() => {
     if (stateRef.current !== "listening") return;
+    if (!speech.listening) {
+      console.log("[VoiceGame] finishSpeechCapture ignored: speech is not active yet.");
+      return;
+    }
     clearListenTimeout();
     updateState("processing");
     try {
@@ -340,13 +358,17 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const finishGeminiCapture = useCallback(async () => {
     if (stateRef.current !== "listening") return;
+    if (!gemini.listening) {
+      console.log("[VoiceGame] finishGeminiCapture ignored: gemini is not active yet.");
+      return;
+    }
     clearListenTimeout();
     updateState("processing");
     try {
       await gemini.stopAndEvaluate(question.targetWord);
     } catch (e) {
       console.warn("finishGeminiCapture: stopAndEvaluate failed", e);
-      onFail("AI evaluation failed.");
+      onFail(null);
     }
   }, [gemini, question.targetWord, onFail]);
 
@@ -385,7 +407,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           return;
         }
 
-        onFail(message);
+        onFail(null);
       },
     });
 
@@ -486,12 +508,16 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           ? t("lessons.tapMicSpeakGemini")
           : t("lessons.tapMicSpeak")
         : state === "listening"
-          ? useGemini || useSpeech
-            ? t("lessons.tapMicStop")
-            : t("lessons.listening")
+          ? (useGemini && !gemini.listening) || (useSpeech && !speech.listening)
+            ? t("lessons.startingMic")
+            : useGemini || useSpeech
+              ? t("lessons.tapMicStop")
+              : t("lessons.listening")
           : state === "success"
             ? t("lessons.nice")
-            : statusDetail || gemini.error || speech.error || t("lessons.micRetry");
+            : statusDetail || t("lessons.micRetry");
+
+  console.log("[VoiceGame Render] state:", state, "| gemini.listening:", gemini.listening, "| gemini.processing:", gemini.processing, "| speech.listening:", speech.listening, "| backend:", backend);
 
   const heroPrompt = question.prompt || t("lessons.sayOutLoudSub");
   const showTranscript =
@@ -515,14 +541,32 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         {heroPrompt}
       </LightQuestionPrompt>
 
+      {question.imageRequire && (
+        <Animated.View entering={FadeInUp.duration(400).springify()} style={{ alignItems: "center", marginVertical: 8 }}>
+          <Image
+            source={question.imageRequire}
+            style={s.heroImage}
+            contentFit="contain"
+            transition={200}
+          />
+        </Animated.View>
+      )}
+
       {!hasHintRevealed ? (
         <Animated.View entering={FadeInUp.duration(300)}>
           <Pressable
             onPress={handleRevealHint}
-            style={({ pressed }) => [s.hintButton, pressed && s.hintButtonPressed]}
+            style={({ pressed }) => [
+              s.hintButton,
+              pressed && s.hintButtonPressed,
+              pathMode === "kids" && {
+                backgroundColor: "rgba(255, 120, 30, 0.08)",
+                borderColor: "rgba(255, 120, 30, 0.25)",
+              }
+            ]}
           >
-            <SpeakerIcon size={24} />
-            <AppText style={s.hintText}>Tap for hint</AppText>
+            <SpeakerIcon size={24} color={pathMode === "kids" ? "#C2410C" : L.blue} />
+            <AppText style={[s.hintText, pathMode === "kids" && { color: "#C2410C" }]}>Tap for hint</AppText>
           </Pressable>
         </Animated.View>
       ) : (
@@ -580,11 +624,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           </>
         ) : (
           <View style={s.manualWrap}>
-            {speech.error || gemini.error ? (
-              <AppText style={s.unavailable}>{speech.error || gemini.error}</AppText>
-            ) : (
-              <AppText style={s.unavailable}>{t("lessons.voiceUnavailable")}</AppText>
-            )}
+            <AppText style={s.unavailable}>{t("lessons.voiceUnavailable")}</AppText>
             <AppText style={s.manualHint}>Type the English sentence below to verify:</AppText>
             <Animated.View style={[s.inputWrapper, shakeStyle]}>
               <TextInput
@@ -794,5 +834,11 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: L.border,
     textAlign: "center",
+  },
+  heroImage: {
+    width: 200,
+    height: 140,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
 });

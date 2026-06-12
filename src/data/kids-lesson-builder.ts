@@ -113,6 +113,7 @@ export function kidsStepToQuestion(step: KidsGameStep, seed: number): GameQuesti
         prompt: step.prompt,
         targetWord: step.target,
         targetKurdish: step.targetKurdish,
+        imageRequire: step.imageRequire,
         xp: 20,
       };
     case "treasure": {

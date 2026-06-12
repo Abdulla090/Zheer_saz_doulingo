@@ -33,6 +33,7 @@ import { L, LightMotion, LightRadius, LightType } from "./lesson-light-design";
 import type { AnswerTier } from "../../../utils/answer-tier";
 import { TIER_COLORS } from "../../../utils/answer-tier";
 import { LessonUnitLessonChip } from "../components/LessonUnitLessonChip";
+import { EmojiSticker } from "../../../components/ui/EmojiSticker";
 
 export function LightGameHeading({
   title,
@@ -61,7 +62,7 @@ export function LightPromptCard({
   onSpeak,
   variant = "default",
 }: {
-  kurdish: string;
+  kurdish?: string;
   english?: string;
   onSpeak?: () => void;
   variant?: "default" | "kids";
@@ -86,9 +87,11 @@ export function LightPromptCard({
         </Svg>
       </Pressable>
       <View style={lh.promptTextCol}>
-        <AppText style={LightType.promptKu} forceKurdishFont>
-          {kurdish}
-        </AppText>
+        {kurdish ? (
+          <AppText style={LightType.promptKu} forceKurdishFont>
+            {kurdish}
+          </AppText>
+        ) : null}
         {english ? (
           <AppText style={LightType.promptEn} forceLatinFont latinRole="medium">
             {english}
@@ -326,6 +329,18 @@ export function mapOptionState(
   return state;
 }
 
+function extractEmoji(text: string): { emoji: string | null; cleanText: string } {
+  if (!text) return { emoji: null, cleanText: "" };
+  const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/u;
+  const match = text.match(emojiRegex);
+  if (match) {
+    const emoji = match[0];
+    const cleanText = text.replace(emoji, "").replace(/\n/g, " ").trim();
+    return { emoji, cleanText };
+  }
+  return { emoji: null, cleanText: text };
+}
+
 export function LightWordTile({
   label,
   tierLabel,
@@ -336,6 +351,7 @@ export function LightWordTile({
   forceLatinFont,
   wide,
   wrapLabel,
+  isKids = false,
 }: {
   label: string;
   tierLabel?: string;
@@ -347,6 +363,7 @@ export function LightWordTile({
   wide?: boolean;
   /** Pair-match columns: wrap text, avoid clipping in narrow tiles */
   wrapLabel?: boolean;
+  isKids?: boolean;
 }) {
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({
@@ -363,13 +380,13 @@ export function LightWordTile({
           : state === "terrible"
             ? TIER_COLORS.terrible.bg
             : state === "correct"
-              ? "#E7F9E0"
+              ? isKids ? "#F0FDF4" : "#E7F9E0"
               : state === "wrong"
-                ? "#FFE8E8"
+                ? isKids ? "#FEF2F2" : "#FFE8E8"
                 : state === "pending"
                   ? "#F8FAFC"
                   : state === "selected"
-                    ? "#E8EFFF"
+                    ? isKids ? "#EFF6FF" : "#E8EFFF"
                     : state === "ghost"
                       ? "transparent"
                       : "#FFFFFF";
@@ -393,7 +410,11 @@ export function LightWordTile({
                     ? L.blue
                     : state === "ghost"
                       ? L.slotDash
-                      : L.border;
+                      : isKids ? "#E2E8F0" : L.border;
+
+  const { emoji: parsedEmoji, cleanText } = isKids
+    ? extractEmoji(label)
+    : { emoji: null, cleanText: label };
 
   const content = (
     <View
@@ -401,6 +422,11 @@ export function LightWordTile({
         lh.tile,
         wide && lh.tileWide,
         wrapLabel && lh.tileWrap,
+        isKids && {
+          borderRadius: 24,
+          borderWidth: 2.5,
+          paddingVertical: parsedEmoji ? 14 : 16,
+        },
         {
           backgroundColor: bg,
           borderColor: border,
@@ -411,10 +437,10 @@ export function LightWordTile({
         state !== "ghost" &&
           crossShadow({
             color: "#1A2B48",
-            offsetY: 6,
-            blur: 14,
-            opacity: 0.07,
-            elevation: 3,
+            offsetY: isKids ? 8 : 6,
+            blur: isKids ? 16 : 14,
+            opacity: isKids ? 0.1 : 0.07,
+            elevation: isKids ? 4 : 3,
           }),
       ]}
     >
@@ -426,10 +452,31 @@ export function LightWordTile({
           pointerEvents="none"
         />
       )}
-      {tierLabel ? (
+      {parsedEmoji ? (
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <EmojiSticker emoji={parsedEmoji} size={36} animateOnMount={false} />
+          {cleanText ? (
+            <AppText
+              style={[
+                LightType.tile,
+                {
+                  color: L.navy,
+                  fontSize: 15,
+                  fontFamily: "DINNextRoundedBold",
+                  textAlign: "center",
+                },
+              ]}
+              forceKurdishFont={rtl && !forceLatinFont}
+              forceLatinFont={forceLatinFont || !rtl}
+            >
+              {cleanText}
+            </AppText>
+          ) : null}
+        </View>
+      ) : tierLabel ? (
         <View style={lh.tileRow}>
           <AppText
-            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }]}
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }, isKids && { fontFamily: "DINNextRoundedBold" }]}
             forceKurdishFont={rtl && !forceLatinFont}
             forceLatinFont={forceLatinFont || !rtl}
           >
@@ -459,6 +506,7 @@ export function LightWordTile({
             LightType.tile,
             wrapLabel && lh.tileWrapText,
             { zIndex: 1, color: L.navy },
+            isKids && { fontFamily: "DINNextRoundedBold", fontSize: 16 },
           ]}
           forceKurdishFont={rtl && !forceLatinFont}
           forceLatinFont={forceLatinFont || !rtl}
@@ -731,10 +779,10 @@ export function LessonLiquidFeedback({
       radius={26}
     >
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
-      <AppText style={[lh.feedbackTitle, { color: titleColor }]} forceKurdishFont>
+      <AppText style={[lh.feedbackTitle, { color: titleColor }]}>
         {title}
       </AppText>
-      <AppText style={lh.feedbackSub} forceKurdishFont>{subtitle}</AppText>
+      <AppText style={lh.feedbackSub}>{subtitle}</AppText>
       <HomeLiquidButton
         label={buttonLabel ?? t("common.continue")}
         onPress={onContinue}

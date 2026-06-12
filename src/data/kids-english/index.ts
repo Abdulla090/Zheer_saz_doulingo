@@ -52,11 +52,12 @@ const KIDS_PATTERN: LessonType[] = [
 function resolveKidsLessonStatus(
   pathIndex: number,
   nextLessonPathIndex: number,
+  isFirstInUnit: boolean = false
 ): LessonStatus {
   if (KIDS_UNLOCK_UNITS_2_AND_3_FOR_TEST && pathIndex >= KIDS_PATTERN.length * KIDS_UNITS.length) {
     return "completed";
   }
-  return resolveLessonStatus(pathIndex, nextLessonPathIndex);
+  return resolveLessonStatus(pathIndex, nextLessonPathIndex, isFirstInUnit);
 }
 
 /** Build kids-English path sections from persisted progress (0 = first lesson current). */
@@ -75,6 +76,7 @@ export function buildKidsSectionData(
         const itemStatus = resolveKidsLessonStatus(
           pathIndex,
           nextLessonPathIndex,
+          itemIndex === 0
         );
 
         return {

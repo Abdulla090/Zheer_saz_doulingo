@@ -10,7 +10,10 @@ export type KidsSceneKey =
   | "backyard"
   | "living"
   | "street"
-  | "night";
+  | "night"
+  | "bathroom"
+  | "classroom"
+  | "livingroom";
 
 export type KidsChoice = {
   id: string;
@@ -58,7 +61,7 @@ export type KidsGameStep =
     }
   | {
       kind: "train";
-      words: [string, string];
+      words: string[];
       kurdishHint: string;
       extraWords?: string[];
     }
@@ -74,6 +77,7 @@ export type KidsGameStep =
       prompt: string;
       target: string;
       targetKurdish: string;
+      imageRequire?: any;
     }
   | {
       kind: "treasure";

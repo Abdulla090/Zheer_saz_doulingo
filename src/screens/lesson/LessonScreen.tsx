@@ -111,7 +111,7 @@ export default function LessonScreen() {
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex, pathMode),
-    [lessonId, lessonIndex, pathMode, contentOverride],
+    [lessonId, lessonIndex, pathMode],
   );
 
   const [current, setCurrent] = useState(0);
@@ -127,6 +127,7 @@ export default function LessonScreen() {
   } | null>(null);
 
   const nextRef = useRef(0);
+  const hasInitializedRef = useRef(false);
 
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
@@ -146,6 +147,10 @@ export default function LessonScreen() {
   /* Reset on focus */
   useFocusEffect(
     useCallback(() => {
+      if (hasInitializedRef.current) {
+        return;
+      }
+      hasInitializedRef.current = true;
       const safeStart = Math.min(
         Math.max(0, startQuestion),
         Math.max(0, questions.length - 1),

@@ -77,13 +77,17 @@ export async function evaluateSpeechWithGemini(input: {
 }): Promise<GeminiSpeechEvaluation> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
+    console.warn("[evaluateSpeechWithGemini] API key missing!");
     throw new Error("Gemini API key is not configured.");
   }
   if (!input.audioBase64) {
+    console.warn("[evaluateSpeechWithGemini] audioBase64 missing!");
     throw new Error("No audio was captured.");
   }
 
   const mimeType = normalizeGeminiMimeType(input.mimeType);
+  console.log("[evaluateSpeechWithGemini] Sending speech grading request to Gemini API...");
+  console.log(`[evaluateSpeechWithGemini] Target Phrase: "${input.targetPhrase}" | MIME: "${mimeType}" | Base64 Length: ${input.audioBase64.length}`);
 
   const prompt = [
     "You evaluate English speaking practice for language learners.",
@@ -132,6 +136,7 @@ export async function evaluateSpeechWithGemini(input: {
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
       controller.abort();
+      console.warn("[evaluateSpeechWithGemini] Request timed out after", API_TIMEOUT_MS, "ms");
       reject(new Error("Network timeout: Gemini request took too long."));
     }, API_TIMEOUT_MS);
   });
@@ -143,7 +148,10 @@ export async function evaluateSpeechWithGemini(input: {
     ])) as Response;
     clearTimeout(timeoutId!);
 
+    console.log("[evaluateSpeechWithGemini] Response status:", res.status);
     const data = (await res.json()) as GeminiGenerateResponse;
+    console.log("[evaluateSpeechWithGemini] Response JSON:", JSON.stringify(data));
+
     if (!res.ok) {
       throw new Error(
         data.error?.message ?? `Gemini request failed (${res.status})`,
@@ -160,7 +168,9 @@ export async function evaluateSpeechWithGemini(input: {
       throw new Error("Gemini returned an empty response.");
     }
 
-    return parseEvaluationPayload(text, input.targetPhrase);
+    const evaluation = parseEvaluationPayload(text, input.targetPhrase);
+    console.log("[evaluateSpeechWithGemini] Parsed evaluation:", evaluation);
+    return evaluation;
   } finally {
     clearTimeout(timeoutId!);
   }

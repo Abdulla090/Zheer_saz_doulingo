@@ -23,6 +23,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withSpring,
 } from "react-native-reanimated";
 import { GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L, LightRadius } from "./lesson-light-design";
@@ -32,6 +33,7 @@ import {
   LightPromptCard,
   LightWordTile,
 } from "./lesson-light-primitives";
+import { EmojiSticker } from "../../../components/ui/EmojiSticker";
 
 type Props = {
   question: KidsPlayQuestion;
@@ -53,6 +55,9 @@ const SCENE_GRADIENTS: Record<
   living: ["#F5EDE4", "#EDE0D4", "#FFF8F0"],
   street: ["#D8E8F8", "#C0D8F0", "#E8F0FF"],
   night: ["#0B132B", "#1C2541", "#3A506B"],
+  bathroom: ["#E0F7FA", "#B2EBF2", "#80DEEA"],
+  classroom: ["#FFF9C4", "#FFF59D", "#FFF176"],
+  livingroom: ["#F5EDE4", "#EDE0D4", "#FFF8F0"],
 };
 
 function variantHeading(
@@ -92,20 +97,48 @@ function FloatingBubble({
   onPop: () => void;
   disabled: boolean;
 }) {
-  const drift = useSharedValue(0);
+  const driftY = useSharedValue(0);
+  const driftX = useSharedValue(0);
+  const rotation = useSharedValue(0);
+  const bubbleScale = useSharedValue(1);
+
   useEffect(() => {
-    drift.value = withRepeat(
+    driftY.value = withRepeat(
       withSequence(
-        withTiming(-10, { duration: 1400 + index * 120, easing: Easing.inOut(Easing.sin) }),
-        withTiming(10, { duration: 1400 + index * 120, easing: Easing.inOut(Easing.sin) }),
+        withTiming(-12, { duration: 1500 + index * 130, easing: Easing.inOut(Easing.sin) }),
+        withTiming(12, { duration: 1500 + index * 130, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
       true,
     );
-  }, [drift, index]);
+    driftX.value = withRepeat(
+      withSequence(
+        withTiming(-8, { duration: 1700 + index * 90, easing: Easing.inOut(Easing.sin) }),
+        withTiming(8, { duration: 1700 + index * 90, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+    rotation.value = withRepeat(
+      withSequence(
+        withTiming(-4, { duration: 1900 + index * 180, easing: Easing.inOut(Easing.sin) }),
+        withTiming(4, { duration: 1900 + index * 180, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+  }, [driftY, driftX, rotation, index]);
 
   const style = useAnimatedStyle(() => ({
-    transform: [{ translateY: drift.value }],
+    transform: [
+      { translateY: driftY.value },
+      { translateX: driftX.value },
+      { rotate: `${rotation.value}deg` },
+    ],
+  }));
+
+  const popStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bubbleScale.value }],
   }));
 
   return (
@@ -113,20 +146,31 @@ function FloatingBubble({
       <Pressable
         onPress={() => {
           if (disabled) return;
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          bubbleScale.value = withSequence(
+            withSpring(0.7, { damping: 5, stiffness: 200 }),
+            withSpring(1, { damping: 10 }),
+          );
           onPop();
         }}
-        style={({ pressed }) => [kb.bubble, pressed && { transform: [{ scale: 0.94 }] }]}
+        onPressIn={() => {
+          bubbleScale.value = withSpring(0.9, { damping: 12 });
+        }}
+        onPressOut={() => {
+          bubbleScale.value = withSpring(1, { damping: 12 });
+        }}
+        disabled={disabled}
       >
-        <AppText style={kb.bubbleEmoji}>{emoji}</AppText>
-        <AppText style={kb.bubbleLabel} forceLatinFont latinRole="bold">
-          {label}
-        </AppText>
+        <Animated.View style={[kb.bubble, popStyle]}>
+          <EmojiSticker emoji={emoji} size={42} animateOnMount={false} />
+          <AppText style={kb.bubbleLabel} forceLatinFont latinRole="bold">
+            {label}
+          </AppText>
+        </Animated.View>
       </Pressable>
     </Animated.View>
   );
 }
-
 export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu: isSystemKu } = useI18n();
   const { speak } = useTTS();
@@ -139,6 +183,22 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const [shadowPicks, setShadowPicks] = useState<Record<string, string>>({});
   const [activeChip, setActiveChip] = useState<string | null>(null);
 
+  // Mascot animations
+  const mascotScale = useSharedValue(1);
+  const mascotY = useSharedValue(0);
+  const mascotBounce = useSharedValue(0);
+
+  // Chest / gift box animations
+  const chestShake = useSharedValue(0);
+  const chestScale = useSharedValue(1);
+
+  // Yes / No animations
+  const yesScale = useSharedValue(1);
+  const noScale = useSharedValue(1);
+
+  // Shadow placement pop animation
+  const slotPopScale = useSharedValue(1);
+
   useEffect(() => {
     setSelectedId(null);
     setRevealed(false);
@@ -146,7 +206,76 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
     setShadowPicks({});
     setActiveChip(null);
     firedRef.current = false;
+    chestShake.value = 0;
+    chestScale.value = 1;
+    slotPopScale.value = 1;
   }, [question]);
+
+  useEffect(() => {
+    // Mascot breathing
+    mascotScale.value = withRepeat(
+      withSequence(
+        withTiming(1.03, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.97, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+    mascotY.value = withRepeat(
+      withSequence(
+        withTiming(-5, { duration: 1300, easing: Easing.inOut(Easing.sin) }),
+        withTiming(5, { duration: 1300, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (revealed && question.variant === "feed" && selectedId === question.correctId) {
+      mascotBounce.value = withSequence(
+        withTiming(-35, { duration: 160, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 250, easing: Easing.bounce }),
+      );
+    }
+  }, [revealed, selectedId, question.variant]);
+
+  const mascotStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateY: mascotY.value + mascotBounce.value },
+        { scale: mascotScale.value },
+      ],
+    };
+  });
+
+  const chestStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: chestShake.value },
+        { scale: chestScale.value },
+      ],
+    };
+  });
+
+  const yesStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: yesScale.value }],
+  }));
+
+  const noStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: noScale.value }],
+  }));
+
+  const currentMascotEmoji = useMemo(() => {
+    const base = question.mascotEmoji ?? "🦉";
+    if (revealed) {
+      return selectedId === question.correctId ? "🥳" : "😢";
+    }
+    if (selectedId) {
+      return "😋"; // mascot gets hungry / opens mouth when item is selected
+    }
+    return base;
+  }, [question.mascotEmoji, selectedId, revealed, question.correctId]);
 
   const isKu = question.promptLang === "ku";
   const sceneColors = question.scene ? SCENE_GRADIENTS[question.scene] : SCENE_GRADIENTS.bedroom;
@@ -207,6 +336,11 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
+    
+    // Animate slot drop pop
+    slotPopScale.value = 0.4;
+    slotPopScale.value = withSpring(1, { damping: 10, stiffness: 150 });
+
     setShadowPicks((prev) => ({ ...prev, [slotId]: activeChip }));
     setActiveChip(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -220,7 +354,30 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const openChest = () => {
     if (treasureOpen) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTreasureOpen(true);
+    
+    // Shake gift
+    chestShake.value = withSequence(
+      withTiming(-12, { duration: 50 }),
+      withTiming(12, { duration: 50 }),
+      withTiming(-10, { duration: 50 }),
+      withTiming(10, { duration: 50 }),
+      withTiming(-6, { duration: 50 }),
+      withTiming(6, { duration: 50 }),
+      withTiming(0, { duration: 50 }),
+    );
+
+    // Spring scaling pop
+    chestScale.value = withSequence(
+      withTiming(1.25, { duration: 180 }),
+      withTiming(1, { duration: 200, easing: Easing.bounce }),
+    );
+
+    setTimeout(() => {
+      setTreasureOpen(true);
+      if (question.treasureRevealLabel) {
+        speak(question.treasureRevealLabel, "en");
+      }
+    }, 320);
   };
 
   const renderChoicesGrid = (floating?: boolean) => (
@@ -254,6 +411,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               disabled={revealed}
               wide
               wrapLabel
+              isKids={true}
             />
           </Animated.View>
         ),
@@ -268,8 +426,8 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
       </GameHeader>
 
       <LightPromptCard
-        kurdish={isKu ? question.prompt : question.prompt}
-        english={!isKu ? undefined : question.prompt}
+        kurdish={isKu ? question.prompt : undefined}
+        english={!isKu ? question.prompt : undefined}
         onSpeak={speakPrompt}
         variant={pathMode === "kids" ? "kids" : "default"}
       />
@@ -292,14 +450,16 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
           {renderChoicesGrid()}
           <Pressable
             onPress={feedToMascot}
-            style={({ pressed }) => [kb.mascotZone, pressed && { opacity: 0.9 }]}
+            style={({ pressed }) => [kb.mascotZone, pressed && { opacity: 0.95 }]}
           >
-            <HomeLiquidCard contentStyle={kb.mascotCard} radius={28}>
-              <AppText style={kb.mascotEmoji}>{question.mascotEmoji ?? "🦉"}</AppText>
-              <AppText style={kb.mascotHint} forceLatinFont latinRole="bold">
-                {selectedId ? "Tap here to give it!" : "Pick an item first"}
-              </AppText>
-            </HomeLiquidCard>
+            <Animated.View style={mascotStyle}>
+              <HomeLiquidCard contentStyle={kb.mascotCard} radius={28}>
+                <EmojiSticker emoji={currentMascotEmoji} size={64} animateOnMount={false} />
+                <AppText style={kb.mascotHint} forceLatinFont latinRole="bold">
+                  {selectedId ? "Tap here to give it!" : "Pick an item first"}
+                </AppText>
+              </HomeLiquidCard>
+            </Animated.View>
           </Pressable>
         </View>
       ) : null}
@@ -317,6 +477,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                   onPress={() => !used && !revealed && setActiveChip(c.id)}
                   disabled={used || revealed}
                   wide
+                  isKids={true}
                 />
               );
             })}
@@ -330,17 +491,28 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                 <Pressable
                   key={slotId}
                   onPress={() => onShadowSlot(slotId)}
-                  style={kb.slot}
+                  style={[
+                    kb.slot,
+                    placedChip && { borderColor: L.green, borderStyle: "solid", backgroundColor: "#F0FDF4" }
+                  ]}
                 >
-                  <AppText style={kb.slotEmoji}>
-                    {placedChip ? placedChip.emoji : chip?.emoji ?? "⬜"}
-                  </AppText>
-                  <AppText
-                    style={[kb.slotLabel, !placedChip && kb.slotGhost]}
-                    forceLatinFont
-                  >
-                    {placedChip ? placedChip.label : "?"}
-                  </AppText>
+                  {placedChip ? (
+                    <Animated.View style={[{ alignItems: "center" }, placed === slotId && { transform: [{ scale: slotPopScale }] }]}>
+                      <EmojiSticker emoji={placedChip.emoji} size={36} animateOnMount={false} />
+                      <AppText style={kb.slotLabel} forceLatinFont>
+                        {placedChip.label}
+                      </AppText>
+                    </Animated.View>
+                  ) : (
+                    <View style={{ alignItems: "center", opacity: 0.25 }}>
+                      <AppText style={kb.slotEmoji}>
+                        {chip?.emoji ?? "⬜"}
+                      </AppText>
+                      <AppText style={[kb.slotLabel, kb.slotGhost]} forceLatinFont>
+                        {chip?.label ?? "?"}
+                      </AppText>
+                    </View>
+                  )}
                 </Pressable>
               );
             })}
@@ -355,42 +527,72 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
       {question.variant === "yes_no" ? (
         <View style={kb.trickArea}>
           <HomeLiquidCard contentStyle={kb.trickCard} radius={24}>
-            <AppText style={kb.trickEmoji}>{question.shownEmoji}</AppText>
+            <EmojiSticker emoji={question.shownEmoji ?? "⭐"} size={64} style={{ marginBottom: 4 }} />
             <AppText style={kb.trickLabel} forceLatinFont latinRole="bold">
               {question.shownLabel}
             </AppText>
-            <AppText style={kb.trickSays} forceLatinFont>
-              Mascot says: &quot;{question.spokenWord}&quot;
-            </AppText>
+            <View style={kb.speechBubble}>
+              <AppText style={kb.trickSays} forceLatinFont>
+                Mascot says: &quot;{question.spokenWord}&quot;
+              </AppText>
+            </View>
           </HomeLiquidCard>
           <View style={[kb.trickBtns, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
-            <HomeLiquidButton
-              label="✓  Match!"
-              color={L.green}
-              onPress={() => onYesNo("yes")}
-            />
-            <HomeLiquidButton
-              label="✗  Trick!"
-              color={L.red}
-              onPress={() => onYesNo("no")}
-            />
+            <Animated.View style={[yesStyle, { flex: 1 }]}>
+              <Pressable
+                onPressIn={() => { yesScale.value = withSpring(0.92, { damping: 10 }); }}
+                onPressOut={() => { yesScale.value = withSpring(1, { damping: 10 }); }}
+                onPress={() => onYesNo("yes")}
+                style={[kb.yesNoBtn, { borderColor: L.green, backgroundColor: "#F0FDF4" }]}
+              >
+                <AppText style={[kb.yesNoText, { color: L.greenDeep }]} forceLatinFont latinRole="bold">
+                  ✓  Match!
+                </AppText>
+              </Pressable>
+            </Animated.View>
+            <Animated.View style={[noStyle, { flex: 1 }]}>
+              <Pressable
+                onPressIn={() => { noScale.value = withSpring(0.92, { damping: 10 }); }}
+                onPressOut={() => { noScale.value = withSpring(1, { damping: 10 }); }}
+                onPress={() => onYesNo("no")}
+                style={[kb.yesNoBtn, { borderColor: L.red, backgroundColor: "#FEF2F2" }]}
+              >
+                <AppText style={[kb.yesNoText, { color: L.redDeep }]} forceLatinFont latinRole="bold">
+                  ✗  Trick!
+                </AppText>
+              </Pressable>
+            </Animated.View>
           </View>
         </View>
       ) : null}
 
       {question.variant === "treasure" ? (
         <View style={kb.treasureArea}>
-          <Pressable onPress={openChest} style={kb.chestWrap}>
-            <AppText style={kb.chestEmoji}>{treasureOpen ? "🎁" : "🧳"}</AppText>
+          <Pressable 
+            onPress={openChest} 
+            style={kb.chestWrap}
+          >
+            <Animated.View style={chestStyle}>
+              {treasureOpen ? (
+                <View style={{ alignItems: "center", gap: 6 }}>
+                  <EmojiSticker emoji={question.treasureRevealEmoji ?? "⭐"} size={72} />
+                  <AppText style={{ fontSize: 18, color: L.greenDeep, fontFamily: "DINNextRoundedBold" }}>
+                    {question.treasureRevealLabel}
+                  </AppText>
+                </View>
+              ) : (
+                <EmojiSticker emoji="🎁" size={72} />
+              )}
+            </Animated.View>
             {!treasureOpen ? (
               <AppText style={kb.chestHint} forceLatinFont latinRole="bold">
-                Tap the chest!
+                Tap the gift!
               </AppText>
             ) : (
               <Animated.View entering={FadeIn.duration(300)} style={kb.revealWrap}>
-                <AppText style={kb.revealEmoji}>{question.treasureRevealEmoji}</AppText>
+                <AppText style={kb.revealEmoji}>🔊</AppText>
                 <AppText style={kb.revealLabel} forceLatinFont latinRole="bold">
-                  {question.treasureRevealLabel}
+                  Listen!
                 </AppText>
               </Animated.View>
             )}
@@ -403,9 +605,8 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                   onPress={() => pickChoice(c.id)}
                   style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}
                 >
-                  <AppText style={kb.audioEmoji}>{c.emoji}</AppText>
                   <AppText style={kb.audioLabel} forceLatinFont>
-                    🔊 {c.label}
+                    {c.label}
                   </AppText>
                 </Pressable>
               ))}
@@ -463,10 +664,10 @@ const kb = StyleSheet.create({
   bubble: {
     backgroundColor: "rgba(255,255,255,0.92)",
     borderRadius: 999,
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingHorizontal: 12,
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: "#D6E8FF",
     shadowColor: L.shadow,
     shadowOpacity: 1,
@@ -474,44 +675,71 @@ const kb = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   bubbleEmoji: { fontSize: 36, lineHeight: 42 },
-  bubbleLabel: { fontSize: 14, color: L.navy, marginTop: 4 },
+  bubbleLabel: { fontSize: 14, color: L.navy, marginTop: 6, fontFamily: "DINNextRoundedBold" },
   feedArea: { gap: 12 },
-  mascotZone: { alignSelf: "center", width: "100%", maxWidth: 280 },
-  mascotCard: { alignItems: "center", paddingVertical: 20, gap: 6 },
+  mascotZone: { alignSelf: "center", width: "100%", maxWidth: 280, marginTop: 8 },
+  mascotCard: { alignItems: "center", paddingVertical: 18, gap: 8 },
   mascotEmoji: { fontSize: 56, lineHeight: 64 },
-  mascotHint: { fontSize: 15, color: L.navy },
+  mascotHint: { fontSize: 15, color: L.navy, fontFamily: "DINNextRoundedBold", textAlign: "center" },
   shadowArea: { gap: 16 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
-  slotRow: { flexDirection: "row", justifyContent: "center", gap: 12 },
+  slotRow: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 8 },
   slot: {
     width: 96,
-    height: 108,
-    borderRadius: 16,
-    borderWidth: 2,
+    height: 112,
+    borderRadius: 20,
+    borderWidth: 2.5,
     borderStyle: "dashed",
     borderColor: L.slotDash,
     backgroundColor: "rgba(255,255,255,0.7)",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
+    shadowColor: "#1A2B48",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
   slotEmoji: { fontSize: 32, opacity: 0.35 },
-  slotLabel: { fontSize: 12, fontWeight: "700", color: L.navy },
+  slotLabel: { fontSize: 12, fontWeight: "700", color: L.navy, fontFamily: "DINNextRoundedBold" },
   slotGhost: { opacity: 0.4 },
   pickArea: { marginTop: 4 },
   trickArea: { gap: 16, alignItems: "center" },
-  trickCard: { alignItems: "center", padding: 20, gap: 8, width: "100%" },
+  trickCard: { alignItems: "center", padding: 18, gap: 6, width: "100%" },
   trickEmoji: { fontSize: 52, lineHeight: 60 },
-  trickLabel: { fontSize: 22, color: L.navy },
-  trickSays: { fontSize: 16, color: L.navySoft, textAlign: "center" },
+  trickLabel: { fontSize: 20, color: L.navy, fontFamily: "DINNextRoundedBold" },
+  trickSays: { fontSize: 15, color: L.navySoft, textAlign: "center", fontFamily: "DINNextRoundedMedium" },
   trickBtns: { flexDirection: "row", gap: 12, width: "100%" },
+  yesNoBtn: {
+    paddingVertical: 14,
+    borderRadius: 20,
+    borderWidth: 2.5,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#1A2B48",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  yesNoText: {
+    fontSize: 16,
+    fontFamily: "DINNextRoundedBold",
+  },
+  speechBubble: {
+    backgroundColor: "rgba(26, 43, 72, 0.05)",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginTop: 4,
+  },
   treasureArea: { alignItems: "center", gap: 16, paddingVertical: 8 },
   chestWrap: { alignItems: "center", gap: 8 },
   chestEmoji: { fontSize: 72, lineHeight: 80 },
-  chestHint: { fontSize: 16, color: L.blue },
-  revealWrap: { alignItems: "center", gap: 4 },
-  revealEmoji: { fontSize: 48 },
-  revealLabel: { fontSize: 20, color: L.navy },
+  chestHint: { fontSize: 16, color: L.blue, fontFamily: "DINNextRoundedBold" },
+  revealWrap: { alignItems: "center", gap: 4, marginTop: 4 },
+  revealEmoji: { fontSize: 44 },
+  revealLabel: { fontSize: 18, color: L.navy, fontFamily: "DINNextRoundedBold" },
   treasureOpts: { width: "100%", gap: 10 },
   audioOpt: {
     flexDirection: "row",
@@ -520,10 +748,10 @@ const kb = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: LightRadius.tile,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 2.5,
     borderColor: L.border,
   },
   audioEmoji: { fontSize: 28 },
-  audioLabel: { fontSize: 17, fontWeight: "700", color: L.navy },
+  audioLabel: { fontSize: 17, fontWeight: "700", color: L.navy, fontFamily: "DINNextRoundedBold" },
   footer: { marginTop: 8 },
 });

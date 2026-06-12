@@ -89,7 +89,7 @@ export function buildNormalSectionData(
       const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
         const currentGlobalIndex = startGlobalIndex + itemIndex;
         const pathIndex = normalPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex, itemIndex === 0);
 
         return {
           id: `ne-level-${currentGlobalIndex}`,
