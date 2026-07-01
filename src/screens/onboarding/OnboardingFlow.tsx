@@ -1,151 +1,67 @@
 import type { PathMode } from "../home/components/PathSwitcher";
-
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
-import { useI18n } from "../../hooks/useI18n";
 import * as Haptics from "expo-haptics";
-
-import React, { useCallback, useMemo, useState } from "react";
-
-import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
-
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-
-import Animated, { FadeIn, FadeOut, runOnJS } from "react-native-reanimated";
-
-import {
-  OnboardingSlide,
-  type OnboardingSlideModel,
-} from "./components/OnboardingSlide";
+import React, { useCallback, useMemo, useState, useRef } from "react";
+import { Platform, StyleSheet, useWindowDimensions, View, TouchableOpacity, NativeSyntheticEvent, NativeScrollEvent, ScrollView, I18nManager } from "react-native";
+import { ArrowRight } from "lucide-react-native";
+import { OnboardingSlide, type OnboardingSlideModel } from "./components/OnboardingSlide";
 import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
+import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
+import { AppText } from "../../components/ui/AppText";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
-
-
-const IMAGE_SLIDE_MAX_W = 576;
-
-
-
-const STEP_IDS = ["welcome", "paths", "practice", "progress", "ready"] as const;
-
-
+const STEP_IDS = ["meet_twin", "learn_conversation", "grow_every_day"] as const;
 
 export function OnboardingFlow() {
   const { width: screenWidth } = useWindowDimensions();
-
-
+  const scrollRef = useRef<ScrollView>(null);
 
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
-
   const pathMode = useSettingsStore((s) => s.pathMode);
-
   const setPathMode = useSettingsStore((s) => s.setPathMode);
-
   const localeReady = useLocaleStore((s) => s.ready);
-
-
 
   const [index, setIndex] = useState(0);
   const [showLangSelection, setShowLangSelection] = useState(false);
 
-  const { isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [selectedPath] = useState<PathMode>(
-
     pathMode === "street" || pathMode === "kids" ? pathMode : "normal",
-
   );
 
-
-
   const total = STEP_IDS.length;
-
   const isLast = index === total - 1;
 
-
-
   const slides = useMemo((): OnboardingSlideModel[] => {
-
     const meta: Record<
-
       (typeof STEP_IDS)[number],
-
-      { title: string; subtitle: string }
-
+      { title: string; subtitle: string; icon: React.ElementType }
     > = {
-
-      welcome: {
-
-        title: "Learn languages,\nspeak the world.",
-
-        subtitle:
-
-          "Smart AI lessons tailored to you.\nPractice, learn, and speak with\nconfidence.",
-
+      meet_twin: {
+        title: "Meet Your AI Twin",
+        subtitle: "Practice real conversations with an AI partner that adapts to your level, goals, and learning style.",
+        icon: ArrowRight,
       },
-
-      paths: {
-
-        title: "AI-Powered\nLearning",
-
-        subtitle:
-
-          "Personalized lessons that adapt to\nyour level, pace, and goals.",
-
+      learn_conversation: {
+        title: "Learn Through Conversation",
+        subtitle: "Speak naturally, receive instant corrections, and build confidence every day.",
+        icon: ArrowRight,
       },
-
-      practice: {
-
-        title: "Practice\nReal Conversations",
-
-        subtitle:
-
-          "Chat with AI or native speakers and\nbuild real-world communication\nskills.",
-
+      grow_every_day: {
+        title: "Grow Every Day",
+        subtitle: "Earn rewards, unlock new skills, and watch your language world expand with every conversation.",
+        icon: ArrowRight,
       },
-
-      progress: {
-
-        title: "Track Progress,\nStay Motivated",
-
-        subtitle:
-
-          "Set goals, track your growth, and\ncelebrate every step forward.",
-
-      },
-
-      ready: {
-
-        title: "Your Journey\nStarts Now!",
-
-        subtitle:
-
-          "Explore. Learn. Connect.\nThe world is waiting for you.",
-
-      },
-
     };
 
-
-
     return STEP_IDS.map((id) => ({
-
       id,
-
       ...meta[id],
-
-      imageOnly: true,
-
     }));
-
   }, []);
-
-
-
-  const activeSlide = slides[index];
-
-  const contentWidth = Math.min(screenWidth, IMAGE_SLIDE_MAX_W);
-
-
 
   const finishSlides = useCallback(() => {
     setShowLangSelection(true);
@@ -154,192 +70,181 @@ export function OnboardingFlow() {
   const finishAll = useCallback(() => {
     setPathMode(selectedPath);
     if (Platform.OS !== "web") {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
+
+    // Complete onboarding immediately — no animation, no setTimeout race
     completeOnboarding();
   }, [completeOnboarding, selectedPath, setPathMode]);
 
-
-
-  const goToIndex = useCallback(
-
-    (next: number) => {
-
-      const clamped = Math.max(0, Math.min(next, total - 1));
-
-      if (clamped === index) return;
-
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = Math.abs(event.nativeEvent.contentOffset.x);
+    const newIndex = Math.round(offsetX / screenWidth);
+    if (newIndex !== index && newIndex >= 0 && newIndex < total) {
       if (Platform.OS !== "web") {
-
-        void Haptics.selectionAsync();
-
+        void Haptics.selectionAsync().catch(() => {});
       }
-
-      setIndex(clamped);
-
-    },
-
-    [index, total],
-
-  );
-
-
+      setIndex(newIndex);
+    }
+  };
 
   const goNext = useCallback(() => {
-
     if (Platform.OS !== "web") {
-
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-
     if (isLast) {
       finishSlides();
       return;
     }
-    goToIndex(index + 1);
-  }, [finishSlides, goToIndex, index, isLast]);
+    const nextIndex = index + 1;
+    
+    const isWebRTL = Platform.OS === "web" && I18nManager.isRTL;
+    const targetX = nextIndex * screenWidth * (isWebRTL ? -1 : 1);
+    
+    scrollRef.current?.scrollTo({ 
+      x: targetX, 
+      y: 0, 
+      animated: Platform.OS !== "web" 
+    });
+    
+    setIndex(nextIndex);
+  }, [finishSlides, index, isLast, screenWidth]);
 
-
-
-  const swipeGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-16, 16])
-        .onEnd((e) => {
-          const nextIndex = isKu ? index - 1 : index + 1;
-          const prevIndex = isKu ? index + 1 : index - 1;
-          if (e.translationX < -48 && e.velocityX <= 0) {
-            runOnJS(goToIndex)(nextIndex);
-          } else if (e.translationX > 48 && e.velocityX >= 0) {
-            runOnJS(goToIndex)(prevIndex);
-          }
-        }),
-    [goToIndex, index, isKu],
-  );
-
-
-
-  if (!localeReady || !activeSlide) {
+  if (!localeReady) {
     return <View style={styles.root} />;
   }
 
   if (showLangSelection) {
-    return <LanguageSelectionFlow onFinish={finishAll} />;
+    return (
+      <View style={{ flex: 1 }}>
+        <LanguageSelectionFlow onFinish={finishAll} />
+      </View>
+    );
   }
 
-
-
   return (
-
     <View style={styles.root}>
-
-      <View
-
-        style={[
-
-          styles.container,
-
-          {
-
-            width: contentWidth,
-
-            paddingTop: 0,
-
-            paddingBottom: 0,
-
-            paddingHorizontal: 0,
-
-          },
-
-        ]}
-
+      <OnboardingSkiaBg />
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.container}
+        contentContainerStyle={{ flexGrow: 1 }}
       >
-
-        <GestureDetector gesture={swipeGesture}>
-
-          <View style={styles.slideClip}>
-
-            <Animated.View
-
-              key={activeSlide.id}
-
-              entering={FadeIn.duration(220)}
-
-              exiting={FadeOut.duration(160)}
-
-              style={styles.slideInner}
-
-            >
-
-              <OnboardingSlide
-
-                slide={activeSlide}
-
-                isLast={isLast}
-
-                onPrimaryPress={goNext}
-
-              />
-
-            </Animated.View>
-
+        {slides.map((slide, i) => (
+          <View key={slide.id} style={{ width: screenWidth, height: "100%", justifyContent: "center", backgroundColor: "transparent" }}>
+            <OnboardingSlide slide={slide} />
           </View>
+        ))}
+      </ScrollView>
 
-        </GestureDetector>
+      {/* Footer Navigation */}
+      <View style={styles.footer}>
+        <View style={styles.pagination}>
+          {slides.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === index ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
 
+        <TouchableOpacity
+          style={styles.nextButton}
+          activeOpacity={0.85}
+          onPress={goNext}
+        >
+          <View style={styles.nextButtonContent}>
+            <AppText style={styles.nextButtonText} forceLatinFont latinRole="bold">
+              {index === 0 ? "Get Started" : (isLast ? "Start Learning" : "Continue")}
+            </AppText>
+            <ArrowRight size={20} color="#FFFFFF" style={styles.arrowIcon} />
+          </View>
+        </TouchableOpacity>
       </View>
-
     </View>
-
   );
-
 }
 
-
-
-const styles = StyleSheet.create({
-
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   root: {
-
     flex: 1,
-
     backgroundColor: "#FFFFFF",
-
-    overflow: "hidden",
-
-    alignItems: "center",
-
   },
-
   container: {
-
     flex: 1,
-
-    overflow: "hidden",
-
   },
-
-  slideClip: {
-
-    flex: 1,
-
-    overflow: "hidden",
-
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === "ios" ? 48 : 32,
+    paddingTop: 16,
+    alignItems: "center",
+    backgroundColor: "transparent",
+    zIndex: 10,
+  },
+  pagination: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 32,
+  },
+  dot: {
+    height: 8,
+    borderRadius: 4,
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: "#2563EB",
+  },
+  dotInactive: {
+    width: 8,
+    backgroundColor: "#E2E8F0",
+  },
+  nextButton: {
     width: "100%",
-
+    height: 56,
+    backgroundColor: "#2563EB",
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 8px 24px rgba(37, 99, 235, 0.25)",
+      },
+      default: {
+        shadowColor: "#2563EB",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
+        elevation: 6,
+      },
+    }),
   },
-
-  slideInner: {
-
-    flex: 1,
-
+  nextButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
     width: "100%",
-
-    overflow: "hidden",
-
   },
-
+  nextButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  arrowIcon: {
+    position: "absolute",
+    right: 24,
+  },
 });
-
-

@@ -1,16 +1,11 @@
-import { translate, type AppLocale, type I18nKey } from "../i18n";
+import { useTranslation } from "react-i18next";
 import { useLocaleStore } from "../stores/useLocaleStore";
-import { useCallback } from "react";
 
 export function useI18n() {
-  const locale = useLocaleStore((s) => s.locale);
+  const { t, i18n } = useTranslation();
+  const locale = useLocaleStore((s) => s.selectedSourceLanguage);
   const ready = useLocaleStore((s) => s.ready);
-  const setLocale = useLocaleStore((s) => s.setLocale);
-
-  const t = useCallback(
-    (key: I18nKey) => translate(locale, key),
-    [locale],
-  );
+  const setLocale = useLocaleStore((s) => s.setLocale); // Legacy alias
 
   return {
     t,
@@ -22,5 +17,3 @@ export function useI18n() {
     setKurdish: () => setLocale("ku"),
   };
 }
-
-export type { AppLocale, I18nKey };

@@ -2,7 +2,7 @@ import { appStorage } from "../lib/app-storage";
 import { router } from "expo-router";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.onboarding.completed";
+const STORAGE_KEY = "twino.onboarding.completed";
 
 interface OnboardingState {
   ready: boolean;
@@ -14,7 +14,7 @@ interface OnboardingState {
   resetOnboarding: () => Promise<void>;
 }
 
-const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) === "1";
+const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) === "true";
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ready: true,
@@ -22,22 +22,22 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   replayNonce: 0,
 
   completeOnboarding: () => {
+    appStorage.setItemSync(STORAGE_KEY, "true");
     set({ completed: true });
-    appStorage.setItemSync(STORAGE_KEY, "1");
-    router.replace("/(tabs)");
+    router.replace("/(tabs)" as any);
   },
 
   replayOnboarding: async () => {
-    appStorage.removeItemSync(STORAGE_KEY);
-    set((s) => ({
-      completed: false,
-      replayNonce: s.replayNonce + 1,
-    }));
-    router.replace("/onboarding");
+    // Navigate to onboarding first, then flip state after a tick so the
+    // old screen tree unmounts gracefully (prevents Android crash).
+    router.replace("/onboarding" as any);
+    setTimeout(() => {
+      appStorage.setItemSync(STORAGE_KEY, "false");
+      set({ completed: false });
+    }, 50);
   },
 
   resetOnboarding: async () => {
-    await get().replayOnboarding();
+    get().replayOnboarding();
   },
 }));
-

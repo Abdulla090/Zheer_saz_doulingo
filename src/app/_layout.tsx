@@ -1,5 +1,7 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
+import "../utils/web-deprecations-patch";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
+import { SkiaWebGate } from "../components/animations/skia-gsap-opening/SkiaWebGate";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { initSentry, Sentry } from "../lib/sentry";
 import { fontMap } from "../fontMap";
@@ -9,9 +11,9 @@ import { useProgressStore } from "../stores/useProgressStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useContentAdminStore } from "../stores/useContentAdminStore";
 import { useAndroidImmersiveChrome } from "../hooks/use-android-immersive-chrome";
-import { NavigationBar } from "expo-navigation-bar";
+// NavigationBar import removed — declarative <NavigationBar hidden /> component
+// crashed on APK builds. useAndroidImmersiveChrome handles it imperatively.
 import { syncHomeWidget } from "../services/home-widget-sync";
-import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import { fetchRemoteCurriculum } from "../services/curriculum-loader";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { useFonts } from "expo-font";
@@ -22,7 +24,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -32,6 +34,13 @@ import "../global.css";
 initSentry();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// BottomSheetModalProvider from @expo/ui/community/bottom-sheet loads Jetpack Compose
+// native modules (ModalBottomSheet, Host) which can crash in standard APK builds.
+// The original implementation is literally just <>{children}</>, so we inline it safely.
+function BottomSheetModalProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
 
 function applyGlobalFont(kurdishFontFamily: string) {
   if (Platform.OS === "web" && typeof document !== "undefined") {
@@ -102,7 +111,7 @@ function RootLayout() {
 
   useEffect(() => {
     if (Platform.OS !== "web") {
-      SecureStore.getItemAsync("phingo.gemini.apikey")
+      SecureStore.getItemAsync("twino.gemini.apikey")
         .then((key: string | null) => {
           if (key) {
             setRuntimeGeminiApiKey(key);
@@ -112,7 +121,7 @@ function RootLayout() {
     } else {
       try {
         if (typeof localStorage !== "undefined") {
-          const key = localStorage.getItem("phingo.gemini.apikey");
+          const key = localStorage.getItem("twino.gemini.apikey");
           if (key) {
             setRuntimeGeminiApiKey(key);
           }
@@ -147,7 +156,8 @@ function RootLayout() {
   }, [ready]);
 
   if (!coreFontsLoaded || !ready) {
-    return null;
+    // Return a plain white view matching the splash background — never a bare null
+    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
   }
 
   const rnWebVars = Platform.OS === "web" ? {} : {
@@ -164,9 +174,13 @@ function RootLayout() {
           style="auto"
           {...({ translucent: true } as any)}
         />
-        {Platform.OS === "android" ? <NavigationBar hidden /> : null}
+        {/* NavigationBar declarative component removed — it loads Jetpack Compose
+            native modules that crash in standard APK builds (same issue as
+            BottomSheetModalProvider above). The imperative API in
+            useAndroidImmersiveChrome already handles hiding the nav bar. */}
         <OfflineBanner />
         <GestureHandlerRootView style={[{ flex: 1, direction: locale === "ku" ? "rtl" : "ltr" }, rnWebVars as any]}>
+          <SkiaWebGate>
           <AppErrorBoundary>
             <BottomSheetModalProvider>
               <Stack
@@ -175,7 +189,6 @@ function RootLayout() {
                   animation: "fade",
                 }}
               >
-                <Stack.Protected guard={onboardingComplete}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen
                     name="roleplay"
@@ -195,13 +208,11 @@ function RootLayout() {
                   <Stack.Screen name="admin/index" />
                   <Stack.Screen name="admin/unit" />
                   <Stack.Screen name="admin/lesson" />
-                </Stack.Protected>
-                <Stack.Protected guard={!onboardingComplete}>
-                  <Stack.Screen name="onboarding" />
-                </Stack.Protected>
+                <Stack.Screen name="onboarding" />
               </Stack>
             </BottomSheetModalProvider>
           </AppErrorBoundary>
+          </SkiaWebGate>
         </GestureHandlerRootView>
       </KeyboardProvider>
     </SafeAreaProvider>
