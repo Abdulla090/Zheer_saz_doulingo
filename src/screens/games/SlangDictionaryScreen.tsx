@@ -12,19 +12,10 @@ import { useProgressStore } from "../../stores/useProgressStore";
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import {
-  ArrowLeft,
-  BookOpen,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Search,
-  Sparkles,
-  Trophy,
-  Volume2,
-  X,
-  XCircle,
-} from "lucide-react-native";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { ArrowLeft01Icon, BookOpen01Icon, CheckmarkCircle02Icon, ChevronDownIcon, ChevronUpIcon, Search01Icon, SparklesIcon, Trophy, VolumeHighIcon, Cancel01Icon, CancelCircleIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
 import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
@@ -41,42 +32,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Premium styling overrides
 const ThemeColors = {
   cardBg: "rgba(255, 255, 255, 0.85)",
-  accentBlue: "#2B59F3",
-  darkNavy: "#0F1A30",
-  slate: "#4B5563",
-  lightSlate: "#9CA3AF",
-  successGreen: "#10B981",
-  errorRed: "#EF4444",
-  warningGold: "#F59E0B",
-  quizBg: "#0B0F19",
+  accentBlue: "#0F172A",
+  darkNavy: "#0F172A",
+  slate: "#475569",
+  lightSlate: "#94A3B8",
+  successGreen: "#0F172A",
+  errorRed: "#64748B",
+  warningGold: "#334155",
+  quizBg: "#000000",
 };
 
 const getTypeBadgeStyle = (type: string) => {
-  switch (type) {
-    case "Gen Z Slang":
-      return { backgroundColor: "rgba(139, 92, 246, 0.15)", borderColor: "rgba(139, 92, 246, 0.3)" };
-    case "Idiom":
-      return { backgroundColor: "rgba(245, 158, 11, 0.15)", borderColor: "rgba(245, 158, 11, 0.3)" };
-    case "Everyday Phrase":
-      return { backgroundColor: "rgba(16, 185, 129, 0.15)", borderColor: "rgba(16, 185, 129, 0.3)" };
-    case "Street Slang":
-      return { backgroundColor: "rgba(239, 68, 68, 0.15)", borderColor: "rgba(239, 68, 68, 0.3)" };
-    case "Business/Formal":
-      return { backgroundColor: "rgba(59, 130, 246, 0.15)", borderColor: "rgba(59, 130, 246, 0.3)" };
-    default:
-      return { backgroundColor: "rgba(107, 114, 128, 0.15)", borderColor: "rgba(107, 114, 128, 0.3)" };
-  }
+  return { backgroundColor: "rgba(15, 23, 42, 0.05)", borderColor: "rgba(15, 23, 42, 0.12)" };
 };
 
 const getTypeBadgeTextStyle = (type: string) => {
-  switch (type) {
-    case "Gen Z Slang": return { color: "#8B5CF6" }; // Purple
-    case "Idiom": return { color: "#D97706" }; // Amber/Orange
-    case "Everyday Phrase": return { color: "#059669" }; // Emerald
-    case "Street Slang": return { color: "#DC2626" }; // Red
-    case "Business/Formal": return { color: "#2563EB" }; // Blue
-    default: return { color: "#4B5563" }; // Gray
-  }
+  return { color: "#475569" };
 };
 
 const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
@@ -169,15 +140,17 @@ const SlangItemRow = React.memo(function SlangItemRow({
                 onPress={() => onSpeak(item.phrase, item.id)}
                 style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
               >
-                <Volume2
+                <HugeiconsIcon
+                  icon={VolumeHighIcon}
                   size={20}
                   color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
+                  strokeWidth={2.0}
                 />
               </PressableScale>
               {isExpanded ? (
-                <ChevronUp size={20} color={ThemeColors.slate} />
+                <HugeiconsIcon icon={ChevronUpIcon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
               ) : (
-                <ChevronDown size={20} color={ThemeColors.slate} />
+                <HugeiconsIcon icon={ChevronDownIcon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
               )}
             </View>
           </View>
@@ -235,9 +208,11 @@ const SlangItemRow = React.memo(function SlangItemRow({
                       speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
                     ]}
                   >
-                    <Volume2
+                    <HugeiconsIcon
+                      icon={VolumeHighIcon}
                       size={14}
                       color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
+                      strokeWidth={2.0}
                     />
                   </PressableScale>
                 </View>
@@ -266,9 +241,11 @@ const SlangItemRow = React.memo(function SlangItemRow({
                       speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
                     ]}
                   >
-                    <Volume2
+                    <HugeiconsIcon
+                      icon={VolumeHighIcon}
                       size={14}
                       color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
+                      strokeWidth={2.0}
                     />
                   </PressableScale>
                 </View>
@@ -448,7 +425,7 @@ export function SlangDictionaryScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKurdish ? "row-reverse" : "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isKurdish ? -1 : 1 }] }}>
-            <ArrowLeft size={22} color={ThemeColors.darkNavy} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.darkNavy} strokeWidth={2.0} />
           </View>
         </PressableScale>
         <AppText style={styles.headerTitle} forceKurdishFont>
@@ -488,7 +465,7 @@ export function SlangDictionaryScreen() {
             >
               <View style={{ flexDirection: isKurdish ? "row-reverse" : "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                 <View style={[styles.spotlightBadge, { flexDirection: isKurdish ? "row-reverse" : "row", alignSelf: isKurdish ? "flex-end" : "flex-start" }]}>
-                  <Sparkles size={14} color="#FFFFFF" />
+                  <HugeiconsIcon icon={SparklesIcon} size={14} color="#000000" strokeWidth={2.0} />
                   <AppText style={styles.spotlightBadgeText} forceKurdishFont>
                     {t("slang.slangOfTheDay")}
                   </AppText>
@@ -516,9 +493,11 @@ export function SlangDictionaryScreen() {
                     speaking && activeId === `spotlight_${slangOfTheDay.id}` && styles.speakerBtnSpeaking,
                   ]}
                 >
-                  <Volume2
+                  <HugeiconsIcon
+                    icon={VolumeHighIcon}
                     size={22}
-                    color={speaking && activeId === `spotlight_${slangOfTheDay.id}` ? "#FFFFFF" : "#FFFFFF"}
+                    color="#FFFFFF"
+                    strokeWidth={2.0}
                   />
                 </PressableScale>
               </View>
@@ -530,7 +509,7 @@ export function SlangDictionaryScreen() {
 
             {/* Search Bar */}
             <View style={[styles.searchContainer, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-              <Search size={18} color={ThemeColors.lightSlate} style={[styles.searchIcon, { marginRight: isKurdish ? 0 : 8, marginLeft: isKurdish ? 8 : 0 }]} />
+              <HugeiconsIcon icon={Search01Icon} size={18} color={ThemeColors.lightSlate} style={[styles.searchIcon, { marginRight: isKurdish ? 0 : 8, marginLeft: isKurdish ? 8 : 0 }]} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -540,7 +519,7 @@ export function SlangDictionaryScreen() {
               />
               {searchQuery ? (
                 <PressableScale onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
-                  <X size={16} color={ThemeColors.slate} />
+                  <HugeiconsIcon icon={Cancel01Icon} size={16} color={ThemeColors.slate} strokeWidth={2.0} />
                 </PressableScale>
               ) : null}
             </View>
@@ -556,7 +535,7 @@ export function SlangDictionaryScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <BookOpen size={48} color={ThemeColors.lightSlate} />
+            <HugeiconsIcon icon={BookOpen01Icon} size={48} color={ThemeColors.lightSlate} strokeWidth={1.5} />
             <AppText style={styles.emptyText} forceKurdishFont>
               هیچ ئەنجامێک نەدۆزرایەوە
             </AppText>
@@ -570,7 +549,7 @@ export function SlangDictionaryScreen() {
           onPress={startQuiz}
           style={[styles.gameLaunchBtn, { flexDirection: isKurdish ? "row-reverse" : "row" }, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.25, offsetY: 6, blur: 16, elevation: 4 })]}
         >
-          <Trophy size={18} color="#FFFFFF" style={{ marginRight: isKurdish ? 0 : 6, marginLeft: isKurdish ? 6 : 0 }} />
+          <HugeiconsIcon icon={Trophy} size={18} color="#FFFFFF" strokeWidth={2.0} style={{ marginRight: isKurdish ? 0 : 6, marginLeft: isKurdish ? 6 : 0 }} />
           <AppText style={styles.gameLaunchBtnLabel} forceKurdishFont>
             {t("slang.quizStart")}
           </AppText>
@@ -591,7 +570,7 @@ export function SlangDictionaryScreen() {
               onPress={() => setQuizVisible(false)}
               style={styles.quizCloseBtn}
             >
-              <X size={20} color={ThemeColors.slate} />
+              <HugeiconsIcon icon={Cancel01Icon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
             </PressableScale>
           </View>
 
@@ -627,7 +606,7 @@ export function SlangDictionaryScreen() {
                     }
                     style={styles.quizSpeakerBtn}
                   >
-                    <Volume2 size={18} color={ThemeColors.accentBlue} />
+                    <HugeiconsIcon icon={VolumeHighIcon} size={18} color={ThemeColors.accentBlue} strokeWidth={2.0} />
                   </PressableScale>
                 </View>
               </View>
@@ -669,10 +648,10 @@ export function SlangDictionaryScreen() {
                           {choice}
                         </AppText>
                         {isAnswerChecked && isCorrectAnswer && (
-                          <CheckCircle2 size={18} color="#FFFFFF" />
+                          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} color="#000000" strokeWidth={2.5} />
                         )}
                         {isAnswerChecked && isSelected && !isCorrectAnswer && (
-                          <XCircle size={18} color="#FFFFFF" />
+                          <HugeiconsIcon icon={CancelCircleIcon} size={18} color="#FFFFFF" strokeWidth={2.5} />
                         )}
                       </View>
                     </PressableScale>
@@ -722,7 +701,7 @@ export function SlangDictionaryScreen() {
             // Quiz Complete Screen
             <View style={styles.completionContainer}>
               <View style={styles.trophyWrapper}>
-                <Trophy size={80} color={ThemeColors.warningGold} />
+                <HugeiconsIcon icon={Trophy} size={80} color={ThemeColors.warningGold} strokeWidth={1.2} />
               </View>
 
               <AppText style={styles.completionTitle} forceKurdishFont>
@@ -787,7 +766,7 @@ const styles = StyleSheet.create({
   },
   spotlightCard: {
     backgroundColor: ThemeColors.darkNavy,
-    borderColor: "rgba(43, 89, 243, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1.5,
     borderRadius: 20,
     marginBottom: 20,
@@ -800,7 +779,7 @@ const styles = StyleSheet.create({
   spotlightBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: ThemeColors.accentBlue,
+    backgroundColor: "#FFFFFF",
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -809,7 +788,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   spotlightBadgeText: {
-    color: "#FFFFFF",
+    color: "#000000",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.5,
@@ -965,7 +944,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(43, 89, 243, 0.08)",
+    backgroundColor: "rgba(15, 23, 42, 0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1016,7 +995,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(43, 89, 243, 0.15)",
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -1025,7 +1004,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    backgroundColor: "rgba(0, 0, 0, 0.04)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -1190,16 +1169,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   choiceCardSelected: {
-    borderColor: ThemeColors.accentBlue,
-    backgroundColor: "rgba(43, 89, 243, 0.15)",
+    borderColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
   },
   choiceCardCorrect: {
-    borderColor: ThemeColors.successGreen,
-    backgroundColor: ThemeColors.successGreen,
+    borderColor: "#FFFFFF",
+    backgroundColor: "#FFFFFF",
   },
   choiceCardWrong: {
-    borderColor: ThemeColors.errorRed,
-    backgroundColor: ThemeColors.errorRed,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   choiceInner: {
     flexDirection: "row",
@@ -1218,7 +1197,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   choiceTextCorrect: {
-    color: "#FFFFFF",
+    color: "#000000",
   },
   choiceTextWrong: {
     color: "#FFFFFF",
@@ -1282,7 +1261,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,

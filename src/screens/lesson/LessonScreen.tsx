@@ -5,16 +5,14 @@
  *   2. Game body (frosted cards, glass options)
  *   3. Bottom feedback sheet — frosted glass with tinted accent
  */
-/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/exhaustive-deps */
 
-import {
-    Icon3DCheck,
-    Icon3DFire,
-    Icon3DX,
-    Icon3DZap,
-} from "../../components/icons/Icon3D";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { Cancel01Icon, FlashIcon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
-import { PingoMascot } from "../../components/mascot/PingoMascot";
+import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -38,10 +36,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
-import { useProgressStore } from "../../stores/useProgressStore";
+import { useProgressStore, getCurrentProgress } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
-import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import type { AnswerTier } from "../../utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
 import { getCurrentLessonMeta, buildPathReturnRoute } from "../../utils/lesson-navigation";
@@ -54,13 +51,16 @@ import {
   LessonLightHeader,
   LessonLiquidFeedback,
   LessonMeshBackdrop,
+  KidsLessonBackdrop,
 } from "./games/lesson-light-primitives";
 import { HomeLiquidButton, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
 import VoiceGame from "./games/VoiceGame";
-import KidsPlayGame from "./games/KidsPlayGame";
+import PictureMatchGame from "./games/PictureMatchGame";
+import ImageMultipleChoiceGame from "./games/ImageMultipleChoiceGame";
+import MemoryFlipGame from "./games/MemoryFlipGame";
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
@@ -99,6 +99,7 @@ export default function LessonScreen() {
   const rawMode = (Array.isArray(params.mode) ? params.mode[0] : params.mode);
   const pathMode: LessonPathMode =
     rawMode === "normal" ? "normal" : rawMode === "kids" ? "kids" : "street";
+  const isKidsMode = pathMode === "kids";
   const pathIndex = parseInt(
     (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
   );
@@ -107,7 +108,6 @@ export default function LessonScreen() {
     (s) => s.requestPathScrollAfterLesson,
   );
   const setPathMode = useSettingsStore((s) => s.setPathMode);
-  const contentOverride = useContentAdminStore((s) => s.overrides[pathMode]);
 
   const questions = React.useMemo(
     () => getLessonQuestions(lessonId, lessonIndex, pathMode),
@@ -127,7 +127,6 @@ export default function LessonScreen() {
   } | null>(null);
 
   const nextRef = useRef(0);
-  const hasInitializedRef = useRef(false);
 
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
@@ -145,26 +144,31 @@ export default function LessonScreen() {
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
 
   /* Reset on focus */
-  useFocusEffect(
-    useCallback(() => {
-      if (hasInitializedRef.current) {
-        return;
-      }
-      hasInitializedRef.current = true;
-      const safeStart = Math.min(
-        Math.max(0, startQuestion),
-        Math.max(0, questions.length - 1),
-      );
-      setCurrent(safeStart);
-      setHearts(MAX_HEARTS);
-      setXp(0);
-      progressW.value = safeStart / Math.max(questions.length, 1);
-      setCorrectN(0); setFinished(false); setPassed(false);
-      setFeedback(null); nextRef.current = 0;
-      xpSc.value = 1;
-      sheetY.value = SHEET_H + insets.bottom;
-    }, [insets.bottom, startQuestion, questions.length]),
-  );
+  /* Reset and initialize lesson state whenever parameters or questions change */
+  React.useEffect(() => {
+    if (questions.length === 0) return;
+    const safeStart = Math.min(
+      Math.max(0, startQuestion),
+      Math.max(0, questions.length - 1),
+    );
+    setCurrent(safeStart);
+    setHearts(MAX_HEARTS);
+    setXp(0);
+    // Smooth entry animation: start at 0 and animate to initial progress with small visible minimum
+    progressW.value = 0;
+    const startVal = safeStart === 0 ? 0.05 : safeStart / questions.length;
+    progressW.value = withTiming(startVal, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
+    setCorrectN(0);
+    setFinished(false);
+    setPassed(false);
+    setFeedback(null);
+    nextRef.current = 0;
+    xpSc.value = 1;
+    sheetY.value = SHEET_H + insets.bottom;
+  }, [lessonId, lessonIndex, pathMode, questions.length, startQuestion, insets.bottom]);
 
   useFocusEffect(
     useCallback(() => {
@@ -206,7 +210,9 @@ export default function LessonScreen() {
 
       const next = current + 1;
       nextRef.current = next;
-      progressW.value = withTiming(next / questions.length, {
+      // Animate smoothly to end (100% / 1.0) on the last question, maintaining a small minimum otherwise
+      const nextVal = next >= questions.length ? 1.0 : Math.max(0.05, next / questions.length);
+      progressW.value = withTiming(nextVal, {
         duration: 420,
         easing: Easing.out(Easing.cubic),
       });
@@ -246,17 +252,19 @@ export default function LessonScreen() {
   }, [feedback, handleAnswer, t]);
 
   const renderGame = (q: GameQuestion) => {
-    const shared = { onAnswer: handleAnswer, pathMode };
+    const shared = { onAnswer: handleAnswer, pathMode, questionIndex: current, totalQuestions: questions.length };
     const key = q.type;
     switch (q.type) {
-      case "multiple_choice":   return <MultipleChoiceGame   key={key} {...shared} question={q} />;
-      case "pair_match":        return <PairMatchGame        key={key} {...shared} question={q} />;
-      case "sentence_builder":  return <SentenceBuilderGame  key={key} {...shared} question={q} />;
-      case "voice":             return <VoiceGame            key={key} {...shared} question={q} />;
-      case "fill_blank":        return <FillBlankGame        key={key} {...shared} question={q} />;
-      case "conversation_pick": return <ConversationPickGame key={key} {...shared} question={q} />;
-      case "kids_play":         return <KidsPlayGame         key={key} {...shared} question={q} />;
-      default:                  return null;
+      case "multiple_choice":     return <MultipleChoiceGame       key={key} {...shared} question={q} />;
+      case "pair_match":          return <PairMatchGame            key={key} {...shared} question={q} />;
+      case "sentence_builder":    return <SentenceBuilderGame      key={key} {...shared} question={q} />;
+      case "voice":               return <VoiceGame                key={key} {...shared} question={q} />;
+      case "fill_blank":          return <FillBlankGame            key={key} {...shared} question={q} />;
+      case "conversation_pick":   return <ConversationPickGame     key={key} {...shared} question={q} />;
+      case "image_pair_match":    return <PictureMatchGame         key={key} {...shared} question={q} />;
+      case "image_multiple_choice": return <ImageMultipleChoiceGame key={key} {...shared} question={q} />;
+      case "memory_flip":         return <MemoryFlipGame           key={key} {...shared} question={q} />;
+      default:                    return null;
     }
   };
   if (questions.length === 0) {
@@ -274,22 +282,23 @@ export default function LessonScreen() {
   /* ─────── SUMMARY SCREEN ─────── */
   if (finished) {
     const ok = passed;
+    const SummaryBackdrop = isKidsMode ? KidsLessonBackdrop : LessonMeshBackdrop;
     return (
-      <LessonMeshBackdrop>
+      <SummaryBackdrop>
         <StatusBar hidden />
         <SafeAreaView style={sSum.root}>
           <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
             <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
               {ok ? (
                 <View style={sSum.mascotWrap}>
-                  <PingoMascot size={120} pose="party" />
+                  <TwinoMascot size={120} pose="party" />
                 </View>
               ) : (
-                <View style={[sSum.iconWrap, { backgroundColor: L.red }]}>
-                  <Icon3DX size={52} />
+                <View style={[sSum.iconWrap, { backgroundColor: isKidsMode ? "#FF4B4B" : L.red }]}>
+                  <HugeiconsIcon icon={Cancel01Icon} size={52} color="#FFFFFF" />
                 </View>
               )}
-              <AppText style={[sSum.title, { color: ok ? L.greenDeep : L.redDeep }]}>
+              <AppText style={[sSum.title, { color: ok ? (isKidsMode ? "#3C8400" : L.greenDeep) : (isKidsMode ? "#CC0000" : L.redDeep) }]}>
                 {ok ? "Lesson Complete!" : "Out of Hearts!"}
               </AppText>
               <AppText style={sSum.sub}>
@@ -299,25 +308,26 @@ export default function LessonScreen() {
 
             {ok ? (
               <View style={sSum.statsRow}>
-                <StatCard icon={<Icon3DZap size={26} />} label="XP" value={`+${xp}`} color={L.gold} />
-                <StatCard icon={<Icon3DCheck size={26} />} label="Correct" value={`${correctN}/${questions.length}`} color={L.green} />
-                <StatCard icon={<Icon3DFire size={26} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={L.red} />
+                <StatCard icon={<HugeiconsIcon icon={FlashIcon} size={26} color={L.gold} />} label="XP" value={`+${xp}`} color={L.gold} />
+                <StatCard icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} size={26} color={isKidsMode ? "#58CC02" : L.green} />} label="Correct" value={`${correctN}/${questions.length}`} color={isKidsMode ? "#3C8400" : L.green} />
+                <StatCard icon={<HugeiconsIcon icon={Fire02Icon} size={26} color={isKidsMode ? "#FF4B4B" : L.red} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={isKidsMode ? "#CC0000" : L.red} />
               </View>
             ) : null}
 
             <HomeLiquidButton
               label={ok ? "Continue" : "Try Again"}
-              color={ok ? L.green : L.blue}
+              color={ok ? (isKidsMode ? "#58CC02" : L.green) : (isKidsMode ? "#1CB0F6" : L.blue)}
               onPress={() => {
                 if (ok && !Number.isNaN(pathIndex)) {
                   const snap = useProgressStore.getState();
+                  const currentProgress = getCurrentProgress();
                   const locale = useLocaleStore.getState().locale;
                   const meta = getCurrentLessonMeta(
                     pathMode,
-                    snap.nextLessonPathIndex,
-                    snap.normalNextLessonPathIndex,
+                    currentProgress.nextLessonPathIndex,
+                    currentProgress.normalNextLessonPathIndex,
                     locale,
-                    snap.kidsNextLessonPathIndex,
+                    currentProgress.kidsNextLessonPathIndex,
                   );
                   const label =
                     meta?.pathIndex === pathIndex
@@ -344,12 +354,13 @@ export default function LessonScreen() {
             />
           </Animated.View>
         </SafeAreaView>
-      </LessonMeshBackdrop>
+      </SummaryBackdrop>
     );
   }
 
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
+  const Backdrop = isKidsMode ? KidsLessonBackdrop : LessonMeshBackdrop;
   const isConversationPick = questions[current]?.type === "conversation_pick";
   const feedbackTier = isConversationPick ? feedback?.tier : undefined;
   const feedbackTitle = feedbackTier
@@ -365,7 +376,7 @@ export default function LessonScreen() {
         ? t("lessons.feedbackCorrectSub")
         : t("lessons.feedbackIncorrectSub");
   return (
-    <LessonMeshBackdrop>
+    <Backdrop>
       <StatusBar hidden />
       <View style={[sL.root, { paddingTop: insets.top }]}>
         <LessonLightHeader
@@ -374,24 +385,26 @@ export default function LessonScreen() {
           onBack={exitToPath}
           unitNumber={lessonId + 1}
           lessonNumber={lessonIndex + 1}
+          variant={isKidsMode ? "kids" : "default"}
         />
 
-        <View style={sL.skipRow}>
+        {!isKidsMode ? (
+          <View style={sL.skipRow}>
+            <Pressable
+              onPress={giveUpQuestion}
+              disabled={feedback !== null}
+              style={({ pressed }) => [
+                sL.skipButton,
+                pressed && sL.skipPressed,
+                feedback !== null && sL.skipDisabled,
+              ]}
+            >
+              <AppText style={sL.skipText}>{t("lessons.dontKnow")}</AppText>
+            </Pressable>
+          </View>
+        ) : null}
 
-          <Pressable
-            onPress={giveUpQuestion}
-            disabled={feedback !== null}
-            style={({ pressed }) => [
-              sL.skipButton,
-              pressed && sL.skipPressed,
-              feedback !== null && sL.skipDisabled,
-            ]}
-          >
-            <AppText style={sL.skipText}>{t("lessons.dontKnow")}</AppText>
-          </Pressable>
-        </View>
-
-        <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, isKidsMode ? 20 : 12) }]}>
           <Animated.View
             entering={enterGame}
             style={{ flex: 1 }}
@@ -415,11 +428,12 @@ export default function LessonScreen() {
               subtitle={feedbackSubtitle}
               buttonLabel={t("common.continue")}
               onContinue={continueToNext}
+              variant={isKidsMode ? "kids" : "default"}
             />
           </Animated.View>
         )}
       </View>
-    </LessonMeshBackdrop>
+    </Backdrop>
   );
 }
 

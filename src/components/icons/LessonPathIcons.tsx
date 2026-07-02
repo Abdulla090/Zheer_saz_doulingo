@@ -1,17 +1,17 @@
 /**
- * Path lesson icons — lucide-react-native glyphs with explicit colors.
- * Avoids nested custom SVGs that break on Android inside path buttons.
+ * Path lesson icons — Hugeicons glyphs with explicit colors.
  */
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  BookOpen,
-  Gamepad2,
-  Headphones,
-  MessageCircle,
-  Mic,
-  Sparkles,
+  BookOpen02Icon,
+  Gamepad2Icon,
+  HeadphonesIcon,
+  Message01Icon,
+  Mic01Icon,
+  SparklesIcon,
   Trophy,
-  Video,
-} from "lucide-react-native";
+  Video01Icon,
+} from "@hugeicons/core-free-icons";
 import React from "react";
 
 export type LessonPathIconType =
@@ -38,22 +38,22 @@ export function LessonPathIcon({ type, color, size = 28, active = false }: Props
 
   switch (type) {
     case "practice":
-      return <Sparkles {...common} fill={`${color}33`} />;
+      return <HugeiconsIcon icon={SparklesIcon} {...common} />;
     case "cup":
-      return <Trophy {...common} fill={`${color}44`} />;
+      return <HugeiconsIcon icon={Trophy} {...common} />;
     case "video":
-      return <Video {...common} fill={`${color}22`} />;
+      return <HugeiconsIcon icon={Video01Icon} {...common} />;
     case "reading":
-      return <BookOpen {...common} fill={`${color}18`} />;
+      return <HugeiconsIcon icon={BookOpen02Icon} {...common} />;
     case "listening":
-      return <Headphones {...common} />;
+      return <HugeiconsIcon icon={HeadphonesIcon} {...common} />;
     case "game":
-      return <Gamepad2 {...common} fill={`${color}22`} />;
+      return <HugeiconsIcon icon={Gamepad2Icon} {...common} />;
     case "speaking":
-      return <Mic {...common} fill={`${color}28`} />;
+      return <HugeiconsIcon icon={Mic01Icon} {...common} />;
     case "conversation":
-      return <MessageCircle {...common} fill={`${color}22`} />;
+      return <HugeiconsIcon icon={Message01Icon} {...common} />;
     default:
-      return <Sparkles {...common} fill={`${color}33`} />;
+      return <HugeiconsIcon icon={SparklesIcon} {...common} />;
   }
 }

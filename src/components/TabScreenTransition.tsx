@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/immutability */
+ 
 import { useTabTransition } from "../context/TabTransitionContext";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback } from "react";

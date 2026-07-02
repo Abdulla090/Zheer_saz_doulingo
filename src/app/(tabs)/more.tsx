@@ -6,7 +6,7 @@ export { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
 
 export default function MoreScreen() {
   return (
-    <TabScreenChrome>
+    <TabScreenChrome openingVariant="settings">
       <SettingsScreen />
     </TabScreenChrome>
   );

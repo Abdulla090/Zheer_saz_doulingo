@@ -1,39 +1,52 @@
-import { en, type TranslationKey } from "./locales/en";
-import { ku } from "./locales/ku";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import { getLocales } from "expo-localization";
+import { useLocaleStore } from "../stores/useLocaleStore";
 
-export type AppLocale = "en" | "ku";
+import en from "./en.json";
+import ku from "./ku.json";
+import es from "./es.json";
+import ru from "./ru.json";
+import ar from "./ar.json";
 
-const catalogs = {
-  en,
-  ku,
-} satisfies Record<AppLocale, TranslationKey>;
+export const resources = {
+  en: { translation: en },
+  ku: { translation: ku },
+  es: { translation: es },
+  ru: { translation: ru },
+  ar: { translation: ar },
+};
 
-type NestedKeyOf<T, Prefix extends string = ""> = T extends object
-  ? {
-      [K in keyof T & string]: T[K] extends object
-        ? NestedKeyOf<T[K], Prefix extends "" ? K : `${Prefix}.${K}`>
-        : Prefix extends ""
-          ? K
-          : `${Prefix}.${K}`;
-    }[keyof T & string]
-  : never;
+// Initialize i18next
+const initI18n = () => {
+  const savedLocale = useLocaleStore.getState().selectedSourceLanguage || "en";
+  
+  i18n
+    .use(initReactI18next)
+    .init({
+      resources,
+      lng: savedLocale,
+      fallbackLng: "en",
+      interpolation: {
+        escapeValue: false,
+      },
+    });
+};
 
-export type I18nKey = NestedKeyOf<TranslationKey>;
+initI18n();
 
-function resolve(obj: Record<string, unknown>, path: string): string | undefined {
-  const parts = path.split(".");
-  let cur: unknown = obj;
-  for (const p of parts) {
-    if (cur == null || typeof cur !== "object") return undefined;
-    cur = (cur as Record<string, unknown>)[p];
+// Subscribe to store changes to update i18n language
+useLocaleStore.subscribe((state, prevState) => {
+  if (state.selectedSourceLanguage !== prevState?.selectedSourceLanguage) {
+    i18n.changeLanguage(state.selectedSourceLanguage);
   }
-  return typeof cur === "string" ? cur : undefined;
+});
+
+export type AppLocale = string;
+export type I18nKey = string;
+
+export function translate(locale: string, key: string): string {
+  return i18n.t(key, { lng: locale }) as string;
 }
 
-export function translate(locale: AppLocale, key: I18nKey): string {
-  const value = resolve(catalogs[locale] as unknown as Record<string, unknown>, key);
-  if (value) return value;
-  return resolve(en as unknown as Record<string, unknown>, key) ?? key;
-}
-
-export { en, ku };
+export default i18n;

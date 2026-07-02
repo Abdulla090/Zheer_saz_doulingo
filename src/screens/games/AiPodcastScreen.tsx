@@ -7,15 +7,10 @@ import {
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import {
-  ArrowLeft,
-  FastForward,
-  Mic2,
-  Pause,
-  Play,
-  Rewind,
-  Volume2,
-} from "lucide-react-native";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { ArrowLeft01Icon, Mic01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import React, { useState, useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -142,7 +137,7 @@ export function AiPodcastScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: isKu ? "row-reverse" : "row" }]}>
         <PressableScale onPress={() => { stopPodcastSpeaking(); router.back(); }} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-            <ArrowLeft size={24} color="#0F1A30" />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
           </View>
         </PressableScale>
         <AppText style={styles.headerTitle}>{isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast"}</AppText>
@@ -152,7 +147,7 @@ export function AiPodcastScreen() {
       <View style={styles.content}>
         <HomeLiquidCard style={styles.artCard} contentStyle={styles.artCardInner}>
           <View style={styles.iconCircle}>
-            <Mic2 size={64} color={C.blue} strokeWidth={1.5} />
+            <HugeiconsIcon icon={Mic01Icon} size={64} color={C.blue} strokeWidth={1.5} />
           </View>
           {isPlaying && (
             <View style={styles.textBubble}>
@@ -181,27 +176,27 @@ export function AiPodcastScreen() {
         <View style={[styles.controlsRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
           <PressableScale onPress={handleRewind} style={styles.controlBtn}>
             <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-              <Rewind size={32} color="#0F1A30" />
+              <HugeiconsIcon icon={BackwardIcon} size={32} color="#0F1A30" />
             </View>
           </PressableScale>
           
           <PressableScale onPress={togglePlay} style={[styles.playBtn, crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.3 })]}>
             {isPlaying ? (
-              <Pause size={40} color="#FFFFFF" fill="#FFFFFF" />
+              <HugeiconsIcon icon={PauseIcon} size={40} color="#FFFFFF" />
             ) : (
-              <Play size={40} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: 4 }} />
+              <HugeiconsIcon icon={PlayIcon} size={40} color="#FFFFFF" style={{ marginLeft: 4 }} />
             )}
           </PressableScale>
 
           <PressableScale onPress={handleFastForward} style={styles.controlBtn}>
             <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-              <FastForward size={32} color="#0F1A30" />
+              <HugeiconsIcon icon={ForwardIcon} size={32} color="#0F1A30" />
             </View>
           </PressableScale>
         </View>
         
         <View style={[styles.volumeArea, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-           <Volume2 size={20} color="#9CA3AF" />
+           <HugeiconsIcon icon={VolumeHighIcon} size={20} color="#9CA3AF" />
            <View style={styles.volumeBarBg}>
              <View style={[styles.volumeBarFill, { width: "70%" }]} />
            </View>
@@ -262,7 +257,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: "rgba(43,89,243,0.1)",
+    backgroundColor: "rgba(15, 23, 42, 0.06)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
@@ -273,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(43,89,243,0.2)",
+    borderColor: "rgba(15, 23, 42, 0.12)",
     maxWidth: "90%",
   },
   bubbleText: {

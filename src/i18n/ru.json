@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "nativeLanguage": "Родной язык",
+    "learningLanguage": "Язык изучения"
+  },
+  "onboarding": {
+    "stepLabel": "Шаг {{step}}",
+    "profileTitle": "Давайте познакомимся",
+    "profileSubtitle": "Персонализируйте свой процесс обучения.",
+    "profileName": "Как вас зовут?",
+    "profileAge": "Сколько вам лет?",
+    "levelTitle": "Выберите уровень",
+    "levelSubtitle": "Каков ваш текущий уровень разговорной речи и аудирования?",
+    "completeSetup": "Завершить настройку",
+    "continue": "Продолжить"
+  }
+}

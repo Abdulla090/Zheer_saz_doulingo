@@ -7,7 +7,7 @@ import type { LessonBank, LessonPathMode, UnitBank } from "../data/types";
 import { deepClone } from "../utils/deep-clone";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.admin.content";
+const STORAGE_KEY = "twino.admin.content";
 
 type ContentOverrides = {
   street: UnitBank[] | null;

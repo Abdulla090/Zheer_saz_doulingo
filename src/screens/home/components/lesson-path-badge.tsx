@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(26,43,72,0.12)",
   },
   unit: {
-    color: "#2B59F3",
+    color: "#0F172A",
     fontWeight: "800",
     fontFamily: "DINNextRoundedBold",
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#94A3B8",
   },
   lesson: {
-    color: "#1A2B48",
+    color: "#334155",
     fontWeight: "800",
     fontFamily: "DINNextRoundedBold",
   },

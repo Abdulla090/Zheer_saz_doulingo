@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "PINGO",
+    "name": "Twino",
     "slug": "duolingo-clone",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.png",
+    "icon": "./assets/images/real-app-icon.png",
     "scheme": "duolingoclone",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
@@ -13,18 +13,18 @@
       "backgroundColor": "#00000000"
     },
     "ios": {
-      "icon": "./assets/images/app-icon.png",
+      "icon": "./assets/images/real-app-icon.png",
       "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
       "supportsTablet": false,
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow Phingo English to transcribe your speech for lessons and AI feedback.",
-        "NSMicrophoneUsageDescription": "Allow Phingo English to use the microphone for speaking practice."
+        "NSSpeechRecognitionUsageDescription": "Allow Twino English to transcribe your speech for lessons and AI feedback.",
+        "NSMicrophoneUsageDescription": "Allow Twino English to use the microphone for speaking practice."
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/android-icon-foreground.png"
+        "foregroundImage": "./assets/images/real-app-icon.png"
       },
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": true,
@@ -39,7 +39,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/app-icon.png"
+      "favicon": "./assets/images/real-app-icon.png"
     },
     "plugins": [
       "expo-dev-client",
@@ -70,14 +70,14 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/app-icon.png",
+          "image": "./assets/images/real-app-icon.png",
           "imageWidth": 200,
           "android": {
-            "image": "./assets/images/app-icon.png",
+            "image": "./assets/images/real-app-icon.png",
             "imageWidth": 200
           },
           "ios": {
-            "image": "./assets/images/app-icon.png",
+            "image": "./assets/images/real-app-icon.png",
             "imageWidth": 200
           }
         }
@@ -90,8 +90,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Phingo English to use the microphone for speaking practice.",
-          "speechRecognitionPermission": "Allow Phingo English to transcribe your speech for lessons and AI feedback."
+          "microphonePermission": "Allow Twino English to use the microphone for speaking practice.",
+          "speechRecognitionPermission": "Allow Twino English to transcribe your speech for lessons and AI feedback."
         }
       ],
       "./plugins/with-normalize-android-receivers.js",
@@ -102,8 +102,8 @@
           "groupIdentifier": "group.com.hewad.mubariz.duolingoclone",
           "widgets": [
             {
-              "name": "PhingoHome",
-              "displayName": "Phingo",
+              "name": "TwinoHome",
+              "displayName": "Twino",
               "description": "Streak, daily XP, path progress, and your next lesson",
               "supportedFamilies": [
                 "systemSmall",
@@ -155,13 +155,9 @@
             }
           }
         },
-        "projectId": "c30ba058-0666-4540-80ba-76b1141b1f4e"
-      },
-      "expo-navigation-bar": {
-        "enforceContrast": false,
-        "hidden": true
+        "projectId": "ddd179c2-af80-49a4-9bdf-bf85f09294a3"
       }
     },
-    "owner": "abdullla01"
+    "owner": "abdullla001"
   }
 }

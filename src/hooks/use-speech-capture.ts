@@ -55,7 +55,7 @@ export function useSpeechCapture(lang = "en-US") {
   const start = useCallback(
     async (
       handlers: SpeechCaptureHandlers,
-      options?: { continuous?: boolean },
+      options?: { continuous?: boolean; contextualStrings?: string[] },
     ) => {
       handlersRef.current = handlers;
 
@@ -76,6 +76,7 @@ export function useSpeechCapture(lang = "en-US") {
           lang,
           interimResults: true,
           continuous: options?.continuous ?? false,
+          contextualStrings: options?.contextualStrings,
         });
         return true;
       } catch (err) {

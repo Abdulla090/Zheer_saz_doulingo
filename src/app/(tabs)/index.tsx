@@ -3,12 +3,12 @@
  */
 
 import { TabScreenChrome } from "../../components/TabScreenChrome";
-import { PhingoLearnHomeScreen } from "../../screens/home/PhingoLearnHomeScreen";
+import { TwinoLearnHomeScreen } from "../../screens/home/TwinoLearnHomeScreen";
 
 export default function HomeIndex() {
   return (
-    <TabScreenChrome lazy={false}>
-      <PhingoLearnHomeScreen />
+    <TabScreenChrome lazy={false} openingVariant="home">
+      <TwinoLearnHomeScreen />
     </TabScreenChrome>
   );
 }

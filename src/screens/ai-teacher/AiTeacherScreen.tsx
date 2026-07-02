@@ -1,12 +1,8 @@
 /* eslint-disable */
-import { DolphinFlat } from "../../components/icons/HomeDashboardIcons";
 import { AppText } from "../../components/ui/AppText";
 import {
-  HomeLiquidButton,
-  HomeLiquidCard,
   HomeMeshBackground,
-  HomePalette,
-  HomeType,
+  HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { AI_TEACHER_PROMPTS } from "../../data/ai-teacher-prompts";
 import type {
@@ -20,29 +16,48 @@ import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useI18n } from "../../hooks/useI18n";
 import { evaluateEnglish } from "../../services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
-import { crossShadow } from "../../utils/shadows";
 import { appStorage } from "../../lib/app-storage";
 import { hapticImpact, hapticNotification } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { PressableScale } from "../../components/animations";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { ArrowLeft01Icon, RobotIcon, InformationCircleIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const C = HomePalette;
-const HISTORY_KEY = "phingo.ai-teacher.last-attempt";
+const Colors = {
+  background: C.meshBottom,
+  foreground: C.navy,
+  primary: C.navy,
+  accent: C.coral,
+  secondary: "rgba(255,255,255,0.78)",
+  mutedForeground: C.gray,
+  border: "rgba(26,43,72,0.08)",
+  borderStrong: "rgba(26,43,72,0.12)",
+  card: "rgba(255,255,255,0.86)",
+  cardSurface: "rgba(255,255,255,0.86)",
+  warmBg: "rgba(255,98,84,0.12)",
+  chart1: C.blue,
+  destructive: "#EF4444",
+  track: "rgba(26,43,72,0.1)",
+};
+
+const HISTORY_KEY = "twino.ai-teacher.last-attempt";
 
 const DEMO_RESULT: AiTeacherResult = {
   overallBand: 6.5,
@@ -86,6 +101,47 @@ const DEMO_RESULT: AiTeacherResult = {
 
 type Phase = "input" | "loading" | "results";
 
+function BrandCard({
+  children,
+  style,
+  contentStyle,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[styles.surfaceCard, style]}>
+      <View style={contentStyle}>{children}</View>
+    </View>
+  );
+}
+
+function BrandPrimaryButton({
+  label,
+  onPress,
+  style,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
+}) {
+  return (
+    <PressableScale
+      onPress={onPress}
+      disabled={disabled}
+      style={[styles.primaryBtn, style, disabled && styles.primaryBtnDisabled]}
+      scaleDown={0.96}
+    >
+      <AppText style={styles.primaryBtnText} forceLatinFont latinRole="bold">
+        {label}
+      </AppText>
+    </PressableScale>
+  );
+}
+
 export function AiTeacherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -111,7 +167,8 @@ export function AiTeacherScreen() {
   );
 
   useEffect(() => {
-    appStorage.getItem(HISTORY_KEY)
+    appStorage
+      .getItem(HISTORY_KEY)
       .then((raw) => {
         if (raw) setLastSaved(JSON.parse(raw) as AiTeacherAttempt);
       })
@@ -119,7 +176,10 @@ export function AiTeacherScreen() {
   }, []);
 
   useEffect(() => {
-    if (promptsForMode.length && !promptsForMode.find((p) => p.id === prompt.id)) {
+    if (
+      promptsForMode.length &&
+      !promptsForMode.find((p) => p.id === prompt.id)
+    ) {
       setPrompt(promptsForMode[0]);
     }
   }, [mode, promptsForMode, prompt.id]);
@@ -211,182 +271,323 @@ export function AiTeacherScreen() {
   return (
     <View style={styles.root}>
       <HomeMeshBackground />
-
       <KeyboardAwareScrollView
         style={styles.flex}
         bottomOffset={insets.bottom + 20}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
         contentContainerStyle={{
-          paddingTop: insets.top + 8,
+          paddingTop: Math.max(insets.top, 20),
           paddingBottom: insets.bottom + 32,
-          paddingHorizontal: 20,
+          paddingHorizontal: 24,
         }}
         keyboardShouldPersistTaps="handled"
       >
-          <View style={[styles.topBar, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <Pressable
-              onPress={() => router.back()}
-              style={styles.backBtn}
-              hitSlop={12}
-            >
-              <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                <ArrowLeft size={22} color={C.navy} strokeWidth={2.5} />
-              </View>
-            </Pressable>
-            <View style={styles.topTitles}>
-              <AppText style={styles.pageTitle} forceKurdishFont={isKu}>{t("aiTeacher.title")}</AppText>
-              <AppText style={styles.pageSub} forceKurdishFont={isKu}>{t("aiTeacher.subtitle")}</AppText>
+        <View
+          style={[
+            styles.topBar,
+            { flexDirection: isKu ? "row-reverse" : "row" },
+          ]}
+        >
+          <PressableScale
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            scaleDown={0.9}
+          >
+            <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                size={22}
+                color={Colors.foreground}
+                strokeWidth={2.5}
+              />
             </View>
-            <View style={styles.backSpacer} />
+          </PressableScale>
+          <View
+            style={[
+              styles.topTitles,
+              { alignItems: isKu ? "flex-end" : "flex-start" },
+            ]}
+          >
+            <AppText style={styles.pageTitle} forceLatinFont latinRole="bold">
+              {t("aiTeacher.title")}
+            </AppText>
+            <AppText style={styles.pageSub} forceLatinFont latinRole="medium">
+              {t("aiTeacher.subtitle")}
+            </AppText>
           </View>
+        </View>
 
-          {phase === "results" && result ? (
-            <ResultsView
-              result={result}
-              onTryAgain={onTryAgain}
-              onSave={onSave}
-            />
-          ) : (
-            <>
-              <View style={[styles.modeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                {((isKu ? ["writing", "speaking"] : ["speaking", "writing"]) as AiTeacherMode[]).map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => setMode(m)}
-                    style={[styles.modeChip, mode === m && styles.modeChipOn]}
+        {phase === "results" && result ? (
+          <ResultsView
+            result={result}
+            onTryAgain={onTryAgain}
+            onSave={onSave}
+          />
+        ) : (
+          <>
+            <View
+              style={[
+                styles.modeRow,
+                { flexDirection: isKu ? "row-reverse" : "row" },
+              ]}
+            >
+              {(
+                (isKu
+                  ? ["writing", "speaking"]
+                  : ["speaking", "writing"]) as AiTeacherMode[]
+              ).map((m) => (
+                <PressableScale
+                  key={m}
+                  onPress={() => setMode(m)}
+                  style={[styles.modeChip, mode === m && styles.modeChipOn]}
+                  scaleDown={0.96}
+                >
+                  <AppText
+                    style={[
+                      styles.modeChipText,
+                      mode === m && styles.modeChipTextOn,
+                    ]}
+                    forceLatinFont
+                    latinRole="bold"
                   >
-                    <AppText
-                      style={[
-                        styles.modeChipText,
-                        mode === m && styles.modeChipTextOn,
-                      ]}
-                      forceKurdishFont={isKu}
-                    >
-                      {m === "speaking" ? t("aiTeacher.speaking") : t("aiTeacher.writing")}
-                    </AppText>
-                  </Pressable>
-                ))}
-              </View>
+                    {m === "speaking"
+                      ? t("aiTeacher.speaking")
+                      : t("aiTeacher.writing")}
+                  </AppText>
+                </PressableScale>
+              ))}
+            </View>
 
-              <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>{t("aiTeacher.choosePrompt")}</AppText>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={[styles.promptScroll, { flexDirection: isKu ? "row-reverse" : "row" }]}
-              >
-                {(isKu ? [...promptsForMode].reverse() : promptsForMode).map((p) => (
-                  <Pressable
+            <AppText
+              style={[
+                styles.sectionTitle,
+                { textAlign: isKu ? "right" : "left" },
+              ]}
+              forceLatinFont
+              latinRole="bold"
+            >
+              {t("aiTeacher.choosePrompt")}
+            </AppText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.promptScroll,
+                { flexDirection: isKu ? "row-reverse" : "row" },
+              ]}
+            >
+              {(isKu ? [...promptsForMode].reverse() : promptsForMode).map(
+                (p) => (
+                  <PressableScale
                     key={p.id}
                     onPress={() => setPrompt(p)}
                     style={[
                       styles.promptCard,
                       prompt.id === p.id && styles.promptCardOn,
                     ]}
+                    scaleDown={0.96}
                   >
-                    <AppText style={styles.promptTitle} forceKurdishFont={isKu}>{p.title}</AppText>
-                  </Pressable>
-                ))}
-              </ScrollView>
-
-              <View style={[styles.promptStrip, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
-                <AppText style={styles.promptScenarioLabel} forceKurdishFont={isKu}>{t("aiTeacher.yourTask")}</AppText>
-                <AppText style={[styles.promptScenario, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{prompt.scenario}</AppText>
-              </View>
-
-              <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>{t("aiTeacher.yourAnswer")}</AppText>
-              {mode === "speaking" && !showTyping ? (
-                <View style={styles.speakingMicBlock}>
-                  <MicCaptureOrb
-                    listening={speech.listening}
-                    disabled={phase === "loading"}
-                    color={speech.listening ? C.blue : C.navy}
-                    size={112}
-                    hint={
-                      speech.listening
-                        ? t("aiTeacher.tapMicStop")
-                        : t("aiTeacher.tapMicSpeak")
-                    }
-                    onPress={toggleMic}
-                  />
-                  {answer.trim().length > 0 ? (
-                    <AppText style={styles.speakingTranscript} forceLatinFont>{answer}</AppText>
-                  ) : null}
-                  <Pressable
-                    onPress={() => setShowTyping(true)}
-                    style={styles.typeInsteadBtn}
-                  >
-                    <AppText style={styles.typeInsteadText} forceKurdishFont={isKu}>{t("aiTeacher.typeInstead")}</AppText>
-                  </Pressable>
-                </View>
-              ) : (
-                <View style={styles.inputShell}>
-                  <TextInput
-                    value={answer}
-                    onChangeText={setAnswer}
-                    placeholder={
-                      mode === "speaking"
-                        ? t("aiTeacher.typeSpeaking")
-                        : t("aiTeacher.typeWriting")
-                    }
-                    placeholderTextColor={C.grayLight}
-                    multiline
-                    style={[styles.textInput, { textAlign: isKu ? "right" : "left" }]}
-                    editable={phase !== "loading"}
-                  />
-                  {mode === "speaking" ? (
-                    <Pressable
-                      onPress={() => setShowTyping(false)}
-                      style={[styles.typeInsteadBtnInline, { alignSelf: isKu ? "flex-end" : "flex-start" }]}
+                    <AppText
+                      style={styles.promptTitle}
+                      forceLatinFont
+                      latinRole="bold"
                     >
-                      <AppText style={styles.typeInsteadText} forceKurdishFont={isKu}>{t("aiTeacher.useMic")}</AppText>
-                    </Pressable>
-                  ) : null}
-                </View>
+                      {p.title}
+                    </AppText>
+                  </PressableScale>
+                ),
               )}
+            </ScrollView>
 
-              {error || speech.error ? (
-                <AppText style={styles.errorText} forceKurdishFont={isKu}>{error || speech.error}</AppText>
-              ) : null}
+            <BrandCard
+              style={styles.taskCard}
+              contentStyle={styles.taskCardInner}
+            >
+              <AppText
+                style={styles.promptScenarioLabel}
+                forceLatinFont
+                latinRole="bold"
+              >
+                {t("aiTeacher.yourTask")}
+              </AppText>
+              <AppText
+                style={[
+                  styles.promptScenario,
+                  { textAlign: isKu ? "right" : "left" },
+                ]}
+                forceLatinFont
+                latinRole="medium"
+              >
+                {prompt.scenario}
+              </AppText>
+            </BrandCard>
 
-              {phase === "loading" ? (
-                <View style={styles.loadingBox}>
-                  <ActivityIndicator color={C.blue} size="large" />
-                  <AppText style={styles.loadingText} forceKurdishFont={isKu}>{t("aiTeacher.checking")}</AppText>
-                </View>
-              ) : (
-                <HomeLiquidButton
-                  label={t("aiTeacher.checkEnglish")}
-                  onPress={onSubmit}
-                  style={styles.submitBtn}
+            <AppText
+              style={[
+                styles.sectionTitle,
+                { textAlign: isKu ? "right" : "left" },
+              ]}
+              forceLatinFont
+              latinRole="bold"
+            >
+              {t("aiTeacher.yourAnswer")}
+            </AppText>
+            {mode === "speaking" && !showTyping ? (
+              <BrandCard contentStyle={styles.speakingMicBlock}>
+                <MicCaptureOrb
+                  listening={speech.listening}
+                  disabled={phase === "loading"}
+                  color={speech.listening ? Colors.accent : Colors.foreground}
+                  size={112}
+                  hint={
+                    speech.listening
+                      ? t("aiTeacher.tapMicStop")
+                      : t("aiTeacher.tapMicSpeak")
+                  }
+                  onPress={toggleMic}
                 />
-              )}
-
-              {lastSaved ? (
-                <HomeLiquidCard
-                  style={styles.historyCard}
-                  contentStyle={styles.historyInner}
+                {answer.trim().length > 0 ? (
+                  <AppText style={styles.speakingTranscript} forceLatinFont>
+                    {answer}
+                  </AppText>
+                ) : null}
+                <PressableScale
+                  onPress={() => setShowTyping(true)}
+                  style={styles.typeInsteadBtn}
+                  scaleDown={0.96}
                 >
-                  <AppText style={styles.historyLabel} forceKurdishFont={isKu}>{isKu ? "دواین ھەوڵی پاشەکەوتکراو" : "Last saved attempt"}</AppText>
-                  <AppText style={styles.historyBand} forceKurdishFont={isKu}>
-                    {isKu ? `باند ${lastSaved.overallBand} · ${lastSaved.mode === "speaking" ? "خوێندنەوە" : "نووسین"}` : `Band ${lastSaved.overallBand} · ${lastSaved.mode}`}
+                  <AppText
+                    style={styles.typeInsteadText}
+                    forceLatinFont
+                    latinRole="bold"
+                  >
+                    {t("aiTeacher.typeInstead")}
                   </AppText>
-                  <AppText style={styles.historyExcerpt} numberOfLines={2} forceLatinFont>
-                    {lastSaved.excerpt}
-                  </AppText>
-                </HomeLiquidCard>
-              ) : null}
+                </PressableScale>
+              </BrandCard>
+            ) : (
+              <BrandCard contentStyle={styles.inputShell}>
+                <TextInput
+                  value={answer}
+                  onChangeText={setAnswer}
+                  placeholder={
+                    mode === "speaking"
+                      ? t("aiTeacher.typeSpeaking")
+                      : t("aiTeacher.typeWriting")
+                  }
+                  placeholderTextColor={Colors.mutedForeground}
+                  multiline
+                  style={[
+                    styles.textInput,
+                    { textAlign: isKu ? "right" : "left" },
+                  ]}
+                  editable={phase !== "loading"}
+                />
+                {mode === "speaking" ? (
+                  <PressableScale
+                    onPress={() => setShowTyping(false)}
+                    style={[
+                      styles.typeInsteadBtnInline,
+                      { alignSelf: isKu ? "flex-end" : "flex-start" },
+                    ]}
+                    scaleDown={0.96}
+                  >
+                    <AppText
+                      style={styles.typeInsteadText}
+                      forceLatinFont
+                      latinRole="bold"
+                    >
+                      {t("aiTeacher.useMic")}
+                    </AppText>
+                  </PressableScale>
+                ) : null}
+              </BrandCard>
+            )}
 
-              <View style={[styles.tipStrip, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                <DolphinFlat width={48} height={48} />
-                <AppText style={styles.tipText} forceKurdishFont={isKu}>
-                  {isKu 
-                    ? "نمرەکان تەنها وەک ئاماژەیەک وان — ئامرازێکی ڕاھێنانە نەک نمرەی فەرمی IELTS. زانیاری زیاتر لە ڕێکخستنەکاندا ببینە."
-                    : "Indicative bands only — practice tool, not an official IELTS score. See AI & practice info in Settings."}
+            {error || speech.error ? (
+              <AppText
+                style={styles.errorText}
+                forceLatinFont
+                latinRole="medium"
+              >
+                {error || speech.error}
+              </AppText>
+            ) : null}
+
+            {phase === "loading" ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator color={Colors.accent} size="large" />
+                <AppText
+                  style={styles.loadingText}
+                  forceLatinFont
+                  latinRole="medium"
+                >
+                  {t("aiTeacher.checking")}
                 </AppText>
               </View>
-            </>
-          )}
+            ) : (
+              <BrandPrimaryButton
+                label={t("aiTeacher.checkEnglish")}
+                onPress={onSubmit}
+                style={styles.submitBtn}
+              />
+            )}
+
+            {lastSaved ? (
+              <BrandCard
+                style={styles.historyCard}
+                contentStyle={styles.historyInner}
+              >
+                <AppText
+                  style={styles.historyLabel}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  {isKu ? "دواین ھەوڵی پاشەکەوتکراو" : "Last saved attempt"}
+                </AppText>
+                <AppText
+                  style={styles.historyBand}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  {isKu
+                    ? `باند ${lastSaved.overallBand} · ${lastSaved.mode === "speaking" ? "قسەکردن" : "نووسین"}`
+                    : `Band ${lastSaved.overallBand} · ${lastSaved.mode}`}
+                </AppText>
+                <AppText
+                  style={styles.historyExcerpt}
+                  numberOfLines={2}
+                  forceLatinFont
+                >
+                  {lastSaved.excerpt}
+                </AppText>
+              </BrandCard>
+            ) : null}
+
+            <BrandCard
+              style={styles.tipCard}
+              contentStyle={[
+                styles.tipStrip,
+                { flexDirection: isKu ? "row-reverse" : "row" },
+              ]}
+            >
+              <View style={styles.tipIconWrap}>
+                <HugeiconsIcon
+                  icon={InformationCircleIcon}
+                  size={20}
+                  color={Colors.chart1}
+                  strokeWidth={2.5}
+                />
+              </View>
+              <AppText style={styles.tipText} forceLatinFont latinRole="medium">
+                {isKu
+                  ? "نمرەکان تەنها وەک ئاماژەیەک وان — ئامرازێکی ڕاھێنانە نەک نمرەی فەرمی IELTS. زانیاری زیاتر لە ڕێکخستنەکاندا ببینە."
+                  : "Indicative bands only — practice tool, not an official IELTS score. See AI & practice info in Settings."}
+              </AppText>
+            </BrandCard>
+          </>
+        )}
       </KeyboardAwareScrollView>
     </View>
   );
@@ -404,228 +605,314 @@ function ResultsView({
   const { isKu } = useI18n();
   return (
     <Animated.View entering={FadeInDown.duration(320)}>
-      <HomeLiquidCard contentStyle={styles.overallCard}>
-        <AppText style={styles.overallLabel} forceKurdishFont={isKu}>
+      <BrandCard contentStyle={styles.overallCard}>
+        <View style={styles.overallBadge}>
+          <HugeiconsIcon
+            icon={RobotIcon}
+            size={18}
+            color={Colors.foreground}
+            strokeWidth={2.0}
+          />
+          <AppText
+            style={styles.overallBadgeText}
+            forceLatinFont
+            latinRole="bold"
+          >
+            AI TEACHER
+          </AppText>
+        </View>
+        <AppText style={styles.overallLabel} forceLatinFont latinRole="bold">
           {isKu ? "نمرەی گشتی پێشبینیکراو" : "Overall indicative band"}
         </AppText>
-        <AppText style={styles.overallBand} forceLatinFont>{result.overallBand}</AppText>
-        <AppText style={styles.overallHint} forceKurdishFont={isKu}>
+        <AppText style={styles.overallBand} forceLatinFont latinRole="bold">
+          {result.overallBand}
+        </AppText>
+        <AppText style={styles.overallHint} forceLatinFont latinRole="medium">
           {isKu ? "لە دەوری ٩.٠ (شێوازی IELTS)" : "Out of 9.0 (IELTS-style)"}
         </AppText>
-      </HomeLiquidCard>
+      </BrandCard>
 
-      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+      <AppText
+        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
+        forceLatinFont
+        latinRole="bold"
+      >
         {isKu ? "پێوەرەکان" : "Criteria"}
       </AppText>
       {result.criteria.map((c) => (
         <View key={c.key} style={styles.criterionCard}>
-          <View style={[styles.criterionTop, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={[styles.criterionLabel, { textAlign: isKu ? "right" : "left", paddingRight: isKu ? 0 : 8, paddingLeft: isKu ? 8 : 0 }]} forceKurdishFont={isKu}>
+          <View
+            style={[
+              styles.criterionTop,
+              { flexDirection: isKu ? "row-reverse" : "row" },
+            ]}
+          >
+            <AppText
+              style={[
+                styles.criterionLabel,
+                {
+                  textAlign: isKu ? "right" : "left",
+                  paddingRight: isKu ? 0 : 8,
+                  paddingLeft: isKu ? 8 : 0,
+                },
+              ]}
+              forceLatinFont
+              latinRole="bold"
+            >
               {c.label}
             </AppText>
-            <AppText style={styles.criterionBand} forceLatinFont>{c.band}</AppText>
+            <AppText
+              style={styles.criterionBand}
+              forceLatinFont
+              latinRole="bold"
+            >
+              {c.band}
+            </AppText>
           </View>
           <View style={styles.bandTrack}>
             <View
               style={[styles.bandFill, { width: `${(c.band / 9) * 100}%` }]}
             />
           </View>
-          <AppText style={[styles.criterionNote, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{c.note}</AppText>
+          <AppText
+            style={[
+              styles.criterionNote,
+              { textAlign: isKu ? "right" : "left" },
+            ]}
+            forceLatinFont
+            latinRole="medium"
+          >
+            {c.note}
+          </AppText>
         </View>
       ))}
 
-      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+      <AppText
+        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
+        forceLatinFont
+        latinRole="bold"
+      >
         {isKu ? "خاڵە بەهێزەکان" : "Strengths"}
       </AppText>
-      <HomeLiquidCard contentStyle={styles.bulletCard}>
+      <BrandCard contentStyle={styles.bulletCard}>
         {result.strengths.map((s) => (
-          <AppText key={s} style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>
+          <AppText
+            key={s}
+            style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]}
+            forceLatinFont
+            latinRole="medium"
+          >
             • {s}
           </AppText>
         ))}
-      </HomeLiquidCard>
+      </BrandCard>
 
-      <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+      <AppText
+        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
+        forceLatinFont
+        latinRole="bold"
+      >
         {isKu ? "خاڵەکان بۆ باشترکردن" : "To improve"}
       </AppText>
-      <HomeLiquidCard contentStyle={styles.bulletCard}>
+      <BrandCard contentStyle={styles.bulletCard}>
         {result.improvements.map((s) => (
-          <AppText key={s} style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>
+          <AppText
+            key={s}
+            style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]}
+            forceLatinFont
+            latinRole="medium"
+          >
             • {s}
           </AppText>
         ))}
-      </HomeLiquidCard>
+      </BrandCard>
 
       {result.sampleRewrite ? (
         <>
-          <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+          <AppText
+            style={[
+              styles.sectionTitle,
+              { textAlign: isKu ? "right" : "left" },
+            ]}
+            forceLatinFont
+            latinRole="bold"
+          >
             {isKu ? "نموونەی نووسینی باشترکراو" : "Sample upgrade"}
           </AppText>
-          <HomeLiquidCard contentStyle={styles.rewriteCard}>
-            <AppText style={[styles.rewriteText, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{result.sampleRewrite}</AppText>
-          </HomeLiquidCard>
+          <BrandCard contentStyle={styles.rewriteCard}>
+            <AppText
+              style={[
+                styles.rewriteText,
+                { textAlign: isKu ? "right" : "left" },
+              ]}
+              forceLatinFont
+              latinRole="medium"
+            >
+              {result.sampleRewrite}
+            </AppText>
+          </BrandCard>
         </>
       ) : null}
 
-      <HomeLiquidButton
-        label={isKu ? "پاشەکەوتکردنی هەوڵدانەکە" : "SAVE ATTEMPT"}
+      <BrandPrimaryButton
+        label={isKu ? "پاشەکەوتکردنی هەوڵدانەکە" : "Save attempt"}
         onPress={onSave}
         style={styles.actionBtn}
       />
-      <Pressable onPress={onTryAgain} style={styles.secondaryBtn}>
-        <AppText style={styles.secondaryBtnText} forceKurdishFont={isKu}>
+      <PressableScale
+        onPress={onTryAgain}
+        style={styles.secondaryBtn}
+        scaleDown={0.96}
+      >
+        <AppText
+          style={styles.secondaryBtnText}
+          forceLatinFont
+          latinRole="bold"
+        >
           {isKu ? "دووبارە هەوڵبدەرەوە" : "Try again"}
         </AppText>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.meshBottom },
+  root: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
   flex: { flex: 1 },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 28,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.secondary,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: C.divider,
   },
-  backSpacer: { width: 40 },
-  topTitles: { flex: 1, alignItems: "center" },
+  topTitles: {
+    flex: 1,
+    gap: 4,
+  },
   pageTitle: {
-    ...HomeType.heading,
-    fontSize: 20,
-    color: C.navy,
+    fontSize: 30,
+    color: Colors.foreground,
+    letterSpacing: -0.5,
   },
   pageSub: {
-    ...HomeType.caption,
-    color: C.grayLight,
-    marginTop: 2,
+    fontSize: 14,
+    color: Colors.mutedForeground,
   },
   modeRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   modeChip: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 999,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: C.divider,
+    paddingVertical: 14,
+    borderRadius: 99,
+    backgroundColor: Colors.cardSurface,
+    borderWidth: 1.5,
+    borderColor: Colors.borderStrong,
     alignItems: "center",
   },
   modeChipOn: {
-    backgroundColor: C.blue,
-    borderColor: C.blue,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   modeChipText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: C.gray,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.mutedForeground,
   },
-  modeChipTextOn: { color: "#FFFFFF" },
+  modeChipTextOn: {
+    color: "#FFFFFF",
+  },
   sectionTitle: {
-    ...HomeType.section,
-    color: C.navy,
-    marginBottom: 10,
+    fontSize: 18,
+    color: Colors.foreground,
+    marginBottom: 12,
     marginTop: 4,
   },
-  promptScroll: { gap: 10, paddingBottom: 12 },
+  promptScroll: {
+    gap: 12,
+    paddingBottom: 16,
+  },
   promptCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: C.divider,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: Colors.cardSurface,
+    borderWidth: 1.5,
+    borderColor: Colors.borderStrong,
     maxWidth: 220,
   },
   promptCardOn: {
-    borderColor: C.blue,
-    backgroundColor: "#EEF4FF",
+    borderColor: "rgba(255, 112, 81, 0.45)",
+    backgroundColor: Colors.warmBg,
   },
   promptTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.foreground,
   },
-  promptStrip: {
-    marginBottom: 16,
-    paddingVertical: 12,
+  taskCard: {
+    marginBottom: 20,
+  },
+  taskCardInner: {
+    padding: 20,
     gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: C.divider,
   },
   promptScenarioLabel: {
-    ...HomeType.caption,
-    color: C.blue,
+    fontSize: 11,
+    color: Colors.accent,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 1,
   },
   promptScenario: {
-    ...HomeType.body,
-    color: C.navy,
-    lineHeight: 22,
+    fontSize: 16,
+    color: Colors.foreground,
+    lineHeight: 24,
+  },
+  surfaceCard: {
+    backgroundColor: Colors.cardSurface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 24,
+    shadowColor: C.navy,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   inputShell: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.divider,
     minHeight: 140,
-    padding: 14,
-    ...crossShadow({
-      color: "#1A2B48",
-      offsetY: 6,
-      blur: 16,
-      opacity: 0.05,
-      elevation: 3,
-    }),
+    padding: 16,
   },
   textInput: {
     minHeight: 100,
     fontSize: 16,
-    color: C.navy,
+    color: Colors.foreground,
     fontFamily: "DINNextRoundedRegular",
     textAlignVertical: "top",
   },
   speakingMicBlock: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 24,
     gap: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.divider,
     marginBottom: 4,
-    ...crossShadow({
-      color: "#1A2B48",
-      offsetY: 6,
-      blur: 16,
-      opacity: 0.05,
-      elevation: 3,
-    }),
   },
   speakingTranscript: {
     fontSize: 16,
     lineHeight: 24,
-    color: C.navy,
+    color: Colors.foreground,
     textAlign: "center",
     paddingHorizontal: 20,
-    fontFamily: "DINNextRoundedRegular",
   },
   typeInsteadBtn: {
     paddingVertical: 8,
@@ -637,15 +924,12 @@ const styles = StyleSheet.create({
   },
   typeInsteadText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.accent,
   },
   errorText: {
-    color: C.red,
+    color: Colors.destructive,
     fontSize: 14,
     marginTop: 8,
-    fontFamily: "DINNextRoundedMedium",
   },
   loadingBox: {
     alignItems: "center",
@@ -653,72 +937,124 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    ...HomeType.body,
-    color: C.gray,
+    fontSize: 15,
+    color: Colors.mutedForeground,
   },
-  submitBtn: { marginTop: 16 },
-  historyCard: { marginTop: 20 },
-  historyInner: { padding: 16 },
+  primaryBtn: {
+    width: "100%",
+    backgroundColor: C.blue,
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: C.blue,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.6,
+  },
+  primaryBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  submitBtn: {
+    marginTop: 16,
+  },
+  historyCard: {
+    marginTop: 20,
+  },
+  historyInner: {
+    padding: 20,
+    gap: 6,
+  },
   historyLabel: {
-    ...HomeType.caption,
-    color: C.grayLight,
+    fontSize: 11,
+    color: Colors.mutedForeground,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   historyBand: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: C.blue,
-    marginTop: 4,
-    fontFamily: "DINNextRoundedBold",
+    fontSize: 18,
+    color: Colors.chart1,
   },
   historyExcerpt: {
-    ...HomeType.body,
-    color: C.gray,
-    marginTop: 6,
+    fontSize: 15,
+    color: Colors.mutedForeground,
+    lineHeight: 22,
+  },
+  tipCard: {
+    marginTop: 20,
   },
   tipStrip: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: C.divider,
+    padding: 16,
+  },
+  tipIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   tipText: {
     flex: 1,
-    ...HomeType.body,
-    color: C.navy,
-    fontWeight: "600",
+    fontSize: 14,
+    color: Colors.mutedForeground,
+    lineHeight: 21,
   },
   overallCard: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    gap: 6,
+  },
+  overallBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
     marginBottom: 8,
   },
+  overallBadgeText: {
+    fontSize: 10,
+    color: Colors.foreground,
+    letterSpacing: 1.2,
+  },
   overallLabel: {
-    ...HomeType.caption,
-    color: C.grayLight,
+    fontSize: 11,
+    color: Colors.mutedForeground,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   overallBand: {
     fontSize: 56,
-    fontWeight: "800",
-    color: C.blue,
-    fontFamily: "DINNextRoundedBold",
-    marginVertical: 4,
+    color: Colors.foreground,
+    lineHeight: 60,
   },
   overallHint: {
-    ...HomeType.caption,
-    color: C.gray,
+    fontSize: 14,
+    color: Colors.mutedForeground,
   },
   criterionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 10,
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: C.divider,
+    borderColor: Colors.border,
   },
   criterionTop: {
     flexDirection: "row",
@@ -727,57 +1063,61 @@ const styles = StyleSheet.create({
   },
   criterionLabel: {
     fontSize: 15,
-    fontWeight: "700",
-    color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.foreground,
     flex: 1,
     paddingRight: 8,
   },
   criterionBand: {
     fontSize: 20,
-    fontWeight: "800",
-    color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.chart1,
   },
   bandTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: C.track,
-    marginTop: 10,
+    backgroundColor: Colors.track,
+    marginTop: 12,
     overflow: "hidden",
   },
   bandFill: {
     height: "100%",
-    backgroundColor: C.blue,
+    backgroundColor: Colors.accent,
     borderRadius: 3,
   },
   criterionNote: {
-    ...HomeType.caption,
-    color: C.gray,
-    marginTop: 8,
+    fontSize: 14,
+    color: Colors.mutedForeground,
+    marginTop: 10,
+    lineHeight: 20,
   },
-  bulletCard: { padding: 14, gap: 8, marginBottom: 8 },
+  bulletCard: {
+    padding: 16,
+    gap: 8,
+    marginBottom: 8,
+  },
   bullet: {
-    ...HomeType.body,
-    color: C.navy,
+    fontSize: 15,
+    color: Colors.foreground,
     lineHeight: 22,
   },
-  rewriteCard: { padding: 14, marginBottom: 8 },
+  rewriteCard: {
+    padding: 16,
+    marginBottom: 8,
+  },
   rewriteText: {
-    ...HomeType.body,
-    color: C.navy,
+    fontSize: 15,
+    color: Colors.foreground,
     fontStyle: "italic",
     lineHeight: 22,
   },
-  actionBtn: { marginTop: 12 },
+  actionBtn: {
+    marginTop: 12,
+  },
   secondaryBtn: {
     alignItems: "center",
     paddingVertical: 16,
   },
   secondaryBtnText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    color: Colors.accent,
   },
 });

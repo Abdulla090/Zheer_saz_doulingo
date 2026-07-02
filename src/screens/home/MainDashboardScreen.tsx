@@ -13,7 +13,7 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import PhingoMascot from "../../../assets/images/svg/phingo charecter.svg";
+import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { useRouter } from "expo-router";
 import {
   AnimatedCard,
@@ -97,7 +97,7 @@ export function MainDashboardScreen({
           <View style={s.header}>
             <View style={s.headerLeft}>
               <View style={s.logoCol}>
-                <Text style={s.logoText}>Phingo</Text>
+                <Text style={s.logoText}>Twino</Text>
                 <Text style={s.logoSub}>Dolphin AI</Text>
               </View>
             </View>
@@ -134,7 +134,7 @@ export function MainDashboardScreen({
               <View style={s.bubbleTail} />
             </GlassCard>
             <View style={s.mascotWrap}>
-              <PhingoMascot width="100%" height="100%" />
+              <TwinoMascot size={220} pose="happy" />
             </View>
           </View>
         </AnimatedCard>

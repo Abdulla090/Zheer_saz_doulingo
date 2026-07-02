@@ -2,14 +2,19 @@ import SafeContainer from "../../components/shared/safe-container";
 import { SvgAppButton } from "../../components/shared/svg-app-button";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Icon3DCheck } from "../../components/icons/Icon3D";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { AppText } from "../../components/ui/AppText";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import { useI18n } from "../../hooks/useI18n";
 import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { hapticImpact } from "../../utils/haptics";
+import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 
 export const SubscriptionScreen = () => {
   const { t, isKu } = useI18n();
@@ -27,7 +32,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureNoAds"),
       ],
       image: require("../../../assets/images/characters/zari.png"),
-      buttonColors: { face: "#1CB0F6", rim: "#0F8FCF" },
+      buttonColors: { face: "#0F172A", rim: "#020617" },
     },
     {
       id: 2,
@@ -40,7 +45,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureSuperFamilyExtra"),
       ],
       image: require("../../../assets/images/characters/boys.png"),
-      buttonColors: { face: "#58CC02", rim: "#3B8E00" },
+      buttonColors: { face: "#334155", rim: "#1E293B" },
     },
     {
       id: 3,
@@ -56,7 +61,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureNoAds"),
       ],
       image: require("../../../assets/images/characters/character1.png"),
-      buttonColors: { face: "#FFC800", rim: "#D9A066" },
+      buttonColors: { face: "#475569", rim: "#334155" },
     },
     {
       id: 4,
@@ -69,7 +74,7 @@ export const SubscriptionScreen = () => {
         t("subscription.featureMaxFamilyExtra"),
       ],
       image: require("../../../assets/images/characters/dolphin-mascot.jpg"),
-      buttonColors: { face: "#FF9600", rim: "#CC7800" },
+      buttonColors: { face: "#64748B", rim: "#475569" },
     },
   ], [t]);
 
@@ -78,8 +83,8 @@ export const SubscriptionScreen = () => {
       {/* Premium Gradient Header */}
       <SafeContainer style={styles.safeHeader} accessibilityRole="header">
         <LinearGradient
-          colors={["#0E3270", "#0A1F44"]}
-          style={StyleSheet.absoluteFillObject}
+          colors={["#1E293B", "#0F172A"]}
+          style={StyleSheet.absoluteFill}
         />
         <View style={styles.headerContent}>
           <AppText style={styles.headerTitle} forceKurdishFont={isKu}>
@@ -96,7 +101,8 @@ export const SubscriptionScreen = () => {
         </View>
       </SafeContainer>
 
-      <ScrollView
+      <View style={{ flex: 1 }}>
+        <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: 16,
@@ -116,7 +122,7 @@ export const SubscriptionScreen = () => {
               {plan.isRecommended && (
                 <View style={styles.recommendedBadgeContainer}>
                   <LinearGradient
-                    colors={["#1CB0F6", "#10B981"]}
+                    colors={["#000000", "#475569"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.recommendedBadgeGrad}
@@ -137,11 +143,15 @@ export const SubscriptionScreen = () => {
                     {plan.description}
                   </AppText>
                 </View>
-                <Image
-                  source={plan.image}
-                  contentFit="contain"
-                  style={styles.cardMascot}
-                />
+                {plan.id === 4 ? (
+                  <TwinoMascot size={64} pose="happy" />
+                ) : (
+                  <Image
+                    source={plan.image}
+                    contentFit="contain"
+                    style={styles.cardMascot}
+                  />
+                )}
               </View>
 
               <View style={styles.divider} />
@@ -152,7 +162,7 @@ export const SubscriptionScreen = () => {
                     key={idx}
                     style={[styles.featureRow, { flexDirection: isKu ? "row-reverse" : "row" }]}
                   >
-                    <Icon3DCheck size={20} />
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} color="#0F172A" />
                     <AppText
                       style={[styles.featureText, { textAlign: isKu ? "right" : "left" }]}
                       forceKurdishFont={isKu}
@@ -185,6 +195,10 @@ export const SubscriptionScreen = () => {
           );
         })}
       </ScrollView>
+
+      {/* Blurred Gradient Overlay above Navbar */}
+      <BottomScrollFade />
+      </View>
     </View>
   );
 };
@@ -192,7 +206,7 @@ export const SubscriptionScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8FAF8",
+    backgroundColor: "#F8FAFC",
   },
   safeHeader: {
     paddingHorizontal: 20,
@@ -214,7 +228,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   headerSub: {
-    color: "#A5B4FC",
+    color: "#CBD5E1",
     fontSize: 15,
     fontFamily: "DINNextRoundedMedium",
     marginTop: 4,
@@ -229,7 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: "#E5E5E5",
+    borderColor: "#E2E8F0",
     padding: 20,
     marginBottom: 20,
     position: "relative",
@@ -244,7 +258,7 @@ const styles = StyleSheet.create({
   },
   cardRecommended: {
     marginTop: 16,
-    borderColor: "#1CB0F6",
+    borderColor: "#0F172A",
   },
   recommendedBadgeContainer: {
     position: "absolute",
@@ -282,7 +296,7 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: "#0F172A",
     fontFamily: "DINNextRoundedBold",
   },
   planDesc: {

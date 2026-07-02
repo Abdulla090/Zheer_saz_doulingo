@@ -33,7 +33,7 @@ export const aiSafetyEn: LegalDocument = {
       title: "Wellbeing",
       paragraphs: [
         "Take breaks during long study sessions. If AI feedback feels discouraging, focus on lesson content and try again later.",
-        "For mental health or crisis support, contact qualified local services — Phingo cannot provide crisis help.",
+        "For mental health or crisis support, contact qualified local services — Twino cannot provide crisis help.",
       ],
     },
     {

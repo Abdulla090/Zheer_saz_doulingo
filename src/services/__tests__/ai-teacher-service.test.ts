@@ -1,3 +1,4 @@
+import { describe, it, expect } from "@jest/globals";
 import { evaluateEnglish } from "../ai-teacher-service";
 
 describe("ai-teacher-service", () => {
@@ -6,8 +7,6 @@ describe("ai-teacher-service", () => {
       evaluateEnglish({
         text: "Too short",
         mode: "writing",
-        nativeLang: "ku",
-        targetLang: "en",
       })
     ).rejects.toThrow("Answer too short");
   });
@@ -16,8 +15,6 @@ describe("ai-teacher-service", () => {
     const result = await evaluateEnglish({
       text: "I think learning English is extremely important because it opens up many job opportunities.",
       mode: "writing",
-      nativeLang: "ku",
-      targetLang: "en",
     });
 
     expect(result).toBeDefined();

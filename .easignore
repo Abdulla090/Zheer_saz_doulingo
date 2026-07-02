@@ -21,3 +21,13 @@ tmp-onboarding*.png
 tmp-*.png
 *.tsbuildinfo
 app-example
+
+# Custom local artifacts and skill tools
+/goat-expo-skill/
+/goat-expo-skill-fixed/
+/scratch/
+/practice-variant-1/
+/*.zip
+/inappgame.riv
+/27975-52851-fully-interactive-learning-app-with-rive.riv
+/*.png

@@ -8,14 +8,7 @@ import {
   startMicPcmStream,
   isLiveAudioSupported,
 } from "../utils/gemini-live-audio";
-import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-  useAudioRecorder,
-} from "expo-audio";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PermissionsAndroid, Platform } from "react-native";
 
 export type LiveTutorStatus =
   | "idle"
@@ -25,53 +18,56 @@ export type LiveTutorStatus =
   | "listening"
   | "error";
 
-async function uriToBase64(uri: string) {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  const mimeType = blob.type || "audio/mp4";
-  return new Promise<{ base64: string; mimeType: string }>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      resolve({ base64: dataUrl.split(",")[1] ?? "", mimeType });
-    };
-    reader.onerror = () => reject(new Error("Failed to read audio."));
-    reader.readAsDataURL(blob);
-  });
-}
-
 export function useGeminiLiveTutor() {
   const configured = isGeminiConfigured();
   const supported = isLiveAudioSupported();
-  const nativeRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const sessionRef = useRef<GeminiLiveSession | null>(null);
   const playerRef = useRef<LivePcmPlayer | null>(null);
   const micRef = useRef<{ stop: () => void } | null>(null);
-  const nativeLoopRef = useRef(false);
   const micActiveRef = useRef(false);
+  const autoLiveRef = useRef(false);
 
   const [phase, setPhase] = useState<LiveSessionPhase>("intro_ku");
   const [status, setStatus] = useState<LiveTutorStatus>("idle");
   const [sessionActive, setSessionActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   const statusRef = useRef(status);
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
 
-  const stopMic = useCallback(() => {
+  const stopMic = useCallback(async () => {
     micActiveRef.current = false;
-    micRef.current?.stop();
-    micRef.current = null;
-    nativeLoopRef.current = false;
-    if (nativeRecorder.isRecording) {
-      void nativeRecorder.stop();
+    if (micRef.current) {
+      try {
+        micRef.current.stop();
+      } catch (e) {
+        console.warn("Error stopping mic stream:", e);
+      }
+      micRef.current = null;
     }
     sessionRef.current?.sendAudioStreamEnd();
-  }, [nativeRecorder]);
+  }, []);
+
+  const startMic = useCallback(async () => {
+    if (micActiveRef.current) return;
+
+    try {
+      micRef.current = await startMicPcmStream((chunk: string) => {
+        sessionRef.current?.sendPcmChunk(chunk);
+      });
+      micActiveRef.current = true;
+      setStatus("listening");
+    } catch (err) {
+      setError("Microphone permission is required to speak with the tutor.");
+      console.warn("Mic Stream failed:", err);
+      setStatus("error");
+    }
+  }, []);
 
   const stopPlayer = useCallback(() => {
     playerRef.current?.stop();
@@ -79,7 +75,7 @@ export function useGeminiLiveTutor() {
   }, []);
 
   const stopAll = useCallback(() => {
-    stopMic();
+    void stopMic();
     stopPlayer();
     sessionRef.current?.disconnect();
     sessionRef.current = null;
@@ -88,107 +84,16 @@ export function useGeminiLiveTutor() {
     setSessionActive(false);
     setStatus("idle");
     setSpeaking(false);
+    setTranscript("");
     setPhase("intro_ku");
+    autoLiveRef.current = false;
   }, [stopMic, stopPlayer]);
 
   useEffect(() => () => stopAll(), [stopAll]);
 
-  const startNativeMicLoop = useCallback(async () => {
-    if (Platform.OS === "web" || micActiveRef.current) return;
-
-    let perm = await requestRecordingPermissionsAsync();
-    
-    // Fallback to explicit PermissionsAndroid request if not granted
-    if (!perm.granted && Platform.OS === "android") {
-      try {
-        const result = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: "Microphone Permission",
-            message: "Phingo English needs access to your microphone to talk to the AI Tutor.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK",
-          }
-        );
-        if (result === PermissionsAndroid.RESULTS.GRANTED) {
-          perm = { granted: true, status: "granted" as any, canAskAgain: true, expires: "never" };
-        }
-      } catch (err) {
-        console.warn("PermissionsAndroid failed", err);
-      }
-    }
-
-    if (!perm.granted) {
-      setError("Microphone permission is required to speak with the tutor.");
-      return;
-    }
-    
-    try {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-    } catch (e) {
-      console.warn("setAudioModeAsync failed:", e);
-    }
-    
-    micActiveRef.current = true;
-    nativeLoopRef.current = true;
-    setStatus("listening");
-
-    const loop = async () => {
-      while (nativeLoopRef.current && micActiveRef.current) {
-        try {
-          nativeRecorder.record();
-          await new Promise((r) => setTimeout(r, 650));
-          if (!nativeLoopRef.current) break;
-
-          if (nativeRecorder.isRecording) {
-            await nativeRecorder.stop();
-          }
-          const uri = nativeRecorder.uri;
-          if (uri && sessionRef.current) {
-            const audio = await uriToBase64(uri);
-            if (audio.base64) {
-              sessionRef.current.sendAudioChunk(audio.base64, audio.mimeType);
-            }
-          }
-        } catch {
-          await new Promise((r) => setTimeout(r, 180));
-        }
-      }
-    };
-
-    void loop();
-  }, [nativeRecorder]);
-
-  const startMic = useCallback(async () => {
-    if (micActiveRef.current) return;
-
-    if (Platform.OS === "web") {
-      try {
-        micRef.current = await startMicPcmStream((chunk: string) => {
-          sessionRef.current?.sendPcmChunk(chunk);
-        });
-        micActiveRef.current = true;
-        setStatus("listening");
-      } catch (err) {
-        setError("Microphone permission is required to speak with the tutor.");
-        console.warn("Web Mic Stream failed:", err);
-      }
-      return;
-    }
-
-    await startNativeMicLoop();
-  }, [startNativeMicLoop]);
-
   const connectSession = useCallback(async () => {
     if (!configured) {
       setError("Add EXPO_PUBLIC_GEMINI_API_KEY to enable Live Voice Tutor.");
-      setStatus("error");
-      return;
-    }
-
-    if (!supported && Platform.OS === "web") {
-      setError("Live voice requires microphone access in this browser.");
       setStatus("error");
       return;
     }
@@ -209,25 +114,34 @@ export function useGeminiLiveTutor() {
         onSetupComplete: () => {
           setStatus("live");
           session.startGreeting();
-          void startMic();
         },
         onAudio: (pcm) => {
+          if (statusRef.current !== "speaking") setTranscript(""); // Clear previous turn's text
           setSpeaking(true);
           setStatus("speaking");
           playerRef.current?.enqueueBase64Pcm(pcm);
+          // Stop mic to prevent echoing tutor audio back into stream
+          if (micActiveRef.current) {
+            void stopMic();
+          }
+        },
+        onText: (text) => {
+          setTranscript((prev) => prev + text);
         },
         onTurnComplete: () => {
           setSpeaking(false);
-          if (micActiveRef.current) {
-            setStatus("listening");
+          if (autoLiveRef.current) {
+            void startMic();
           } else {
             setStatus("live");
           }
         },
         onInterrupted: () => {
           stopPlayer();
-          if (micActiveRef.current) {
-            setStatus("listening");
+          if (autoLiveRef.current) {
+            void startMic();
+          } else {
+            setStatus("live");
           }
         },
         onError: (msg) => {
@@ -240,30 +154,49 @@ export function useGeminiLiveTutor() {
       setError(msg);
       setStatus("error");
     }
-  }, [configured, startMic, stopPlayer, supported]);
+  }, [configured, startMic, stopMic, stopPlayer]);
 
   const handleMicPress = useCallback(() => {
     switch (statusRef.current) {
       case "idle":
       case "error":
+        autoLiveRef.current = true;
         void connectSession();
         break;
       case "speaking":
+        autoLiveRef.current = true;
         stopPlayer();
         sessionRef.current?.sendAudioStreamEnd();
         if (!micActiveRef.current) void startMic();
         break;
       case "listening":
-        stopMic();
+        // Manual override: stop listening and turn off auto-live
+        autoLiveRef.current = false;
+        void stopMic();
         setStatus("live");
         break;
       case "live":
+        autoLiveRef.current = true;
         void startMic();
         break;
       default:
         break;
     }
   }, [connectSession, startMic, stopMic, stopPlayer]);
+
+  const interruptAi = useCallback(() => {
+    if (statusRef.current === "speaking") {
+      stopPlayer();
+      sessionRef.current?.sendAudioStreamEnd();
+      setStatus("live");
+    }
+  }, [stopPlayer]);
+
+  const changeTopic = useCallback((topic: string) => {
+    if (sessionRef.current) {
+      sessionRef.current.sendClientText(`Let's change the topic. We are now roleplaying: ${topic}. Confirm by greeting me in character in English.`);
+    }
+  }, []);
 
   return {
     configured,
@@ -274,8 +207,11 @@ export function useGeminiLiveTutor() {
     speaking,
     listening: status === "listening",
     thinking: status === "connecting",
+    transcript,
     error,
     handleMicPress,
+    interruptAi,
+    changeTopic,
     stopAll,
   };
 }

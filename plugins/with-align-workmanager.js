@@ -11,21 +11,27 @@ const withAlignWorkManager = (config) => {
         const insertion = `
   // Only redirect buildDir/cmake on Windows local builds (not EAS/CI Linux)
   if (org.gradle.internal.os.OperatingSystem.current().isWindows() && System.getenv('EAS_BUILD') == null) {
-    if (project.name != 'PINGO') {
-      buildDir = "C:/tmp/build-phingo/\${project.name}"
+    // Redirect buildDir for all sub-projects EXCEPT root and :app
+    // (:app must stay in-place so autolinking.json is found by Gradle)
+    if (project != rootProject && project.name != 'app') {
+      buildDir = "C:/tmp/build-twino/\${project.name}"
       new File(buildDir.toString()).mkdirs()
     }
 
-    afterEvaluate {
-      if (project.extensions.findByName("android") != null) {
-        android {
-          externalNativeBuild {
-            cmake {
-              buildStagingDirectory = "C:/tmp/cxx-phingo/\${project.name}"
+    // Redirect cmake buildStagingDirectory for ALL android sub-projects including :app
+    // This keeps all prefab packages co-located in C:/tmp/cxx-twino/ so CMake can find them
+    if (project != rootProject) {
+      afterEvaluate {
+        if (project.extensions.findByName("android") != null) {
+          android {
+            externalNativeBuild {
+              cmake {
+                buildStagingDirectory = "C:/tmp/cxx-twino/\${project.name}"
+              }
             }
           }
+          new File("C:/tmp/cxx-twino/\${project.name}").mkdirs()
         }
-        new File("C:/tmp/cxx-phingo/\${project.name}").mkdirs()
       }
     }
   }

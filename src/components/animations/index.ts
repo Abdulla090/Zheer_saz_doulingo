@@ -8,3 +8,4 @@ export { AnimatedCard } from "./AnimatedCard";
 export { GlassCard } from "./GlassCard";
 export { StaggeredList } from "./StaggeredList";
 export * from "./motion";
+export * from "./skia-gsap-opening";

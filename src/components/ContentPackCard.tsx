@@ -198,36 +198,43 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
   }));
 
   const handlePress = useCallback(() => {
-    if (status === "not_downloaded") {
-      confirmAction(
-        "Storage & Notification Permission",
-        "Phingo needs permission to store the downloaded learning assets on your device and notify you when the download completes. Do you grant permission?",
-        async () => {
-          if (Platform.OS === "web") {
-            if (typeof Notification !== "undefined" && Notification.permission === "default") {
-              try {
-                await Notification.requestPermission();
-              } catch (e) {
-                console.warn("Notification request failed:", e);
-              }
-            }
-            startDownload(pack.id);
-          } else if (Platform.OS === "android") {
+    if (status === "not_downloaded" || status === "error") {
+      const runDownload = async () => {
+        if (Platform.OS === "web") {
+          if (typeof Notification !== "undefined" && Notification.permission === "default") {
             try {
-              const writePerm = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-              const postNotifications = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS || "android.permission.POST_NOTIFICATIONS";
-              
-              await PermissionsAndroid.requestMultiple([writePerm, postNotifications]);
-            } catch (err) {
-              console.warn("Android permissions request failed:", err);
+              await Notification.requestPermission();
+            } catch (e) {
+              console.warn("Notification request failed:", e);
             }
-            startDownload(pack.id);
-          } else {
-            startDownload(pack.id);
           }
-        },
-        { confirmLabel: "Allow", cancelLabel: "Deny" }
-      );
+          startDownload(pack.id);
+        } else if (Platform.OS === "android") {
+          try {
+            const writePerm = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+            const postNotifications = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS || "android.permission.POST_NOTIFICATIONS";
+            
+            await PermissionsAndroid.requestMultiple([writePerm, postNotifications]);
+          } catch (err) {
+            console.warn("Android permissions request failed:", err);
+          }
+          startDownload(pack.id);
+        } else {
+          startDownload(pack.id);
+        }
+      };
+
+      if (status === "error") {
+        // Direct retry without showing permission prompt again
+        runDownload();
+      } else {
+        confirmAction(
+          "Storage & Notification Permission",
+          "Phingo needs permission to store the downloaded learning assets on your device and notify you when the download completes. Do you grant permission?",
+          runDownload,
+          { confirmLabel: "Allow", cancelLabel: "Deny" }
+        );
+      }
     } else if (status === "downloading") {
       cancelDownload(pack.id);
     }
@@ -358,15 +365,17 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
           haptic
           style={styles.btnWrap}
         >
-          {status === "not_downloaded" && (
+          {(status === "not_downloaded" || status === "error") && (
             <LinearGradient
-              colors={[pack.accentColor, `${pack.accentColor}DD`]}
+              colors={status === "error" ? ["#EF4444", "#DC2626"] : [pack.accentColor, `${pack.accentColor}DD`]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.downloadBtn}
             >
-              <CloudDownloadIcon size={22} color="#FFF" />
-              <Text style={styles.downloadBtnText}>Download Pack</Text>
+              {status === "error" ? null : <CloudDownloadIcon size={22} color="#FFF" />}
+              <Text style={styles.downloadBtnText}>
+                {status === "error" ? "Download Failed — Retry" : "Download Pack"}
+              </Text>
             </LinearGradient>
           )}
           {status === "downloading" && (

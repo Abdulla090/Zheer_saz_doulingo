@@ -1,14 +1,14 @@
 import { appStorage } from "../lib/app-storage";
 import { registerWidgetTaskHandler } from "react-native-android-widget";
 
-import { PhingoHomeAndroidWidget } from "./PhingoHomeAndroidWidget";
+import { TwinoHomeAndroidWidget } from "./TwinoHomeAndroidWidget";
 import {
   ANDROID_WIDGET_NAME,
   WIDGET_SNAPSHOT_KEY,
-  type PhingoHomeWidgetPayload,
+  type TwinoHomeWidgetPayload,
 } from "./widget-types";
 
-const DEFAULT_PAYLOAD: PhingoHomeWidgetPayload = {
+const DEFAULT_PAYLOAD: TwinoHomeWidgetPayload = {
   streak: 0,
   dailyXp: 0,
   dailyGoalXp: 15,
@@ -17,12 +17,12 @@ const DEFAULT_PAYLOAD: PhingoHomeWidgetPayload = {
   streetLabel: "Kurdish",
   normalLabel: "English",
   nextTitle: "Start learning",
-  nextSubtitle: "Open Phingo",
+  nextSubtitle: "Open Twino",
   recentTitle: "",
   recentSubtitle: "",
 };
 
-async function readPayload(): Promise<PhingoHomeWidgetPayload> {
+async function readPayload(): Promise<TwinoHomeWidgetPayload> {
   try {
     const raw = await appStorage.getItem(WIDGET_SNAPSHOT_KEY);
     if (!raw) return DEFAULT_PAYLOAD;
@@ -35,7 +35,7 @@ async function readPayload(): Promise<PhingoHomeWidgetPayload> {
 let registered = false;
 
 /** Registers the Android widget headless task (safe to call more than once). */
-export function registerPhingoAndroidWidgetHandler(): void {
+export function registerTwinoAndroidWidgetHandler(): void {
   if (registered) return;
   registered = true;
 
@@ -44,6 +44,6 @@ export function registerPhingoAndroidWidgetHandler(): void {
     if (widgetAction === "WIDGET_DELETED") return;
 
     const payload = await readPayload();
-    renderWidget(<PhingoHomeAndroidWidget {...payload} />);
+    renderWidget(<TwinoHomeAndroidWidget {...payload} />);
   });
 }

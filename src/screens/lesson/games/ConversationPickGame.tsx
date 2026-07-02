@@ -185,6 +185,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
                 onPress={() => pick(opt)}
                 disabled={revealed}
                 forceLatinFont
+                isKids={pathMode === "kids"}
               />
 
             </GameOption>
@@ -198,21 +199,14 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
 
       <GameFooter>
-
-        <View style={s.checkWrap}>
-
+        <View style={[s.checkWrap, pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 }]}>
           <LightCheckButton
-
             label={t("lessons.check")}
-
             onPress={check}
-
             disabled={!selected || revealed}
-
+            variant={pathMode === "kids" ? "kids" : "default"}
           />
-
         </View>
-
       </GameFooter>
 
     </GameRoot>

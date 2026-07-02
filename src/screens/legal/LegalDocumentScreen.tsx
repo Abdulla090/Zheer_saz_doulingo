@@ -5,7 +5,8 @@ import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "../../constants/app-meta";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useI18n } from "../../hooks/useI18n";
 import { useRouter } from "expo-router";
-import { ArrowLeft } from "lucide-react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import React from "react";
 import {
   Pressable,
@@ -30,7 +31,7 @@ export function LegalDocumentScreen({ docId }: Props) {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-          <ArrowLeft size={22} color="#1A2B48" strokeWidth={2.5} />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
         </Pressable>
         <AppText style={styles.title} forceKurdishFont={isKu} numberOfLines={2}>
           {doc.title}

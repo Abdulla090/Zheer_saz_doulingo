@@ -37,6 +37,18 @@ const kidsUnit1: UnitBank = [
         explanation: "بۆ منداڵان بە سادەیی بڵێ: 'It's a dog!' — وشە گەورە و ئاڵۆزەکان وەک 'canine' پێویست نین.",
       },
     ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "I have a cat.", targetKurdish: "پشیلەم هەیە.", imageRequire: require("../../../assets/images/games/kids_playing_ball.png") },
+      { kind: "scene", scene: "playground", prompt: "Find the dog!", correctId: "dog", choices: [{ id: "dog", emoji: "🐶", label: "Dog" }, { id: "cat", emoji: "🐱", label: "Cat" }] },
+      { kind: "bubble", prompt: "Pop the fish!", correctId: "fish", choices: [{ id: "fish", emoji: "🐟", label: "Fish" }, { id: "bird", emoji: "🐦", label: "Bird" }] },
+      { kind: "feed", mascotEmoji: "🐱", prompt: "Feed the cat a fish!", correctId: "fish", choices: [{ id: "fish", emoji: "🐟", label: "Fish" }, { id: "carrot", emoji: "🥕", label: "Carrot" }] },
+      { kind: "shadow", prompt: "Match the pets!", items: [{ id: "dog", emoji: "🐶", label: "Dog" }, { id: "rabbit", emoji: "🐰", label: "Rabbit" }] },
+      { kind: "native", kurdishPrompt: "کەروێشکەکە بدۆزەرەوە", correctId: "rabbit", choices: [{ id: "rabbit", emoji: "🐰", label: "Rabbit" }, { id: "bird", emoji: "🐦", label: "Bird" }] },
+      { kind: "simon", phrase: "Simon says, pick the bird!", correctId: "bird", choices: [{ id: "bird", emoji: "🐦", label: "Bird" }, { id: "dog", emoji: "🐶", label: "Dog" }] },
+      { kind: "train", words: ["It", "is", "a", "dog"], kurdishHint: "ئەمە سەگە" },
+      { kind: "trick", showEmoji: "🐱", showLabel: "Cat", spokenWord: "Cat", matches: true },
+      { kind: "treasure", correctId: "rabbit", pool: [{ id: "rabbit", emoji: "🐰", label: "Rabbit" }, { id: "fish", emoji: "🐟", label: "Fish" }] }
+    ],
   },
 
   // Lesson 1: Farm Animals
@@ -71,6 +83,18 @@ const kidsUnit1: UnitBank = [
         wrong3: "I believe that is a bovine animal.",
         explanation: "بە دڵخۆشی بڵێ: 'It's a cow!' — کورت و ئاسان بۆ منداڵان.",
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "I see a horse.", targetKurdish: "ئەسپێک دەبینم.", imageRequire: require("../../../assets/images/games/magical_apple_tree.png") },
+      { kind: "scene", scene: "yard", prompt: "Find the cow!", correctId: "cow", choices: [{ id: "cow", emoji: "🐮", label: "Cow" }, { id: "horse", emoji: "🐴", label: "Horse" }] },
+      { kind: "bubble", prompt: "Pop the sheep!", correctId: "sheep", choices: [{ id: "sheep", emoji: "🐑", label: "Sheep" }, { id: "chicken", emoji: "🐔", label: "Chicken" }] },
+      { kind: "feed", mascotEmoji: "🦆", prompt: "Feed the duck some corn!", correctId: "corn", choices: [{ id: "corn", emoji: "🌽", label: "Corn" }, { id: "meat", emoji: "🍖", label: "Meat" }] },
+      { kind: "shadow", prompt: "Match the farm animals!", items: [{ id: "chicken", emoji: "🐔", label: "Chicken" }, { id: "sheep", emoji: "🐑", label: "Sheep" }] },
+      { kind: "native", kurdishPrompt: "ئەسپەکە بدۆزەرەوە", correctId: "horse", choices: [{ id: "horse", emoji: "🐴", label: "Horse" }, { id: "duck", emoji: "🦆", label: "Duck" }] },
+      { kind: "simon", phrase: "Simon says, pick the chicken!", correctId: "chicken", choices: [{ id: "chicken", emoji: "🐔", label: "Chicken" }, { id: "cow", emoji: "🐮", label: "Cow" }] },
+      { kind: "train", words: ["The", "cow", "is", "big"], kurdishHint: "مانگاکە گەورەیە" },
+      { kind: "trick", showEmoji: "🦆", showLabel: "Duck", spokenWord: "Duck", matches: true },
+      { kind: "treasure", correctId: "cow", pool: [{ id: "cow", emoji: "🐮", label: "Cow" }, { id: "sheep", emoji: "🐑", label: "Sheep" }] }
     ],
   },
 
@@ -107,6 +131,18 @@ const kidsUnit1: UnitBank = [
         explanation: "بۆ منداڵان بڵێ: 'I like the lion!' — سادە و دڵخۆش.",
       },
     ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The lion is big.", targetKurdish: "شێرەکە گەورەیە.", imageRequire: require("../../../assets/images/games/kids_with_blocks.png") },
+      { kind: "scene", scene: "playground", prompt: "Find the monkey!", correctId: "monkey", choices: [{ id: "monkey", emoji: "🐒", label: "Monkey" }, { id: "bear", emoji: "🐻", label: "Bear" }] },
+      { kind: "bubble", prompt: "Pop the elephant!", correctId: "elephant", choices: [{ id: "elephant", emoji: "🐘", label: "Elephant" }, { id: "lion", emoji: "🦁", label: "Lion" }] },
+      { kind: "feed", mascotEmoji: "🐻", prompt: "Feed the bear honey!", correctId: "honey", choices: [{ id: "honey", emoji: "🍯", label: "Honey" }, { id: "leaf", emoji: "🌿", label: "Leaf" }] },
+      { kind: "shadow", prompt: "Match the wild animals!", items: [{ id: "lion", emoji: "🦁", label: "Lion" }, { id: "tiger", emoji: "🐯", label: "Tiger" }] },
+      { kind: "native", kurdishPrompt: "ورچەکە بدۆزەرەوە", correctId: "bear", choices: [{ id: "bear", emoji: "🐻", label: "Bear" }, { id: "elephant", emoji: "🐘", label: "Elephant" }] },
+      { kind: "simon", phrase: "Simon says, pick the monkey!", correctId: "monkey", choices: [{ id: "monkey", emoji: "🐒", label: "Monkey" }, { id: "tiger", emoji: "🐯", label: "Tiger" }] },
+      { kind: "train", words: ["I", "like", "the", "monkey"], kurdishHint: "کەیفم بە مەیمون دێت" },
+      { kind: "trick", showEmoji: "🐘", showLabel: "Elephant", spokenWord: "Elephant", matches: true },
+      { kind: "treasure", correctId: "tiger", pool: [{ id: "tiger", emoji: "🐯", label: "Tiger" }, { id: "lion", emoji: "🦁", label: "Lion" }] }
+    ],
   },
 
   // Lesson 3: Animals Can...
@@ -142,6 +178,18 @@ const kidsUnit1: UnitBank = [
         explanation: "بڵێ: 'A bird can fly!' — وشەی ئاسان بۆ منداڵ باشترە.",
       },
     ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The bird can fly.", targetKurdish: "باڵندەکە دەتوانێت بفڕێت.", imageRequire: require("../../../assets/images/games/kids_playing_ball.png") },
+      { kind: "scene", scene: "playground", prompt: "Find jump!", correctId: "jump", choices: [{ id: "jump", emoji: "🦘", label: "Jump" }, { id: "swim", emoji: "🏊", label: "Swim" }] },
+      { kind: "bubble", prompt: "Pop run!", correctId: "run", choices: [{ id: "run", emoji: "🏃", label: "Run" }, { id: "fly", emoji: "🕊️", label: "Fly" }] },
+      { kind: "feed", mascotEmoji: "🐼", prompt: "Feed the panda bamboo!", correctId: "eat", choices: [{ id: "eat", emoji: "🎋", label: "Eat" }, { id: "run", emoji: "🏃", label: "Run" }] },
+      { kind: "shadow", prompt: "Match the actions!", items: [{ id: "swim", emoji: "🏊", label: "Swim" }, { id: "fly", emoji: "🕊️", label: "Fly" }] },
+      { kind: "native", kurdishPrompt: "مەلەکردن بدۆزەرەوە", correctId: "swim", choices: [{ id: "swim", emoji: "🏊", label: "Swim" }, { id: "jump", emoji: "🦘", label: "Jump" }] },
+      { kind: "simon", phrase: "Simon says, pick jump!", correctId: "jump", choices: [{ id: "jump", emoji: "🦘", label: "Jump" }, { id: "eat", emoji: "🍕", label: "Eat" }] },
+      { kind: "train", words: ["The", "fish", "can", "swim"], kurdishHint: "ماسییەکە دەتوانێت مەلە بکات" },
+      { kind: "trick", showEmoji: "🕊️", showLabel: "Fly", spokenWord: "Fly", matches: true },
+      { kind: "treasure", correctId: "run", pool: [{ id: "run", emoji: "🏃", label: "Run" }, { id: "swim", emoji: "🏊", label: "Swim" }] }
+    ],
   },
 
   // Lesson 4: My Favorite Animal
@@ -174,8 +222,20 @@ const kidsUnit1: UnitBank = [
         wrong1: "I like the cat.",
         wrong2: "My preferred animal is the feline.",
         wrong3: "The animal I favor most is the domestic cat.",
-        explanation: "بڵێ: 'My favorite animal is the cat!' — ڕستەیەکی تەواوی ئاسان.",
+        explanation: "بۆ منداڵان بڵێ: 'My favorite animal is the cat!' — ڕستەیەکی تەواوی ئاسان.",
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The rabbit is cute.", targetKurdish: "کەروێشکەکە نازدارە.", imageRequire: require("../../../assets/images/games/kids_hugging.png") },
+      { kind: "scene", scene: "bedroom", prompt: "Find small!", correctId: "small", choices: [{ id: "small", emoji: "🐭", label: "Small" }, { id: "big", emoji: "🐘", label: "Big" }] },
+      { kind: "bubble", prompt: "Pop big!", correctId: "big", choices: [{ id: "big", emoji: "🦁", label: "Big" }, { id: "small", emoji: "🐜", label: "Small" }] },
+      { kind: "feed", mascotEmoji: "🐶", prompt: "Feed the animal dog food!", correctId: "animal", choices: [{ id: "animal", emoji: "🍖", label: "Animal" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match sizes!", items: [{ id: "small", emoji: "🐭", label: "Small" }, { id: "cute", emoji: "🐰", label: "Cute" }] },
+      { kind: "native", kurdishPrompt: "گەورە بدۆزەرەوە", correctId: "big", choices: [{ id: "big", emoji: "🐘", label: "Big" }, { id: "small", emoji: "🐜", label: "Small" }] },
+      { kind: "simon", phrase: "Simon says, pick favorite!", correctId: "favorite", choices: [{ id: "favorite", emoji: "❤️", label: "Favorite" }, { id: "animal", emoji: "🦖", label: "Animal" }] },
+      { kind: "train", words: ["The", "cat", "is", "cute"], kurdishHint: "پشیلەکە نازدارە" },
+      { kind: "trick", showEmoji: "🐰", showLabel: "Cute", spokenWord: "Cute", matches: true },
+      { kind: "treasure", correctId: "animal", pool: [{ id: "animal", emoji: "🐼", label: "Animal" }, { id: "stone", emoji: "🪨", label: "Stone" }] }
     ],
   },
 
@@ -212,6 +272,18 @@ const kidsUnit1: UnitBank = [
         explanation: "وەڵامی ئاسان بۆ منداڵ: 'It is an eagle!'",
       },
     ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The eagle flies.", targetKurdish: "هەڵۆکە دەفڕێت.", imageRequire: require("../../../assets/images/games/colorful_parrot.png") },
+      { kind: "scene", scene: "night", prompt: "Find sky!", correctId: "sky", choices: [{ id: "sky", emoji: "🌌", label: "Sky" }, { id: "owl", emoji: "🦉", label: "Owl" }] },
+      { kind: "bubble", prompt: "Pop owl!", correctId: "owl", choices: [{ id: "owl", emoji: "🦉", label: "Owl" }, { id: "eagle", emoji: "🦅", label: "Eagle" }] },
+      { kind: "feed", mascotEmoji: "🦜", prompt: "Feed the parrot seeds!", correctId: "seeds", choices: [{ id: "seeds", emoji: "🌻", label: "Seeds" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match the bird parts!", items: [{ id: "eagle", emoji: "🦅", label: "Eagle" }, { id: "wing", emoji: "🪶", label: "Wing" }] },
+      { kind: "native", kurdishPrompt: "کوندەپەپوو بدۆزەرەوە", correctId: "owl", choices: [{ id: "owl", emoji: "🦉", label: "Owl" }, { id: "sky", emoji: "☁️", label: "Sky" }] },
+      { kind: "simon", phrase: "Simon says, pick parrot!", correctId: "parrot", choices: [{ id: "parrot", emoji: "🦜", label: "Parrot" }, { id: "wing", emoji: "🪶", label: "Wing" }] },
+      { kind: "train", words: ["The", "parrot", "talks"], kurdishHint: "تووتییەکە قسە دەکات" },
+      { kind: "trick", showEmoji: "☁️", showLabel: "Sky", spokenWord: "Sky", matches: true },
+      { kind: "treasure", correctId: "eagle", pool: [{ id: "eagle", emoji: "🦅", label: "Eagle" }, { id: "wing", emoji: "🪶", label: "Wing" }] }
+    ],
   },
 
   // Lesson 6: Bugs & Insects
@@ -244,8 +316,20 @@ const kidsUnit1: UnitBank = [
         wrong1: "Spider is small.",
         wrong2: "I see a butterfly.",
         wrong3: "Arachnids induce fear.",
-        explanation: "بڵێ: 'Yes, it is a spider!'",
+        explanation: "بڵێ: 'Yes, it is a spider!'" ,
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The ant is small.", targetKurdish: "مێروولەکە بچووکە.", imageRequire: require("../../../assets/images/games/girl_helping_mother.png") },
+      { kind: "scene", scene: "yard", prompt: "Find spider!", correctId: "spider", choices: [{ id: "spider", emoji: "🕷️", label: "Spider" }, { id: "ant", emoji: "🐜", label: "Ant" }] },
+      { kind: "bubble", prompt: "Pop butterfly!", correctId: "butterfly", choices: [{ id: "butterfly", emoji: "🦋", label: "Butterfly" }, { id: "bee", emoji: "🐝", label: "Bee" }] },
+      { kind: "feed", mascotEmoji: "🐝", prompt: "Feed the bee honey!", correctId: "honey", choices: [{ id: "honey", emoji: "🍯", label: "Honey" }, { id: "leaf", emoji: "🍂", label: "Leaf" }] },
+      { kind: "shadow", prompt: "Match the bugs!", items: [{ id: "ant", emoji: "🐜", label: "Ant" }, { id: "bee", emoji: "🐝", label: "Bee" }] },
+      { kind: "native", kurdishPrompt: "پەپوولەکە بدۆزەرەوە", correctId: "butterfly", choices: [{ id: "butterfly", emoji: "🦋", label: "Butterfly" }, { id: "spider", emoji: "🕷️", label: "Spider" }] },
+      { kind: "simon", phrase: "Simon says, pick spider!", correctId: "spider", choices: [{ id: "spider", emoji: "🕷️", label: "Spider" }, { id: "ant", emoji: "🐜", label: "Ant" }] },
+      { kind: "train", words: ["The", "ant", "is", "small"], kurdishHint: "مێروولەکە بچووکە" },
+      { kind: "trick", showEmoji: "🦋", showLabel: "Butterfly", spokenWord: "Butterfly", matches: true },
+      { kind: "treasure", correctId: "bee", pool: [{ id: "bee", emoji: "🐝", label: "Bee" }, { id: "spider", emoji: "🕷️", label: "Spider" }] }
     ],
   },
 
@@ -279,8 +363,20 @@ const kidsUnit1: UnitBank = [
         wrong1: "Dolphin is sea.",
         wrong2: "I see a shark.",
         wrong3: "Marine mammals are my preference.",
-        explanation: "وەڵامی ڕوون: 'I love the dolphin!'",
+        explanation: "وەڵامی ڕوون: 'I love the dolphin!'" ,
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The turtle is slow.", targetKurdish: "کیسەڵەکە هێواشە.", imageRequire: require("../../../assets/images/games/kids_playing_ball.png") },
+      { kind: "scene", scene: "playground", prompt: "Find dolphin!", correctId: "dolphin", choices: [{ id: "dolphin", emoji: "🐬", label: "Dolphin" }, { id: "shark", emoji: "🦈", label: "Shark" }] },
+      { kind: "bubble", prompt: "Pop shark!", correctId: "shark", choices: [{ id: "shark", emoji: "🦈", label: "Shark" }, { id: "whale", emoji: "🐋", label: "Whale" }] },
+      { kind: "feed", mascotEmoji: "🐋", prompt: "Feed the whale small fish!", correctId: "fish", choices: [{ id: "fish", emoji: "🐟", label: "Fish" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
+      { kind: "shadow", prompt: "Match the sea animals!", items: [{ id: "dolphin", emoji: "🐬", label: "Dolphin" }, { id: "turtle", emoji: "🐢", label: "Turtle" }] },
+      { kind: "native", kurdishPrompt: "قەرشەکە بدۆزەرەوە", correctId: "shark", choices: [{ id: "shark", emoji: "🦈", label: "Shark" }, { id: "dolphin", emoji: "🐬", label: "Dolphin" }] },
+      { kind: "simon", phrase: "Simon says, pick ocean!", correctId: "ocean", choices: [{ id: "ocean", emoji: "🌊", label: "Ocean" }, { id: "turtle", emoji: "🐢", label: "Turtle" }] },
+      { kind: "train", words: ["The", "whale", "is", "very", "big"], kurdishHint: "نەهەنگەکە زۆر گەورەیە" },
+      { kind: "trick", showEmoji: "🐬", showLabel: "Dolphin", spokenWord: "Dolphin", matches: true },
+      { kind: "treasure", correctId: "turtle", pool: [{ id: "turtle", emoji: "🐢", label: "Turtle" }, { id: "shark", emoji: "🦈", label: "Shark" }] }
     ],
   },
 
@@ -314,8 +410,20 @@ const kidsUnit1: UnitBank = [
         wrong1: "It is a dog.",
         wrong2: "Puppy sleeps.",
         wrong3: "That is a juvenile canine.",
-        explanation: "وەڵامێکی دڵخۆشکەر: 'It is a cute puppy!'",
+        explanation: "وەڵامێکی دڵخۆشکەر: 'It is a cute puppy!'" ,
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The puppy plays.", targetKurdish: "بەچکە سەگەکە یاری دەکات.", imageRequire: require("../../../assets/images/games/kids_hugging.png") },
+      { kind: "scene", scene: "bedroom", prompt: "Find kitten!", correctId: "kitten", choices: [{ id: "kitten", emoji: "🐱", label: "Kitten" }, { id: "puppy", emoji: "🐶", label: "Puppy" }] },
+      { kind: "bubble", prompt: "Pop puppy!", correctId: "puppy", choices: [{ id: "puppy", emoji: "🐶", label: "Puppy" }, { id: "baby", emoji: "👶", label: "Baby" }] },
+      { kind: "feed", mascotEmoji: "👶", prompt: "Give the baby milk!", correctId: "milk", choices: [{ id: "milk", emoji: "🍼", label: "Milk" }, { id: "bone", emoji: "🦴", label: "Bone" }] },
+      { kind: "shadow", prompt: "Match the baby actions!", items: [{ id: "play", emoji: "⚽", label: "Play" }, { id: "sleep", emoji: "💤", label: "Sleep" }] },
+      { kind: "native", kurdishPrompt: "بەچکە پشیلەکە بدۆزەرەوە", correctId: "kitten", choices: [{ id: "kitten", emoji: "🐱", label: "Kitten" }, { id: "baby", emoji: "👶", label: "Baby" }] },
+      { kind: "simon", phrase: "Simon says, pick sleep!", correctId: "sleep", choices: [{ id: "sleep", emoji: "💤", label: "Sleep" }, { id: "play", emoji: "🏀", label: "Play" }] },
+      { kind: "train", words: ["The", "kitten", "sleeps"], kurdishHint: "بەچکە پشیلەکە دەخەوێت" },
+      { kind: "trick", showEmoji: "⚽", showLabel: "Play", spokenWord: "Play", matches: true },
+      { kind: "treasure", correctId: "puppy", pool: [{ id: "puppy", emoji: "🐶", label: "Puppy" }, { id: "kitten", emoji: "🐱", label: "Kitten" }] }
     ],
   },
 
@@ -351,6 +459,18 @@ const kidsUnit1: UnitBank = [
         wrong3: "I desire to observe the striped equine.",
         explanation: "ڕستەیەکی تەواو بڵێ: 'I want to see the zebra!'",
       },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "The giraffe is tall.", targetKurdish: "زەڕافەکە باڵابەرزە.", imageRequire: require("../../../assets/images/games/kids_playing_ball.png") },
+      { kind: "scene", scene: "playground", prompt: "Find giraffe!", correctId: "giraffe", choices: [{ id: "giraffe", emoji: "🦒", label: "Giraffe" }, { id: "zebra", emoji: "🦓", label: "Zebra" }] },
+      { kind: "bubble", prompt: "Pop zebra!", correctId: "zebra", choices: [{ id: "zebra", emoji: "🦓", label: "Zebra" }, { id: "zoo", emoji: "🦁", label: "Zoo" }] },
+      { kind: "feed", mascotEmoji: "🦒", prompt: "Feed the giraffe green leaves!", correctId: "leaves", choices: [{ id: "leaves", emoji: "🌿", label: "Leaves" }, { id: "bone", emoji: "🦴", label: "Bone" }] },
+      { kind: "shadow", prompt: "Match the zoo actions!", items: [{ id: "tall", emoji: "🦒", label: "Tall" }, { id: "look", emoji: "👀", label: "Look" }] },
+      { kind: "native", kurdishPrompt: "کەرەکێوی بدۆزەرەوە", correctId: "zebra", choices: [{ id: "zebra", emoji: "🦓", label: "Zebra" }, { id: "giraffe", emoji: "🦒", label: "Giraffe" }] },
+      { kind: "simon", phrase: "Simon says, look at the giraffe!", correctId: "look", choices: [{ id: "look", emoji: "👀", label: "Look" }, { id: "zoo", emoji: "🎪", label: "Zoo" }] },
+      { kind: "train", words: ["We", "go", "to", "the", "zoo"], kurdishHint: "ئێمە دەچین بۆ باخی ئاژەڵان" },
+      { kind: "trick", showEmoji: "🦒", showLabel: "Giraffe", spokenWord: "Giraffe", matches: true },
+      { kind: "treasure", correctId: "giraffe", pool: [{ id: "giraffe", emoji: "🦒", label: "Giraffe" }, { id: "zebra", emoji: "🦓", label: "Zebra" }] }
     ],
   },
 ];

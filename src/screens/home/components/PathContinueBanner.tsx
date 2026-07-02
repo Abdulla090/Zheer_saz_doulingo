@@ -1,6 +1,6 @@
 import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
 import { useI18n } from "../../../hooks/useI18n";
-import { useProgressStore } from "../../../stores/useProgressStore";
+import { useProgressStore, useCurrentProgress } from "../../../stores/useProgressStore";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import {
   buildLessonRouteForMode,
@@ -27,9 +27,9 @@ export function PathContinueBanner() {
   const { t, locale } = useI18n();
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const pathMode = useSettingsStore((s) => s.pathMode);
-  const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
-  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
-  const kidsNext = useProgressStore((s) => s.kidsNextLessonPathIndex);
+  const streetNext = useCurrentProgress().nextLessonPathIndex;
+  const normalNext = useCurrentProgress().normalNextLessonPathIndex;
+  const kidsNext = useCurrentProgress().kidsNextLessonPathIndex;
   const activeMode = parsePathMode(params.mode, pathMode);
 
   const onContinue = useCallback(() => {

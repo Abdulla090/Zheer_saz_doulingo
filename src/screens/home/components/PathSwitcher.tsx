@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 /**
  * PathSwitcher — Street / Normal / Kids pill with sliding active chip.
  */

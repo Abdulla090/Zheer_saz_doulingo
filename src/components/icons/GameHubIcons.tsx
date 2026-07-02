@@ -1,22 +1,24 @@
-import { HomePalette } from "../ui/ios-liquid-home";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  Bot,
-  BookOpen,
-  Headphones,
-  Link2,
-  ListOrdered,
-  MessagesSquare,
-  Mic,
-  Radio,
-} from "lucide-react-native";
+  RobotIcon,
+  BookOpen02Icon,
+  HeadphonesIcon,
+  Link02Icon,
+  Sorting01Icon,
+  Comment02Icon,
+  Mic01Icon,
+  RadioIcon,
+} from "@hugeicons/core-free-icons";
 import React from "react";
 import { View, type ViewStyle } from "react-native";
 
-const C = HomePalette;
-
-/** Brand-consistent icon wells — avoid per-card rainbow fills */
-const TILE_BLUE = "#E8F0FE";
-const TILE_NAVY = "#EEF2F6";
+// Safely map Tailwind colors from HTML
+const Colors = {
+  primary: "#FF6B4A",
+  secondary: "#0066FF",
+  foreground: "#0F172A",
+  mutedForeground: "#64748B",
+};
 
 type GameIconProps = {
   size?: number;
@@ -24,12 +26,10 @@ type GameIconProps = {
 
 function GameIconTile({
   size,
-  backgroundColor,
   children,
   style,
 }: {
   size: number;
-  backgroundColor: string;
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
@@ -39,8 +39,6 @@ function GameIconTile({
         {
           width: size,
           height: size,
-          borderRadius: Math.round(size * 0.28),
-          backgroundColor,
           alignItems: "center",
           justifyContent: "center",
         },
@@ -53,89 +51,73 @@ function GameIconTile({
 }
 
 export function RolePlayGameIcon({ size = 64 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
-      <MessagesSquare
-        size={glyph}
-        color={C.blue}
-        strokeWidth={2.1}
-        fill={`${C.blue}18`}
-      />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={Comment02Icon} size={glyph} color={Colors.secondary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function OrderWordsGameIcon({ size = 60 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_NAVY}>
-      <ListOrdered size={glyph} color={C.blue} strokeWidth={2.1} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={Sorting01Icon} size={glyph} color={Colors.primary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function PairWordsGameIcon({ size = 60 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
-      <Link2 size={glyph} color={C.blue} strokeWidth={2.1} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={Link02Icon} size={glyph} color={Colors.secondary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function SpeakUpGameIcon({ size = 60 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
-      <Mic size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={Mic01Icon} size={glyph} color={Colors.primary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function AiTeacherGameIcon({ size = 60 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_NAVY}>
-      <Bot size={glyph} color={C.navy} strokeWidth={2.1} fill={`${C.navy}14`} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={RobotIcon} size={glyph} color={Colors.foreground} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function VoiceTutorGameIcon({ size = 64 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile
-      size={size}
-      backgroundColor={TILE_BLUE}
-    >
-      <Radio size={glyph} color={C.blue} strokeWidth={2.1} fill={`${C.blue}18`} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={RadioIcon} size={glyph} color="#FFFFFF" strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function SlangDictionaryGameIcon({ size = 64 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile
-      size={size}
-      backgroundColor={TILE_NAVY}
-    >
-      <BookOpen
-        size={glyph}
-        color={C.navy}
-        strokeWidth={2.1}
-        fill={`${C.navy}12`}
-      />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={BookOpen02Icon} size={glyph} color={Colors.secondary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }
 
 export function PodcastGameIcon({ size = 52 }: GameIconProps) {
-  const glyph = Math.round(size * 0.48);
+  const glyph = Math.round(size * 0.75);
   return (
-    <GameIconTile size={size} backgroundColor={TILE_BLUE}>
-      <Headphones size={glyph} color={C.blue} strokeWidth={2.1} />
+    <GameIconTile size={size}>
+      <HugeiconsIcon icon={HeadphonesIcon} size={glyph} color={Colors.primary} strokeWidth={2.5} />
     </GameIconTile>
   );
 }

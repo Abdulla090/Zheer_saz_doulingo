@@ -1,3 +1,6 @@
+const gracefulFs = require("graceful-fs");
+gracefulFs.gracefulify(require("fs"));
+
 const { getDefaultConfig } = require("expo/metro-config");
 const { FileStore } = require("@expo/metro-config/build/file-store");
 const { DiskCacheManager } = require("@expo/metro-file-map");
@@ -24,8 +27,7 @@ if (!fs.existsSync(expoTypesDir)) {
 
 const config = getDefaultConfig(projectRoot);
 
-// Windows: limit parallel file handles (EMFILE)
-config.maxWorkers = isWindows ? 1 : 2;
+// Windows: EMFILE fix achieved via watchFolder exclusions
 config.fileMapCacheDirectory = projectCacheRoot;
 config.hasteMapCacheDirectory = projectCacheRoot;
 config.cacheManagerFactory = (factoryParams) =>
@@ -41,6 +43,9 @@ config.watcher = {
     /[/\\]node_modules[/\\]\.babel-preset-expo-[^/\\]+[/\\].*/,
     /[/\\]node_modules[/\\]\.cache[/\\].*/,
     /[/\\]\.metro-cache[/\\].*/,
+    /[/\\]android[/\\].*/,
+    /[/\\]ios[/\\].*/,
+    /[/\\]dist[/\\].*/,
   ],
 };
 
@@ -64,6 +69,34 @@ config.resolver = {
   assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
   sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
+    // Redirect lucide-react-native ESM files → single CJS barrel to avoid EMFILE (too many open files on Windows)
+    if (
+      moduleName === "lucide-react-native" ||
+      moduleName.startsWith("lucide-react-native/")
+    ) {
+      return {
+        type: "sourceFile",
+        filePath: path.resolve(projectRoot, "node_modules/lucide-react-native/dist/cjs/lucide-react-native.js"),
+      };
+    }
+    if (
+      moduleName === "@hugeicons/react-native" ||
+      moduleName.startsWith("@hugeicons/react-native/")
+    ) {
+      return {
+        type: "sourceFile",
+        filePath: path.resolve(projectRoot, "node_modules/@hugeicons/react-native/dist/cjs/index.js"),
+      };
+    }
+    if (
+      moduleName === "@hugeicons/core-free-icons" ||
+      moduleName.startsWith("@hugeicons/core-free-icons/")
+    ) {
+      return {
+        type: "sourceFile",
+        filePath: path.resolve(projectRoot, "node_modules/@hugeicons/core-free-icons/dist/cjs/index.js"),
+      };
+    }
     if (
       platform === "web" &&
       moduleName.includes(

@@ -1,22 +1,31 @@
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.app.settings";
+const STORAGE_KEY = "twino.app.settings";
 
 type PathMode = "street" | "normal" | "kids";
+export type AppTheme = "light" | "dark" | "system";
 
 interface SettingsState {
   ready: boolean;
   hapticsEnabled: boolean;
   soundsEnabled: boolean;
   pathMode: PathMode;
+  theme: AppTheme;
   nativeLang: string;
   targetLang: string;
+  userName: string;
+  userAge: string;
+  englishLevel: number;
   setHapticsEnabled: (v: boolean) => void;
   setSoundsEnabled: (v: boolean) => void;
   setPathMode: (mode: PathMode) => void;
+  setTheme: (theme: AppTheme) => void;
   setNativeLang: (lang: string) => void;
   setTargetLang: (lang: string) => void;
+  setUserName: (name: string) => void;
+  setUserAge: (age: string) => void;
+  setEnglishLevel: (level: number) => void;
 }
 
 function persist(partial: Partial<SettingsState>) {
@@ -39,8 +48,12 @@ const initialSettings = (() => {
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: "normal" as PathMode,
+      theme: "light" as AppTheme,
       nativeLang: "ku",
       targetLang: "en",
+      userName: "",
+      userAge: "",
+      englishLevel: 5,
     };
   }
   try {
@@ -53,16 +66,24 @@ const initialSettings = (() => {
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
       pathMode: savedMode,
+      theme: (parsed.theme === "dark" || parsed.theme === "system" ? parsed.theme : "light") as AppTheme,
       nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
       targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
+      userName: typeof parsed.userName === "string" ? parsed.userName : "",
+      userAge: typeof parsed.userAge === "string" ? parsed.userAge : "",
+      englishLevel: typeof parsed.englishLevel === "number" ? parsed.englishLevel : 5,
     };
   } catch {
     return {
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: "normal" as PathMode,
+      theme: "light" as AppTheme,
       nativeLang: "ku",
       targetLang: "en",
+      userName: "",
+      userAge: "",
+      englishLevel: 5,
     };
   }
 })();
@@ -86,6 +107,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     persist({ pathMode });
   },
 
+  setTheme: (theme) => {
+    set({ theme });
+    persist({ theme });
+  },
+
   setNativeLang: (nativeLang) => {
     set({ nativeLang });
     persist({ nativeLang });
@@ -94,6 +120,21 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setTargetLang: (targetLang) => {
     set({ targetLang });
     persist({ targetLang });
+  },
+
+  setUserName: (userName) => {
+    set({ userName });
+    persist({ userName });
+  },
+
+  setUserAge: (userAge) => {
+    set({ userAge });
+    persist({ userAge });
+  },
+
+  setEnglishLevel: (englishLevel) => {
+    set({ englishLevel });
+    persist({ englishLevel });
   },
 }));
 

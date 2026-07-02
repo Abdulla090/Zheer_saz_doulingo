@@ -8,23 +8,18 @@ import React, { memo, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Line } from "react-native-svg";
 import { AppText } from "../../../components/ui/AppText";
-
-const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { L, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,
-  LightSurfaceCard,
   LightWordTile,
 } from "./lesson-light-primitives";
 import { GameHeader, GameRoot } from "./GameAnimatedShell";
@@ -48,19 +43,6 @@ function shuffleSeeded<T>(arr: T[], seed: number): T[] {
   return a;
 }
 
-function pairSeed(pairs: PairMatchQuestion["pairs"]): number {
-  let h = 0;
-  const key = plans_key(pairs);
-  for (let i = 0; i < key.length; i++) {
-    h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
-function plans_key(pairs: PairMatchQuestion["pairs"]): string {
-  return pairs.map((p) => `${p.kurdish}|${p.english}`).join(";");
-}
-
 const MatchChip = memo(function MatchChip({
   label,
   state,
@@ -68,7 +50,7 @@ const MatchChip = memo(function MatchChip({
   matched,
   rtl,
   forceLatinFont,
-  onLayoutCenter,
+  isKids,
 }: {
   label: string;
   state: TileState;
@@ -76,12 +58,12 @@ const MatchChip = memo(function MatchChip({
   matched: boolean;
   rtl?: boolean;
   forceLatinFont?: boolean;
-  onLayoutCenter?: (y: number) => void;
+  isKids?: boolean;
 }) {
   const shakeX = useSharedValue(0);
   const wrapStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
-    opacity: matched ? 0.5 : 1,
+    opacity: matched ? 0.85 : 1,
   }));
 
   React.useEffect(() => {
@@ -95,15 +77,7 @@ const MatchChip = memo(function MatchChip({
   }, [state, shakeX]);
 
   return (
-    <Animated.View
-      style={[wrapStyle, s.chipWrap]}
-      onLayout={(e) => {
-        if (onLayoutCenter) {
-          const { y, height } = e.nativeEvent.layout;
-          onLayoutCenter(y + height / 2);
-        }
-      }}
-    >
+    <Animated.View style={[wrapStyle, s.chipWrap]}>
       <LightWordTile
         label={label}
         state={state}
@@ -111,55 +85,20 @@ const MatchChip = memo(function MatchChip({
         disabled={matched}
         rtl={rtl}
         forceLatinFont={forceLatinFont}
-        wide
         wrapLabel
+        centerLabel
+        isKids={isKids}
+        fontSize={isKids ? 19 : 17}
+        style={s.pairTile}
       />
     </Animated.View>
   );
 });
 
-function WireLine({
-  ly,
-  ry,
-}: {
-  ly: number;
-  ry: number;
-}) {
-  const { isKu } = useI18n();
-  const progress = useSharedValue(0);
-  React.useEffect(() => {
-    progress.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
-  }, []);
-
-  const lx = isKu ? 40 : 0;
-  const rx = isKu ? 0 : 40;
-
-  const len = Math.sqrt((rx - lx) ** 2 + (ry - ly) ** 2);
-
-  const animatedProps = useAnimatedProps(() => {
-    return {
-      strokeDashoffset: len - len * progress.value,
-    };
-  });
-
-  return (
-    <AnimatedLine
-      x1={lx}
-      y1={ly}
-      x2={rx}
-      y2={ry}
-      stroke={L.blue}
-      strokeWidth={3}
-      strokeLinecap="round"
-      strokeDasharray={len}
-      animatedProps={animatedProps}
-    />
-  );
-}
-
-export default function PairMatchGame({ question, onAnswer }: Props) {
+export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
-  const seed = useMemo(() => pairSeed(question.pairs), [question.pairs]);
+  const isKids = pathMode === "kids";
+  const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
   const left = useMemo(() =>
     shuffleSeeded(
       question.pairs.map((p) => p.kurdish),
@@ -184,10 +123,6 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   const [wrongR, setWrongR] = useState<string | null>(null);
   const firedRef = useRef(false);
 
-  const leftYs = useRef<{ [k: string]: number }>({});
-  const rightYs = useRef<{ [k: string]: number }>({});
-  const [wires, setWires] = useState<Array<{ id: string; ly: number; ry: number }>>([]);
-
   React.useEffect(() => {
     selLRef.current = null;
     selRRef.current = null;
@@ -197,15 +132,12 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
     setWrongL(null);
     setWrongR(null);
     firedRef.current = false;
-    leftYs.current = {};
-    rightYs.current = {};
-    setWires([]);
   }, [question]);
+
   const total = question.pairs.length;
   const matchedCount = matched.size / 2;
 
   const isLocked = wrongL !== null || wrongR !== null;
-  const awaitingPair = (selL !== null) !== (selR !== null);
 
   const tryMatch = (pendL: string | null, pendR: string | null) => {
     if (!pendL || !pendR) return;
@@ -221,11 +153,6 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         }
         return next;
       });
-      const ly = leftYs.current[pendL];
-      const ry = rightYs.current[pendR];
-      if (ly !== undefined && ry !== undefined) {
-        setWires((w) => [...w, { id: `${pendL}-${pendR}`, ly, ry }]);
-      }
       setSelL(null);
       setSelR(null);
       selLRef.current = null;
@@ -289,9 +216,7 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
   return (
     <GameRoot style={s.root}>
       <GameHeader>
-        <LightGameHeading
-          title={t("lessons.pairWords")}
-        />
+        <LightGameHeading title={t("lessons.pairWords")} />
       </GameHeader>
 
       <View style={[s.progressRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
@@ -311,59 +236,46 @@ export default function PairMatchGame({ question, onAnswer }: Props) {
         </AppText>
       </View>
 
-      <LightSurfaceCard style={s.boardCard} contentStyle={{ flex: 1 }}>
-        <View style={[s.boardScroll, s.boardScrollContent]}>
-          <View style={[s.colLabels, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={[LightType.label, s.colLabel, { textAlign: isKu ? "left" : "right" }]} forceKurdishFont>
-              کوردی
-            </AppText>
-            <View style={s.colDivider} />
-            <AppText style={[LightType.label, s.colLabel, { textAlign: isKu ? "right" : "left" }]} forceLatinFont>English</AppText>
+      <View style={s.boardArea}>
+        <View style={[s.colLabels, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <AppText style={[LightType.label, s.colLabel]} forceKurdishFont>
+            کوردی
+          </AppText>
+          <AppText style={[LightType.label, s.colLabel]} forceLatinFont>
+            English
+          </AppText>
+        </View>
+
+        <View style={[s.board, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={s.column}>
+            {left.map((lw, i) => (
+              <MatchChip
+                key={`${lw}-${i}`}
+                label={lw}
+                state={lState(lw)}
+                onPress={() => handleL(lw)}
+                matched={matched.has(lw)}
+                rtl
+                isKids={isKids}
+              />
+            ))}
           </View>
 
-          <View style={[s.board, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <View style={s.column}>
-              {left.map((lw, i) => (
-                <MatchChip
-                  key={`${lw}-${i}`}
-                  label={lw}
-                  state={lState(lw)}
-                  onPress={() => handleL(lw)}
-                  matched={matched.has(lw)}
-                  rtl
-                  onLayoutCenter={(y) => {
-                    leftYs.current[lw] = y;
-                  }}
-                />
-              ))}
-            </View>
-
-            <View style={s.wireContainer}>
-              <Svg style={StyleSheet.absoluteFill}>
-                {wires.map((w) => (
-                  <WireLine key={w.id} ly={w.ly} ry={w.ry} />
-                ))}
-              </Svg>
-            </View>
-
-            <View style={s.column}>
-              {right.map((rw, i) => (
-                <MatchChip
-                  key={`${rw}-${i}`}
-                  label={rw}
-                  state={rState(rw)}
-                  onPress={() => handleR(rw)}
-                  matched={matched.has(rw)}
-                  forceLatinFont
-                  onLayoutCenter={(y) => {
-                    rightYs.current[rw] = y;
-                  }}
-                />
-              ))}
-            </View>
+          <View style={s.column}>
+            {right.map((rw, i) => (
+              <MatchChip
+                key={`${rw}-${i}`}
+                label={rw}
+                state={rState(rw)}
+                onPress={() => handleR(rw)}
+                matched={matched.has(rw)}
+                forceLatinFont
+                isKids={isKids}
+              />
+            ))}
           </View>
         </View>
-      </LightSurfaceCard>
+      </View>
 
       <View style={s.bottomSpacer} />
     </GameRoot>
@@ -379,8 +291,8 @@ const s = StyleSheet.create({
     gap: 10,
   },
   chipWrap: {
-    width: "100%",
-    alignSelf: "stretch",
+    width: 132,
+    alignSelf: "center",
   },
   progressRow: {
     flexDirection: "row",
@@ -410,64 +322,42 @@ const s = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     textAlign: "right",
   },
-  boardCard: {
+  boardArea: {
     flex: 1,
     minHeight: 0,
-    padding: 14,
-  },
-  boardScroll: {
-    flex: 1,
-  },
-  boardScrollContent: {
-    flexGrow: 1,
-    paddingBottom: 4,
+    backgroundColor: "transparent",
+    paddingHorizontal: 2,
+    paddingTop: 4,
   },
   colLabels: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
-    gap: 12,
+    gap: 40,
   },
   colLabel: {
-    flex: 1,
+    width: 132,
+    textAlign: "center",
   },
-  colDivider: { width: 1 },
   board: {
     flexDirection: "row",
-    gap: 10,
+    justifyContent: "center",
+    gap: 36,
     alignItems: "flex-start",
+    flex: 1,
   },
   column: {
-    flex: 1,
+    width: 132,
     gap: 8,
-    justifyContent: "flex-start",
-  },
-  wireContainer: {
-    width: 40,
-    alignSelf: "stretch",
-    position: "relative",
-  },
-  hintRow: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: L.border,
   },
-  hintDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: L.blue,
-  },
-  hintText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: L.gray,
-    fontFamily: "DINNextRoundedMedium",
+  pairTile: {
+    width: 132,
+    minHeight: 72,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 24,
   },
   bottomSpacer: {
     flexGrow: 0,

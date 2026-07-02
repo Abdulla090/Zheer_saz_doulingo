@@ -18,13 +18,10 @@ import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { useRouter } from "expo-router";
-import {
-  ArrowLeft,
-  Briefcase,
-  Coffee,
-  Rocket,
-  Store,
-} from "lucide-react-native";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -41,14 +38,20 @@ import * as Speech from "expo-speech";
 import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
 
 const C = HomePalette;
-const { width: SW } = Dimensions.get("window");
+
+type HugeiconsIconData = {
+  name: string;
+  paths: string[];
+  width: number;
+  height: number;
+};
 
 type Scenario = {
   id: string;
   title: string;
   titleKu: string;
   subtitleKu: string;
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  icon: HugeiconsIconData;
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
@@ -61,7 +64,7 @@ const SCENARIOS: Scenario[] = [
     title: "Coffee Shop",
     titleKu: "قاوەخانەی پاریس",
     subtitleKu: "داواکردنی قاوە و کرۆسان بە ئینگلیزی",
-    icon: Coffee,
+    icon: Coffee01Icon,
     initialMessage:
       "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
     voicePitch: 0.95,
@@ -73,7 +76,7 @@ const SCENARIOS: Scenario[] = [
     title: "Mars Flight",
     titleKu: "گەشتی مەریخ",
     subtitleKu: "گفتوگۆ لەسەر کێشی جانتاکەت",
-    icon: Rocket,
+    icon: Rocket01Icon,
     initialMessage:
       "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
     voicePitch: 1.25,
@@ -85,7 +88,7 @@ const SCENARIOS: Scenario[] = [
     title: "Job Interview",
     titleKu: "چاوپێکەوتنی کار",
     subtitleKu: "چاوپێکەوتن بۆ ئەندازیاری AI",
-    icon: Briefcase,
+    icon: Briefcase01Icon,
     initialMessage:
       "Thank you for joining us. Could you describe your experience optimizing small language models?",
     voicePitch: 1.1,
@@ -97,7 +100,7 @@ const SCENARIOS: Scenario[] = [
     title: "Bazaar Bargain",
     titleKu: "بازاڕی گەورە",
     subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش",
-    icon: Store,
+    icon: Store01Icon,
     initialMessage:
       "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
     voicePitch: 0.85,
@@ -370,7 +373,7 @@ export function RolePlayScreen() {
       <View style={styles.flex}>
         <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-            <ArrowLeft size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
           </HomeLiquidPill>
           <View style={[styles.headerCenter, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={40} />
@@ -410,7 +413,7 @@ export function RolePlayScreen() {
                         setActiveScenario(sc);
                       }}
                       scaleDown={0.98}
-                      style={{ width: (SW - 52) / 2 }}
+                      style={{ width: "48%" }}
                     >
                       <HomeLiquidCard
                         interactive
@@ -435,7 +438,7 @@ export function RolePlayScreen() {
                             { backgroundColor: sc.accent + "18" },
                           ]}
                         >
-                          <ScIcon size={24} color={sc.accent} strokeWidth={2} />
+                          <HugeiconsIcon icon={ScIcon} size={24} color={sc.accent} strokeWidth={2.0} />
                         </View>
                         <AppText
                           style={[styles.scenarioName, sel && { color: sc.accent }]}
@@ -456,7 +459,7 @@ export function RolePlayScreen() {
                 contentStyle={styles.heroInner}
               >
                 <View style={[styles.heroIconRing, { borderColor: accent + "40" }]}>
-                  <Icon size={44} color={accent} strokeWidth={1.8} />
+                  <HugeiconsIcon icon={Icon} size={44} color={accent} strokeWidth={1.8} />
                 </View>
                 <AppText style={styles.heroTitle} forceKurdishFont>
                   {activeScenario.titleKu}
@@ -474,7 +477,7 @@ export function RolePlayScreen() {
           ) : (
             <View style={styles.voiceOnlyContainer}>
               <View style={[styles.activeChip, { borderColor: accent + "35", alignSelf: "center", marginBottom: 12, flexDirection: isKu ? "row-reverse" : "row" }]}>
-                <Icon size={16} color={accent} strokeWidth={2.5} />
+                <HugeiconsIcon icon={Icon} size={16} color={accent} strokeWidth={2.5} />
                 <AppText style={[styles.activeChipText, { color: accent, fontSize: 14 }]} forceLatinFont latinRole="bold">
                   {activeScenario.title}
                 </AppText>
@@ -484,7 +487,7 @@ export function RolePlayScreen() {
                 <View style={[styles.orbPulseRing, { borderColor: accent + "30" }]} />
                 <View style={[styles.orbPulseRing2, { borderColor: accent + "15" }]} />
                 <View style={[styles.voiceOrb, { backgroundColor: accent }]}>
-                  <Icon size={44} color="#FFF" strokeWidth={2} />
+                  <HugeiconsIcon icon={Icon} size={44} color="#FFF" strokeWidth={2.0} />
                 </View>
               </View>
 
@@ -568,7 +571,9 @@ const styles = StyleSheet.create({
   scenarioGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    width: "100%",
+    justifyContent: "space-between",
+    rowGap: 12,
     marginBottom: 16,
   },
   scenarioInner: {

@@ -3,9 +3,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AnswerTier } from "../utils/answer-tier";
-import type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";
-
-export type { KidsChoice, KidsGameStep, KidsSceneKey } from "./kids-games";
 
 export type VoiceQuestion = {
   type: "voice";
@@ -27,7 +24,7 @@ export type SentenceBuilderQuestion = {
 export type MultipleChoiceQuestion = {
   type: "multiple_choice";
   prompt: string;
-  promptLang: "ku" | "en";
+  promptLang: string;
   correctAnswer: string;
   options: string[];
   xp: number;
@@ -59,24 +56,52 @@ export type ConversationPickQuestion = {
   xp: number;
 };
 
-/** Kids path — scene, bubbles, feed, shadow, pick, yes/no, treasure chest */
+export type ImagePairMatchQuestion = {
+  type: "image_pair_match";
+  pairs: { english: string; kurdish: string; image: any }[];
+  xp: number;
+};
+
+export type ImageMultipleChoiceQuestion = {
+  type: "image_multiple_choice";
+  prompt: string;
+  correctAnswer: string;
+  image: any;
+  options: string[];
+  xp: number;
+};
+
+export type MemoryFlipQuestion = {
+  type: "memory_flip";
+  pairs: { english: string; kurdish: string; image: any }[];
+  xp: number;
+};
+
+export type KidsChoice = {
+  id: string;
+  emoji: string;
+  label: string;
+  kurdishLabel?: string;
+  arabicLabel?: string;
+};
+
 export type KidsPlayQuestion = {
   type: "kids_play";
+  xp: number;
   variant: "scene" | "bubble" | "feed" | "shadow" | "pick" | "yes_no" | "treasure";
   prompt: string;
-  promptLang?: "en" | "ku";
-  scene?: KidsSceneKey;
-  mascotEmoji?: string;
+  promptLang: string;
   correctId: string;
   choices: KidsChoice[];
+  scene?: string;
+  mascotEmoji?: string;
+  shadowSlotIds?: string[];
   shownEmoji?: string;
   shownLabel?: string;
   spokenWord?: string;
   matches?: boolean;
-  shadowSlotIds?: string[];
   treasureRevealEmoji?: string;
   treasureRevealLabel?: string;
-  xp: number;
 };
 
 export type GameQuestion =
@@ -86,6 +111,9 @@ export type GameQuestion =
   | PairMatchQuestion
   | FillBlankQuestion
   | ConversationPickQuestion
+  | ImagePairMatchQuestion
+  | ImageMultipleChoiceQuestion
+  | MemoryFlipQuestion
   | KidsPlayQuestion;
 
 // ── ONE lesson's worth of content (unique per dot) ────────────────────────────
@@ -94,9 +122,9 @@ export type LessonBank = {
   topicKu: string;         // Kurdish, e.g. "سڵاوی سەرەکی"
   topicAr?: string;        // Arabic topic
   words:         { english: string; kurdish: string; arabic?: string }[];
-  voices:        { prompt: string; target: string; targetKurdish: string; targetArabic?: string }[];
+  voices:        { prompt: string; target: string; targetKurdish: string; targetArabic?: string; promptAr?: string }[];
   sentences:     { english: string[]; kurdish: string; arabic?: string }[];
-  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string]; arabicHint?: string }[];
+  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string]; arabicHint?: string; arabicParts?: [string, string]; arabicAnswer?: string; arabicWrongs?: [string, string, string] }[];
   conversations: {
     situation:   string;
     theyAsk:     string;
@@ -105,9 +133,15 @@ export type LessonBank = {
     wrong2:      string;
     wrong3:      string;
     explanation: string;
+    situationAr?: string;
+    explanationAr?: string;
+    theyAskAr?:   string;
+    correctAr?:   string;
+    wrong1Ar?:    string;
+    wrong2Ar?:    string;
+    wrong3Ar?:    string;
   }[];
-  /** When set, kids mode runs this 10-step interactive flow instead of the generic mix. */
-  kidsGames?: KidsGameStep[];
+  kidsGames?: any;
 };
 
 // ── A full unit = 10 unique lesson banks ─────────────────────────────────────

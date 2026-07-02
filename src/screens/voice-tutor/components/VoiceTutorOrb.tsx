@@ -1,5 +1,5 @@
 /**
- * @deprecated Prefer MicCaptureOrb + PingoMascot on VoiceTutorScreen.
+ * @deprecated Prefer MicCaptureOrb + TwinoMascot on VoiceTutorScreen.
  * Brand-colored pulse orb (no dark-mode AI sphere).
  */
 

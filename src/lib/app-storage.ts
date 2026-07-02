@@ -20,7 +20,7 @@ function getMmkv(): MmkvInstance | null {
     const { createMMKV } = require("react-native-mmkv") as {
       createMMKV: (opts: { id: string }) => MmkvInstance;
     };
-    mmkv = createMMKV({ id: "phingo-app" });
+    mmkv = createMMKV({ id: "twino-app" });
     return mmkv;
   } catch (error) {
     mmkvUnavailable = true;

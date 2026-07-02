@@ -22,7 +22,7 @@ function JsTabsLayoutInner() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: "#2B59F3",
+        tabBarActiveTintColor: "#000000",
         tabBarInactiveTintColor: "#8E95A3",
         animation: "none",
         tabBarBackground: () => (
@@ -50,8 +50,8 @@ function JsTabsLayoutInner() {
         name="subscription"
         options={{ href: ENABLE_SHOP ? undefined : null }}
       />
-      <Tabs.Screen name="dashboard" />
       <Tabs.Screen name="feed" />
+      <Tabs.Screen name="dashboard" />
       <Tabs.Screen name="more" />
     </Tabs>
   );

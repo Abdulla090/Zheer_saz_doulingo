@@ -2,7 +2,7 @@ import type { LessonPathMode } from "../data/lesson-content";
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.app.progress";
+const STORAGE_KEY = "twino.app.progress";
 const DAILY_GOAL_XP = 15;
 
 export type LastActivity =
@@ -20,12 +20,12 @@ export type LastActivity =
     };
 
 export type ProgressSnapshot = {
-  /** Street Kurdish path — next lesson path index (0-based). */
-  nextLessonPathIndex: number;
-  /** Normal English path — next lesson path index (0-based). */
-  normalNextLessonPathIndex: number;
-  /** Kids English path — next lesson path index (0-based). */
-  kidsNextLessonPathIndex: number;
+  /** Map of "{source}-{target}" to their street path index */
+  pathIndexes: Record<string, number>;
+  /** Map of "{source}-{target}" to their normal path index */
+  normalPathIndexes: Record<string, number>;
+  /** Map of "{source}-{target}" to their kids path index */
+  kidsPathIndexes: Record<string, number>;
   totalXp: number;
   dailyXp: number;
   dailyGoalXp: number;
@@ -35,9 +35,9 @@ export type ProgressSnapshot = {
 };
 
 const DEFAULT_PROGRESS: ProgressSnapshot = {
-  nextLessonPathIndex: 0,
-  normalNextLessonPathIndex: 0,
-  kidsNextLessonPathIndex: 0,
+  pathIndexes: {},
+  normalPathIndexes: {},
+  kidsPathIndexes: {},
   totalXp: 0,
   dailyXp: 0,
   dailyGoalXp: DAILY_GOAL_XP,
@@ -101,6 +101,12 @@ function persistProgress(state: ProgressSnapshot) {
   }
 }
 
+import { migrateProgress } from "../lib/migrate-progress";
+import { useLocaleStore } from "./useLocaleStore";
+
+// Run migration before initialization
+migrateProgress();
+
 const savedRaw = appStorage.getItemSync(STORAGE_KEY);
 const initialProgress: ProgressSnapshot = (() => {
   if (!savedRaw) return DEFAULT_PROGRESS;
@@ -109,10 +115,9 @@ const initialProgress: ProgressSnapshot = (() => {
     const merged: ProgressSnapshot = {
       ...DEFAULT_PROGRESS,
       ...parsed,
-      normalNextLessonPathIndex:
-        parsed.normalNextLessonPathIndex ?? DEFAULT_PROGRESS.normalNextLessonPathIndex,
-      kidsNextLessonPathIndex:
-        parsed.kidsNextLessonPathIndex ?? DEFAULT_PROGRESS.kidsNextLessonPathIndex,
+      pathIndexes: parsed.pathIndexes ?? DEFAULT_PROGRESS.pathIndexes,
+      normalPathIndexes: parsed.normalPathIndexes ?? DEFAULT_PROGRESS.normalPathIndexes,
+      kidsPathIndexes: parsed.kidsPathIndexes ?? DEFAULT_PROGRESS.kidsPathIndexes,
       dailyGoalXp: DAILY_GOAL_XP,
     };
     merged.dailyXp = rollDailyXp(merged.dailyXp, merged.lastActiveDate);
@@ -143,24 +148,35 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
       cur.streakDays,
     );
     const dailyXp = rollDailyXp(cur.dailyXp, cur.lastActiveDate) + xpEarned;
+    
+    // Get current language pair
+    const localeState = useLocaleStore.getState();
+    const langPair = `${localeState.selectedSourceLanguage}-${localeState.selectedTargetLanguage}`;
 
-    const nextLessonPathIndex =
-      mode === "street" && pathIndex >= cur.nextLessonPathIndex
+    const currentStreetIndex = cur.pathIndexes[langPair] || 0;
+    const currentNormalIndex = cur.normalPathIndexes[langPair] || 0;
+    const currentKidsIndex = cur.kidsPathIndexes[langPair] || 0;
+
+    const nextStreetIndex =
+      mode === "street" && pathIndex >= currentStreetIndex
         ? pathIndex + 1
-        : cur.nextLessonPathIndex;
-    const normalNextLessonPathIndex =
-      mode === "normal" && pathIndex >= cur.normalNextLessonPathIndex
+        : currentStreetIndex;
+        
+    const nextNormalIndex =
+      mode === "normal" && pathIndex >= currentNormalIndex
         ? pathIndex + 1
-        : cur.normalNextLessonPathIndex;
-    const kidsNextLessonPathIndex =
-      mode === "kids" && pathIndex >= cur.kidsNextLessonPathIndex
+        : currentNormalIndex;
+        
+    const nextKidsIndex =
+      mode === "kids" && pathIndex >= currentKidsIndex
         ? pathIndex + 1
-        : cur.kidsNextLessonPathIndex;
+        : currentKidsIndex;
 
     const next: ProgressSnapshot = {
-      nextLessonPathIndex,
-      normalNextLessonPathIndex,
-      kidsNextLessonPathIndex,
+      ...cur,
+      pathIndexes: { ...cur.pathIndexes, [langPair]: nextStreetIndex },
+      normalPathIndexes: { ...cur.normalPathIndexes, [langPair]: nextNormalIndex },
+      kidsPathIndexes: { ...cur.kidsPathIndexes, [langPair]: nextKidsIndex },
       totalXp: cur.totalXp + xpEarned,
       dailyXp,
       dailyGoalXp: DAILY_GOAL_XP,
@@ -225,4 +241,32 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     persistProgress(DEFAULT_PROGRESS);
   },
 }));
+
+export function useCurrentProgress() {
+  const localeState = useLocaleStore();
+  const langPair = `${localeState.selectedSourceLanguage}-${localeState.selectedTargetLanguage}`;
+  
+  const pathIndexes = useProgressStore((s) => s.pathIndexes);
+  const normalPathIndexes = useProgressStore((s) => s.normalPathIndexes);
+  const kidsPathIndexes = useProgressStore((s) => s.kidsPathIndexes);
+
+  return {
+    nextLessonPathIndex: pathIndexes[langPair] || 0,
+    normalNextLessonPathIndex: normalPathIndexes[langPair] || 0,
+    kidsNextLessonPathIndex: kidsPathIndexes[langPair] || 0,
+  };
+}
+
+export function getCurrentProgress() {
+  const localeState = useLocaleStore.getState();
+  const langPair = `${localeState.selectedSourceLanguage}-${localeState.selectedTargetLanguage}`;
+  
+  const snap = useProgressStore.getState();
+
+  return {
+    nextLessonPathIndex: snap.pathIndexes[langPair] || 0,
+    normalNextLessonPathIndex: snap.normalPathIndexes[langPair] || 0,
+    kidsNextLessonPathIndex: snap.kidsPathIndexes[langPair] || 0,
+  };
+}
 

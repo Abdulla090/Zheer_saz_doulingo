@@ -5,7 +5,8 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useMemo, useState, useRef } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View, TouchableOpacity, NativeSyntheticEvent, NativeScrollEvent, ScrollView, I18nManager } from "react-native";
-import { ArrowRight } from "lucide-react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { OnboardingSlide, type OnboardingSlideModel } from "./components/OnboardingSlide";
 import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
@@ -38,22 +39,22 @@ export function OnboardingFlow() {
   const slides = useMemo((): OnboardingSlideModel[] => {
     const meta: Record<
       (typeof STEP_IDS)[number],
-      { title: string; subtitle: string; icon: React.ElementType }
+      { title: string; subtitle: string; icon: any }
     > = {
       meet_twin: {
         title: "Meet Your AI Twin",
         subtitle: "Practice real conversations with an AI partner that adapts to your level, goals, and learning style.",
-        icon: ArrowRight,
+        icon: ArrowRight01Icon,
       },
       learn_conversation: {
         title: "Learn Through Conversation",
         subtitle: "Speak naturally, receive instant corrections, and build confidence every day.",
-        icon: ArrowRight,
+        icon: ArrowRight01Icon,
       },
       grow_every_day: {
         title: "Grow Every Day",
         subtitle: "Earn rewards, unlock new skills, and watch your language world expand with every conversation.",
-        icon: ArrowRight,
+        icon: ArrowRight01Icon,
       },
     };
 
@@ -166,7 +167,7 @@ export function OnboardingFlow() {
             <AppText style={styles.nextButtonText} forceLatinFont latinRole="bold">
               {index === 0 ? "Get Started" : (isLast ? "Start Learning" : "Continue")}
             </AppText>
-            <ArrowRight size={20} color="#FFFFFF" style={styles.arrowIcon} />
+            <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" style={styles.arrowIcon} />
           </View>
         </TouchableOpacity>
       </View>

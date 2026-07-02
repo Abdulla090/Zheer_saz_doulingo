@@ -8,7 +8,7 @@ import {
   type SectionTheme,
 } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "../../stores/useProgressStore";
+import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -17,7 +17,9 @@ import {
 import { useI18n } from "../../hooks/useI18n";
 import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { AppText } from "../../components/ui/AppText";
+import { PressableScale } from "../../components/animations/PressableScale";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -46,7 +48,7 @@ export const StreetEnglishPathScreen = () => {
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
-  const nextLessonPathIndex = useProgressStore((s) => s.nextLessonPathIndex);
+  const nextLessonPathIndex = useCurrentProgress().nextLessonPathIndex;
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     "green",
@@ -61,6 +63,62 @@ export const StreetEnglishPathScreen = () => {
       ),
     [locale, nextLessonPathIndex],
   );
+
+  // Find the unit index of the user's active/current lesson
+  const currentUnitIndex = useMemo(() => {
+    const idx = localizedSections.findIndex((section) =>
+      section.data.some((item) => item.isCurrent)
+    );
+    return idx !== -1 ? idx : 0;
+  }, [localizedSections]);
+
+  const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
+    Math.max(2, currentUnitIndex + 1)
+  );
+
+  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  useEffect(() => {
+    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
+  }, [currentUnitIndex]);
+
+  const visibleSections = useMemo(
+    () => localizedSections.slice(0, visibleUnitsCount),
+    [localizedSections, visibleUnitsCount]
+  );
+
+  const hasMore = visibleUnitsCount < localizedSections.length;
+
+  const renderFooter = useCallback(() => {
+    if (hasMore) {
+      return (
+        <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+          <PressableScale
+            style={{
+              paddingVertical: 14,
+              paddingHorizontal: 28,
+              backgroundColor: "#0F172A",
+              borderRadius: 20,
+              borderBottomWidth: 4,
+              borderBottomColor: "#020617",
+            }}
+            onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
+          >
+            <AppText
+              style={{
+                color: "#FFFFFF",
+                fontSize: 16,
+                fontFamily: "DINNextRoundedBold",
+              }}
+              forceLatinFont
+            >
+              See More Units
+            </AppText>
+          </PressableScale>
+        </View>
+      );
+    }
+    return <ListFooter />;
+  }, [hasMore]);
 
   usePathScrollAfterLesson("street", localizedSections, listRef);
 
@@ -157,7 +215,7 @@ export const StreetEnglishPathScreen = () => {
           pathMode="street"
         />
         <SectionList<LessonListItem, SectionDataItem>
-          sections={localizedSections}
+          sections={visibleSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ref={listRef}
@@ -167,7 +225,7 @@ export const StreetEnglishPathScreen = () => {
           onScroll={onScroll}
           scrollEventThrottle={16}
           style={styles.list}
-          ListFooterComponent={ListFooter}
+          ListFooterComponent={renderFooter}
           contentContainerStyle={[
             styles.listContainer,
             { paddingBottom: tabBarScrollPadding(insets.bottom) },

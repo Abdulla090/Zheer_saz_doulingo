@@ -1,8 +1,8 @@
-import { PingoMascot, type PingoPose } from "../../../components/mascot/PingoMascot";
+import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMascot";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-const UNIT_POSES: PingoPose[] = ["wave", "happy", "headset"];
+const UNIT_POSES: TwinoPose[] = ["wave", "happy", "headset"];
 
 export const KIDS_CURVE_MASCOT_SIZE = 116;
 /** Show mascot on this lesson row (under the mic node). */
@@ -45,7 +45,7 @@ export function KidsPathCurveMascot({
           { transform: [{ translateX: offsetX }], width: size, height: size },
         ]}
       >
-        <PingoMascot size={size} pose={pose} />
+        <TwinoMascot size={size} pose={pose} />
       </View>
     </View>
   );

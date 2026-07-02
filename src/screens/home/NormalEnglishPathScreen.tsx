@@ -10,7 +10,7 @@ import { tabBarScrollPadding } from "../../constants/layout";
 import type { LessonListItem, SectionDataItem, SectionTheme } from "../../data/list-items";
 import { buildNormalSectionData } from "../../data/normal-english";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "../../stores/useProgressStore";
+import { useCurrentProgress } from "../../stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -20,7 +20,8 @@ import { useI18n } from "../../hooks/useI18n";
 import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { ltrText, rtlText } from "../lesson/games/game-text";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { PressableScale } from "../../components/animations/PressableScale";
+import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -74,9 +75,7 @@ export function NormalEnglishPathScreen() {
     minimumViewTime: 100,
   }).current;
 
-  const normalNextLessonPathIndex = useProgressStore(
-    (s) => s.normalNextLessonPathIndex,
-  );
+  const { normalNextLessonPathIndex } = useCurrentProgress();
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     "blue",
@@ -91,6 +90,60 @@ export function NormalEnglishPathScreen() {
       ),
     [locale, normalNextLessonPathIndex],
   );
+
+  // Find the unit index of the user's active/current lesson
+  const currentUnitIndex = useMemo(() => {
+    const idx = localizedSections.findIndex((section) =>
+      section.data.some((item) => item.isCurrent)
+    );
+    return idx !== -1 ? idx : 0;
+  }, [localizedSections]);
+
+  const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
+    Math.max(2, currentUnitIndex + 1)
+  );
+
+  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  useEffect(() => {
+    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
+  }, [currentUnitIndex]);
+
+  const visibleSections = useMemo(
+    () => localizedSections.slice(0, visibleUnitsCount),
+    [localizedSections, visibleUnitsCount]
+  );
+
+  const hasMore = visibleUnitsCount < localizedSections.length;
+
+  const renderFooter = useCallback(() => {
+    if (!hasMore) return null;
+    return (
+      <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+        <PressableScale
+          style={{
+            paddingVertical: 14,
+            paddingHorizontal: 28,
+            backgroundColor: "#0F172A",
+            borderRadius: 20,
+            borderBottomWidth: 4,
+            borderBottomColor: "#020617",
+          }}
+          onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
+        >
+          <AppText
+            style={{
+              color: "#FFFFFF",
+              fontSize: 16,
+              fontFamily: "DINNextRoundedBold",
+            }}
+            forceLatinFont
+          >
+            See More Units
+          </AppText>
+        </PressableScale>
+      </View>
+    );
+  }, [hasMore]);
 
   usePathScrollAfterLesson("normal", localizedSections, listRef);
 
@@ -184,9 +237,10 @@ export function NormalEnglishPathScreen() {
         />
 
         <SectionList<LessonListItem, SectionDataItem>
-          sections={localizedSections}
+          sections={visibleSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
+          ListFooterComponent={renderFooter}
           ref={listRef}
           renderSectionHeader={renderSectionHeader}
           onLayout={onListLayout}

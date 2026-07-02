@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 /**
  * liquid-primitives.tsx — iOS 26 Liquid Glass building blocks
  *
@@ -39,7 +39,8 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 
-import { Check, X } from "lucide-react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { CheckmarkBadge01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { crossShadow } from "../../../utils/shadows";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
@@ -414,10 +415,10 @@ export function LiquidOption({
           {text}
         </Animated.Text>
         {isCorrectState ? (
-          <Check size={20} color="#16A34A" strokeWidth={3} />
+          <HugeiconsIcon icon={CheckmarkBadge01Icon} size={20} color="#16A34A" strokeWidth={3.0} />
         ) : null}
         {state === "wrong" ? (
-          <X size={20} color="#DC2626" strokeWidth={3} />
+          <HugeiconsIcon icon={Cancel01Icon} size={20} color="#DC2626" strokeWidth={3.0} />
         ) : null}
       </Pressable>
     </Animated.View>

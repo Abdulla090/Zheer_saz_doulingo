@@ -4,6 +4,7 @@ import {
   isGeminiConfigured,
 } from "../constants/gemini";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { useLocaleStore } from "../stores/useLocaleStore";
 
 export type TutorPhase = "intro_ku" | "english";
 
@@ -39,16 +40,45 @@ const API_TIMEOUT_MS = 28_000;
 
 function getLanguageName(code: string): string {
   if (code === "ar") return "Arabic";
+  if (code === "es") return "Spanish";
+  if (code === "ru") return "Russian";
   if (code === "en") return "English";
-  return "Kurdish Sorani";
+  if (code === "ku") return "Kurdish";
+  return code;
 }
 
-function buildTutorSystem(nativeLang: string, targetLang: string): string {
+function buildTutorSystem(
+  nativeLang: string,
+  targetLang: string,
+  userAge: string,
+  englishLevel: number
+): string {
   const nativeName = getLanguageName(nativeLang);
   const targetName = getLanguageName(targetLang);
 
+  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string }> = {
+    1: { cefr: "Beginner (A1)", pace: "very slowly, with long pauses between words", vocab: "very simple words, sentences max 4 words", feedback: "Kurdish" },
+    2: { cefr: "Beginner (A1)", pace: "very slowly", vocab: "basic A1 words, sentences max 5 words", feedback: "Kurdish" },
+    3: { cefr: "Elementary (A2)", pace: "slowly", vocab: "simple daily vocabulary, sentences max 6 words", feedback: "Kurdish" },
+    4: { cefr: "Elementary (A2)", pace: "slowly", vocab: "standard A2 vocabulary, sentences max 7 words", feedback: "English" },
+    5: { cefr: "Intermediate (B1)", pace: "moderately slowly", vocab: "everyday intermediate B1 vocabulary, sentences max 8-10 words", feedback: "English" },
+    6: { cefr: "Intermediate (B1)", pace: "normal pace", vocab: "B1 vocabulary, varied sentence structures", feedback: "English" },
+    7: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "rich vocabulary and expressions", feedback: "English" },
+    8: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "B2 level vocabulary, idiomatic phrases", feedback: "English" },
+    9: { cefr: "Advanced (C1)", pace: "natural native speed", vocab: "slang, idioms, and advanced professional phrasing", feedback: "English" },
+    10: { cefr: "Advanced / Fluent (C2)", pace: "fast natural native speed", vocab: "nuanced vocabulary, abstract themes, and professional jargon", feedback: "English" },
+  };
+
+  const currentLevel = levelMapping[englishLevel] || levelMapping[5];
+  
+  const ageGroup = userAge && parseInt(userAge, 10) < 13 
+    ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
+    : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
+
   return [
-    `You are Phingo — a warm, natural, world-class ${targetName} conversation tutor for ${nativeName} speakers.`,
+    `You are Twino — a warm, natural, world-class ${targetName} conversation tutor for ${nativeName} speakers.`,
+    `The learner's age group is: ${ageGroup}`,
+    `The learner's English level is: ${englishLevel}/10 which corresponds to CEFR ${currentLevel.cefr}.`,
     "Your tone is calm, friendly, encouraging, and modern — like a trusted friend who happens to be fluent.",
     "Never sound robotic, never over-explain, never repeat yourself unnecessarily.",
     "",
@@ -58,9 +88,13 @@ function buildTutorSystem(nativeLang: string, targetLang: string): string {
     "Wait for a clear readiness signal before switching phases.",
     "",
     "=== PHASE: english ===",
-    `Conduct a natural back-and-forth ${targetName} conversation at A2–B1 level.`,
+    `Conduct a natural back-and-forth ${targetName} conversation adapted to CEFR ${currentLevel.cefr}.`,
+    `- Speak ${currentLevel.pace}.`,
+    `- Use ${currentLevel.vocab}.`,
+    `- Respond naturally to what the learner said.`,
+    `- Offer gentle corrections and linguistic feedback in ${currentLevel.feedback}.`,
     "Each turn: (1) respond naturally to what the learner said, (2) offer gentle correction if needed with a natural restatement — never lecture, (3) introduce ONE new useful word or phrase organically in context.",
-    "Keep replies concise (2–4 sentences). Vary your topics — daily life, travel, food, emotions, work, culture.",
+    "Keep replies concise (2–4 sentences). Vary your topics based on age and interests.",
     "After 3–4 successful exchanges on a topic, smoothly transition to a new topic.",
     "Sound human: use contractions, casual phrasing, short affirmations like 'Exactly!', 'Nice!', 'Love that!'",
     `teachNote: 1 short ${nativeName} sentence explaining the key ${targetName} thing you just modeled.`,
@@ -264,7 +298,18 @@ export async function sendTutorTurn(
           "x-goog-api-key": apiKey,
         },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: buildTutorSystem(useSettingsStore.getState().nativeLang, useSettingsStore.getState().targetLang) }] },
+          systemInstruction: {
+            parts: [
+              {
+                text: buildTutorSystem(
+                  useLocaleStore.getState().selectedSourceLanguage,
+                  useLocaleStore.getState().selectedTargetLanguage,
+                  useSettingsStore.getState().userAge,
+                  useSettingsStore.getState().englishLevel || 5
+                )
+              }
+            ]
+          },
           contents,
           generationConfig: {
             temperature: 0.65,

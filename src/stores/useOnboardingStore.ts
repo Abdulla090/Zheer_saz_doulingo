@@ -14,7 +14,7 @@ interface OnboardingState {
   resetOnboarding: () => Promise<void>;
 }
 
-const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) === "true";
+const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) !== "false";
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ready: true,

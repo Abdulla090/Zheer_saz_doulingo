@@ -278,7 +278,9 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   }, [question.mascotEmoji, selectedId, revealed, question.correctId]);
 
   const isKu = question.promptLang === "ku";
-  const sceneColors = question.scene ? SCENE_GRADIENTS[question.scene] : SCENE_GRADIENTS.bedroom;
+  const sceneColors = (question.scene && question.scene in SCENE_GRADIENTS)
+    ? SCENE_GRADIENTS[question.scene as KidsSceneKey]
+    : SCENE_GRADIENTS.bedroom;
   const isNight = question.scene === "night";
 
   const speakPrompt = useCallback(() => {
@@ -433,7 +435,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
       />
 
       {question.variant === "scene" && question.scene ? (
-        <LinearGradient colors={[...sceneColors]} style={kb.scene}>
+        <LinearGradient colors={sceneColors} style={kb.scene}>
           <AppText style={[kb.sceneLabel, isNight && kb.sceneLabelNight]} forceLatinFont>
             {question.scene.charAt(0).toUpperCase() + question.scene.slice(1)}
           </AppText>
@@ -621,6 +623,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
             label={t("lessons.check")}
             disabled={!selectedId || revealed}
             onPress={feedToMascot}
+            variant={pathMode === "kids" ? "kids" : "default"}
           />
         </View>
       ) : null}

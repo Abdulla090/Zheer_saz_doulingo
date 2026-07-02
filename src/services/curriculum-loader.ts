@@ -3,7 +3,7 @@ import { UnitBank, LessonPathMode } from "../data/types";
 import { appStorage } from "../lib/app-storage";
 
 const API_URL = process.env.EXPO_PUBLIC_CURRICULUM_API_URL;
-const CACHE_PREFIX = "phingo.curriculum.cache.";
+const CACHE_PREFIX = "twino.curriculum.cache.";
 
 /**
  * CurriculumLoader — dynamically loads learning path units.
@@ -40,7 +40,12 @@ export async function fetchRemoteCurriculum(mode: LessonPathMode): Promise<UnitB
 }
 
 export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
-  // Try local storage cache first
+  // Normal mode is always bundled and available directly
+  if (mode === "normal") {
+    return getBundledUnits("normal");
+  }
+
+  // For kids and street modes, we ONLY load from local storage cache (downloaded assets)
   try {
     const cached = appStorage.getItemSync(`${CACHE_PREFIX}${mode}`);
     if (cached) {
@@ -50,9 +55,9 @@ export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
       }
     }
   } catch {
-    /* fallback to bundle */
+    /* ignore and return empty */
   }
 
-  // Fallback to bundled asset files
-  return getBundledUnits(mode);
+  // If not downloaded yet (not in cache), return an empty array to make the path inactive
+  return [];
 }

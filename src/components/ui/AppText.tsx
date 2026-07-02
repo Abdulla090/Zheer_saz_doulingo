@@ -1,13 +1,17 @@
 import { FontLatin } from "../../constants/typography";
-import { useKurdishFont } from "../../hooks/useKurdishFont";
+import { useLanguageFont } from "../../hooks/useLanguageFont";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { dirForText } from "../../screens/lesson/games/game-text";
 import { latinRoleFromWeight } from "../../utils/pickFontFamily";
 import React, { useMemo } from "react";
 import {
+  Platform,
   StyleSheet,
   Text,
   type TextProps,
 } from "react-native";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { LANGUAGES } from "../../config/languages";
 
 function getFirstChar(children: React.ReactNode): string {
   if (typeof children === "string" || typeof children === "number") {
@@ -24,7 +28,7 @@ function getFirstChar(children: React.ReactNode): string {
 }
 
 export type AppTextProps = TextProps & {
-  /** Always use Rabar + RTL defaults. */
+  /** Alias for forceSourceFont */
   forceKurdishFont?: boolean;
   /** Always use DIN (English UI). */
   forceLatinFont?: boolean;
@@ -32,7 +36,7 @@ export type AppTextProps = TextProps & {
 };
 
 /**
- * Text with automatic Kurdish (Rabar) vs Latin (DIN) font and RTL direction.
+ * Text with automatic Source vs Latin font and RTL direction.
  */
 export function AppText({
   style,
@@ -42,15 +46,16 @@ export function AppText({
   latinRole,
   ...props
 }: AppTextProps) {
-  const kurdishFont = useKurdishFont();
+  const languageFont = useLanguageFont();
+  const sourceLang = useLocaleStore((s) => s.selectedSourceLanguage);
+  const isSourceRtl = LANGUAGES[sourceLang]?.rtl || false;
+  const { colors } = useThemeColors();
 
-  // Fix: Call StyleSheet.flatten on style (handles IDs, objects, and arrays correctly)
   const flat = useMemo(() => {
     if (!style) return undefined;
     return StyleSheet.flatten(style);
   }, [style]);
 
-  // Optimize: Get only the first character to detect language direction, rather than stringifying the whole tree
   const firstChar = useMemo(() => {
     if (forceKurdishFont || forceLatinFont) return "";
     return getFirstChar(children);
@@ -61,22 +66,25 @@ export function AppText({
   }, [latinRole, flat?.fontWeight]);
 
   const fontFamily = useMemo(() => {
-    return forceLatinFont ? FontLatin[role] : kurdishFont;
-  }, [forceLatinFont, role, kurdishFont]);
+    return forceLatinFont ? FontLatin[role] : (languageFont || FontLatin[role]);
+  }, [forceLatinFont, role, languageFont]);
 
   const direction = useMemo(() => {
-    if (forceKurdishFont) return dirForText("ک");
-    if (forceLatinFont) return dirForText("A");
+    if (forceKurdishFont) return { writingDirection: isSourceRtl ? "rtl" : "ltr", textAlign: isSourceRtl ? "right" : "left" } as any;
+    if (forceLatinFont) return { writingDirection: "ltr", textAlign: "left" } as any;
     return dirForText(firstChar);
-  }, [forceKurdishFont, forceLatinFont, firstChar]);
+  }, [forceKurdishFont, forceLatinFont, firstChar, isSourceRtl]);
 
-  // Robust style flattening to prevent leaks (such as white text background boxes on Android)
   const combinedStyle = useMemo(() => {
     const flattened = StyleSheet.flatten([
-      style,
       direction,
+      { color: colors.foreground },
+      style,
       { backgroundColor: "transparent" },
     ]);
+    if (flattened.textAlign === "center" || Platform.OS === "android") {
+      flattened.writingDirection = undefined;
+    }
     const { fontFamily: _ignoredFont, ...rest } = flattened;
     return {
       ...rest,

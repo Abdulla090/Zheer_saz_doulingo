@@ -16,9 +16,9 @@
 
 import { buildConversationOptionTiers } from "../utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
-import { buildKidsFlowQuestions } from "./kids-lesson-builder";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
-import { useSettingsStore } from "../stores/useSettingsStore";
+import { useLocaleStore } from "../stores/useLocaleStore";
+import { getWord3DImage, getWordsWithDistinctImages } from "../utils/kids-assets";
 
 export type {
   GameQuestion,
@@ -28,6 +28,9 @@ export type {
   PairMatchQuestion,
   FillBlankQuestion,
   ConversationPickQuestion,
+  ImagePairMatchQuestion,
+  ImageMultipleChoiceQuestion,
+  MemoryFlipQuestion,
   KidsPlayQuestion,
   LessonBank,
   UnitBank,
@@ -103,58 +106,216 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 // ── Safe circular accessor (never throws) ───────────────────────────────────
 const pick = <T>(arr: T[], i: number): T => arr[Math.abs(i) % arr.length];
 
+function getPromptText(
+  key: "how_to_say" | "what_is_word" | "choose_correct" | "say_word" | "which_matches_image",
+  nativeLang: string,
+  targetLang: string,
+  word: string,
+): string {
+  const getLanguageName = (tLang: string, nLang: string) => {
+    if (nLang === "ku") return tLang === "ar" ? "عەرەبی" : "ئینگلیزی";
+    if (nLang === "ar") return tLang === "ku" ? "الكردية" : "الإنجليزية";
+    if (nLang === "es") return tLang === "ar" ? "árabe" : (tLang === "ku" ? "kurdo" : "inglés");
+    if (nLang === "ru") return tLang === "ar" ? "арабском" : (tLang === "ku" ? "курдском" : "английском");
+    return tLang === "ar" ? "Arabic" : (tLang === "ku" ? "Kurdish" : "English");
+  };
+
+  const langName = getLanguageName(targetLang, nativeLang);
+
+  if (nativeLang === "ku") {
+    if (key === "how_to_say") return `چۆن بە ${langName} دەڵێیت:\n«${word}»`;
+    if (key === "what_is_word") return `${word} بە ${langName} چییە؟`;
+    if (key === "choose_correct") return `ڕستەی دروست هەڵبژێرە:\n«${word}»`;
+    if (key === "say_word") return `بڵێ: ${word}`;
+    if (key === "which_matches_image") return `کۆدام وشە لەگەڵ وێنەکە دەگونجێت؟`;
+  }
+  if (nativeLang === "ar") {
+    if (key === "how_to_say") return `كيف تقول ب${langName}:\n«${word}»؟`;
+    if (key === "what_is_word") return `ما معنى ${word} ب${langName}؟`;
+    if (key === "choose_correct") return `اختر الجملة الصحيحة:\n«${word}»`;
+    if (key === "say_word") return `قل: ${word}`;
+    if (key === "which_matches_image") return `أي كلمة تطابق الصورة؟`;
+  }
+  if (nativeLang === "es") {
+    if (key === "how_to_say") return `¿Cómo se dice en ${langName}:\n«${word}»?`;
+    if (key === "what_is_word") return `¿Qué significa ${word} en ${langName}?`;
+    if (key === "choose_correct") return `Elige la frase correcta:\n«${word}»`;
+    if (key === "say_word") return `Di: ${word}`;
+    if (key === "which_matches_image") return `¿Qué palabra coincide con la imagen?`;
+  }
+  if (nativeLang === "ru") {
+    if (key === "how_to_say") return `Как сказать на ${langName}:\n«${word}»?`;
+    if (key === "what_is_word") return `Что означает ${word} на ${langName}?`;
+    if (key === "choose_correct") return `Выберите правильную фразу:\n«${word}»`;
+    if (key === "say_word") return `Скажи: ${word}`;
+    if (key === "which_matches_image") return `Какое слово соответствует картинке?`;
+  }
+  // Default/English
+  if (key === "how_to_say") return `How do you say in ${langName}:\n«${word}»?`;
+  if (key === "what_is_word") return `What does ${word} mean in ${langName}?`;
+  if (key === "choose_correct") return `Choose the correct sentence:\n«${word}»`;
+  if (key === "say_word") return `Say: ${word}`;
+  if (key === "which_matches_image") return `Which word matches the image?`;
+  return word;
+}
+
 function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, targetLang: string): LessonBank {
   if (nativeLang === "ku" && targetLang === "en") return lesson; // Default, no need to map
 
-  const getStr = (obj: any, lang: string, fallbackField: string): string => {
-    if (lang === "en") return obj.english || obj.target || obj.targetWord || obj.topic || obj.answer || obj[fallbackField] || "";
-    if (lang === "ar") return obj.arabic || obj.topicAr || obj.targetArabic || obj.arabicHint || getStr(obj, "ku", fallbackField);
-    return obj.kurdish || obj.targetKurdish || obj.topicKu || obj.kurdishHint || obj.hint || obj[fallbackField] || "";
+  const getNativeStr = (obj: any, lang: string, fallbackField: string): string => {
+    if (!obj) return "";
+    
+    // 0. Specific field overrides
+    if (lang === "ar") {
+      if (fallbackField === "prompt" && obj.promptAr) return obj.promptAr;
+      if (fallbackField === "targetKurdish" && obj.targetArabic) return obj.targetArabic;
+      if (fallbackField === "situation" && obj.situationAr) return obj.situationAr;
+      if (fallbackField === "explanation" && obj.explanationAr) return obj.explanationAr;
+      if (fallbackField === "topicKu" && obj.topicAr) return obj.topicAr;
+    }
+    
+    // 1. Direct language key check
+    if (lang === "en") {
+      if (obj.english) {
+        if (Array.isArray(obj.english)) return obj.english.join(" ");
+        return obj.english;
+      }
+      if (obj.target) return obj.target;
+      if (obj.targetWord) return obj.targetWord;
+      if (obj.topic) return obj.topic;
+    }
+    
+    if (lang === "ar" && obj.arabic) return obj.arabic;
+    if (lang === "es" && obj.spanish) return obj.spanish;
+    if (lang === "ru" && obj.russian) return obj.russian;
+    if (lang === "ku" && obj.kurdish) return obj.kurdish;
+    
+    // 2. Hint checks
+    if (lang === "ar" && obj.arabicHint) return obj.arabicHint;
+    if (lang === "es" && obj.spanishHint) return obj.spanishHint;
+    if (lang === "ru" && obj.russianHint) return obj.russianHint;
+    if (lang === "ku" && obj.kurdishHint) return obj.kurdishHint;
+    if (obj.hint && typeof obj.hint === "string") return obj.hint;
+    
+    // 3. Fallbacks: Kurdish is the default source language in the curriculum
+    if (obj.kurdish && typeof obj.kurdish === "string") return obj.kurdish;
+    if (obj.arabic && typeof obj.arabic === "string") return obj.arabic;
+    if (obj.kurdishHint && typeof obj.kurdishHint === "string") return obj.kurdishHint;
+    if (obj.topicKu && typeof obj.topicKu === "string") return obj.topicKu;
+    if (obj[fallbackField] && typeof obj[fallbackField] === "string") return obj[fallbackField];
+    
+    return "";
   };
 
-  const getArr = (obj: any, lang: string): string[] => {
-    if (lang === "en") return Array.isArray(obj.english) ? obj.english : (typeof obj.english === "string" ? obj.english.split(" ") : []);
-    if (lang === "ar") return typeof obj.arabic === "string" ? obj.arabic.split(" ") : (typeof obj.kurdish === "string" ? obj.kurdish.split(" ") : []);
-    return typeof obj.kurdish === "string" ? obj.kurdish.split(" ") : [];
+  const getTargetStr = (obj: any, lang: string): string => {
+    if (!obj) return "";
+    
+    // If user is learning Arabic, the target text must be the Arabic translation
+    if (lang === "ar") {
+      if (obj.arabic) {
+        if (Array.isArray(obj.arabic)) return obj.arabic.join(" ");
+        return obj.arabic;
+      }
+      if (obj.targetArabic) return obj.targetArabic;
+      if (obj.topicAr) return obj.topicAr;
+    }
+    
+    // Default fallback to English (the original curriculum's native structure)
+    if (lang === "en" && obj.english) {
+      if (Array.isArray(obj.english)) return obj.english.join(" ");
+      return obj.english;
+    }
+    
+    return obj.target || obj.targetWord || obj.english || obj.topic || obj.answer || "";
+  };
+
+  const getTargetArr = (obj: any, lang: string): string[] => {
+    if (!obj) return [];
+    
+    if (lang === "ar") {
+      if (obj.arabic) {
+        if (Array.isArray(obj.arabic)) return obj.arabic;
+        return obj.arabic.split(" ");
+      }
+      if (obj.targetArabic) return obj.targetArabic.split(" ");
+    }
+    
+    if (lang === "en" && obj.english) {
+      if (Array.isArray(obj.english)) return obj.english;
+      return obj.english.split(" ");
+    }
+    
+    const targetVal = obj.target || obj.targetWord || obj.english || "";
+    if (Array.isArray(targetVal)) return targetVal;
+    if (typeof targetVal === "string") return targetVal.split(" ");
+    return [];
   };
 
   return {
-    topic: getStr(lesson, targetLang, "topic"),
-    topicKu: getStr(lesson, nativeLang, "topicKu"),
+    topic: getTargetStr(lesson, targetLang),
+    topicKu: getNativeStr(lesson, nativeLang, "topicKu"),
     topicAr: lesson.topicAr,
     words: lesson.words.map((w) => ({
-      english: getStr(w, targetLang, "english"),
-      kurdish: getStr(w, nativeLang, "kurdish"),
+      english: getTargetStr(w, targetLang),
+      kurdish: getNativeStr(w, nativeLang, "kurdish"),
       arabic: w.arabic,
     })),
     voices: lesson.voices.map((v) => ({
-      prompt: getStr(v, nativeLang, "prompt"),
-      target: getStr(v, targetLang, "target"),
-      targetKurdish: getStr(v, nativeLang, "targetKurdish"),
+      prompt: getNativeStr(v, nativeLang, "prompt"),
+      target: getTargetStr(v, targetLang),
+      targetKurdish: getNativeStr(v, nativeLang, "targetKurdish"),
       targetArabic: v.targetArabic,
     })),
     sentences: lesson.sentences.map((s) => ({
-      english: getArr(s, targetLang),
-      kurdish: getStr(s, nativeLang, "kurdish"),
+      english: getTargetArr(s, targetLang),
+      kurdish: getNativeStr(s, nativeLang, "kurdish"),
       arabic: s.arabic,
     })),
     fillBlanks: lesson.fillBlanks.map((f) => {
+      const getParts = () => {
+        if (targetLang === "ar" && f.arabicParts) return f.arabicParts;
+        return f.parts;
+      };
+      const getWrongs = () => {
+        if (targetLang === "ar" && f.arabicWrongs) return f.arabicWrongs;
+        return f.wrongs;
+      };
+      const getAnswer = () => {
+        if (targetLang === "ar" && f.arabicAnswer) return f.arabicAnswer;
+        return f.answer;
+      };
+
       return {
         ...f,
-        hint: getStr(f, nativeLang, "hint"),
-        answer: targetLang === "en" ? f.answer : getStr(f, targetLang, "hint") || f.answer,
+        hint: getNativeStr(f, nativeLang, "hint"),
+        answer: getAnswer(),
+        parts: getParts(),
+        wrongs: getWrongs(),
       };
     }),
-    conversations: lesson.conversations.map((c) => ({
-      ...c,
-      situation: getStr(c, nativeLang, "situation"),
-      theyAsk: targetLang === "en" ? c.theyAsk : c.correct,
-      correct: targetLang === "en" ? c.correct : c.theyAsk,
-      wrong1: targetLang === "en" ? c.wrong1 : getStr(c, targetLang, "wrong1"),
-      wrong2: targetLang === "en" ? c.wrong2 : getStr(c, targetLang, "wrong2"),
-      wrong3: targetLang === "en" ? c.wrong3 : getStr(c, targetLang, "wrong3"),
-      explanation: getStr(c, nativeLang, "explanation"),
-    })),
+    conversations: lesson.conversations.map((c) => {
+      const getC = (field: string, arField: string) => {
+        if (targetLang === "ar" && (c as any)[arField]) return (c as any)[arField];
+        return (c as any)[field];
+      };
+      
+      const targetTheyAsk = getC("theyAsk", "theyAskAr");
+      const targetCorrect = getC("correct", "correctAr");
+      const targetWrong1 = getC("wrong1", "wrong1Ar");
+      const targetWrong2 = getC("wrong2", "wrong2Ar");
+      const targetWrong3 = getC("wrong3", "wrong3Ar");
+      
+      return {
+        ...c,
+        situation: getNativeStr(c, nativeLang, "situation"),
+        theyAsk: targetLang === "en" ? c.theyAsk : targetCorrect,
+        correct: targetLang === "en" ? c.correct : targetTheyAsk,
+        wrong1: targetWrong1,
+        wrong2: targetWrong2,
+        wrong3: targetWrong3,
+        explanation: getNativeStr(c, nativeLang, "explanation"),
+      };
+    }),
     kidsGames: lesson.kidsGames,
   };
 }
@@ -165,12 +326,11 @@ function buildLessonQuestionsFromBank(
   lessonIndex: number,
   mode: LessonPathMode,
 ): GameQuestion[] {
-  const { nativeLang, targetLang } = useSettingsStore.getState();
+  const nativeLang = useLocaleStore.getState().selectedSourceLanguage;
+  const targetLang = useLocaleStore.getState().selectedTargetLanguage;
   const lesson = mapLessonBankGenerically(rawLesson, nativeLang, targetLang);
 
-  if (mode === "kids" && lesson.kidsGames && lesson.kidsGames.length > 0) {
-    return buildKidsFlowQuestions(lesson.kidsGames, unitIndex, lessonIndex);
-  }
+  // Removed kidsGames full-screen diversion to use standard beautiful React Native UI
 
   const seed = unitIndex * 997 + lessonIndex * 137;
 
@@ -196,10 +356,13 @@ function buildLessonQuestionsFromBank(
     );
     questions.push({
       type: "multiple_choice",
-      prompt: isNormal
-        ? `چۆن بە ئینگلیزی دەڵێیت:\n«${mcWord.kurdish}»`
-        : `${mcWord.kurdish} بە ئینگلیزی چییە؟`,
-      promptLang: "ku",
+      prompt: getPromptText(
+        isNormal ? "how_to_say" : "what_is_word",
+        nativeLang,
+        targetLang,
+        mcWord.kurdish
+      ),
+      promptLang: nativeLang,
       correctAnswer: mcWord.english,
       options: shuffle([mcWord.english, ...mcWrongs], optionSeed),
       xp: 10,
@@ -254,19 +417,76 @@ function buildLessonQuestionsFromBank(
       pushWordMc(1, seed + 40); // fallback
     }
 
-    // 5. Voice Games (6×)
+    // 5. Image-to-Word Pair Match (1×)
+    // Use words with distinct images so each tile looks different
+    const distinctImgWords = getWordsWithDistinctImages(words, 4);
+    if (distinctImgWords.length >= 2) {
+      questions.push({
+        type: "image_pair_match",
+        pairs: distinctImgWords.map((w) => ({
+          english: w.english,
+          kurdish: w.kurdish,
+          image: getWord3DImage(w.english),
+        })),
+        xp: 15,
+      });
+    } else {
+      // Fallback to a regular MC if not enough distinct images
+      pushWordMc(2, seed + 55);
+    }
+
+    // 6. Which Word Matches the Image (1×)
+    const distinctMCImgWords = getWordsWithDistinctImages(words, 1);
+    if (distinctMCImgWords.length > 0) {
+      const targetWordObj = distinctMCImgWords[0];
+      const mcWrongs = pickLessonWrongs(
+        words.map((w) => w.english),
+        targetWordObj.english,
+        3,
+        seed + 60
+      );
+      questions.push({
+        type: "image_multiple_choice",
+        prompt: "Which word matches the image?",
+        correctAnswer: targetWordObj.english,
+        image: getWord3DImage(targetWordObj.english),
+        options: shuffle([targetWordObj.english, ...mcWrongs], seed + 60),
+        xp: 15,
+      });
+    } else {
+      pushWordMc(2, seed + 60); // fallback
+    }
+
+    // 7. Memory Flip (1×)
+    // Use words with distinct images; offset by 1 so we don't always use the same words as game 5
+    const distinctMemWords = getWordsWithDistinctImages(
+      [...words.slice(1), ...words.slice(0, 1)], // rotate to get different selection
+      3
+    );
+    if (distinctMemWords.length >= 2) {
+      questions.push({
+        type: "memory_flip",
+        pairs: distinctMemWords.map((w) => ({
+          english: w.english,
+          kurdish: w.kurdish,
+          image: getWord3DImage(w.english),
+        })),
+        xp: 20,
+      });
+    } else {
+      // Fallback to a regular MC if not enough distinct images
+      pushWordMc(3, seed + 65);
+    }
+
+    // 8. Voice Games (3×)
     const allVoices: VoiceQuestion[] = [
       ...voices.map(v => ({ type: "voice" as const, prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 })),
-      ...words.map(w => ({ type: "voice" as const, prompt: `بڵێ: ${w.kurdish}`, targetWord: w.english, targetKurdish: w.kurdish, xp: 20 })),
-      ...sentences.map(s => ({ type: "voice" as const, prompt: `بڵێ: ${s.kurdish}`, targetWord: s.english.join(" "), targetKurdish: s.kurdish, xp: 20 })),
+      ...words.map(w => ({ type: "voice" as const, prompt: getPromptText("say_word", nativeLang, targetLang, w.kurdish), targetWord: w.english, targetKurdish: w.kurdish, xp: 20 })),
+      ...sentences.map(s => ({ type: "voice" as const, prompt: getPromptText("say_word", nativeLang, targetLang, s.kurdish), targetWord: s.english.join(" "), targetKurdish: s.kurdish, xp: 20 })),
     ];
     
-    // We need 6 questions, if we generated fewer than 4 (excluding voices), we need to fill the gap.
-    // Since we pushed 1 PairMatch, 1 MC, 1 SB, 1 FB, we have 4 questions.
-    // If SB or FB fell back, we still pushed a question. Total is 4.
-    // So we add 6 Voice games.
     const shuffledVoices = shuffle(allVoices, seed + 50);
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 3; i++) {
       questions.push(pick(shuffledVoices, i));
     }
 
@@ -296,8 +516,8 @@ function buildLessonQuestionsFromBank(
     );
     questions.push({
       type: "multiple_choice",
-      prompt: `ڕستەی دروست هەڵبژێرە:\n«${mcSource.kurdish}»`,
-      promptLang: "ku",
+      prompt: getPromptText("choose_correct", nativeLang, targetLang, mcSource.kurdish),
+      promptLang: nativeLang,
       correctAnswer: correctSentence,
       options: shuffle([correctSentence, ...sentenceWrongs], seed + 10),
       xp: 10,
@@ -387,7 +607,14 @@ export function getLessonQuestions(
   mode: LessonPathMode = "street",
 ): GameQuestion[] {
   const units = getUnitsForPath(mode);
-  const unit   = units[Math.abs(unitIndex) % units.length];
-  const lesson: LessonBank = unit[Math.abs(lessonIndex) % unit.length];
+  if (units.length === 0) return [];
+
+  const unit = units[Math.abs(unitIndex) % units.length];
+  if (!unit?.length) return [];
+
+  const lesson: LessonBank | undefined =
+    unit[Math.abs(lessonIndex) % unit.length];
+  if (!lesson) return [];
+
   return buildLessonQuestionsFromBank(lesson, unitIndex, lessonIndex, mode);
 }

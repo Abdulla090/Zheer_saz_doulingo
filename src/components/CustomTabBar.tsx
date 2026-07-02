@@ -1,8 +1,8 @@
-/* eslint-disable react-hooks/immutability */
+ 
 import {
   GamesTabIcon,
   HomeTabIconFlat,
-  PathTabIcon,
+  LeaderboardTabIcon,
   ProfileTabIconFlat,
   ShopTabIcon,
 } from "./icons/HomeDashboardIcons";
@@ -31,7 +31,7 @@ import { useTabTransition } from "../context/TabTransitionContext";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View, I18nManager } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TAB_BAR_GLASS } from "../constants/tab-bar-glass";
@@ -63,17 +63,17 @@ const PILL_TABS: {
     ),
   },
   {
-    route: "dashboard",
-    labelKey: "tabs.path",
-    renderIcon: (active, size) => (
-      <PathTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
-  {
     route: "feed",
     labelKey: "tabs.games",
     renderIcon: (active, size) => (
       <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    ),
+  },
+  {
+    route: "dashboard",
+    labelKey: "tabs.leaderboard",
+    renderIcon: (active, size) => (
+      <LeaderboardTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
 ];
@@ -115,31 +115,24 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
       
-      // On web under RTL layout, elements with position: absolute and left: 0 are relative to the physical left,
-      // and translateX moves left-to-right. Thus, we must calculate the coordinate from the physical left.
-      // On native, Yoga automatically mirrors both start/left coordinates and translateX directions,
-      // so the standard LTR coordinate formulas are mirrored automatically.
-      const isWebRTL = Platform.OS === "web" && isKu;
-      
-      if (isWebRTL) {
+      const isRTL = I18nManager.isRTL;
+
+      if (isRTL) {
+        // Physical RTL layout: [ FAB ] gap [ Pill (reversed) ]
         if (index < tabCount) {
-          // RTL layout on web: FAB is on the left, pill is on the right.
-          // Inside the pill, slots are laid out from right to left (index 0 is on the right, index tabCount-1 is on the left)
-          const slotIndexFromLeft = tabCount - 1 - index;
-          return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + slotIndexFromLeft * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+          const physicalSlotIndex = tabCount - 1 - index;
+          return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + physicalSlotIndex * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
         }
-        // FAB is on the far left
         return (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       } else {
-        // LTR layout (or native RTL layout which Yoga handles automatically)
+        // Physical LTR layout: [ Pill ] gap [ FAB ]
         if (index < tabCount) {
           return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
         }
-        // FAB is on the far right
         return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       }
     },
-    [slotWidth, tabCount, pillWidth, isKu]
+    [slotWidth, tabCount, pillWidth]
   );
 
   const indicatorX = useSharedValue(indicatorTargetX(focusedIndex));
@@ -241,13 +234,20 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         </View>
 
         {/* Layer 2: Seamless Active Indicator */}
-        <Animated.View
+        <View
           style={[
-            styles.activeCircle,
-            { top: activeCircleTop, pointerEvents: "none" },
-            pillIndicatorStyle
+            StyleSheet.absoluteFill,
+            { direction: "ltr" as any, pointerEvents: "none" }
           ]}
-        />
+        >
+          <Animated.View
+            style={[
+              styles.activeCircle,
+              { top: activeCircleTop, left: 0 },
+              pillIndicatorStyle
+            ]}
+          />
+        </View>
 
         {/* Layer 3: Interactive Icons */}
         <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TAB_BAR_GLASS.activeCircleBorder,
     ...crossShadow({
-      color: "#2B59F3",
+      color: "#000000",
       offsetY: 2,
       blur: 6,
       opacity: 0.12,

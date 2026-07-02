@@ -8,7 +8,7 @@ import { DynamicColorIOS, Platform, type ViewStyle } from "react-native";
 /** Tab bar tokens — extends shared liquid glass. */
 export const TAB_BAR_GLASS = {
   ...LIQUID_GLASS,
-  iconActive: "#2B59F3",
+  iconActive: "#000000",
   iconInactive: "#64748B",
 } as const;
 

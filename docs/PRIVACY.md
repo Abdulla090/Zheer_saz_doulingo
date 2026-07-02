@@ -1,8 +1,8 @@
-# Phingo English — Privacy Policy
+# Twino English — Privacy Policy
 
 **Last updated:** May 27, 2026
 
-Phingo English helps Kurdish speakers learn English. This document mirrors the in-app Privacy Policy (Settings → Privacy Policy).
+Twino English helps Kurdish speakers learn English. This document mirrors the in-app Privacy Policy (Settings → Privacy Policy).
 
 ## Summary
 
@@ -17,10 +17,10 @@ We store locally: lesson progress, XP, daily goal progress, streak, app language
 
 ## Microphone & speech
 
-Voice features use the device microphone and OS speech recognition. Audio is not sent to Phingo servers unless you configure an optional third-party AI API (developer feature).
+Voice features use the device microphone and OS speech recognition. Audio is not sent to Twino servers unless you configure an optional third-party AI API (developer feature).
 
 ## Contact
 
-**support@phingo.app**
+**support@twino.app**
 
-For the full policy text, open **Phingo → Profile → Settings → Privacy Policy**.
+For the full policy text, open **Twino → Profile → Settings → Privacy Policy**.

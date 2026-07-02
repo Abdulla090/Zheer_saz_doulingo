@@ -136,6 +136,23 @@ export function PathTabIcon({
   );
 }
 
+export function LeaderboardTabIcon({
+  size = 24,
+  color = "#9CA3AF",
+}: {
+  size?: number;
+  color?: string;
+}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 15H3V20H6V15ZM10 9H14V20H10V9ZM18 4H21V20H18V4Z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
 export function ShopTabIcon({
   size = 24,
   color = "#9CA3AF",

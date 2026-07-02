@@ -1,40 +1,47 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    background: '#FFFFFF',
+    foreground: '#0F172A',
+    card: '#FFFFFF',
+    cardBorder: '#E2E8F0',
+    primary: '#FF6B4A',
+    primaryGlow: 'rgba(255, 107, 74, 0.2)',
+    secondary: '#3B82F6',
+    muted: '#F8FAFC',
+    mutedForeground: '#64748B',
+    border: '#E2E8F0',
+    success: '#10B981',
+    successBg: '#D1FAE5',
+    error: '#EF4444',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    background: '#0F172A',
+    foreground: '#FFFFFF',
+    card: 'rgba(255, 255, 255, 0.05)',
+    cardBorder: 'rgba(255, 255, 255, 0.1)',
+    primary: '#FF6B4A',
+    primaryGlow: 'rgba(255, 107, 74, 0.4)',
+    secondary: '#3B82F6',
+    muted: 'rgba(255, 255, 255, 0.05)',
+    mutedForeground: '#94A3B8',
+    border: 'rgba(255, 255, 255, 0.1)',
+    success: '#10B981',
+    successBg: 'rgba(16, 185, 129, 0.2)',
+    error: '#EF4444',
   },
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColorName = keyof typeof Colors.light;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

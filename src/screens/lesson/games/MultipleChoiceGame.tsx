@@ -27,9 +27,11 @@ type Props = {
   question: MultipleChoiceQuestion;
   onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
+  questionIndex?: number;
+  totalQuestions?: number;
 };
 
-export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Props) {
+export default function MultipleChoiceGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -64,13 +66,26 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Pro
     return "idle";
   };
 
+  const shuffledOptions = React.useMemo(() => {
+    const opts = [...question.options];
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+    return opts;
+  }, [question.options]);
+
   const isKuPrompt = question.promptLang === "ku";
+  const kidsBadgeText = pathMode === "kids" && questionIndex !== undefined && totalQuestions !== undefined
+    ? `EXERCISE ${questionIndex + 1} OF ${totalQuestions}`
+    : undefined;
 
   return (
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
           title={t("lessons.chooseAnswer")}
+          badge={kidsBadgeText}
         />
       </GameHeader>
 
@@ -83,13 +98,14 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Pro
       </LightQuestionPrompt>
 
       <View style={s.options}>
-        {question.options.map((opt, i) => (
+        {shuffledOptions.map((opt, i) => (
           <GameOption key={opt} index={i}>
             <LightOptionRow
               label={opt}
               state={mapOptionState(getState(opt))}
               onPress={() => pick(opt)}
               disabled={revealed}
+              isKids={pathMode === "kids"}
             />
           </GameOption>
         ))}
@@ -102,6 +118,7 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode }: Pro
           label={t("lessons.check")}
           onPress={check}
           disabled={!selected || revealed}
+          variant={pathMode === "kids" ? "kids" : "default"}
         />
       </GameFooter>
     </GameRoot>
@@ -115,5 +132,5 @@ const s = StyleSheet.create({
     paddingBottom: 12,
     gap: 16,
   },
-  options: { gap: 10 },
+  options: { gap: 14 },
 });

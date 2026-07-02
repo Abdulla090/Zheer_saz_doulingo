@@ -96,11 +96,11 @@ if (boson.includes("bai-") || boson.match(/Bearer [a-zA-Z0-9_-]{20,}/)) {
   ok("No hardcoded Boson API key");
 }
 
-const homeScreen = read("src/screens/home/PhingoLearnHomeScreen.tsx");
+const homeScreen = read("src/screens/home/TwinoLearnHomeScreen.tsx");
 if (homeScreen.includes("hapticSelection()") && !homeScreen.includes("hapticSelection")) {
-  fail("PhingoLearnHomeScreen uses hapticSelection without import");
+  fail("TwinoLearnHomeScreen uses hapticSelection without import");
 } else if (homeScreen.includes('router.push("/games")')) {
-  fail('PhingoLearnHomeScreen links to dead route "/games" — use "/feed"');
+  fail('TwinoLearnHomeScreen links to dead route "/games" — use "/feed"');
 } else {
   ok("Home screen haptics import and games route");
 }

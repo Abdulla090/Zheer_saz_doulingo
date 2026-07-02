@@ -1,5 +1,5 @@
 /** Shared payload for iOS (expo-widgets) and Android home screen widgets. */
-export type PhingoHomeWidgetPayload = {
+export type TwinoHomeWidgetPayload = {
   streak: number;
   dailyXp: number;
   dailyGoalXp: number;
@@ -13,6 +13,8 @@ export type PhingoHomeWidgetPayload = {
   recentSubtitle: string;
 };
 
-export const WIDGET_SNAPSHOT_KEY = "phingo.widget.snapshot";
+export const WIDGET_SNAPSHOT_KEY = "twino.widget.snapshot";
 
-export const ANDROID_WIDGET_NAME = "PhingoHome";
+export const ANDROID_WIDGET_NAME = "TwinoHome";
+
+export type PhingoHomeWidgetPayload = TwinoHomeWidgetPayload;

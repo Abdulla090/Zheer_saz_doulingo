@@ -41,7 +41,7 @@ export default function AdminUnitScreen() {
           label="← Units"
           variant="ghost"
           small
-          onPress={() => router.push({ pathname: "/admin", params: { mode } })}
+          onPress={() => router.push({ pathname: "/admin" as any, params: { mode } })}
         />
         <AppText style={styles.title} forceLatinFont>
           Unit {unitIndex + 1}

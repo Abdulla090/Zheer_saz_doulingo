@@ -142,6 +142,7 @@ export function kidsStepToQuestion(step: KidsGameStep, seed: number): GameQuesti
       return kidsPlay({
         variant: "pick",
         prompt: "Choose one!",
+        promptLang: "en",
         correctId: "a",
         choices: [{ id: "a", emoji: "⭐", label: "Star" }],
       });

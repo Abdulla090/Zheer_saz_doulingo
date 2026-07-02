@@ -4,8 +4,9 @@
  * Structurally mirrors the Street/Normal path screens, driven by kids progress.
  */
 
-import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
+import { BUTTON_FACE_RIM_COLORS, KIDS_BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
 import { tabBarScrollPadding } from "../../constants/layout";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   type LessonListItem,
   type SectionDataItem,
@@ -20,8 +21,10 @@ import {
 import { useI18n } from "../../hooks/useI18n";
 import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
-import { useProgressStore } from "../../stores/useProgressStore";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCurrentProgress } from "../../stores/useProgressStore";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { AppText } from "../../components/ui/AppText";
+import { PressableScale } from "../../components/animations/PressableScale";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -50,9 +53,7 @@ export function KidsEnglishPathScreen() {
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
 
-  const kidsNextLessonPathIndex = useProgressStore(
-    (s) => s.kidsNextLessonPathIndex,
-  );
+  const { kidsNextLessonPathIndex } = useCurrentProgress();
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     "green",
@@ -68,6 +69,60 @@ export function KidsEnglishPathScreen() {
     [locale, kidsNextLessonPathIndex],
   );
 
+  // Find the unit index of the user's active/current lesson
+  const currentUnitIndex = useMemo(() => {
+    const idx = localizedSections.findIndex((section) =>
+      section.data.some((item) => item.isCurrent)
+    );
+    return idx !== -1 ? idx : 0;
+  }, [localizedSections]);
+
+  const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
+    Math.max(2, currentUnitIndex + 1)
+  );
+
+  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  useEffect(() => {
+    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
+  }, [currentUnitIndex]);
+
+  const visibleSections = useMemo(
+    () => localizedSections.slice(0, visibleUnitsCount),
+    [localizedSections, visibleUnitsCount]
+  );
+
+  const hasMore = visibleUnitsCount < localizedSections.length;
+
+  const renderFooter = useCallback(() => {
+    if (!hasMore) return null;
+    return (
+      <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+        <PressableScale
+          style={{
+            paddingVertical: 14,
+            paddingHorizontal: 28,
+            backgroundColor: "#58CC02", // Duolingo Green for kids
+            borderRadius: 20,
+            borderBottomWidth: 4,
+            borderBottomColor: "#3F9302",
+          }}
+          onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
+        >
+          <AppText
+            style={{
+              color: "#FFFFFF",
+              fontSize: 16,
+              fontFamily: "DINNextRoundedBold",
+            }}
+            forceLatinFont
+          >
+            See More Units
+          </AppText>
+        </PressableScale>
+      </View>
+    );
+  }, [hasMore]);
+
   usePathScrollAfterLesson("kids", localizedSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
@@ -76,9 +131,9 @@ export function KidsEnglishPathScreen() {
   }, [activeSectionIndex, locale]);
 
   const buttonColors =
-    BUTTON_FACE_RIM_COLORS[
-      activeSectionTheme as keyof typeof BUTTON_FACE_RIM_COLORS
-    ] ?? BUTTON_FACE_RIM_COLORS.green;
+    KIDS_BUTTON_FACE_RIM_COLORS[
+      activeSectionTheme as keyof typeof KIDS_BUTTON_FACE_RIM_COLORS
+    ] ?? KIDS_BUTTON_FACE_RIM_COLORS.green;
 
   const recalcMaxScroll = useCallback(() => {
     maxScrollYRef.current = Math.max(
@@ -140,7 +195,7 @@ export function KidsEnglishPathScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <HomeMeshBackground />
+      <KidsMeshBackground />
       <View
         style={{
           flex: 1,
@@ -156,9 +211,10 @@ export function KidsEnglishPathScreen() {
           pathMode="kids"
         />
         <SectionList<LessonListItem, SectionDataItem>
-          sections={localizedSections}
+          sections={visibleSections}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
+          ListFooterComponent={renderFooter}
           ref={listRef}
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
@@ -183,6 +239,26 @@ export function KidsEnglishPathScreen() {
   );
 }
 
+function KidsMeshBackground() {
+  return (
+    <>
+      <LinearGradient
+        colors={[
+          "#E0F2FE", // Soft blue
+          "#F0FDF4", // Soft green/mint
+          "#FFF7ED", // Soft orange
+        ]}
+        locations={[0, 0.46, 1]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={[styles.meshOrb, { top: -90, left: -70, backgroundColor: "rgba(251, 146, 60, 0.16)" }]} pointerEvents="none" />
+      <View style={[styles.meshOrb, { top: -70, right: -62, backgroundColor: "rgba(56, 189, 248, 0.16)" }]} pointerEvents="none" />
+      <View style={[styles.meshOrb, { top: 292, left: -74, width: 190, height: 190, borderRadius: 95, backgroundColor: "rgba(250, 204, 21, 0.14)" }]} pointerEvents="none" />
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 10,
@@ -190,4 +266,10 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   list: { flex: 1, width: "100%", backgroundColor: "transparent" },
+  meshOrb: {
+    position: "absolute",
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+  },
 });

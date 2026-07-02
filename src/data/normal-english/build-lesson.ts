@@ -1,13 +1,14 @@
 import type { LessonBank } from "../types";
 
-type Phrase = { en: string; ku: string };
-type Speak = { prompt: string; target: string; targetKurdish: string };
-type Sentence = { english: string[]; kurdish: string };
+type Phrase = { en: string; ku: string; ar?: string };
+type Speak = { prompt: string; target: string; targetKurdish: string; promptAr?: string; targetArabic?: string };
+type Sentence = { english: string[]; kurdish: string; arabic?: string };
 type Fill = {
   parts: [string, string];
   hint: string;
   answer: string;
   wrongs: [string, string, string];
+  arabicHint?: string;
 };
 type Convo = {
   situation: string;
@@ -17,6 +18,8 @@ type Convo = {
   wrong2: string;
   wrong3: string;
   explanation: string;
+  situationAr?: string;
+  explanationAr?: string;
 };
 
 function splitSentence(en: string): string[] {
@@ -28,6 +31,7 @@ function defaultSpeaks(phrases: Phrase[]): Speak[] {
     prompt: "ئەم جملەیە بە ئینگلیزی بڵێ",
     target: p.en,
     targetKurdish: p.ku,
+    ...(p.ar ? { promptAr: "قل هذه الجملة بالإنجليزية", targetArabic: p.ar } : {}),
   }));
 }
 
@@ -35,6 +39,7 @@ function defaultSentences(phrases: Phrase[]): Sentence[] {
   return phrases.slice(0, 3).map((p) => ({
     english: splitSentence(p.en),
     kurdish: p.ku,
+    ...(p.ar ? { arabic: p.ar } : {}),
   }));
 }
 
@@ -48,6 +53,7 @@ function defaultFills(phrases: Phrase[]): Fill[] {
       hint: p.ku,
       answer,
       wrongs,
+      ...(p.ar ? { arabicHint: p.ar } : {}),
     };
   });
 }
@@ -63,11 +69,13 @@ export function buildLesson(
     fills?: Fill[];
     convos?: Convo[];
   },
+  topicAr?: string,
 ): LessonBank {
   return {
     topic,
     topicKu,
-    words: phrases.map((p) => ({ english: p.en, kurdish: p.ku })),
+    ...(topicAr ? { topicAr } : {}),
+    words: phrases.map((p) => ({ english: p.en, kurdish: p.ku, ...(p.ar ? { arabic: p.ar } : {}) })),
     voices: extras?.speak ?? defaultSpeaks(phrases),
     sentences: extras?.sentences ?? defaultSentences(phrases),
     fillBlanks: extras?.fills ?? defaultFills(phrases),

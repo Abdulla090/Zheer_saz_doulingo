@@ -1,7 +1,7 @@
 import { appStorage } from "../lib/app-storage";
 import { Platform } from "react-native";
 
-import { useProgressStore } from "../stores/useProgressStore";
+import { useProgressStore, getCurrentProgress } from "../stores/useProgressStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getPathProgressSummary } from "../utils/path-progress";
 import {
@@ -10,10 +10,10 @@ import {
 } from "../utils/lesson-navigation";
 import {
   WIDGET_SNAPSHOT_KEY,
-  type PhingoHomeWidgetPayload,
+  type TwinoHomeWidgetPayload,
 } from "../widgets/widget-types";
 
-async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> {
+async function persistSnapshot(payload: TwinoHomeWidgetPayload): Promise<void> {
   try {
     await appStorage.setItem(WIDGET_SNAPSHOT_KEY, JSON.stringify(payload));
   } catch {
@@ -21,32 +21,35 @@ async function persistSnapshot(payload: PhingoHomeWidgetPayload): Promise<void> 
   }
 }
 
-function buildPayload(): PhingoHomeWidgetPayload {
+function buildPayload(): TwinoHomeWidgetPayload {
   const s = useProgressStore.getState();
+  const currentProgress = getCurrentProgress();
   const locale = useLocaleStore.getState().locale;
   const summary = getPathProgressSummary(
-    s.nextLessonPathIndex,
-    s.normalNextLessonPathIndex,
+    currentProgress.nextLessonPathIndex,
+    currentProgress.normalNextLessonPathIndex,
   );
 
   const streetMeta = getCurrentLessonMeta(
     "street",
-    s.nextLessonPathIndex,
-    s.normalNextLessonPathIndex,
+    currentProgress.nextLessonPathIndex,
+    currentProgress.normalNextLessonPathIndex,
     locale,
+    currentProgress.kidsNextLessonPathIndex
   );
   const normalMeta = getCurrentLessonMeta(
     "normal",
-    s.nextLessonPathIndex,
-    s.normalNextLessonPathIndex,
+    currentProgress.nextLessonPathIndex,
+    currentProgress.normalNextLessonPathIndex,
     locale,
+    currentProgress.kidsNextLessonPathIndex
   );
   const nextMeta = streetMeta ?? normalMeta;
 
   const nextTitle = nextMeta
     ? `Lesson ${nextMeta.lessonNumber}`
     : "Start learning";
-  const nextSubtitle = nextMeta?.sectionTitle ?? "Open Phingo to continue";
+  const nextSubtitle = nextMeta?.sectionTitle ?? "Open Twino to continue";
 
   let recentTitle = "";
   let recentSubtitle = "";
@@ -82,8 +85,8 @@ export async function syncHomeWidget(): Promise<void> {
 
   if (Platform.OS === "ios") {
     try {
-      const { PhingoHomeWidget } = await import("../widgets/PhingoHomeWidget");
-      PhingoHomeWidget.updateSnapshot(payload);
+      const { TwinoHomeWidget } = await import("../widgets/TwinoHomeWidget");
+      TwinoHomeWidget.updateSnapshot(payload);
     } catch {
       /* expo-widgets requires dev build */
     }
@@ -94,10 +97,10 @@ export async function syncHomeWidget(): Promise<void> {
 export function getWidgetDeepLinkRoute():
   | ReturnType<typeof buildLessonRouteForMode>
   | null {
-  const s = useProgressStore.getState();
+  const currentProgress = getCurrentProgress();
   return buildLessonRouteForMode(
     "street",
-    s.nextLessonPathIndex,
-    s.normalNextLessonPathIndex,
+    currentProgress.nextLessonPathIndex,
+    currentProgress.normalNextLessonPathIndex,
   );
 }

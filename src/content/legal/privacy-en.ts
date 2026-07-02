@@ -7,8 +7,8 @@ export const privacyEn: LegalDocument = {
     {
       title: "Overview",
       paragraphs: [
-        "Phingo English (“Phingo”, “we”, “our”) helps Kurdish speakers learn English. This policy explains what data the app uses on your device and when optional online features are enabled.",
-        "Phingo is free to use. We do not sell your personal data.",
+        "Twino English (“Twino”, “we”, “our”) helps Kurdish speakers learn English. This policy explains what data the app uses on your device and when optional online features are enabled.",
+        "Twino is free to use. We do not sell your personal data.",
       ],
     },
     {
@@ -36,7 +36,7 @@ export const privacyEn: LegalDocument = {
     {
       title: "Children",
       paragraphs: [
-        "Phingo is an education app suitable for learners of many ages. Parents or guardians should supervise younger children’s use of microphone and online features.",
+        "Twino is an education app suitable for learners of many ages. Parents or guardians should supervise younger children’s use of microphone and online features.",
       ],
     },
     {

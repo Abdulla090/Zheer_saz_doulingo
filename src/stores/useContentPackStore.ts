@@ -8,12 +8,14 @@
 
 import type { LessonPathMode } from "../data/types";
 import { appStorage } from "../lib/app-storage";
+import { getBundledUnits } from "../data/content-registry";
 import { create } from "zustand";
 
-const STORAGE_KEY = "phingo.content-packs";
+const STORAGE_KEY = "twino.content-packs";
+const CACHE_PREFIX = "twino.curriculum.cache.";
 
 export type PackId = "street" | "kids";
-export type PackStatus = "not_downloaded" | "downloading" | "downloaded";
+export type PackStatus = "not_downloaded" | "downloading" | "downloaded" | "error";
 
 export interface ContentPackMeta {
   id: PackId;
@@ -75,8 +77,8 @@ interface ContentPackState {
   removePack: (pack: PackId) => void;
 }
 
-// Active download timer handles so we can cancel
-const downloadTimers: Partial<Record<PackId, ReturnType<typeof setInterval>>> = {};
+// Active XHR requests to track and cancel downloads
+const downloadXHRs: Partial<Record<PackId, XMLHttpRequest>> = {};
 
 function persistState(state: ContentPackState) {
   const data = {
@@ -104,7 +106,7 @@ const initialPacks = (() => {
       streetStatus: PackStatus;
       kidsStatus: PackStatus;
     }>;
-    const validStatuses: PackStatus[] = ["not_downloaded", "downloading", "downloaded"];
+    const validStatuses: PackStatus[] = ["not_downloaded", "downloading", "downloaded", "error"];
     const streetStatus = validStatuses.includes(parsed.streetStatus as any)
       ? (parsed.streetStatus as PackStatus)
       : "not_downloaded";
@@ -152,49 +154,76 @@ export const useContentPackStore = create<ContentPackState>((set, get) => ({
     const current = get()[statusKey];
     if (current === "downloaded" || current === "downloading") return;
 
-    set({ [statusKey]: "downloading", [progressKey]: 0 } as any);
-
-    // Simulated download: increment progress over ~4 seconds
-    const TOTAL_DURATION = 4000;
-    const TICK_INTERVAL = 80;
-    const TOTAL_TICKS = TOTAL_DURATION / TICK_INTERVAL;
-    let tick = 0;
-
-    // Clear any existing timer
-    if (downloadTimers[pack]) {
-      clearInterval(downloadTimers[pack]);
+    // 1. Immediately cache the local curriculum units from shipped content
+    try {
+      const curriculumData = getBundledUnits(pack);
+      appStorage.setItemSync(`${CACHE_PREFIX}${pack}`, JSON.stringify(curriculumData));
+    } catch (err) {
+      console.error("Failed to write downloaded curriculum to cache:", err);
+      set({ [statusKey]: "error" as PackStatus } as any);
+      return;
     }
 
-    downloadTimers[pack] = setInterval(() => {
-      tick++;
-      const progress = Math.min(tick / TOTAL_TICKS, 1);
+    // 2. Immediately persist the downloaded state to storage disk so it is unlocked/saved permanently
+    const diskState = {
+      ...get(),
+      [statusKey]: "downloaded" as PackStatus,
+      [progressKey]: 1,
+    };
+    persistState(diskState);
 
-      // Add slight randomness to make it feel more natural
-      const jitter = progress < 0.95 ? (Math.random() - 0.5) * 0.02 : 0;
-      const displayProgress = Math.min(Math.max(progress + jitter, 0), 1);
+    // 3. Set memory Zustand state to downloading to trigger the visual progress bar UX signal
+    set({ [statusKey]: "downloading", [progressKey]: 0 } as any);
 
-      if (tick >= TOTAL_TICKS) {
-        // Download complete
-        clearInterval(downloadTimers[pack]!);
-        delete downloadTimers[pack];
-        set({
-          [statusKey]: "downloaded" as PackStatus,
-          [progressKey]: 1,
-        } as any);
-        persistState(get());
-      } else {
-        set({ [progressKey]: displayProgress } as any);
+    // Cancel any existing request
+    if (downloadXHRs[pack]) {
+      downloadXHRs[pack]?.abort();
+      delete downloadXHRs[pack];
+    }
+
+    const xhr = new XMLHttpRequest();
+    downloadXHRs[pack] = xhr;
+
+    // 4. Run Cloudflare download speed test purely as a UX signal for network progress
+    const bytes = pack === "street" ? 25000000 : 15000000;
+    xhr.open("GET", `https://speed.cloudflare.com/__down?bytes=${bytes}&nocache=${Date.now()}`, true);
+
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = event.loaded / event.total;
+        set({ [progressKey]: progress } as any);
       }
-    }, TICK_INTERVAL);
+    };
+
+    xhr.onload = () => {
+      delete downloadXHRs[pack];
+      set({
+        [statusKey]: "downloaded" as PackStatus,
+        [progressKey]: 1,
+      } as any);
+      persistState(get());
+    };
+
+    xhr.onerror = () => {
+      delete downloadXHRs[pack];
+      // Even if speed test fails/no network, transition Zustand state to downloaded
+      set({
+        [statusKey]: "downloaded" as PackStatus,
+        [progressKey]: 1,
+      } as any);
+      persistState(get());
+    };
+
+    xhr.send();
   },
 
   cancelDownload: (pack: PackId) => {
     const statusKey = pack === "street" ? "streetStatus" : "kidsStatus";
     const progressKey = pack === "street" ? "streetProgress" : "kidsProgress";
 
-    if (downloadTimers[pack]) {
-      clearInterval(downloadTimers[pack]);
-      delete downloadTimers[pack];
+    if (downloadXHRs[pack]) {
+      downloadXHRs[pack]?.abort();
+      delete downloadXHRs[pack];
     }
 
     set({
@@ -207,9 +236,15 @@ export const useContentPackStore = create<ContentPackState>((set, get) => ({
     const statusKey = pack === "street" ? "streetStatus" : "kidsStatus";
     const progressKey = pack === "street" ? "streetProgress" : "kidsProgress";
 
-    if (downloadTimers[pack]) {
-      clearInterval(downloadTimers[pack]);
-      delete downloadTimers[pack];
+    if (downloadXHRs[pack]) {
+      downloadXHRs[pack]?.abort();
+      delete downloadXHRs[pack];
+    }
+
+    try {
+      appStorage.removeItemSync(`${CACHE_PREFIX}${pack}`);
+    } catch {
+      /* noop */
     }
 
     set({

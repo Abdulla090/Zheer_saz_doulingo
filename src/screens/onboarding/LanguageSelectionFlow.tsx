@@ -1,15 +1,11 @@
 import { useI18n } from "../../hooks/useI18n";
-import type { I18nKey } from "../../i18n";
-import { OnboardingProgressBar } from "./components/OnboardingProgressBar";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
-import { SOURCE_LANGUAGES, TARGET_LANGUAGES } from "../../config/languages";
 import { hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,134 +15,75 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  withSpring,
-  Easing,
   FadeInDown,
-  FadeOut,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { User, Calendar } from "lucide-react-native";
-import { useThemeColors } from "../../hooks/useThemeColors";
-import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  UserIcon,
+  Calendar01Icon,
+  Message01Icon,
+  Airplane01Icon,
+  BookOpen02Icon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
+import MascotOrange from "../../../../assets/images/svg/newmascotorange.svg";
+import MascotPurple from "../../../../assets/images/svg/newmascotpurple.svg";
 
-type Step = "profile" | "native" | "target" | "level";
+type Step = "profile" | "language" | "goal";
 
 type Props = {
   onFinish: () => void;
 };
 
-function SleekInput({
-  value,
-  onChangeText,
-  placeholder,
-  icon: Icon,
-  keyboardType = "default",
-}: {
-  value: string;
-  onChangeText: (t: string) => void;
-  placeholder: string;
-  icon: React.ElementType;
-  keyboardType?: "default" | "numeric";
-}) {
-  const [isFocusedState, setIsFocusedState] = useState(false);
-  const isFocused = useSharedValue(0);
+const LANGUAGES = [
+  { id: "ku", label: "Kurdish (Soranî)", code: "KU", flag: "☀️" },
+  { id: "es", label: "Español", code: "ES", flag: "🇪🇸" },
+  { id: "ru", label: "Русский", code: "RU", flag: "🇷🇺" },
+  { id: "ar", label: "العربية", code: "AR", flag: "🇸🇦" },
+  { id: "en", label: "English", code: "EN", flag: "🇬🇧" },
+];
 
-  const handleFocus = () => {
-    setIsFocusedState(true);
-    isFocused.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-  };
-  const handleBlur = () => {
-    setIsFocusedState(false);
-    isFocused.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.cubic) });
-  };
-
-  const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-
-  const borderStyle = useAnimatedStyle(() => ({
-    borderColor: isFocused.value ? "#2563EB" : "rgba(0, 0, 0, 0.1)",
-    borderWidth: 1.5,
-    ...Platform.select({
-      web: {
-        boxShadow: isFocused.value ? "0px 4px 12px rgba(37, 99, 235, 0.15)" : "none",
-      },
-      ios: {
-        shadowColor: "#2563EB",
-        shadowOpacity: isFocused.value * 0.2,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-      },
-      android: {
-        elevation: isFocused.value ? 2 : 0,
-      },
-    }),
-  }));
-
-  const iconColor = isFocusedState ? "#2563EB" : "rgba(0, 0, 0, 0.3)";
-
-  return (
-    <Animated.View style={[styles.inputWrapper, borderStyle]}>
-      <Animated.View style={{ paddingLeft: 16, paddingRight: 8 }}>
-        <Icon size={20} color={iconColor} />
-      </Animated.View>
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="rgba(0, 0, 0, 0.3)"
-        keyboardType={keyboardType}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        selectionColor="#2563EB"
-      />
-    </Animated.View>
-  );
-}
-
-function LangOptionCard({
-  label,
-  code,
-  selected,
-  onPress,
-}: {
-  label: string;
-  code: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button">
-      <View
-        style={[styles.langCard, selected && styles.langCardSelected]}
-      >
-        <View style={[styles.codeBadge, selected && styles.codeBadgeSelected]}>
-          <Text style={[styles.codeText, selected && styles.codeTextSelected]}>
-            {code}
-          </Text>
-        </View>
-        <Text style={[styles.optionLabel, selected && styles.optionLabelSelected]}>
-          {label}
-        </Text>
-        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-          {selected ? <View style={styles.radioInner} /> : null}
-        </View>
-      </View>
-    </Pressable>
-  );
-}
+const GOALS = [
+  {
+    id: "conversations",
+    title: "Have Conversations",
+    desc: "Speak confidently in real life situations.",
+    icon: Message01Icon,
+    color: "#8B5CF6",
+    bg: "#F5F3FF",
+  },
+  {
+    id: "travel",
+    title: "Travel the World",
+    desc: "Communicate easily while traveling.",
+    icon: Airplane01Icon,
+    color: "#F97316",
+    bg: "#FFF7ED",
+  },
+  {
+    id: "career",
+    title: "Advance My Career",
+    desc: "Improve communication for work opportunities.",
+    icon: BookOpen02Icon,
+    color: "#10B981",
+    bg: "#ECFDF5",
+  },
+  {
+    id: "challenge",
+    title: "Challenge Myself",
+    desc: "Learn a new language and expand my mind.",
+    icon: SparklesIcon,
+    color: "#EF4444",
+    bg: "#FEF2F2",
+  },
+];
 
 export function LanguageSelectionFlow({ onFinish }: Props) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const { width: screenWidth } = useWindowDimensions();
 
   // Stores
@@ -154,221 +91,246 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   const setUserAge = useSettingsStore((s) => s.setUserAge);
   const userName = useSettingsStore((s) => s.userName);
   const userAge = useSettingsStore((s) => s.userAge);
-  const englishLevel = useSettingsStore((s) => s.englishLevel);
-  const setEnglishLevel = useSettingsStore((s) => s.setEnglishLevel);
   const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
 
   const [step, setStep] = useState<Step>("profile");
-  const [native, setNative] = useState<string>("ku");
-  const [target, setTarget] = useState<string>("en");
+  const [selectedLang, setSelectedLang] = useState<string>("en");
+  const [selectedGoal, setSelectedGoal] = useState<string>("conversations");
   const [name, setName] = useState(userName || "");
   const [age, setAge] = useState(userAge || "");
 
-  const stepIndex = step === "profile" ? 0 : step === "native" ? 1 : step === "target" ? 2 : 3;
-
-  const nativeOptions = SOURCE_LANGUAGES;
-  const targetOptions = TARGET_LANGUAGES.filter((l) => l.id !== native);
-
   const handleProfileContinue = useCallback(() => {
     if (!name.trim()) {
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
       return;
     }
     setUserName(name);
     setUserAge(age);
     hapticSelection();
-    setStep("native");
+    setStep("language");
   }, [name, age, setUserName, setUserAge]);
 
-  const handleSelectNative = useCallback(
-    (lang: string) => {
-      hapticSelection();
-      setNative(lang);
-      const nextTarget = TARGET_LANGUAGES.find(l => l.id !== lang)?.id || "en";
-      setTarget(nextTarget);
-      setStep("target");
-    },
-    [],
-  );
+  const handleLanguageContinue = useCallback(() => {
+    hapticSelection();
+    // Default native to English if learning Kurdish, otherwise Kurdish
+    const nativeLang = selectedLang === "ku" ? "en" : "ku";
+    setLanguagePair(nativeLang, selectedLang);
+    setStep("goal");
+  }, [selectedLang, setLanguagePair]);
 
-  const handleSelectTarget = useCallback(
-    (lang: string) => {
-      hapticSelection();
-      setTarget(lang);
-      setLanguagePair(native, lang);
-      setStep("level");
-    },
-    [setLanguagePair, native],
-  );
+  const handleFinish = useCallback(() => {
+    hapticSelection();
+    onFinish();
+  }, [onFinish]);
 
   const onBack = useCallback(() => {
     hapticSelection();
-    if (step === "level") setStep("target");
-    else if (step === "target") setStep("native");
-    else if (step === "native") setStep("profile");
+    if (step === "goal") setStep("language");
+    else if (step === "language") setStep("profile");
   }, [step]);
 
-  const onContinueTarget = useCallback(() => {
-    handleSelectTarget(target);
-  }, [handleSelectTarget, target]);
+  const stepIndex = step === "profile" ? 1 : step === "language" ? 2 : 3;
 
   return (
     <View style={styles.root}>
-      <OnboardingSkiaBg />
+      {/* HEADER: Back Button & Step Indicators */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
+        <View style={styles.headerLeft}>
+          {step !== "profile" ? (
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#0F172A" strokeWidth={2.5} />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+        </View>
+        <View style={styles.headerCenter}>
+          <View style={styles.stepIndicatorRow}>
+            <View style={[styles.stepLine, stepIndex >= 1 && styles.stepLineActive]} />
+            <View style={[styles.stepLine, stepIndex >= 2 && styles.stepLineActive]} />
+            <View style={[styles.stepLine, stepIndex >= 3 && styles.stepLineActive]} />
+          </View>
+        </View>
+        <View style={{ width: 40 }} />
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
-          styles.scroll,
-          {
-            paddingTop: insets.top + 16,
-            paddingBottom: insets.bottom + 28,
-          },
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 24) + 20 },
         ]}
       >
-        <View style={styles.topRow}>
-          {step !== "profile" ? (
-            <Pressable
-              onPress={onBack}
-              hitSlop={12}
-              accessibilityRole="button"
-            >
-              <Text style={styles.back}>{t("onboarding.langBack")}</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.backSpacer} />
-          )}
-          <OnboardingProgressBar total={4} index={stepIndex} />
-          <View style={styles.backSpacer} />
-        </View>
-
+        {/* STEP 1: PROFILE NAME & AGE */}
         {step === "profile" && (
-          <Animated.View
-            key="profile"
-            style={styles.stepBlock}
-          >
-            <Text style={styles.stepLabel}>{t("onboarding.stepLabel", { step: 1 })}</Text>
-            <Text style={styles.title}>{t("onboarding.profileTitle")}</Text>
-            <Text style={styles.subtitle}>
-              {t("onboarding.profileSubtitle")}
-            </Text>
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
+            <Text style={styles.stepNumLabel}>STEP 1 OF 3</Text>
+            <Text style={styles.title}>What's your name?</Text>
+            <Text style={styles.subtitle}>We'll personalize your learning journey for you.</Text>
 
-            <View style={styles.options}>
-              <SleekInput
-                icon={User}
-                placeholder={t("onboarding.profileName")}
-                value={name}
-                onChangeText={setName}
-              />
-              <SleekInput
-                icon={Calendar}
-                placeholder={t("onboarding.profileAge")}
-                value={age}
-                onChangeText={setAge}
-                keyboardType="numeric"
-              />
+            {/* Cute Mascots Visual */}
+            <View style={styles.mascotVisualRow}>
+              <View style={styles.mascotCol}>
+                <View style={[styles.speechBubble, { backgroundColor: "#FFF8E1", borderColor: "#FFE082" }]}>
+                  <Text style={[styles.speechBubbleText, { color: "#D97706" }]}>Hey!</Text>
+                </View>
+                <MascotOrange width={90} height={100} />
+              </View>
             </View>
-            
+
+            <View style={styles.inputForm}>
+              <View style={styles.inputBox}>
+                <HugeiconsIcon icon={UserIcon} size={20} color="#64748B" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#94A3B8"
+                  selectionColor="#2563EB"
+                />
+              </View>
+
+              <View style={styles.inputBox}>
+                <HugeiconsIcon icon={Calendar01Icon} size={20} color="#64748B" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={age}
+                  onChangeText={setAge}
+                  placeholder="Enter your age (optional)"
+                  placeholderTextColor="#94A3B8"
+                  keyboardType="numeric"
+                  selectionColor="#2563EB"
+                />
+              </View>
+            </View>
+
             <TouchableOpacity
-              style={[styles.continueButton, !name.trim() && styles.continueButtonDisabled]}
-              activeOpacity={0.8}
+              style={[styles.primaryButton, !name.trim() && styles.primaryButtonDisabled]}
+              activeOpacity={0.85}
               onPress={handleProfileContinue}
+              disabled={!name.trim()}
             >
-              <Text style={styles.continueButtonText}>{t("onboarding.continue")}</Text>
+              <Text style={styles.primaryButtonText}>Continue</Text>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {step === "native" && (
-          <Animated.View
-            key="native"
-            style={styles.stepBlock}
-          >
-            <Text style={styles.stepLabel}>
-              {t("onboarding.stepLabel", { step: 2 })}
-            </Text>
-            <Text style={styles.title}>{t("onboarding.langNativeTitle")}</Text>
-            <Text style={styles.subtitle}>
-              {t("onboarding.langNativeSubtitle")}
-            </Text>
+        {/* STEP 2: LANGUAGE SELECTION */}
+        {step === "language" && (
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
+            <Text style={styles.stepNumLabel}>STEP 2 OF 3</Text>
+            <Text style={styles.title}>Which language would you like to learn?</Text>
+            <Text style={styles.subtitle}>You can always add more languages later.</Text>
 
-            <View style={styles.options}>
-              {nativeOptions.map((l) => (
-                <LangOptionCard
-                  key={l.id}
-                  label={l.nativeName}
-                  code={l.code.toUpperCase()}
-                  selected={native === l.id}
-                  onPress={() => handleSelectNative(l.id)}
-                />
-              ))}
+            {/* Flipped Mascots Talking */}
+            <View style={styles.mascotVisualRow}>
+              <View style={styles.mascotCol}>
+                <View style={[styles.speechBubble, { backgroundColor: "#FFF5F5", borderColor: "#FED7D7" }]}>
+                  <Text style={[styles.speechBubbleText, { color: "#E53E3E" }]}>¡Hola!</Text>
+                </View>
+                <View style={{ transform: [{ scaleX: -1 }] }}>
+                  <MascotOrange width={80} height={90} />
+                </View>
+              </View>
+              <View style={[styles.mascotCol, { marginTop: 12 }]}>
+                <View style={[styles.speechBubble, { backgroundColor: "#EBF8FF", borderColor: "#BEE3F8" }]}>
+                  <Text style={[styles.speechBubbleText, { color: "#2B6CB0" }]}>Hello!</Text>
+                </View>
+                <MascotPurple width={80} height={90} />
+              </View>
             </View>
-          </Animated.View>
-        )}
-        
-        {step === "target" && (
-          <Animated.View
-            key="target"
-            style={styles.stepBlock}
-          >
-            <Text style={styles.stepLabel}>
-              {t("onboarding.stepLabel", { step: 3 })}
-            </Text>
-            <Text style={styles.title}>{t("onboarding.langTargetTitle")}</Text>
-            <Text style={styles.subtitle}>
-              {t("onboarding.langTargetSubtitle")}
-            </Text>
 
-            <View style={styles.options}>
-              {targetOptions.map((l) => (
-                <LangOptionCard
-                  key={l.id}
-                  label={l.nativeName}
-                  code={l.code.toUpperCase()}
-                  selected={target === l.id}
-                  onPress={() => {
-                    hapticSelection();
-                    setTarget(l.id);
-                  }}
-                />
-              ))}
+            <View style={styles.optionsList}>
+              {LANGUAGES.map((l) => {
+                const isSelected = selectedLang === l.id;
+                return (
+                  <TouchableOpacity
+                    key={l.id}
+                    style={[styles.optionRow, isSelected && styles.optionRowSelected]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedLang(l.id)}
+                  >
+                    <View style={[styles.radioDot, isSelected && styles.radioDotSelected]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={styles.flagEmoji}>{l.flag}</Text>
+                    <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                      {l.label}
+                    </Text>
+                    <View style={styles.codeTag}>
+                      <Text style={styles.codeTagText}>{l.code}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <TouchableOpacity
-              style={[styles.continueButton, { marginTop: 32 }]}
-              activeOpacity={0.8}
-              onPress={onContinueTarget}
+              style={styles.primaryButton}
+              activeOpacity={0.85}
+              onPress={handleLanguageContinue}
             >
-              <Text style={styles.continueButtonText}>{t("onboarding.continue")}</Text>
+              <Text style={styles.primaryButtonText}>Continue</Text>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
         )}
 
-        {step === "level" && (
-          <Animated.View
-            key="level"
-            style={styles.stepBlock}
-          >
-            <Text style={styles.stepLabel}>
-              {t("onboarding.stepLabel", { step: 4 })}
-            </Text>
-            <Text style={styles.title}>{t("onboarding.levelTitle")}</Text>
-            <Text style={styles.subtitle}>
-              {t("onboarding.levelSubtitle")}
-            </Text>
+        {/* STEP 3: MAIN GOAL SELECTION */}
+        {step === "goal" && (
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
+            <Text style={styles.stepNumLabel}>STEP 3 OF 3</Text>
+            <Text style={styles.title}>What's your main goal?</Text>
+            <Text style={styles.subtitle}>We'll personalize your journey based on your goal.</Text>
 
-            <LevelSelectorValue
-              value={englishLevel}
-              onChange={setEnglishLevel}
-              screenWidth={screenWidth}
-              styles={styles}
-            />
+            {/* Checklist Mascots visual */}
+            <View style={styles.mascotVisualRow}>
+              <View style={styles.mascotCol}>
+                <MascotOrange width={80} height={90} />
+              </View>
+              <View style={[styles.mascotCol, { marginTop: 12 }]}>
+                <MascotPurple width={80} height={90} />
+              </View>
+            </View>
+
+            <View style={styles.optionsList}>
+              {GOALS.map((g) => {
+                const isSelected = selectedGoal === g.id;
+                return (
+                  <TouchableOpacity
+                    key={g.id}
+                    style={[styles.goalRow, isSelected && styles.goalRowSelected]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedGoal(g.id)}
+                  >
+                    <View style={[styles.goalIconWrap, { backgroundColor: g.bg }]}>
+                      <HugeiconsIcon icon={g.icon} size={20} color={g.color} strokeWidth={2.5} />
+                    </View>
+                    <View style={styles.goalInfoCol}>
+                      <Text style={[styles.goalTitle, isSelected && styles.goalTitleSelected]}>
+                        {g.title}
+                      </Text>
+                      <Text style={styles.goalDesc}>{g.desc}</Text>
+                    </View>
+                    <View style={[styles.radioDot, isSelected && styles.radioDotSelected]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
             <TouchableOpacity
-              style={[styles.continueButton, { marginTop: 32 }]}
-              activeOpacity={0.8}
-              onPress={onFinish}
+              style={styles.primaryButton}
+              activeOpacity={0.85}
+              onPress={handleFinish}
             >
-              <Text style={styles.continueButtonText}>{t("onboarding.completeSetup")}</Text>
+              <Text style={styles.primaryButtonText}>Let's Get Started</Text>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -377,388 +339,279 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   );
 }
 
-const LEVEL_DESCS = [
-  {
-    title: "Absolute Beginner (CEFR A1)",
-    desc: "You can understand basic greetings, simple words, and very slow questions.",
-    points: ["Understand greetings", "Simple vocabulary", "Basic pronunciation"],
-  },
-  {
-    title: "Beginner (CEFR A1+)",
-    desc: "You can introduce yourself and answer simple questions about your name, age, or home.",
-    points: ["Introduce yourself", "Basic sentence structure", "Common everyday words"],
-  },
-  {
-    title: "Elementary (CEFR A2)",
-    desc: "You can understand sentences about shopping, family, work, and your local area.",
-    points: ["Describe your environment", "Understand basic directions", "Simple conversations"],
-  },
-  {
-    title: "Pre-Intermediate (CEFR A2+)",
-    desc: "You can hold basic conversations about your routines, hobbies, and past events.",
-    points: ["Express likes/dislikes", "Talk about past activities", "Simple descriptions"],
-  },
-  {
-    title: "Intermediate (CEFR B1)",
-    desc: "You can talk about dreams, hopes, give simple reasons for opinions, and travel confidently.",
-    points: ["Explain plans & opinions", "Handle daily travel situations", "Connect sentences smoothly"],
-  },
-  {
-    title: "Upper-Intermediate (CEFR B1+)",
-    desc: "You can explain plans, discuss slightly complex topics, and understand main ideas.",
-    points: ["Express complex thoughts", "Active vocabulary expand", "Improved grammar accuracy"],
-  },
-  {
-    title: "Pre-Advanced (CEFR B2)",
-    desc: "You can speak with a degree of fluency and spontaneity, and read complex texts.",
-    points: ["Spontaneous conversations", "Fluency in general topics", "Self-correct mistakes"],
-  },
-  {
-    title: "Advanced (CEFR B2+)",
-    desc: "You can debate, write clear arguments, and understand idiomatic expressions.",
-    points: ["Understand idiomatic English", "Debate & present ideas", "Professional communication"],
-  },
-  {
-    title: "Proficient (CEFR C1)",
-    desc: "You can express ideas fluently without searching for words, using English flexibly for all purposes.",
-    points: ["Flexible language usage", "Understand implicit meanings", "Write complex structures"],
-  },
-  {
-    title: "Mastery (CEFR C2)",
-    desc: "You can understand virtually everything heard or read, expressing yourself precisely and fluently.",
-    points: ["Near-native fluency", "Express fine shades of meaning", "Complete command of English"],
-  },
-];
-
-function LevelSelectorValue({
-  value,
-  onChange,
-  screenWidth,
-  styles,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  screenWidth: number;
-  styles: any;
-}) {
-  const cellWidth = (screenWidth - 44) / 10;
-  const animatedX = useSharedValue((value - 1) * cellWidth);
-
-  useEffect(() => {
-    const targetX = (value - 1) * cellWidth;
-    if (Platform.OS === "web") {
-      animatedX.value = withTiming(targetX, { duration: 220, easing: Easing.out(Easing.cubic) });
-    } else {
-      animatedX.value = withSpring(targetX, { damping: 15, stiffness: 180 });
-    }
-  }, [value, cellWidth]);
-
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: animatedX.value }],
-  }));
-
-  const activeLevelDetails = LEVEL_DESCS[value - 1] || LEVEL_DESCS[4];
-
-  const handleSelect = (lvl: number) => {
-    if (lvl !== value) {
-      if (Platform.OS !== "web") {
-        void Haptics.selectionAsync();
-      }
-      onChange(lvl);
-    }
-  };
-
-  return (
-    <View style={styles.levelSelectorContainer}>
-      <View style={styles.sliderTrack}>
-        <Animated.View style={[styles.activePill, pillStyle, { width: cellWidth }]} />
-        {Array.from({ length: 10 }, (_, i) => {
-          const lvl = i + 1;
-          const isActive = value === lvl;
-          return (
-            <Pressable
-              key={lvl}
-              style={[styles.sliderCell, { width: cellWidth }]}
-              onPress={() => handleSelect(lvl)}
-            >
-              <Text style={[styles.sliderCellText, isActive && styles.sliderCellTextActive]}>
-                {lvl}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Animated.View key={`details-${value}`} style={styles.detailsCard}>
-        <Text style={styles.detailsTitle}>{activeLevelDetails.title}</Text>
-        <Text style={styles.detailsDesc}>{activeLevelDetails.desc}</Text>
-        <View style={styles.pointsWrap}>
-          {activeLevelDetails.points.map((pt, idx) => (
-            <View key={idx} style={styles.pointRow}>
-              <View style={styles.pointDot} />
-              <Text style={styles.pointText}>{pt}</Text>
-            </View>
-          ))}
-        </View>
-      </Animated.View>
-    </View>
-  );
-}
-
-const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
   },
-  scroll: {
-    paddingHorizontal: 22,
-    flexGrow: 1,
-  },
-  topRow: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
-  back: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(0, 0, 0, 0.5)",
-    minWidth: 72,
+  headerLeft: {
+    width: 40,
+    alignItems: "flex-start",
   },
-  backSpacer: {
-    minWidth: 72,
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
   },
-  stepBlock: {
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  stepIndicatorRow: {
+    flexDirection: "row",
+    gap: 8,
+    width: 100,
+    justifyContent: "center",
+  },
+  stepLine: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E2E8F0",
+  },
+  stepLineActive: {
+    backgroundColor: "#2563EB",
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  contentWrap: {
     width: "100%",
+    alignItems: "center",
   },
-  stepLabel: {
-    fontSize: 14,
-    fontWeight: "700",
+  stepNumLabel: {
+    fontSize: 12,
+    fontWeight: "800",
     color: "#2563EB",
-    textAlign: "center",
-    letterSpacing: 1.5,
-    textTransform: "uppercase",
-    marginBottom: 12,
+    letterSpacing: 1.2,
+    marginBottom: 8,
   },
   title: {
+    fontSize: 26,
     color: "#0F172A",
     textAlign: "center",
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    lineHeight: 32,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "rgba(15, 23, 42, 0.6)",
+    fontSize: 14,
+    color: "#64748B",
     textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 24,
-    paddingHorizontal: 16,
+    lineHeight: 20,
+    marginBottom: 24,
+    paddingHorizontal: 12,
   },
-  options: {
-    gap: 16,
-  },
-  inputWrapper: {
+
+  // -- Mascot Visual --
+  mascotVisualRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.03)",
-    borderRadius: 16,
-    height: 64,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    gap: 20,
+    marginBottom: 24,
   },
-  input: {
-    flex: 1,
-    color: "#0F172A",
-    fontSize: 18,
-    fontWeight: "500",
-    height: "100%",
-    paddingRight: 16,
-  },
-  langCard: {
-    flexDirection: "row",
+  mascotCol: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.02)",
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    gap: 16,
+    position: "relative",
+  },
+  speechBubble: {
+    position: "absolute",
+    top: -34,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.08)",
-  },
-  langCardSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "rgba(37, 99, 235, 0.05)",
-  },
-  codeBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.06)",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  codeBadgeSelected: {
-    backgroundColor: "#2563EB",
+  speechBubbleText: {
+    fontSize: 11,
+    fontFamily: "DINNextRoundedBold",
   },
-  codeText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "rgba(0, 0, 0, 0.5)",
-    letterSpacing: 0.5,
+
+  // -- Form Fields --
+  inputForm: {
+    width: "100%",
+    gap: 12,
+    marginBottom: 24,
   },
-  codeTextSelected: {
-    color: "#FFFFFF",
+  inputBox: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 54,
   },
-  optionLabel: {
+  inputIcon: {
+    marginRight: 12,
+  },
+  textInput: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "700",
+    height: "100%",
+    fontSize: 15,
     color: "#0F172A",
+    fontFamily: "DINNextRoundedMedium",
   },
-  optionLabelSelected: {
-    color: "#2563EB",
+
+  // -- Options List --
+  optionsList: {
+    width: "100%",
+    gap: 10,
+    marginBottom: 28,
   },
-  radioOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  optionRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  optionRowSelected: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
+  },
+  radioDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: "rgba(0, 0, 0, 0.2)",
+    borderColor: "#CBD5E1",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
   },
-  radioOuterSelected: {
+  radioDotSelected: {
     borderColor: "#2563EB",
   },
   radioInner: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#2563EB",
+  },
+  flagEmoji: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  optionLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: "#334155",
+    fontFamily: "DINNextRoundedBold",
+  },
+  optionLabelSelected: {
+    color: "#1E3A8A",
+  },
+  codeTag: {
+    backgroundColor: "#F1F5F9",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: "#2563EB",
   },
-  continueButton: {
+  codeTagText: {
+    fontSize: 11,
+    color: "#64748B",
+    fontFamily: "DINNextRoundedBold",
+  },
+
+  // -- Goals List --
+  goalRow: {
     width: "100%",
-    height: 60,
-    backgroundColor: "#2563EB",
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 24,
-    ...Platform.select({
-      web: {
-        boxShadow: "0px 8px 24px rgba(37, 99, 235, 0.25)",
-      },
-      default: {
-        shadowColor: "#2563EB",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
-        elevation: 6,
-      },
-    }),
-  },
-  continueButtonDisabled: {
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    ...Platform.select({
-      web: { boxShadow: "none" },
-      default: { elevation: 0, shadowOpacity: 0 },
-    }),
-  },
-  continueButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  levelSelectorContainer: {
-    marginTop: 12,
-    alignItems: "center",
-    width: "100%",
-  },
-  sliderTrack: {
-    height: 56,
-    width: "100%",
-    borderRadius: 28,
-    backgroundColor: "rgba(0, 0, 0, 0.03)",
-    borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.08)",
     flexDirection: "row",
     alignItems: "center",
-    position: "relative",
-    overflow: "hidden",
-    marginBottom: 24,
-  },
-  activePill: {
-    position: "absolute",
-    height: "100%",
-    borderRadius: 28,
-    backgroundColor: "#2563EB",
-  },
-  sliderCell: {
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  sliderCellText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "rgba(0, 0, 0, 0.4)",
-  },
-  sliderCellTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-  },
-  detailsCard: {
-    width: "100%",
-    padding: 20,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    ...Platform.select({
-      web: {
-        boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.05)",
-      },
-      default: {
-        shadowColor: "#000000",
-        shadowOpacity: 0.05,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 10 },
-        elevation: 2,
-      },
-    }),
   },
-  detailsTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0F172A",
-    marginBottom: 8,
+  goalRowSelected: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
   },
-  detailsDesc: {
-    fontSize: 14,
-    color: "rgba(15, 23, 42, 0.7)",
-    lineHeight: 20,
-    marginBottom: 16,
+  goalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
-  pointsWrap: {
-    gap: 8,
+  goalInfoCol: {
+    flex: 1,
+    marginRight: 8,
   },
-  pointRow: {
+  goalTitle: {
+    fontSize: 15,
+    color: "#334155",
+    fontFamily: "DINNextRoundedBold",
+  },
+  goalTitleSelected: {
+    color: "#1E3A8A",
+  },
+  goalDesc: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+  },
+
+  // -- Primary Action Button --
+  primaryButton: {
+    width: "100%",
+    backgroundColor: "#2563EB",
+    height: 54,
+    borderRadius: 27,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "center",
+    gap: 8,
+    borderBottomWidth: 4,
+    borderBottomColor: "#1D4ED8",
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  pointDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#2563EB",
+  primaryButtonDisabled: {
+    backgroundColor: "#94A3B8",
+    borderBottomColor: "#64748B",
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  pointText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#475569",
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontFamily: "DINNextRoundedBold",
   },
 });
-

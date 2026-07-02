@@ -7,7 +7,7 @@ export const termsKu: LegalDocument = {
     {
       title: "ڕازبوون",
       paragraphs: [
-        "بە بەکارهێنانی Phingo English ڕازی دەبیت بەم مەرجانە و سیاسەتی تایبەتمەندی.",
+        "بە بەکارهێنانی Twino English ڕازی دەبیت بەم مەرجانە و سیاسەتی تایبەتمەندی.",
       ],
     },
     {
@@ -19,7 +19,7 @@ export const termsKu: LegalDocument = {
     {
       title: "بەخۆڕایی",
       paragraphs: [
-        "لە ئێستادا Phingo بەخۆڕاییە. بەشداریکردنی پارەدار کوژاوەتەوە.",
+        "لە ئێستادا Twino بەخۆڕاییە. بەشداریکردنی پارەدار کوژاوەتەوە.",
       ],
     },
     {

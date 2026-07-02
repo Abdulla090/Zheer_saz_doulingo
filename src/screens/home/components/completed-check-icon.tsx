@@ -1,4 +1,5 @@
-import { CheckCircle2 } from "lucide-react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import React from "react";
 
 /** White checkmark used inside completed gold lesson nodes. */
@@ -13,11 +14,11 @@ export function CompletedCheckIcon({
 }) {
   const size = Math.max(width, height);
   return (
-    <CheckCircle2
+    <HugeiconsIcon
+      icon={CheckmarkCircle02Icon}
       size={size}
       color={color}
       strokeWidth={2.4}
-      fill={`${color}33`}
     />
   );
 }

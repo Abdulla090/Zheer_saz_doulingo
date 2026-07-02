@@ -1,5 +1,8 @@
 import { crossShadow } from "../../utils/shadows";
-import { Mic } from "lucide-react-native";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { Mic01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -24,29 +27,50 @@ type Props = {
 export function MicCaptureOrb({
   listening,
   disabled,
-  color = "#2B59F3",
+  color = "#0F172A",
   size = 108,
   hint,
   onPress,
 }: Props) {
-  const ringO = useSharedValue(0);
+  const pulse = useSharedValue(0);
 
   useEffect(() => {
     if (listening) {
-      ringO.value = withRepeat(
-        withTiming(0.42, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+      pulse.value = 0;
+      pulse.value = withRepeat(
+        withTiming(1, { duration: 1800, easing: Easing.linear }),
         -1,
-        true,
+        false
       );
     } else {
-      cancelAnimation(ringO);
-      ringO.value = withTiming(0, { duration: 200 });
+      cancelAnimation(pulse);
+      pulse.value = withTiming(0, { duration: 300 });
     }
-  }, [listening, ringO]);
+  }, [listening, pulse]);
 
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: ringO.value,
-  }));
+  const ring1Style = useAnimatedStyle(() => {
+    const p = pulse.value;
+    return {
+      transform: [{ scale: 1 + p * 1.0 }],
+      opacity: (1 - p) * 0.45 * (listening ? 1 : 0),
+    };
+  });
+
+  const ring2Style = useAnimatedStyle(() => {
+    const p = (pulse.value + 0.33) % 1;
+    return {
+      transform: [{ scale: 1 + p * 1.0 }],
+      opacity: (1 - p) * 0.45 * (listening ? 1 : 0),
+    };
+  });
+
+  const ring3Style = useAnimatedStyle(() => {
+    const p = (pulse.value + 0.66) % 1;
+    return {
+      transform: [{ scale: 1 + p * 1.0 }],
+      opacity: (1 - p) * 0.45 * (listening ? 1 : 0),
+    };
+  });
 
   const outer = size + 12;
   const radius = size / 2;
@@ -63,7 +87,31 @@ export function MicCaptureOrb({
               borderRadius: radius,
               backgroundColor: color,
             },
-            ringStyle,
+            ring1Style,
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.ring,
+            {
+              width: size,
+              height: size,
+              borderRadius: radius,
+              backgroundColor: color,
+            },
+            ring2Style,
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.ring,
+            {
+              width: size,
+              height: size,
+              borderRadius: radius,
+              backgroundColor: color,
+            },
+            ring3Style,
           ]}
         />
         <Pressable
@@ -92,7 +140,7 @@ export function MicCaptureOrb({
             },
           ]}
         >
-          <Mic size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
+          <HugeiconsIcon icon={Mic01Icon} size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
       </View>
       {hint ? <AppText style={styles.hint}>{hint}</AppText> : null}

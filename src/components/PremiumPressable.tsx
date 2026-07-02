@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/immutability -- Reanimated SharedValue writes in press handlers */
+ 
 import { LiquidGlassSurface } from "./LiquidGlassSurface";
 import { Motion } from "../screens/lesson/games/game-design";
 import React from "react";

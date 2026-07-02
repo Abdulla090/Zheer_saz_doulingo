@@ -54,7 +54,7 @@ export default function AdminHomeScreen() {
   const handleExport = () => {
     const json = exportJson(mode);
     if (Platform.OS === "web") {
-      downloadTextFile(`phingo-${mode}-units.json`, json);
+      downloadTextFile(`twino-${mode}-units.json`, json);
     } else {
       Alert.alert("Export JSON", "Copy this JSON from the import box after export on web, or use web admin to download.");
       setImportText(json);

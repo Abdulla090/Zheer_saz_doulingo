@@ -14,7 +14,7 @@ const kidsUnit3: UnitBank = [
     ],
     voices: [
       { prompt: "بڵێ: هەڵسە لە خەو", target: "Wake up.", targetKurdish: "هەڵسە لە خەو." },
-      { prompt: "بڵێ: دەموچاوم دەشۆم", target: "I wash my face.", targetKurdish: "دەموچاوم دەشۆم." },
+      { prompt: "بڵێ: دەموچاو دەشۆم", target: "I wash my face.", targetKurdish: "دەموچاوم دەشۆم." },
     ],
     sentences: [
       { english: ["I", "wake", "up"], kurdish: "لە خەو هەڵدەستم", arabic: "أنا أستيقظ" },
@@ -37,17 +37,18 @@ const kidsUnit3: UnitBank = [
     ],
     kidsGames: [
       { kind: "echo", prompt: "Describe the image:", target: "I wake up.", targetKurdish: "لە خەو هەڵدەستم.", imageRequire: require("../../../assets/images/games/kid_waking_up.png") },
-      { kind: "scene", scene: "bedroom", prompt: "Find the water!", correctId: "water", choices: [{ id: "water", emoji: "💧", label: "Water" }, { id: "fire", emoji: "🔥", label: "Fire" }] },
+      { kind: "scene", scene: "bedroom", prompt: "Find the glass of water!", correctId: "water", choices: [{ id: "water", emoji: "🥛", label: "Water" }, { id: "fire", emoji: "🔥", label: "Fire" }] },
       { kind: "bubble", prompt: "Pop the happy face!", correctId: "happy", choices: [{ id: "happy", emoji: "😀", label: "Happy" }, { id: "sad", emoji: "😢", label: "Sad" }] },
-      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child water!", correctId: "water", choices: [{ id: "water", emoji: "💧", label: "Water" }, { id: "rock", emoji: "🪨", label: "Rock" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "sun", emoji: "☀️", label: "Sun" }, { id: "moon", emoji: "🌙", label: "Moon" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Feed the child some clean water!", correctId: "water", choices: [{ id: "water", emoji: "🥛", label: "Water" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match sun and moon!", items: [{ id: "sun", emoji: "☀️", label: "Sun" }, { id: "moon", emoji: "🌙", label: "Moon" }] },
       { kind: "native", kurdishPrompt: "دەموچاو بدۆزەرەوە", correctId: "face", choices: [{ id: "face", emoji: "👦", label: "Face" }, { id: "hand", emoji: "🖐️", label: "Hand" }] },
       { kind: "simon", phrase: "Simon says, pick the sun!", correctId: "sun", choices: [{ id: "sun", emoji: "☀️", label: "Sun" }, { id: "cloud", emoji: "☁️", label: "Cloud" }] },
       { kind: "train", words: ["I", "wake", "up"], kurdishHint: "لە خەو هەڵدەستم" },
       { kind: "trick", showEmoji: "☀️", showLabel: "Sun", spokenWord: "Sun", matches: true },
-      { kind: "treasure", correctId: "star", pool: [{ id: "star", emoji: "⭐", label: "Star" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "treasure", correctId: "happy_star", pool: [{ id: "happy_star", emoji: "⭐️", label: "Happy Star" }, { id: "sad_cloud", emoji: "🌧️", label: "Rainy Cloud" }] }
     ],
   },
+
   // Lesson 1: Hungry
   {
     topic: "Hungry", topicKu: "برسی", topicAr: "جائع",
@@ -83,17 +84,18 @@ const kidsUnit3: UnitBank = [
     ],
     kidsGames: [
       { kind: "echo", prompt: "What is he doing?", target: "I eat an apple.", targetKurdish: "سێوێک دەخۆم.", imageRequire: require("../../../assets/images/games/kid_eating_apple.png") },
-      { kind: "scene", scene: "kitchen", prompt: "Find the apple!", correctId: "apple", choices: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "bread", emoji: "🍞", label: "Bread" }] },
-      { kind: "bubble", prompt: "Pop the milk!", correctId: "milk", choices: [{ id: "milk", emoji: "🥛", label: "Milk" }, { id: "juice", emoji: "🧃", label: "Juice" }] },
-      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child bread!", correctId: "bread", choices: [{ id: "bread", emoji: "🍞", label: "Bread" }, { id: "rock", emoji: "🪨", label: "Rock" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "milk", emoji: "🥛", label: "Milk" }] },
-      { kind: "native", kurdishPrompt: "سێوەکە بدۆزەرەوە", correctId: "apple", choices: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "banana", emoji: "🍌", label: "Banana" }] },
+      { kind: "scene", scene: "kitchen", prompt: "Find the red apple!", correctId: "apple", choices: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "bubble", prompt: "Pop the fresh milk!", correctId: "milk", choices: [{ id: "milk", emoji: "🥛", label: "Milk" }, { id: "juice", emoji: "🧃", label: "Juice" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Feed the hungry child some bread!", correctId: "bread", choices: [{ id: "bread", emoji: "🍞", label: "Bread" }, { id: "shoe", emoji: "👞", label: "Shoe" }] },
+      { kind: "shadow", prompt: "Match apple and milk!", items: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "milk", emoji: "🥛", label: "Milk" }] },
+      { kind: "native", kurdishPrompt: "سێو بدۆزەرەوە", correctId: "apple", choices: [{ id: "apple", emoji: "🍎", label: "Apple" }, { id: "bread", emoji: "🍞", label: "Bread" }] },
       { kind: "simon", phrase: "Simon says, pick the bread!", correctId: "bread", choices: [{ id: "bread", emoji: "🍞", label: "Bread" }, { id: "cake", emoji: "🍰", label: "Cake" }] },
       { kind: "train", words: ["I", "am", "hungry"], kurdishHint: "من برسیمە" },
       { kind: "trick", showEmoji: "🍎", showLabel: "Apple", spokenWord: "Apple", matches: true },
-      { kind: "treasure", correctId: "coin", pool: [{ id: "coin", emoji: "🪙", label: "Coin" }, { id: "shoe", emoji: "👞", label: "Shoe" }] }
+      { kind: "treasure", correctId: "milk_glass", pool: [{ id: "milk_glass", emoji: "🥛", label: "Milk" }, { id: "empty_glass", emoji: "🫗", label: "Empty" }] }
     ],
   },
+
   // Lesson 2: Play Time
   {
     topic: "Play Time", topicKu: "کاتی یاری", topicAr: "وقت اللعب",
@@ -131,15 +133,16 @@ const kidsUnit3: UnitBank = [
       { kind: "echo", prompt: "What are they doing?", target: "We play with a ball.", targetKurdish: "یاری بە تۆپ دەکەین.", imageRequire: require("../../../assets/images/games/kids_playing_ball.png") },
       { kind: "scene", scene: "playground", prompt: "Find the ball!", correctId: "ball", choices: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "shoe", emoji: "👞", label: "Shoe" }] },
       { kind: "bubble", prompt: "Pop the running shoe!", correctId: "shoe", choices: [{ id: "shoe", emoji: "👟", label: "Shoe" }, { id: "sock", emoji: "🧦", label: "Sock" }] },
-      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child a ball!", correctId: "ball", choices: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "book", emoji: "📖", label: "Book" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "kite", emoji: "🪁", label: "Kite" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child the colorful ball!", correctId: "ball", choices: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "book", emoji: "📖", label: "Book" }] },
+      { kind: "shadow", prompt: "Match ball and shoe!", items: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "shoe", emoji: "👟", label: "Shoe" }] },
       { kind: "native", kurdishPrompt: "تۆپەکە بدۆزەرەوە", correctId: "ball", choices: [{ id: "ball", emoji: "⚽", label: "Ball" }, { id: "car", emoji: "🚗", label: "Car" }] },
       { kind: "simon", phrase: "Simon says, jump high!", correctId: "jump", choices: [{ id: "jump", emoji: "🦘", label: "Jump" }, { id: "sit", emoji: "🪑", label: "Sit" }] },
       { kind: "train", words: ["We", "play", "fun", "games"], kurdishHint: "یاری خۆش دەکەین" },
       { kind: "trick", showEmoji: "⚽", showLabel: "Ball", spokenWord: "Ball", matches: true },
-      { kind: "treasure", correctId: "medal", pool: [{ id: "medal", emoji: "🥇", label: "Medal" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "treasure", correctId: "gold_medal", pool: [{ id: "gold_medal", emoji: "🥇", label: "Gold Medal" }, { id: "grey_rock", emoji: "🪨", label: "Rock" }] }
     ],
   },
+
   // Lesson 3: My Clothes
   {
     topic: "My Clothes", topicKu: "جلوبەرگم", topicAr: "ملابسي",
@@ -170,22 +173,23 @@ const kidsUnit3: UnitBank = [
         wrong1: "I will wear an apple.",
         wrong2: "I wear shoes.",
         wrong3: "I shall clothe myself.",
-        explanation: "بڵێ: 'I will wear a shirt and pants.'",
+        explanation: "بڵێ: 'I will wear a shirt and pants.'" ,
       },
     ],
     kidsGames: [
       { kind: "echo", prompt: "Describe the clothes:", target: "I wear a shirt.", targetKurdish: "کراسێک لەبەر دەکەم.", imageRequire: require("../../../assets/images/games/kid_wearing_shoes.png") },
       { kind: "scene", scene: "bedroom", prompt: "Find the shoes!", correctId: "shoes", choices: [{ id: "shoes", emoji: "👟", label: "Shoes" }, { id: "hat", emoji: "🧢", label: "Hat" }] },
       { kind: "bubble", prompt: "Pop the pants!", correctId: "pants", choices: [{ id: "pants", emoji: "👖", label: "Pants" }, { id: "shirt", emoji: "👕", label: "Shirt" }] },
-      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child a shirt!", correctId: "shirt", choices: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "pants", emoji: "👖", label: "Pants" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the cold child a warm shirt!", correctId: "shirt", choices: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
+      { kind: "shadow", prompt: "Match shirt and pants!", items: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "pants", emoji: "👖", label: "Pants" }] },
       { kind: "native", kurdishPrompt: "پێڵاوەکان بدۆزەرەوە", correctId: "shoes", choices: [{ id: "shoes", emoji: "👟", label: "Shoes" }, { id: "sock", emoji: "🧦", label: "Sock" }] },
       { kind: "simon", phrase: "Simon says, pick the shirt!", correctId: "shirt", choices: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "pants", emoji: "👖", label: "Pants" }] },
       { kind: "train", words: ["I", "am", "cold"], kurdishHint: "من سەرمامە" },
       { kind: "trick", showEmoji: "👕", showLabel: "Shirt", spokenWord: "Shirt", matches: true },
-      { kind: "treasure", correctId: "gem", pool: [{ id: "gem", emoji: "💎", label: "Gem" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "treasure", correctId: "blue_shoes", pool: [{ id: "blue_shoes", emoji: "👟", label: "Blue Shoes" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
     ],
   },
+
   // Lesson 4: Family House
   {
     topic: "Family House", topicKu: "خانووی خێزان", topicAr: "بيت العائلة",
@@ -198,268 +202,272 @@ const kidsUnit3: UnitBank = [
     ],
     voices: [
       { prompt: "بڵێ: ئەمە ماڵی منە", target: "This is my home.", targetKurdish: "ئەمە ماڵی منە." },
-      { prompt: "بڵێ: دەرگاکە بکەرەوە", target: "Open the door.", targetKurdish: "دەرگاکە بکەرەوە." },
+      { prompt: "بڵێ: دایک و باوکم خۆشدەوێت", target: "I love my mom and dad.", targetKurdish: "دایک و باوکم خۆشدەوێت." },
     ],
     sentences: [
-      { english: ["This", "is", "my", "house"], kurdish: "ئەمە خانووی منە", arabic: "هذا منزلي" },
-      { english: ["Open", "the", "door"], kurdish: "دەرگاکە بکەرەوە", arabic: "افتح الباب" },
+      { english: ["This", "is", "my", "home"], kurdish: "ئەمە ماڵی منە", arabic: "هذا بيتي" },
+      { english: ["I", "love", "my", "mom"], kurdish: "دایکمم خۆشدەوێت", arabic: "أنا أحب أمي" },
     ],
     fillBlanks: [
-      { parts: ["My", "and dad are here"], hint: "دایک و باوکم لێرەن", answer: "mom", wrongs: ["cat", "dog", "car"] },
-      { parts: ["We go", "after school"], hint: "دوای قوتابخانە دەچینەوە ماڵەوە", answer: "home", wrongs: ["tree", "door", "house"] },
+      { parts: ["Open the", "please"], hint: "دەرگاکە بکەرەوە تکایە", answer: "door", wrongs: ["house", "mom", "dad"] },
+      { parts: ["My", "is warm"], hint: "ماڵەکەم گەرمە", answer: "home", wrongs: ["door", "pants", "shoes"] },
     ],
     conversations: [
       {
-        situation: "لە بەردەم دەرگای ماڵەوەن",
-        theyAsk: "Are we home?",
-        correct: "Yes, open the door!",
-        wrong1: "This is a house.",
-        wrong2: "Mom is here.",
-        wrong3: "We have arrived at our residence.",
-        explanation: "بڵێ: 'Yes, open the door!'",
+        situation: "مامۆستا دەپرسێت لەگەڵ کێ دەژیت",
+        theyAsk: "Who lives in your house?",
+        correct: "My mom and dad!",
+        wrong1: "I live in house.",
+        wrong2: "Open the door.",
+        wrong3: "My parental units live with me.",
+        explanation: "بۆ منداڵ بڵێ: 'My mom and dad!'" ,
       },
     ],
     kidsGames: [
-      { kind: "echo", prompt: "What is this?", target: "This is my house.", targetKurdish: "ئەمە خانووی منە.", imageRequire: require("../../../assets/images/games/family_at_home.png") },
-      { kind: "scene", scene: "yard", prompt: "Find the door!", correctId: "door", choices: [{ id: "door", emoji: "🚪", label: "Door" }, { id: "window", emoji: "🪟", label: "Window" }] },
-      { kind: "bubble", prompt: "Pop the house!", correctId: "house", choices: [{ id: "house", emoji: "🏠", label: "House" }, { id: "car", emoji: "🚗", label: "Car" }] },
-      { kind: "feed", mascotEmoji: "👩", prompt: "Give Mom a flower!", correctId: "flower", choices: [{ id: "flower", emoji: "🌸", label: "Flower" }, { id: "rock", emoji: "🪨", label: "Rock" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "door", emoji: "🚪", label: "Door" }, { id: "house", emoji: "🏠", label: "House" }] },
-      { kind: "native", kurdishPrompt: "خانووەکە بدۆزەرەوە", correctId: "house", choices: [{ id: "house", emoji: "🏠", label: "House" }, { id: "tree", emoji: "🌳", label: "Tree" }] },
-      { kind: "simon", phrase: "Simon says, open the door!", correctId: "door", choices: [{ id: "door", emoji: "🚪", label: "Door" }, { id: "window", emoji: "🪟", label: "Window" }] },
-      { kind: "train", words: ["Open", "the", "door"], kurdishHint: "دەرگاکە بکەرەوە" },
+      { kind: "echo", prompt: "Describe the image:", target: "This is my family at home.", targetKurdish: "ئەمە خێزانەکەمە لە ماڵەوە.", imageRequire: require("../../../assets/images/games/family_at_home.png") },
+      { kind: "scene", scene: "street", prompt: "Find the house!", correctId: "house", choices: [{ id: "house", emoji: "🏠", label: "House" }, { id: "car", emoji: "🚗", label: "Car" }] },
+      { kind: "bubble", prompt: "Pop the door!", correctId: "door", choices: [{ id: "door", emoji: "🚪", label: "Door" }, { id: "key", emoji: "🔑", label: "Key" }] },
+      { kind: "feed", mascotEmoji: "👨", prompt: "Give Dad the key to the door!", correctId: "key", choices: [{ id: "key", emoji: "🔑", label: "Key" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
+      { kind: "shadow", prompt: "Match door and window!", items: [{ id: "door", emoji: "🚪", label: "Door" }, { id: "window", emoji: "🪟", label: "Window" }] },
+      { kind: "native", kurdishPrompt: "دایک بدۆزەرەوە", correctId: "mom", choices: [{ id: "mom", emoji: "👩", label: "Mom" }, { id: "dad", emoji: "👨", label: "Dad" }] },
+      { kind: "simon", phrase: "Simon says, pick the house!", correctId: "house", choices: [{ id: "house", emoji: "🏠", label: "House" }, { id: "tree", emoji: "🌳", label: "Tree" }] },
+      { kind: "train", words: ["This", "is", "my", "home"], kurdishHint: "ئەمە ماڵی منە" },
       { kind: "trick", showEmoji: "🏠", showLabel: "House", spokenWord: "House", matches: true },
-      { kind: "treasure", correctId: "key", pool: [{ id: "key", emoji: "🗝️", label: "Key" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "treasure", correctId: "home_key", pool: [{ id: "home_key", emoji: "🔑", label: "Key" }, { id: "stone", emoji: "🪨", label: "Stone" }] }
     ],
   },
-  // Lesson 5: Bath Time
+
+  // Lesson 5: Clean Up
   {
-    topic: "Bath Time", topicKu: "کاتی خۆشتن", topicAr: "وقت الاستحمام",
+    topic: "Clean Up", topicKu: "پاککردنەوە", topicAr: "التنظيف",
     words: [
-      { english: "Bath", kurdish: "خۆشتن", arabic: "استحمام" },
-      { english: "Soap", kurdish: "سابوون", arabic: "صابون" },
-      { english: "Water", kurdish: "ئاو", arabic: "ماء" },
-      { english: "Clean", kurdish: "خاوێن", arabic: "نظيف" },
       { english: "Wash", kurdish: "شۆردن", arabic: "يغسل" },
+      { english: "Clean", kurdish: "پاک", arabic: "نظيف" },
+      { english: "Brush", kurdish: "فڵچەکردن", arabic: "فرشاة" },
+      { english: "Soap", kurdish: "سابوون", arabic: "صابون" },
+      { english: "Toothbrush", kurdish: "فڵچەی ددان", arabic: "فرشاة أسنان" },
     ],
     voices: [
       { prompt: "بڵێ: دەستەکانم دەشۆم", target: "I wash my hands.", targetKurdish: "دەستەکانم دەشۆم." },
-      { prompt: "بڵێ: من خاوێنم", target: "I am clean.", targetKurdish: "من خاوێنم." },
+      { prompt: "بڵێ: سابوونەکە پاکە", target: "The soap is clean.", targetKurdish: "سابوونەکە پاکە." },
     ],
     sentences: [
-      { english: ["I", "take", "a", "bath"], kurdish: "خۆم دەشۆم", arabic: "أنا أستحم" },
-      { english: ["I", "wash", "my", "hands"], kurdish: "دەستەکانم دەشۆم", arabic: "أغسل يدي" },
+      { english: ["I", "wash", "my", "hands"], kurdish: "دەستەکانم دەشۆم", arabic: "أنا أغسل يدي" },
+      { english: ["The", "soap", "is", "clean"], kurdish: "سابوونەکە پاکە", arabic: "الصابون نظيف" },
     ],
     fillBlanks: [
-      { parts: ["I use", "and water"], hint: "سابوون و ئاو بەکار دەهێنم", answer: "soap", wrongs: ["apple", "bread", "shoe"] },
-      { parts: ["Now I am very", ""], hint: "ئێستا زۆر خاوێنم", answer: "clean", wrongs: ["dirty", "sad", "mad"] },
+      { parts: ["I use", "to clean my teeth"], hint: "فڵچەی ددان بەکاردێنم بۆ پاککردنەوەی ددانەکانم", answer: "toothbrush", wrongs: ["soap", "wash", "door"] },
+      { parts: ["I", "my face"], hint: "دەموچاوم دەشۆم", answer: "wash", wrongs: ["brush", "soap", "clean"] },
     ],
     conversations: [
       {
-        situation: "دایکت دەپرسێت بۆچی سابوون بەکار دەهێنیت",
-        theyAsk: "Why do you use soap?",
-        correct: "To be clean!",
-        wrong1: "Soap is good.",
-        wrong2: "Water is cold.",
-        wrong3: "For hygienic purposes.",
-        explanation: "وەڵامی سادە: 'To be clean!'",
+        situation: "مامۆستا پێش نانخواردن پێت دەڵێت",
+        theyAsk: "Your hands are dirty! What should you do?",
+        correct: "I will wash with soap!",
+        wrong1: "I have toothbrush.",
+        wrong2: "Clean house.",
+        wrong3: "I shall sanitize my hands.",
+        explanation: "بڵێ: 'I will wash with soap!'" ,
       },
     ],
     kidsGames: [
-      { kind: "echo", prompt: "What is the child doing?", target: "I take a bath.", targetKurdish: "خۆم دەشۆم.", imageRequire: require("../../../assets/images/games/kid_taking_bath.png") },
-      { kind: "scene", scene: "bathroom", prompt: "Find the soap!", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "towel", emoji: "🛁", label: "Towel" }] },
-      { kind: "bubble", prompt: "Pop the water drop!", correctId: "water", choices: [{ id: "water", emoji: "💧", label: "Water" }, { id: "fire", emoji: "🔥", label: "Fire" }] },
-      { kind: "feed", mascotEmoji: "🦆", prompt: "Give the duck some soap!", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "duck", emoji: "🦆", label: "Duck" }] },
-      { kind: "native", kurdishPrompt: "سابوونەکە بدۆزەرەوە", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "book", emoji: "📖", label: "Book" }] },
-      { kind: "simon", phrase: "Simon says, pick the duck!", correctId: "duck", choices: [{ id: "duck", emoji: "🦆", label: "Duck" }, { id: "cat", emoji: "🐱", label: "Cat" }] },
+      { kind: "echo", prompt: "Describe the action:", target: "I wash my face.", targetKurdish: "دەموچاوم دەشۆم.", imageRequire: require("../../../assets/images/games/kid_taking_bath.png") },
+      { kind: "scene", scene: "bathroom", prompt: "Find the toothbrush!", correctId: "toothbrush", choices: [{ id: "toothbrush", emoji: "🪥", label: "Toothbrush" }, { id: "cup", emoji: "🥛", label: "Cup" }] },
+      { kind: "bubble", prompt: "Pop the soap bubble!", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "water", emoji: "💧", label: "Water" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child the soap to wash!", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match soap and toothbrush!", items: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "toothbrush", emoji: "🪥", label: "Toothbrush" }] },
+      { kind: "native", kurdishPrompt: "سابوون بدۆزەرەوە", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "sponge", emoji: "🧽", label: "Sponge" }] },
+      { kind: "simon", phrase: "Simon says, wash your hands!", correctId: "wash", choices: [{ id: "wash", emoji: "🧼", label: "Wash" }, { id: "sleep", emoji: "💤", label: "Sleep" }] },
       { kind: "train", words: ["I", "wash", "my", "hands"], kurdishHint: "دەستەکانم دەشۆم" },
-      { kind: "trick", showEmoji: "🧼", showLabel: "Soap", spokenWord: "Soap", matches: true },
-      { kind: "treasure", correctId: "bubble", pool: [{ id: "bubble", emoji: "🫧", label: "Bubble" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "trick", showEmoji: "🪥", showLabel: "Toothbrush", spokenWord: "Toothbrush", matches: true },
+      { kind: "treasure", correctId: "clean_towel", pool: [{ id: "clean_towel", emoji: "🧼", label: "Clean Towel" }, { id: "dust", emoji: "💨", label: "Dust" }] }
     ],
   },
-  // Lesson 6: School Time
+
+  // Lesson 6: Night Time
   {
-    topic: "School Time", topicKu: "کاتی قوتابخانە", topicAr: "وقت المدرسة",
+    topic: "Night Time", topicKu: "کاتی شەو", topicAr: "وقت الليل",
     words: [
-      { english: "School", kurdish: "قوتابخانە", arabic: "مدرسة" },
-      { english: "Teacher", kurdish: "مامۆستا", arabic: "معلم" },
-      { english: "Book", kurdish: "کتێب", arabic: "كتاب" },
-      { english: "Read", kurdish: "خوێندنەوە", arabic: "يقرأ" },
-      { english: "Learn", kurdish: "فێربوون", arabic: "يتعلم" },
-    ],
-    voices: [
-      { prompt: "بڵێ: دەچم بۆ قوتابخانە", target: "I go to school.", targetKurdish: "دەچم بۆ قوتابخانە." },
-      { prompt: "بڵێ: من کتێبێک دەخوێنمەوە", target: "I read a book.", targetKurdish: "من کتێبێک دەخوێنمەوە." },
-    ],
-    sentences: [
-      { english: ["I", "go", "to", "school"], kurdish: "دەچم بۆ قوتابخانە", arabic: "أذهب إلى المدرسة" },
-      { english: ["I", "read", "a", "book"], kurdish: "کتێبێک دەخوێنمەوە", arabic: "أقرأ كتابًا" },
-    ],
-    fillBlanks: [
-      { parts: ["My", "is nice"], hint: "مامۆستاکەم باشە", answer: "teacher", wrongs: ["dog", "cat", "car"] },
-      { parts: ["We", "English at school"], hint: "لە قوتابخانە فێری ئینگلیزی دەبین", answer: "learn", wrongs: ["eat", "sleep", "jump"] },
-    ],
-    conversations: [
-      {
-        situation: "لە قوتابخانەیت و مامۆستاکەت دێتە ژوورەوە",
-        theyAsk: "Good morning class!",
-        correct: "Good morning teacher!",
-        wrong1: "I read a book.",
-        wrong2: "School is fun.",
-        wrong3: "Salutations educator.",
-        explanation: "وەڵامێکی ڕێزدارانە: 'Good morning teacher!'",
-      },
-    ],
-    kidsGames: [
-      { kind: "echo", prompt: "What is he doing?", target: "I read a book.", targetKurdish: "کتێبێک دەخوێنمەوە.", imageRequire: require("../../../assets/images/games/kid_reading_book.png") },
-      { kind: "scene", scene: "classroom", prompt: "Find the book!", correctId: "book", choices: [{ id: "book", emoji: "📖", label: "Book" }, { id: "ball", emoji: "⚽", label: "Ball" }] },
-      { kind: "bubble", prompt: "Pop the teacher!", correctId: "teacher", choices: [{ id: "teacher", emoji: "👩‍🏫", label: "Teacher" }, { id: "policeman", emoji: "👮", label: "Policeman" }] },
-      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the child a book!", correctId: "book", choices: [{ id: "book", emoji: "📖", label: "Book" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "book", emoji: "📖", label: "Book" }, { id: "pencil", emoji: "✏️", label: "Pencil" }] },
-      { kind: "native", kurdishPrompt: "کتێبەکە بدۆزەرەوە", correctId: "book", choices: [{ id: "book", emoji: "📖", label: "Book" }, { id: "shoe", emoji: "👟", label: "Shoe" }] },
-      { kind: "simon", phrase: "Simon says, pick the pencil!", correctId: "pencil", choices: [{ id: "pencil", emoji: "✏️", label: "Pencil" }, { id: "pen", emoji: "🖊️", label: "Pen" }] },
-      { kind: "train", words: ["I", "go", "to", "school"], kurdishHint: "دەچم بۆ قوتابخانە" },
-      { kind: "trick", showEmoji: "📖", showLabel: "Book", spokenWord: "Book", matches: true },
-      { kind: "treasure", correctId: "star", pool: [{ id: "star", emoji: "⭐", label: "Star" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
-    ],
-  },
-  // Lesson 7: Helping at Home
-  {
-    topic: "Helping at Home", topicKu: "یارمەتیدان لە ماڵەوە", topicAr: "المساعدة في المنزل",
-    words: [
-      { english: "Help", kurdish: "یارمەتیدان", arabic: "يساعد" },
-      { english: "Clean", kurdish: "پاککردنەوە", arabic: "ينظف" },
-      { english: "Room", kurdish: "ژوور", arabic: "غرفة" },
-      { english: "Toy", kurdish: "یاری", arabic: "لعبة" },
-      { english: "Box", kurdish: "سندوق", arabic: "صندوق" },
-    ],
-    voices: [
-      { prompt: "بڵێ: یارمەتی دایکم دەدەم", target: "I help my mom.", targetKurdish: "یارمەتی دایکم دەدەم." },
-      { prompt: "بڵێ: ژوورەکەم پاکدەکەمەوە", target: "I clean my room.", targetKurdish: "ژوورەکەم پاکدەکەمەوە." },
-    ],
-    sentences: [
-      { english: ["I", "help", "my", "mom"], kurdish: "یارمەتی دایکم دەدەم", arabic: "أساعد أمي" },
-      { english: ["I", "clean", "my", "room"], kurdish: "ژوورەکەم پاکدەکەمەوە", arabic: "أنظف غرفتي" },
-    ],
-    fillBlanks: [
-      { parts: ["I put my", "in the box"], hint: "یارییەکانم دەخەمە سندوقەکەوە", answer: "toy", wrongs: ["dog", "cat", "apple"] },
-      { parts: ["The toys go in the", ""], hint: "یارییەکان دەچنە سندوقەکەوە", answer: "box", wrongs: ["sky", "tree", "sun"] },
-    ],
-    conversations: [
-      {
-        situation: "دایکت دەپرسێت ئایا یارمەتیم دەدەیت",
-        theyAsk: "Can you help me clean the room?",
-        correct: "Yes, I can help!",
-        wrong1: "I have a toy.",
-        wrong2: "The box is empty.",
-        wrong3: "I shall assist in organizing.",
-        explanation: "بڵێ: 'Yes, I can help!'",
-      },
-    ],
-    kidsGames: [
-      { kind: "echo", prompt: "What is the child doing?", target: "I clean my room.", targetKurdish: "ژوورەکەم پاکدەکەمەوە." },
-      { kind: "scene", scene: "bedroom", prompt: "Find the toy box!", correctId: "box", choices: [{ id: "box", emoji: "📦", label: "Box" }, { id: "bed", emoji: "🛏️", label: "Bed" }] },
-      { kind: "bubble", prompt: "Pop the toy!", correctId: "toy", choices: [{ id: "toy", emoji: "🧸", label: "Toy" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
-      { kind: "feed", mascotEmoji: "📦", prompt: "Put a toy in the box!", correctId: "toy", choices: [{ id: "toy", emoji: "🧸", label: "Toy" }, { id: "water", emoji: "💧", label: "Water" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "toy", emoji: "🧸", label: "Toy" }, { id: "box", emoji: "📦", label: "Box" }] },
-      { kind: "native", kurdishPrompt: "یارییەکە بدۆزەرەوە", correctId: "toy", choices: [{ id: "toy", emoji: "🧸", label: "Toy" }, { id: "car", emoji: "🚗", label: "Car" }] },
-      { kind: "simon", phrase: "Simon says, clean up!", correctId: "broom", choices: [{ id: "broom", emoji: "🧹", label: "Broom" }, { id: "spoon", emoji: "🥄", label: "Spoon" }] },
-      { kind: "train", words: ["I", "help", "my", "mom"], kurdishHint: "یارمەتی دایکم دەدەم" },
-      { kind: "trick", showEmoji: "🧸", showLabel: "Toy", spokenWord: "Toy", matches: true },
-      { kind: "treasure", correctId: "coin", pool: [{ id: "coin", emoji: "🪙", label: "Coin" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
-    ],
-  },
-  // Lesson 8: Evening Routine
-  {
-    topic: "Evening Routine", topicKu: "ڕووتینی ئێوارە", topicAr: "روتين المساء",
-    words: [
-      { english: "Evening", kurdish: "ئێوارە", arabic: "مساء" },
-      { english: "Dinner", kurdish: "نانی ئێوارە", arabic: "عشاء" },
-      { english: "Family", kurdish: "خێزان", arabic: "عائلة" },
-      { english: "Watch", kurdish: "سەیرکردن", arabic: "يشاهد" },
-      { english: "TV", kurdish: "تەلەفزیۆن", arabic: "تلفاز" },
-    ],
-    voices: [
-      { prompt: "بڵێ: نانی ئێوارە دەخۆین", target: "We eat dinner.", targetKurdish: "نانی ئێوارە دەخۆین." },
-      { prompt: "بڵێ: سەیری تەلەفزیۆن دەکەین", target: "We watch TV.", targetKurdish: "سەیری تەلەفزیۆن دەکەین." },
-    ],
-    sentences: [
-      { english: ["We", "eat", "dinner"], kurdish: "نانی ئێوارە دەخۆین", arabic: "نحن نأكل العشاء" },
-      { english: ["We", "watch", "TV"], kurdish: "سەیری تەلەفزیۆن دەکەین", arabic: "نحن نشاهد التلفاز" },
-    ],
-    fillBlanks: [
-      { parts: ["I am with my", ""], hint: "لەگەڵ خێزانەکەمم", answer: "family", wrongs: ["school", "teacher", "car"] },
-      { parts: ["In the", "we eat dinner"], hint: "لە ئێوارەدا نانی ئێوارە دەخۆین", answer: "evening", wrongs: ["morning", "sky", "tree"] },
-    ],
-    conversations: [
-      {
-        situation: "باوکت دەپرسێت چیت دەوێت سەیری بکەیت",
-        theyAsk: "What do you want to watch on TV?",
-        correct: "I want to watch cartoons!",
-        wrong1: "I watch TV.",
-        wrong2: "Dinner is ready.",
-        wrong3: "I desire to observe animation.",
-        explanation: "بڵێ: 'I want to watch cartoons!'",
-      },
-    ],
-    kidsGames: [
-      { kind: "echo", prompt: "What are they doing?", target: "We eat dinner.", targetKurdish: "نانی ئێوارە دەخۆین." },
-      { kind: "scene", scene: "livingroom", prompt: "Find the TV!", correctId: "tv", choices: [{ id: "tv", emoji: "📺", label: "TV" }, { id: "window", emoji: "🪟", label: "Window" }] },
-      { kind: "bubble", prompt: "Pop the family!", correctId: "family", choices: [{ id: "family", emoji: "👨‍👩‍👧", label: "Family" }, { id: "dog", emoji: "🐶", label: "Dog" }] },
-      { kind: "feed", mascotEmoji: "📺", prompt: "Turn on the TV!", correctId: "remote", choices: [{ id: "remote", emoji: "📱", label: "Remote" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "tv", emoji: "📺", label: "TV" }, { id: "couch", emoji: "🛋️", label: "Couch" }] },
-      { kind: "native", kurdishPrompt: "تەلەفزیۆنەکە بدۆزەرەوە", correctId: "tv", choices: [{ id: "tv", emoji: "📺", label: "TV" }, { id: "bed", emoji: "🛏️", label: "Bed" }] },
-      { kind: "simon", phrase: "Simon says, eat dinner!", correctId: "plate", choices: [{ id: "plate", emoji: "🍽️", label: "Plate" }, { id: "book", emoji: "📖", label: "Book" }] },
-      { kind: "train", words: ["We", "watch", "TV"], kurdishHint: "سەیری تەلەفزیۆن دەکەین" },
-      { kind: "trick", showEmoji: "📺", showLabel: "TV", spokenWord: "TV", matches: true },
-      { kind: "treasure", correctId: "star", pool: [{ id: "star", emoji: "⭐", label: "Star" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
-    ],
-  },
-  // Lesson 9: Good Night
-  {
-    topic: "Good Night", topicKu: "شەوباش", topicAr: "تصبح على خير",
-    words: [
-      { english: "Night", kurdish: "شەو", arabic: "ليل" },
-      { english: "Bed", kurdish: "جێگا", arabic: "سرير" },
       { english: "Sleep", kurdish: "خەوتن", arabic: "ينام" },
-      { english: "Tired", kurdish: "ماندوو", arabic: "متعب" },
-      { english: "Dream", kurdish: "خەون", arabic: "حلم" },
+      { english: "Bed", kurdish: "جێگای خەوتن", arabic: "سرير" },
+      { english: "Night", kurdish: "شەو", arabic: "ليل" },
+      { english: "Star", kurdish: "ئەستێرە", arabic: "نجمة" },
+      { english: "Moon", kurdish: "مانگ", arabic: "قمر" },
     ],
     voices: [
-      { prompt: "بڵێ: من ماندووم", target: "I am tired.", targetKurdish: "من ماندووم." },
-      { prompt: "بڵێ: دەچم بۆ جێگاکەم", target: "I go to bed.", targetKurdish: "دەچم بۆ جێگاکەم." },
+      { prompt: "بڵێ: کاتی خەوتنە", target: "It is time to sleep.", targetKurdish: "کاتی خەوتنە." },
+      { prompt: "بڵێ: مانگ و ئەستێرەکان دەبینم", target: "I see the moon and stars.", targetKurdish: "مانگ و ئەستێرەکان دەبینم." },
     ],
     sentences: [
-      { english: ["I", "am", "tired"], kurdish: "من ماندووم", arabic: "أنا متعب" },
-      { english: ["I", "go", "to", "bed"], kurdish: "دەچم بۆ جێگاکەم", arabic: "أذهب إلى السرير" },
+      { english: ["It", "is", "night"], kurdish: "شەوە", arabic: "إنه الليل" },
+      { english: ["I", "sleep", "in", "my", "bed"], kurdish: "لە جێگاکەمدا دەخەوم", arabic: "أنام في سريري" },
     ],
     fillBlanks: [
-      { parts: ["I want to", "now"], hint: "دەمەوێت ئێستا بخەوم", answer: "sleep", wrongs: ["run", "play", "eat"] },
-      { parts: ["Have a good", ""], hint: "خەونێکی خۆش ببینیت", answer: "dream", wrongs: ["night", "car", "apple"] },
+      { parts: ["The", "shines at night"], hint: "مانگەکە بە شەو دەدرەوشێتەوە", answer: "moon", wrongs: ["sun", "bed", "sleep"] },
+      { parts: ["I go to", ""], hint: "دەچمە سەر جێگای خەوتنەکەم", answer: "bed", wrongs: ["star", "moon", "night"] },
     ],
     conversations: [
       {
-        situation: "کاتی خەوتنە و دایکت دەڵێت",
-        theyAsk: "Good night! Sleep well.",
-        correct: "Good night mom!",
-        wrong1: "I am tired.",
-        wrong2: "I go to bed.",
-        wrong3: "Pleasant dreams.",
-        explanation: "وەڵام بدەوە: 'Good night mom!'",
+        situation: "دایکت دەڵێت کاتی خەوتنە",
+        theyAsk: "It is night! Are you ready for bed?",
+        correct: "Yes, I want to sleep!",
+        wrong1: "I see sun.",
+        wrong2: "Good morning.",
+        wrong3: "I shall commence sleep.",
+        explanation: "بڵێ: 'Yes, I want to sleep!'" ,
       },
     ],
     kidsGames: [
-      { kind: "echo", prompt: "What does the child do?", target: "I go to bed.", targetKurdish: "دەچم بۆ جێگاکەم." },
-      { kind: "scene", scene: "bedroom", prompt: "Find the bed!", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "chair", emoji: "🪑", label: "Chair" }] },
-      { kind: "bubble", prompt: "Pop the moon!", correctId: "moon", choices: [{ id: "moon", emoji: "🌙", label: "Moon" }, { id: "sun", emoji: "☀️", label: "Sun" }] },
-      { kind: "feed", mascotEmoji: "🛏️", prompt: "Put a pillow on the bed!", correctId: "pillow", choices: [{ id: "pillow", emoji: "🛌", label: "Pillow" }, { id: "book", emoji: "📖", label: "Book" }] },
-      { kind: "shadow", prompt: "Match the shape!", items: [{ id: "moon", emoji: "🌙", label: "Moon" }, { id: "star", emoji: "⭐", label: "Star" }] },
-      { kind: "native", kurdishPrompt: "جێگاکە بدۆزەرەوە", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "table", emoji: "🪚", label: "Table" }] },
-      { kind: "simon", phrase: "Simon says, go to sleep!", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "ball", emoji: "⚽", label: "Ball" }] },
-      { kind: "train", words: ["I", "am", "tired"], kurdishHint: "من ماندووم" },
+      { kind: "echo", prompt: "Describe the image:", target: "I read a book before bed.", targetKurdish: "پێش خەوتن کتێب دەخوێنمەوە.", imageRequire: require("../../../assets/images/games/kid_reading_book.png") },
+      { kind: "scene", scene: "night", prompt: "Find the bed!", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "chair", emoji: "🪑", label: "Chair" }] },
+      { kind: "bubble", prompt: "Pop the yellow star!", correctId: "star", choices: [{ id: "star", emoji: "⭐️", label: "Star" }, { id: "cloud", emoji: "☁️", label: "Cloud" }] },
+      { kind: "feed", mascotEmoji: "🦉", prompt: "Put the sleepy owl to bed!", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match moon and star!", items: [{ id: "moon", emoji: "🌙", label: "Moon" }, { id: "star", emoji: "⭐️", label: "Star" }] },
+      { kind: "native", kurdishPrompt: "مانگەکە بدۆزەرەوە", correctId: "moon", choices: [{ id: "moon", emoji: "🌙", label: "Moon" }, { id: "sun", emoji: "☀️", label: "Sun" }] },
+      { kind: "simon", phrase: "Simon says, pick the star!", correctId: "star", choices: [{ id: "star", emoji: "⭐️", label: "Star" }, { id: "sun", emoji: "☀️", label: "Sun" }] },
+      { kind: "train", words: ["It", "is", "night"], kurdishHint: "شەوە" },
       { kind: "trick", showEmoji: "🌙", showLabel: "Moon", spokenWord: "Moon", matches: true },
-      { kind: "treasure", correctId: "dream", pool: [{ id: "dream", emoji: "💭", label: "Dream" }, { id: "rock", emoji: "🪨", label: "Rock" }] }
+      { kind: "treasure", correctId: "crescent_moon", pool: [{ id: "crescent_moon", emoji: "🌙", label: "Crescent Moon" }, { id: "sun", emoji: "☀️", label: "Sun" }] }
+    ],
+  },
+
+  // Lesson 7: My Body
+  {
+    topic: "My Body", topicKu: "جەستەم", topicAr: "جسدي",
+    words: [
+      { english: "Hand", kurdish: "دەست", arabic: "يد" },
+      { english: "Foot", kurdish: "پێ", arabic: "قدم" },
+      { english: "Eye", kurdish: "چاو", arabic: "عين" },
+      { english: "Ear", kurdish: "گوێ", arabic: "أذن" },
+      { english: "Nose", kurdish: "لووت", arabic: "أنف" },
+    ],
+    voices: [
+      { prompt: "بڵێ: دوو چاوم هەیە", target: "I have two eyes.", targetKurdish: "دوو چاوم هەیە." },
+      { prompt: "بڵێ: لووتم نیشان بدە", target: "Touch your nose.", targetKurdish: "لووتت نیشان بدە." },
+    ],
+    sentences: [
+      { english: ["I", "have", "two", "eyes"], kurdish: "دوو چاوم هەیە", arabic: "لدي عينان" },
+      { english: ["Touch", "your", "nose"], kurdish: "دەست لە لووتت بدە", arabic: "المس أنفك" },
+    ],
+    fillBlanks: [
+      { parts: ["I wave my", ""], hint: "دەستم دەوەشێنم", answer: "hand", wrongs: ["foot", "eye", "ear"] },
+      { parts: ["I listen with my", ""], hint: "بە گوێم گوێ دەگرم", answer: "ear", wrongs: ["eye", "nose", "foot"] },
+    ],
+    conversations: [
+      {
+        situation: "مامۆستا یاری جەستەت لەگەڵ دەکات",
+        theyAsk: "What do you see with?",
+        correct: "I see with my eyes!",
+        wrong1: "I see with my hand.",
+        wrong2: "Touch your ear.",
+        wrong3: "I utilize my visual organs.",
+        explanation: "بڵێ: 'I see with my eyes!'" ,
+      },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the image:", target: "I wash my hands.", targetKurdish: "دەستەکانم دەشۆم.", imageRequire: require("../../../assets/images/games/kid_taking_bath.png") },
+      { kind: "scene", scene: "classroom", prompt: "Find the hand!", correctId: "hand", choices: [{ id: "hand", emoji: "🖐️", label: "Hand" }, { id: "book", emoji: "📖", label: "Book" }] },
+      { kind: "bubble", prompt: "Pop the blue eye!", correctId: "eye", choices: [{ id: "eye", emoji: "👁️", label: "Eye" }, { id: "ear", emoji: "👂", label: "Ear" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the waving boy a high-five!", correctId: "hand", choices: [{ id: "hand", emoji: "🖐️", label: "Hand" }, { id: "stone", emoji: "🪨", label: "Stone" }] },
+      { kind: "shadow", prompt: "Match eye and ear!", items: [{ id: "eye", emoji: "👁️", label: "Eye" }, { id: "ear", emoji: "👂", label: "Ear" }] },
+      { kind: "native", kurdishPrompt: "لووت بدۆزەرەوە", correctId: "nose", choices: [{ id: "nose", emoji: "👃", label: "Nose" }, { id: "hand", emoji: "🖐️", label: "Hand" }] },
+      { kind: "simon", phrase: "Simon says, touch your nose!", correctId: "nose", choices: [{ id: "nose", emoji: "👃", label: "Nose" }, { id: "foot", emoji: "🦶", label: "Foot" }] },
+      { kind: "train", words: ["Wash", "your", "face"], kurdishHint: "دەموچاوت بشۆ" },
+      { kind: "trick", showEmoji: "👃", showLabel: "Nose", spokenWord: "Nose", matches: true },
+      { kind: "treasure", correctId: "left_hand", pool: [{ id: "left_hand", emoji: "🖐️", label: "Hand" }, { id: "boot", emoji: "🥾", label: "Boot" }] }
+    ],
+  },
+
+  // Lesson 8: Daily Actions
+  {
+    topic: "Daily Actions", topicKu: "کردارەکانی ڕۆژانە", topicAr: "الأفعال اليومية",
+    words: [
+      { english: "Brush teeth", kurdish: "ددان شوشتن", arabic: "ينظف أسنانه" },
+      { english: "Wash face", kurdish: "دەموچاو شوشتن", arabic: "يغسل وجهه" },
+      { english: "Put on clothes", kurdish: "جلوبەرگ لەبەرکردن", arabic: "يرتدي ملابسه" },
+      { english: "Go to sleep", kurdish: "چوون بۆ خەوتن", arabic: "يذهب للنوم" },
+    ],
+    voices: [
+      { prompt: "بڵێ: ددانەکانم دەشۆم", target: "I brush my teeth.", targetKurdish: "ددانەکانم دەشۆم." },
+      { prompt: "بڵێ: دەچم دەخەوم", target: "I go to sleep.", targetKurdish: "دەچم دەخەوم." },
+    ],
+    sentences: [
+      { english: ["I", "brush", "my", "teeth"], kurdish: "ددانەکانم دەشۆم", arabic: "أنظف أسناني" },
+      { english: ["I", "go", "to", "sleep"], kurdish: "دەچم دەخەوم", arabic: "أنا أذهب للنوم" },
+    ],
+    fillBlanks: [
+      { parts: ["Every morning I", "my face"], hint: "هەموو بەیانییەک دەموچاوم دەشۆم", answer: "wash face", wrongs: ["brush teeth", "go to sleep", "put on clothes"] },
+      { parts: ["Before bed I", "my teeth"], hint: "پێش خەوتن ددانەکانم دەشۆم", answer: "brush teeth", wrongs: ["wash face", "go to sleep", "put on clothes"] },
+    ],
+    conversations: [
+      {
+        situation: "باوکت دەپرسێت پێش خەوتن چی دەکەیت",
+        theyAsk: "What do you do before bed?",
+        correct: "I brush my teeth!",
+        wrong1: "I put on clothes.",
+        wrong2: "Good morning.",
+        wrong3: "I perform dental hygiene.",
+        explanation: "بۆ منداڵ بڵێ: 'I brush my teeth!'" ,
+      },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the action:", target: "I read a book.", targetKurdish: "کتێب دەخوێنمەوە.", imageRequire: require("../../../assets/images/games/kid_reading_book.png") },
+      { kind: "scene", scene: "bathroom", prompt: "Find the soap!", correctId: "soap", choices: [{ id: "soap", emoji: "🧼", label: "Soap" }, { id: "towel", emoji: "🧻", label: "Towel" }] },
+      { kind: "bubble", prompt: "Pop the shirt!", correctId: "shirt", choices: [{ id: "shirt", emoji: "👕", label: "Shirt" }, { id: "toothbrush", emoji: "🪥", label: "Toothbrush" }] },
+      { kind: "feed", mascotEmoji: "🧒", prompt: "Give the boy the toothbrush!", correctId: "toothbrush", choices: [{ id: "toothbrush", emoji: "🪥", label: "Toothbrush" }, { id: "apple", emoji: "🍎", label: "Apple" }] },
+      { kind: "shadow", prompt: "Match comb and shirt!", items: [{ id: "comb", emoji: "🪮", label: "Comb" }, { id: "shirt", emoji: "👕", label: "Shirt" }] },
+      { kind: "native", kurdishPrompt: "ددان شوشتن بدۆزەرەوە", correctId: "brush", choices: [{ id: "brush", emoji: "🪥", label: "Brush" }, { id: "sleep", emoji: "💤", label: "Sleep" }] },
+      { kind: "simon", phrase: "Simon says, wash your face!", correctId: "wash", choices: [{ id: "wash", emoji: "🧼", label: "Wash" }, { id: "sleep", emoji: "💤", label: "Sleep" }] },
+      { kind: "train", words: ["I", "brush", "my", "teeth"], kurdishHint: "ددانەکانم دەشۆم" },
+      { kind: "trick", showEmoji: "🪥", showLabel: "Brush Teeth", spokenWord: "Brush teeth", matches: true },
+      { kind: "treasure", correctId: "toothpaste", pool: [{ id: "toothpaste", emoji: "🪥", label: "Toothpaste" }, { id: "dirt", emoji: "🪨", label: "Dirt" }] }
+    ],
+  },
+
+  // Lesson 9: Review Day
+  {
+    topic: "Review Day", topicKu: "پێداچوونەوەی ڕۆژ", topicAr: "مراجعة اليوم",
+    words: [
+      { english: "Good morning", kurdish: "بەیانی باش", arabic: "صباح الخير" },
+      { english: "Good night", kurdish: "شەو باش", arabic: "تصبح على خير" },
+      { english: "Happy", kurdish: "دڵخۆش", arabic: "سعيد" },
+      { english: "Tired", kurdish: "ماندوو", arabic: "تعبان" },
+      { english: "Sleepy", kurdish: "خەواڵوو", arabic: "نعسان" },
+    ],
+    voices: [
+      { prompt: "بڵێ: بەیانی باش دایکە", target: "Good morning mom.", targetKurdish: "بەیانی باش دایکە." },
+      { prompt: "بڵێ: شەو باش باوکە", target: "Good night dad.", targetKurdish: "شەو باش باوکە." },
+    ],
+    sentences: [
+      { english: ["Good", "morning", "mom"], kurdish: "بەیانی باش دایکە", arabic: "صباح الخير يا أمي" },
+      { english: ["Good", "night", "dad"], kurdish: "شەو باش باوکە", arabic: "تصبح على خير يا أبي" },
+    ],
+    fillBlanks: [
+      { parts: ["I am", "I want to sleep"], hint: "من خەواڵووم، دەمەوێت بخەوم", answer: "sleepy", wrongs: ["happy", "morning", "night"] },
+      { parts: ["I am very", "today"], hint: "من زۆر دڵخۆشم ئەمڕۆ", answer: "happy", wrongs: ["tired", "sleepy", "night"] },
+    ],
+    conversations: [
+      {
+        situation: "باوکت شەو باشیت لێدەکات",
+        theyAsk: "Good night, sleep well!",
+        correct: "Good night, dad!",
+        wrong1: "Good morning.",
+        wrong2: "I am happy.",
+        wrong3: "I wish you a pleasant nocturnal rest.",
+        explanation: "بڵێ: 'Good night, dad!'" ,
+      },
+    ],
+    kidsGames: [
+      { kind: "echo", prompt: "Describe the feeling:", target: "I feel very happy.", targetKurdish: "زۆر هەست بە دڵخۆشی دەکەم.", imageRequire: require("../../../assets/images/games/friendly_teacher.png") },
+      { kind: "scene", scene: "bedroom", prompt: "Find the clock!", correctId: "clock", choices: [{ id: "clock", emoji: "⏰", label: "Clock" }, { id: "pillow", emoji: "🛋️", label: "Pillow" }] },
+      { kind: "bubble", prompt: "Pop the sleeping emoji!", correctId: "sleepy", choices: [{ id: "sleepy", emoji: "😴", label: "Sleepy" }, { id: "happy", emoji: "😀", label: "Happy" }] },
+      { kind: "feed", mascotEmoji: "🦉", prompt: "Put the tired owl to sleep!", correctId: "bed", choices: [{ id: "bed", emoji: "🛏️", label: "Bed" }, { id: "ball", emoji: "⚽", label: "Ball" }] },
+      { kind: "shadow", prompt: "Match sun and moon!", items: [{ id: "morning_sun", emoji: "☀️", label: "Morning" }, { id: "night_moon", emoji: "🌙", label: "Night" }] },
+      { kind: "native", kurdishPrompt: "دڵخۆش بدۆزەرەوە", correctId: "happy", choices: [{ id: "happy", emoji: "😀", label: "Happy" }, { id: "tired", emoji: "🥱", label: "Tired" }] },
+      { kind: "simon", phrase: "Simon says, say good night!", correctId: "goodnight", choices: [{ id: "goodnight", emoji: "👋", label: "Good Night" }, { id: "wake", emoji: "⏰", label: "Wake" }] },
+      { kind: "train", words: ["I", "feel", "very", "happy"], kurdishHint: "من زۆر دڵخۆشم" },
+      { kind: "trick", showEmoji: "😴", showLabel: "Sleepy", spokenWord: "Sleepy", matches: true },
+      { kind: "treasure", correctId: "happy_star", pool: [{ id: "happy_star", emoji: "⭐️", label: "Happy Star" }, { id: "grey_rock", emoji: "🪨", label: "Rock" }] }
     ],
   },
 ];

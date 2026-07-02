@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "nativeLanguage": "Idioma nativo",
+    "learningLanguage": "Idioma de aprendizaje"
+  },
+  "onboarding": {
+    "stepLabel": "Paso {{step}}",
+    "profileTitle": "Queremos conocerte",
+    "profileSubtitle": "Personaliza tu experiencia de aprendizaje.",
+    "profileName": "¿Cómo te llamas?",
+    "profileAge": "¿Cuántos años tienes?",
+    "levelTitle": "Selecciona el nivel",
+    "levelSubtitle": "¿Cuál es tu nivel actual de habla y escucha?",
+    "completeSetup": "Completar configuración",
+    "continue": "Continuar"
+  }
+}

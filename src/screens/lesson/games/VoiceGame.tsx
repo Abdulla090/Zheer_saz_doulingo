@@ -6,10 +6,10 @@
  */
 
 import { AppText } from "../../../components/ui/AppText";
-import { isGeminiConfigured } from "../../../constants/gemini";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View, TextInput } from "react-native";
 import { Image } from "expo-image";
+import { crossShadow } from "../../../utils/shadows";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -22,7 +22,6 @@ import Animated, {
 import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
 import { VoiceQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
 import { useI18n } from "../../../hooks/useI18n";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { useTTS } from "../../../hooks/use-tts";
@@ -33,6 +32,7 @@ import {
   LightGameHeading,
   LightQuestionPrompt,
   SpeakerIcon,
+  SpringPressable,
 } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
 import { ltrText, rtlBlock } from "./game-text";
@@ -57,29 +57,14 @@ const BENIGN_SPEECH_ERRORS = new Set([
   "network",
 ]);
 
-function pickInitialBackend(
-  geminiAvailable: boolean,
-  speechAvailable: boolean,
-): CaptureBackend {
-  if (geminiAvailable) return "gemini";
-  if (speechAvailable) return "speech";
-  return "manual";
-}
-
 export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
   const { speak } = useTTS();
-  const gemini = useGeminiVoiceCapture();
   const speech = useSpeechCapture("en-US");
 
-  const [backend, setBackend] = useState<CaptureBackend>(() =>
-    pickInitialBackend(gemini.available, speech.available),
-  );
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
-  const [statusDetail, setStatusDetail] = useState<string | null>(null);
   const [hasHintRevealed, setHasHintRevealed] = useState(false);
-  const [inputText, setInputText] = useState("");
 
   const firedRef = useRef(false);
   const stateRef = useRef<ListenState>("idle");
@@ -96,20 +81,10 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   }));
 
   React.useEffect(() => {
-    console.log("[VoiceGame] useEffect question change running, target:", question.targetWord);
-    // Abort active session
-    if (backend === "gemini") {
-      void gemini.abort();
-    } else if (backend === "speech") {
-      speech.abort();
-    }
-
-    setBackend(pickInitialBackend(gemini.available, speech.available));
+    speech.abort();
     setState("idle");
     setTranscript("");
-    setStatusDetail(null);
     setHasHintRevealed(false);
-    setInputText("");
     firedRef.current = false;
     stateRef.current = "idle";
     transcriptRef.current = "";
@@ -123,11 +98,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       speechEvalTimeoutRef.current = null;
     }
   }, [question.targetWord]);
-
-  const manualMode = backend === "manual";
-  const useGemini = backend === "gemini";
-  const useSpeech = backend === "speech";
-  const showGeminiKeyHint = Platform.OS === "web" && !isGeminiConfigured();
 
   const updateState = (s: ListenState) => {
     stateRef.current = s;
@@ -165,36 +135,17 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     );
   }, [shakeX]);
 
-  const fallbackToSpeech = useCallback(() => {
-    if (speech.available) {
-      setBackend("speech");
-      setStatusDetail(null);
-      return true;
-    }
-    setBackend("manual");
-    return false;
-  }, [speech.available]);
-
   const stopSession = useCallback(() => {
     clearListenTimeout();
     clearSpeechEvalTimeout();
     try {
-      if (useGemini) {
-        void gemini.abort();
-      } else if (useSpeech) {
-        speech.stop();
-      }
+      speech.stop();
     } catch (e) {
       console.warn("stopSession: failed to stop speech", e);
     }
-  }, [gemini, speech, useGemini, useSpeech]);
+  }, [speech]);
 
-  const geminiAbortRef = useRef(gemini.abort);
   const speechAbortRef = useRef(speech.abort);
-
-  useEffect(() => {
-    geminiAbortRef.current = gemini.abort;
-  }, [gemini.abort]);
 
   useEffect(() => {
     speechAbortRef.current = speech.abort;
@@ -202,14 +153,8 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   useEffect(
     () => () => {
-      console.log("[VoiceGame] useEffect unmount cleanup running");
       clearListenTimeout();
       clearSpeechEvalTimeout();
-      try {
-        void geminiAbortRef.current();
-      } catch (e) {
-        /* noop */
-      }
       try {
         speechAbortRef.current();
       } catch (e) {
@@ -223,7 +168,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     (text: string) => {
       stopSession();
       setTranscript(text);
-      setStatusDetail(null);
       updateState("success");
       setTimeout(() => fireAnswer(true), 700);
     },
@@ -231,10 +175,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   );
 
   const onFail = useCallback(
-    (detail?: string | null) => {
+    () => {
       if (stateRef.current === "fail" || stateRef.current === "success") return;
       stopSession();
-      if (detail) setStatusDetail(detail);
       updateState("fail");
       triggerFailShake();
     },
@@ -247,7 +190,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         onSuccess(text);
         return true;
       }
-      onFail(text || null);
+      onFail();
       return false;
     },
     [onFail, onSuccess, question.targetWord],
@@ -286,30 +229,36 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           return;
         }
 
-        if (elapsed < MIN_LISTEN_MS) return;
+        // If the engine ended extremely quickly (less than 400ms) and we have no transcript,
+        // it was likely a native startup glitch or premature end. Transition back to idle so they can retry.
+        if (elapsed < 400 && !last) {
+          clearListenTimeout();
+          updateState("idle");
+          return;
+        }
 
         clearListenTimeout();
         scheduleSpeechEvaluation();
       },
-      onError: (code: string) => {
+      onError: (code: string, message?: string) => {
         if (stateRef.current !== "listening") return;
-        if (BENIGN_SPEECH_ERRORS.has(code)) return;
-        onFail(null);
+        console.warn(`Speech recognition error: ${code} - ${message}`);
+        
+        clearListenTimeout();
+        if (transcriptRef.current.trim()) {
+          scheduleSpeechEvaluation();
+        } else {
+          onFail();
+        }
       },
     }),
-    [onFail, onSuccess, question.targetWord, scheduleSpeechEvaluation, speech.error],
+    [onFail, onSuccess, question.targetWord, scheduleSpeechEvaluation],
   );
 
   const startSpeechListening = useCallback(async () => {
-    if (!speech.available) {
-      setBackend("manual");
-      return;
-    }
-
     firedRef.current = false;
     transcriptRef.current = "";
     setTranscript("");
-    setStatusDetail(null);
     listenStartedAtRef.current = Date.now();
     updateState("listening");
     clearListenTimeout();
@@ -322,30 +271,25 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     try {
       const started = await speech.start(buildSpeechHandlers(), {
         continuous: false,
+        contextualStrings: [question.targetWord],
       });
       if (!started) {
         clearListenTimeout();
         updateState("idle");
-        setBackend("manual");
         return;
       }
     } catch (err) {
       console.warn("speech.start failed:", err);
       clearListenTimeout();
       updateState("idle");
-      setBackend("manual");
       return;
     }
 
     listenStartedAtRef.current = Date.now();
-  }, [buildSpeechHandlers, scheduleSpeechEvaluation, speech]);
+  }, [buildSpeechHandlers, scheduleSpeechEvaluation, speech, question.targetWord]);
 
   const finishSpeechCapture = useCallback(() => {
     if (stateRef.current !== "listening") return;
-    if (!speech.listening) {
-      console.log("[VoiceGame] finishSpeechCapture ignored: speech is not active yet.");
-      return;
-    }
     clearListenTimeout();
     updateState("processing");
     try {
@@ -356,125 +300,21 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     scheduleSpeechEvaluation();
   }, [scheduleSpeechEvaluation, speech]);
 
-  const finishGeminiCapture = useCallback(async () => {
-    if (stateRef.current !== "listening") return;
-    if (!gemini.listening) {
-      console.log("[VoiceGame] finishGeminiCapture ignored: gemini is not active yet.");
-      return;
-    }
-    clearListenTimeout();
-    updateState("processing");
-    try {
-      await gemini.stopAndEvaluate(question.targetWord);
-    } catch (e) {
-      console.warn("finishGeminiCapture: stopAndEvaluate failed", e);
-      onFail(null);
-    }
-  }, [gemini, question.targetWord, onFail]);
-
-  const startGeminiListening = useCallback(async () => {
-    firedRef.current = false;
-    transcriptRef.current = "";
-    setTranscript("");
-    setStatusDetail(null);
-    listenStartedAtRef.current = Date.now();
-    updateState("listening");
-    clearListenTimeout();
-    listenTimeoutRef.current = setTimeout(() => {
-      if (stateRef.current === "listening") {
-        void finishGeminiCapture();
-      }
-    }, LISTEN_TIMEOUT_MS);
-
-    const started = await gemini.start({
-      onResult: (text, matches) => {
-        setTranscript(text);
-        setStatusDetail(null);
-        if (matches) onSuccess(text);
-        else onFail(text || null);
-      },
-      onError: (message) => {
-        if (
-          stateRef.current !== "listening" &&
-          stateRef.current !== "processing"
-        ) {
-          return;
-        }
-
-        if (fallbackToSpeech()) {
-          updateState("idle");
-          void startSpeechListening();
-          return;
-        }
-
-        onFail(null);
-      },
-    });
-
-    if (!started) {
-      clearListenTimeout();
-      updateState("idle");
-      if (fallbackToSpeech()) {
-        await startSpeechListening();
-      } else {
-        setBackend("manual");
-      }
-      return;
-    }
-
-    listenStartedAtRef.current = Date.now();
-  }, [
-    fallbackToSpeech,
-    finishGeminiCapture,
-    gemini,
-    onFail,
-    onSuccess,
-    startSpeechListening,
-  ]);
-
-  const startListening = useCallback(async () => {
-    if (stateRef.current !== "idle" && stateRef.current !== "fail") return;
-    if (useGemini) {
-      await startGeminiListening();
-    } else if (useSpeech) {
-      await startSpeechListening();
-    }
-  }, [startGeminiListening, startSpeechListening, useGemini, useSpeech]);
-
   const handleMicPress = () => {
-    if (manualMode || state === "processing") return;
+    if (state === "processing") return;
 
     if (state === "listening") {
-      if (useGemini) {
-        void finishGeminiCapture();
-      } else if (useSpeech) {
-        finishSpeechCapture();
-      }
+      finishSpeechCapture();
       return;
     }
 
     if (state === "fail") {
       updateState("idle");
-      setStatusDetail(null);
-      void startListening();
+      void startSpeechListening();
       return;
     }
 
-    if (state === "idle") void startListening();
-  };
-
-  const handleManualConfirm = () => {
-    if (firedRef.current) return;
-
-    const cleanStr = (s: string) =>
-      s.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
-
-    if (cleanStr(inputText) === cleanStr(question.targetWord)) {
-      updateState("success");
-      setTimeout(() => fireAnswer(true), 400);
-    } else {
-      triggerFailShake();
-    }
+    if (state === "idle") void startSpeechListening();
   };
 
   const handleHearPhrase = () => {
@@ -488,10 +328,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const micColor =
     state === "listening" ||
-    gemini.listening ||
     speech.listening
       ? L.blue
-      : state === "processing" || gemini.processing
+      : state === "processing"
         ? L.blue
         : state === "success"
           ? L.green
@@ -499,31 +338,20 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             ? L.red
             : L.blue;
 
-  const statusText = manualMode
-    ? t("lessons.voiceManualHint")
-    : state === "processing" || gemini.processing
-      ? t("lessons.voiceProcessing")
-      : state === "idle"
-        ? useGemini
-          ? t("lessons.tapMicSpeakGemini")
-          : t("lessons.tapMicSpeak")
-        : state === "listening"
-          ? (useGemini && !gemini.listening) || (useSpeech && !speech.listening)
-            ? t("lessons.startingMic")
-            : useGemini || useSpeech
-              ? t("lessons.tapMicStop")
-              : t("lessons.listening")
-          : state === "success"
-            ? t("lessons.nice")
-            : statusDetail || t("lessons.micRetry");
-
-  console.log("[VoiceGame Render] state:", state, "| gemini.listening:", gemini.listening, "| gemini.processing:", gemini.processing, "| speech.listening:", speech.listening, "| backend:", backend);
+  const statusText = state === "processing"
+    ? t("lessons.voiceChecking")
+    : state === "listening"
+      ? t("lessons.voiceListeningSpeak")
+      : state === "success"
+        ? t("lessons.voiceCorrect")
+        : state === "fail"
+          ? t("lessons.voiceTryAgainStatus")
+          : t("lessons.voiceTapMicSpeak");
 
   const heroPrompt = question.prompt || t("lessons.sayOutLoudSub");
   const showTranscript =
-    !manualMode &&
     transcript.length > 0 &&
-    (state === "success" || state === "fail");
+    (state === "listening" || state === "processing" || state === "success" || state === "fail");
 
   return (
     <GameRoot style={s.root}>
@@ -535,18 +363,17 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       <LightQuestionPrompt
         label={t("lessons.questionLabel")}
-        forceKurdishFont
         variant={pathMode === "kids" ? "kids" : "default"}
       >
         {heroPrompt}
       </LightQuestionPrompt>
 
       {question.imageRequire && (
-        <Animated.View entering={FadeInUp.duration(400).springify()} style={{ alignItems: "center", marginVertical: 8 }}>
+        <Animated.View entering={FadeInUp.duration(400).springify()} style={s.heroImageCard}>
           <Image
             source={question.imageRequire}
             style={s.heroImage}
-            contentFit="contain"
+            contentFit="cover"
             transition={200}
           />
         </Animated.View>
@@ -554,20 +381,19 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       {!hasHintRevealed ? (
         <Animated.View entering={FadeInUp.duration(300)}>
-          <Pressable
+          <SpringPressable
             onPress={handleRevealHint}
-            style={({ pressed }) => [
+            style={[
               s.hintButton,
-              pressed && s.hintButtonPressed,
               pathMode === "kids" && {
-                backgroundColor: "rgba(255, 120, 30, 0.08)",
+                backgroundColor: "#FFF4ED",
                 borderColor: "rgba(255, 120, 30, 0.25)",
               }
             ]}
           >
             <SpeakerIcon size={24} color={pathMode === "kids" ? "#C2410C" : L.blue} />
-            <AppText style={[s.hintText, pathMode === "kids" && { color: "#C2410C" }]}>Tap for hint</AppText>
-          </Pressable>
+            <AppText style={[s.hintText, pathMode === "kids" && { color: "#C2410C" }]}>{t("lessons.voiceTapForHint")}</AppText>
+          </SpringPressable>
         </Animated.View>
       ) : (
         <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
@@ -577,71 +403,31 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             <AppText style={s.targetEn} forceLatinFont latinRole="bold">
               {question.targetWord}
             </AppText>
-            <Pressable
+            <SpringPressable
               onPress={handleHearPhrase}
-              style={({ pressed }) => [s.speakerBtn, pressed && { opacity: 0.85 }]}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t("lessons.voiceListenHint")}
+              style={s.speakerBtn}
             >
               <SpeakerIcon size={20} />
-            </Pressable>
+            </SpringPressable>
           </View>
         </Animated.View>
       )}
 
       <View style={s.micStage}>
-        {!manualMode ? (
-          <>
-            <Animated.View style={shakeStyle}>
-              <MicCaptureOrb
-                listening={
-                  state === "listening" ||
-                  state === "processing" ||
-                  gemini.listening ||
-                  gemini.processing ||
-                  speech.listening
-                }
-                disabled={state === "success"}
-                color={micColor}
-                size={108}
-                hint={statusText}
-                onPress={handleMicPress}
-              />
-            </Animated.View>
-            {(state === "idle" || state === "listening" || state === "processing" || state === "fail") && (
-              <Pressable
-                onPress={() => {
-                  stopSession();
-                  setBackend("manual");
-                  updateState("idle");
-                }}
-                style={({ pressed }) => [s.fallbackLink, pressed && { opacity: 0.75 }]}
-              >
-                <AppText style={s.fallbackLinkText}>{t("lessons.voiceManualFallback")}</AppText>
-              </Pressable>
-            )}
-          </>
-        ) : (
-          <View style={s.manualWrap}>
-            <AppText style={s.unavailable}>{t("lessons.voiceUnavailable")}</AppText>
-            <AppText style={s.manualHint}>Type the English sentence below to verify:</AppText>
-            <Animated.View style={[s.inputWrapper, shakeStyle]}>
-              <TextInput
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder="Type target phrase..."
-                placeholderTextColor="#A0AEC0"
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={[
-                  s.inputField,
-                  state === "fail" && { borderColor: "#EF4444", backgroundColor: "#FEF2F2" }
-                ]}
-              />
-            </Animated.View>
-          </View>
-        )}
+        <Animated.View style={shakeStyle}>
+          <MicCaptureOrb
+            listening={
+              state === "listening" ||
+              state === "processing" ||
+              speech.listening
+            }
+            disabled={state === "success"}
+            color={micColor}
+            size={108}
+            hint={statusText}
+            onPress={handleMicPress}
+          />
+        </Animated.View>
 
         {showTranscript ? (
           <AppText style={s.transcript} numberOfLines={2}>
@@ -652,15 +438,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       <View style={{ flex: 1 }} />
 
-      {manualMode ? (
-        <GameFooter>
-          <LightCheckButton
-            label={t("lessons.voiceSaidIt")}
-            onPress={handleManualConfirm}
-            disabled={state === "success"}
-          />
-        </GameFooter>
-      ) : state === "fail" ? (
+      {state !== "success" ? (
         <GameFooter delay={120}>
           <AppText style={s.skipLink} onPress={() => fireAnswer("skip")}>
             {t("lessons.dontKnow")}
@@ -782,7 +560,7 @@ const s = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 24,
-    backgroundColor: "rgba(43,89,243,0.06)",
+    backgroundColor: "#F2F5FE",
     borderWidth: 1.5,
     borderColor: "rgba(43,89,243,0.15)",
     borderRadius: 20,
@@ -803,19 +581,34 @@ const s = StyleSheet.create({
     fontWeight: "800",
     color: L.blue,
     fontFamily: "DINNextRoundedBold",
+    backgroundColor: "transparent",
   },
   fallbackLink: {
-    marginTop: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    marginTop: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+    backgroundColor: "rgba(43, 89, 243, 0.07)",
+    borderWidth: 1.5,
+    borderColor: "rgba(43, 89, 243, 0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  fallbackLinkKids: {
+    backgroundColor: "rgba(255, 120, 30, 0.08)",
+    borderColor: "rgba(255, 120, 30, 0.18)",
   },
   fallbackLinkText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "800",
     color: L.blue,
     fontFamily: "DINNextRoundedBold",
     textAlign: "center",
-    textDecorationLine: "underline",
+    textDecorationLine: "none",
+  },
+  fallbackLinkTextKids: {
+    color: "#C2410C",
   },
   inputWrapper: {
     width: "100%",
@@ -834,6 +627,24 @@ const s = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: L.border,
     textAlign: "center",
+  },
+  heroImageCard: {
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    padding: 10,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    ...(Platform.OS === "web"
+      ? { boxShadow: "0px 6px 16px 0px rgba(26, 43, 72, 0.06)" }
+      : {
+          shadowColor: "#1A2B48",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.06,
+          shadowRadius: 16,
+          elevation: 4,
+        }),
+    marginVertical: 12,
   },
   heroImage: {
     width: 200,

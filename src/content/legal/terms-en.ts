@@ -7,7 +7,7 @@ export const termsEn: LegalDocument = {
     {
       title: "Agreement",
       paragraphs: [
-        "By using Phingo English you agree to these terms and our Privacy Policy. If you do not agree, please uninstall the app.",
+        "By using Twino English you agree to these terms and our Privacy Policy. If you do not agree, please uninstall the app.",
       ],
     },
     {
@@ -20,7 +20,7 @@ export const termsEn: LegalDocument = {
     {
       title: "Free app",
       paragraphs: [
-        "Phingo is currently free. Paid subscriptions are disabled. If we add optional purchases later, store billing rules will apply and these terms will be updated.",
+        "Twino is currently free. Paid subscriptions are disabled. If we add optional purchases later, store billing rules will apply and these terms will be updated.",
       ],
     },
     {

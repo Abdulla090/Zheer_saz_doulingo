@@ -43,23 +43,32 @@ try {
 }
 
 export const HomePalette = {
-  blue: "#2B59F3",
-  blueGlow: "#0A84FF",
-  navy: "#1A2B48",
-  gray: "#6B7280",
-  grayLight: "#9CA3AF",
-  track: "#E8EDF2",
-  orange: "#FF9600",
-  red: "#FF4B4B",
-  gold: "#FFC800",
-  divider: "#EEF2F6",
-  meshTop: "#E8F0FE",
-  meshMid: "#F4F8FF",
-  meshBottom: "#FFFFFF",
+  blue: "#0F172A",
+  blueGlow: "#64748B",
+  coral: "#334155",
+  coralDeep: "#0F172A",
+  amber: "#475569",
+  navy: "#090D16",
+  gray: "#64748B",
+  grayLight: "#94A3B8",
+  track: "#E2E8F0",
+  orange: "#1E293B",
+  red: "#0F172A",
+  gold: "#334155",
+  cream: "#FFFFFF",
+  sand: "#F8FAFC",
+  divider: "#E2E8F0",
+  meshTop: "#FFFFFF",
+  meshMid: "#F8FAFC",
+  meshBottom: "#F1F5F9",
 } as const;
 
 function useNativeLiquidGlass() {
-  return Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
+  return (
+    Platform.OS === "ios" &&
+    isGlassEffectAPIAvailable() &&
+    GlassViewComponent != null
+  );
 }
 
 /** Compact glass chip — lesson header pills, icon buttons */
@@ -90,7 +99,9 @@ export function HomeLiquidPill({
   );
 
   const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   if (!onPress) return inner;
 
@@ -163,7 +174,9 @@ export function HomeLiquidCard({
           borderRadius: radius,
           borderWidth: 1,
           borderColor: Glass.border,
-          backgroundColor: IS_ANDROID ? "rgba(255,255,255,0.94)" : Glass.surface,
+          backgroundColor: IS_ANDROID
+            ? "rgba(255,255,255,0.94)"
+            : Glass.surface,
           overflow: "hidden",
         },
         crossShadow({
@@ -190,13 +203,16 @@ export function HomeLiquidCard({
             {
               backdropFilter: "blur(18px) saturate(160%)",
               WebkitBackdropFilter: "blur(18px) saturate(160%)",
-            } as any
+            } as any,
           ]}
         />
       )}
       <LinearGradient
         colors={[...Glass.sheen]}
-        style={[styles.cardSheen, { borderTopLeftRadius: radius, borderTopRightRadius: radius }]}
+        style={[
+          styles.cardSheen,
+          { borderTopLeftRadius: radius, borderTopRightRadius: radius },
+        ]}
         pointerEvents="none"
       />
       <View style={[styles.cardContent, contentStyle]}>{children}</View>
@@ -250,7 +266,11 @@ export function HomeLiquidButton({
         ]}
       >
         <LinearGradient
-          colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]}
+          colors={[
+            "rgba(255,255,255,0.42)",
+            "rgba(255,255,255,0.08)",
+            "rgba(255,255,255,0)",
+          ]}
           locations={[0, 0.45, 1]}
           style={styles.primarySheen}
           pointerEvents="none"
@@ -284,11 +304,17 @@ export function HomeLiquidLessonTile({
       {!nativeGlass && (
         <>
           <View
-            style={[StyleSheet.absoluteFill, { backgroundColor: HomePalette.blue, borderRadius: radius }]}
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: HomePalette.blue, borderRadius: radius },
+            ]}
           />
           <LinearGradient
             colors={["rgba(255,255,255,0.28)", "rgba(255,255,255,0)"]}
-            style={[styles.lessonSheen, { borderTopLeftRadius: radius, borderTopRightRadius: radius }]}
+            style={[
+              styles.lessonSheen,
+              { borderTopLeftRadius: radius, borderTopRightRadius: radius },
+            ]}
             pointerEvents="none"
           />
         </>
@@ -301,7 +327,8 @@ export function HomeLiquidLessonTile({
     <Animated.View style={[anim, style]}>
       <Pressable
         onPress={() => {
-          if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (Platform.OS !== "web")
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress();
         }}
         onPressIn={() => {
@@ -349,7 +376,12 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
 
   if (nativeGlass && GlassView) {
     return (
-      <View style={[styles.xpOuter, { width: size, height: size, borderRadius: size / 2 }]}>
+      <View
+        style={[
+          styles.xpOuter,
+          { width: size, height: size, borderRadius: size / 2 },
+        ]}
+      >
         <GlassView
           style={[StyleSheet.absoluteFill, { borderRadius: size / 2 }]}
           glassEffectStyle="clear"
@@ -364,7 +396,11 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
   return (
     <View style={styles.xpOuter}>
       {!IS_ANDROID && (
-        <BlurView intensity={Glass.blurLight} tint="light" style={StyleSheet.absoluteFill} />
+        <BlurView
+          intensity={Glass.blurLight}
+          tint="light"
+          style={StyleSheet.absoluteFill}
+        />
       )}
       <AppText style={styles.xpText}>{label}</AppText>
     </View>
@@ -375,13 +411,18 @@ export function HomeMeshBackground() {
   return (
     <>
       <LinearGradient
-        colors={[HomePalette.meshTop, HomePalette.meshMid, HomePalette.meshBottom]}
-        locations={[0, 0.42, 1]}
+        colors={[
+          HomePalette.meshTop,
+          HomePalette.meshMid,
+          HomePalette.meshBottom,
+        ]}
+        locations={[0, 0.46, 1]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
+      <View style={styles.meshOrbCoral} pointerEvents="none" />
       <View style={styles.meshOrbBlue} pointerEvents="none" />
-      <View style={styles.meshOrbTeal} pointerEvents="none" />
+      <View style={styles.meshOrbAmber} pointerEvents="none" />
     </>
   );
 }
@@ -429,6 +470,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    width: "100%",
     height: 56,
   },
   cardContent: {
@@ -449,6 +491,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    width: "100%",
     height: 26,
   },
   primaryLabel: {
@@ -470,6 +513,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    width: "100%",
     height: 48,
   },
   lessonContent: {
@@ -497,22 +541,31 @@ const styles = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     zIndex: 1,
   },
+  meshOrbCoral: {
+    position: "absolute",
+    top: -90,
+    left: -70,
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    backgroundColor: "rgba(15, 23, 42, 0.05)",
+  },
   meshOrbBlue: {
     position: "absolute",
-    top: -80,
-    right: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(43,89,243,0.08)",
+    top: -70,
+    right: -62,
+    width: 230,
+    height: 230,
+    borderRadius: 115,
+    backgroundColor: "rgba(15, 23, 42, 0.03)",
   },
-  meshOrbTeal: {
+  meshOrbAmber: {
     position: "absolute",
-    top: 280,
-    left: -70,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(100,210,255,0.07)",
+    top: 292,
+    left: -74,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: "rgba(15, 23, 42, 0.02)",
   },
 });

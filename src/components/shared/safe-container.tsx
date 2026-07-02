@@ -8,6 +8,8 @@ type SafeContainerProps = {
   edges?: ("top" | "bottom")[];
   paddingTop?: number;
   paddingBottom?: number;
+  style?: any;
+  [key: string]: any;
 };
 
 const SafeContainer = ({
@@ -16,6 +18,8 @@ const SafeContainer = ({
   edges = ["top"],
   paddingTop = 0,
   paddingBottom = 0,
+  style,
+  ...props
 }: SafeContainerProps) => {
   const insets = useSafeAreaInsets();
   const top = edges?.includes("top") ? insets.top : 0;
@@ -24,10 +28,14 @@ const SafeContainer = ({
   return (
     <View
       className={` ${className ?? ""}`}
-      style={{
-        paddingTop: top + paddingTop,
-        paddingBottom: bottom + paddingBottom,
-      }}
+      style={[
+        {
+          paddingTop: top + paddingTop,
+          paddingBottom: bottom + paddingBottom,
+        },
+        style,
+      ]}
+      {...props}
     >
       {children}
     </View>

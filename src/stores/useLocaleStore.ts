@@ -1,26 +1,40 @@
 import { appStorage } from "../lib/app-storage";
 import { Alert, DevSettings, I18nManager } from "react-native";
 import { create } from "zustand";
-import type { AppLocale } from "../i18n";
+import { LANGUAGES } from "../config/languages";
+import * as Updates from "expo-updates";
 
-const STORAGE_KEY = "phingo.app.locale";
+const SOURCE_LANG_KEY = "twino.app.sourceLanguage";
+const TARGET_LANG_KEY = "twino.app.targetLanguage";
 
 interface LocaleState {
-  locale: AppLocale;
+  selectedSourceLanguage: string;
+  selectedTargetLanguage: string;
+  locale: string;
   ready: boolean;
-  setLocale: (locale: AppLocale) => void;
+  setLocale: (locale: string) => void;
+  setLanguagePair: (source: string, target: string) => void;
 }
 
-const savedLocale = (appStorage.getItemSync(STORAGE_KEY) === "ku" ? "ku" : "en") as AppLocale;
+const defaultSource = appStorage.getItemSync(SOURCE_LANG_KEY) || "ku";
+const defaultTarget = appStorage.getItemSync(TARGET_LANG_KEY) || "en";
 
 export const useLocaleStore = create<LocaleState>((set) => ({
-  locale: savedLocale,
+  selectedSourceLanguage: defaultSource,
+  selectedTargetLanguage: defaultTarget,
+  locale: defaultSource, // Alias for legacy code
   ready: true,
-  setLocale: (locale) => {
-    appStorage.setItemSync(STORAGE_KEY, locale);
-    set({ locale });
+  setLocale: (locale: string) => { // Alias for legacy code
+    appStorage.setItemSync(SOURCE_LANG_KEY, locale);
+    set((state) => ({ 
+      selectedSourceLanguage: locale, 
+      locale, 
+      selectedTargetLanguage: state.selectedTargetLanguage 
+    }));
+    // We also need to run RTL logic here to not break legacy
+    const sourceLangDef = LANGUAGES[locale];
+    const isRTL = sourceLangDef ? sourceLangDef.rtl : false;
     
-    const isRTL = locale === "ku";
     if (I18nManager.isRTL !== isRTL) {
       I18nManager.allowRTL(isRTL);
       I18nManager.forceRTL(isRTL);
@@ -28,10 +42,37 @@ export const useLocaleStore = create<LocaleState>((set) => ({
         if (__DEV__ && DevSettings && DevSettings.reload) {
           DevSettings.reload();
         } else {
-          Alert.alert(
-            "Restart Required",
-            "Please restart the app to fully apply the language layout changes."
-          );
+          Updates.reloadAsync().catch(() => {
+            Alert.alert(
+              "Restart Required",
+              "Please restart the app to fully apply the language layout changes."
+            );
+          });
+        }
+      }, 150);
+    }
+  },
+  setLanguagePair: (source, target) => {
+    appStorage.setItemSync(SOURCE_LANG_KEY, source);
+    appStorage.setItemSync(TARGET_LANG_KEY, target);
+    set({ selectedSourceLanguage: source, selectedTargetLanguage: target });
+    
+    const sourceLangDef = LANGUAGES[source];
+    const isRTL = sourceLangDef ? sourceLangDef.rtl : false;
+    
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.allowRTL(isRTL);
+      I18nManager.forceRTL(isRTL);
+      setTimeout(() => {
+        if (__DEV__ && DevSettings && DevSettings.reload) {
+          DevSettings.reload();
+        } else {
+          Updates.reloadAsync().catch(() => {
+            Alert.alert(
+              "Restart Required",
+              "Please restart the app to fully apply the language layout changes."
+            );
+          });
         }
       }, 150);
     }

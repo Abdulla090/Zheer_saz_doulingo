@@ -91,7 +91,7 @@ Project ID: `57df22e9-341f-4e45-a08d-fb5ca28d69c5` (in `app.json`).
 **Option B — GitHub Actions**
 
 1. Add repository secret `EXPO_TOKEN` with your Expo token.
-2. Run workflow **EAS Android APK** (`.github/workflows/eas-android-apk.yml`) or push to `main` / `cursor/phingo-home-dashboard-bb74`.
+2. Run workflow **EAS Android APK** (`.github/workflows/eas-android-apk.yml`) or push to `main` / `cursor/twino-home-dashboard-bb74`.
 3. Download the APK from the [Expo builds dashboard](https://expo.dev/accounts/abdulla001/projects/duolingo-clone/builds).
 
 Profiles in `eas.json`:
@@ -137,7 +137,7 @@ Star counts and “Best: XX%” on the Games hub are **placeholder UI** until pr
 
 - Route: `/ai-teacher` (also linked from **Games → AI experiences**).
 - Mock scoring: `src/services/ai-teacher-service.ts` (set `EXPO_PUBLIC_AI_TEACHER_URL` for a real API).
-- Last saved attempt stored in AsyncStorage key `phingo.ai-teacher.last-attempt`.
+- Last saved attempt stored in AsyncStorage key `twino.ai-teacher.last-attempt`.
 - Screenshot demo results: `/ai-teacher?demo=results`.
 
 ## Demo

@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",

@@ -7,10 +7,11 @@ const fs = require('fs');
 
   page.on('console', msg => console.log('BROWSER CONSOLE:', msg.type(), msg.text()));
   page.on('pageerror', error => console.log('BROWSER ERROR:', error.message));
+  page.on('requestfailed', request => console.log('REQUEST FAILED:', request.url(), request.failure()?.errorText || 'Unknown'));
 
-  console.log('Navigating to http://127.0.0.1:8081...');
+  console.log('Navigating to http://localhost:8081...');
   try {
-    await page.goto('http://127.0.0.1:8081', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('http://localhost:8081', { waitUntil: 'domcontentloaded', timeout: 90000 });
     console.log('Page loaded successfully.');
     await page.waitForTimeout(5000); // wait for JS to execute
 

@@ -1,50 +1,29 @@
 /* eslint-disable */
+import React, { useCallback, useMemo, useState } from "react";
+import { View, StyleSheet, Text, Pressable, Platform } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FlashList } from "@shopify/flash-list";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  Easing,
+  interpolateColor,
+} from "react-native-reanimated";
 import { AppText } from "../../components/ui/AppText";
-import { enterFadeDown } from "../../components/animations/motion";
 import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
 import { getGuidebook, GuidebookLesson } from "../../data/guidebook-data";
 import type { LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
 import { useTTS } from "../../hooks/use-tts";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  Icon3DBook,
-  Icon3DBookSm,
-  Icon3DMessage,
-  Icon3DGradCap,
-  Icon3DVolume,
-  Icon3DChevronDown,
-  Icon3DX,
-} from "../../components/icons/Icon3D";
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import Animated, {
-  Easing,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-// EaseView replaced with Animated.View from reanimated
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { crossShadow } from "../../utils/shadows";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { BookOpen02Icon, Message01Icon, GraduationCapIcon, VolumeHighIcon, ChevronDownIcon, Cancel01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 
-// ─── Color utils ──────────────────────────────────────────────────────────────
-const rgba = (hex: string, a: number) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${a})`;
-};
-
-/** Reanimated interpolateColor only accepts #RRGGBB / #RRGGBBAA — not rgba(). */
+// ─── Color Utils ─────────────────────────────────────────────────────────────
 const hexWithAlpha = (hex: string, alpha: number) => {
   const clean = hex.replace("#", "");
   const r = parseInt(clean.slice(0, 2), 16);
@@ -56,7 +35,9 @@ const hexWithAlpha = (hex: string, alpha: number) => {
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}${a}`;
 };
 
-function parseSearchParam(raw: string | string[] | undefined): string | undefined {
+function parseSearchParam(
+  raw: string | string[] | undefined,
+): string | undefined {
   return Array.isArray(raw) ? raw[0] : raw;
 }
 
@@ -72,26 +53,68 @@ function parsePathMode(raw: string | string[] | undefined): LessonPathMode {
   return "street";
 }
 
-// ─── 3-D TTS Pill Button ──────────────────────────────────────────────────────
-// Matches the exact same 3D architecture as the game chips (shadow layer + face layer + marginBottom)
+// ─── Shared Components ────────────────────────────────────────────────────────
+
+function CloseBtn({ onPress }: { onPress: () => void }) {
+  const ty = useSharedValue(0);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateY: ty.value }],
+  }));
+  return (
+    <Pressable
+      onPressIn={() => {
+        ty.value = withTiming(3, { duration: 65 });
+      }}
+      onPressOut={() => {
+        ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 });
+      }}
+      onPress={onPress}
+    >
+      <View
+        style={{
+          borderRadius: 20,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          paddingBottom: 3,
+        }}
+      >
+        <Animated.View
+          style={[
+            {
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: "rgba(255,255,255,0.25)",
+              borderWidth: 2,
+              borderColor: "rgba(255,255,255,0.4)",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+            style,
+          ]}
+        >
+          <HugeiconsIcon icon={Cancel01Icon} size={20} color="#FFFFFF" />
+        </Animated.View>
+      </View>
+    </Pressable>
+  );
+}
+
 function TTSPill({
   onPress,
   isActive,
   faceColor,
   rimColor,
-  size = "sm",
 }: {
   onPress: () => void;
   isActive: boolean;
   faceColor: string;
   rimColor: string;
-  size?: "sm" | "lg";
 }) {
   const p = useSharedValue(0);
   const ty = useSharedValue(0);
 
   React.useEffect(() => {
-    p.value = withTiming(isActive ? 1 : 0, { duration: 180, easing: Easing.out(Easing.quad) });
+    p.value = withTiming(isActive ? 1 : 0, { duration: 180 });
   }, [isActive]);
 
   const shadowStyle = useAnimatedStyle(() => ({
@@ -102,318 +125,616 @@ function TTSPill({
     transform: [{ translateY: ty.value }],
   }));
 
-  const iconSize = size === "lg" ? 20 : 16;
-  const pad = size === "lg" ? 10 : 7;
-  const br = size === "lg" ? 16 : 12;
-
   return (
-    <Animated.View style={[{ borderRadius: br }, shadowStyle]}>
-      <Animated.View style={[{ borderRadius: br, marginBottom: 3 }, faceStyle]}>
+    <Animated.View
+      style={[
+        {
+          borderRadius: 14,
+          minWidth: 46,
+          minHeight: 46,
+          justifyContent: "center",
+        },
+        shadowStyle,
+      ]}
+    >
+      <Animated.View
+        style={[
+          {
+            borderRadius: 14,
+            marginBottom: 3,
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          faceStyle,
+        ]}
+      >
         <Pressable
           onPress={onPress}
-          onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-          onPressOut={() => { ty.value = withTiming(0, { duration: 100 }); }}
-          style={{ padding: pad }}
+          onPressIn={() => {
+            ty.value = withTiming(3, { duration: 65 });
+          }}
+          onPressOut={() => {
+            ty.value = withTiming(0, { duration: 100 });
+          }}
+          style={{
+            width: "100%",
+            height: "100%",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <Icon3DVolume size={iconSize} />
+          <HugeiconsIcon icon={VolumeHighIcon} size={20} color={isActive ? "#FFFFFF" : faceColor} />
         </Pressable>
       </Animated.View>
     </Animated.View>
   );
 }
 
-// ─── Word Card (vocabulary item) ─────────────────────────────────────────────
-function WordCard({
-  english, kurdish, faceColor, rimColor, isActive, onPress, delay,
+// ─── List Components ──────────────────────────────────────────────────────────
+
+function HeroSection({
+  item,
+  faceColor,
+  rimColor,
+  insets,
+  onClose,
 }: {
-  english: string; kurdish: string; faceColor: string; rimColor: string;
-  isActive: boolean; onPress: () => void; delay: number;
+  item: any;
+  faceColor: string;
+  rimColor: string;
+  insets: any;
+  onClose: () => void;
 }) {
-  const p  = useSharedValue(0);
-  const ty = useSharedValue(0);               // ← 3D press
-  React.useEffect(() => {
-    p.value = withTiming(isActive ? 1 : 0, { duration: 200 });
-  }, [isActive]);
-
-  const cardBg = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      p.value,
-      [0, 1],
-      ["#FAFAFA", hexWithAlpha(faceColor, 0.07)],
-    ),
-    transform: [{ translateY: ty.value }],
-  }));
-
   return (
-    <Animated.View entering={enterFadeDown(delay)}>
-      {/* Rim (depth shadow using face color) */}
-      <View style={[styles.wordCardRim, { backgroundColor: isActive ? rgba(faceColor, 0.5) : "#E5E5E5" }]}>
-        <Animated.View
-          style={[styles.wordCard, cardBg, { borderLeftColor: faceColor }]}
+    <View
+      style={{
+        backgroundColor: rimColor,
+        paddingBottom: 8,
+        marginBottom: 16,
+        borderBottomLeftRadius: 32,
+        borderBottomRightRadius: 32,
+      }}
+    >
+      <View
+        style={{
+          backgroundColor: faceColor,
+          paddingTop: insets.top,
+          paddingHorizontal: 20,
+          paddingBottom: 24,
+          borderBottomLeftRadius: 32,
+          borderBottomRightRadius: 32,
+        }}
+      >
+        {/* Top Row */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 12,
+            marginBottom: 20,
+          }}
         >
-          <Pressable
-            onPress={onPress}
-            onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-            onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
-            style={styles.wordCardInner}
-          >
-            <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={styles.wordEn}>{english}</Text>
-              <AppText
-                style={[styles.wordKu, { color: rgba(faceColor, 0.75) }]}
-                forceKurdishFont
+          <CloseBtn onPress={onClose} />
+          {item.unitLabel && (
+            <View
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 24,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFF",
+                  fontSize: 15,
+                  fontWeight: "900",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
               >
-                {kurdish}
-              </AppText>
+                {item.unitLabel}
+              </Text>
             </View>
-            <TTSPill
-              onPress={onPress}
-              isActive={isActive}
-              faceColor={faceColor}
-              rimColor={rimColor}
-              size="sm"
-            />
-          </Pressable>
-        </Animated.View>
-      </View>
-    </Animated.View>
-  );
-}
+          )}
+        </View>
 
-// ─── Phrase Card ──────────────────────────────────────────────────────────────
-function PhraseCard({
-  english, kurdish, faceColor, rimColor, isActive, onPress, delay,
-}: {
-  english: string; kurdish: string; faceColor: string; rimColor: string;
-  isActive: boolean; onPress: () => void; delay: number;
-}) {
-  const p  = useSharedValue(0);
-  const ty = useSharedValue(0);               // ← 3D press
-  React.useEffect(() => {
-    p.value = withTiming(isActive ? 1 : 0, { duration: 200 });
-  }, [isActive]);
-
-  const cardStyle = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(p.value, [0, 1], ["#EBEBEB", faceColor]),
-    backgroundColor: interpolateColor(
-      p.value,
-      [0, 1],
-      ["#FFFFFF", hexWithAlpha(faceColor, 0.05)],
-    ),
-    transform: [{ translateY: ty.value }],
-  }));
-
-  return (
-    <Animated.View entering={enterFadeDown(delay)}>
-      {/* Rim */}
-      <View style={[styles.phraseRim, {
-        backgroundColor: isActive ? rgba(faceColor, 0.4) : "#E0E0E0",
-      }]}>
-        <Animated.View style={[styles.phraseCard, cardStyle]}>
-          <Pressable
-            onPress={onPress}
-            onPressIn={() => { ty.value = withTiming(4, { duration: 65 }); }}
-            onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
+        {/* Title Block */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 16,
+            marginBottom: 28,
+          }}
+        >
+          <View
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 24,
+              backgroundColor: "rgba(255,255,255,0.25)",
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 2,
+              borderColor: "rgba(255,255,255,0.4)",
+            }}
           >
-            {/* Accent stripe */}
-            <View style={[styles.phraseAccentBar, { backgroundColor: faceColor }]} />
-            <View style={styles.phraseInner}>
-              <View style={styles.phraseTopRow}>
-                <Text style={styles.phraseEn}>{english}</Text>
-                <TTSPill
-                  onPress={onPress}
-                  isActive={isActive}
-                  faceColor={faceColor}
-                  rimColor={rimColor}
-                  size="sm"
-                />
-              </View>
-              <View style={[styles.phraseDivider, { backgroundColor: rgba(faceColor, 0.12) }]} />
-              <AppText style={styles.phraseKu} forceKurdishFont>
-                {kurdish}
-              </AppText>
-            </View>
-          </Pressable>
-        </Animated.View>
-      </View>
-    </Animated.View>
-  );
-}
+            <HugeiconsIcon icon={GraduationCapIcon} size={52} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                color: "#FFF",
+                fontSize: 26,
+                fontWeight: "900",
+                lineHeight: 34,
+              }}
+            >
+              {item.title}
+            </Text>
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.9)",
+                fontSize: 16,
+                fontWeight: "700",
+                marginTop: 6,
+              }}
+            >
+              {item.subtitle}
+            </Text>
+          </View>
+        </View>
 
-// ─── Section Header Row ───────────────────────────────────────────────────────
-function SectionHeader({
-  icon, label, count, faceColor,
-}: {
-  icon: React.ReactNode; label: string; count: number; faceColor: string;
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <View style={[styles.sectionIconWrap, { backgroundColor: rgba(faceColor, 0.12) }]}>
-        {icon}
-      </View>
-      <Text style={[styles.sectionLabel, { color: faceColor }]}>{label}</Text>
-      <View style={styles.sectionFlex} />
-      <View style={[styles.sectionCountBadge, { backgroundColor: rgba(faceColor, 0.1) }]}>
-        <Text style={[styles.sectionCountText, { color: faceColor }]}>{count}</Text>
+        {/* Stats Strip */}
+        <View
+          style={{
+            flexDirection: "row",
+            backgroundColor: "rgba(0,0,0,0.15)",
+            borderRadius: 20,
+            padding: 18,
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <StatItem value={item.lessonsCount} label="Lessons" />
+          <View
+            style={{
+              width: 2,
+              height: 32,
+              backgroundColor: "rgba(255,255,255,0.2)",
+            }}
+          />
+          <StatItem value={item.wordsCount} label="Words" />
+          <View
+            style={{
+              width: 2,
+              height: 32,
+              backgroundColor: "rgba(255,255,255,0.2)",
+            }}
+          />
+          <StatItem value={item.phrasesCount} label="Phrases" />
+        </View>
       </View>
     </View>
   );
 }
 
-// ─── Lesson Accordion ─────────────────────────────────────────────────────────
-function LessonAccordion({
-  lesson, index, faceColor, rimColor, activeId, onSpeak, isFirst,
+function StatItem({ value, label }: { value: number | string; label: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: "center" }}>
+      <Text style={{ color: "#FFF", fontSize: 24, fontWeight: "900" }}>
+        {value}
+      </Text>
+      <Text
+        style={{
+          color: "rgba(255,255,255,0.8)",
+          fontSize: 13,
+          fontWeight: "800",
+          textTransform: "uppercase",
+          marginTop: 2,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function LessonHeader({
+  item,
+  faceColor,
+  rimColor,
+  onToggle,
 }: {
-  lesson: GuidebookLesson; index: number; faceColor: string; rimColor: string;
-  activeId: string | null; onSpeak: (text: string, id: string) => void; isFirst: boolean;
+  item: any;
+  faceColor: string;
+  rimColor: string;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(isFirst);
-  const rot = useSharedValue(isFirst ? 90 : 0);
+  const ty = useSharedValue(0);
+  const rot = useSharedValue(item.isOpen ? 90 : 0);
+
+  React.useEffect(() => {
+    rot.value = withTiming(item.isOpen ? 90 : 0, {
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+    });
+  }, [item.isOpen]);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: ty.value }],
+  }));
   const chevStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rot.value}deg` }],
   }));
 
-  const toggle = () => {
-    setOpen((prev) => {
-      rot.value = withTiming(prev ? 0 : 90, { duration: 220, easing: Easing.out(Easing.quad) });
-      return !prev;
-    });
-  };
-
-  // ── Press animation for header row ──
-  const headerTy = useSharedValue(0);
-  const headerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: headerTy.value }] }));
-
   return (
-    <Animated.View entering={enterFadeDown(index * 35)}>
-      <View style={styles.accordionCard}>
-        {/* Header ──────────────────────────────────── */}
-        <Pressable
-          onPress={toggle}
-          onPressIn={() => { headerTy.value = withTiming(1.5, { duration: 60 }); }}
-          onPressOut={() => { headerTy.value = withTiming(0, { duration: 100 }); }}
+    <View style={{ paddingHorizontal: 16, marginBottom: 12, marginTop: 12 }}>
+      <Pressable
+        onPress={onToggle}
+        onPressIn={() => {
+          ty.value = withTiming(4, { duration: 60 });
+        }}
+        onPressOut={() => {
+          ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 });
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: "#E5E5E5",
+            borderRadius: 20,
+            paddingBottom: 4,
+          }}
         >
-          <Animated.View style={[styles.accordionHeader, headerStyle]}>
-            {/* Index badge */}
-            <View style={[styles.indexBadge, { backgroundColor: faceColor }]}>
-              <Text style={styles.indexBadgeText}>{index + 1}</Text>
+          <Animated.View
+            style={[
+              {
+                backgroundColor: "#FFF",
+                borderRadius: 20,
+                borderWidth: 2,
+                borderColor: "#E5E5E5",
+                padding: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+              },
+              cardStyle,
+            ]}
+          >
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 16,
+                backgroundColor: faceColor,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "#FFF", fontSize: 20, fontWeight: "900" }}>
+                {item.index + 1}
+              </Text>
             </View>
-
-            {/* Titles */}
-            <View style={styles.accordionTitles}>
-              <Text style={styles.topicEn}>{lesson.topic}</Text>
-              <Text style={styles.topicKu}>{lesson.topicKu}</Text>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{ fontSize: 18, fontWeight: "800", color: "#4B4B4B" }}
+              >
+                {item.topicEn}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "700",
+                  color: "#AFAFAF",
+                  marginTop: 2,
+                }}
+              >
+                {item.topicKu}
+              </Text>
             </View>
-
-            {/* Stats pills */}
-            <View style={styles.accordionMeta}>
-              <View style={[styles.metaPill, { backgroundColor: rgba(faceColor, 0.1) }]}>
-              <Icon3DBookSm size={12} />
-                <Text style={[styles.metaPillText, { color: faceColor }]}>
-                  {lesson.words.length}
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: hexWithAlpha(faceColor, 0.1),
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                }}
+              >
+                <HugeiconsIcon icon={BookOpen02Icon} size={14} color={faceColor} />
+                <Text
+                  style={{ color: faceColor, fontWeight: "800", fontSize: 14 }}
+                >
+                  {item.wordsCount}
                 </Text>
               </View>
               <Animated.View style={chevStyle}>
-                <Icon3DChevronDown size={18} />
+                <HugeiconsIcon icon={ChevronDownIcon} size={22} color={faceColor} />
               </Animated.View>
             </View>
           </Animated.View>
-        </Pressable>
-
-        {/* Body ───────────────────────────────────── */}
-        {open && (
-          <View style={styles.accordionBody}>
-            {/* Separator */}
-            <View style={[styles.accordionSep, { backgroundColor: rgba(faceColor, 0.1) }]} />
-
-            {/* Vocabulary ─────────────────── */}
-            <SectionHeader
-            icon={<Icon3DBook size={16} />}
-              label="Vocabulary"
-              count={lesson.words.length}
-              faceColor={faceColor}
-            />
-            <View style={styles.wordList}>
-              {lesson.words.map((w, i) => (
-                <WordCard
-                  key={`w-${index}-${i}`}
-                  english={w.english}
-                  kurdish={w.kurdish}
-                  faceColor={faceColor}
-                  rimColor={rimColor}
-                  isActive={activeId === `w-${index}-${i}`}
-                  onPress={() => onSpeak(w.english, `w-${index}-${i}`)}
-                  delay={i * 35}
-                />
-              ))}
-            </View>
-
-            {/* Key Phrases ─────────────────── */}
-            {lesson.phrases.length > 0 && (
-              <>
-                <SectionHeader
-                icon={<Icon3DMessage size={14} />}
-                  label="Key Phrases"
-                  count={lesson.phrases.length}
-                  faceColor={rimColor}
-                />
-                <View style={styles.phraseList}>
-                  {lesson.phrases.map((p, i) => (
-                    <PhraseCard
-                      key={`p-${index}-${i}`}
-                      english={p.english}
-                      kurdish={p.kurdish}
-                      faceColor={faceColor}
-                      rimColor={rimColor}
-                      isActive={activeId === `p-${index}-${i}`}
-                      onPress={() => onSpeak(p.english, `p-${index}-${i}`)}
-                      delay={i * 45}
-                    />
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        )}
-      </View>
-    </Animated.View>
-  );
-}
-
-// ─── Close Button ─────────────────────────────────────────────────────────────
-function CloseBtn({ onPress }: { onPress: () => void }) {
-  const ty = useSharedValue(0);
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: ty.value }] }));
-  return (
-    // 3D rim + face
-    <View style={[styles.closeBtnRim]}>
-      <Animated.View style={[styles.closeBtn, style]}>
-        <Pressable
-          onPressIn={() => { ty.value = withTiming(3, { duration: 65 }); }}
-          onPressOut={() => { ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 }); }}
-          onPress={onPress}
-          style={styles.closeBtnInner}
-        >
-          <Icon3DX size={20} />
-        </Pressable>
-      </Animated.View>
+        </View>
+      </Pressable>
     </View>
   );
 }
 
-// ─── Stats Row Item ───────────────────────────────────────────────────────────
-function StatItem({ value, label, faceColor }: { value: string; label: string; faceColor: string }) {
+function SectionHeader({ item, faceColor }: { item: any; faceColor: string }) {
   return (
-    <View style={styles.statItem}>
-      <Text style={[styles.statValue, { color: faceColor }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 20,
+        marginTop: 12,
+        marginBottom: 16,
+        gap: 12,
+      }}
+    >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          backgroundColor: hexWithAlpha(faceColor, 0.15),
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {item.iconType === "vocab" ? (
+          <HugeiconsIcon icon={BookOpen02Icon} size={20} color={faceColor} />
+        ) : (
+          <HugeiconsIcon icon={Message01Icon} size={18} color={faceColor} />
+        )}
+      </View>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "900",
+          color: faceColor,
+          textTransform: "uppercase",
+          letterSpacing: 1.5,
+        }}
+      >
+        {item.label}
+      </Text>
+    </View>
+  );
+}
+
+function WordCard({
+  item,
+  faceColor,
+  rimColor,
+  isActive,
+  onSpeak,
+}: {
+  item: any;
+  faceColor: string;
+  rimColor: string;
+  isActive: boolean;
+  onSpeak: () => void;
+}) {
+  const ty = useSharedValue(0);
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: ty.value }],
+  }));
+
+  return (
+    <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+      <Pressable
+        onPress={onSpeak}
+        onPressIn={() => {
+          ty.value = withTiming(4, { duration: 60 });
+        }}
+        onPressOut={() => {
+          ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 });
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: isActive
+              ? hexWithAlpha(faceColor, 0.4)
+              : "#E5E5E5",
+            borderRadius: 16,
+            paddingBottom: 4,
+          }}
+        >
+          <Animated.View
+            style={[
+              {
+                backgroundColor: isActive
+                  ? hexWithAlpha(faceColor, 0.08)
+                  : "#FFFFFF",
+                borderRadius: 16,
+                borderWidth: 2,
+                borderColor: isActive ? faceColor : "#E5E5E5",
+                padding: 16,
+                flexDirection: "row",
+                alignItems: "center",
+              },
+              cardStyle,
+            ]}
+          >
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text
+                style={{
+                  fontSize: 19,
+                  fontWeight: "800",
+                  color: faceColor,
+                  marginBottom: 4,
+                }}
+              >
+                {item.english}
+              </Text>
+              <AppText
+                style={{ fontSize: 17, fontWeight: "700", color: "#777777" }}
+                forceKurdishFont
+              >
+                {item.kurdish}
+              </AppText>
+            </View>
+            <TTSPill
+              onPress={onSpeak}
+              isActive={isActive}
+              faceColor={faceColor}
+              rimColor={rimColor}
+            />
+          </Animated.View>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+function PhraseCard({
+  item,
+  faceColor,
+  rimColor,
+  isActive,
+  onSpeak,
+}: {
+  item: any;
+  faceColor: string;
+  rimColor: string;
+  isActive: boolean;
+  onSpeak: () => void;
+}) {
+  const ty = useSharedValue(0);
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: ty.value }],
+  }));
+
+  return (
+    <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+      <Pressable
+        onPress={onSpeak}
+        onPressIn={() => {
+          ty.value = withTiming(4, { duration: 60 });
+        }}
+        onPressOut={() => {
+          ty.value = withSpring(0, { damping: 14, stiffness: 200, mass: 0.7 });
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: isActive
+              ? hexWithAlpha(faceColor, 0.4)
+              : "#E5E5E5",
+            borderRadius: 16,
+            paddingBottom: 4,
+          }}
+        >
+          <Animated.View
+            style={[
+              {
+                backgroundColor: isActive
+                  ? hexWithAlpha(faceColor, 0.08)
+                  : "#FFFFFF",
+                borderRadius: 16,
+                borderWidth: 2,
+                borderColor: isActive ? faceColor : "#E5E5E5",
+                padding: 16,
+              },
+              cardStyle,
+            ]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: "#4B4B4B",
+                  flex: 1,
+                  lineHeight: 26,
+                  paddingRight: 12,
+                }}
+              >
+                {item.english}
+              </Text>
+              <TTSPill
+                onPress={onSpeak}
+                isActive={isActive}
+                faceColor={faceColor}
+                rimColor={rimColor}
+              />
+            </View>
+            <View
+              style={{
+                height: 2,
+                backgroundColor: "#F0F0F0",
+                marginBottom: 14,
+                borderRadius: 1,
+              }}
+            />
+            <AppText
+              style={{
+                fontSize: 17,
+                color: "#9F9F9F",
+                fontWeight: "700",
+                writingDirection: "rtl",
+              }}
+              forceKurdishFont
+            >
+              {item.kurdish}
+            </AppText>
+          </Animated.View>
+        </View>
+      </Pressable>
     </View>
   );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
+
+type GuidebookItem =
+  | {
+      type: "hero";
+      unitLabel?: string;
+      title: string;
+      subtitle: string;
+      lessonsCount: number;
+      wordsCount: number;
+      phrasesCount: number;
+    }
+  | {
+      type: "lesson_header";
+      index: number;
+      topicEn: string;
+      topicKu: string;
+      wordsCount: number;
+      isOpen: boolean;
+    }
+  | {
+      type: "section_header";
+      label: string;
+      iconType: "vocab" | "phrase";
+      count: number;
+    }
+  | { type: "word"; id: string; english: string; kurdish: string }
+  | { type: "phrase"; id: string; english: string; kurdish: string }
+  | { type: "spacer"; height: number };
+
 export default function GuidebookScreen() {
-  const { unit, mode } = useLocalSearchParams<{ unit?: string; mode?: string }>();
+  const { unit, mode } = useLocalSearchParams<{
+    unit?: string;
+    mode?: string;
+  }>();
   const unitIndex = parseUnitIndex(unit);
   const pathMode = parsePathMode(mode);
   const router = useRouter();
@@ -425,7 +746,9 @@ export default function GuidebookScreen() {
     () => getGuidebook(pathMode, unitIndex, locale),
     [pathMode, unitIndex, locale],
   );
-  const theme = (guidebook?.displayTheme ?? "blue") as keyof typeof BUTTON_FACE_RIM_COLORS;
+
+  const theme = (guidebook?.displayTheme ??
+    "blue") as keyof typeof BUTTON_FACE_RIM_COLORS;
   const colors = BUTTON_FACE_RIM_COLORS[theme] ?? BUTTON_FACE_RIM_COLORS.blue;
 
   const totalWords = useMemo(
@@ -445,347 +768,163 @@ export default function GuidebookScreen() {
     [activeId, speak, stop],
   );
 
+  const [expandedLessons, setExpandedLessons] = useState<Set<number>>(
+    new Set([0]),
+  );
+
+  const toggleLesson = useCallback((index: number) => {
+    setExpandedLessons((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const listData = useMemo(() => {
+    if (!guidebook) return [];
+    const items: GuidebookItem[] = [];
+
+    // 1. Hero
+    const [rawUnitLabel, ...rest] = guidebook.title.split(":");
+    items.push({
+      type: "hero",
+      unitLabel: rawUnitLabel?.trim(),
+      title: rest.join(":").trim(),
+      subtitle: "Guidebook — tap any word to hear it",
+      lessonsCount: guidebook.lessons.length,
+      wordsCount: totalWords,
+      phrasesCount: totalPhrases,
+    });
+
+    // 2. Lessons
+    guidebook.lessons.forEach((lesson, i) => {
+      const isOpen = expandedLessons.has(i);
+      items.push({
+        type: "lesson_header",
+        index: i,
+        topicEn: lesson.topic,
+        topicKu: lesson.topicKu,
+        wordsCount: lesson.words.length,
+        isOpen,
+      });
+
+      if (isOpen) {
+        if (lesson.words.length > 0) {
+          items.push({
+            type: "section_header",
+            label: "Vocabulary",
+            iconType: "vocab",
+            count: lesson.words.length,
+          });
+          lesson.words.forEach((w, wIndex) => {
+            items.push({
+              type: "word",
+              id: `w-${i}-${wIndex}`,
+              english: w.english,
+              kurdish: w.kurdish,
+            });
+          });
+        }
+        if (lesson.phrases.length > 0) {
+          items.push({
+            type: "section_header",
+            label: "Key Phrases",
+            iconType: "phrase",
+            count: lesson.phrases.length,
+          });
+          lesson.phrases.forEach((p, pIndex) => {
+            items.push({
+              type: "phrase",
+              id: `p-${i}-${pIndex}`,
+              english: p.english,
+              kurdish: p.kurdish,
+            });
+          });
+        }
+        items.push({ type: "spacer", height: 16 });
+      }
+    });
+
+    return items;
+  }, [guidebook, expandedLessons, totalWords, totalPhrases]);
+
   if (!guidebook) {
     return (
-      <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Text style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>Not available</Text>
+      <View
+        style={{ flex: 1, paddingTop: insets.top, backgroundColor: "#F4F6F9" }}
+      >
+        <Text style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>
+          Not available
+        </Text>
       </View>
     );
   }
 
-  const [rawUnitLabel, ...rest] = guidebook.title.split(":");
-  const unitLabel = rawUnitLabel?.trim();
-  const sectionTitle = rest.join(":").trim();
-
   return (
-    <View style={[styles.root, { backgroundColor: "#F4F6F9" }]}>
-
-      {/* ══ HERO HEADER — 3D card, unit color, full bleed ══════════════════ */}
-      <View style={[styles.heroOuter, { backgroundColor: colors.rim, paddingTop: insets.top }]}>
-        <View style={[styles.heroFace, { backgroundColor: colors.face }]}>
-
-          {/* Top row: close + unit label */}
-          <View style={styles.heroTopRow}>
-            <CloseBtn onPress={() => { stop(); router.back(); }} />
-            <View style={[styles.unitLabelPill, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
-              <Text style={styles.unitLabelText}>{unitLabel}</Text>
-            </View>
-          </View>
-
-          {/* Icon + title block */}
-          <View style={styles.heroContentRow}>
-            <View style={[styles.heroIconWrap, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
-              <Icon3DGradCap size={48} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{sectionTitle}</Text>
-              <Text style={styles.heroSub}>Guidebook — tap any word to hear it</Text>
-            </View>
-          </View>
-
-          {/* Stats strip */}
-          <View style={styles.statsStrip}>
-            <StatItem value={String(guidebook.lessons.length)} label="Lessons" faceColor="#FFFFFF" />
-            <View style={styles.statsDivider} />
-            <StatItem value={String(totalWords)} label="Words" faceColor="#FFFFFF" />
-            <View style={styles.statsDivider} />
-            <StatItem value={String(totalPhrases)} label="Phrases" faceColor="#FFFFFF" />
-          </View>
-        </View>
-      </View>
-
-      {/* Per-screen lesson count is small (<30); ScrollView OK per rn-expo-stack list audit */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 36 }]}
+    <View style={styles.root}>
+      <FlashList
+        data={listData}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
-      >
-        {guidebook.lessons.map((lesson, i) => (
-          <LessonAccordion
-            key={`lesson-${i}`}
-            lesson={lesson}
-            index={i}
-            faceColor={colors.face}
-            rimColor={colors.rim}
-            activeId={activeId}
-            onSpeak={handleSpeak}
-            isFirst={i === 0}
-          />
-        ))}
-      </ScrollView>
+        getItemType={(item) => item.type}
+        renderItem={({ item }) => {
+          switch (item.type) {
+            case "hero":
+              return (
+                <HeroSection
+                  item={item}
+                  faceColor={colors.face}
+                  rimColor={colors.rim}
+                  insets={insets}
+                  onClose={() => {
+                    stop();
+                    router.back();
+                  }}
+                />
+              );
+            case "lesson_header":
+              return (
+                <LessonHeader
+                  item={item}
+                  faceColor={colors.face}
+                  rimColor={colors.rim}
+                  onToggle={() => toggleLesson(item.index)}
+                />
+              );
+            case "section_header":
+              return <SectionHeader item={item} faceColor={colors.face} />;
+            case "word":
+              return (
+                <WordCard
+                  item={item}
+                  faceColor={colors.face}
+                  rimColor={colors.rim}
+                  isActive={activeId === item.id}
+                  onSpeak={() => handleSpeak(item.english, item.id)}
+                />
+              );
+            case "phrase":
+              return (
+                <PhraseCard
+                  item={item}
+                  faceColor={colors.face}
+                  rimColor={colors.rim}
+                  isActive={activeId === item.id}
+                  onSpeak={() => handleSpeak(item.english, item.id)}
+                />
+              );
+            case "spacer":
+              return <View style={{ height: item.height }} />;
+            default:
+              return null;
+          }
+        }}
+      />
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#F4F6F9",
-  },
-
-  // ── Hero ────────────────────────────────────────────────────────────────────
-  heroOuter: {
-    // 3D depth: rim color shows at bottom
-    paddingBottom: 6,
-  },
-  heroFace: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  heroTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 10,
-    paddingBottom: 18,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.22)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.35)",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    marginBottom: 3,          // ← 3D depth off rim
-  },
-  closeBtnRim: {
-    borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.18)",
-    overflow: "hidden" as const,
-  },
-  closeBtnInner: {
-    padding: 8,
-  },
-  unitLabelPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  unitLabelText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  heroContentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    marginBottom: 24,
-  },
-  heroIconWrap: {
-    width: 68,
-    height: 68,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 5,
-    lineHeight: 28,
-  },
-  heroSub: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 18,
-  },
-
-  // Stats strip
-  statsStrip: {
-    flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.12)",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: "center",
-  },
-  statItem: { flex: 1, alignItems: "center" },
-  statValue: { fontSize: 22, fontWeight: "800", marginBottom: 2 },
-  statLabel: { fontSize: 12, color: "rgba(255,255,255,0.65)", fontWeight: "600" },
-  statsDivider: { width: 1, height: 32, backgroundColor: "rgba(255,255,255,0.2)" },
-
-  // ── List ─────────────────────────────────────────────────────────────────────
-  listContent: {
-    padding: 16,
-    gap: 12,
-  },
-
-  // ── Accordion card ────────────────────────────────────────────────────────────
-  accordionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    overflow: "hidden",
-    ...crossShadow({ color: "#000", offsetY: 2, opacity: 0.06, blur: 8, elevation: 3 }),
-  },
-  accordionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 14,
-  },
-  indexBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  indexBadgeText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  accordionTitles: { flex: 1, minWidth: 0 },
-  topicEn: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1A1A2E",
-    marginBottom: 3,
-  },
-  topicKu: {
-    fontSize: 13,
-    color: "#ABABAB",
-    fontWeight: "500",
-  },
-  accordionMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexShrink: 0,
-  },
-  metaPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  metaPillText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  accordionSep: {
-    height: 1,
-    marginBottom: 20,
-    marginHorizontal: 0,
-  },
-  accordionBody: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-
-  // ── Section header ────────────────────────────────────────────────────────────
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  sectionIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  sectionFlex: { flex: 1 },
-  sectionCountBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  sectionCountText: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  // ── Word cards ────────────────────────────────────────────────────────────────
-  wordList: { gap: 8, marginBottom: 20 },
-  wordCardRim: {
-    borderRadius: 14,
-    overflow: "hidden" as const,
-  },
-  wordCard: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    borderRadius: 14,
-    borderLeftWidth: 3.5,
-    marginBottom: 3,
-  },
-  wordCardInner: {
-    flex: 1,
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    paddingVertical: 13,
-    paddingLeft: 14,
-    paddingRight: 10,
-  },
-  wordEn: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1A1A2E",
-    marginBottom: 3,
-  },
-  wordKu: {
-    fontSize: 13,
-    fontWeight: "500",
-    writingDirection: "rtl",
-  },
-
-  // ── Phrase cards ──────────────────────────────────────────────────────────────
-  phraseList: { gap: 10 },
-  phraseRim: {
-    borderRadius: 16,
-    overflow: "hidden" as const,
-  },
-  phraseCard: {
-    borderRadius: 16,
-    borderWidth: 1.5,
-    overflow: "hidden" as const,
-    marginBottom: 4,
-  },
-  phraseAccentBar: {
-    height: 4,
-    width: "100%",
-  },
-  phraseInner: { padding: 14 },
-  phraseTopRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginBottom: 12,
-  },
-  phraseEn: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1A1A2E",
-    lineHeight: 22,
-  },
-  phraseDivider: {
-    height: 1,
-    marginBottom: 10,
-  },
-  phraseKu: {
-    fontSize: 14,
-    color: "#777",
-    writingDirection: "rtl",
-    lineHeight: 21,
-    fontWeight: "400",
-  },
+  root: { flex: 1, backgroundColor: "#F4F6F9" },
 });

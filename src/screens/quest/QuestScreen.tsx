@@ -3,7 +3,10 @@ import SafeContainer from "../../components/shared/safe-container";
 import { SvgAppButton } from "../../components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "../../constants/icons";
 import { Image } from "expo-image";
-import { Icon3DClock, Icon3DGift, Icon3DBell } from "../../components/icons/Icon3D";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AnimatedCard } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
@@ -13,11 +16,11 @@ import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hapticImpact } from "../../utils/haptics";
 
-const TRACK_COLOR = "#E5E5E5";
-const HERO_FILL_COLOR = "#1CB0F5";
-const HERO_GLOSS_COLOR = "#48C0F7";
-const GOAL_FILL_COLOR = "#0070B5";
-const GOAL_GLOSS_COLOR = "#338CC4";
+const TRACK_COLOR = "#E2E8F0";
+const HERO_FILL_COLOR = "#0F172A";
+const HERO_GLOSS_COLOR = "#334155";
+const GOAL_FILL_COLOR = "#475569";
+const GOAL_GLOSS_COLOR = "#64748B";
 
 type QuestProgressBarProps = {
   progress: number;
@@ -170,7 +173,7 @@ const QuestScreen = () => {
               {questTitle}
             </AppText>
             <View style={[styles.timeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-              <Icon3DClock size={16} />
+              <HugeiconsIcon icon={Clock01Icon} size={16} color="#0F172A" />
               <AppText style={styles.timeText} forceKurdishFont={isKu}>
                 {t("quest.daysLeft").replace("{count}", String(diffDays))}
               </AppText>
@@ -209,7 +212,7 @@ const QuestScreen = () => {
               {t("quest.friendsQuest")}
             </AppText>
             <View style={[styles.timeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-              <Icon3DClock size={16} />
+              <HugeiconsIcon icon={Clock01Icon} size={16} color="#475569" />
               <AppText style={styles.timeTextGray} forceKurdishFont={isKu}>
                 {t("quest.daysLeft").replace("{count}", "3")}
               </AppText>
@@ -232,7 +235,7 @@ const QuestScreen = () => {
               title={t("quest.nextLesson")}
               progress={1.0}
               value="1 / 1"
-              valueColor="#58CC02"
+              valueColor="#0F172A"
               barWidth={goalBarWidth}
               isKu={isKu}
             />
@@ -254,13 +257,13 @@ const QuestScreen = () => {
               <QuestActionButton
                 width={windowWidth * 0.4}
                 label={t("quest.nudge")}
-                leftNode={<Icon3DBell size={20} />}
+                leftNode={<HugeiconsIcon icon={Notification01Icon} size={20} color="#0F172A" />}
                 onPress={() => hapticImpact()}
               />
               <QuestActionButton
                 width={windowWidth * 0.4}
                 label={t("quest.gift")}
-                leftNode={<Icon3DGift size={20} />}
+                leftNode={<HugeiconsIcon icon={GiftIcon} size={20} color="#0F172A" />}
                 onPress={() => hapticImpact()}
               />
             </View>
@@ -274,7 +277,7 @@ const QuestScreen = () => {
                   {t("quest.dailyQuests")}
                 </AppText>
                 <View style={[styles.timeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                  <Icon3DClock size={16} />
+                  <HugeiconsIcon icon={Clock01Icon} size={16} color="#334155" />
                   <AppText style={styles.timeTextGold} forceKurdishFont={isKu}>
                     {t("quest.daysLeft").replace("{count}", "1")}
                   </AppText>
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
   },
   safeHeader: {
     paddingHorizontal: 20,
-    backgroundColor: "#1CB0F5",
+    backgroundColor: "#0F172A",
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     paddingBottom: 24,

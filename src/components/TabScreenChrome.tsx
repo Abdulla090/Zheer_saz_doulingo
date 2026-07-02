@@ -1,3 +1,4 @@
+import { ScreenOpeningShell, type ScreenOpeningVariant } from "./animations/skia-gsap-opening";
 import { TabScreenTransition } from "./TabScreenTransition";
 import { usesJsTabBar } from "../constants/tab-mode";
 import React, { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ function TabLazyWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-    }, 280); // 280ms lets the horizontal slide and tab transition finish completely first
+    }, 30); // 30ms is enough to let tab click transitions register, but fast enough to feel immediate
     return () => clearTimeout(timer);
   }, []);
 
@@ -24,9 +25,9 @@ function TabLazyWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <Animated.View style={{ flex: 1 }} entering={FadeIn.duration(250)}>
+    <View style={{ flex: 1 }}>
       {children}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -39,11 +40,23 @@ function TabLazyWrapper({ children }: { children: React.ReactNode }) {
 export function TabScreenChrome({
   children,
   lazy = true,
+  openingVariant,
 }: {
   children: React.ReactNode;
   lazy?: boolean;
+  openingVariant?: ScreenOpeningVariant;
 }) {
-  const content = lazy ? <TabLazyWrapper>{children}</TabLazyWrapper> : children;
+  let content = children;
+
+  if (openingVariant) {
+    content = (
+      <ScreenOpeningShell variant={openingVariant}>{content}</ScreenOpeningShell>
+    );
+  }
+
+  if (lazy) {
+    content = <TabLazyWrapper>{content}</TabLazyWrapper>;
+  }
 
   if (usesJsTabBar()) {
     return <TabScreenTransition>{content}</TabScreenTransition>;

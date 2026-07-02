@@ -15,7 +15,7 @@ import { ThinProgressBar } from "../../components/ui/ThinProgressBar";
 import { AppText } from "../../components/ui/AppText";
 import { useI18n } from "../../hooks/useI18n";
 import type { I18nKey } from "../../i18n";
-import { useProgressStore } from "../../stores/useProgressStore";
+import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useContentPackStore } from "../../stores/useContentPackStore";
 import {
@@ -194,9 +194,11 @@ export function PhingoLearnHomeScreen() {
   const dailyXp = useProgressStore((s) => s.dailyXp);
   const dailyGoalXp = useProgressStore((s) => s.dailyGoalXp);
   const totalXp = useProgressStore((s) => s.totalXp);
-  const streetNext = useProgressStore((s) => s.nextLessonPathIndex);
-  const normalNext = useProgressStore((s) => s.normalNextLessonPathIndex);
-  const kidsNext = useProgressStore((s) => s.kidsNextLessonPathIndex);
+  const {
+    nextLessonPathIndex: streetNext,
+    normalNextLessonPathIndex: normalNext,
+    kidsNextLessonPathIndex: kidsNext,
+  } = useCurrentProgress();
   const lastActivity = useProgressStore((s) => s.lastActivity);
   const pathMode = useSettingsStore((s) => s.pathMode);
   const streetStatus = useContentPackStore((s) => s.streetStatus);

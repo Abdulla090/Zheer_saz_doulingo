@@ -15,8 +15,8 @@ const C = HomePalette;
 
 const PATH_ACCENTS: Record<PathMode, string> = {
   street: C.blue,
-  normal: "#58CC02",
-  kids: C.orange,
+  normal: "#475569",
+  kids: C.grayLight,
 };
 
 export function OnboardingPathPicker({

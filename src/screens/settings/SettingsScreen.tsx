@@ -1,11 +1,17 @@
 /* eslint-disable */
 import { PressableScale } from "../../components/animations";
+import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import {
   Icon3DCheckCircle,
   Icon3DChevronRight,
   Icon3DSettings,
 } from "../../components/icons/Icon3D";
 import { AppText } from "../../components/ui/AppText";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import {
+  HomeMeshBackground,
+} from "../../components/ui/ios-liquid-home";
+import { TopScrollFade } from "../../components/ui/TopScrollFade";
 import {
   APP_VERSION,
   PRIVACY_POLICY_URL,
@@ -15,15 +21,18 @@ import { ENABLE_ADMIN } from "../../constants/feature-flags";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
 import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import type { AppLocale } from "../../i18n";
 import { useFontStore } from "../../stores/useFontStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
+import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { SOURCE_LANGUAGES, TARGET_LANGUAGES } from "../../config/languages";
 import { confirmAction } from "../../utils/confirm-action";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import * as Font from "expo-font";
 import { fontMap } from "../../fontMap";
 import {
@@ -38,14 +47,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const LOCALE_OPTIONS: { id: AppLocale; labelKey: "settings.languageEn" | "settings.languageKu" }[] =
-  [
-    { id: "en", labelKey: "settings.languageEn" },
-    { id: "ku", labelKey: "settings.languageKu" },
-  ];
+ 
 
 const LEGAL_LINKS = [
-  { route: "/privacy-policy" as const, labelKey: "settings.privacyPolicy" as const },
+  {
+    route: "/privacy-policy" as const,
+    labelKey: "settings.privacyPolicy" as const,
+  },
   { route: "/ai-safety" as const, labelKey: "settings.aiSafety" as const },
   { route: "/terms" as const, labelKey: "settings.termsOfUse" as const },
 ];
@@ -85,21 +93,34 @@ const FontPreviewText = React.memo(
   },
 );
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale, setLocale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   const { selectedFont, setFont } = useFontStore();
   const resetProgress = useProgressStore((s) => s.resetProgress);
   const replayOnboarding = useOnboardingStore((s) => s.replayOnboarding);
   const haptics = useSettingsStore((s) => s.hapticsEnabled);
   const sounds = useSettingsStore((s) => s.soundsEnabled);
-  const targetLang = useSettingsStore((s) => s.targetLang);
-  const nativeLang = useSettingsStore((s) => s.nativeLang);
+  const targetLang = useLocaleStore((s) => s.selectedTargetLanguage);
+  const nativeLang = useLocaleStore((s) => s.selectedSourceLanguage);
+  const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
+
+  // Store the last selected non-Arabic learning language to restore when kids path Arabic is toggled off
+  const prevNonArTargetRef = React.useRef<string>(targetLang !== "ar" ? targetLang : "en");
+  React.useEffect(() => {
+    if (targetLang !== "ar") {
+      prevNonArTargetRef.current = targetLang;
+    }
+  }, [targetLang]);
+  
+  const theme = useSettingsStore((s) => s.theme);
   const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
-  const setTargetLang = useSettingsStore((s) => s.setTargetLang);
-  const setNativeLang = useSettingsStore((s) => s.setNativeLang);
+  const setTheme = useSettingsStore((s) => s.setTheme);
 
   const [apiKeyInput, setApiKeyInput] = React.useState("");
 
@@ -107,7 +128,7 @@ export default function SettingsScreen() {
     if (Platform.OS !== "web") {
       try {
         const SecureStore = require("expo-secure-store");
-        SecureStore.getItemAsync("phingo.gemini.apikey")
+        SecureStore.getItemAsync("twino.gemini.apikey")
           .then((key: string | null) => {
             if (key) setApiKeyInput(key);
           })
@@ -116,7 +137,7 @@ export default function SettingsScreen() {
     } else {
       try {
         if (typeof localStorage !== "undefined") {
-          const key = localStorage.getItem("phingo.gemini.apikey");
+          const key = localStorage.getItem("twino.gemini.apikey");
           if (key) setApiKeyInput(key);
         }
       } catch {}
@@ -127,34 +148,36 @@ export default function SettingsScreen() {
     try {
       const { setRuntimeGeminiApiKey } = require("../../constants/gemini");
       const keyToSave = apiKeyInput.trim();
-      
+
       if (Platform.OS !== "web") {
         const SecureStore = require("expo-secure-store");
         if (keyToSave) {
-          await SecureStore.setItemAsync("phingo.gemini.apikey", keyToSave);
+          await SecureStore.setItemAsync("twino.gemini.apikey", keyToSave);
         } else {
-          await SecureStore.deleteItemAsync("phingo.gemini.apikey");
+          await SecureStore.deleteItemAsync("twino.gemini.apikey");
         }
       } else {
         if (typeof localStorage !== "undefined") {
           if (keyToSave) {
-            localStorage.setItem("phingo.gemini.apikey", keyToSave);
+            localStorage.setItem("twino.gemini.apikey", keyToSave);
           } else {
-            localStorage.removeItem("phingo.gemini.apikey");
+            localStorage.removeItem("twino.gemini.apikey");
           }
         }
       }
-      
+
       setRuntimeGeminiApiKey(keyToSave || undefined);
-      
+
       Alert.alert(
         isKu ? "سەرکەوتوو بوو" : "Success",
-        isKu ? "کلیلی API بە سەرکەوتوویی پاشەکەوت کرا." : "API Key updated successfully."
+        isKu
+          ? "کلیلی API بە سەرکەوتوویی پاشەکەوت کرا."
+          : "API Key updated successfully.",
       );
     } catch (err) {
       Alert.alert(
         isKu ? "کێشەیەک ڕوویدا" : "Error",
-        isKu ? "پاشەکەوتکردن سەرکەوتوو نەبوو." : "Failed to update API key."
+        isKu ? "پاشەکەوتکردن سەرکەوتوو نەبوو." : "Failed to update API key.",
       );
     }
   };
@@ -186,538 +209,653 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={[styles.header, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-        <Icon3DSettings size={28} />
-        <AppText style={styles.title} forceKurdishFont={isKu}>
-          {t("settings.title")}
-        </AppText>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: tabBarScrollPadding(insets.bottom),
-        }}
-      >
-        <AppText style={styles.sectionLabel} forceKurdishFont={isKu}>
-          {t("settings.languageSection")}
-        </AppText>
-        <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-          {t("settings.languageHint")}
-        </AppText>
-
-        <View style={styles.card}>
-          {LOCALE_OPTIONS.map((opt, index) => {
-            const selected = locale === opt.id;
-            return (
-              <PressableScale
-                key={opt.id}
-                onPress={() => setLocale(opt.id)}
-                scaleDown={0.98}
-                style={[
-                  styles.row,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
-                  index < LOCALE_OPTIONS.length - 1 && styles.rowBorder,
-                ]}
-              >
-                <AppText
-                  style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                  forceKurdishFont={opt.id === "ku" || isKu}
-                >
-                  {t(opt.labelKey)}
-                </AppText>
-                {selected ? (
-                  <Icon3DCheckCircle size={22} />
-                ) : (
-                  <View style={styles.radioEmpty} />
-                )}
-              </PressableScale>
-            );
-          })}
-        </View>
-
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
-          {isKu ? "زمانی دایک" : "Native Language"}
-        </AppText>
-        <View style={styles.card}>
-          {[
-            { id: "en", label: "English" },
-            { id: "ku", label: "Kurdish (Sorani)" },
-            { id: "ar", label: "Arabic" },
-          ].map((opt, index) => {
-            const selected = nativeLang === opt.id;
-            return (
-              <PressableScale
-                key={opt.id}
-                onPress={() => setNativeLang(opt.id)}
-                scaleDown={0.98}
-                style={[
-                  styles.row,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
-                  index < 2 && styles.rowBorder,
-                ]}
-              >
-                <AppText
-                  style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                  forceKurdishFont={opt.id === "ku" || isKu}
-                >
-                  {opt.label}
-                </AppText>
-                {selected ? (
-                  <Icon3DCheckCircle size={22} />
-                ) : (
-                  <View style={styles.radioEmpty} />
-                )}
-              </PressableScale>
-            );
-          })}
-        </View>
-
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
-          {isKu ? "زمانی فێربوون" : "Learning Language"}
-        </AppText>
-        <View style={styles.card}>
-          {[
-            { id: "en", label: "English" },
-            { id: "ku", label: "Kurdish (Sorani)" },
-          ].map((opt, index) => {
-            const selected = targetLang === opt.id;
-            return (
-              <PressableScale
-                key={opt.id}
-                onPress={() => setTargetLang(opt.id)}
-                scaleDown={0.98}
-                style={[
-                  styles.row,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
-                  index < 1 && styles.rowBorder,
-                ]}
-              >
-                <AppText
-                  style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                  forceKurdishFont={opt.id === "ku" || isKu}
-                >
-                  {opt.label}
-                </AppText>
-                {selected ? (
-                  <Icon3DCheckCircle size={22} />
-                ) : (
-                  <View style={styles.radioEmpty} />
-                )}
-              </PressableScale>
-            );
-          })}
-        </View>
-
-        <View style={styles.toggleCard}>
-          <View style={[styles.toggleRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-              {t("settings.haptics")}
+      {!isDark && <HomeMeshBackground />}
+      <GsapEnterBlock index={0}>
+        <View
+          style={[
+            styles.header,
+            { flexDirection: isKu ? "row-reverse" : "row" },
+          ]}
+        >
+          <Icon3DSettings size={28} />
+          <View
+            style={{ flex: 1, alignItems: isKu ? "flex-end" : "flex-start" }}
+          >
+            <AppText style={styles.title} forceKurdishFont={isKu}>
+              {t("settings.title")}
             </AppText>
-            <Switch value={haptics} onValueChange={setHaptics} />
-          </View>
-          <View style={[styles.toggleRow, styles.toggleRowLast, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-              {t("settings.sounds")}
-            </AppText>
-            <Switch value={sounds} onValueChange={setSounds} />
+            <View style={styles.titleUnderline} />
           </View>
         </View>
+      </GsapEnterBlock>
 
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
-          {isKu ? "ڕێڕەوی منداڵان" : "Kids Path Configuration"}
-        </AppText>
-        <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-          {t("settings.kidsArabicHint")}
-        </AppText>
-        <View style={styles.toggleCard}>
-          <View style={[styles.toggleRow, styles.toggleRowLast, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-              {t("settings.kidsArabic")}
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: tabBarScrollPadding(insets.bottom),
+            gap: 2,
+          }}
+        >
+          <GsapEnterBlock index={1}>
+            <AppText style={styles.sectionLabel} forceKurdishFont={isKu}>
+              {isKu ? "ڕووکار (دەسکاریکردنی ڕەنگ)" : "Appearance"}
             </AppText>
-            <Switch
-              value={targetLang === "ar"}
-              onValueChange={(val) => {
-                setTargetLang(val ? "ar" : "en");
-              }}
-            />
-          </View>
-        </View>
-
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont>
-          {t("settings.fontSection")}
-        </AppText>
-        <AppText style={styles.sectionHint} forceKurdishFont>
-          {t("settings.fontHint")}
-        </AppText>
-
-        <View style={styles.card}>
-          {ALL_RABAR_FONTS.map((font, index) => {
-            const selected = selectedFont === font;
-            return (
-              <PressableScale
-                key={font}
-                onPress={() => setFont(font)}
-                scaleDown={0.98}
-                style={[
-                  styles.fontRow,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
-                  index < ALL_RABAR_FONTS.length - 1 && styles.rowBorder,
-                  selected && styles.fontRowSelected,
-                ]}
-              >
-                <View style={[styles.fontRowLeft, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                  {selected ? (
-                    <Icon3DCheckCircle size={22} />
-                  ) : (
-                    <View style={styles.radioEmpty} />
-                  )}
-                  <FontPreviewText
-                    font={font}
+            <View style={styles.card}>
+              {[
+                { id: "light", label: isKu ? "ڕووناکی" : "Light Mode" },
+                { id: "dark", label: isKu ? "تاریک" : "Dark Mode" },
+                { id: "system", label: isKu ? "سیستەم" : "System Default" },
+              ].map((opt, index) => {
+                const selected = theme === opt.id;
+                return (
+                  <PressableScale
+                    key={opt.id}
+                    onPress={() => setTheme(opt.id as any)}
+                    scaleDown={0.98}
                     style={[
-                      styles.fontPreview,
-                      selected && styles.fontPreviewOn,
+                      styles.row,
+                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      index < 2 && styles.rowBorder,
                     ]}
                   >
-                    {t("settings.previewSample")}
-                  </FontPreviewText>
+                    <AppText
+                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                      forceKurdishFont={isKu}
+                    >
+                      {opt.label}
+                    </AppText>
+                    {selected ? (
+                      <Icon3DCheckCircle size={22} />
+                    ) : (
+                      <View style={styles.radioEmpty} />
+                    )}
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </GsapEnterBlock>
+
+          <GsapEnterBlock index={2}>
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {t("settings.nativeLanguage")}
+            </AppText>
+            <View style={styles.card}>
+              {SOURCE_LANGUAGES.map((lang, index) => {
+                const selected = nativeLang === lang.id;
+                return (
+                  <PressableScale
+                    key={lang.id}
+                    onPress={() => setLanguagePair(lang.id, targetLang)}
+                    scaleDown={0.98}
+                    style={[
+                      styles.row,
+                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      index < SOURCE_LANGUAGES.length - 1 && styles.rowBorder,
+                    ]}
+                  >
+                    <AppText
+                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                      forceKurdishFont={lang.rtl || isKu}
+                    >
+                      {lang.nativeName}
+                    </AppText>
+                    {selected ? (
+                      <Icon3DCheckCircle size={22} />
+                    ) : (
+                      <View style={styles.radioEmpty} />
+                    )}
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {t("settings.learningLanguage")}
+            </AppText>
+            <View style={styles.card}>
+              {TARGET_LANGUAGES.map((lang, index) => {
+                const selected = targetLang === lang.id;
+                return (
+                  <PressableScale
+                    key={lang.id}
+                    onPress={() => setLanguagePair(nativeLang, lang.id)}
+                    scaleDown={0.98}
+                    style={[
+                      styles.row,
+                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      index < TARGET_LANGUAGES.length - 1 && styles.rowBorder,
+                    ]}
+                  >
+                    <AppText
+                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                      forceKurdishFont={lang.rtl || isKu}
+                    >
+                      {lang.nativeName}
+                    </AppText>
+                    {selected ? (
+                      <Icon3DCheckCircle size={22} />
+                    ) : (
+                      <View style={styles.radioEmpty} />
+                    )}
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </GsapEnterBlock>
+
+          <GsapEnterBlock index={3}>
+            <View style={styles.toggleCard}>
+              <View
+                style={[
+                  styles.toggleRow,
+                  { flexDirection: isKu ? "row-reverse" : "row" },
+                ]}
+              >
+                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
+                  {t("settings.haptics")}
+                </AppText>
+                <Switch
+                  value={haptics}
+                  onValueChange={setHaptics}
+                  trackColor={{ true: colors.primary }}
+                />
+              </View>
+              <View
+                style={[
+                  styles.toggleRow,
+                  styles.toggleRowLast,
+                  { flexDirection: isKu ? "row-reverse" : "row" },
+                ]}
+              >
+                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
+                  {t("settings.sounds")}
+                </AppText>
+                <Switch
+                  value={sounds}
+                  onValueChange={setSounds}
+                  trackColor={{ true: colors.primary }}
+                />
+              </View>
+            </View>
+
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {isKu ? "ڕێڕەوی منداڵان" : "Kids Path Configuration"}
+            </AppText>
+            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+              {t("settings.kidsArabicHint")}
+            </AppText>
+            <View style={styles.toggleCard}>
+              <View
+                style={[
+                  styles.toggleRow,
+                  styles.toggleRowLast,
+                  { flexDirection: isKu ? "row-reverse" : "row" },
+                ]}
+              >
+                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
+                  {t("settings.kidsArabic")}
+                </AppText>
+                <Switch
+                  value={targetLang === "ar"}
+                  onValueChange={(val: boolean) => {
+                    setLanguagePair(nativeLang, val ? "ar" : prevNonArTargetRef.current);
+                  }}
+                  trackColor={{ true: colors.primary }}
+                />
+              </View>
+            </View>
+
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {t("settings.fontSection")}
+            </AppText>
+            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+              {t("settings.fontHint")}
+            </AppText>
+
+            <View style={styles.card}>
+              {ALL_RABAR_FONTS.map((font, index) => {
+                const selected = selectedFont === font;
+                return (
+                  <PressableScale
+                    key={font}
+                    onPress={() => setFont(font)}
+                    scaleDown={0.98}
+                    style={[
+                      styles.fontRow,
+                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      index < ALL_RABAR_FONTS.length - 1 && styles.rowBorder,
+                      selected && styles.fontRowSelected,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.fontRowLeft,
+                        { flexDirection: isKu ? "row-reverse" : "row" },
+                      ]}
+                    >
+                      {selected ? (
+                        <Icon3DCheckCircle size={22} />
+                      ) : (
+                        <View style={styles.radioEmpty} />
+                      )}
+                      <FontPreviewText
+                        font={font}
+                        style={[
+                          styles.fontPreview,
+                          selected && styles.fontPreviewOn,
+                        ]}
+                      >
+                        {t("settings.previewSample")}
+                      </FontPreviewText>
+                    </View>
+                    <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+                      <Icon3DChevronRight size={20} />
+                    </View>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            {!isKidsMode && (
+              <>
+                <AppText
+                  style={[styles.sectionLabel, styles.sectionSpaced]}
+                  forceKurdishFont={isKu}
+                >
+                  {isKu ? "مفتاحی Gemini API" : "Gemini API Key"}
+                </AppText>
+                <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+                  {Platform.OS === "web"
+                    ? (isKu
+                        ? "کلیلەکەت لە بیرگەی ناوخۆیی وێبگەڕەکەتدا پاشەکەوت دەکرێت."
+                        : "Your key is stored in your browser's local storage.")
+                    : (isKu
+                        ? "کلیلەکەت بە شێوەیەکی پارێزراو لەسەر مۆبایلەکەت پاشەکەوت دەکرێت."
+                        : "Your key is stored securely in the device's native Keychain/Keystore.")}
+                </AppText>
+                <View style={[styles.card, { padding: 16, gap: 12 }]}>
+                  <TextInput
+                    secureTextEntry
+                    placeholder={
+                      isKu ? "کلیلەکە لێرە بنووسە..." : "Enter Gemini API key..."
+                    }
+                    placeholderTextColor={colors.mutedForeground}
+                    value={apiKeyInput}
+                    onChangeText={setApiKeyInput}
+                    style={[styles.inputField, isKu && { textAlign: "right" }]}
+                  />
+                  <PressableScale
+                    onPress={saveApiKey}
+                    scaleDown={0.98}
+                    style={styles.saveBtn}
+                  >
+                    <AppText style={styles.saveBtnText} forceKurdishFont={isKu}>
+                      {isKu ? "پاشەکەوتکردن" : "Save Key"}
+                    </AppText>
+                  </PressableScale>
                 </View>
+              </>
+            )}
+
+            {!isKidsMode && ENABLE_ADMIN ? (
+              <>
+                <AppText
+                  style={[styles.sectionLabel, styles.sectionSpaced]}
+                  forceLatinFont
+                >
+                  Content Admin
+                </AppText>
+                <AppText style={styles.sectionHint} forceLatinFont>
+                  Edit units, lessons, and game content without code.
+                </AppText>
+                <PressableScale
+                  onPress={() => router.push("/admin" as any)}
+                  scaleDown={0.98}
+                  style={[
+                    styles.supportRow,
+                    styles.card,
+                    {
+                      marginTop: 0,
+                      flexDirection: isKu ? "row-reverse" : "row",
+                    },
+                  ]}
+                >
+                  <AppText style={styles.rowLabel} forceLatinFont>
+                    Open admin panel
+                  </AppText>
+                  <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+                    <Icon3DChevronRight size={20} />
+                  </View>
+                </PressableScale>
+              </>
+            ) : null}
+
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {t("settings.legalSection")}
+            </AppText>
+
+            {PRIVACY_POLICY_URL ? (
+              <PressableScale
+                onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
+                scaleDown={0.98}
+                style={[
+                  styles.supportRow,
+                  styles.card,
+                  { marginTop: 0, flexDirection: isKu ? "row-reverse" : "row" },
+                ]}
+              >
+                <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+                  {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
+                </AppText>
                 <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
                   <Icon3DChevronRight size={20} />
                 </View>
               </PressableScale>
-            );
-          })}
-        </View>
+            ) : null}
 
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
-          {isKu ? "مفتاحی Gemini API" : "Gemini API Key"}
-        </AppText>
-        <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-          {isKu
-            ? "کلیلەکەت بە شێوەیەکی پارێزراو لەسەر مۆبایلەکەت پاشەکەوت دەکرێت."
-            : "Your key is stored securely in the device's native Keychain/Keystore."}
-        </AppText>
-        <View style={[styles.card, { padding: 16, gap: 12 }]}>
-          <TextInput
-            secureTextEntry
-            placeholder={isKu ? "کلیلەکە لێرە بنووسە..." : "Enter Gemini API key..."}
-            placeholderTextColor="#999"
-            value={apiKeyInput}
-            onChangeText={setApiKeyInput}
-            style={[styles.inputField, isKu && { textAlign: "right" }]}
-          />
-          <PressableScale
-            onPress={saveApiKey}
-            scaleDown={0.98}
-            style={styles.saveBtn}
-          >
-            <AppText style={styles.saveBtnText} forceKurdishFont={isKu}>
-              {isKu ? "پاشەکەوتکردن" : "Save Key"}
-            </AppText>
-          </PressableScale>
-        </View>
-
-        {ENABLE_ADMIN ? (
-          <>
-            <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceLatinFont>
-              Content Admin
-            </AppText>
-            <AppText style={styles.sectionHint} forceLatinFont>
-              Edit units, lessons, and game content without code.
-            </AppText>
-            <PressableScale
-              onPress={() => router.push("/admin")}
-              scaleDown={0.98}
-              style={[styles.supportRow, styles.card, { marginTop: 0, flexDirection: isKu ? "row-reverse" : "row" }]}
-            >
-              <AppText style={styles.rowLabel} forceLatinFont>
-                Open admin panel
-              </AppText>
-              <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                <Icon3DChevronRight size={20} />
-              </View>
-            </PressableScale>
-          </>
-        ) : null}
-
-        <AppText style={[styles.sectionLabel, styles.sectionSpaced]} forceKurdishFont={isKu}>
-          {t("settings.legalSection")}
-        </AppText>
-
-        {PRIVACY_POLICY_URL ? (
-          <PressableScale
-            onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
-            scaleDown={0.98}
-            style={[styles.supportRow, styles.card, { marginTop: 0, flexDirection: isKu ? "row-reverse" : "row" }]}
-          >
-            <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-              {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
-            </AppText>
-            <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-              <Icon3DChevronRight size={20} />
+            <View style={[styles.card, { marginTop: 16 }]}>
+              {LEGAL_LINKS.map((link, index) => (
+                <PressableScale
+                  key={link.route}
+                  onPress={() => router.push(link.route)}
+                  scaleDown={0.98}
+                  style={[
+                    styles.row,
+                    { flexDirection: isKu ? "row-reverse" : "row" },
+                    index < LEGAL_LINKS.length - 1 && styles.rowBorder,
+                  ]}
+                >
+                  <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+                    {t(link.labelKey)}
+                  </AppText>
+                  <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+                    <Icon3DChevronRight size={20} />
+                  </View>
+                </PressableScale>
+              ))}
             </View>
-          </PressableScale>
-        ) : null}
 
-        <View style={[styles.card, { marginTop: 16 }]}>
-          {LEGAL_LINKS.map((link, index) => (
             <PressableScale
-              key={link.route}
-              onPress={() => router.push(link.route)}
+              onPress={() => void openMailto(SUPPORT_EMAIL)}
               scaleDown={0.98}
               style={[
-                styles.row,
+                styles.supportRow,
+                styles.card,
                 { flexDirection: isKu ? "row-reverse" : "row" },
-                index < LEGAL_LINKS.length - 1 && styles.rowBorder,
               ]}
             >
-              <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-                {t(link.labelKey)}
-              </AppText>
+              <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
+                <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
+                  {t("settings.support")}
+                </AppText>
+                <Text
+                  style={[
+                    styles.supportEmail,
+                    { textAlign: isKu ? "right" : "left" },
+                  ]}
+                >
+                  {SUPPORT_EMAIL}
+                </Text>
+              </View>
               <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
                 <Icon3DChevronRight size={20} />
               </View>
             </PressableScale>
-          ))}
-        </View>
 
-        <PressableScale
-          onPress={() => void openMailto(SUPPORT_EMAIL)}
-          scaleDown={0.98}
-          style={[styles.supportRow, styles.card, { flexDirection: isKu ? "row-reverse" : "row" }]}
-        >
-          <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
-            <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-              {t("settings.support")}
-            </AppText>
-            <Text style={[styles.supportEmail, { textAlign: isKu ? "right" : "left" }]}>{SUPPORT_EMAIL}</Text>
-          </View>
-          <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-            <Icon3DChevronRight size={20} />
-          </View>
-        </PressableScale>
+            <Text style={styles.versionText}>
+              {t("settings.version")} {APP_VERSION}
+            </Text>
 
-        <Text style={styles.versionText}>
-          {t("settings.version")} {APP_VERSION}
-        </Text>
+            {!isKidsMode && (
+              <>
+                <PressableScale
+                  onPress={confirmReplayOnboarding}
+                  scaleDown={0.98}
+                  style={[styles.replayBtn, styles.card]}
+                >
+                  <AppText style={styles.replayLabel} forceKurdishFont={isKu}>
+                    {t("settings.replayOnboarding")}
+                  </AppText>
+                </PressableScale>
 
-        <PressableScale
-          onPress={confirmReplayOnboarding}
-          scaleDown={0.98}
-          style={[styles.replayBtn, styles.card]}
-        >
-          <AppText style={styles.replayLabel} forceKurdishFont={isKu}>
-            {t("settings.replayOnboarding")}
-          </AppText>
-        </PressableScale>
+                <PressableScale
+                  onPress={confirmReset}
+                  scaleDown={0.98}
+                  style={[styles.resetBtn, styles.card]}
+                >
+                  <AppText style={styles.resetLabel} forceKurdishFont={isKu}>
+                    {t("settings.resetProgress")}
+                  </AppText>
+                </PressableScale>
+              </>
+            )}
+          </GsapEnterBlock>
+        </ScrollView>
 
-        <PressableScale
-          onPress={confirmReset}
-          scaleDown={0.98}
-          style={[styles.resetBtn, styles.card]}
-        >
-          <AppText style={styles.resetLabel} forceKurdishFont={isKu}>
-            {t("settings.resetProgress")}
-          </AppText>
-        </PressableScale>
-      </ScrollView>
+        {/* Blurred Gradient Overlay above Navbar */}
+        <BottomScrollFade />
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#F7F7F7",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#4B4B4B",
-    fontFamily: "DINNextRoundedBold",
-  },
-  sectionLabel: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#4B4B4B",
-    fontFamily: "DINNextRoundedBold",
-    marginBottom: 6,
-  },
-  sectionSpaced: {
-    marginTop: 20,
-  },
-  sectionHint: {
-    fontSize: 14,
-    color: "#777",
-    fontFamily: "DINNextRoundedMedium",
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    overflow: "hidden",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF0F2",
-  },
-  rowLabel: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#4B4B4B",
-    fontFamily: "DINNextRoundedMedium",
-  },
-  rowLabelOn: {
-    color: "#1CB0F6",
-    fontFamily: "DINNextRoundedBold",
-  },
-  radioEmpty: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#E5E5E5",
-  },
-  toggleCard: {
-    marginTop: 16,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    paddingHorizontal: 16,
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF0F2",
-  },
-  toggleRowLast: {
-    borderBottomWidth: 0,
-  },
-  toggleLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4B4B4B",
-    fontFamily: "DINNextRoundedMedium",
-  },
-  fontRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-  },
-  fontRowSelected: {
-    backgroundColor: "#E5F7FF",
-  },
-  fontRowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  fontPreview: {
-    fontSize: 20,
-    color: "#4B4B4B",
-    textAlign: "right",
-    writingDirection: "rtl",
-    flexShrink: 1,
-  },
-  fontPreviewOn: {
-    color: "#1CB0F6",
-  },
-  supportRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  supportEmail: {
-    fontSize: 14,
-    color: "#1CB0F6",
-    marginTop: 4,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  versionText: {
-    fontSize: 13,
-    color: "#999",
-    textAlign: "center",
-    marginTop: 12,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  replayBtn: {
-    marginTop: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: "center",
-  },
-  replayLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#2B59F3",
-    fontFamily: "DINNextRoundedBold",
-  },
-  resetBtn: {
-    marginTop: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: "center",
-  },
-  resetLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#E53935",
-    fontFamily: "DINNextRoundedBold",
-  },
-  inputField: {
-    height: 48,
-    borderWidth: 1.5,
-    borderColor: "#E5E5E5",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: "#4B4B4B",
-    backgroundColor: "#F9F9F9",
-  },
-  saveBtn: {
-    backgroundColor: "#2B59F3",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveBtnText: {
-    color: "#FFF",
-    fontWeight: "700",
-    fontSize: 16,
-    fontFamily: "DINNextRoundedBold",
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 10,
+      backgroundColor: "transparent",
+      marginBottom: 8,
+    },
+    title: {
+      fontSize: 30,
+      fontWeight: "800",
+      color: colors.foreground,
+      letterSpacing: -0.8,
+      fontFamily: "DINNextRoundedBold",
+    },
+    titleUnderline: {
+      width: 34,
+      height: 4,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      marginTop: 6,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.mutedForeground,
+      fontFamily: "DINNextRoundedBold",
+      marginBottom: 8,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+    },
+    sectionSpaced: {
+      marginTop: 18,
+    },
+    sectionHint: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+      marginBottom: 8,
+      marginTop: -4,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 15,
+      paddingHorizontal: 16,
+    },
+    rowBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    rowLabel: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: colors.foreground,
+      fontFamily: "DINNextRoundedMedium",
+    },
+    rowLabelOn: {
+      color: colors.secondary,
+      fontFamily: "DINNextRoundedBold",
+    },
+    radioEmpty: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      borderColor: colors.border,
+    },
+    toggleCard: {
+      marginTop: 16,
+      backgroundColor: colors.card,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      paddingHorizontal: 16,
+    },
+    toggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    toggleRowLast: {
+      borderBottomWidth: 0,
+    },
+    toggleLabel: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: colors.foreground,
+      fontFamily: "DINNextRoundedMedium",
+    },
+    fontRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+    },
+    fontRowSelected: {
+      backgroundColor: colors.muted,
+    },
+    fontRowLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      flex: 1,
+    },
+    fontPreview: {
+      fontSize: 20,
+      color: colors.foreground,
+      textAlign: "right",
+      writingDirection: "rtl",
+      flexShrink: 1,
+    },
+    fontPreviewOn: {
+      color: colors.secondary,
+    },
+    supportRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginTop: 16,
+    },
+    supportEmail: {
+      fontSize: 14,
+      color: colors.secondary,
+      marginTop: 4,
+      fontFamily: "DINNextRoundedMedium",
+    },
+    versionText: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+      textAlign: "center",
+      marginTop: 12,
+      fontFamily: "DINNextRoundedMedium",
+    },
+    replayBtn: {
+      marginTop: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      alignItems: "center",
+    },
+    replayLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.secondary,
+      fontFamily: "DINNextRoundedBold",
+    },
+    resetBtn: {
+      marginTop: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      alignItems: "center",
+    },
+    resetLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.error,
+      fontFamily: "DINNextRoundedBold",
+    },
+    inputField: {
+      height: 48,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      fontSize: 16,
+      color: colors.foreground,
+      backgroundColor: colors.card,
+    },
+    saveBtn: {
+      backgroundColor: colors.secondary,
+      borderRadius: 14,
+      paddingVertical: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    saveBtnText: {
+      color: "#FFF",
+      fontWeight: "700",
+      fontSize: 16,
+      fontFamily: "DINNextRoundedBold",
+    },
+  });

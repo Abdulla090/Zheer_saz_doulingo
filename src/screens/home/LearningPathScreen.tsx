@@ -1,14 +1,17 @@
 /* eslint-disable */
 import { ContentPackCard } from "../../components/ContentPackCard";
+import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import { KidsEnglishPathScreen } from "./KidsEnglishPathScreen";
 import { NormalEnglishPathScreen } from "./NormalEnglishPathScreen";
 import { StreetEnglishPathScreen } from "./StreetEnglishPathScreen";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { TopScrollFade } from "../../components/ui/TopScrollFade";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   CONTENT_PACKS,
   useContentPackStore,
 } from "../../stores/useContentPackStore";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,6 +31,9 @@ export function LearningPathScreen() {
   const savedMode = useSettingsStore((s) => s.pathMode);
   const activeMode = parseMode(params.mode) ?? savedMode;
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  // Removed kids router redirect so it renders in the dashboard
 
   const streetStatus = useContentPackStore((s) => s.streetStatus);
   const kidsStatus = useContentPackStore((s) => s.kidsStatus);
@@ -86,13 +92,16 @@ export function LearningPathScreen() {
     }
   }
 
-  if (activeMode === "normal") {
-    return <NormalEnglishPathScreen />;
-  }
-  if (activeMode === "kids") {
-    return <KidsEnglishPathScreen />;
-  }
-  return <StreetEnglishPathScreen />;
+  return (
+    <GsapEnterBlock index={1} style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
+      {activeMode === "normal" && <NormalEnglishPathScreen />}
+      {activeMode === "kids" && <KidsEnglishPathScreen />}
+      {activeMode === "street" && <StreetEnglishPathScreen />}
+      <BottomScrollFade />
+    </View>
+    </GsapEnterBlock>
+  );
 }
 
 const styles = StyleSheet.create({

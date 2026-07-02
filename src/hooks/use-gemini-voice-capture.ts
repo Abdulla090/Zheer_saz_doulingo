@@ -7,7 +7,7 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 import * as FileSystem from "expo-file-system";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PermissionsAndroid, Platform } from "react-native";
 
 export type GeminiVoiceHandlers = {
@@ -57,7 +57,10 @@ export function useGeminiVoiceCapture() {
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderRef = useRef(recorder);
-  recorderRef.current = recorder;
+
+  useEffect(() => {
+    recorderRef.current = recorder;
+  }, [recorder]);
 
   const setListeningState = useCallback((value: boolean) => {
     console.trace("[useGeminiVoiceCapture] setListeningState called with:", value);
@@ -239,19 +242,45 @@ export function useGeminiVoiceCapture() {
   }, []);
 
   const stopNativeRecording = useCallback(async () => {
-    if (recorderRef.current.isRecording) {
-      await Promise.race([
-        recorderRef.current.stop(),
-        new Promise((resolve) => setTimeout(resolve, 3000)),
-      ]);
+    try {
+      const rec = recorderRef.current;
+      if (!rec) return null;
+
+      let isRecording = false;
+      try {
+        isRecording = rec.isRecording;
+      } catch (err) {
+        console.warn("[useGeminiVoiceCapture] isRecording check failed (object released?):", err);
+      }
+
+      if (isRecording) {
+        try {
+          await Promise.race([
+            rec.stop(),
+            new Promise((resolve) => setTimeout(resolve, 3000)),
+          ]);
+        } catch (err) {
+          console.warn("[useGeminiVoiceCapture] stop() failed (object released?):", err);
+        }
+      }
+
+      let uri = null;
+      try {
+        uri = rec.uri;
+      } catch (err) {
+        console.warn("[useGeminiVoiceCapture] uri read failed (object released?):", err);
+      }
+
+      if (!uri) return null;
+      const audio = await uriToBase64Native(uri);
+      return {
+        ...audio,
+        mimeType: normalizeAudioMimeType(audio.mimeType),
+      };
+    } catch (err) {
+      console.error("[useGeminiVoiceCapture] stopNativeRecording failed:", err);
+      return null;
     }
-    const uri = recorderRef.current.uri;
-    if (!uri) return null;
-    const audio = await uriToBase64Native(uri);
-    return {
-      ...audio,
-      mimeType: normalizeAudioMimeType(audio.mimeType),
-    };
   }, []);
 
   const processAudio = useCallback(
@@ -399,8 +428,23 @@ export function useGeminiVoiceCapture() {
       }
       webRecorderRef.current = null;
       webChunksRef.current = [];
-    } else if (recorderRef.current.isRecording) {
-      await recorderRef.current.stop();
+    } else {
+      const rec = recorderRef.current;
+      if (rec) {
+        let isRecording = false;
+        try {
+          isRecording = rec.isRecording;
+        } catch {
+          // ignore
+        }
+        if (isRecording) {
+          try {
+            await rec.stop();
+          } catch {
+            // ignore
+          }
+        }
+      }
     }
 
     setListeningState(false);

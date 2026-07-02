@@ -1,10 +1,10 @@
-/* eslint-disable react-hooks/immutability */
-/* eslint-disable react-hooks/set-state-in-effect */
+ 
+ 
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { StyleSheet, View, Pressable, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { layoutMorph, tileFlyTiming } from "../../../components/animations/motion";
+import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
 import Animated, {
   Easing,
   interpolate,
@@ -43,7 +43,33 @@ type FlySession = {
   toH: number;
 };
 
-function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id: string, word: string) => void }) {
+const getWebCoords = (el: any) => {
+  if (!el) return null;
+  if (Platform.OS !== "web") return null;
+  try {
+    let node = el;
+    if (typeof node.getBoundingClientRect === "function") {
+      const r = node.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    }
+    if (node._component && typeof node._component.getBoundingClientRect === "function") {
+      const r = node._component.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    }
+    if (typeof node.getHostNode === "function") {
+      const host = node.getHostNode();
+      if (host && typeof host.getBoundingClientRect === "function") {
+        const r = host.getBoundingClientRect();
+        return { x: r.left, y: r.top, w: r.width, h: r.height };
+      }
+    }
+  } catch (err) {
+    console.error("Error measuring web coords:", err);
+  }
+  return null;
+};
+
+function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFinish: (id: string, word: string) => void; isKids?: boolean }) {
   const flyProgress = useSharedValue(0);
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
@@ -67,7 +93,7 @@ function FlyingTile({ session, onFinish }: { session: FlySession; onFinish: (id:
   return (
     <Animated.View style={flyStyle}>
       <View style={{ flex: 1, justifyContent: "center" }}>
-        <LightWordTile label={session.word} state="pending" />
+        <LightWordTile label={session.word} state="pending" isKids={isKids} />
       </View>
     </Animated.View>
   );
@@ -77,9 +103,11 @@ type Props = {
   question: FillBlankQuestion;
   onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
+  questionIndex?: number;
+  totalQuestions?: number;
 };
 
-export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
+export default function FillBlankGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
   const { t, isKu } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
@@ -119,9 +147,18 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
     if (revealed) return;
     if (selected === word) return;
 
-    const root = rootCoords.current;
-    const bank = bankCoords.current[word];
-    const target = blankCoords.current;
+    let root = rootCoords.current;
+    let bank = bankCoords.current[word];
+    let target = blankCoords.current;
+
+    if (Platform.OS === 'web') {
+      const webRoot = getWebCoords(rootRef.current);
+      const webBank = getWebCoords(bankRefs.current[word]);
+      const webTarget = getWebCoords(blankRef.current);
+      if (webRoot) root = webRoot;
+      if (webBank) bank = webBank;
+      if (webTarget) target = webTarget;
+    }
 
     if (!root || !bank || !target) {
       setSelected(word);
@@ -136,10 +173,10 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       fromY: bank.y - root.y,
       fromW: bank.w,
       fromH: bank.h,
-      toX: target.x - root.x,
-      toY: target.y - root.y,
-      toW: target.w,
-      toH: target.h,
+      toX: target.x - root.x + (target.w - bank.w) / 2,
+      toY: target.y - root.y + (target.h - bank.h) / 2,
+      toW: bank.w,
+      toH: bank.h,
     });
   };
 
@@ -170,6 +207,24 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
     return "idle";
   };
 
+  const shuffledOptions = React.useMemo(() => {
+    const opts = [...question.options];
+    let seed = 0;
+    for (const opt of question.options) {
+      for (let i = 0; i < opt.length; i++) {
+        seed = opt.charCodeAt(i) + ((seed << 5) - seed);
+      }
+    }
+    const a = [...opts];
+    let s = seed;
+    for (let i = a.length - 1; i > 0; i--) {
+      s = (s * 1664525 + 1013904223) & 0xffffffff;
+      const j = Math.abs(s) % (i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }, [question.options]);
+
   const blankBorder =
     revealed && selected
       ? selected === question.correctAnswer
@@ -178,6 +233,10 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       : selected || flySession
         ? L.blue
         : L.slotDash;
+
+  const kidsBadgeText = pathMode === "kids" && questionIndex !== undefined && totalQuestions !== undefined
+    ? `EXERCISE ${questionIndex + 1} OF ${totalQuestions}`
+    : undefined;
 
   return (
     <GameRoot style={s.root}>
@@ -194,6 +253,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       <GameHeader>
         <LightGameHeading
           title={t("lessons.fillBlank")}
+          badge={kidsBadgeText}
         />
       </GameHeader>
 
@@ -207,34 +267,42 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <Animated.View layout={layoutMorph} style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
+          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
             {question.sentenceParts[0] ? (
               <AppText style={s.sentenceText}>{question.sentenceParts[0]} </AppText>
             ) : null}
-            <Pressable
+            <Animated.View
               ref={blankRef}
+              layout={layoutSmooth}
               collapsable={false}
-              style={({ pressed }) => [
-                s.blank,
-                { borderColor: blankBorder },
-                pressed && selected && { opacity: 0.8, transform: [{ scale: 0.96 }] }
-              ]}
-              onPress={() => {
-                if (revealed || !selected) return;
-                if (Platform.OS !== "web") {
-                  void Haptics.selectionAsync();
-                }
-                setSelected(null);
-              }}
+              style={s.blankContainer}
               onLayout={() => {
                 blankRef.current?.measureInWindow((x, y, w, h) => {
                   blankCoords.current = { x, y, w, h };
                 });
               }}
-              disabled={revealed || !selected}
             >
-              <AppText style={s.blankText}>{flySession ? "" : (selected || "____")}</AppText>
-            </Pressable>
+              {selected && !flySession ? (
+                <Animated.View layout={layoutSmooth}>
+                  <LightWordTile
+                    label={selected}
+                    state={mapOptionState(getState(selected))}
+                    onPress={() => {
+                      if (revealed) return;
+                      if (Platform.OS !== "web") {
+                        void Haptics.selectionAsync();
+                      }
+                      setSelected(null);
+                    }}
+                    isKids={pathMode === "kids"}
+                  />
+                </Animated.View>
+              ) : (
+                <View style={[s.emptySlot, { borderColor: blankBorder }]}>
+                  <AppText style={s.blankPlaceholder}>____</AppText>
+                </View>
+              )}
+            </Animated.View>
             {question.sentenceParts[1] ? (
               <AppText style={s.sentenceText}> {question.sentenceParts[1]}</AppText>
             ) : null}
@@ -243,7 +311,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
       </Animated.View>
 
       <View style={[s.chipsWrap, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-        {question.options.map((w) => {
+        {shuffledOptions.map((w) => {
           const isFlying = flySession?.word === w;
           const isSelected = selected === w;
           // Hide the chip if it is currently flying, OR if it's selected and not revealed yet
@@ -270,6 +338,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
                 state={mapOptionState(getState(w))}
                 onPress={() => pick(w)}
                 disabled={revealed}
+                isKids={pathMode === "kids"}
               />
             </View>
           );
@@ -285,7 +354,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
             style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
             collapsable={false}
           >
-            <FlyingTile session={flySession} onFinish={finishFly} />
+            <FlyingTile session={flySession} onFinish={finishFly} isKids={pathMode === "kids"} />
           </Animated.View>
         ) : null}
       </View>
@@ -295,6 +364,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode }: Props) {
           label={t("lessons.check")}
           onPress={check}
           disabled={!selected || revealed || !!flySession}
+          variant={pathMode === "kids" ? "kids" : "default"}
         />
       </GameFooter>
       </View>
@@ -326,22 +396,29 @@ const s = StyleSheet.create({
     backgroundColor: "transparent",
     ...ltrText,
   },
-  blank: {
+  blankContainer: {
     minWidth: 88,
-    borderRadius: 14,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptySlot: {
+    minWidth: 88,
+    height: 48,
+    borderRadius: 16,
     borderWidth: 2,
     borderStyle: "dashed",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: L.slotDash,
     backgroundColor: L.bgSoft,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  blankText: {
+  blankPlaceholder: {
     fontSize: 17,
     fontWeight: "800",
     color: L.navy,
     fontFamily: "DINNextRoundedBold",
-    backgroundColor: "transparent",
-    ...ltrText,
+    opacity: 0.35,
   },
   chipsWrap: {
     flexDirection: "row",
