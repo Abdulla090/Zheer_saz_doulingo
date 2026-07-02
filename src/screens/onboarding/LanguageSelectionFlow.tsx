@@ -29,8 +29,8 @@ import {
   BookOpen02Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons";
-import MascotOrange from "../../../../assets/images/svg/newmascotorange.svg";
-import MascotPurple from "../../../../assets/images/svg/newmascotpurple.svg";
+import MascotOrange from "../../../assets/images/svg/newmascotorange.svg";
+import MascotPurple from "../../../assets/images/svg/newmascotpurple.svg";
 
 type Step = "profile" | "language" | "goal";
 
