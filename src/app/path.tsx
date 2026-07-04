@@ -1,6 +1,7 @@
-import { PathModeTabs } from "../screens/home/components/PathModeTabs";
+import { PathSwitcher, type PathMode } from "../screens/home/components/PathSwitcher";
 import { LearningPathScreen } from "../screens/home/LearningPathScreen";
-import React from "react";
+import { useSettingsStore } from "../stores/useSettingsStore";
+import React, { useCallback, useState } from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -10,20 +11,48 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function PathRoute() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const savedMode = useSettingsStore((s) => s.pathMode);
+  const setPathMode = useSettingsStore((s) => s.setPathMode);
+  const [activeMode, setActiveMode] = useState<PathMode>(savedMode);
+
+  const handleSwitch = useCallback(
+    (next: PathMode) => {
+      setActiveMode(next);
+      setPathMode(next);
+    },
+    [setPathMode],
+  );
 
   return (
     <View style={styles.root}>
-      <View style={{ flex: 1 }}>
-        <LearningPathScreen />
-        <View style={[styles.topChrome, { pointerEvents: "box-none", paddingTop: Math.max(insets.top, 20) }]}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton} activeOpacity={0.8}>
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#0F172A" strokeWidth={2.5} />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}>
-              <PathModeTabs />
-            </View>
-          </View>
+      {/* Full-screen path content */}
+      <LearningPathScreen overrideMode={activeMode} />
+
+      {/* Floating header overlay */}
+      <View
+        style={[
+          styles.topChrome,
+          { paddingTop: Math.max(insets.top, 20) + 44 },
+        ]}
+        pointerEvents="box-none"
+      >
+        {/* Back button - absolutely positioned above tabs */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backButton, { top: Math.max(insets.top, 20) + 4 }]}
+          activeOpacity={0.8}
+        >
+          <HugeiconsIcon
+            icon={ArrowLeft01Icon}
+            size={22}
+            color="#0F172A"
+            strokeWidth={2.5}
+          />
+        </TouchableOpacity>
+
+        {/* Tabs - centered with bottom spacing for unit bar gap */}
+        <View style={{ marginBottom: 14 }}>
+          <PathSwitcher activeMode={activeMode} onSwitch={handleSwitch} />
         </View>
       </View>
     </View>
@@ -39,22 +68,17 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 50,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    gap: 8,
-  },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F8FAFC",
+    position: "absolute",
+    left: 8,
+    zIndex: 100,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.92)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderBottomWidth: 4,
-    borderBottomColor: "#CBD5E1",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
   },
 });

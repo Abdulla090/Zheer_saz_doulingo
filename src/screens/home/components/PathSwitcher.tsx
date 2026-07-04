@@ -24,7 +24,7 @@ import {
 } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 
-export type PathMode = "street" | "normal" | "kids";
+export type PathMode = "street" | "normal" | "kids" | "custom";
 
 type Props = {
   activeMode: PathMode;
@@ -39,6 +39,7 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
+
   {
     key: "street",
     label: "Street",
@@ -57,9 +58,15 @@ const TABS: TabDef[] = [
     activeColor: "#FF9600",
     icon: (active) => <Icon3DStar size={16} active={active} />,
   },
+  {
+    key: "custom",
+    label: "Custom",
+    activeColor: "#10B981",
+    icon: (active) => <Icon3DLayers size={16} active={active} />,
+  },
 ];
 
-const TAB_INDEX: Record<PathMode, number> = { street: 0, normal: 1, kids: 2 };
+const TAB_INDEX: Record<string, number> = { street: 0, normal: 1, kids: 2, custom: 3 };
 const PILL_PAD = 4;
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {

@@ -1,6 +1,5 @@
 /* eslint-disable */
 import { ContentPackCard } from "../../components/ContentPackCard";
-import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import { KidsEnglishPathScreen } from "./KidsEnglishPathScreen";
 import { NormalEnglishPathScreen } from "./NormalEnglishPathScreen";
 import { StreetEnglishPathScreen } from "./StreetEnglishPathScreen";
@@ -16,7 +15,7 @@ import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type PathMode = "street" | "normal" | "kids";
+import type { PathMode } from "../../stores/useSettingsStore";
 
 function parseMode(raw: string | string[] | undefined): PathMode | null {
   if (raw == null) return null;
@@ -26,10 +25,10 @@ function parseMode(raw: string | string[] | undefined): PathMode | null {
   return "street";
 }
 
-export function LearningPathScreen() {
+export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }) {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const savedMode = useSettingsStore((s) => s.pathMode);
-  const activeMode = parseMode(params.mode) ?? savedMode;
+  const activeMode = overrideMode ?? parseMode(params.mode) ?? savedMode;
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -92,15 +91,24 @@ export function LearningPathScreen() {
     }
   }
 
+  // Lazy rendering: only the active tab mounts; inactive tabs are fully unmounted
+  const renderActiveContent = () => {
+    switch (activeMode) {
+      case "normal":
+        return <NormalEnglishPathScreen />;
+      case "kids":
+        return <KidsEnglishPathScreen />;
+      case "street":
+      default:
+        return <StreetEnglishPathScreen />;
+    }
+  };
+
   return (
-    <GsapEnterBlock index={1} style={{ flex: 1 }}>
     <View style={{ flex: 1 }}>
-      {activeMode === "normal" && <NormalEnglishPathScreen />}
-      {activeMode === "kids" && <KidsEnglishPathScreen />}
-      {activeMode === "street" && <StreetEnglishPathScreen />}
+      {renderActiveContent()}
       <BottomScrollFade />
     </View>
-    </GsapEnterBlock>
   );
 }
 

@@ -15,12 +15,19 @@ function parseMode(raw: string | string[] | undefined): PathMode {
   return "street";
 }
 
-/** PathSwitcher pill + bar padding (continue CTA is not in this chrome). */
+/** PathSwitcher pill + bar padding (continue CTA is not in this chrome).
+ *  44px back-button row + 56px switcher pill + 14px gap to unit bar = 114 */
 export const PATH_SWITCHER_HEIGHT = 56;
 
-export const PATH_TOP_CHROME_HEIGHT = PATH_SWITCHER_HEIGHT;
+export const PATH_TOP_CHROME_HEIGHT = 44 + PATH_SWITCHER_HEIGHT + 14;
 
-export function PathModeTabs() {
+export function PathModeTabs({
+  hasSafeArea = true,
+  absolute = true,
+}: {
+  hasSafeArea?: boolean;
+  absolute?: boolean;
+} = {}) {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -41,7 +48,20 @@ export function PathModeTabs() {
   );
 
   return (
-    <View style={[styles.bar, { paddingTop: insets.top + 6, pointerEvents: "box-none" }]}>
+    <View
+      style={[
+        styles.bar,
+        !absolute && {
+          position: "relative",
+          top: undefined,
+          left: undefined,
+          right: undefined,
+          zIndex: undefined,
+        },
+        hasSafeArea && { paddingTop: insets.top + 6 },
+        { pointerEvents: "box-none" },
+      ]}
+    >
       <PathSwitcher activeMode={activeMode} onSwitch={handleSwitch} />
     </View>
   );

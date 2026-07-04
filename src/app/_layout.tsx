@@ -198,8 +198,10 @@ function RootLayout() {
                   <Stack.Screen name="guidebook" options={{ animation: "fade" }} />
                   <Stack.Screen name="ai-teacher" />
                   <Stack.Screen name="voice-tutor" />
+                  <Stack.Screen name="path" options={{ animation: "fade" }} />
                   <Stack.Screen name="podcast" />
                   <Stack.Screen name="slang" />
+                  <Stack.Screen name="reading-practice" />
                   <Stack.Screen name="quest" />
                   <Stack.Screen name="league" />
                   <Stack.Screen name="privacy-policy" />

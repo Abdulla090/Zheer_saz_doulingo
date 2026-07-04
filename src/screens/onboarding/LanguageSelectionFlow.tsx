@@ -15,35 +15,43 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Animated, {
-  FadeInDown,
+  FadeInRight,
+  FadeOutLeft,
+  LinearTransition,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  UserIcon,
-  Calendar01Icon,
   Message01Icon,
   Airplane01Icon,
   BookOpen02Icon,
   SparklesIcon,
+  EarthIcon,
+  Sun01Icon,
+  LeafIcon,
+  BotMessageSquareIcon,
+  RocketIcon,
+  CloudLightningIcon
 } from "@hugeicons/core-free-icons";
-import MascotOrange from "../../../assets/images/svg/newmascotorange.svg";
-import MascotPurple from "../../../assets/images/svg/newmascotpurple.svg";
+import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
+import { generateCustomCurriculum } from "../../services/curriculum-generator";
 
-type Step = "profile" | "language" | "goal";
+type Step = "profile" | "language" | "level" | "goal" | "generating";
 
 type Props = {
   onFinish: () => void;
 };
 
 const LANGUAGES = [
-  { id: "ku", label: "Kurdish (Soranî)", code: "KU", flag: "☀️" },
-  { id: "es", label: "Español", code: "ES", flag: "🇪🇸" },
-  { id: "ru", label: "Русский", code: "RU", flag: "🇷🇺" },
-  { id: "ar", label: "العربية", code: "AR", flag: "🇸🇦" },
-  { id: "en", label: "English", code: "EN", flag: "🇬🇧" },
+  { id: "ku", label: "Kurdish (Soranî)", code: "KU", icon: Sun01Icon },
+  { id: "es", label: "Español", code: "ES", icon: EarthIcon },
+  { id: "ru", label: "Русский", code: "RU", icon: EarthIcon },
+  { id: "ar", label: "العربية", code: "AR", icon: EarthIcon },
+  { id: "en", label: "English", code: "EN", icon: EarthIcon },
 ];
 
 const GOALS = [
@@ -81,6 +89,14 @@ const GOALS = [
   },
 ];
 
+const LEVELS = [
+  { id: 2, label: "Beginner (A1)", desc: "Start from the very basics, simple words and greetings.", icon: LeafIcon },
+  { id: 4, label: "Elementary (A2)", desc: "Can form basic sentences and talk about daily routines.", icon: BotMessageSquareIcon },
+  { id: 6, label: "Intermediate (B1)", desc: "Can handle travel situations and express opinions.", icon: RocketIcon },
+  { id: 8, label: "Upper-Intermediate (B2)", desc: "Can converse fluently and understand main ideas.", icon: BookOpen02Icon },
+  { id: 10, label: "Advanced / Expert (C1/C2)", desc: "Fluent, natural, and complex sentence structures.", icon: CloudLightningIcon },
+];
+
 export function LanguageSelectionFlow({ onFinish }: Props) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -92,9 +108,12 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   const userName = useSettingsStore((s) => s.userName);
   const userAge = useSettingsStore((s) => s.userAge);
   const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
+  const englishLevel = useSettingsStore((s) => s.englishLevel);
+  const setEnglishLevel = useSettingsStore((s) => s.setEnglishLevel);
 
   const [step, setStep] = useState<Step>("profile");
   const [selectedLang, setSelectedLang] = useState<string>("en");
+  const [selectedLevel, setSelectedLevel] = useState<number>(englishLevel || 5);
   const [selectedGoal, setSelectedGoal] = useState<string>("conversations");
   const [name, setName] = useState(userName || "");
   const [age, setAge] = useState(userAge || "");
@@ -114,27 +133,62 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
   const handleLanguageContinue = useCallback(() => {
     hapticSelection();
-    // Default native to English if learning Kurdish, otherwise Kurdish
     const nativeLang = selectedLang === "ku" ? "en" : "ku";
     setLanguagePair(nativeLang, selectedLang);
-    setStep("goal");
+    setStep("level");
   }, [selectedLang, setLanguagePair]);
 
-  const handleFinish = useCallback(() => {
+  const handleLevelContinue = useCallback(() => {
     hapticSelection();
+    setEnglishLevel(selectedLevel);
+    setStep("goal");
+  }, [selectedLevel, setEnglishLevel]);
+
+  const setPathMode = useSettingsStore((s) => s.setPathMode);
+
+  const handleGoalContinue = useCallback(async () => {
+    hapticSelection();
+    setStep("generating");
+    
+    // Convert level (1-10) to "beginner" or "advanced" for generator
+    const levelStr = selectedLevel <= 5 ? "beginner" : "advanced";
+
+    try {
+      await generateCustomCurriculum({
+        name,
+        age,
+        language: selectedLang,
+        level: levelStr,
+        goal: selectedGoal
+      });
+      // Activate normal path mode (which now uses the custom curriculum)
+      setPathMode("normal");
+    } catch (err) {
+      console.warn("Failed to generate curriculum:", err);
+    }
+    
     onFinish();
-  }, [onFinish]);
+  }, [name, age, selectedLang, selectedLevel, selectedGoal, setPathMode, onFinish]);
 
   const onBack = useCallback(() => {
     hapticSelection();
-    if (step === "goal") setStep("language");
+    if (step === "goal") setStep("level");
+    else if (step === "level") setStep("language");
     else if (step === "language") setStep("profile");
   }, [step]);
 
-  const stepIndex = step === "profile" ? 1 : step === "language" ? 2 : 3;
+  const stepIndex = step === "profile" ? 1 : step === "language" ? 2 : step === "level" ? 3 : 4;
+
+  // Background animated gradient
+  const bgScrollX = useSharedValue(0);
+  React.useEffect(() => {
+    let targetIndex = stepIndex - 1;
+    bgScrollX.value = withTiming(targetIndex * screenWidth, { duration: 600 });
+  }, [stepIndex, screenWidth, bgScrollX]);
 
   return (
     <View style={styles.root}>
+      <OnboardingSkiaBg scrollX={bgScrollX} />
       {/* HEADER: Back Button & Step Indicators */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
         <View style={styles.headerLeft}>
@@ -151,12 +205,14 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             <View style={[styles.stepLine, stepIndex >= 1 && styles.stepLineActive]} />
             <View style={[styles.stepLine, stepIndex >= 2 && styles.stepLineActive]} />
             <View style={[styles.stepLine, stepIndex >= 3 && styles.stepLineActive]} />
+            <View style={[styles.stepLine, stepIndex >= 4 && styles.stepLineActive]} />
           </View>
         </View>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
@@ -165,44 +221,39 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
       >
         {/* STEP 1: PROFILE NAME & AGE */}
         {step === "profile" && (
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
-            <Text style={styles.stepNumLabel}>STEP 1 OF 3</Text>
+          <Animated.View 
+            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={styles.contentWrap}
+          >
+            <Text style={styles.stepNumLabel}>STEP 1 OF 4</Text>
             <Text style={styles.title}>What's your name?</Text>
             <Text style={styles.subtitle}>We'll personalize your learning journey for you.</Text>
 
-            {/* Cute Mascots Visual */}
-            <View style={styles.mascotVisualRow}>
-              <View style={styles.mascotCol}>
-                <View style={[styles.speechBubble, { backgroundColor: "#FFF8E1", borderColor: "#FFE082" }]}>
-                  <Text style={[styles.speechBubbleText, { color: "#D97706" }]}>Hey!</Text>
-                </View>
-                <MascotOrange width={90} height={100} />
-              </View>
-            </View>
+
 
             <View style={styles.inputForm}>
-              <View style={styles.inputBox}>
-                <HugeiconsIcon icon={UserIcon} size={20} color="#64748B" style={styles.inputIcon} />
+              <View style={styles.inputBoxClean}>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInputClean, { outlineStyle: "none" } as any]}
                   value={name}
                   onChangeText={setName}
-                  placeholder="Enter your name"
-                  placeholderTextColor="#94A3B8"
-                  selectionColor="#2563EB"
+                  placeholder="Your Name"
+                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
+                  selectionColor="#0F172A"
                 />
               </View>
 
-              <View style={styles.inputBox}>
-                <HugeiconsIcon icon={Calendar01Icon} size={20} color="#64748B" style={styles.inputIcon} />
+              <View style={styles.inputBoxClean}>
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInputClean, { outlineStyle: "none" } as any]}
                   value={age}
                   onChangeText={setAge}
-                  placeholder="Enter your age (optional)"
-                  placeholderTextColor="#94A3B8"
+                  placeholder="Your Age (optional)"
+                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
                   keyboardType="numeric"
-                  selectionColor="#2563EB"
+                  selectionColor="#0F172A"
                 />
               </View>
             </View>
@@ -221,28 +272,17 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
         {/* STEP 2: LANGUAGE SELECTION */}
         {step === "language" && (
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
-            <Text style={styles.stepNumLabel}>STEP 2 OF 3</Text>
+          <Animated.View 
+            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={styles.contentWrap}
+          >
+            <Text style={styles.stepNumLabel}>STEP 2 OF 4</Text>
             <Text style={styles.title}>Which language would you like to learn?</Text>
             <Text style={styles.subtitle}>You can always add more languages later.</Text>
 
-            {/* Flipped Mascots Talking */}
-            <View style={styles.mascotVisualRow}>
-              <View style={styles.mascotCol}>
-                <View style={[styles.speechBubble, { backgroundColor: "#FFF5F5", borderColor: "#FED7D7" }]}>
-                  <Text style={[styles.speechBubbleText, { color: "#E53E3E" }]}>¡Hola!</Text>
-                </View>
-                <View style={{ transform: [{ scaleX: -1 }] }}>
-                  <MascotOrange width={80} height={90} />
-                </View>
-              </View>
-              <View style={[styles.mascotCol, { marginTop: 12 }]}>
-                <View style={[styles.speechBubble, { backgroundColor: "#EBF8FF", borderColor: "#BEE3F8" }]}>
-                  <Text style={[styles.speechBubbleText, { color: "#2B6CB0" }]}>Hello!</Text>
-                </View>
-                <MascotPurple width={80} height={90} />
-              </View>
-            </View>
+
 
             <View style={styles.optionsList}>
               {LANGUAGES.map((l) => {
@@ -257,7 +297,9 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                     <View style={[styles.radioDot, isSelected && styles.radioDotSelected]}>
                       {isSelected && <View style={styles.radioInner} />}
                     </View>
-                    <Text style={styles.flagEmoji}>{l.flag}</Text>
+                    <View style={styles.goalIconWrap}>
+                      <HugeiconsIcon icon={l.icon} size={24} color="#64748B" strokeWidth={2} />
+                    </View>
                     <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
                       {l.label}
                     </Text>
@@ -280,22 +322,73 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
           </Animated.View>
         )}
 
-        {/* STEP 3: MAIN GOAL SELECTION */}
+        {/* STEP 3: LEVEL SELECTION */}
+        {step === "level" && (
+          <Animated.View 
+            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={styles.contentWrap}
+          >
+            <Text style={styles.stepNumLabel}>STEP 3 OF 4</Text>
+            <Text style={styles.title}>
+              What is your current level in {LANGUAGES.find((l) => l.id === selectedLang)?.label.split(" ")[0]}?
+            </Text>
+            <Text style={styles.subtitle}>Select your current speaking & listening level.</Text>
+
+
+
+            <View style={styles.optionsList}>
+              {LEVELS.map((lvl) => {
+                const isSelected = selectedLevel === lvl.id;
+                return (
+                  <TouchableOpacity
+                    key={lvl.id}
+                    style={[styles.goalRow, isSelected && styles.goalRowSelected]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedLevel(lvl.id)}
+                  >
+                    <View style={[styles.goalIconWrap, { backgroundColor: "#EFF6FF" }]}>
+                      <HugeiconsIcon icon={lvl.icon} size={20} color="#2563EB" strokeWidth={2} />
+                    </View>
+                    <View style={styles.goalInfoCol}>
+                      <Text style={[styles.goalTitle, isSelected && styles.goalTitleSelected]}>
+                        {lvl.label}
+                      </Text>
+                      <Text style={styles.goalDesc}>{lvl.desc}</Text>
+                    </View>
+                    <View style={[styles.radioDot, isSelected && styles.radioDotSelected]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              activeOpacity={0.85}
+              onPress={handleLevelContinue}
+            >
+              <Text style={styles.primaryButtonText}>Continue</Text>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {/* STEP 4: MAIN GOAL SELECTION */}
         {step === "goal" && (
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.contentWrap}>
-            <Text style={styles.stepNumLabel}>STEP 3 OF 3</Text>
+          <Animated.View 
+            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            exiting={FadeOutLeft.duration(200)}
+            layout={LinearTransition.springify()}
+            style={styles.contentWrap}
+          >
+            <Text style={styles.stepNumLabel}>STEP 4 OF 4</Text>
             <Text style={styles.title}>What's your main goal?</Text>
             <Text style={styles.subtitle}>We'll personalize your journey based on your goal.</Text>
 
-            {/* Checklist Mascots visual */}
-            <View style={styles.mascotVisualRow}>
-              <View style={styles.mascotCol}>
-                <MascotOrange width={80} height={90} />
-              </View>
-              <View style={[styles.mascotCol, { marginTop: 12 }]}>
-                <MascotPurple width={80} height={90} />
-              </View>
-            </View>
+
 
             <View style={styles.optionsList}>
               {GOALS.map((g) => {
@@ -327,11 +420,27 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             <TouchableOpacity
               style={styles.primaryButton}
               activeOpacity={0.85}
-              onPress={handleFinish}
+              onPress={handleGoalContinue}
             >
               <Text style={styles.primaryButtonText}>Let's Get Started</Text>
               <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
+          </Animated.View>
+        )}
+        {/* STEP 5: GENERATING (LOADING) */}
+        {step === "generating" && (
+          <Animated.View 
+            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            exiting={FadeOutLeft.duration(200)}
+            style={[styles.contentWrap, { alignItems: "center", justifyContent: "center", paddingBottom: 100 }]}
+          >
+            <HugeiconsIcon icon={SparklesIcon} size={64} color="#0F172A" />
+            <Text style={[styles.title, { textAlign: "center", marginTop: 24, fontSize: 32 }]}>
+              Generating your personalized path...
+            </Text>
+            <Text style={[styles.subtitle, { textAlign: "center", fontSize: 16 }]}>
+              Building content tailored for your goals and level.
+            </Text>
           </Animated.View>
         )}
       </ScrollView>
@@ -342,7 +451,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
   },
   header: {
     flexDirection: "row",
@@ -350,8 +459,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
   },
   headerLeft: {
     width: 40,
@@ -361,11 +468,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
   headerCenter: {
     flex: 1,
@@ -381,41 +488,46 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
   },
   stepLineActive: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0F172A",
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 24,
   },
   contentWrap: {
     width: "100%",
-    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "stretch",
   },
   stepNumLabel: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#2563EB",
+    color: "rgba(0, 0, 0, 0.6)",
     letterSpacing: 1.2,
     marginBottom: 8,
+    textAlign: "left",
   },
   title: {
     fontSize: 26,
     color: "#0F172A",
-    textAlign: "center",
+    textAlign: "left",
     fontFamily: "DINNextRoundedBold",
     lineHeight: 32,
     marginBottom: 8,
+    width: "100%",
   },
   subtitle: {
     fontSize: 14,
-    color: "#64748B",
-    textAlign: "center",
+    color: "rgba(0, 0, 0, 0.5)",
+    textAlign: "left",
     lineHeight: 20,
     marginBottom: 24,
-    paddingHorizontal: 12,
+    width: "100%",
   },
 
   // -- Mascot Visual --
@@ -453,29 +565,22 @@ const styles = StyleSheet.create({
   // -- Form Fields --
   inputForm: {
     width: "100%",
-    gap: 12,
-    marginBottom: 24,
+    gap: 16,
+    marginBottom: 32,
+    marginTop: 16,
   },
-  inputBox: {
+  inputBoxClean: {
     width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 54,
+    borderBottomWidth: 2,
+    borderBottomColor: "rgba(0, 0, 0, 0.2)",
+    paddingVertical: 8,
   },
-  inputIcon: {
-    marginRight: 12,
-  },
-  textInput: {
-    flex: 1,
-    height: "100%",
-    fontSize: 15,
+  textInputClean: {
+    width: "100%",
+    fontSize: 32,
     color: "#0F172A",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "DINNextRoundedBold",
+    textAlign: "left",
   },
 
   // -- Options List --
@@ -491,32 +596,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
   },
   optionRowSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF",
+    borderColor: "rgba(0, 0, 0, 0.2)",
+    backgroundColor: "#FFFFFF",
   },
   radioDot: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#CBD5E1",
+    borderColor: "rgba(0, 0, 0, 0.2)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
   radioDotSelected: {
-    borderColor: "#2563EB",
+    borderColor: "#0F172A",
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#2563EB",
+    backgroundColor: "#0F172A",
   },
   flagEmoji: {
     fontSize: 22,
@@ -525,21 +630,21 @@ const styles = StyleSheet.create({
   optionLabel: {
     flex: 1,
     fontSize: 15,
-    color: "#334155",
+    color: "#0F172A",
     fontFamily: "DINNextRoundedBold",
   },
   optionLabelSelected: {
-    color: "#1E3A8A",
+    color: "#000000",
   },
   codeTag: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   codeTagText: {
     fontSize: 11,
-    color: "#64748B",
+    color: "rgba(0, 0, 0, 0.6)",
     fontFamily: "DINNextRoundedBold",
   },
 
@@ -551,13 +656,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
   },
   goalRowSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF",
+    borderColor: "rgba(0, 0, 0, 0.2)",
+    backgroundColor: "#FFFFFF",
   },
   goalIconWrap: {
     width: 44,
@@ -573,16 +678,19 @@ const styles = StyleSheet.create({
   },
   goalTitle: {
     fontSize: 15,
-    color: "#334155",
+    color: "#0F172A",
     fontFamily: "DINNextRoundedBold",
   },
   goalTitleSelected: {
-    color: "#1E3A8A",
+    color: "#000000",
   },
   goalDesc: {
     fontSize: 12,
-    color: "#64748B",
+    color: "rgba(0, 0, 0, 0.5)",
     marginTop: 2,
+  },
+  goalDescSelected: {
+    color: "rgba(0, 0, 0, 0.8)",
   },
 
   // -- Primary Action Button --

@@ -98,7 +98,7 @@ export function buildLessonRouteForMode(
 
 export function buildPathReturnRoute(pathMode: LessonPathMode) {
   return {
-    pathname: "/dashboard" as const,
+    pathname: "/path" as const,
     params: { mode: pathMode },
   };
 }

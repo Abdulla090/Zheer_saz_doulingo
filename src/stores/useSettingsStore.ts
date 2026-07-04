@@ -3,7 +3,7 @@ import { create } from "zustand";
 
 const STORAGE_KEY = "twino.app.settings";
 
-type PathMode = "street" | "normal" | "kids";
+export type PathMode = "street" | "normal" | "kids" | "custom";
 export type AppTheme = "light" | "dark" | "system";
 
 interface SettingsState {

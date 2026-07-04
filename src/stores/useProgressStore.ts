@@ -1,4 +1,4 @@
-import type { LessonPathMode } from "../data/lesson-content";
+import type { LessonPathMode } from "../data/types";
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
@@ -8,7 +8,7 @@ const DAILY_GOAL_XP = 15;
 export type LastActivity =
   | {
       kind: "lesson";
-      mode: "street" | "normal" | "kids";
+      mode: LessonPathMode;
       label: string;
       at: string;
     }
@@ -26,6 +26,7 @@ export type ProgressSnapshot = {
   normalPathIndexes: Record<string, number>;
   /** Map of "{source}-{target}" to their kids path index */
   kidsPathIndexes: Record<string, number>;
+
   totalXp: number;
   dailyXp: number;
   dailyGoalXp: number;

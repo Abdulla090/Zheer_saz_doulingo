@@ -1,5 +1,6 @@
 /**
- * RolePlayScreen — liquid glass + soft 3D hub, native/web speech via expo-speech-recognition.
+ * RolePlayScreen — iOS 27 hyper-professional redesign.
+ * Full-width scenario rows, animated voice orb, live chat transcript.
  */
 
 import { PressableScale } from "../../components/animations";
@@ -14,6 +15,7 @@ import {
   HomeType,
 } from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
@@ -21,12 +23,12 @@ import { useRouter } from "expo-router";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, Mic01Icon, Airplane01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Dimensions,
   Platform,
+  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
@@ -34,6 +36,18 @@ import {
   KeyboardAwareScrollView,
 } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import * as Speech from "expo-speech";
 import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
 
@@ -51,6 +65,7 @@ type Scenario = {
   title: string;
   titleKu: string;
   subtitleKu: string;
+  subtitle: string;
   icon: HugeiconsIconData;
   initialMessage: string;
   voicePitch: number;
@@ -64,6 +79,7 @@ const SCENARIOS: Scenario[] = [
     title: "Coffee Shop",
     titleKu: "قاوەخانەی پاریس",
     subtitleKu: "داواکردنی قاوە و کرۆسان بە ئینگلیزی",
+    subtitle: "Order coffee and croissants in English",
     icon: Coffee01Icon,
     initialMessage:
       "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
@@ -76,6 +92,7 @@ const SCENARIOS: Scenario[] = [
     title: "Mars Flight",
     titleKu: "گەشتی مەریخ",
     subtitleKu: "گفتوگۆ لەسەر کێشی جانتاکەت",
+    subtitle: "Explain your overweight luggage to the gate agent",
     icon: Rocket01Icon,
     initialMessage:
       "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
@@ -88,6 +105,7 @@ const SCENARIOS: Scenario[] = [
     title: "Job Interview",
     titleKu: "چاوپێکەوتنی کار",
     subtitleKu: "چاوپێکەوتن بۆ ئەندازیاری AI",
+    subtitle: "Interview for an AI Engineering position",
     icon: Briefcase01Icon,
     initialMessage:
       "Thank you for joining us. Could you describe your experience optimizing small language models?",
@@ -100,6 +118,7 @@ const SCENARIOS: Scenario[] = [
     title: "Bazaar Bargain",
     titleKu: "بازاڕی گەورە",
     subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش",
+    subtitle: "Negotiate the price of a hand-woven rug",
     icon: Store01Icon,
     initialMessage:
       "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
@@ -111,11 +130,133 @@ const SCENARIOS: Scenario[] = [
 
 type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
 
+
+/* ─── Animated Pulse Ring ─── */
+const PulseRing = React.memo(function PulseRing({ size, color, delay, status }: { size: number; color: string; delay: number; status: Status }) {
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    cancelAnimation(scale);
+    cancelAnimation(opacity);
+
+    if (status === "listening") {
+      scale.value = 1;
+      opacity.value = withRepeat(
+        withSequence(
+          withTiming(0.5, { duration: 200, easing: Easing.out(Easing.ease) }),
+          withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) }),
+        ),
+        -1,
+        false,
+      );
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: delay }),
+          withTiming(1.6, { duration: 1400, easing: Easing.out(Easing.cubic) }),
+          withTiming(1, { duration: 0 }),
+        ),
+        -1,
+        false,
+      );
+    } else if (status === "speaking") {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 800, easing: Easing.inOut(Easing.sin) }),
+          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      );
+      opacity.value = withTiming(0.25, { duration: 400 });
+    } else if (status === "thinking") {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.05, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.98, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        true,
+      );
+      opacity.value = withTiming(0.15, { duration: 300 });
+    } else {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.04, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      );
+      opacity.value = withTiming(0.12, { duration: 600 });
+    }
+  }, [status, scale, opacity, delay]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const r = size / 2;
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          width: size,
+          height: size,
+          borderRadius: r,
+          borderWidth: 2,
+          borderColor: color,
+        },
+        animStyle,
+      ]}
+    />
+  );
+});
+
+/* ─── Chat Bubble ─── */
+const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, isKu }: { sender: "user" | "ai"; text: string; accent: string; icon: HugeiconsIconData; isKu: boolean }) {
+  const isAi = sender === "ai";
+  return (
+    <Animated.View
+      entering={FadeInUp.duration(300).springify().damping(18)}
+      style={[
+        st.bubbleRow,
+        isAi
+          ? { flexDirection: isKu ? "row-reverse" : "row" }
+          : { flexDirection: isKu ? "row" : "row-reverse" },
+      ]}
+    >
+      {isAi && (
+        <View style={[st.avatar, { backgroundColor: accent + "18" }]}>
+          <HugeiconsIcon icon={icon} size={16} color={accent} strokeWidth={2} />
+        </View>
+      )}
+      <View
+        style={[
+          st.bubble,
+          isAi
+            ? st.aiBubble
+            : [st.userBubble, { backgroundColor: accent + "12", borderColor: accent + "20" }],
+        ]}
+      >
+        <AppText style={[st.bubbleText, { textAlign: isKu && isAi ? "right" : "left" }]}>
+          {text}
+        </AppText>
+      </View>
+    </Animated.View>
+  );
+});
+
+
+/* ─── Main Screen ─── */
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, isKu } = useI18n();
-  const scrollRef = useRef<React.ElementRef<typeof KeyboardAwareScrollView>>(null);
+  const { colors } = useThemeColors();
+  const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
@@ -126,18 +267,11 @@ export function RolePlayScreen() {
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const historyRef = useRef(history);
-  useEffect(() => {
-    historyRef.current = history;
-  }, [history]);
 
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
-  useEffect(() => {
-    scenarioRef.current = activeScenario;
-  }, [activeScenario]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
 
   useEffect(() => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -234,6 +368,7 @@ export function RolePlayScreen() {
   const handleUserResponse = useCallback(async (userText: string) => {
     setHistory((p) => [...p, { sender: "user", text: userText }]);
     setStatus("thinking");
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     if (isGeminiConfigured()) {
       try {
@@ -252,23 +387,23 @@ export function RolePlayScreen() {
     setTimeout(() => {
       const sc = scenarioRef.current;
       let r = "";
-      const t = userText.toLowerCase();
+      const lower = userText.toLowerCase();
 
       if (sc.id === "cafe") {
         r =
-          t.includes("croissant") || t.includes("pastry")
+          lower.includes("croissant") || lower.includes("pastry")
             ? "Excellent choice! Our croissants are baked fresh. Would you like a café au lait with that?"
-            : t.includes("espresso") || t.includes("coffee")
+            : lower.includes("espresso") || lower.includes("coffee")
               ? "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?"
               : "Of course! Will you be enjoying that at our sunny patio, or is it to go?";
       } else if (sc.id === "space") {
         r =
-          t.includes("oxygen") || t.includes("life support")
+          lower.includes("oxygen") || lower.includes("life support")
             ? "Life support systems are critical gear. Fee waived. Enjoy your journey to Mars!"
             : "My scanner detects dense materials. You must justify this weight in English, passenger.";
       } else if (sc.id === "job") {
         r =
-          t.includes("optim") || t.includes("model") || t.includes("ai")
+          lower.includes("optim") || lower.includes("model") || lower.includes("ai")
             ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
             : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
       } else {
@@ -329,6 +464,13 @@ export function RolePlayScreen() {
     speak(msg);
   }
 
+  function resetSession() {
+    stopAll();
+    hapticImpact();
+    setHistory([]);
+    setStatus("idle");
+  }
+
   const handleMicTap = () => {
     hapticImpact();
     switch (statusRef.current) {
@@ -351,8 +493,6 @@ export function RolePlayScreen() {
     }
   };
 
-
-
   const sessionStarted = history.length > 0;
   const accent = activeScenario.accent;
   const Icon = activeScenario.icon;
@@ -366,177 +506,243 @@ export function RolePlayScreen() {
           ? t("rolePlay.interrupt")
           : t("rolePlay.tapSpeak");
 
-  return (
-    <View style={styles.root}>
-      <HomeMeshBackground />
+  /* ─── Scenario Picker (Setup) ─── */
+  if (!sessionStarted) {
+    return (
+      <View style={st.root}>
+        <HomeMeshBackground />
 
-      <View style={styles.flex}>
-        <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
+        {/* Header */}
+        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
           </HomeLiquidPill>
-          <View style={[styles.headerCenter, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <RolePlayGameIcon size={40} />
+          <View style={[st.headerCenter, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <RolePlayGameIcon size={36} />
             <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
-              <AppText style={[styles.headerTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.headerTitle")}</AppText>
-              <AppText style={[styles.headerSub, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.headerSub")}</AppText>
+              <AppText style={st.headerTitle} forceKurdishFont>{t("rolePlay.headerTitle")}</AppText>
+              <AppText style={st.headerSub} forceKurdishFont>{t("rolePlay.headerSub")}</AppText>
             </View>
           </View>
           <View style={{ width: 44 }} />
         </View>
 
-        <KeyboardAwareScrollView
-          ref={scrollRef}
-          bottomOffset={sessionStarted ? 120 : 24}
+        <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: insets.bottom + (sessionStarted ? 200 : 32),
-          }}
-          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 32 }}
         >
-          {!sessionStarted ? (
-            <>
-              <AppText style={[styles.pickerLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>{t("rolePlay.chooseScene")}</AppText>
-              <AppText style={[styles.disclaimer, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
-                {t("rolePlay.practiceDisclaimer")}
+          {/* Hero Card */}
+          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+            <HomeLiquidCard
+              style={{ marginBottom: 24 }}
+              contentStyle={st.heroInner}
+            >
+              <View style={st.heroOrbWrap}>
+                <View style={[st.heroRingOuter, { borderColor: accent + "20" }]} />
+                <View style={[st.heroRingInner, { borderColor: accent + "35" }]} />
+                <View style={[st.heroIconCircle, { backgroundColor: accent + "14" }]}>
+                  <HugeiconsIcon icon={Icon} size={36} color={accent} strokeWidth={1.8} />
+                </View>
+              </View>
+              <AppText style={st.heroTitle} forceKurdishFont>
+                {activeScenario.titleKu}
               </AppText>
-              <View style={[styles.scenarioGrid, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                {SCENARIOS.map((sc) => {
-                  const sel = activeScenario.id === sc.id;
-                  const ScIcon = sc.icon;
-                  return (
+              <AppText style={st.heroSubtitle} forceLatinFont latinRole="medium">
+                {activeScenario.subtitle}
+              </AppText>
+            </HomeLiquidCard>
+          </Animated.View>
+
+          {/* Section label */}
+          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+            <AppText style={[st.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
+              {t("rolePlay.chooseScene")}
+            </AppText>
+          </Animated.View>
+
+          {/* Scenario rows */}
+          <Animated.View entering={FadeInDown.delay(250).duration(500)}>
+            <HomeLiquidCard contentStyle={{ padding: 0, overflow: "hidden" }}>
+              {SCENARIOS.map((sc, idx) => {
+                const sel = activeScenario.id === sc.id;
+                const ScIcon = sc.icon;
+                const isLast = idx === SCENARIOS.length - 1;
+                return (
+                  <React.Fragment key={sc.id}>
                     <PressableScale
-                      key={sc.id}
                       onPress={() => {
                         hapticSelection();
                         setActiveScenario(sc);
                       }}
                       scaleDown={0.98}
-                      style={{ width: "48%" }}
                     >
-                      <HomeLiquidCard
-                        interactive
+                      <View
                         style={[
-                          sel && {
-                            borderWidth: 1.5,
-                            borderColor: sc.accent + "55",
-                          },
-                          crossShadow({
-                            color: sel ? sc.accent : "#1A2B48",
-                            offsetY: 8,
-                            blur: 18,
-                            opacity: sel ? 0.1 : 0.05,
-                            elevation: sel ? 5 : 2,
-                          }),
+                          st.scenarioRow,
+                          { flexDirection: isKu ? "row-reverse" : "row" },
+                          sel && { backgroundColor: sc.accent + "08" },
                         ]}
-                        contentStyle={styles.scenarioInner}
                       >
-                        <View
-                          style={[
-                            styles.scenarioIconWrap,
-                            { backgroundColor: sc.accent + "18" },
-                          ]}
-                        >
-                          <HugeiconsIcon icon={ScIcon} size={24} color={sc.accent} strokeWidth={2.0} />
+                        <View style={[st.scenarioIconCircle, { backgroundColor: sc.accent + "14" }]}>
+                          <HugeiconsIcon icon={ScIcon} size={22} color={sc.accent} strokeWidth={2} />
                         </View>
-                        <AppText
-                          style={[styles.scenarioName, sel && { color: sc.accent }]}
-                          numberOfLines={2}
-                          forceKurdishFont
-                        >
-                          {sc.titleKu}
-                        </AppText>
-                        <AppText style={styles.scenarioEn} forceLatinFont latinRole="medium">{sc.title}</AppText>
-                      </HomeLiquidCard>
+                        <View style={[st.scenarioTextCol, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+                          <AppText style={[st.scenarioTitle, sel && { color: sc.accent }]} forceKurdishFont>
+                            {sc.titleKu}
+                          </AppText>
+                          <AppText style={st.scenarioSubtitle} forceLatinFont latinRole="medium">
+                            {sc.title}
+                          </AppText>
+                        </View>
+                        {sel && (
+                          <View style={[st.checkCircle, { backgroundColor: sc.accent }]}>
+                            <AppText style={{ color: "#FFF", fontSize: 11, fontWeight: "800" }}>✓</AppText>
+                          </View>
+                        )}
+                      </View>
                     </PressableScale>
-                  );
-                })}
-              </View>
+                    {!isLast && <View style={st.rowDivider} />}
+                  </React.Fragment>
+                );
+              })}
+            </HomeLiquidCard>
+          </Animated.View>
 
-              <HomeLiquidCard
-                style={styles.heroCard}
-                contentStyle={styles.heroInner}
-              >
-                <View style={[styles.heroIconRing, { borderColor: accent + "40" }]}>
-                  <HugeiconsIcon icon={Icon} size={44} color={accent} strokeWidth={1.8} />
-                </View>
-                <AppText style={styles.heroTitle} forceKurdishFont>
-                  {activeScenario.titleKu}
-                </AppText>
-                <AppText style={styles.heroSub} forceKurdishFont>
-                  {activeScenario.subtitleKu}
-                </AppText>
-                <HomeLiquidButton
-                  label={t("rolePlay.start")}
-                  onPress={startSession}
-                  style={styles.startBtn}
-                />
-              </HomeLiquidCard>
-            </>
-          ) : (
-            <View style={styles.voiceOnlyContainer}>
-              <View style={[styles.activeChip, { borderColor: accent + "35", alignSelf: "center", marginBottom: 12, flexDirection: isKu ? "row-reverse" : "row" }]}>
-                <HugeiconsIcon icon={Icon} size={16} color={accent} strokeWidth={2.5} />
-                <AppText style={[styles.activeChipText, { color: accent, fontSize: 14 }]} forceLatinFont latinRole="bold">
-                  {activeScenario.title}
-                </AppText>
-              </View>
+          {/* Disclaimer */}
+          <Animated.View entering={FadeInDown.delay(350).duration(400)}>
+            <AppText style={[st.disclaimer, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
+              {t("rolePlay.practiceDisclaimer")}
+            </AppText>
+          </Animated.View>
 
-              <View style={styles.voiceOrbWrapper}>
-                <View style={[styles.orbPulseRing, { borderColor: accent + "30" }]} />
-                <View style={[styles.orbPulseRing2, { borderColor: accent + "15" }]} />
-                <View style={[styles.voiceOrb, { backgroundColor: accent }]}>
-                  <HugeiconsIcon icon={Icon} size={44} color="#FFF" strokeWidth={2.0} />
-                </View>
-              </View>
+          {/* Start Button */}
+          <Animated.View entering={FadeInDown.delay(400).duration(500)} style={{ marginTop: 8 }}>
+            <HomeLiquidButton
+              label={t("rolePlay.start")}
+              onPress={startSession}
+            />
+          </Animated.View>
+        </ScrollView>
+      </View>
+    );
+  }
 
-              <View style={styles.voiceStatusWrap}>
-                <AppText style={[styles.voiceStatusText, { color: accent, textAlign: "center" }]} forceKurdishFont={isKu}>
-                  {status === "listening"
-                    ? t("rolePlay.listening")
-                    : status === "thinking"
-                      ? t("rolePlay.thinking")
-                      : status === "speaking"
-                        ? (isKu ? "AI قسە دەکات..." : "AI IS SPEAKING...")
-                        : (isKu ? "بۆ قسەکردن دەست بنێ بە مایکەکەدا" : "TAP MIC TO INTERRUPT OR SPEAK")}
-                </AppText>
-              </View>
-            </View>
-          )}
-        </KeyboardAwareScrollView>
+  /* ─── In-Session Conversation UI ─── */
+  return (
+    <View style={st.root}>
+      <HomeMeshBackground />
 
-        {sessionStarted ? (
+      {/* Session Header */}
+      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
+        </HomeLiquidPill>
+
+        {/* Active scenario chip */}
+        <PressableScale onPress={resetSession} scaleDown={0.95}>
+          <View style={[st.sessionChip, { borderColor: accent + "30", flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <HugeiconsIcon icon={Icon} size={16} color={accent} strokeWidth={2.5} />
+            <AppText style={[st.sessionChipText, { color: accent }]} forceLatinFont latinRole="bold">
+              {activeScenario.title}
+            </AppText>
+          </View>
+        </PressableScale>
+
+        <HomeLiquidPill onPress={resetSession} size={44}>
+          <HugeiconsIcon icon={RotateLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} />
+        </HomeLiquidPill>
+      </View>
+
+      {/* Animated Voice Orb */}
+      <Animated.View entering={FadeIn.duration(500)} style={st.orbSection}>
+        <View style={st.orbContainer}>
+          <PulseRing size={180} color={accent} delay={0} status={status} />
+          <PulseRing size={220} color={accent} delay={400} status={status} />
+          <PulseRing size={260} color={accent} delay={800} status={status} />
           <View
             style={[
-              styles.bottomBarVoiceOnly,
-              { paddingBottom: Math.max(insets.bottom, 24) },
+              st.orbCore,
+              {
+                backgroundColor: accent,
+                ...crossShadow({
+                  color: accent,
+                  offsetY: 12,
+                  blur: 32,
+                  opacity: 0.3,
+                  elevation: 8,
+                }),
+              },
             ]}
           >
-            <MicCaptureOrb
-              listening={status === "listening" || speech.listening}
-              disabled={status === "thinking"}
-              color={status === "listening" ? C.red : accent}
-              size={110}
-              hint={micHint}
-              onPress={handleMicTap}
-            />
+            <HugeiconsIcon icon={Icon} size={40} color="#FFF" strokeWidth={1.8} />
           </View>
-        ) : null}
+        </View>
+
+        {/* Status label */}
+        <AppText style={[st.statusLabel, { color: accent }]} forceKurdishFont={isKu}>
+          {status === "listening"
+            ? t("rolePlay.listening")
+            : status === "thinking"
+              ? t("rolePlay.thinking")
+              : status === "speaking"
+                ? (isKu ? "AI قسە دەکات..." : "AI is speaking...")
+                : (isKu ? "بۆ قسەکردن مایکەکە دابگرە" : "Tap mic to speak")}
+        </AppText>
+      </Animated.View>
+
+      {/* Chat Transcript */}
+      <View style={st.chatContainer}>
+        <ScrollView
+          ref={scrollRef}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[st.chatContent, { paddingBottom: 24 }]}
+        >
+          {history.map((msg, idx) => (
+            <ChatBubble
+              key={idx}
+              sender={msg.sender}
+              text={msg.text}
+              accent={accent}
+              icon={Icon}
+              isKu={isKu}
+            />
+          ))}
+          {status === "thinking" && (
+            <Animated.View entering={FadeInUp.duration(200)} style={st.thinkingRow}>
+              <View style={[st.thinkingDot, { backgroundColor: accent }]} />
+              <View style={[st.thinkingDot, { backgroundColor: accent, opacity: 0.6 }]} />
+              <View style={[st.thinkingDot, { backgroundColor: accent, opacity: 0.3 }]} />
+            </Animated.View>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Bottom Mic Bar */}
+      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+        <MicCaptureOrb
+          listening={status === "listening" || speech.listening}
+          disabled={status === "thinking"}
+          color={status === "listening" ? "#EF4444" : accent}
+          size={100}
+          hint={micHint}
+          onPress={handleMicTap}
+        />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+/* ─── Styles ─── */
+const st = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.meshBottom },
-  flex: { flex: 1 },
+
+  /* Header */
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
   headerCenter: {
     flexDirection: "row",
@@ -556,256 +762,226 @@ const styles = StyleSheet.create({
     ...HomeType.caption,
     color: C.grayLight,
   },
-  pickerLabel: {
-    ...HomeType.section,
-    color: C.navy,
-    marginTop: 8,
-    marginBottom: 6,
-  },
-  disclaimer: {
-    ...HomeType.caption,
-    color: C.grayLight,
-    marginBottom: 14,
-    lineHeight: 18,
-  },
-  scenarioGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    width: "100%",
-    justifyContent: "space-between",
-    rowGap: 12,
-    marginBottom: 16,
-  },
-  scenarioInner: {
-    padding: 16,
-    alignItems: "center",
-    gap: 8,
-    minHeight: 120,
-  },
-  scenarioIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scenarioName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: C.navy,
-    textAlign: "center",
-    fontFamily: "DINNextRoundedBold",
-  },
-  scenarioEn: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: C.grayLight,
-    textAlign: "center",
-  },
-  heroCard: {
-    marginTop: 4,
-  },
+
+  /* Hero card */
   heroInner: {
     alignItems: "center",
-    padding: 24,
-    gap: 12,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    gap: 10,
   },
-  heroIconRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 2,
+  heroOrbWrap: {
+    width: 100,
+    height: 100,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.6)",
+    marginBottom: 4,
+  },
+  heroRingOuter: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 1.5,
+  },
+  heroRingInner: {
+    position: "absolute",
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 2,
+  },
+  heroIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
   heroTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
     color: C.navy,
     textAlign: "center",
     fontFamily: "DINNextRoundedBold",
   },
-  heroSub: {
-    ...HomeType.body,
+  heroSubtitle: {
+    fontSize: 14,
     color: C.gray,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
   },
-  startBtn: {
-    marginTop: 8,
-    alignSelf: "stretch",
+
+  /* Section label */
+  sectionLabel: {
+    ...HomeType.section,
+    color: C.navy,
+    marginBottom: 10,
   },
-  chatSection: {
-    paddingTop: 12,
-    gap: 12,
-  },
-  activeChip: {
+
+  /* Scenario rows */
+  scenarioRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    alignSelf: "center",
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: "rgba(255,255,255,0.85)",
-    marginBottom: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 14,
   },
-  activeChipText: {
-    fontSize: 12,
+  scenarioIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scenarioTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  scenarioTitle: {
+    fontSize: 15,
     fontWeight: "700",
+    color: C.navy,
     fontFamily: "DINNextRoundedBold",
   },
-  aiRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    maxWidth: "92%",
+  scenarioSubtitle: {
+    fontSize: 12,
+    color: C.grayLight,
   },
-  userRow: {
-    alignSelf: "flex-end",
-    maxWidth: "88%",
-  },
-  avatar: {
-    width: 32,
-    height: 32,
+  checkCircle: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+  },
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.divider,
+    marginHorizontal: 16,
+  },
+
+  /* Disclaimer */
+  disclaimer: {
+    ...HomeType.caption,
+    color: C.grayLight,
+    marginTop: 14,
+    marginBottom: 4,
+    lineHeight: 18,
+    paddingHorizontal: 4,
+  },
+
+  /* Session chip */
+  sessionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: "rgba(255,255,255,0.88)",
+  },
+  sessionChipText: {
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: "DINNextRoundedBold",
+  },
+
+  /* Animated orb section */
+  orbSection: {
+    alignItems: "center",
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 14,
+  },
+  orbContainer: {
+    width: 160,
+    height: 160,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orbCore: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  statusLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: 0.5,
+    textAlign: "center",
+    textTransform: "uppercase",
+  },
+
+  /* Chat transcript */
+  chatContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  chatContent: {
+    gap: 10,
+    paddingTop: 8,
+  },
+  bubbleRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+    maxWidth: "92%",
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
   },
   bubble: {
     flex: 1,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  userBubble: {
-    backgroundColor: "#E8F2FF",
-  },
-  bubbleInner: {
-    padding: 14,
-  },
-  msgText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: C.navy,
-    lineHeight: 23,
-    fontFamily: "DINNextRoundedRegular",
-  },
-  thinking: {
-    ...HomeType.caption,
-    color: C.grayLight,
-    textAlign: "center",
-    paddingVertical: 8,
-  },
-  bottomBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    backgroundColor: "rgba(255,255,255,0.92)",
-    borderTopWidth: 1,
-    borderTopColor: C.divider,
-    gap: 10,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    width: "100%",
-  },
-  textField: {
-    flex: 1,
-    height: 48,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: C.navy,
-    fontFamily: "DINNextRoundedRegular",
+  aiBubble: {
+    backgroundColor: "rgba(255,255,255,0.85)",
     borderWidth: 1,
     borderColor: C.divider,
   },
-  sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+  userBubble: {
+    alignSelf: "flex-end",
+    borderWidth: 1,
+  },
+  bubbleText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: C.navy,
+    lineHeight: 22,
+    fontFamily: "DINNextRoundedRegular",
+  },
+  thinkingRow: {
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignSelf: "flex-start",
+  },
+  thinkingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+
+  /* Bottom bar */
+  bottomBar: {
     alignItems: "center",
-    justifyContent: "center",
-  },
-  typeLink: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: C.blue,
-    fontFamily: "DINNextRoundedBold",
-    paddingVertical: 4,
-  },
-  voiceOnlyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 60,
-    gap: 40,
-  },
-  voiceOrbWrapper: {
-    width: 220,
-    height: 220,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  orbPulseRing: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 2.5,
-    opacity: 0.28,
-  },
-  orbPulseRing2: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 1.5,
-    opacity: 0.14,
-  },
-  voiceOrb: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    alignItems: "center",
-    justifyContent: "center",
-    ...crossShadow({
-      color: "#000",
-      offsetY: 8,
-      blur: 24,
-      opacity: 0.15,
-      elevation: 6,
-    }),
-  },
-  voiceStatusWrap: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  voiceStatusText: {
-    fontSize: 16,
-    fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: 0.8,
-    textAlign: "center",
-  },
-  bottomBarVoiceOnly: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    paddingTop: 24,
+    paddingTop: 10,
     paddingHorizontal: 20,
     backgroundColor: "transparent",
-    gap: 10,
   },
 });

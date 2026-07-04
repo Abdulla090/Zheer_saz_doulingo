@@ -23,7 +23,10 @@ import {
   StyleSheet,
   View,
   ViewStyle,
+  TouchableOpacity,
 } from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { VolumeHighIcon } from "@hugeicons/core-free-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -44,7 +47,7 @@ import type { AnswerTier } from "../../../utils/answer-tier";
 import { TIER_COLORS } from "../../../utils/answer-tier";
 import { LessonUnitLessonChip } from "../components/LessonUnitLessonChip";
 import { EmojiSticker } from "../../../components/ui/EmojiSticker";
-import { TwinoMascot } from "../../../components/mascot/TwinoMascot";
+import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMascot";
 import { RiveMascot } from "../../../components/mascot/RiveMascot";
 
 export function LightGameHeading({
@@ -256,7 +259,6 @@ export function LightQuestionPrompt({
   const droplet2Y = useSharedValue(0);
 
   useEffect(() => {
-    if (!isKids) return;
     floatY.value = withRepeat(
       withSequence(
         withTiming(-5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
@@ -273,22 +275,24 @@ export function LightQuestionPrompt({
       -1,
       true,
     );
-    droplet1Y.value = withRepeat(
-      withSequence(
-        withTiming(-3, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
-        withTiming(3, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
-    droplet2Y.value = withRepeat(
-      withSequence(
-        withTiming(2, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
-        withTiming(-2, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
+    if (isKids) {
+      droplet1Y.value = withRepeat(
+        withSequence(
+          withTiming(-3, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+          withTiming(3, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      );
+      droplet2Y.value = withRepeat(
+        withSequence(
+          withTiming(2, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+          withTiming(-2, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      );
+    }
   }, [isKids, floatY, breathe, droplet1Y, droplet2Y]);
 
   const mascotStyle = useAnimatedStyle(() => ({
@@ -314,6 +318,24 @@ export function LightQuestionPrompt({
   const handleSpeak = () => {
     speak(children, "en");
   };
+
+  const pose = React.useMemo<TwinoPose>(() => {
+    const l = label.toLowerCase();
+    if (l.includes("speak") || l.includes("voice") || l.includes("pronounce") || l.includes("mic")) {
+      return "headset";
+    }
+    const c = children.toLowerCase();
+    if (c.includes("!") || c.includes("congrats") || c.includes("happy") || c.includes("great")) {
+      return "party";
+    }
+    const poses: TwinoPose[] = ["wave", "happy", "wink"];
+    let hash = 0;
+    for (let i = 0; i < children.length; i++) {
+      hash = children.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % poses.length;
+    return poses[index];
+  }, [children, label]);
 
   if (isKids) {
     return (
@@ -353,41 +375,35 @@ export function LightQuestionPrompt({
   }
 
   return (
-    <View style={[lh.questionHeroWrap, isKids && lh.questionHeroWrapKids]}>
-      <LinearGradient
-        colors={
-          isKids
-            ? ["#FFF3E0", "#FFD0A8", "#C8E6FF"]
-            : ["#152238", "#1E3354", "#2B59F3"]
-        }
-        locations={isKids ? [0, 0.55, 1] : [0, 0.55, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={lh.questionHeroGradient}
-      >
-        {isKids ? (
-          <View style={lh.questionHeroOrbKids} />
-        ) : (
-          <View style={lh.questionHeroOrb} />
-        )}
+    <View style={lh.normalMascotStage}>
+      {/* Twino Mascot with gentle floating animation */}
+      <View style={lh.normalMascotArea}>
+        <Animated.View style={[lh.normalMascotWrap, mascotStyle]}>
+          <TwinoMascot size={90} pose={pose} />
+        </Animated.View>
+        <Animated.View style={[lh.normalMascotShadow, shadowStyle]} />
+      </View>
 
-        <View style={lh.questionHeroContent}>
-          <View style={[lh.questionHeroBadge, isKids && lh.questionHeroBadgeKids]}>
-            <AppText
-              style={isKids ? LightType.questionHeroBadgeKids : LightType.questionHeroBadge}
-              forceLatinFont
-            >
+      {/* Speech Bubble */}
+      <View style={{ flex: 1, position: "relative" }}>
+        <View style={lh.normalBubble}>
+          {/* Bubble tail pointing left to the mascot */}
+          <View style={lh.normalBubbleTail} />
+          
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText style={lh.normalBubbleLabel} forceLatinFont>
               {label}
             </AppText>
+            <AppText style={lh.normalBubbleText} forceKurdishFont={forceKurdishFont}>
+              {children}
+            </AppText>
           </View>
-          <AppText
-            style={isKids ? LightType.questionHeroKids : LightType.questionHero}
-            forceKurdishFont={forceKurdishFont}
-          >
-            {children}
-          </AppText>
+
+          <TouchableOpacity onPress={handleSpeak} style={lh.normalBubbleSpeaker}>
+            <HugeiconsIcon icon={VolumeHighIcon} size={18} color="#2B59F3" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -1128,6 +1144,7 @@ export function LessonLiquidFeedback({
           }
         ]}
       >
+        <View style={[lh.trayHandle, { backgroundColor: correct ? "rgba(70,163,2,0.18)" : "rgba(220,38,38,0.18)" }]} />
         <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
           <Animated.View
             entering={ZoomIn.springify().mass(0.45).stiffness(160).damping(12)}
@@ -1187,6 +1204,7 @@ export function LessonLiquidFeedback({
       contentStyle={[lh.feedbackInner, { paddingBottom: 16 }]}
       radius={26}
     >
+      <View style={[lh.trayHandle, { backgroundColor: correct ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)" }]} />
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
       
       <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
@@ -1959,5 +1977,100 @@ const lh = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     letterSpacing: 0.5,
     textTransform: "none",
+  },
+  normalMascotStage: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 120,
+    marginTop: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+  },
+  normalMascotArea: {
+    width: 90,
+    height: 120,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    position: "relative",
+  },
+  normalMascotWrap: {
+    width: 90,
+    height: 100,
+    zIndex: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  normalMascotShadow: {
+    position: "absolute",
+    bottom: 2,
+    width: 50,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(0,0,0,0.06)",
+    zIndex: 1,
+  },
+  normalBubble: {
+    flex: 1,
+    marginLeft: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderBottomWidth: 3.5,
+    borderBottomColor: "#CBD5E1",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 76,
+    justifyContent: "center",
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  normalBubbleTail: {
+    position: "absolute",
+    left: -7,
+    top: "50%",
+    marginTop: -7,
+    width: 14,
+    height: 14,
+    backgroundColor: "#FFFFFF",
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: "#E2E8F0",
+    transform: [{ rotate: "45deg" }],
+    zIndex: 2,
+  },
+  normalBubbleLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  normalBubbleText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E293B",
+    lineHeight: 22,
+  },
+  normalBubbleSpeaker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
+  },
+  trayHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "rgba(0,0,0,0.12)",
+    alignSelf: "center",
+    marginTop: 6,
+    marginBottom: 10,
   },
 });

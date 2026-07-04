@@ -1,0 +1,10 @@
+const hugeicons = require("@hugeicons/core-free-icons");
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("sun")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("globe")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("leaf")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("rocket")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("translate")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("flash")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("message")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("mortarboard")));
+console.log(Object.keys(hugeicons).filter(k => k.toLowerCase().includes("book")));

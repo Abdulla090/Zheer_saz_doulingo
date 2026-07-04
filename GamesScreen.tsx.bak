@@ -1,0 +1,639 @@
+import { LiquidGlassSurface } from "../../components/LiquidGlassSurface";
+import { tabBarScrollPadding } from "../../constants/layout";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import {
+  buildPracticeLessonParams,
+  type PracticeGameKind,
+} from "../../data/game-practice";
+import { useI18n } from "../../hooks/useI18n";
+import type { I18nKey } from "../../i18n";
+import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import { useRouter } from "expo-router";
+import React, { memo, useCallback, useMemo } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  useWindowDimensions,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppText } from "../../components/ui/AppText";
+import {
+  HomeMeshBackground,
+  HomePalette as C,
+} from "../../components/ui/ios-liquid-home";
+import * as Haptics from "expo-haptics";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
+// @ts-expect-error No type declarations for hugeicons cjs paths
+import { ChatBotIcon, Chat01Icon, BookOpen02Icon, HeadphonesIcon, Mic01Icon, RobotIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+
+const Theme = {
+  background: C.meshBottom,
+  surface: "rgba(255,255,255,0.86)",
+  text: C.navy,
+  textSec: C.gray,
+  divider: "rgba(26,43,72,0.08)",
+  accent: C.blue,
+};
+
+type HubTile = {
+  id: string;
+  titleKey: I18nKey;
+  subtitleKey: I18nKey;
+  badgeKey?: I18nKey;
+  kind?: PracticeGameKind;
+  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang" | "/podcast" | "/reading-practice";
+  icon: any;
+};
+
+const BOUNCE_SPRING = { damping: 14, stiffness: 220, mass: 0.8 };
+
+function StatusPill({
+  label,
+  inverted = false,
+}: {
+  label: string;
+  inverted?: boolean;
+}) {
+  return (
+    <View style={[styles.pill, inverted && styles.pillInverted]}>
+      <Text style={[styles.pillText, inverted && styles.pillTextInverted]}>
+        {label.toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
+const DrillPill = memo(function DrillPill({
+  title,
+  subtitle,
+  icon,
+  onPress,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: any;
+  onPress: () => void;
+}) {
+  const { isKu } = useI18n();
+  const scale = useSharedValue(1);
+
+  const rowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, BOUNCE_SPRING);
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, BOUNCE_SPRING);
+  };
+
+  return (
+    <Animated.View style={[rowStyle, { marginBottom: 12 }]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => {
+          if (Platform.OS !== "web") void Haptics.selectionAsync();
+          onPress();
+        }}
+      >
+        <LiquidGlassSurface
+          borderRadius={24}
+          style={styles.drillPillShell}
+          edgeShading={false}
+        >
+          <View style={[styles.drillPillContent, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <HugeiconsIcon
+              icon={icon}
+              size={28}
+              color={Theme.accent}
+              strokeWidth={2.2}
+            />
+            <View style={styles.hubRowCopy}>
+              <AppText
+                style={[styles.hubRowTitle, { textAlign: isKu ? "right" : "left" }]}
+                numberOfLines={1}
+              >
+                {title}
+              </AppText>
+              {subtitle ? (
+                <AppText
+                  style={[styles.hubRowSub, { textAlign: isKu ? "right" : "left" }]}
+                  numberOfLines={1}
+                >
+                  {subtitle}
+                </AppText>
+              ) : null}
+            </View>
+            <Text
+              style={[styles.chevron, { transform: [{ scaleX: isKu ? -1 : 1 }] }]}
+              accessibilityElementsHidden
+            >
+              ›
+            </Text>
+          </View>
+        </LiquidGlassSurface>
+      </Pressable>
+    </Animated.View>
+  );
+});
+
+const ExperienceCard = memo(function ExperienceCard({
+  title,
+  subtitle,
+  badge,
+  icon,
+  onPress,
+  width,
+}: {
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  icon: any;
+  onPress: () => void;
+  width: number;
+}) {
+  const { isKu } = useI18n();
+  const cardScale = useSharedValue(1);
+
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cardScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    cardScale.value = withSpring(0.94, BOUNCE_SPRING);
+  };
+
+  const handlePressOut = () => {
+    cardScale.value = withSpring(1, BOUNCE_SPRING);
+  };
+
+  return (
+    <Animated.View style={[cardStyle, { width, marginBottom: 14 }]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={() => {
+          if (Platform.OS !== "web") void Haptics.selectionAsync();
+          onPress();
+        }}
+      >
+        <LiquidGlassSurface
+          borderRadius={28}
+          style={styles.experienceCardShell}
+          contentStyle={styles.experienceInner}
+          edgeShading={false}
+        >
+          <View
+            style={[
+              styles.experienceTopRow,
+              { flexDirection: isKu ? "row-reverse" : "row" },
+            ]}
+          >
+            <HugeiconsIcon
+              icon={icon}
+              size={36}
+              color={Theme.text}
+              strokeWidth={2.2}
+            />
+            {badge ? <StatusPill label={badge} /> : null}
+          </View>
+          <View style={{ marginTop: 16 }}>
+            <AppText
+              style={[
+                styles.experienceTitle,
+                { textAlign: isKu ? "right" : "left" },
+              ]}
+              numberOfLines={1}
+            >
+              {title}
+            </AppText>
+            {subtitle ? (
+              <AppText
+                style={[
+                  styles.experienceSub,
+                  { textAlign: isKu ? "right" : "left" },
+                ]}
+                numberOfLines={1}
+              >
+                {subtitle}
+              </AppText>
+            ) : null}
+          </View>
+        </LiquidGlassSurface>
+      </Pressable>
+    </Animated.View>
+  );
+});
+
+export function GamesScreen() {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { t, isKu } = useI18n();
+  const streetNext = useCurrentProgress().nextLessonPathIndex;
+  const normalNext = useCurrentProgress().normalNextLessonPathIndex;
+  const pathMode = useSettingsStore((s) => s.pathMode);
+  const recordGamePlayed = useProgressStore((s) => s.recordGamePlayed);
+  const { width } = useWindowDimensions();
+
+  const horizontalPad = 20;
+  const gap = 14;
+  const contentWidth = width - horizontalPad * 2;
+  const halfWidth = (contentWidth - gap) / 2;
+
+  const immersiveTile = useMemo<HubTile>(
+    () => ({
+      id: "voice-tutor",
+      titleKey: "games.voiceTutorTitle",
+      subtitleKey: "games.voiceTutorSub",
+      badgeKey: "games.badgeNew",
+      href: "/voice-tutor",
+      icon: ChatBotIcon,
+    }),
+    [],
+  );
+
+  const experienceTiles = useMemo<HubTile[]>(
+    () => [
+      {
+        id: "roleplay",
+        titleKey: "games.rolePlayTitle",
+        subtitleKey: "games.rolePlaySub",
+        badgeKey: "games.badgeHot",
+        href: "/roleplay",
+        icon: Chat01Icon,
+      },
+      {
+        id: "slang",
+        titleKey: "games.slangTitle",
+        subtitleKey: "games.slangSub",
+        badgeKey: "games.badgeNew",
+        href: "/slang",
+        icon: BookOpen02Icon,
+      },
+      {
+        id: "podcast",
+        titleKey: "games.podcastTitle",
+        subtitleKey: "games.podcastSub",
+        badgeKey: "games.badgeNew",
+        href: "/podcast",
+        icon: HeadphonesIcon,
+      },
+      {
+        id: "ai-teacher",
+        titleKey: "games.teacherTitle",
+        subtitleKey: "games.teacherSub",
+        href: "/ai-teacher",
+        icon: RobotIcon,
+      },
+      {
+        id: "paragraph_speech",
+        titleKey: "games.paragraphSpeechTitle",
+        subtitleKey: "games.paragraphSpeechSub",
+        badgeKey: "games.badgeNew",
+        href: "/reading-practice",
+        icon: BookOpen02Icon,
+      },
+    ],
+    [],
+  );
+
+  const drillTiles = useMemo<HubTile[]>(
+    () => [
+      {
+        id: "conversation",
+        titleKey: "games.conversationTitle",
+        subtitleKey: "games.conversationSub",
+        kind: "conversation_pick",
+        icon: Chat01Icon,
+      },
+      {
+        id: "speak",
+        titleKey: "games.speakTitle",
+        subtitleKey: "games.speakSub",
+        kind: "voice_speak",
+        icon: Mic01Icon,
+      },
+      {
+        id: "listen",
+        titleKey: "games.listenTitle",
+        subtitleKey: "games.listenSub",
+        kind: "voice_listen",
+        icon: HeadphonesIcon,
+      },
+    ],
+    [],
+  );
+
+  const openPractice = useCallback(
+    (kind: PracticeGameKind) => {
+      const pi = pathMode === "normal" ? normalNext : streetNext;
+      router.push(buildPracticeLessonParams(kind, { pi, mode: pathMode }));
+    },
+    [router, pathMode, normalNext, streetNext],
+  );
+
+  const openTile = useCallback(
+    (tile: HubTile) => {
+      recordGamePlayed(t(tile.titleKey), tile.id);
+      if (tile.href) {
+        router.push(tile.href as any);
+        return;
+      }
+      if (tile.kind) openPractice(tile.kind);
+    },
+    [openPractice, recordGamePlayed, router, t],
+  );
+
+  const heroScale = useSharedValue(1);
+
+  const heroStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heroScale.value }],
+  }));
+
+  const handleHeroPressIn = () => {
+    heroScale.value = withSpring(0.96, BOUNCE_SPRING);
+  };
+
+  const handleHeroPressOut = () => {
+    heroScale.value = withSpring(1, BOUNCE_SPRING);
+  };
+
+  return (
+    <View style={styles.root}>
+      <HomeMeshBackground />
+      
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={Platform.OS === "android"}
+        contentContainerStyle={{
+          paddingTop: insets.top + 24,
+          paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
+        <View style={[styles.header, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
+          <AppText style={[styles.pageTitle, { textAlign: isKu ? "right" : "left" }]}>
+            {t("games.title")}
+          </AppText>
+          <View style={[styles.titleUnderline, { alignSelf: isKu ? "flex-end" : "flex-start" }]} />
+        </View>
+
+        <Text style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}>
+          {t("games.sectionImmersive")}
+        </Text>
+
+        <Animated.View style={heroStyle}>
+          <Pressable
+            onPressIn={handleHeroPressIn}
+            onPressOut={handleHeroPressOut}
+            onPress={() => {
+              if (Platform.OS !== "web") void Haptics.selectionAsync();
+              openTile(immersiveTile);
+            }}
+          >
+            <LiquidGlassSurface
+              borderRadius={32}
+              style={styles.heroShell}
+              edgeShading={false}
+            >
+              <View style={[styles.heroRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                <View style={styles.heroCopy}>
+                  <View style={[styles.heroTitleRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+                    <AppText style={[styles.heroLabel, { textAlign: isKu ? "right" : "left" }]} numberOfLines={1}>
+                      {t(immersiveTile.titleKey)}
+                    </AppText>
+                    {immersiveTile.badgeKey ? (
+                      <StatusPill label={t(immersiveTile.badgeKey)} inverted />
+                    ) : null}
+                  </View>
+                  <AppText style={[styles.heroHint, { textAlign: isKu ? "right" : "left" }]} numberOfLines={2}>
+                    {t(immersiveTile.subtitleKey)}
+                  </AppText>
+                </View>
+                <HugeiconsIcon
+                  icon={immersiveTile.icon}
+                  size={56}
+                  color={Theme.text}
+                  strokeWidth={2.5}
+                />
+              </View>
+            </LiquidGlassSurface>
+          </Pressable>
+        </Animated.View>
+
+        <Text style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}>
+          {t("games.sectionExperiences")}
+        </Text>
+        
+        <View style={[styles.experienceGrid, { gap, flexDirection: isKu ? "row-reverse" : "row" }]}>
+          {experienceTiles.map((tile) => (
+            <ExperienceCard
+              key={tile.id}
+              width={halfWidth}
+              title={t(tile.titleKey)}
+              subtitle={undefined}
+              badge={tile.badgeKey ? t(tile.badgeKey) : undefined}
+              icon={tile.icon}
+              onPress={() => openTile(tile)}
+            />
+          ))}
+        </View>
+
+        <Text style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}>
+          {t("games.sectionDrills")}
+        </Text>
+        
+        <View style={{ marginBottom: 40 }}>
+          {drillTiles.map((tile) => (
+            <DrillPill
+              key={tile.id}
+              title={t(tile.titleKey)}
+              subtitle={undefined}
+              icon={tile.icon}
+              onPress={() => openTile(tile)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+      <BottomScrollFade />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Theme.background,
+  },
+  header: {
+    marginBottom: 20,
+    gap: 10,
+  },
+  pageTitle: {
+    fontSize: 40,
+    fontWeight: "900",
+    color: Theme.text,
+    letterSpacing: -1.2,
+  },
+  titleUnderline: {
+    width: 48,
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: C.coral,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: Theme.textSec,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  heroShell: {
+    minHeight: 140,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+    shadowColor: C.coral,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 24,
+  },
+  heroCopy: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 16,
+  },
+  heroTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  heroLabel: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "800",
+    color: Theme.text,
+    letterSpacing: -0.5,
+  },
+  heroHint: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Theme.textSec,
+    lineHeight: 22,
+  },
+  experienceGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  experienceCardShell: {
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+    shadowColor: C.blue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  experienceInner: {
+    padding: 20,
+    minHeight: 120,
+    justifyContent: "space-between",
+  },
+  experienceTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  experienceTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: Theme.text,
+    letterSpacing: -0.4,
+  },
+  experienceSub: {
+    fontSize: 13,
+    color: Theme.textSec,
+    marginTop: 6,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  drillPillShell: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.5)",
+    shadowColor: C.navy,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  drillPillContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    gap: 18,
+  },
+  hubRowCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  hubRowTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: Theme.text,
+  },
+  hubRowSub: {
+    fontSize: 14,
+    color: Theme.textSec,
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  chevron: {
+    fontSize: 24,
+    fontWeight: "400",
+    color: "rgba(26,43,72,0.3)",
+    marginLeft: 4,
+  },
+  pill: {
+    backgroundColor: "rgba(43,89,243,0.12)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  pillInverted: {
+    backgroundColor: C.navy,
+  },
+  pillText: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: C.blue,
+    letterSpacing: 0.8,
+  },
+  pillTextInverted: {
+    color: "#FFFFFF",
+  },
+});

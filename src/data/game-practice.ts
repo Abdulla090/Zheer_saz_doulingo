@@ -10,7 +10,8 @@ export type PracticeGameKind =
   | "voice_listen"
   | "voice_speak"
   | "conversation_pick"
-  | "fill_blank";
+  | "fill_blank"
+  | "paragraph_speech";
 
 function findVoiceIndex(questions: GameQuestion[], occurrence: number): number {
   let seen = 0;
@@ -42,7 +43,9 @@ export function findPracticeQuestionIndex(
         ? "fill_blank"
         : kind === "pair_match"
           ? "pair_match"
-          : "sentence_builder";
+          : kind === "paragraph_speech"
+            ? "paragraph_speech"
+            : "sentence_builder";
 
   const idx = questions.findIndex((q) => q.type === type);
   return idx >= 0 ? idx : 0;

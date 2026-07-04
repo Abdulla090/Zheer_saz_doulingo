@@ -50,7 +50,7 @@ function JsTabsLayoutInner() {
         name="subscription"
         options={{ href: ENABLE_SHOP ? undefined : null }}
       />
-      <Tabs.Screen name="feed" />
+      <Tabs.Screen name="play" />
       <Tabs.Screen name="dashboard" />
       <Tabs.Screen name="more" />
     </Tabs>

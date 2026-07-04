@@ -12,26 +12,11 @@ type Props = { size?: number };
  * Falls back to static PNG only in Expo Go.
  */
 export function KidsRhinoMascot({ size = 108 }: Props) {
-  const isExpoGo =
-    Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-
-  if (isExpoGo) {
-    return (
-      <View style={[styles.fallback, { width: size, height: size }]}>
-        <Image source={RHINO_IMG} style={styles.image} resizeMode="contain" />
-      </View>
-    );
-  }
-
-  if (Platform.OS === "web") {
-     
-    const KidsRhinoMascotImplWeb = require("./KidsRhinoMascotImpl.web").default;
-    return <KidsRhinoMascotImplWeb size={size} />;
-  }
-
-   
-  const KidsRhinoMascotImpl = require("./KidsRhinoMascotImpl").default;
-  return <KidsRhinoMascotImpl size={size} />;
+  return (
+    <View style={[styles.fallback, { width: size, height: size }]}>
+      <Image source={RHINO_IMG} style={styles.image} resizeMode="contain" />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({

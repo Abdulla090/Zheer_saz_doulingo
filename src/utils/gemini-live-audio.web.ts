@@ -1,168 +1,246 @@
-/**
- * Web: stream mic as 16 kHz PCM + play 24 kHz PCM from Gemini Live.
- */
-
-import { GEMINI_LIVE_INPUT_RATE, GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
+import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
 
 export type MicStreamHandle = {
   stop: () => void;
 };
 
-function resample(
-  input: Float32Array,
-  inputRate: number,
-  outputRate: number,
-): Float32Array {
-  if (inputRate === outputRate) return input;
-  const ratio = inputRate / outputRate;
-  const length = Math.max(1, Math.round(input.length / ratio));
-  const out = new Float32Array(length);
-  for (let i = 0; i < length; i++) {
-    const pos = i * ratio;
-    const lo = Math.floor(pos);
-    const hi = Math.min(lo + 1, input.length - 1);
-    const frac = pos - lo;
-    out[i] = input[lo] * (1 - frac) + input[hi] * frac;
+function decodeBase64(b64: string): Uint8Array {
+  const binary = window.atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
   }
-  return out;
+  return bytes;
 }
 
-function floatTo16BitPcmBase64(samples: Float32Array): string {
-  const buffer = new ArrayBuffer(samples.length * 2);
-  const view = new DataView(buffer);
-  for (let i = 0; i < samples.length; i++) {
-    const s = Math.max(-1, Math.min(1, samples[i] ?? 0));
-    view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-  }
-  const bytes = new Uint8Array(buffer);
+function encodeBase64(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]!);
   }
-  return btoa(binary);
+  return window.btoa(binary);
+}
+
+function pcmBytesToWavBase64(pcmBytes: Uint8Array, sampleRate: number): string {
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  const dataSize = pcmBytes.length;
+
+  const writeStr = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  const wav = new Uint8Array(44 + dataSize);
+  wav.set(new Uint8Array(header), 0);
+  wav.set(pcmBytes, 44);
+  return encodeBase64(wav);
 }
 
 export class LivePcmPlayer {
-  private ctx: AudioContext | null = null;
-  private nextTime = 0;
-  private activeSources: AudioBufferSourceNode[] = [];
+  private pendingBytes = new Uint8Array(0);
+  private flushTimeout: ReturnType<typeof setTimeout> | null = null;
+  private wavQueue: string[] = [];
+  private playing = false;
+  private destroyed = false;
+  private currentAudio: HTMLAudioElement | null = null;
 
-  private ensureContext() {
-    if (typeof window === "undefined") return null;
-    if (!this.ctx) {
-      this.ctx = new AudioContext({ sampleRate: GEMINI_LIVE_OUTPUT_RATE });
-      this.nextTime = this.ctx.currentTime;
-    }
-    if (this.ctx.state === "suspended") {
-      void this.ctx.resume();
-    }
-    return this.ctx;
-  }
+  private static BUFFER_THRESHOLD = 24_000;
+  private static FLUSH_DELAY_MS = 80;
 
   enqueueBase64Pcm(base64: string) {
-    const ctx = this.ensureContext();
-    if (!ctx) return;
+    if (this.destroyed) return;
 
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    try {
+      const newBytes = decodeBase64(base64);
+      if (newBytes.length === 0) return;
+
+      const merged = new Uint8Array(this.pendingBytes.length + newBytes.length);
+      merged.set(this.pendingBytes, 0);
+      merged.set(newBytes, this.pendingBytes.length);
+      this.pendingBytes = merged;
+    } catch (e) {
+      console.warn("LivePcmPlayer (Web): decode failed", e);
+      return;
     }
 
-    const int16 = new Int16Array(bytes.buffer);
-    const floats = new Float32Array(int16.length);
-    for (let i = 0; i < int16.length; i++) {
-      floats[i] = (int16[i] ?? 0) / 0x8000;
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
     }
 
-    const buffer = ctx.createBuffer(1, floats.length, GEMINI_LIVE_OUTPUT_RATE);
-    buffer.copyToChannel(floats, 0);
+    if (this.pendingBytes.length >= LivePcmPlayer.BUFFER_THRESHOLD) {
+      this.flushBuffer();
+    } else {
+      this.flushTimeout = setTimeout(() => {
+        this.flushBuffer();
+      }, LivePcmPlayer.FLUSH_DELAY_MS);
+    }
+  }
 
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
+  private flushBuffer() {
+    if (this.destroyed || this.pendingBytes.length === 0) return;
 
-    const startAt = Math.max(ctx.currentTime, this.nextTime);
-    source.start(startAt);
-    this.nextTime = startAt + buffer.duration;
+    try {
+      const pcmBytes = this.pendingBytes;
+      this.pendingBytes = new Uint8Array(0);
 
-    this.activeSources.push(source);
-    source.onended = () => {
-      this.activeSources = this.activeSources.filter((s) => s !== source);
-    };
+      const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
+      const uri = `data:audio/wav;base64,${wavB64}`;
+
+      this.wavQueue.push(uri);
+      void this.drain();
+    } catch (e) {
+      console.warn("LivePcmPlayer (Web): flush failed", e);
+    }
+  }
+
+  private async drain() {
+    if (this.playing || this.destroyed || this.wavQueue.length === 0) return;
+    this.playing = true;
+
+    while (this.wavQueue.length > 0 && !this.destroyed) {
+      const uri = this.wavQueue.shift()!;
+      try {
+        await this.playOneChunk(uri);
+      } catch (err) {
+        console.warn("LivePcmPlayer (Web): play chunk failed", err);
+      }
+    }
+
+    this.playing = false;
+
+    if (this.wavQueue.length > 0 && !this.destroyed) {
+      void this.drain();
+    }
+  }
+
+  private playOneChunk(uri: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (this.destroyed) {
+        resolve();
+        return;
+      }
+
+      const audio = new Audio(uri);
+      this.currentAudio = audio;
+
+      let resolved = false;
+      const finish = () => {
+        if (resolved) return;
+        resolved = true;
+        this.currentAudio = null;
+        resolve();
+      };
+
+      audio.onended = finish;
+      audio.onerror = finish;
+
+      audio.play().catch((e) => {
+        console.warn("LivePcmPlayer (Web): autoplay blocked or failed", e);
+        finish();
+      });
+
+      // Safety timeout: WAV chunks are usually < 4s, resolve after 6s max
+      setTimeout(() => {
+        if (!resolved) {
+          console.warn("LivePcmPlayer (Web): safety timeout triggered");
+          finish();
+        }
+      }, 6000);
+    });
   }
 
   stop() {
-    for (const source of this.activeSources) {
-      try {
-        source.stop();
-      } catch {
-        /* noop */
-      }
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
     }
-    this.activeSources = [];
-    if (this.ctx) {
-      this.nextTime = this.ctx.currentTime;
-    }
+    this.pendingBytes = new Uint8Array(0);
+    this.wavQueue = [];
+    try {
+      this.currentAudio?.pause();
+    } catch {}
+    this.currentAudio = null;
+    this.playing = false;
   }
 
   destroy() {
+    this.destroyed = true;
     this.stop();
-    void this.ctx?.close();
-    this.ctx = null;
   }
 
-  get playing() {
-    return this.activeSources.length > 0;
+  get isPlaying() {
+    return this.playing;
   }
 }
 
 export async function startMicPcmStream(
-  onChunk: (pcmBase64: string) => void,
+  onData: (base64: string) => void
 ): Promise<MicStreamHandle> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Microphone is not available.");
+    throw new Error("Microphone is not supported in this browser.");
   }
 
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      channelCount: 1,
-      echoCancellation: true,
-      noiseSuppression: true,
-    },
-  });
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-  const ctx = new AudioContext();
-  const source = ctx.createMediaStreamSource(stream);
-  const inputRate = ctx.sampleRate;
-
-  // ScriptProcessor is widely supported; buffer 4096 samples
-  const processor = ctx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (event) => {
-    const input = event.inputBuffer.getChannelData(0);
-    const copy = new Float32Array(input.length);
-    copy.set(input);
-    const resampled = resample(copy, inputRate, GEMINI_LIVE_INPUT_RATE);
-    onChunk(floatTo16BitPcmBase64(resampled));
-  };
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  const audioCtx = new AudioContextClass({ sampleRate: 16000 });
+  const source = audioCtx.createMediaStreamSource(stream);
+  
+  // Use 2048 buffer size, 1 input channel, 1 output channel
+  const processor = audioCtx.createScriptProcessor(2048, 1, 1);
 
   source.connect(processor);
-  processor.connect(ctx.destination);
+  processor.connect(audioCtx.destination);
+
+  processor.onaudioprocess = (e) => {
+    const inputData = e.inputBuffer.getChannelData(0);
+    
+    // Convert Float32Array to 16-bit signed PCM
+    const buffer = new ArrayBuffer(inputData.length * 2);
+    const view = new DataView(buffer);
+    for (let i = 0; i < inputData.length; i++) {
+      const s = Math.max(-1, Math.min(1, inputData[i]!));
+      view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    const bytes = new Uint8Array(buffer);
+    const b64 = encodeBase64(bytes);
+    onData(b64);
+  };
 
   return {
     stop: () => {
-      processor.disconnect();
-      source.disconnect();
-      stream.getTracks().forEach((t) => t.stop());
-      void ctx.close();
+      try {
+        processor.disconnect();
+        source.disconnect();
+        stream.getTracks().forEach((track) => track.stop());
+        void audioCtx.close();
+      } catch (err) {
+        console.warn("startMicPcmStream (Web) stop failed:", err);
+      }
     },
   };
 }
 
 export function isLiveAudioSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof WebSocket !== "undefined" &&
-    Boolean(navigator.mediaDevices?.getUserMedia)
-  );
+  return typeof window !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia;
 }

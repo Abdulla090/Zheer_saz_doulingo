@@ -13,6 +13,7 @@ type ContentOverrides = {
   street: UnitBank[] | null;
   normal: UnitBank[] | null;
   kids: UnitBank[] | null;
+  custom: UnitBank[] | null;
 };
 
 interface ContentAdminState {
@@ -60,16 +61,17 @@ function cloneBundled(mode: LessonPathMode): UnitBank[] {
 
 const savedAdminContent = appStorage.getItemSync(STORAGE_KEY);
 const initialAdminContent: ContentOverrides = (() => {
-  if (!savedAdminContent) return { street: null, normal: null, kids: null };
+  if (!savedAdminContent) return { street: null, normal: null, kids: null, custom: null };
   try {
     const parsed = JSON.parse(savedAdminContent) as { overrides?: ContentOverrides };
     return {
       street: parsed.overrides?.street ?? null,
       normal: parsed.overrides?.normal ?? null,
       kids: parsed.overrides?.kids ?? null,
+      custom: parsed.overrides?.custom ?? null,
     };
   } catch {
-    return { street: null, normal: null, kids: null };
+    return { street: null, normal: null, kids: null, custom: null };
   }
 })();
 
@@ -102,7 +104,7 @@ export const useContentAdminStore = create<ContentAdminState>((set, get) => ({
   },
 
   resetAll: () => {
-    const overrides = { street: null, normal: null, kids: null };
+    const overrides = { street: null, normal: null, kids: null, custom: null };
     set({ overrides });
     persist(overrides);
   },

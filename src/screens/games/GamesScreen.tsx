@@ -1,719 +1,847 @@
-import { LiquidGlassSurface } from "../../components/LiquidGlassSurface";
-import { tabBarScrollPadding } from "../../constants/layout";
-import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import {
-  buildPracticeLessonParams,
-  type PracticeGameKind,
-} from "../../data/game-practice";
-import { useI18n } from "../../hooks/useI18n";
-import type { I18nKey } from "../../i18n";
-import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
-import { useRouter } from "expo-router";
-import React, { memo, useCallback, useMemo } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Platform,
-  useWindowDimensions,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppText } from "../../components/ui/AppText";
-import {
-  HomeMeshBackground,
-  HomePalette as C,
-} from "../../components/ui/ios-liquid-home";
-import * as Haptics from "expo-haptics";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from "react-native-reanimated";
+import { PremiumPressable } from '../../components/PremiumPressable';
+import { crossShadow } from '../../utils/shadows';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import Fire from '../../../assets/images/svg/header/fire.svg';
+import Dictionary from '../../../assets/images/svg/dictionary.svg';
+import { useRouter } from 'expo-router';
+import { useProgressStore } from '../../stores/useProgressStore';
+import { 
+  HeadphonesIcon, 
+  Mic01Icon, 
+  Message01Icon, 
+  Robot02Icon, 
+  Book01Icon, 
+  BookOpen02Icon,
+  CrownIcon,
+  ArrowRight01Icon,
+  FireIcon,
+  StarIcon,
+  Diamond01Icon,
+  ChartBarLineIcon,
+  Chatting01Icon,
+  MaskTheater02Icon,
+  TeacherIcon
+} from "@hugeicons/core-free-icons";
 
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ChatBotIcon, Chat01Icon, BookOpen02Icon, HeadphonesIcon, Mic01Icon, RobotIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+const { width } = Dimensions.get('window');
 
-const Theme = {
-  background: C.meshBottom,
-  surface: "rgba(255,255,255,0.86)",
-  text: C.navy,
-  textSec: C.gray,
-  divider: "rgba(26,43,72,0.08)",
-  accent: C.blue,
+/* ──────────────────────────────────────────────
+   Design tokens – matches the reference image
+   ────────────────────────────────────────────── */
+const C = {
+  // Base
+  bg: '#F8F7FC',           // soft lavender-tinted background
+  card: '#FFFFFF',
+  text: '#111827',
+  sub: '#6B7280',
+  // Brand indigo
+  indigo: '#4338CA',
+  indigoDark: '#1E1B4B',
+  indigoMid: '#312E81',
+  indigoLight: '#EEF2FF',
+  // Accent
+  amber: '#F59E0B',
+  orange: '#F97316',
+  blue: '#3B82F6',
+  violet: '#8B5CF6',
+  violetLight: '#F3E8FF',
+  // Role play card gradient
+  rpStart: '#2D2A6E',
+  rpEnd: '#1A1744',
+  // Badge
+  badgeBg: '#EDE9FE',
+  badgeText: '#7C3AED',
+  hotBg: '#EF4444',
+  hotText: '#FFFFFF',
 };
-
-type HubTile = {
-  id: string;
-  titleKey: I18nKey;
-  subtitleKey: I18nKey;
-  badgeKey?: I18nKey;
-  kind?: PracticeGameKind;
-  href?: "/roleplay" | "/ai-teacher" | "/voice-tutor" | "/slang" | "/podcast";
-  icon: any;
-};
-
-function StatusPill({
-  label,
-  inverted = false,
-}: {
-  label: string;
-  inverted?: boolean;
-}) {
-  return (
-    <View style={[styles.pill, inverted && styles.pillInverted]}>
-      <Text style={[styles.pillText, inverted && styles.pillTextInverted]}>
-        {label.toUpperCase()}
-      </Text>
-    </View>
-  );
-}
-
-const HubRow = memo(function HubRow({
-  title,
-  subtitle,
-  icon,
-  onPress,
-  isLast,
-}: {
-  title: string;
-  subtitle?: string;
-  icon: any;
-  onPress: () => void;
-  isLast?: boolean;
-}) {
-  const { isKu } = useI18n();
-  const scale = useSharedValue(1);
-  const iconTranslateX = useSharedValue(0);
-
-  const rowStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: iconTranslateX.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withTiming(0.98, { duration: 90 });
-    iconTranslateX.value = withTiming(isKu ? -4 : 4, { duration: 90 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 220 });
-    iconTranslateX.value = withSpring(0, { damping: 12, stiffness: 180 });
-  };
-
-  return (
-    <Animated.View style={rowStyle}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={() => {
-          if (Platform.OS !== "web") void Haptics.selectionAsync();
-          onPress();
-        }}
-        style={[
-          styles.hubRow,
-          !isLast && styles.hubRowBorder,
-          { flexDirection: isKu ? "row-reverse" : "row" },
-        ]}
-      >
-        <Animated.View style={iconStyle}>
-          <HugeiconsIcon
-            icon={icon}
-            size={24}
-            color={Theme.text}
-            strokeWidth={2.2}
-          />
-        </Animated.View>
-        <View style={styles.hubRowCopy}>
-          <AppText
-            style={[styles.hubRowTitle, { textAlign: isKu ? "right" : "left" }]}
-            numberOfLines={1}
-          >
-            {title}
-          </AppText>
-          {subtitle ? (
-            <AppText
-              style={[styles.hubRowSub, { textAlign: isKu ? "right" : "left" }]}
-              numberOfLines={1}
-            >
-              {subtitle}
-            </AppText>
-          ) : null}
-        </View>
-        <Text
-          style={[styles.chevron, { transform: [{ scaleX: isKu ? -1 : 1 }] }]}
-          accessibilityElementsHidden
-        >
-          ›
-        </Text>
-      </Pressable>
-    </Animated.View>
-  );
-});
-
-const ExperienceCard = memo(function ExperienceCard({
-  title,
-  subtitle,
-  badge,
-  icon,
-  onPress,
-  width,
-}: {
-  title: string;
-  subtitle?: string;
-  badge?: string;
-  icon: any;
-  onPress: () => void;
-  width: number;
-}) {
-  const { isKu } = useI18n();
-  const cardScale = useSharedValue(1);
-  const iconScale = useSharedValue(1);
-  const iconRotate = useSharedValue(0);
-  const iconTranslateY = useSharedValue(0);
-
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: iconScale.value },
-      { rotate: `${iconRotate.value}deg` },
-      { translateY: iconTranslateY.value },
-    ],
-  }));
-
-  const handlePressIn = () => {
-    cardScale.value = withTiming(0.96, { duration: 90 });
-    iconScale.value = withTiming(1.15, { duration: 90 });
-    iconRotate.value = withTiming(isKu ? -6 : 6, { duration: 90 });
-    iconTranslateY.value = withTiming(-4, { duration: 90 });
-  };
-
-  const handlePressOut = () => {
-    cardScale.value = withSpring(1, { damping: 15, stiffness: 220 });
-    iconScale.value = withSpring(1, { damping: 12, stiffness: 180 });
-    iconRotate.value = withSpring(0, { damping: 12, stiffness: 180 });
-    iconTranslateY.value = withSpring(0, { damping: 12, stiffness: 180 });
-  };
-
-  return (
-    <Animated.View style={[cardStyle, { width }]}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={() => {
-          if (Platform.OS !== "web") void Haptics.selectionAsync();
-          onPress();
-        }}
-      >
-        <LiquidGlassSurface
-          borderRadius={24}
-          style={styles.experienceCardShell}
-          contentStyle={styles.experienceInner}
-          edgeShading={false}
-        >
-          <View
-            style={[
-              styles.experienceTopRow,
-              { flexDirection: isKu ? "row-reverse" : "row" },
-            ]}
-          >
-            <Animated.View style={iconStyle}>
-              <HugeiconsIcon
-                icon={icon}
-                size={32}
-                color={Theme.text}
-                strokeWidth={2.2}
-              />
-            </Animated.View>
-            {badge ? <StatusPill label={badge} /> : null}
-          </View>
-          <View style={{ marginTop: 12 }}>
-            <AppText
-              style={[
-                styles.experienceTitle,
-                { textAlign: isKu ? "right" : "left" },
-              ]}
-              numberOfLines={1}
-            >
-              {title}
-            </AppText>
-            {subtitle ? (
-              <AppText
-                style={[
-                  styles.experienceSub,
-                  { textAlign: isKu ? "right" : "left" },
-                ]}
-                numberOfLines={1}
-              >
-                {subtitle}
-              </AppText>
-            ) : null}
-          </View>
-        </LiquidGlassSurface>
-      </Pressable>
-    </Animated.View>
-  );
-});
 
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, isKu } = useI18n();
-  const streetNext = useCurrentProgress().nextLessonPathIndex;
-  const normalNext = useCurrentProgress().normalNextLessonPathIndex;
-  const pathMode = useSettingsStore((s) => s.pathMode);
-  const recordGamePlayed = useProgressStore((s) => s.recordGamePlayed);
-  const { width } = useWindowDimensions();
+  const { dailyXp, dailyGoalXp } = useProgressStore();
 
-  const horizontalPad = 20;
-  const gap = 12;
-  const contentWidth = width - horizontalPad * 2;
-  const halfWidth = (contentWidth - gap) / 2;
-
-  const immersiveTile = useMemo<HubTile>(
-    () => ({
-      id: "voice-tutor",
-      titleKey: "games.voiceTutorTitle",
-      subtitleKey: "games.voiceTutorSub",
-      badgeKey: "games.badgeNew",
-      href: "/voice-tutor",
-      icon: ChatBotIcon,
-    }),
-    [],
-  );
-
-  const experienceTiles = useMemo<HubTile[]>(
-    () => [
-      {
-        id: "roleplay",
-        titleKey: "games.rolePlayTitle",
-        subtitleKey: "games.rolePlaySub",
-        badgeKey: "games.badgeHot",
-        href: "/roleplay",
-        icon: Chat01Icon,
-      },
-      {
-        id: "slang",
-        titleKey: "games.slangTitle",
-        subtitleKey: "games.slangSub",
-        badgeKey: "games.badgeNew",
-        href: "/slang",
-        icon: BookOpen02Icon,
-      },
-      {
-        id: "podcast",
-        titleKey: "games.podcastTitle",
-        subtitleKey: "games.podcastSub",
-        badgeKey: "games.badgeNew",
-        href: "/podcast",
-        icon: HeadphonesIcon,
-      },
-      {
-        id: "ai-teacher",
-        titleKey: "games.teacherTitle",
-        subtitleKey: "games.teacherSub",
-        href: "/ai-teacher",
-        icon: RobotIcon,
-      },
-    ],
-    [],
-  );
-
-  const drillTiles = useMemo<HubTile[]>(
-    () => [
-      {
-        id: "conversation",
-        titleKey: "games.conversationTitle",
-        subtitleKey: "games.conversationSub",
-        kind: "conversation_pick",
-        icon: Chat01Icon,
-      },
-      {
-        id: "speak",
-        titleKey: "games.speakTitle",
-        subtitleKey: "games.speakSub",
-        kind: "voice_speak",
-        icon: Mic01Icon,
-      },
-      {
-        id: "listen",
-        titleKey: "games.listenTitle",
-        subtitleKey: "games.listenSub",
-        kind: "voice_listen",
-        icon: HeadphonesIcon,
-      },
-    ],
-    [],
-  );
-
-  const openPractice = useCallback(
-    (kind: PracticeGameKind) => {
-      const pi = pathMode === "normal" ? normalNext : streetNext;
-      router.push(buildPracticeLessonParams(kind, { pi, mode: pathMode }));
-    },
-    [router, pathMode, normalNext, streetNext],
-  );
-
-  const openTile = useCallback(
-    (tile: HubTile) => {
-      recordGamePlayed(t(tile.titleKey), tile.id);
-      if (tile.href) {
-        router.push(tile.href as any);
-        return;
-      }
-      if (tile.kind) openPractice(tile.kind);
-    },
-    [openPractice, recordGamePlayed, router, t],
-  );
-
-  // Reanimated Hooks for Immersive Hero Card
-  const heroScale = useSharedValue(1);
-  const heroIconScale = useSharedValue(1);
-  const heroIconRotate = useSharedValue(0);
-
-  const heroStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: heroScale.value }],
-  }));
-
-  const heroIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: heroIconScale.value },
-      { rotate: `${heroIconRotate.value}deg` },
-    ],
-  }));
-
-  const handleHeroPressIn = () => {
-    heroScale.value = withTiming(0.97, { duration: 90 });
-    heroIconScale.value = withTiming(1.15, { duration: 90 });
-    heroIconRotate.value = withTiming(isKu ? -8 : 8, { duration: 90 });
-  };
-
-  const handleHeroPressOut = () => {
-    heroScale.value = withSpring(1, { damping: 15, stiffness: 220 });
-    heroIconScale.value = withSpring(1, { damping: 12, stiffness: 180 });
-    heroIconRotate.value = withSpring(0, { damping: 12, stiffness: 180 });
-  };
+  const xp = dailyXp || 0;
+  const goal = dailyGoalXp || 15;
+  const percent = Math.min(100, Math.max(0, (xp / goal) * 100));
 
   return (
-    <View style={styles.root}>
-      <HomeMeshBackground />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-        contentContainerStyle={{
-          paddingTop: insets.top + 24,
-          paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
-          paddingHorizontal: horizontalPad,
-        }}
-      >
-        <View
-          style={[
-            styles.header,
-            { alignItems: isKu ? "flex-end" : "flex-start" },
-          ]}
-        >
-          <AppText
-            style={[styles.pageTitle, { textAlign: isKu ? "right" : "left" }]}
-          >
-            {t("games.title")}
-          </AppText>
-          <View
-            style={[
-              styles.titleUnderline,
-              { alignSelf: isKu ? "flex-end" : "flex-start" },
-            ]}
-          />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: 120,
+        maxWidth: 600,
+        width: '100%',
+        alignSelf: 'center',
+      }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Header ── */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandDots}>
+              <View style={[styles.dot, { backgroundColor: C.indigo }]} />
+              <View style={[styles.dot, { backgroundColor: C.indigo, opacity: 0.5 }]} />
+            </View>
+            <Text style={styles.brandText}>TWINO LABS</Text>
+          </View>
+          <View style={styles.proPill}>
+            <HugeiconsIcon icon={CrownIcon} size={14} color={C.amber} />
+            <Text style={styles.proText}>Pro</Text>
+          </View>
         </View>
 
-        <AppText
-          style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}
-        >
-          {t("games.sectionImmersive")}
-        </AppText>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.heroLeft}>
+            <Text style={styles.heroTitle}>Practice</Text>
+            <Text style={styles.heroSub}>
+              Choose how you want{'\n'}to practice today ✨
+            </Text>
+          </View>
+          {/* Mascot area — using clean, flat vector shapes */}
+          <View style={styles.heroMascot}>
+            <View style={styles.mascotBlobOrange}>
+              <HugeiconsIcon icon={Chatting01Icon} size={28} color="#FFF" strokeWidth={1.5} />
+            </View>
+            <View style={styles.mascotBlobBlue}>
+              <HugeiconsIcon icon={Message01Icon} size={20} color="#FFF" strokeWidth={1.5} />
+            </View>
+            {/* Sparkle dots */}
+            <View style={[styles.sparkle, { top: 2, right: 4 }]} />
+            <View style={[styles.sparkle, { bottom: 10, left: 0, width: 5, height: 5 }]} />
+          </View>
+        </View>
+      </View>
 
-        <Animated.View style={heroStyle}>
-          <Pressable
-            onPressIn={handleHeroPressIn}
-            onPressOut={handleHeroPressOut}
-            onPress={() => {
-              if (Platform.OS !== "web") void Haptics.selectionAsync();
-              openTile(immersiveTile);
-            }}
-          >
-            <LiquidGlassSurface
-              borderRadius={28}
-              style={styles.heroShell}
-              edgeShading={false}
-            >
-              <View
-                style={[
-                  styles.heroRow,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
-                ]}
-              >
-                <View style={styles.heroCopy}>
-                  <View
-                    style={[
-                      styles.heroTitleRow,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
-                    ]}
-                  >
-                    <AppText
-                      style={[
-                        styles.heroLabel,
-                        { textAlign: isKu ? "right" : "left" },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {t(immersiveTile.titleKey)}
-                    </AppText>
-                    {immersiveTile.badgeKey ? (
-                      <StatusPill label={t(immersiveTile.badgeKey)} inverted />
-                    ) : null}
-                  </View>
-                  <AppText
-                    style={[
-                      styles.heroHint,
-                      { textAlign: isKu ? "right" : "left" },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {t(immersiveTile.subtitleKey)}
-                  </AppText>
-                </View>
-                <Animated.View style={heroIconStyle}>
-                  <HugeiconsIcon
-                    icon={immersiveTile.icon}
-                    size={48}
-                    color={Theme.text}
-                    strokeWidth={2.0}
-                  />
-                </Animated.View>
+      {/* ── Quick Actions Row ── */}
+      <View style={styles.quickActionsOuter}>
+        <View style={styles.quickActionsCard}>
+          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+            <View style={[styles.quickIcon, { backgroundColor: '#F4F0FF', borderWidth: 1, borderColor: '#EDE9FE' }]}>  
+              <HugeiconsIcon icon={HeadphonesIcon} size={26} color={C.violet} strokeWidth={2} />
+            </View>
+            <Text style={styles.quickLabel}>Listening</Text>
+            <Text style={styles.quickSub}>Sharpen comprehension</Text>
+          </PremiumPressable>
+
+          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+            <View style={[styles.quickIcon, { backgroundColor: '#EEF5FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>  
+              <HugeiconsIcon icon={Mic01Icon} size={26} color={C.blue} strokeWidth={2} />
+            </View>
+            <Text style={styles.quickLabel}>Speak Up</Text>
+            <Text style={styles.quickSub}>Practice speaking</Text>
+          </PremiumPressable>
+
+          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+            <View style={[styles.quickIcon, { backgroundColor: '#FFF5F0', borderWidth: 1, borderColor: '#FFE4E6' }]}>  
+              <HugeiconsIcon icon={Chatting01Icon} size={26} color={C.orange} strokeWidth={2} />
+            </View>
+            <Text style={styles.quickLabel}>Real-Life Dialogues</Text>
+            <Text style={styles.quickSub}>Talk like in real life</Text>
+          </PremiumPressable>
+        </View>
+      </View>
+
+      {/* ── Daily Goal Card ── */}
+      <View style={styles.dailyGoalContainer}>
+        <LinearGradient
+          colors={['#FFA04A', '#FF7300']}
+          style={styles.dailyGoalCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.goalLeft}>
+            <View style={styles.goalHeaderRow}>
+              <View style={styles.goalFireCircle}>
+                <Fire width={22} height={22} fill="#FF7300" />
               </View>
-            </LiquidGlassSurface>
-          </Pressable>
-        </Animated.View>
+              <View style={styles.goalTextCol}>
+                <Text style={styles.goalTitle}>Time to learn!</Text>
+                <Text style={styles.goalSub}>Let's reach your daily goal.</Text>
+              </View>
+            </View>
 
-        <AppText
-          style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}
-        >
-          {t("games.sectionExperiences")}
-        </AppText>
-        <View
-          style={[
-            styles.experienceGrid,
-            {
-              gap,
-              marginBottom: 8,
-              flexDirection: isKu ? "row-reverse" : "row",
-            },
-          ]}
-        >
-          {experienceTiles.map((tile) => (
-            <ExperienceCard
-              key={tile.id}
-              width={halfWidth}
-              title={t(tile.titleKey)}
-              subtitle={undefined}
-              badge={tile.badgeKey ? t(tile.badgeKey) : undefined}
-              icon={tile.icon}
-              onPress={() => openTile(tile)}
+            {/* Progress bar */}
+            <View style={styles.goalProgressBg}>
+              <View style={[styles.goalProgressFill, { width: `${percent}%` }]} />
+            </View>
+            <Text style={styles.goalXPText}>{xp} / {goal} XP</Text>
+          </View>
+          
+          <View style={styles.goalRight}>
+            <Image
+              source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
+              style={styles.mascotImg}
+              resizeMode="contain"
             />
-          ))}
+          </View>
+        </LinearGradient>
+      </View>
+
+      {/* ── Bento Grid ── */}
+      <View style={styles.bentoGrid}>
+        {/* Left column */}
+        <View style={styles.bentoLeft}>
+          {/* Live Voice Tutor */}
+          <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/voice-tutor")}>
+            <View style={styles.cardTop}>
+              <View style={[styles.iconBox, { backgroundColor: C.indigoLight }]}>
+                <HugeiconsIcon icon={Robot02Icon} size={20} color={C.indigo} strokeWidth={2} />
+              </View>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>NEW</Text>
+              </View>
+            </View>
+            <Text style={styles.cardTitle}>Live Voice Tutor</Text>
+            <Text style={styles.cardSub}>Talk with your AI tutor{'\n'}in real time.</Text>
+            <View style={styles.arrowRow}>
+              <View style={styles.arrowCircle}>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+              </View>
+            </View>
+          </PremiumPressable>
+
+          {/* AI Podcast */}
+          <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/podcast")}>
+            <View style={styles.cardTop}>
+              <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
+                <HugeiconsIcon icon={HeadphonesIcon} size={20} color={C.violet} strokeWidth={2} />
+              </View>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>NEW</Text>
+              </View>
+            </View>
+            <Text style={styles.cardTitle}>AI Podcast</Text>
+            <Text style={styles.cardSub}>Listen to AI-generated{'\n'}podcasts on any topic.</Text>
+            <View style={styles.arrowRow}>
+              <View style={styles.arrowCircle}>
+                <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+              </View>
+            </View>
+          </PremiumPressable>
         </View>
 
-        <AppText
-          style={[styles.sectionLabel, { textAlign: isKu ? "right" : "left" }]}
-        >
-          {t("games.sectionDrills")}
-        </AppText>
-        <LiquidGlassSurface
-          borderRadius={28}
-          contentStyle={styles.drillsCard}
-          edgeShading={false}
-        >
-          {drillTiles.map((tile, index) => (
-            <HubRow
-              key={tile.id}
-              title={t(tile.titleKey)}
-              subtitle={undefined}
-              icon={tile.icon}
-              onPress={() => openTile(tile)}
-              isLast={index === drillTiles.length - 1}
-            />
-          ))}
-        </LiquidGlassSurface>
-      </ScrollView>
-      <BottomScrollFade />
-    </View>
+        {/* Right column: AI Role Play */}
+        <View style={styles.bentoRight}>
+          <PremiumPressable style={styles.cardDark} pressScale={0.97} onPress={() => router.push("/roleplay")}>
+            <LinearGradient
+              colors={[C.rpStart, C.rpEnd]}
+              style={styles.rolePlayGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <View style={styles.cardTop}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]}>
+                  <HugeiconsIcon icon={MaskTheater02Icon} size={20} color="#FFF" strokeWidth={2} />
+                </View>
+                <View style={styles.hotBadge}>
+                  <Text style={styles.hotBadgeText}>HOT</Text>
+                </View>
+              </View>
+
+              <Text style={styles.rpTitle}>AI Role Play</Text>
+              <Text style={styles.rpSub}>
+                Live conversations in{'\n'}real-world scenarios.
+              </Text>
+
+              <View style={styles.arrowRow}>
+                <View style={[styles.arrowCircle, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} color="#FFF" />
+                </View>
+              </View>
+            </LinearGradient>
+          </PremiumPressable>
+        </View>
+      </View>
+
+      {/* ── Reading Practice (full width) ── */}
+      <PremiumPressable style={styles.readingCard} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
+        <View style={styles.readingLeft}>
+          <View style={styles.cardTop}>
+            <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
+              <HugeiconsIcon icon={BookOpen02Icon} size={20} color={C.blue} strokeWidth={2} />
+            </View>
+          </View>
+          <Text style={styles.cardTitle}>Reading Practice</Text>
+          <Text style={styles.cardSub}>
+            Read paragraphs out loud and{'\n'}improve pronunciation & fluency.
+          </Text>
+        </View>
+        <View style={styles.readingRight}>
+          <View style={styles.readingBadgePos}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>NEW</Text>
+            </View>
+          </View>
+          {/* Book illustration — Bolder, playful book */}
+          <View style={styles.readingBookIllustration}>
+            <HugeiconsIcon icon={BookOpen02Icon} size={42} color={C.violet} strokeWidth={1.8} />
+            {/* Chat dots decoration */}
+            <View style={styles.readingDots}>
+              <View style={[styles.chatDot, { backgroundColor: C.violet }]} />
+              <View style={[styles.chatDot, { backgroundColor: C.violet, opacity: 0.7 }]} />
+              <View style={[styles.chatDot, { backgroundColor: C.violet, opacity: 0.4 }]} />
+            </View>
+          </View>
+          <View style={styles.readingArrowPos}>
+            <View style={styles.arrowCircle}>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+            </View>
+          </View>
+        </View>
+      </PremiumPressable>
+
+      {/* ── Bottom 2-col: AI Teacher + Slang Dictionary ── */}
+      <View style={styles.bottomGrid}>
+        <PremiumPressable style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
+          <View style={styles.cardTop}>
+            <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
+              <HugeiconsIcon icon={TeacherIcon} size={20} color={C.violet} strokeWidth={2} />
+            </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>NEW</Text>
+            </View>
+          </View>
+          <Text style={styles.cardTitle}>AI Teacher</Text>
+          <Text style={styles.cardSub}>IELTS-style writing &{'\n'}speaking practice.</Text>
+          <View style={styles.arrowRow}>
+            <View style={styles.arrowCircle}>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+            </View>
+          </View>
+        </PremiumPressable>
+
+        <PremiumPressable style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/slang")}>
+          <View style={styles.cardTop}>
+            <View style={[styles.iconBox, { backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>
+              <Dictionary width={20} height={20} fill={C.indigo} />
+            </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>NEW</Text>
+            </View>
+          </View>
+          <Text style={styles.cardTitle}>Slang Dictionary</Text>
+          <Text style={styles.cardSub}>Kurdish-to-English{'\n'}street slang.</Text>
+          <View style={styles.arrowRow}>
+            <View style={styles.arrowCircle}>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+            </View>
+          </View>
+        </PremiumPressable>
+      </View>
+
+      {/* ── Your Progress ── */}
+      <View style={styles.progressCard}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressTitle}>Your Progress</Text>
+          <PremiumPressable hitSlop={12} pressScale={0.95}>
+            <Text style={styles.viewAll}>View all  {'>'}</Text>
+          </PremiumPressable>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <HugeiconsIcon icon={FireIcon} size={22} color={C.orange} />
+            <View style={styles.statText}>
+              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statLabel}>Day Streak</Text>
+            </View>
+          </View>
+
+          <View style={styles.statItem}>
+            <HugeiconsIcon icon={StarIcon} size={22} color={C.amber} />
+            <View style={styles.statText}>
+              <Text style={styles.statValue}>4,250</Text>
+              <Text style={styles.statLabel}>XP Earned</Text>
+            </View>
+          </View>
+
+          <View style={styles.statItem}>
+            <HugeiconsIcon icon={Mic01Icon} size={22} color={C.blue} />
+            <View style={styles.statText}>
+              <Text style={styles.statValue}>36</Text>
+              <Text style={styles.statLabel}>Conversations</Text>
+            </View>
+          </View>
+
+          <View style={styles.statItem}>
+            <HugeiconsIcon icon={Diamond01Icon} size={22} color={C.violet} />
+            <View style={styles.statText}>
+              <Text style={styles.statValue}>8</Text>
+              <Text style={styles.statLabel}>Badges</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
+/* ──────────────────────────────────────────────
+   Styles
+   ────────────────────────────────────────────── */
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
-    backgroundColor: Theme.background,
+    backgroundColor: C.bg,
   },
+
+  /* ── Header ── */
   header: {
-    marginBottom: 18,
+    paddingHorizontal: 24,
+    marginBottom: 4,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
-  pageTitle: {
-    fontSize: 36,
-    fontWeight: "800",
-    color: Theme.text,
-    letterSpacing: -1,
+  brandDots: {
+    flexDirection: 'row',
+    gap: 3,
   },
-  titleUnderline: {
-    width: 42,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: C.coral,
+  dot: {
+    width: 6,
+    height: 14,
+    borderRadius: 3,
   },
-  pageSubtitle: {
-    display: "none",
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: Theme.textSec,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    marginTop: 26,
-    marginBottom: 12,
-  },
-  heroShell: {
-    minHeight: 132,
-    borderWidth: 1,
-    borderColor: "rgba(26,43,72,0.08)",
-  },
-  heroRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 22,
-  },
-  heroCopy: {
-    flex: 1,
-    minWidth: 0,
-    paddingRight: 16,
-  },
-  heroTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 6,
-  },
-  heroLabel: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: "700",
-    color: Theme.text,
-    letterSpacing: -0.4,
-  },
-  heroHint: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Theme.textSec,
-    lineHeight: 20,
-  },
-  experienceGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  experienceCardShell: {
-    borderWidth: 1,
-    borderColor: "rgba(26,43,72,0.08)",
-  },
-  experienceInner: {
-    padding: 16,
-    minHeight: 112,
-    justifyContent: "space-between",
-  },
-  experienceTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  experienceTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Theme.text,
-    letterSpacing: -0.3,
-  },
-  experienceSub: {
+  brandText: {
     fontSize: 12,
-    color: Theme.textSec,
-    marginTop: 4,
-    fontWeight: "500",
-    lineHeight: 16,
+    fontWeight: '800',
+    color: C.indigo,
+    letterSpacing: 1.5,
   },
-  drillsCard: {
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+  proPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+    ...crossShadow({ color: '#F59E0B', offsetY: 2, blur: 8, opacity: 0.08 }),
   },
-  hubRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 16,
+  proText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: C.amber,
   },
-  hubRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Theme.divider,
+
+  /* ── Hero ── */
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  hubRowCopy: {
+  heroLeft: {
     flex: 1,
-    minWidth: 0,
   },
-  hubRowTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Theme.text,
+  heroTitle: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: C.text,
+    letterSpacing: -1.5,
+    marginBottom: 8,
   },
-  hubRowSub: {
-    fontSize: 13,
-    color: Theme.textSec,
+  heroSub: {
+    fontSize: 15,
+    color: C.sub,
+    fontWeight: '500',
+    lineHeight: 22,
+  },
+  heroMascot: {
+    width: 120,
+    height: 110,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mascotBlobOrange: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FB923C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...crossShadow({ color: '#FB923C', offsetY: 6, blur: 16, opacity: 0.3 }),
+  },
+  mascotBlobBlue: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6366F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    ...crossShadow({ color: '#6366F1', offsetY: 4, blur: 12, opacity: 0.3 }),
+  },
+  sparkle: {
+    position: 'absolute',
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: C.amber,
+  },
+
+  /* ── Daily Goal Card ── */
+  dailyGoalContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+    overflow: 'visible',
+  },
+  dailyGoalCard: {
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    minHeight: 145,
+    flexDirection: 'row',
+    position: 'relative',
+    overflow: 'visible',
+    ...crossShadow({ color: '#FF7300', offsetY: 8, blur: 24, opacity: 0.16 }),
+  },
+  goalLeft: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  goalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  goalFireCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    ...crossShadow({ color: '#FF7300', offsetY: 2, blur: 6, opacity: 0.1 }),
+  },
+  goalTextCol: {
+    flex: 1,
+  },
+  goalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+  },
+  goalSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.95)',
     marginTop: 2,
-    fontWeight: "500",
   },
-  chevron: {
-    fontSize: 22,
-    fontWeight: "300",
-    color: "rgba(26,43,72,0.35)",
-    marginLeft: 4,
+  goalProgressBg: {
+    height: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 7,
+    overflow: 'hidden',
+    width: '100%',
+    marginBottom: 8,
   },
-  pill: {
-    backgroundColor: "rgba(43,89,243,0.1)",
+  goalProgressFill: {
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 7,
+  },
+  goalXPText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  goalRight: {
+    width: 130,
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  mascotImg: {
+    width: 190,
+    height: 160,
+    position: 'absolute',
+    bottom: -22,
+    right: -16,
+  },
+
+  /* ── Quick Actions ── */
+  quickActionsOuter: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+  },
+  quickActionsCard: {
+    flexDirection: 'row',
+    backgroundColor: C.card,
+    borderRadius: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 8,
+    ...crossShadow({ color: '#000', offsetY: 6, blur: 24, opacity: 0.04 }),
+  },
+  quickItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 4,
+  },
+  quickIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.text,
+    textAlign: 'center',
+  },
+  quickSub: {
+    fontSize: 11,
+    color: C.sub,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+
+  /* ── Bento Grid ── */
+  bentoGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    alignItems: 'flex-start',
+  },
+  bentoLeft: {
+    width: '48%',
+    gap: 14,
+  },
+  bentoRight: {
+    width: '48%',
+  },
+
+  /* ── White Card (shared) ── */
+  cardWhite: {
+    backgroundColor: C.card,
+    borderRadius: 22,
+    padding: 16,
+    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+  },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: C.badgeBg,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 999,
+    borderRadius: 8,
   },
-  pillInverted: {
-    backgroundColor: C.navy,
-  },
-  pillText: {
+  badgeText: {
     fontSize: 10,
-    fontWeight: "800",
-    color: C.blue,
-    letterSpacing: 0.6,
+    fontWeight: '800',
+    color: C.badgeText,
   },
-  pillTextInverted: {
-    color: "#FFFFFF",
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: C.text,
+    marginBottom: 6,
+    letterSpacing: -0.2,
+  },
+  cardSub: {
+    fontSize: 12,
+    color: C.sub,
+    fontWeight: '500',
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  arrowRow: {
+    alignItems: 'flex-end',
+  },
+  arrowCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F4F4F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ── AI Role Play Card ── */
+  cardDark: {
+    borderRadius: 22,
+    overflow: 'hidden',
+    backgroundColor: C.rpEnd,
+    ...crossShadow({ color: C.indigoDark, offsetY: 12, blur: 28, opacity: 0.25 }),
+  },
+  rolePlayGradient: {
+    borderRadius: 22,
+    padding: 16,
+  },
+  hotBadge: {
+    backgroundColor: C.hotBg,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  hotBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: C.hotText,
+  },
+  rpTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 6,
+    letterSpacing: -0.2,
+  },
+  rpSub: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontWeight: '500',
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+
+  /* ── Reading Practice ── */
+  readingCard: {
+    flexDirection: 'row',
+    backgroundColor: C.card,
+    borderRadius: 22,
+    padding: 16,
+    marginHorizontal: 24,
+    marginBottom: 14,
+    minHeight: 125,
+    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+  },
+  readingLeft: {
+    flex: 1,
+  },
+  readingRight: {
+    width: 110,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  readingBadgePos: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+  readingBookIllustration: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  readingDots: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 6,
+  },
+  chatDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  readingArrowPos: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+  },
+
+  /* ── Bottom Grid ── */
+  bottomGrid: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  bottomCard: {
+    flex: 1,
+    minWidth: 140,
+  },
+  aaIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#4338CA',
+    letterSpacing: -0.5,
+  },
+
+  /* ── Progress ── */
+  progressCard: {
+    backgroundColor: C.card,
+    borderRadius: 22,
+    padding: 20,
+    marginHorizontal: 24,
+    marginBottom: 40,
+    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: C.text,
+  },
+  viewAll: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.indigo,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 115,
+    flex: 1,
+  },
+  statText: {
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: C.text,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: C.sub,
+    fontWeight: '500',
   },
 });

@@ -20,12 +20,13 @@ export const resources = {
 // Initialize i18next
 const initI18n = () => {
   const savedLocale = useLocaleStore.getState().selectedSourceLanguage || "en";
+  const appLocale = savedLocale === "ku" ? "en" : savedLocale;
   
   i18n
     .use(initReactI18next)
     .init({
       resources,
-      lng: savedLocale,
+      lng: appLocale,
       fallbackLng: "en",
       interpolation: {
         escapeValue: false,
@@ -38,7 +39,8 @@ initI18n();
 // Subscribe to store changes to update i18n language
 useLocaleStore.subscribe((state, prevState) => {
   if (state.selectedSourceLanguage !== prevState?.selectedSourceLanguage) {
-    i18n.changeLanguage(state.selectedSourceLanguage);
+    const appLang = state.selectedSourceLanguage === "ku" ? "en" : state.selectedSourceLanguage;
+    i18n.changeLanguage(appLang);
   }
 });
 

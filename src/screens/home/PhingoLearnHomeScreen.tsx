@@ -348,7 +348,7 @@ export function PhingoLearnHomeScreen() {
         }}
       >
         <View style={[styles.header, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-          <AppText style={styles.logo} forceLatinFont latinRole="bold">PINGO</AppText>
+          <AppText style={styles.logo} forceLatinFont latinRole="bold">TWINO</AppText>
           <View style={[styles.headerStats, { flexDirection: isKu ? "row-reverse" : "row" }]}>
             <View style={[styles.statItem, { flexDirection: isKu ? "row-reverse" : "row" }]}>
               <Fire width={24} height={24} />

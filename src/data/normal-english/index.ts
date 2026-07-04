@@ -1,5 +1,8 @@
 // ── Normal English — section configs, data builder, and guidebook data ─────────
 
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import unit0BasicGreetingsAndIntroductions from "./unit-0-basic-greetings-and-introductions";
+import unit0bElementarySituations from "./unit-0b-elementary-situations";
 import unit1EverydayEssentials from "./unit-1-everyday-essentials";
 import unit2SocialAndDailyLife from "./unit-2-social-and-daily-life";
 import unit3WorkAndBusiness from "./unit-3-work-and-business";
@@ -23,6 +26,8 @@ import {
 import type { UnitBank } from "../types";
 
 export const NORMAL_UNITS: UnitBank[] = [
+  unit0BasicGreetingsAndIntroductions,
+  unit0bElementarySituations,
   unit1EverydayEssentials,
   unit2SocialAndDailyLife,
   unit3WorkAndBusiness,
@@ -42,6 +47,8 @@ export const normalSectionConfigs: {
   theme: SectionTheme;
   displayTheme: SectionTheme;
 }[] = [
+  { theme: "mint", displayTheme: "mint" },
+  { theme: "yellow", displayTheme: "yellow" },
   { theme: "blue", displayTheme: "blue" },
   { theme: "green", displayTheme: "green" },
   { theme: "purple", displayTheme: "purple" },
@@ -71,12 +78,23 @@ const BASE_PATTERN: LessonType[] = [
 ];
 
 /** Build normal-English path sections from persisted progress (0 = first lesson current). */
+export function getSkippedUnitsCount(level: number): number {
+  if (level <= 4) return 0;
+  if (level <= 6) return 2; // skip A1, A2
+  if (level <= 8) return 4; // skip A1, A2, B1
+  return 6; // skip A1, A2, B1, B2
+}
+
 export function buildNormalSectionData(
   nextLessonPathIndex: number,
 ): SectionDataItem[] {
+  const level = useSettingsStore.getState().englishLevel || 5;
+  const skipCount = getSkippedUnitsCount(level);
+  const activeConfigs = normalSectionConfigs.slice(skipCount);
+
   let normalPathIndex = 0;
 
-  return normalSectionConfigs.map(
+  return activeConfigs.map(
     ({ theme, displayTheme }, sectionIndex): SectionDataItem => {
       const pattern =
         sectionIndex === 0

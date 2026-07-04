@@ -17,6 +17,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
     BackHandler,
+    Platform,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -27,12 +28,19 @@ import { StatusBar } from "expo-status-bar";
 import Animated, {
     Easing,
     FadeInUp,
+    FadeInDown,
     useAnimatedStyle,
     useSharedValue,
+    useAnimatedProps,
     withSequence,
     withTiming,
+    withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
+import Svg, { Circle } from "react-native-svg";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
@@ -41,7 +49,7 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import type { AnswerTier } from "../../utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
-import { getCurrentLessonMeta, buildPathReturnRoute } from "../../utils/lesson-navigation";
+import { getCurrentLessonMeta, buildPathReturnRoute, buildLessonRouteForMode } from "../../utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
@@ -61,13 +69,14 @@ import VoiceGame from "./games/VoiceGame";
 import PictureMatchGame from "./games/PictureMatchGame";
 import ImageMultipleChoiceGame from "./games/ImageMultipleChoiceGame";
 import MemoryFlipGame from "./games/MemoryFlipGame";
+import ParagraphSpeechGame from "./games/ParagraphSpeechGame";
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
 
 /* Summary stat card */
 function StatCard({
-  icon, label, value, color,
+  icon, label, value, color, delay = 0,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -76,13 +85,13 @@ function StatCard({
   delay?: number;
 }) {
   return (
-    <View style={{ flex: 1 }}>
+    <Animated.View entering={FadeInDown.delay(delay).duration(600).springify()} style={{ flex: 1 }}>
       <HomeLiquidCard contentStyle={sSum.statCard} radius={18}>
         {icon}
         <Text style={[sSum.statValue, { color }]}>{value}</Text>
         <Text style={sSum.statLabel}>{label}</Text>
       </HomeLiquidCard>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -128,6 +137,35 @@ export default function LessonScreen() {
 
   const nextRef = useRef(0);
 
+  const accuracyValue = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (finished) {
+      if (Platform.OS !== "web") {
+        if (passed) {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        } else {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        }
+      }
+
+      if (passed) {
+        accuracyValue.value = 0;
+        accuracyValue.value = withTiming(correctN / Math.max(1, questions.length), {
+          duration: 1200,
+          easing: Easing.out(Easing.quad),
+        });
+      }
+    }
+  }, [finished, passed, correctN, questions.length]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset = 226.19 * (1 - accuracyValue.value);
+    return {
+      strokeDashoffset,
+    };
+  });
+
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
     router.replace(buildPathReturnRoute(pathMode));
@@ -141,7 +179,16 @@ export default function LessonScreen() {
 
   const xpSc = useSharedValue(1);
   const sheetY = useSharedValue(SHEET_H + insets.bottom);
-  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
+  const sheetScale = useSharedValue(0.94);
+  const sheetOpacity = useSharedValue(0);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    opacity: sheetOpacity.value,
+    transform: [
+      { translateY: sheetY.value },
+      { scale: sheetScale.value },
+    ],
+  }));
 
   /* Reset on focus */
   /* Reset and initialize lesson state whenever parameters or questions change */
@@ -168,6 +215,8 @@ export default function LessonScreen() {
     nextRef.current = 0;
     xpSc.value = 1;
     sheetY.value = SHEET_H + insets.bottom;
+    sheetScale.value = 0.94;
+    sheetOpacity.value = 0;
   }, [lessonId, lessonIndex, pathMode, questions.length, startQuestion, insets.bottom]);
 
   useFocusEffect(
@@ -222,18 +271,26 @@ export default function LessonScreen() {
         tier: isConversationPick ? tier : undefined,
         explanation,
       });
-      sheetY.value = withTiming(0, {
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
+      sheetY.value = withSpring(0, {
+        damping: 15,
+        stiffness: 120,
       });
+      sheetScale.value = withSpring(1, {
+        damping: 14,
+        stiffness: 110,
+      });
+      sheetOpacity.value = withTiming(1, { duration: 180 });
     },
     [current, hearts, questions],
   );
 
   const continueToNext = useCallback(() => {
     sheetY.value = withTiming(SHEET_H + insets.bottom, {
-      duration: 240, easing: Easing.in(Easing.quad),
+      duration: 220,
+      easing: Easing.in(Easing.quad),
     });
+    sheetScale.value = withTiming(0.94, { duration: 220 });
+    sheetOpacity.value = withTiming(0, { duration: 180 });
     setTimeout(() => {
       setFeedback(null);
       const next = nextRef.current;
@@ -264,6 +321,7 @@ export default function LessonScreen() {
       case "image_pair_match":    return <PictureMatchGame         key={key} {...shared} question={q} />;
       case "image_multiple_choice": return <ImageMultipleChoiceGame key={key} {...shared} question={q} />;
       case "memory_flip":         return <MemoryFlipGame           key={key} {...shared} question={q} />;
+      case "paragraph_speech":    return <ParagraphSpeechGame      key={key} {...shared} question={q} />;
       default:                    return null;
     }
   };
@@ -304,13 +362,48 @@ export default function LessonScreen() {
               <AppText style={sSum.sub}>
                 {ok ? "Impressive! You're on a roll 🔥" : "Don't give up — try again!"}
               </AppText>
+
+              {ok ? (
+                <Animated.View entering={FadeInDown.delay(100).duration(600).springify()} style={{ alignItems: "center", marginTop: 12 }}>
+                  <View style={{ position: "relative", width: 90, height: 90, justifyContent: "center", alignItems: "center" }}>
+                    <Svg width={90} height={90} viewBox="0 0 90 90" style={{ position: "absolute", top: 0, left: 0 }}>
+                      <Circle
+                        cx="45"
+                        cy="45"
+                        r={36}
+                        stroke="rgba(0, 0, 0, 0.05)"
+                        strokeWidth="8"
+                        fill="none"
+                      />
+                      <AnimatedCircle
+                        cx="45"
+                        cy="45"
+                        r={36}
+                        stroke={isKidsMode ? "#58CC02" : "#10B981"}
+                        strokeWidth="8"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray="226.19 226.19"
+                        animatedProps={animatedProps}
+                        transform="rotate(-90 45 45)"
+                      />
+                    </Svg>
+                    <AppText style={{ fontSize: 18, color: isKidsMode ? "#3C8400" : "#0F172A", fontFamily: "DINNextRoundedBold" }} forceLatinFont latinRole="bold">
+                      {Math.round((correctN / Math.max(1, questions.length)) * 100)}%
+                    </AppText>
+                  </View>
+                  <AppText style={{ fontSize: 11, color: L.gray, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.8 }} forceLatinFont latinRole="bold">
+                    Accuracy Rate
+                  </AppText>
+                </Animated.View>
+              ) : null}
             </HomeLiquidCard>
 
             {ok ? (
               <View style={sSum.statsRow}>
-                <StatCard icon={<HugeiconsIcon icon={FlashIcon} size={26} color={L.gold} />} label="XP" value={`+${xp}`} color={L.gold} />
-                <StatCard icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} size={26} color={isKidsMode ? "#58CC02" : L.green} />} label="Correct" value={`${correctN}/${questions.length}`} color={isKidsMode ? "#3C8400" : L.green} />
-                <StatCard icon={<HugeiconsIcon icon={Fire02Icon} size={26} color={isKidsMode ? "#FF4B4B" : L.red} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={isKidsMode ? "#CC0000" : L.red} />
+                <StatCard icon={<HugeiconsIcon icon={FlashIcon} size={26} color={L.gold} />} label="XP" value={`+${xp}`} color={L.gold} delay={200} />
+                <StatCard icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} size={26} color={isKidsMode ? "#58CC02" : L.green} />} label="Correct" value={`${correctN}/${questions.length}`} color={isKidsMode ? "#3C8400" : L.green} delay={350} />
+                <StatCard icon={<HugeiconsIcon icon={Fire02Icon} size={26} color={isKidsMode ? "#FF4B4B" : L.red} />} label="Hearts" value={`${hearts}/${MAX_HEARTS}`} color={isKidsMode ? "#CC0000" : L.red} delay={500} />
               </View>
             ) : null}
 
@@ -352,6 +445,73 @@ export default function LessonScreen() {
                 exitToPath();
               }}
             />
+
+            {ok && (
+              <Animated.View entering={FadeInDown.delay(600).duration(400)} style={{ width: "100%" }}>
+                <Pressable
+                  onPress={() => {
+                    // Record completion first
+                    if (!Number.isNaN(pathIndex)) {
+                      const currentProgress = getCurrentProgress();
+                      const locale = useLocaleStore.getState().locale;
+                      const meta = getCurrentLessonMeta(
+                        pathMode,
+                        currentProgress.nextLessonPathIndex,
+                        currentProgress.normalNextLessonPathIndex,
+                        locale,
+                        currentProgress.kidsNextLessonPathIndex,
+                      );
+                      const label =
+                        meta?.pathIndex === pathIndex
+                          ? `${meta.sectionTitle} · ${meta.lessonNumber}`
+                          : `Lesson ${pathIndex + 1}`;
+                      recordLessonComplete(pathIndex, xp, pathMode, label);
+                      requestPathScrollAfterLesson(pathMode);
+                    }
+                    // Build next lesson route from updated progress
+                    const updatedProgress = getCurrentProgress();
+                    const nextRoute = buildLessonRouteForMode(
+                      pathMode,
+                      updatedProgress.nextLessonPathIndex,
+                      updatedProgress.normalNextLessonPathIndex,
+                      updatedProgress.kidsNextLessonPathIndex,
+                    );
+                    if (nextRoute) {
+                      setPathMode(pathMode);
+                      router.replace(nextRoute);
+                    } else {
+                      // No more lessons — go back to path
+                      exitToPath();
+                    }
+                  }}
+                  style={({ pressed }) => ({
+                    width: "100%",
+                    paddingVertical: 16,
+                    borderRadius: 18,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: pressed ? "rgba(0,0,0,0.04)" : "transparent",
+                    borderWidth: 2,
+                    borderColor: isKidsMode ? "#58CC02" : L.green,
+                    marginTop: 8,
+                  })}
+                >
+                  <AppText
+                    style={{
+                      color: isKidsMode ? "#3C8400" : L.greenDeep,
+                      fontSize: 16,
+                      fontWeight: "800",
+                      fontFamily: "DINNextRoundedBold",
+                      letterSpacing: 0.4,
+                    }}
+                    forceLatinFont
+                    latinRole="bold"
+                  >
+                    Next Lesson →
+                  </AppText>
+                </Pressable>
+              </Animated.View>
+            )}
           </Animated.View>
         </SafeAreaView>
       </SummaryBackdrop>

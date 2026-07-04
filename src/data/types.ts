@@ -104,6 +104,13 @@ export type KidsPlayQuestion = {
   treasureRevealLabel?: string;
 };
 
+export type ParagraphSpeechQuestion = {
+  type: "paragraph_speech";
+  mode: "practice" | "quiz";
+  paragraphs: string[];
+  xp: number;
+};
+
 export type GameQuestion =
   | VoiceQuestion
   | SentenceBuilderQuestion
@@ -114,7 +121,8 @@ export type GameQuestion =
   | ImagePairMatchQuestion
   | ImageMultipleChoiceQuestion
   | MemoryFlipQuestion
-  | KidsPlayQuestion;
+  | KidsPlayQuestion
+  | ParagraphSpeechQuestion;
 
 // ── ONE lesson's worth of content (unique per dot) ────────────────────────────
 export type LessonBank = {
@@ -141,10 +149,14 @@ export type LessonBank = {
     wrong2Ar?:    string;
     wrong3Ar?:    string;
   }[];
+  paragraphSpeeches?: {
+    mode: "practice" | "quiz";
+    paragraphs: string[];
+  }[];
   kidsGames?: any;
 };
 
 // ── A full unit = 10 unique lesson banks ─────────────────────────────────────
 export type UnitBank = LessonBank[];
 
-export type LessonPathMode = "street" | "normal" | "kids";
+export type LessonPathMode = "street" | "normal" | "kids" | "custom";

@@ -1,4 +1,3 @@
- 
 import { LiquidGlassSurface } from "./LiquidGlassSurface";
 import { Motion } from "../screens/lesson/games/game-design";
 import React from "react";
@@ -17,6 +16,7 @@ import Animated, {
 type Props = PressableProps & {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
   /** 0.96 default — physical press without overshoot */
   pressScale?: number;
   /** iOS liquid glass shell with edge shading */
@@ -28,6 +28,7 @@ type Props = PressableProps & {
 export function PremiumPressable({
   children,
   style,
+  containerStyle,
   pressScale = 0.96,
   glass = false,
   glassRadius = 14,
@@ -57,7 +58,7 @@ export function PremiumPressable({
         android_ripple={
           android_ripple ?? { color: "rgba(148, 163, 184, 0.2)", borderless: false }
         }
-        style={{ alignItems: "center", justifyContent: "center" }}
+        style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
       >
         {children}
       </Pressable>
@@ -82,5 +83,11 @@ export function PremiumPressable({
     </Pressable>
   );
 
-  return <Animated.View style={animStyle}>{body}</Animated.View>;
+  return (
+    <Animated.View style={[containerStyle, animStyle, { alignSelf: 'stretch' }]}>
+      {body}
+    </Animated.View>
+  );
 }
+
+

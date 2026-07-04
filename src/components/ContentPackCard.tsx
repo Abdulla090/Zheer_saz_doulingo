@@ -230,7 +230,7 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
       } else {
         confirmAction(
           "Storage & Notification Permission",
-          "Phingo needs permission to store the downloaded learning assets on your device and notify you when the download completes. Do you grant permission?",
+          "Twino needs permission to store the downloaded learning assets on your device and notify you when the download completes. Do you grant permission?",
           runDownload,
           { confirmLabel: "Allow", cancelLabel: "Deny" }
         );

@@ -345,7 +345,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             </LightQuestionPrompt>
 
             <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <Animated.View style={[s.slotsRow, { flexDirection: isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row" }]}>
+              <Animated.View style={[s.slotsRow, { flexDirection: isKu ? (isRtlText(question.correctWords.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row") }]}>
                 {Array.from({ length: slotCount }).map((_, i) => {
                   const placed = sentence[i];
                   const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
@@ -384,7 +384,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               </Animated.View>
             </Animated.View>
 
-            <Animated.View style={[s.bank, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+            <Animated.View style={[s.bank, { flexDirection: isKu ? (isRtlText(question.correctWords.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row") }]}>
               {shuffledWordBank.map((w, i) => {
                 const taken = usedBank[i];
                 return (

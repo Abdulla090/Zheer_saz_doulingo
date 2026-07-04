@@ -267,7 +267,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row" }]}>
+          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: isKu ? (isRtlText(question.sentenceParts.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row") }]}>
             {question.sentenceParts[0] ? (
               <AppText style={s.sentenceText}>{question.sentenceParts[0]} </AppText>
             ) : null}

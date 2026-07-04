@@ -16,7 +16,7 @@ function TabLazyWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-    }, 30); // 30ms is enough to let tab click transitions register, but fast enough to feel immediate
+    }, 160); // 160ms lets the tab transition complete first, avoiding animation lag
     return () => clearTimeout(timer);
   }, []);
 
@@ -25,9 +25,9 @@ function TabLazyWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <Animated.View style={{ flex: 1 }} entering={FadeIn.duration(220)}>
       {children}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -3,12 +3,13 @@ import React from "react";
 import { StyleSheet, View, Image, Platform } from "react-native";
 import MascotOrange from "../../../../assets/images/svg/newmascotorange.svg";
 import MascotPurple from "../../../../assets/images/svg/newmascotpurple.svg";
-import { LinearGradient } from "expo-linear-gradient";
+
 
 export type OnboardingSceneVariant =
   | "meet_twin"
   | "learn_conversation"
-  | "grow_every_day";
+  | "grow_every_day"
+  | "achieve_fluency";
 
 export function OnboardingHeroScene({
   variant,
@@ -19,59 +20,65 @@ export function OnboardingHeroScene({
 }) {
   return (
     <View style={[styles.root, { height }]}>
-      {variant === "meet_twin" ? (
-        <MeetTwinScene />
-      ) : (
-        <OtherScene variant={variant} />
-      )}
+      {variant === "learn_conversation" && <MascotScene variant="learn_conversation" />}
+      {variant === "grow_every_day" && <MascotScene variant="grow_every_day" />}
+      {variant === "achieve_fluency" && <MascotScene variant="achieve_fluency" />}
     </View>
   );
 }
 
-function MeetTwinScene() {
+function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
+  if (variant === "learn_conversation") {
+    return (
+      <View style={styles.scene}>
+        <View style={styles.mascotsRow}>
+          <View style={[styles.mascotWrapper, { marginTop: 12 }]}>
+            <View style={[styles.helloBubble, { top: -28 }]}>
+              <AppText style={styles.helloBubbleText} forceLatinFont latinRole="bold">
+                Hello! 👋
+              </AppText>
+            </View>
+            <MascotOrange width={120} height={140} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (variant === "grow_every_day") {
+    return (
+      <View style={styles.scene}>
+        <View style={styles.mascotsRow}>
+          <View style={[styles.mascotWrapper, { marginTop: 12 }]}>
+            <View style={[styles.helloBubble, { top: -28 }]}>
+              <AppText style={styles.helloBubbleText} forceLatinFont latinRole="bold">
+                Ready? 🚀
+              </AppText>
+            </View>
+            <MascotPurple width={130} height={130} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.scene}>
-      {/* Logo at the top - Using logo-glow for the text logo */}
-      <Image
-        source={require("../../../../assets/images/logo-glow.png")}
-        style={styles.logoImage}
-      />
-      
       <View style={styles.mascotsRow}>
-        {/* Orange Mascot on left — cropped with overflow:hidden wrapper
-            instead of runtime viewBox override (which crashes react-native-svg
-            on Android release builds) */}
         <View style={styles.mascotWrapper}>
           <View style={[styles.orangeMascotCropper, { transform: [{ scaleX: -1 }] }]}>
             <MascotOrange width={110} height={130} />
           </View>
         </View>
-        
-        {/* Purple Mascot on right */}
+
         <View style={[styles.mascotWrapper, { marginTop: 12 }]}>
-          {/* Custom Hello! bubble */}
           <View style={styles.helloBubble}>
             <AppText style={styles.helloBubbleText} forceLatinFont latinRole="bold">
-              Hello!
+              Let's go! ✨
             </AppText>
           </View>
           <MascotPurple width={120} height={120} />
         </View>
-      </View>
-    </View>
-  );
-}
-
-function OtherScene({ variant }: { variant: OnboardingSceneVariant }) {
-  return (
-    <View style={styles.otherScene}>
-      <View style={styles.bottomGradientWrapper}>
-        <LinearGradient
-          colors={["rgba(37, 99, 235, 0)", "rgba(37, 99, 235, 0.4)", "rgba(37, 99, 235, 0.8)"]}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
       </View>
     </View>
   );
@@ -144,19 +151,64 @@ const styles = StyleSheet.create({
     color: "#2F69FF",
     fontFamily: "DINNextRoundedBold",
   },
-  otherScene: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  bottomGradientWrapper: {
-    width: "150%",
-    height: "60%",
+  convoBubble: {
     position: "absolute",
-    bottom: -20,
-    borderTopLeftRadius: 400,
-    borderTopRightRadius: 400,
-    overflow: "hidden",
+    top: -38,
+    backgroundColor: "#F0FDF4",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: "#DCFCE7",
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.04)",
+      },
+      default: {
+        shadowColor: "#000000",
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+      },
+    }),
+  },
+  convoBubbleText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#16A34A",
+    fontFamily: "DINNextRoundedBold",
+  },
+  growBubble: {
+    position: "absolute",
+    top: -38,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: "#FDE68A",
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.04)",
+      },
+      default: {
+        shadowColor: "#000000",
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+      },
+    }),
+  },
+  growBubbleText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#D97706",
+    fontFamily: "DINNextRoundedBold",
+  },
+  shadowOffset: {
+    // Offset slightly to align with the visual base of the slide
+    marginBottom: 8,
   },
 });

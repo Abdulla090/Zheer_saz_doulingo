@@ -41,7 +41,7 @@ import { crossShadow } from "../utils/shadows";
 const ACTIVE = TAB_BAR_GLASS.iconActive;
 const INACTIVE = TAB_BAR_GLASS.iconInactive;
 
-type PillRoute = "index" | "feed" | "dashboard" | "subscription";
+type PillRoute = "index" | "play" | "dashboard" | "subscription";
 
 const PILL_TABS: {
   route: PillRoute;
@@ -63,7 +63,7 @@ const PILL_TABS: {
     ),
   },
   {
-    route: "feed",
+    route: "play",
     labelKey: "tabs.games",
     renderIcon: (active, size) => (
       <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />

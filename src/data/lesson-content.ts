@@ -20,6 +20,47 @@ import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getWord3DImage, getWordsWithDistinctImages } from "../utils/kids-assets";
 
+import arTranslations from "./translations/ar.json";
+import kuTranslations from "./translations/ku.json";
+import esTranslations from "./translations/es.json";
+import ruTranslations from "./translations/ru.json";
+
+const CONTENT_TRANSLATIONS: Record<string, Record<string, string>> = {
+  ar: arTranslations as Record<string, string>,
+  ku: kuTranslations as Record<string, string>,
+  es: esTranslations as Record<string, string>,
+  ru: ruTranslations as Record<string, string>,
+};
+
+function getTranslatedValue(obj: any, fieldName: string, lang: string): string | null {
+  if (!obj) return null;
+  const dict = CONTENT_TRANSLATIONS[lang];
+  if (!dict) return null;
+
+  const keysToTry: string[] = [];
+  const fields = ["english", "kurdish", "prompt", "target", "situation", "explanation", "topic", "topicKu", "answer"];
+  for (const f of fields) {
+    if (obj[f]) {
+      const val = Array.isArray(obj[f]) ? obj[f].join(" ") : String(obj[f]);
+      if (val && !keysToTry.includes(val)) {
+        keysToTry.push(val);
+      }
+    }
+  }
+
+  for (const key of keysToTry) {
+    if (dict[key]) {
+      return dict[key];
+    }
+    const trimmedKey = key.trim();
+    if (dict[trimmedKey]) {
+      return dict[trimmedKey];
+    }
+  }
+
+  return null;
+}
+
 export type {
   GameQuestion,
   VoiceQuestion,
@@ -165,7 +206,11 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
   const getNativeStr = (obj: any, lang: string, fallbackField: string): string => {
     if (!obj) return "";
     
-    // 0. Specific field overrides
+    // 0. Try dictionary first
+    const dictVal = getTranslatedValue(obj, fallbackField, lang);
+    if (dictVal != null) return dictVal;
+
+    // 1. Specific field overrides
     if (lang === "ar") {
       if (fallbackField === "prompt" && obj.promptAr) return obj.promptAr;
       if (fallbackField === "targetKurdish" && obj.targetArabic) return obj.targetArabic;
@@ -174,7 +219,7 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
       if (fallbackField === "topicKu" && obj.topicAr) return obj.topicAr;
     }
     
-    // 1. Direct language key check
+    // 2. Direct language key check
     if (lang === "en") {
       if (obj.english) {
         if (Array.isArray(obj.english)) return obj.english.join(" ");
@@ -190,14 +235,14 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
     if (lang === "ru" && obj.russian) return obj.russian;
     if (lang === "ku" && obj.kurdish) return obj.kurdish;
     
-    // 2. Hint checks
+    // 3. Hint checks
     if (lang === "ar" && obj.arabicHint) return obj.arabicHint;
     if (lang === "es" && obj.spanishHint) return obj.spanishHint;
     if (lang === "ru" && obj.russianHint) return obj.russianHint;
     if (lang === "ku" && obj.kurdishHint) return obj.kurdishHint;
     if (obj.hint && typeof obj.hint === "string") return obj.hint;
     
-    // 3. Fallbacks: Kurdish is the default source language in the curriculum
+    // 4. Fallbacks: Kurdish is the default source language in the curriculum
     if (obj.kurdish && typeof obj.kurdish === "string") return obj.kurdish;
     if (obj.arabic && typeof obj.arabic === "string") return obj.arabic;
     if (obj.kurdishHint && typeof obj.kurdishHint === "string") return obj.kurdishHint;
@@ -210,7 +255,11 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
   const getTargetStr = (obj: any, lang: string): string => {
     if (!obj) return "";
     
-    // If user is learning Arabic, the target text must be the Arabic translation
+    // 0. Try dictionary first
+    const dictVal = getTranslatedValue(obj, "target", lang);
+    if (dictVal != null) return dictVal;
+
+    // 1. Specific field overrides
     if (lang === "ar") {
       if (obj.arabic) {
         if (Array.isArray(obj.arabic)) return obj.arabic.join(" ");
@@ -220,7 +269,7 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
       if (obj.topicAr) return obj.topicAr;
     }
     
-    // Default fallback to English (the original curriculum's native structure)
+    // 2. Default fallback to English (the original curriculum's native structure)
     if (lang === "en" && obj.english) {
       if (Array.isArray(obj.english)) return obj.english.join(" ");
       return obj.english;
@@ -232,6 +281,13 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
   const getTargetArr = (obj: any, lang: string): string[] => {
     if (!obj) return [];
     
+    // 0. Try dictionary first
+    const dictVal = getTranslatedValue(obj, "target", lang);
+    if (dictVal != null) {
+      return dictVal.split(/\s+/);
+    }
+
+    // 1. Specific field overrides
     if (lang === "ar") {
       if (obj.arabic) {
         if (Array.isArray(obj.arabic)) return obj.arabic;
@@ -271,32 +327,65 @@ function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, target
       kurdish: getNativeStr(s, nativeLang, "kurdish"),
       arabic: s.arabic,
     })),
+
     fillBlanks: lesson.fillBlanks.map((f) => {
-      const getParts = () => {
-        if (targetLang === "ar" && f.arabicParts) return f.arabicParts;
-        return f.parts;
-      };
-      const getWrongs = () => {
-        if (targetLang === "ar" && f.arabicWrongs) return f.arabicWrongs;
-        return f.wrongs;
-      };
       const getAnswer = () => {
+        const dictAnswer = getTranslatedValue({ answer: f.answer }, "answer", targetLang);
+        if (dictAnswer != null) return dictAnswer;
+
         if (targetLang === "ar" && f.arabicAnswer) return f.arabicAnswer;
         return f.answer;
       };
+
+      const getParts = () => {
+        const fullSentence = f.parts.join(` ${f.answer} `);
+        const dictFull = getTranslatedValue({ english: fullSentence }, "english", targetLang);
+        if (dictFull != null) {
+          const ans = getAnswer();
+          if (dictFull.includes(ans)) {
+            return dictFull.split(ans);
+          }
+          return dictFull.split(" ");
+        }
+
+        if (targetLang === "ar" && f.arabicParts) return f.arabicParts;
+        return f.parts;
+      };
+
+      const getWrongs = () => {
+        const dictWrongs = f.wrongs.map((w: string) => {
+          const trans = getTranslatedValue({ answer: w }, "answer", targetLang);
+          return trans != null ? trans : w;
+        });
+        
+        if (dictWrongs.some((w: string, idx: number) => w !== f.wrongs[idx])) {
+          return dictWrongs;
+        }
+
+        if (targetLang === "ar" && f.arabicWrongs) return f.arabicWrongs;
+        return f.wrongs;
+      };
+
+      const partsVal = getParts();
+      const wrongsVal = getWrongs();
 
       return {
         ...f,
         hint: getNativeStr(f, nativeLang, "hint"),
         answer: getAnswer(),
-        parts: getParts(),
-        wrongs: getWrongs(),
+        parts: [partsVal[0] || "", partsVal[1] || ""] as [string, string],
+        wrongs: [wrongsVal[0] || "", wrongsVal[1] || "", wrongsVal[2] || ""] as [string, string, string],
       };
     }),
+
     conversations: lesson.conversations.map((c) => {
       const getC = (field: string, arField: string) => {
+        const val = (c as any)[field];
+        const dictVal = getTranslatedValue({ [field]: val }, field, targetLang);
+        if (dictVal != null) return dictVal;
+
         if (targetLang === "ar" && (c as any)[arField]) return (c as any)[arField];
-        return (c as any)[field];
+        return val;
       };
       
       const targetTheyAsk = getC("theyAsk", "theyAskAr");
@@ -582,6 +671,29 @@ function buildLessonQuestionsFromBank(
       options: shuffle([c.correct, c.wrong1, c.wrong2, c.wrong3], seed + 50 + i),
       explanation: c.explanation,
       xp: 25,
+    });
+  }
+
+  // 7. Paragraph Speech (if present, or fallback)
+  if (lesson.paragraphSpeeches && lesson.paragraphSpeeches.length > 0) {
+    for (const ps of lesson.paragraphSpeeches) {
+      questions.push({
+        type: "paragraph_speech",
+        mode: ps.mode,
+        paragraphs: ps.paragraphs,
+        xp: 30, // Higher XP for paragraph reading
+      });
+    }
+  } else {
+    // Fallback paragraph for hardcoded lessons so Practice games don't crash/fallback
+    questions.push({
+      type: "paragraph_speech",
+      mode: "practice",
+      paragraphs: [
+        "Welcome to your first reading practice. Learning English is fun and easy when you practice every day.",
+        "Take a deep breath, read slowly, and try to pronounce each word clearly. You are doing a great job!"
+      ],
+      xp: 30,
     });
   }
 

@@ -17,7 +17,7 @@ import { getLessonBank } from "../../data/content-access";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Fire02Icon, Clock01Icon, Coffee01Icon, Airplane01Icon, LockIcon, Mic01Icon, Notification01Icon, PlayIcon, ArrowRight01Icon, BookOpen02Icon } from "@hugeicons/core-free-icons";
+import { Fire02Icon, Clock01Icon, Coffee01Icon, Airplane01Icon, LockIcon, Mic01Icon, Settings01Icon, PlayIcon, ArrowRight01Icon, BookOpen02Icon, WavingHand01Icon } from "@hugeicons/core-free-icons";
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { PressableScale } from "../../components/animations";
@@ -90,6 +90,7 @@ export function TwinoLearnHomeScreen() {
 
   const ready = useProgressStore((s) => s.ready);
   const dailyXp = useProgressStore((s) => s.dailyXp);
+  const englishLevel = useSettingsStore((s) => s.englishLevel);
   
   // Calculate practice minutes: estimate 3 minutes per 10 XP
   const practiceMinutes = ready ? Math.round(dailyXp * 0.3) : null;
@@ -99,7 +100,7 @@ export function TwinoLearnHomeScreen() {
     if (pathMode === "normal") return buildNormalSectionData(normalNext);
     if (pathMode === "kids") return buildKidsSectionData(kidsNext);
     return buildSectionData(streetNext);
-  }, [pathMode, normalNext, kidsNext, streetNext]);
+  }, [pathMode, normalNext, kidsNext, streetNext, englishLevel]);
 
   const allLessons = React.useMemo(() => {
     return sections.flatMap((section) => section.data);
@@ -169,10 +170,16 @@ export function TwinoLearnHomeScreen() {
             Twino
           </AppText>
         </View>
-        <View style={styles.notificationBtn}>
-          <HugeiconsIcon icon={Notification01Icon} size={20} color={Colors.foreground} strokeWidth={2.5} />
-          <View style={styles.notificationDot} />
-        </View>
+        <PressableScale
+          style={styles.notificationBtn}
+          onPress={() => {
+            hapticSelection();
+            router.push("/settings");
+          }}
+          scaleDown={0.9}
+        >
+          <HugeiconsIcon icon={Settings01Icon} size={20} color={Colors.foreground} strokeWidth={2.5} />
+        </PressableScale>
       </View>
       </GsapEnterBlock>
 
@@ -188,9 +195,12 @@ export function TwinoLearnHomeScreen() {
           <GsapEnterBlock index={1}>
           <View style={styles.greetingSection}>
             <AppText style={styles.greetingSub}>{t("twinoHome.welcomeBack")}</AppText>
-            <AppText style={styles.greetingTitle} forceLatinFont latinRole="bold">
-              {userName ? `${userName} 👋` : "Friend 👋"}
-            </AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+              <AppText style={styles.greetingTitle} forceLatinFont latinRole="bold">
+                {userName ? userName : "Friend"}
+              </AppText>
+              <HugeiconsIcon icon={WavingHand01Icon} size={28} color="#0F172A" strokeWidth={2.5} />
+            </View>
           </View>
           </GsapEnterBlock>
 
@@ -223,11 +233,11 @@ export function TwinoLearnHomeScreen() {
               </PressableScale>
 
               <PressableScale 
-                style={[styles.learnBtn, styles.btn3DSecondary]}
+                style={[styles.learnBtn, styles.btnFlat]}
                 onPress={onOpenPath}
                 scaleDown={0.96}
               >
-                <HugeiconsIcon icon={BookOpen02Icon} size={20} color="#2B59F3" strokeWidth={2.5} />
+                <HugeiconsIcon icon={BookOpen02Icon} size={20} color="#0F172A" strokeWidth={2.5} />
                 <AppText style={styles.learnBtnText} forceLatinFont latinRole="bold">{t("twinoHome.learn")}</AppText>
               </PressableScale>
             </View>
@@ -495,7 +505,6 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   aiCardBtn: {
-    flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 16,
@@ -503,20 +512,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    width: "100%",
   },
   aiCardBtnText: {
     color: Colors.background,
     fontSize: 14,
   },
   aiCardBtnRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 12,
     zIndex: 2,
     width: "100%",
     marginTop: 8,
   },
   learnBtn: {
-    flex: 1,
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 16,
@@ -524,17 +533,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    width: "100%",
   },
   learnBtnText: {
-    color: "#2B59F3",
+    color: "#0F172A",
     fontSize: 14,
   },
   btn3DPrimary: {
-    backgroundColor: "#2B59F3",
+    backgroundColor: "#0F172A",
     borderWidth: 1.5,
-    borderColor: "#1A49D3",
+    borderColor: "#1E293B",
     borderBottomWidth: 5,
-    borderBottomColor: "#102F9C",
+    borderBottomColor: "#020617",
   },
   btn3DSecondary: {
     backgroundColor: "#FFFFFF",
@@ -542,6 +552,18 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     borderBottomWidth: 5,
     borderBottomColor: "#CBD5E1",
+  },
+  btn3DOrange: {
+    backgroundColor: "#FF9600",
+    borderWidth: 1.5,
+    borderColor: "#EA580C",
+    borderBottomWidth: 5,
+    borderBottomColor: "#B33E00",
+  },
+  btnFlat: {
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   statsRow: {
     flexDirection: "row",

@@ -8,9 +8,11 @@ import { AppText } from "../../components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
 import { tabBarScrollPadding } from "../../constants/layout";
 import type { LessonListItem, SectionDataItem, SectionTheme } from "../../data/list-items";
-import { buildNormalSectionData } from "../../data/normal-english";
+import { getUnitsForPath } from "../../data/content-access";
+import { resolveLessonStatus, type LessonType } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { useCurrentProgress } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -76,20 +78,48 @@ export function NormalEnglishPathScreen() {
   }).current;
 
   const { normalNextLessonPathIndex } = useCurrentProgress();
+  const englishLevel = useSettingsStore((s) => s.englishLevel);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
     "blue",
   );
 
-  const localizedSections = useMemo(
-    () =>
-      localizePathSections(
-        buildNormalSectionData(normalNextLessonPathIndex),
-        "normal",
-        locale,
-      ),
-    [locale, normalNextLessonPathIndex],
-  );
+  const localizedSections = useMemo(() => {
+    const units = getUnitsForPath("normal");
+    let pathIndex = 0;
+    
+    const sections: SectionDataItem[] = units.map((unit, unitIndex) => {
+      const displayTheme: SectionTheme = unitIndex % 2 === 0 ? "blue" : "purple";
+      
+      const data: LessonListItem[] = unit.map((lesson, lessonIndex) => {
+        const itemStatus = resolveLessonStatus(pathIndex, normalNextLessonPathIndex, lessonIndex === 0);
+        const currentIndex = pathIndex++;
+        return {
+          id: `normal-level-${currentIndex}`,
+          pathIndex: currentIndex,
+          globalIndex: currentIndex,
+          sectionItemIndex: lessonIndex,
+          type: "practice" as LessonType,
+          sectionTheme: displayTheme,
+          displayTheme,
+          status: itemStatus,
+          isCurrent: itemStatus === "current",
+          progressSegments: itemStatus === "current" ? 2 : 0,
+          lessonId: lessonIndex, // Or unitIndex? Actually unitIndex * 100 + lessonIndex
+        };
+      });
+
+      return {
+        unitIndex,
+        title: "",
+        theme: displayTheme,
+        displayTheme,
+        data,
+      };
+    });
+
+    return localizePathSections(sections, "normal", locale);
+  }, [locale, normalNextLessonPathIndex]);
 
   // Find the unit index of the user's active/current lesson
   const currentUnitIndex = useMemo(() => {

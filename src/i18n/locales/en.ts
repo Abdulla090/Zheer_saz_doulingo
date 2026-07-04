@@ -252,7 +252,7 @@ export const en = {
     getStarted: "Start learning",
     swipeHint: "Swipe to explore · or tap Continue",
     readyHint: "Your path is ready — let's go",
-    welcomeTitle: "Welcome to PINGO",
+    welcomeTitle: "Welcome to TWINO",
     welcomeSubtitle:
       "Learn English with clarity — designed for Kurdish speakers, polished like a flagship app.",
     pathsTitle: "Three paths. One goal.",

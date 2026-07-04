@@ -11,10 +11,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 
+import type { PathMode } from "../../../stores/useSettingsStore";
+
 function parsePathMode(
   raw: string | string[] | undefined,
-  saved: "street" | "normal" | "kids",
-): "street" | "normal" | "kids" {
+  saved: PathMode,
+): PathMode {
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "normal") return "normal";
   if (value === "kids") return "kids";

@@ -2,6 +2,7 @@ import type { SectionDataItem } from "../data/list-items";
 import { buildSectionData } from "../data/list-items";
 import { buildNormalSectionData } from "../data/normal-english";
 import { buildKidsSectionData } from "../data/kids-english";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export type PathProgressSummary = {
   streetTotal: number;
@@ -20,7 +21,6 @@ function countLessons(sections: SectionDataItem[]): number {
 }
 
 let streetTotalCache: number | null = null;
-let normalTotalCache: number | null = null;
 let kidsTotalCache: number | null = null;
 
 function streetLessonTotal(): number {
@@ -31,10 +31,7 @@ function streetLessonTotal(): number {
 }
 
 function normalLessonTotal(): number {
-  if (normalTotalCache == null) {
-    normalTotalCache = countLessons(buildNormalSectionData(999_999));
-  }
-  return normalTotalCache;
+  return countLessons(buildNormalSectionData(999_999));
 }
 
 function kidsLessonTotal(): number {

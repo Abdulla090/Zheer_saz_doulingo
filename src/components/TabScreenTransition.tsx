@@ -2,7 +2,7 @@
 import { useTabTransition } from "../context/TabTransitionContext";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback } from "react";
-import { StyleSheet, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -31,11 +31,23 @@ export function TabScreenTransition({ children }: Props) {
         return;
       }
 
-      const offset = Math.min(width * 0.18, 80) * direction;
+      if (Platform.OS === "web") {
+        translateX.value = 0;
+        opacity.value = 1;
+        return;
+      }
+
+      const offset = Math.min(width * 0.15, 60) * direction;
       translateX.value = offset;
-      opacity.value = 0.92;
-      translateX.value = withSpring(0, { damping: 22, stiffness: 480, mass: 0.3, overshootClamping: true });
-      opacity.value = withSpring(1, { damping: 22, stiffness: 480, mass: 0.3, overshootClamping: true });
+      opacity.value = 0.8;
+
+      // Postpone animation slightly to let Hermes finish mounting the screen
+      const timer = setTimeout(() => {
+        translateX.value = withSpring(0, { damping: 26, stiffness: 170, mass: 0.8, overshootClamping: true });
+        opacity.value = withSpring(1, { damping: 26, stiffness: 170, mass: 0.8, overshootClamping: true });
+      }, 35);
+
+      return () => clearTimeout(timer);
     }, [consumeDirection, opacity, translateX, width]),
   );
 

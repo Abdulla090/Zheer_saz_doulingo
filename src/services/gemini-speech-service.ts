@@ -262,3 +262,182 @@ export async function generateRolePlayResponse(
 
   return text || "Of course! Let's continue.";
 }
+
+export type ParagraphSpeechEvaluation = {
+  transcript: string;
+  accuracyScore: number;
+  wordAnalysis: { word: string; correct: boolean }[];
+};
+
+export async function evaluateParagraphSpeechWithGemini(
+  audioBase64: string,
+  mimeType: string,
+  targetParagraphs: string[]
+): Promise<ParagraphSpeechEvaluation> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured.");
+  }
+  if (!audioBase64) {
+    throw new Error("No audio was captured.");
+  }
+
+  const normalizedMimeType = normalizeGeminiMimeType(mimeType);
+  const targetText = targetParagraphs.join(" ");
+
+  const prompt = [
+    "You evaluate English speaking practice for language learners.",
+    `The learner was asked to read the following text aloud:`,
+    `"${targetText}"`,
+    `Listen to the audio and evaluate their pronunciation word by word.`,
+    `Return ONLY a valid JSON object with the following structure:`,
+    `{`,
+    `  "transcript": "exactly what you heard them say",`,
+    `  "accuracyScore": 85, // an integer from 0 to 100 representing overall pronunciation accuracy`,
+    `  "wordAnalysis": [`,
+    `    { "word": "word1 from target text", "correct": true },`,
+    `    { "word": "word2 from target text", "correct": false }`,
+    `  ]`,
+    `}`,
+    `IMPORTANT RULES:`,
+    `- The "wordAnalysis" array MUST contain every single word from the target text, in the exact original order.`,
+    `- Set "correct" to true if the user pronounced the word intelligibly (allow minor accent differences).`,
+    `- Set "correct" to false if they skipped it, completely mispronounced it, or said the wrong word.`,
+    `- Strip punctuation from the "word" field in wordAnalysis for cleaner UI mapping, but keep it in the transcript.`
+  ].join("\n");
+
+  const controller = new AbortController();
+  const fetchPromise = fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: normalizedMimeType,
+                  data: audioBase64,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048,
+        },
+      }),
+      signal: controller.signal,
+    },
+  );
+
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error("Network timeout: Gemini request took too long."));
+    }, API_TIMEOUT_MS * 2); // Longer timeout since paragraphs are longer
+  });
+
+  try {
+    const res = (await Promise.race([
+      fetchPromise,
+      timeoutPromise,
+    ])) as Response;
+    clearTimeout(timeoutId!);
+
+    const data = (await res.json()) as GeminiGenerateResponse;
+    if (!res.ok) {
+      throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
+    }
+
+    let text =
+      data.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim() ?? "";
+
+    if (!text) {
+      throw new Error("Gemini returned an empty response.");
+    }
+
+    if (text.startsWith("```json")) {
+      text = text.replace(/^```json/, "").replace(/```$/, "").trim();
+    } else if (text.startsWith("```")) {
+      text = text.replace(/^```/, "").replace(/```$/, "").trim();
+    }
+
+    const evaluation = JSON.parse(text) as ParagraphSpeechEvaluation;
+    return evaluation;
+  } catch (err: any) {
+    console.error("[evaluateParagraphSpeechWithGemini] Error:", err);
+    throw new Error(err.message || "Failed to evaluate paragraph speech.");
+  } finally {
+    clearTimeout(timeoutId!);
+  }
+}
+
+export async function generateReadingPracticeParagraphs(
+  difficulty: "Beginner" | "Intermediate" | "Advanced",
+  paragraphCount: number
+): Promise<string[]> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  const prompt = `You are an expert English teacher. Create a reading practice exercise for a language learner.
+The difficulty is ${difficulty}.
+You must generate exactly ${paragraphCount} paragraph(s).
+The topic should be engaging, like self-improvement, technology, nature, or a short story.
+Respond with ONLY a JSON array of strings, where each string is a paragraph. Do not include markdown formatting or backticks.
+Example: ["Paragraph 1 text.", "Paragraph 2 text."]`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Gemini API error: ${res.status}`);
+    }
+
+    const data = (await res.json()) as GeminiGenerateResponse;
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const jsonText = extractJsonObject(text) || text.trim();
+    
+    try {
+      const parsed = JSON.parse(jsonText);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(String);
+      }
+    } catch {
+      // Fallback if it fails to parse
+    }
+
+    // Manual fallback: split by double newline
+    return text.split('\n\n').map(p => p.trim()).filter(Boolean);
+
+  } catch (err) {
+    console.error("[generateReadingPracticeParagraphs] Failed:", err);
+    // Hardcoded fallback so the user is never stuck
+    if (difficulty === "Beginner") {
+      return ["Hello! I am learning English today. It is a beautiful day.", "I like to read books and drink coffee."].slice(0, paragraphCount);
+    }
+    return ["Learning a new language opens up incredible opportunities for personal growth and cultural understanding.", "Consistency is the key to mastery, so practicing a little bit every day leads to significant progress over time.", "Embrace the challenges, learn from your mistakes, and celebrate the small victories along your educational journey."].slice(0, paragraphCount);
+  }
+}
