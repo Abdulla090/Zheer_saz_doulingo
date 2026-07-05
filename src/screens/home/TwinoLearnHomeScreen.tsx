@@ -207,8 +207,8 @@ export function TwinoLearnHomeScreen() {
           {/* AI LIVE TUTOR */}
           <GsapEnterBlock index={2}>
           <View style={styles.aiCard}>
-            <View style={styles.aiCardContent}>
-              <View style={styles.aiBadge}>
+            <View style={[styles.aiCardContent, isKu && { paddingRight: 0, paddingLeft: 100 }]}>
+              <View style={[styles.aiBadge, isKu && { alignSelf: "flex-end", flexDirection: "row-reverse" }]}>
                 <View style={styles.aiPulseWrap}>
                   <View style={styles.aiPulsePing} />
                   <View style={styles.aiPulseDot} />
@@ -216,35 +216,35 @@ export function TwinoLearnHomeScreen() {
                 <AppText style={styles.aiBadgeText}>{t("twinoHome.aiLiveTutor")}</AppText>
               </View>
               
-              <AppText style={styles.aiCardTitle} forceLatinFont latinRole="bold">{t("twinoHome.speakNatural")}</AppText>
-              <AppText style={styles.aiCardSub}>
+              <AppText style={[styles.aiCardTitle, isKu && { textAlign: "right" }]} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.speakNatural")}</AppText>
+              <AppText style={[styles.aiCardSub, isKu && { textAlign: "right" }]}>
                 {t("twinoHome.aiTutorDesc")}
               </AppText>
             </View>
               
             <View style={styles.aiCardBtnRow}>
               <PressableScale 
-                style={[styles.aiCardBtn, styles.btn3DPrimary]}
+                style={[styles.aiCardBtn, styles.btn3DPrimary, isKu && { flexDirection: "row-reverse" }]}
                 onPress={onOpenVoiceTutor}
                 scaleDown={0.96}
               >
                 <HugeiconsIcon icon={Mic01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-                <AppText style={styles.aiCardBtnText} forceLatinFont latinRole="bold">{t("twinoHome.startConversation")}</AppText>
+                <AppText style={styles.aiCardBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.startConversation")}</AppText>
               </PressableScale>
 
               <PressableScale 
-                style={[styles.learnBtn, styles.btnFlat]}
+                style={[styles.learnBtn, styles.btnFlat, isKu && { flexDirection: "row-reverse" }]}
                 onPress={onOpenPath}
                 scaleDown={0.96}
               >
                 <HugeiconsIcon icon={BookOpen02Icon} size={20} color="#0F172A" strokeWidth={2.5} />
-                <AppText style={styles.learnBtnText} forceLatinFont latinRole="bold">{t("twinoHome.learn")}</AppText>
+                <AppText style={styles.learnBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.learn")}</AppText>
               </PressableScale>
             </View>
             
             <Image 
               source={BRAND_ICON} 
-              style={styles.aiCardLogo} 
+              style={[styles.aiCardLogo, isKu ? { right: undefined, left: -25 } : { right: -25 }]} 
               contentFit="contain" 
             />
           </View>

@@ -9,6 +9,8 @@ import Fire from '../../../assets/images/svg/header/fire.svg';
 import Dictionary from '../../../assets/images/svg/dictionary.svg';
 import { useRouter } from 'expo-router';
 import { useProgressStore } from '../../stores/useProgressStore';
+import { useI18n } from '../../hooks/useI18n';
+import { AppText } from '../../components/ui/AppText';
 import { 
   HeadphonesIcon, 
   Mic01Icon, 
@@ -63,6 +65,8 @@ export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { dailyXp, dailyGoalXp } = useProgressStore();
+  const { t, locale, isKu } = useI18n();
+  const isRtl = isKu || locale === 'ar';
 
   const xp = dailyXp || 0;
   const goal = dailyGoalXp || 15;
@@ -97,23 +101,11 @@ export function GamesScreen() {
 
         {/* Hero */}
         <View style={styles.hero}>
-          <View style={styles.heroLeft}>
-            <Text style={styles.heroTitle}>Practice</Text>
-            <Text style={styles.heroSub}>
-              Choose how you want{'\n'}to practice today ✨
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, isRtl && { textAlign: 'right' }]}>{t("games.title")}</Text>
+            <Text style={[styles.heroSub, isRtl && { textAlign: 'right' }]}>
+              {t("games.subtitle")}
             </Text>
-          </View>
-          {/* Mascot area — using clean, flat vector shapes */}
-          <View style={styles.heroMascot}>
-            <View style={styles.mascotBlobOrange}>
-              <HugeiconsIcon icon={Chatting01Icon} size={28} color="#FFF" strokeWidth={1.5} />
-            </View>
-            <View style={styles.mascotBlobBlue}>
-              <HugeiconsIcon icon={Message01Icon} size={20} color="#FFF" strokeWidth={1.5} />
-            </View>
-            {/* Sparkle dots */}
-            <View style={[styles.sparkle, { top: 2, right: 4 }]} />
-            <View style={[styles.sparkle, { bottom: 10, left: 0, width: 5, height: 5 }]} />
           </View>
         </View>
       </View>
@@ -125,24 +117,24 @@ export function GamesScreen() {
             <View style={[styles.quickIcon, { backgroundColor: '#F4F0FF', borderWidth: 1, borderColor: '#EDE9FE' }]}>  
               <HugeiconsIcon icon={HeadphonesIcon} size={26} color={C.violet} strokeWidth={2} />
             </View>
-            <Text style={styles.quickLabel}>Listening</Text>
-            <Text style={styles.quickSub}>Sharpen comprehension</Text>
+            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.listenTitle")}</Text>
+            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.listenSub")}</Text>
           </PremiumPressable>
 
           <PremiumPressable style={styles.quickItem} pressScale={0.94}>
             <View style={[styles.quickIcon, { backgroundColor: '#EEF5FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>  
               <HugeiconsIcon icon={Mic01Icon} size={26} color={C.blue} strokeWidth={2} />
             </View>
-            <Text style={styles.quickLabel}>Speak Up</Text>
-            <Text style={styles.quickSub}>Practice speaking</Text>
+            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.speakTitle")}</Text>
+            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.speakSub")}</Text>
           </PremiumPressable>
 
           <PremiumPressable style={styles.quickItem} pressScale={0.94}>
             <View style={[styles.quickIcon, { backgroundColor: '#FFF5F0', borderWidth: 1, borderColor: '#FFE4E6' }]}>  
               <HugeiconsIcon icon={Chatting01Icon} size={26} color={C.orange} strokeWidth={2} />
             </View>
-            <Text style={styles.quickLabel}>Real-Life Dialogues</Text>
-            <Text style={styles.quickSub}>Talk like in real life</Text>
+            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.conversationTitle")}</Text>
+            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.conversationSub")}</Text>
           </PremiumPressable>
         </View>
       </View>
@@ -151,135 +143,134 @@ export function GamesScreen() {
       <View style={styles.dailyGoalContainer}>
         <LinearGradient
           colors={['#FFA04A', '#FF7300']}
-          style={styles.dailyGoalCard}
+          style={[styles.dailyGoalCard, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={styles.goalLeft}>
-            <View style={styles.goalHeaderRow}>
-              <View style={styles.goalFireCircle}>
+          <View style={[styles.goalLeft, isRtl ? { paddingLeft: 110, paddingRight: 0 } : {}]}>
+            <View style={[styles.goalHeaderRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+              <View style={[styles.goalFireCircle, isRtl ? { marginLeft: 12, marginRight: 0 } : {}]}>
                 <Fire width={22} height={22} fill="#FF7300" />
               </View>
               <View style={styles.goalTextCol}>
-                <Text style={styles.goalTitle}>Time to learn!</Text>
-                <Text style={styles.goalSub}>Let's reach your daily goal.</Text>
+                <AppText style={[styles.goalTitle, { textAlign: isRtl ? 'right' : 'left' }]} forceKurdishFont={isKu}>{t("games.timeToLearn")}</AppText>
+                <AppText style={[styles.goalSub, { textAlign: isRtl ? 'right' : 'left' }]} forceKurdishFont={isKu}>{t("games.reachGoal")}</AppText>
               </View>
             </View>
 
             {/* Progress bar */}
-            <View style={styles.goalProgressBg}>
+            <View style={[styles.goalProgressBg, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
               <View style={[styles.goalProgressFill, { width: `${percent}%` }]} />
             </View>
-            <Text style={styles.goalXPText}>{xp} / {goal} XP</Text>
+            <AppText style={[styles.goalXPText, { textAlign: isRtl ? 'right' : 'left' }]} forceLatinFont latinRole="bold">{xp} / {goal} XP</AppText>
           </View>
           
-          <View style={styles.goalRight}>
-            <Image
-              source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
-              style={styles.mascotImg}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
+            style={[styles.mascotImg, isRtl ? { left: -16, right: undefined, transform: [{ scaleX: -1 }] } : {}]}
+            resizeMode="contain"
+          />
         </LinearGradient>
       </View>
 
       {/* ── Bento Grid ── */}
-      <View style={styles.bentoGrid}>
-        {/* Left column */}
-        <View style={styles.bentoLeft}>
-          {/* Live Voice Tutor */}
-          <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/voice-tutor")}>
-            <View style={styles.cardTop}>
-              <View style={[styles.iconBox, { backgroundColor: C.indigoLight }]}>
-                <HugeiconsIcon icon={Robot02Icon} size={20} color={C.indigo} strokeWidth={2} />
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>NEW</Text>
-              </View>
+      <View style={styles.bentoContainer}>
+        {/* Live Voice Tutor (Full Width) */}
+        <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/voice-tutor")}>
+          <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
+            <View style={[styles.iconBox, { backgroundColor: C.indigoLight }]}>
+              <HugeiconsIcon icon={Robot02Icon} size={20} color={C.indigo} strokeWidth={2} />
             </View>
-            <Text style={styles.cardTitle}>Live Voice Tutor</Text>
-            <Text style={styles.cardSub}>Talk with your AI tutor{'\n'}in real time.</Text>
-            <View style={styles.arrowRow}>
-              <View style={styles.arrowCircle}>
-                <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
-              </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
             </View>
-          </PremiumPressable>
+          </View>
+          <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.voiceTutorTitle")}</Text>
+          <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>{t("games.voiceTutorSub")}</Text>
+          <View style={[styles.arrowRow, isRtl ? { alignItems: 'flex-start' } : { alignItems: 'flex-end' }]}>
+            <View style={[styles.arrowCircle, isRtl && { transform: [{ rotate: "180deg" }] }]}>
+              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+            </View>
+          </View>
+        </PremiumPressable>
 
-          {/* AI Podcast */}
-          <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/podcast")}>
-            <View style={styles.cardTop}>
-              <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
-                <HugeiconsIcon icon={HeadphonesIcon} size={20} color={C.violet} strokeWidth={2} />
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>NEW</Text>
-              </View>
-            </View>
-            <Text style={styles.cardTitle}>AI Podcast</Text>
-            <Text style={styles.cardSub}>Listen to AI-generated{'\n'}podcasts on any topic.</Text>
-            <View style={styles.arrowRow}>
-              <View style={styles.arrowCircle}>
-                <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
-              </View>
-            </View>
-          </PremiumPressable>
-        </View>
-
-        {/* Right column: AI Role Play */}
-        <View style={styles.bentoRight}>
-          <PremiumPressable style={styles.cardDark} pressScale={0.97} onPress={() => router.push("/roleplay")}>
-            <LinearGradient
-              colors={[C.rpStart, C.rpEnd]}
-              style={styles.rolePlayGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            >
-              <View style={styles.cardTop}>
-                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]}>
-                  <HugeiconsIcon icon={MaskTheater02Icon} size={20} color="#FFF" strokeWidth={2} />
+        {/* Side-by-Side Row (AI Podcast and AI Role Play) */}
+        <View style={styles.bentoRow}>
+          {(() => {
+            const bentoCards = [
+              <PremiumPressable key="podcast" style={[styles.cardWhite, styles.bentoHalfCard]} pressScale={0.97} onPress={() => router.push("/podcast")}>
+                <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
+                  <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
+                    <HugeiconsIcon icon={HeadphonesIcon} size={20} color={C.violet} strokeWidth={2} />
+                  </View>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
+                  </View>
                 </View>
-                <View style={styles.hotBadge}>
-                  <Text style={styles.hotBadgeText}>HOT</Text>
+                <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.podcastTitle")}</Text>
+                <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>{t("games.podcastSub")}</Text>
+                <View style={[styles.arrowRow, isRtl ? { alignItems: 'flex-start' } : { alignItems: 'flex-end' }]}>
+                  <View style={[styles.arrowCircle, isRtl && { transform: [{ rotate: "180deg" }] }]}>
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+                  </View>
                 </View>
-              </View>
+              </PremiumPressable>,
 
-              <Text style={styles.rpTitle}>AI Role Play</Text>
-              <Text style={styles.rpSub}>
-                Live conversations in{'\n'}real-world scenarios.
-              </Text>
+              <PremiumPressable key="roleplay" style={[styles.cardDark, styles.bentoHalfCard]} pressScale={0.97} onPress={() => router.push("/roleplay")}>
+                <LinearGradient
+                  colors={[C.rpStart, C.rpEnd]}
+                  style={styles.rolePlayGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                >
+                  <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
+                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]}>
+                      <HugeiconsIcon icon={MaskTheater02Icon} size={20} color="#FFF" strokeWidth={2} />
+                    </View>
+                    <View style={styles.hotBadge}>
+                      <Text style={styles.hotBadgeText}>{t("games.badgeHot")}</Text>
+                    </View>
+                  </View>
 
-              <View style={styles.arrowRow}>
-                <View style={[styles.arrowCircle, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
-                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} color="#FFF" />
-                </View>
-              </View>
-            </LinearGradient>
-          </PremiumPressable>
+                  <Text style={[styles.rpTitle, isRtl && { textAlign: 'right' }]}>{t("games.rolePlayTitle")}</Text>
+                  <Text style={[styles.rpSub, isRtl && { textAlign: 'right' }]}>
+                    {t("games.rolePlaySub")}
+                  </Text>
+
+                  <View style={[styles.arrowRow, isRtl ? { alignItems: 'flex-start' } : { alignItems: 'flex-end' }]}>
+                    <View style={[styles.arrowCircle, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }, isRtl && { transform: [{ rotate: "180deg" }] }]}>
+                      <HugeiconsIcon icon={ArrowRight01Icon} size={14} color="#FFF" />
+                    </View>
+                  </View>
+                </LinearGradient>
+              </PremiumPressable>
+            ];
+            return isRtl ? bentoCards.reverse() : bentoCards;
+          })()}
         </View>
       </View>
 
       {/* ── Reading Practice (full width) ── */}
-      <PremiumPressable style={styles.readingCard} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
+      <PremiumPressable style={[styles.readingCard, isRtl && { flexDirection: 'row-reverse' }]} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
         <View style={styles.readingLeft}>
-          <View style={styles.cardTop}>
+          <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
             <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
               <HugeiconsIcon icon={BookOpen02Icon} size={20} color={C.blue} strokeWidth={2} />
             </View>
           </View>
-          <Text style={styles.cardTitle}>Reading Practice</Text>
-          <Text style={styles.cardSub}>
-            Read paragraphs out loud and{'\n'}improve pronunciation & fluency.
+          <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.paragraphSpeechTitle")}</Text>
+          <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>
+            {t("games.paragraphSpeechSub")}
           </Text>
         </View>
-        <View style={styles.readingRight}>
-          <View style={styles.readingBadgePos}>
+        <View style={[styles.readingRight, isRtl && { alignItems: 'flex-start' }]}>
+          <View style={[styles.readingBadgePos, isRtl ? { right: undefined, left: 0 } : { right: 0, left: undefined }]}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>NEW</Text>
+              <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
             </View>
           </View>
           {/* Book illustration — Bolder, playful book */}
-          <View style={styles.readingBookIllustration}>
+          <View style={[styles.readingBookIllustration, isRtl ? { marginLeft: 8, marginRight: 0 } : { marginRight: 8, marginLeft: 0 }]}>
             <HugeiconsIcon icon={BookOpen02Icon} size={42} color={C.violet} strokeWidth={1.8} />
             {/* Chat dots decoration */}
             <View style={styles.readingDots}>
@@ -288,8 +279,8 @@ export function GamesScreen() {
               <View style={[styles.chatDot, { backgroundColor: C.violet, opacity: 0.4 }]} />
             </View>
           </View>
-          <View style={styles.readingArrowPos}>
-            <View style={styles.arrowCircle}>
+          <View style={[styles.readingArrowPos, isRtl ? { right: undefined, left: 0 } : { right: 0, left: undefined }]}>
+            <View style={[styles.arrowCircle, isRtl && { transform: [{ rotate: "180deg" }] }]}>
               <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
             </View>
           </View>
@@ -297,83 +288,92 @@ export function GamesScreen() {
       </PremiumPressable>
 
       {/* ── Bottom 2-col: AI Teacher + Slang Dictionary ── */}
-      <View style={styles.bottomGrid}>
-        <PremiumPressable style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
-          <View style={styles.cardTop}>
-            <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
-              <HugeiconsIcon icon={TeacherIcon} size={20} color={C.violet} strokeWidth={2} />
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>NEW</Text>
-            </View>
-          </View>
-          <Text style={styles.cardTitle}>AI Teacher</Text>
-          <Text style={styles.cardSub}>IELTS-style writing &{'\n'}speaking practice.</Text>
-          <View style={styles.arrowRow}>
-            <View style={styles.arrowCircle}>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
-            </View>
-          </View>
-        </PremiumPressable>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.bottomScrollContainer}
+      >
+        {(() => {
+          const cards = [
+            <PremiumPressable key="teacher" style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
+              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
+                <View style={[styles.iconBox, { backgroundColor: '#F5F3FF' }]}>
+                  <HugeiconsIcon icon={TeacherIcon} size={20} color={C.violet} strokeWidth={2} />
+                </View>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
+                </View>
+              </View>
+              <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.teacherTitle")}</Text>
+              <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>{t("games.teacherSub")}</Text>
+              <View style={[styles.arrowRow, isRtl ? { alignItems: 'flex-start' } : { alignItems: 'flex-end' }]}>
+                <View style={[styles.arrowCircle, isRtl && { transform: [{ rotate: "180deg" }] }]}>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+                </View>
+              </View>
+            </PremiumPressable>,
 
-        <PremiumPressable style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/slang")}>
-          <View style={styles.cardTop}>
-            <View style={[styles.iconBox, { backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>
-              <Dictionary width={20} height={20} fill={C.indigo} />
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>NEW</Text>
-            </View>
-          </View>
-          <Text style={styles.cardTitle}>Slang Dictionary</Text>
-          <Text style={styles.cardSub}>Kurdish-to-English{'\n'}street slang.</Text>
-          <View style={styles.arrowRow}>
-            <View style={styles.arrowCircle}>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
-            </View>
-          </View>
-        </PremiumPressable>
-      </View>
+            <PremiumPressable key="slang" style={[styles.cardWhite, styles.bottomCard]} pressScale={0.97} onPress={() => router.push("/slang")}>
+              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
+                <View style={[styles.iconBox, { backgroundColor: '#EEF2FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>
+                  <Dictionary width={20} height={20} fill={C.indigo} />
+                </View>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
+                </View>
+              </View>
+              <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.slangTitle")}</Text>
+              <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>{t("games.slangSub")}</Text>
+              <View style={[styles.arrowRow, isRtl ? { alignItems: 'flex-start' } : { alignItems: 'flex-end' }]}>
+                <View style={[styles.arrowCircle, isRtl && { transform: [{ rotate: "180deg" }] }]}>
+                  <HugeiconsIcon icon={ArrowRight01Icon} size={14} color={C.sub} />
+                </View>
+              </View>
+            </PremiumPressable>
+          ];
+          return isRtl ? cards.reverse() : cards;
+        })()}
+      </ScrollView>
 
       {/* ── Your Progress ── */}
       <View style={styles.progressCard}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Your Progress</Text>
+        <View style={[styles.progressHeader, isRtl && { flexDirection: 'row-reverse' }]}>
+          <Text style={[styles.progressTitle, isRtl && { textAlign: 'right' }]}>{t("games.yourProgress")}</Text>
           <PremiumPressable hitSlop={12} pressScale={0.95}>
-            <Text style={styles.viewAll}>View all  {'>'}</Text>
+            <Text style={styles.viewAll}>{t("games.viewAll")}  {isRtl ? '<' : '>'}</Text>
           </PremiumPressable>
         </View>
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
+        <View style={[styles.statsGrid, isRtl && { flexDirection: 'row-reverse' }]}>
+          <View style={[styles.statItem, isRtl && { flexDirection: 'row-reverse' }]}>
             <HugeiconsIcon icon={FireIcon} size={22} color={C.orange} />
-            <View style={styles.statText}>
-              <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
+            <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 10 } : { marginLeft: 10, marginRight: 0 }]}>
+              <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>12</Text>
+              <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]}>{t("games.dayStreak")}</Text>
             </View>
           </View>
 
-          <View style={styles.statItem}>
+          <View style={[styles.statItem, isRtl && { flexDirection: 'row-reverse' }]}>
             <HugeiconsIcon icon={StarIcon} size={22} color={C.amber} />
-            <View style={styles.statText}>
-              <Text style={styles.statValue}>4,250</Text>
-              <Text style={styles.statLabel}>XP Earned</Text>
+            <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 10 } : { marginLeft: 10, marginRight: 0 }]}>
+              <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>4,250</Text>
+              <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]}>{t("games.xpEarned")}</Text>
             </View>
           </View>
 
-          <View style={styles.statItem}>
+          <View style={[styles.statItem, isRtl && { flexDirection: 'row-reverse' }]}>
             <HugeiconsIcon icon={Mic01Icon} size={22} color={C.blue} />
-            <View style={styles.statText}>
-              <Text style={styles.statValue}>36</Text>
-              <Text style={styles.statLabel}>Conversations</Text>
+            <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 10 } : { marginLeft: 10, marginRight: 0 }]}>
+              <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>36</Text>
+              <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]}>{t("games.conversations")}</Text>
             </View>
           </View>
 
-          <View style={styles.statItem}>
+          <View style={[styles.statItem, isRtl && { flexDirection: 'row-reverse' }]}>
             <HugeiconsIcon icon={Diamond01Icon} size={22} color={C.violet} />
-            <View style={styles.statText}>
-              <Text style={styles.statValue}>8</Text>
-              <Text style={styles.statLabel}>Badges</Text>
+            <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 10 } : { marginLeft: 10, marginRight: 0 }]}>
+              <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>8</Text>
+              <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]}>{t("games.badges")}</Text>
             </View>
           </View>
         </View>
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 22,
-    minHeight: 145,
+    height: 145,
     flexDirection: 'row',
     position: 'relative',
     overflow: 'visible',
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   goalLeft: {
     flex: 1,
-    paddingRight: 10,
+    paddingRight: 110,
   },
   goalHeaderRow: {
     flexDirection: 'row',
@@ -556,6 +556,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
     marginBottom: 8,
+    flexDirection: 'row',
   },
   goalProgressFill: {
     height: '100%',
@@ -576,7 +577,7 @@ const styles = StyleSheet.create({
     width: 190,
     height: 160,
     position: 'absolute',
-    bottom: -22,
+    bottom: -10,
     right: -16,
   },
 
@@ -641,7 +642,11 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderRadius: 22,
     padding: 16,
-    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderBottomWidth: 4.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.04 }),
   },
   cardTop: {
     flexDirection: 'row',
@@ -698,7 +703,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: 'hidden',
     backgroundColor: C.rpEnd,
-    ...crossShadow({ color: C.indigoDark, offsetY: 12, blur: 28, opacity: 0.25 }),
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+    borderBottomWidth: 4.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.25)',
+    ...crossShadow({ color: C.indigoDark, offsetY: 8, blur: 20, opacity: 0.15 }),
   },
   rolePlayGradient: {
     borderRadius: 22,
@@ -739,7 +748,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginBottom: 14,
     minHeight: 125,
-    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderBottomWidth: 4.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.04 }),
   },
   readingLeft: {
     flex: 1,
@@ -801,7 +814,11 @@ const styles = StyleSheet.create({
     padding: 20,
     marginHorizontal: 24,
     marginBottom: 40,
-    ...crossShadow({ color: '#000', offsetY: 4, blur: 16, opacity: 0.03 }),
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderBottomWidth: 4.5,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.04 }),
   },
   progressHeader: {
     flexDirection: 'row',
@@ -843,5 +860,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: C.sub,
     fontWeight: '500',
+  },
+  bentoContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 14,
+    gap: 14,
+  },
+  bentoRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  bentoHalfCard: {
+    flex: 1,
+  },
+  bottomScrollContainer: {
+    paddingHorizontal: 24,
+    gap: 14,
+    marginBottom: 24,
   },
 });

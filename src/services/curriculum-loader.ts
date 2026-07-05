@@ -40,7 +40,10 @@ export async function fetchRemoteCurriculum(mode: LessonPathMode): Promise<UnitB
 }
 
 export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
-
+  // Normal mode has a bundled fallback and should always use it
+  if (mode === "normal") {
+    return getBundledUnits("normal");
+  }
 
   // For kids and street modes, we ONLY load from local storage cache (downloaded assets)
   try {
@@ -53,11 +56,6 @@ export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
     }
   } catch {
     /* ignore and return empty */
-  }
-
-  // Normal mode has a bundled fallback
-  if (mode === "normal") {
-    return getBundledUnits("normal");
   }
 
   // If not downloaded yet (not in cache), return an empty array to make the path inactive

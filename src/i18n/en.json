@@ -82,7 +82,14 @@
     "slangTitle": "Slang Dictionary",
     "slangSub": "Kurdish-to-English street slang & idioms",
     "badgeNew": "NEW",
-    "badgeHot": "HOT"
+    "badgeHot": "HOT",
+    "timeToLearn": "Time to learn!",
+    "reachGoal": "Let's reach your daily goal.",
+    "yourProgress": "Your Progress",
+    "xpEarned": "XP Earned",
+    "dayStreak": "Day Streak",
+    "conversations": "Conversations",
+    "badges": "Badges"
   },
   "slang": {
     "title": "Street Dictionary",
@@ -337,19 +344,24 @@
       "unit12": "Unit 12: Idioms & Expressions"
     },
     "normal": {
-      "unit1": "Unit 1: Everyday Essentials",
-      "unit2": "Unit 2: Social & Daily Life",
-      "unit3": "Unit 3: Work & Business",
-      "unit4": "Unit 4: Deep Conversations",
-      "unit5": "Unit 5: Special Encounters",
-      "unit6": "Unit 6: Travel & Exploring",
-      "unit7": "Unit 7: Idioms & Natural Slang",
-      "unit8": "Unit 8: Digital Life",
-      "unit9": "Unit 9: Relationships & Feelings",
-      "unit10": "Unit 10: Health & Emergencies",
-      "unit11": "Unit 11: Money & Shopping",
-      "unit12": "Unit 12: Real-World Mastery",
-      "unit13": "Unit 13: Opinions & Confidence"
+      "unit1": "Unit 1: Basic Greetings & Introductions",
+      "unit2": "Unit 2: Elementary Situations",
+      "unit3": "Unit 3: Everyday Essentials",
+      "unit4": "Unit 4: Money & Shopping",
+      "unit5": "Unit 5: Travel & Exploring",
+      "unit6": "Unit 6: Food, Dining, & Storytelling",
+      "unit7": "Unit 7: Social & Daily Life",
+      "unit8": "Unit 8: Relationships & Feelings",
+      "unit9": "Unit 9: Digital Life",
+      "unit10": "Unit 10: Logic, Plans, & Hypotheticals",
+      "unit11": "Unit 11: Work & Business",
+      "unit12": "Unit 12: Health & Emergencies",
+      "unit13": "Unit 13: Opinions & Confidence",
+      "unit14": "Unit 14: Science, Media, & Modern Issues",
+      "unit15": "Unit 15: Idioms & Natural Slang",
+      "unit16": "Unit 16: Deep Conversations",
+      "unit17": "Unit 17: Real-World Mastery",
+      "unit18": "Unit 18: Special Encounters"
     },
     "kids": {
       "unit1": "Unit 1: Animals",

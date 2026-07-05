@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 export default function SettingsRoute() {
   return (
-    <ScreenOpeningShell variant="fade">
+    <ScreenOpeningShell variant="settings">
       <SettingsScreen />
     </ScreenOpeningShell>
   );

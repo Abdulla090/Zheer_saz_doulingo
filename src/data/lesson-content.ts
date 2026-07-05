@@ -674,7 +674,7 @@ function buildLessonQuestionsFromBank(
     });
   }
 
-  // 7. Paragraph Speech (if present, or fallback)
+  // 7. Paragraph Speech (if present, or fallback for advanced units)
   if (lesson.paragraphSpeeches && lesson.paragraphSpeeches.length > 0) {
     for (const ps of lesson.paragraphSpeeches) {
       questions.push({
@@ -685,19 +685,43 @@ function buildLessonQuestionsFromBank(
       });
     }
   } else {
-    // Fallback paragraph for hardcoded lessons so Practice games don't crash/fallback
-    questions.push({
-      type: "paragraph_speech",
-      mode: "practice",
-      paragraphs: [
-        "Welcome to your first reading practice. Learning English is fun and easy when you practice every day.",
-        "Take a deep breath, read slowly, and try to pronounce each word clearly. You are doing a great job!"
-      ],
-      xp: 30,
-    });
+    // Only add fallback reading practice for unit index >= 2 (Unit 3+)
+    // to avoid confusing absolute beginners in Unit 1 (index 0) and Unit 2 (index 1)
+    if (unitIndex >= 2) {
+      questions.push({
+        type: "paragraph_speech",
+        mode: "practice",
+        paragraphs: [
+          "Welcome to your first reading practice. Learning English is fun and easy when you practice every day.",
+          "Take a deep breath, read slowly, and try to pronounce each word clearly. You are doing a great job!"
+        ],
+        xp: 30,
+      });
+    }
   }
 
-  return shuffle(questions, seed + 99);
+  let result = shuffle(questions, seed + 99);
+
+  // If this is Unit 1, Lesson 1 (normal path), ensure the first game is a pair_match
+  if (mode === "normal" && unitIndex === 0 && lessonIndex === 0) {
+    const firstQ = result[0];
+    if (firstQ && firstQ.type !== "pair_match") {
+      const pairMatchIdx = result.findIndex((q) => q.type === "pair_match");
+      if (pairMatchIdx !== -1) {
+        const pairMatchQ = result[pairMatchIdx];
+        // Remove the pair match question from its current index
+        result.splice(pairMatchIdx, 1);
+        // Remove the first (harder) question
+        result.shift();
+        // Insert pair match at the beginning
+        result.unshift(pairMatchQ);
+        // Push the harder question to the end
+        result.push(firstQ);
+      }
+    }
+  }
+
+  return result;
 }
 
 /** Preview games from a draft lesson bank (admin). */

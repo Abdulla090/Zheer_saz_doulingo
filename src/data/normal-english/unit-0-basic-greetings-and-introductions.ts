@@ -1,279 +1,658 @@
 import { UnitBank } from "../types";
 
-// ── Unit 0: Basic Greetings & Introductions — 10 unique A1/A2 lessons ──────────────────────────
-// Simple, foundational vocabulary and daily phrases for absolute beginners.
+// ── Unit 1: Basic Greetings & Introductions — 10 lessons ──────────────────────────
+// Extremely basic, foundational English for absolute beginners, teaching core pronouns, verbs, and daily vocabulary in context.
 
 const normalUnit00: UnitBank = [
-
-  // Lesson 0: Basic Greetings
+  // Lesson 0: Basic Greetings & Hello
   {
-    topic: "Basic Greetings", topicKu: "سڵاوکردنی سەرەتایی", topicAr: "التحيات البسيطة",
+    topic: "Greetings & Hello", topicKu: "سڵاوکردن", topicAr: "التحيات والترحيب",
     words: [
-      { english: "Hello", kurdish: "سڵاو", arabic: "هلو" },
+      { english: "Hello", kurdish: "سڵاو", arabic: "مرحبا" },
       { english: "Good morning", kurdish: "بەیانیت باش", arabic: "صباح الخير" },
+      { english: "Good evening", kurdish: "ئێوارەت باش", arabic: "مساء الخير" },
       { english: "Goodbye", kurdish: "خوات لەگەڵ", arabic: "مع السلامة" },
-      { english: "Yes", kurdish: "بەڵێ", arabic: "اي" },
+      { english: "Yes", kurdish: "بەڵێ", arabic: "نعم" },
       { english: "No", kurdish: "نەخێر", arabic: "لا" },
+      { english: "Please", kurdish: "تکایە", arabic: "من فضلك" },
+      { english: "Thank you", kurdish: "سوپاس", arabic: "شكراً لك" },
     ],
     voices: [
-      { prompt: "بڵێ: بەیانیت باش", target: "Good morning.", targetKurdish: "بەیانیت باش.", promptAr: "قول صباح الخير", targetArabic: "صباح الخير." },
-      { prompt: "بڵێ: سڵاو، خوات لەگەڵ", target: "Hello, goodbye.", targetKurdish: "سڵاو، خوات لەگەڵ.", promptAr: "قول هلو، مع السلامة", targetArabic: "هلو، مع السلامة." },
+      { prompt: "بڵێ: سڵاو، بەیانیت باش", target: "Hello, good morning.", targetKurdish: "سڵاو، بەیانیت باش.", promptAr: "قول: مرحبا، صباح الخير", targetArabic: "مرحبا، صباح الخير." },
+      { prompt: "بەڕێزەوە بڵێ: نەخێر، سوپاس", target: "No, thank you.", targetKurdish: "نەخێر، سوپاس.", promptAr: "قل بأدب: لا، شكراً", targetArabic: "لا، شكراً لك." },
+      { prompt: "بەڕێزەوە بڵێ: بەڵێ، تکایە", target: "Yes, please.", targetKurdish: "بەڵێ، تکایە.", promptAr: "قل بأدب: نعم، من فضلك", targetArabic: "نعم، من فضلك." },
     ],
     sentences: [
-      { english: ["Good", "morning"], kurdish: "بەیانیت باش", arabic: "صباح الخير" },
-      { english: ["Hello", "goodbye"], kurdish: "سڵاو، خوات لەگەڵ", arabic: "هلو، مع السلامة" },
+      { english: ["Hello", "good", "evening", "my", "friend"], kurdish: "سڵاو، ئێوارەت باش هاوڕێم", arabic: "مرحبا، مساء الخير يا صديقي" },
+      { english: ["Goodbye", "and", "thank", "you", "very", "much"], kurdish: "خوات لەگەڵ و زۆر سوپاس", arabic: "مع السلامة وشكراً جزيلاً لك" },
+      { english: ["Yes", "please", "come", "in"], kurdish: "بەڵێ، تکایە وەرە ژوورەوە", arabic: "نعم، تفضل بالدخول من فضلك" },
+      { english: ["No", "thank", "you", "I", "am", "fine"], kurdish: "نەخێر، سوپاس من باشم", arabic: "لا، شكراً لك أنا بخير" },
     ],
     fillBlanks: [
-      { parts: ["Good", "!"], hint: "بەیانیت باش", answer: "morning", wrongs: ["bye", "night", "hello"], arabicHint: "صباح الخير", arabicParts: ["صباح", "!"], arabicAnswer: "الخير", arabicWrongs: ["سلام", "ليل", "هلو"] },
-      { parts: ["Hello,", "!"], hint: "سڵاو، خوات لەگەڵ", answer: "goodbye", wrongs: ["yes", "no", "morning"], arabicHint: "هلو، مع السلامة", arabicParts: ["هلو،", "!"], arabicAnswer: "مع السلامة", arabicWrongs: ["اي", "لا", "صباح"] },
+      { parts: ["Good", ", my friend!"], hint: "بەیانیت باش، هاوڕێم!", answer: "morning", wrongs: ["evening", "goodbye", "please"], arabicHint: "صباح الخير، يا صديقي!", arabicParts: ["صباح", "، يا صديقي!"], arabicAnswer: "الخير", arabicWrongs: ["الخير", "الخير", "الخير"] },
+      { parts: ["No,", "you."], hint: "نەخێر، سوپاس.", answer: "thank", wrongs: ["please", "hello", "yes"], arabicHint: "لا، شكراً لك.", arabicParts: ["لا،", "لك."], arabicAnswer: "شكراً", arabicWrongs: ["من فضلك", "مرحبا", "نعم"] },
+      { parts: ["Yes,", "."], hint: "بەڵێ، تکایە.", answer: "please", wrongs: ["goodbye", "no", "thank"], arabicHint: "نعم، من فضلك.", arabicParts: ["نعم،", "."], arabicAnswer: "من فضلك", arabicWrongs: ["مع السلامة", "لا", "شكراً"] },
     ],
     conversations: [
-      { situation: "سڵاوکردن لە هاوڕێیەک", theyAsk: "Hello!", correct: "Hi! Good morning.", wrong1: "Goodbye.", wrong2: "No, thanks.", wrong3: "Yes, please.", explanation: "سڵاو بە سڵاو یان بەیانیت باش وەڵام دەدرێتەوە.", situationAr: "الترحيب بصديق", explanationAr: "التحية ترد بالتحية أو صباح الخير.", theyAskAr: "هلو!", correctAr: "هلو! صباح الخير.", wrong1Ar: "مع السلامة.", wrong2Ar: "لا شكراً.", wrong3Ar: "اي فدوة." },
-    ],
+      {
+        situation: "سڵاوکردنی بەیانیان لە هاوڕێیەک",
+        theyAsk: "Good morning! How are you?",
+        correct: "Good morning! I am fine, thank you.",
+        wrong1: "Goodbye, see you.",
+        wrong2: "No, please.",
+        wrong3: "Good evening, friend.",
+        explanation: "بۆ سڵاوی بەیانیان بە 'Good morning' وەڵام دەدەیتەوە.",
+        situationAr: "التحية الصباحية لصديق",
+        theyAskAr: "صباح الخير! كيف حالك؟",
+        correctAr: "صباح الخير! أنا بخير، شكراً لك.",
+        wrong1Ar: "مع السلامة، أراك لاحقاً.",
+        wrong2Ar: "لا، من فضلك.",
+        wrong3Ar: "مساء الخير يا صديقي.",
+        explanationAr: "للتحية الصباحية نرد بـ 'Good morning'."
+      },
+      {
+        situation: "ڕەتکردنەوەی پێشنیاری چا یان قاوە بە ئەدەبەوە",
+        theyAsk: "Do you want some tea?",
+        correct: "No, thank you. I am fine.",
+        wrong1: "Yes, goodbye.",
+        wrong2: "Please hello.",
+        wrong3: "Good evening.",
+        explanation: "'No, thank you' جوانترین ڕێگەیە بۆ ڕەتکردنەوەی پێشنیار بە ئەدەبەوە.",
+        situationAr: "رفض عرض شرب الشاي بأدب",
+        theyAskAr: "هل تريد بعض الشاي؟",
+        correctAr: "لا، شكراً لك. أنا بخير.",
+        wrong1Ar: "نعم، مع السلامة.",
+        wrong2Ar: "من فضلك مرحبا.",
+        wrong3Ar: "مساء الخير.",
+        explanationAr: "'No, thank you' هي الطريقة المثلى لرفض العروض بأدب."
+      }
+    ]
   },
 
-  // Lesson 1: Introducing Yourself
+  // Lesson 1: Introducing Yourself (Core Grammar: Pronouns & To Be)
   {
-    topic: "Introducing Yourself", topicKu: "خۆناساندن", topicAr: "التعريف بالنفس",
+    topic: "Introducing Yourself", topicKu: "ناساندنی خۆت", topicAr: "التعريف بالنفس",
     words: [
-      { english: "What is your name?", kurdish: "ناوت چییە؟", arabic: "شنو اسمك؟" },
-      { english: "My name is", kurdish: "ناوی من...", arabic: "اسمي..." },
-      { english: "Nice to meet you", kurdish: "خۆشحاڵم بە ناسینت", arabic: "فرصة سعيدة" },
-      { english: "Friend", kurdish: "هاوڕێ", arabic: "صديق" },
-      { english: "Teacher", kurdish: "مامۆستا", arabic: "استاذ" },
+      { english: "Name", kurdish: "ناو", arabic: "اسم" },
+      { english: "I am", kurdish: "من ...م (بۆ خۆناساندن)", arabic: "أنا" },
+      { english: "You are", kurdish: "تۆ ...یت", arabic: "أنت" },
+      { english: "He is", kurdish: "ئەو (نێر) ...ە", arabic: "هو" },
+      { english: "She is", kurdish: "ئەو (مێ) ...ە", arabic: "هي" },
+      { english: "My name", kurdish: "ناوی من", arabic: "اسمي" },
+      { english: "Your name", kurdish: "ناوی تۆ", arabic: "اسمك" },
+      { english: "Nice to meet you", kurdish: "خۆشحاڵم بە ناسینت", arabic: "سررت بلقائك" },
     ],
     voices: [
-      { prompt: "بڵێ: ناوم ئەحمەدە", target: "My name is Ahmed.", targetKurdish: "ناوی من ئەحمەدە.", promptAr: "قول اسمي احمد", targetArabic: "اسمي احمد." },
-      { prompt: "بڵێ: خۆشحاڵم بە ناسینت", target: "Nice to meet you.", targetKurdish: "خۆشحاڵم بە ناسینت.", promptAr: "قول فرصة سعيدة", targetArabic: "فرصة سعيدة." },
+      { prompt: "بڵێ ناوت چییە و خۆت بناسێنە", target: "My name is John. Nice to meet you.", targetKurdish: "ناوی من جۆنە. خۆشحاڵم بە ناسینت.", promptAr: "قل اسمي جون وسررت بلقائك", targetArabic: "اسمي جون. سررت بلقائك." },
+      { prompt: "بڵێ ئەو هاوڕێی منە", target: "She is my friend.", targetKurdish: "ئەو هاوڕێی منە.", promptAr: "قل هي صديقتي", targetArabic: "هي صديقتي." },
+      { prompt: "بڵێ ئەو مامۆستایە", target: "He is a teacher.", targetKurdish: "ئەو مامۆستایە.", promptAr: "قل هو معلم", targetArabic: "هو معلم." },
     ],
     sentences: [
-      { english: ["My", "name", "is", "Ahmed"], kurdish: "ناوی من ئەحمەدە", arabic: "اسمي احمد" },
-      { english: ["Nice", "to", "meet", "you"], kurdish: "خۆشحاڵم بە ناسینت", arabic: "فرصة سعيدة" },
+      { english: ["What", "is", "your", "name"], kurdish: "ناوت چییە؟", arabic: "ما هو اسمك؟" },
+      { english: ["I", "am", "a", "student", "and", "she", "is", "a", "teacher"], kurdish: "من قوتابیم و ئەویش مامۆستایە", arabic: "أنا طالب وهي معلمة" },
+      { english: ["Nice", "to", "meet", "you", "my", "friend"], kurdish: "خۆشحاڵم بە ناسینت، هاوڕێم", arabic: "سررت بلقائك يا صديقي" },
+      { english: ["He", "is", "my", "brother", "and", "she", "is", "my", "sister"], kurdish: "ئەو برای منە و ئەویش خوشکی منە", arabic: "هو أخي وهي أختي" },
     ],
     fillBlanks: [
-      { parts: ["My", "is Ahmed."], hint: "ناوی من ئەحمەدە", answer: "name", wrongs: ["friend", "teacher", "meet"], arabicHint: "اسمي احمد", arabicParts: ["اسمي", "احمد."], arabicAnswer: "اسمي", arabicWrongs: ["صديقي", "استاذي", "فرصة"] },
-      { parts: ["Nice to", "you."], hint: "خۆشحاڵم بە ناسینت", answer: "meet", wrongs: ["name", "friend", "say"], arabicHint: "فرصة سعيدة", arabicParts: ["فرصة", "بیک."], arabicAnswer: "سعيدة", arabicWrongs: ["شلونك", "صديقي", "استاذ"] },
+      { parts: ["My", "is John."], hint: "ناوی من جۆنە.", answer: "name", wrongs: ["teacher", "student", "nice"], arabicHint: "اسمي جون.", arabicParts: ["اسمي", "جون."], arabicAnswer: "اسمي", arabicWrongs: ["معلم", "طالب", "جميل"] },
+      { parts: ["Nice to", "you."], hint: "خۆشحاڵم بە ناسینت.", answer: "meet", wrongs: ["name", "friend", "is"], arabicHint: "سررت بلقائك.", arabicParts: ["سررت بـ", "ك."], arabicAnswer: "لقاء", arabicWrongs: ["اسم", "صديق", "يكون"] },
+      { parts: ["She", "my friend."], hint: "ئەو هاوڕێی منە.", answer: "is", wrongs: ["am", "are", "meet"], arabicHint: "هي صديقتي.", arabicParts: ["هي", "صديقتي."], arabicAnswer: "صديقتي", arabicWrongs: ["أنا", "تكون", "لقاء"] },
     ],
     conversations: [
-      { situation: "کەسێکی نوێ خۆت پێ دەناسێنێت", theyAsk: "My name is Sara. What is your name?", correct: "My name is Karwan. Nice to meet you!", wrong1: "Goodbye Sara.", wrong2: "Good morning friend.", wrong3: "No, thank you.", explanation: "کاتێک کەسێک ناوی خۆی دەڵێت، تۆش ناوی خۆت بڵێ و پاشان بڵێ خۆشحاڵم بە ناسینت.", situationAr: "شخص جديد يعرف نفسه لك", explanationAr: "عندما يذكر شخص اسمه، اذكر اسمك وقل فرصة سعيدة.", theyAskAr: "اسمي سارة. شنو اسمك؟", correctAr: "اسمي كاروان. فرصة سعيدة!", wrong1Ar: "مع السلامة سارة.", wrong2Ar: "صباح الخير صديقي.", wrong3Ar: "لا شكراً." },
-    ],
+      {
+        situation: "خۆناساندن بە هاوپۆلێکی نوێ",
+        theyAsk: "Hello! My name is Sarah. What is your name?",
+        correct: "Hi Sarah! My name is Karwan. Nice to meet you.",
+        wrong1: "She is my friend.",
+        wrong2: "Goodbye, my name is John.",
+        wrong3: "No, thank you.",
+        explanation: "لەسەرەتای خۆناساندندا دەڵێیت 'My name is...' و لە کۆتاییدا دەڵێیت 'Nice to meet you'.",
+        situationAr: "التعريف بالنفس لزميل جديد",
+        theyAskAr: "مرحبا! اسمي سارة. ما هو اسمك؟",
+        correctAr: "مرحبا سارة! اسمي كاروان. سررت بلقائك.",
+        wrong1Ar: "هي صديقتي.",
+        wrong2Ar: "مع السلامة، اسمي جون.",
+        wrong3Ar: "لا، شكراً لك.",
+        explanationAr: "في بداية التعريف بالذات تقول 'My name is...' وفي النهاية 'Nice to meet you'."
+      },
+      {
+        situation: "ناساندنی هاوڕێیەک بە کەسێکی تر",
+        theyAsk: "Who is the boy next to you?",
+        correct: "He is my brother. His name is Ahmed.",
+        wrong1: "Nice to meet you brother.",
+        wrong2: "I am a student.",
+        wrong3: "Yes, please.",
+        explanation: "بۆ ناساندنی کەسێکی تر دەڵێیت 'He is...' بۆ نێر و 'She is...' بۆ مێ.",
+        situationAr: "تعريف شخص بصديقك",
+        theyAskAr: "من الولد الذي بجانبك؟",
+        correctAr: "هو أخي. اسمه أحمد.",
+        wrong1Ar: "سررت بلقائك يا أخي.",
+        wrong2Ar: "أنا طالب.",
+        wrong3Ar: "نعم، من فضلك.",
+        explanationAr: "لتعريف شخص آخر نستخدم 'He is...' للمذكر و 'She is...' للمؤنث."
+      }
+    ]
   },
 
-  // Lesson 2: How Are You?
+  // Lesson 2: Basic Feelings & State
   {
-    topic: "How Are You?", topicKu: "چۆنێتیی باشبوون", topicAr: "كيف حالك؟",
+    topic: "Feelings & State", topicKu: "هەستەکان", topicAr: "المشاعر والحالة",
     words: [
-      { english: "How are you?", kurdish: "چۆنی؟", arabic: "شلونك؟" },
-      { english: "I am fine", kurdish: "من باشم", arabic: "اني زين" },
-      { english: "Thanks", kurdish: "سوپاس", arabic: "شكراً" },
-      { english: "And you?", kurdish: "ئەی تۆ؟", arabic: "وانت؟" },
-      { english: "Very good", kurdish: "زۆر باش", arabic: "كلش زين" },
+      { english: "Fine", kurdish: "باشم (ئاساییم)", arabic: "بخير" },
+      { english: "Happy", kurdish: "دڵخۆش", arabic: "سعيد" },
+      { english: "Sad", kurdish: "دڵتەنگ", arabic: "حزين" },
+      { english: "Tired", kurdish: "ماندوو", arabic: "تعبان" },
+      { english: "Angry", kurdish: "توڕە", arabic: "غاضب" },
+      { english: "Good", kurdish: "باش", arabic: "جيد" },
+      { english: "Bad", kurdish: "خراپ", arabic: "سيء" },
+      { english: "Okay", kurdish: "ئاسایی (باش)", arabic: "بخير (لا بأس)" },
     ],
     voices: [
-      { prompt: "بپرس: چۆنیت؟", target: "How are you?", targetKurdish: "چۆنی؟", promptAr: "اسأل شلونك", targetArabic: "شلونك؟" },
-      { prompt: "بڵێ: من باشم، سوپاس", target: "I am fine, thanks.", targetKurdish: "من باشم، سوپاس.", promptAr: "قول اني زين، شكراً", targetArabic: "اني زين، شكراً." },
+      { prompt: "بڵێ من باشم، سوپاس", target: "I am fine, thank you.", targetKurdish: "من باشم، سوپاس.", promptAr: "قل أنا بخير، شكراً لك", targetArabic: "أنا بخير، شكراً لك." },
+      { prompt: "بڵێ ماندوویت", target: "I am tired today.", targetKurdish: "من ئەمڕۆ ماندووم.", promptAr: "قل أنا تعبان اليوم", targetArabic: "أنا تعبان اليوم." },
+      { prompt: "بڵێ ئەو دڵخۆشە", target: "She is very happy.", targetKurdish: "ئەو زۆر دڵخۆشە.", promptAr: "قل هي سعيدة جداً", targetArabic: "هي سعيدة جداً." },
     ],
     sentences: [
-      { english: ["How", "are", "you"], kurdish: "چۆنی؟", arabic: "شلونك؟" },
-      { english: ["I", "am", "fine", "thanks"], kurdish: "من باشم، سوپاس", arabic: "اني زين، شكراً" },
+      { english: ["How", "are", "you", "today", "my", "friend"], kurdish: "چۆنیت ئەمڕۆ هاوڕێم؟", arabic: "كيف حالك اليوم يا صديقي؟" },
+      { english: ["I", "am", "sad", "because", "my", "dog", "is", "sick"], kurdish: "من دڵتەنگم چونکە سەگەکەم نەخۆشە", arabic: "أنا حزين لأن كلبي مريض" },
+      { english: ["Are", "you", "okay", "or", "are", "you", "angry"], kurdish: "تۆ باشیت یان توڕەیت؟", arabic: "هل أنت بخير أم أنت غاضب؟" },
+      { english: ["Everything", "is", "good", "thank", "you", "very", "much"], kurdish: "هەموو شتێک باشە، زۆر سوپاس", arabic: "كل شيء جيد، شكراً جزيلاً لك" },
     ],
     fillBlanks: [
-      { parts: ["I am", ", thanks."], hint: "من باشم، سوپاس", answer: "fine", wrongs: ["bad", "morning", "how"], arabicHint: "اني زين، شكراً", arabicParts: ["اني", "، شكراً."], arabicAnswer: "زين", arabicWrongs: ["مو زين", "الصبح", "شلونك"] },
-      { parts: ["How are", "?"], hint: "چۆنی؟", answer: "you", wrongs: ["fine", "thanks", "me"], arabicHint: "شلونك؟", arabicParts: ["شلون", "؟"], arabicAnswer: "ك", arabicWrongs: ["زين", "شكراً", "اني"] },
+      { parts: ["I am", ", thank you! And you?"], hint: "من باشم، سوپاس! ئەی تۆ؟", answer: "fine", wrongs: ["sad", "angry", "tired"], arabicHint: "أنا بخير، شكراً لك! وأنت؟", arabicParts: ["أنا", "، شكراً لك! وأنت؟"], arabicAnswer: "بخير", arabicWrongs: ["حزين", "غاضب", "تعبان"] },
+      { parts: ["She is crying; she must be", "."], hint: "ئەو دەگری؛ دەبێت دڵتەنگ بێت.", answer: "sad", wrongs: ["happy", "fine", "good"], arabicHint: "هي تبكي؛ لا بد أنها حزينة.", arabicParts: ["هي تبكي؛ لا بد أنها", "."], arabicAnswer: "حزينة", arabicWrongs: ["سعيدة", "بخير", "جيدة"] },
+      { parts: ["Are you", "after work?"], hint: "ئایا دوای کار ماندوویت؟", answer: "tired", wrongs: ["good", "happy", "okay"], arabicHint: "هل أنت تعبان بعد العمل؟", arabicParts: ["هل أنت", "بعد العمل؟"], arabicAnswer: "تعبان", arabicWrongs: ["جيد", "سعيد", "بخير"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک دەپرسێت چۆنیت", theyAsk: "How are you?", correct: "I am fine, thanks! And you?", wrong1: "Nice to meet you.", wrong2: "My name is Karwan.", wrong3: "Good morning.", explanation: "لە وەڵامی 'How are you' دەڵێیت باشم و سوپاس، و دەتوانیت بپرسی ئەی تۆ؟", situationAr: "صديق يسألك عن حالك", explanationAr: "في جواب شلونك تقول اني زين وشكراً وتسأل وانت شلونك؟", theyAskAr: "شلونك؟", correctAr: "اني زين، شكراً! وانت؟", wrong1Ar: "فرصة سعيدة.", wrong2Ar: "اسمي كاروان.", wrong3Ar: "صباح الخير." },
-    ],
+      {
+        situation: "پرسیارکردن لە بارودۆخی کەسێک",
+        theyAsk: "How are you doing today?",
+        correct: "I am doing well, thank you. And you?",
+        wrong1: "No, thank you.",
+        wrong2: "Goodbye, see you.",
+        wrong3: "Nice to meet you, I am tired.",
+        explanation: "لە وەڵامی 'How are you' دەڵێیت 'I am doing well' یان 'I am fine' و دەتوانیت بپرسیتەوە 'And you?'.",
+        situationAr: "السؤال عن حال شخص ما",
+        theyAskAr: "كيف حالك اليوم؟",
+        correctAr: "أنا بخير، شكراً لك. وأنت؟",
+        wrong1Ar: "لا، شكراً لك.",
+        wrong2Ar: "مع السلامة، أراك لاحقاً.",
+        wrong3Ar: "سررت بلقائك، أنا تعبان.",
+        explanationAr: "في جواب 'How are you' نقول 'I am fine' ونسأل المقابل عن حاله بـ 'And you?'."
+      },
+      {
+        situation: "بینینی هاوڕێیەک کە کێشەی هەیە",
+        theyAsk: "You look very tired.",
+        correct: "Yes, I had a very long day at work.",
+        wrong1: "Nice to meet you.",
+        wrong2: "Good morning, thank you.",
+        wrong3: "I am very happy and sad.",
+        explanation: "کاتێک کەسێک دەڵێت ماندوویت، دەتوانیت بڵێیت 'Yes' و هۆکارەکەی کورت بکەیتەوە.",
+        situationAr: "رؤية صديق يبدو عليه التعب",
+        theyAskAr: "تبدو تعباناً جداً.",
+        correctAr: "نعم، كان لدي يوم طويل جداً في العمل.",
+        wrong1Ar: "سررت بلقائك.",
+        wrong2Ar: "صباح الخير، شكراً لك.",
+        wrong3Ar: "أنا سعيد وحزين جداً.",
+        explanationAr: "عندما يلاحظ شخص تعبك، يمكنك تأكيد ذلك بـ 'Yes' وشرح السبب باختصار."
+      }
+    ]
   },
 
-  // Lesson 3: Numbers 1-10
+  // Lesson 3: Numbers & Age
   {
-    topic: "Numbers 1-10", topicKu: "ژمارەکان ١-١٠", topicAr: "الأرقام ١-١٠",
+    topic: "Numbers & Age", topicKu: "ژمارە و تەمەن", topicAr: "الأرقام والعمر",
     words: [
       { english: "One", kurdish: "یەک", arabic: "واحد" },
-      { english: "Two", kurdish: "دوو", arabic: "اثنين" },
-      { english: "Three", kurdish: "سێ", arabic: "تلاثة" },
+      { english: "Two", kurdish: "دوو", arabic: "اثنان" },
+      { english: "Three", kurdish: "سێ", arabic: "ثلاثة" },
+      { english: "Four", kurdish: "چوار", arabic: "أربعة" },
       { english: "Five", kurdish: "پێنج", arabic: "خمسة" },
       { english: "Ten", kurdish: "دە", arabic: "عشرة" },
+      { english: "Years old", kurdish: "ساڵ تەمەن", arabic: "سنة من العمر" },
+      { english: "How old", kurdish: "تەمەن چەند", arabic: "كم عمر" },
     ],
     voices: [
-      { prompt: "بڵێ: سێ پشیلە", target: "Three cats.", targetKurdish: "سێ پشیلە.", promptAr: "قول تلاث بزونات", targetArabic: "تلاث بزونات." },
-      { prompt: "بڵێ: پێنج سەگ", target: "Five dogs.", targetKurdish: "پێنج سەگ.", promptAr: "قول خمس چلیب", targetArabic: "خمس چلیب." },
+      { prompt: "بڵێ تەمەنت دە ساڵە", target: "I am ten years old.", targetKurdish: "تەمەنم دە ساڵە.", promptAr: "قل عمري عشر سنوات", targetArabic: "عمري عشر سنوات." },
+      { prompt: "بڵێ دوو پەرتووکت هەیە", target: "I have two books.", targetKurdish: "دوو پەرتووکم هەیە.", promptAr: "قل لدي كتابان", targetArabic: "لدي كتابان." },
+      { prompt: "بپرس تەمەنی چەندە", target: "How old is your brother?", targetKurdish: "تەمەنی براکەت چەندە؟", promptAr: "اسأل عن عمر أخيه", targetArabic: "كم عمر أخيك؟" },
     ],
     sentences: [
-      { english: ["I", "have", "three", "cats"], kurdish: "سێ پشیلەم هەیە", arabic: "عندي تلاث بزونات" },
-      { english: ["I", "see", "five", "dogs"], kurdish: "پێنج سەگ دەبینم", arabic: "دا اشوف خمس چلیب" },
+      { english: ["How", "old", "are", "you"], kurdish: "تەمەنت چەند ساڵە؟", arabic: "كم عمرك؟" },
+      { english: ["My", "sister", "is", "five", "years", "old"], kurdish: "خوشکەکەم تەمەنی پێنج ساڵە", arabic: "أختي تبلغ من العمر خمس سنوات" },
+      { english: ["I", "see", "three", "cats", "and", "four", "dogs"], kurdish: "سێ پشیلە و چوار سەگ دەبینم", arabic: "أرى ثلاثة قطط وأربعة كلاب" },
+      { english: ["One", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"], kurdish: "یەک، دوو، سێ، چوار، پێنج، شەش، حەوت، هەشت، نۆ، دە", arabic: "واحد، اثنان، ثلاثة، أربعة، خمسة، ستة، سبعة، ثمانية، تسعة، عشرة" },
     ],
     fillBlanks: [
-      { parts: ["I have", "dogs."], hint: "دوو سەگم هەیە", answer: "two", wrongs: ["one", "hello", "fine"], arabicHint: "عندي اثنين چلیب", arabicParts: ["عندي", "چلیب."], arabicAnswer: "اثنين", arabicWrongs: ["واحد", "هلو", "زين"] },
-      { parts: ["Three cats and", "dogs."], hint: "سێ پشیلە و دە سەگ", answer: "ten", wrongs: ["five", "name", "bye"], arabicHint: "تلاث بزونات وعشرة چلیب", arabicParts: ["تلاث بزونات و", "چلیب."], arabicAnswer: "عشرة", arabicWrongs: ["خمسة", "اسمي", "باي"] },
+      { parts: ["I am five", "old."], hint: "من تەمەنم پێنج ساڵە.", answer: "years", wrongs: ["old", "how", "brother"], arabicHint: "عمري خمس سنوات.", arabicParts: ["عمري خمس", "."], arabicAnswer: "سنوات", arabicWrongs: ["قديم", "كم", "أخي"] },
+      { parts: ["How", "are you?"], hint: "تەمەنت چەندە؟", answer: "old", wrongs: ["years", "name", "are"], arabicHint: "كم عمرك؟", arabicParts: ["كم", "ك؟"], arabicAnswer: "عمر", arabicWrongs: ["سنوات", "اسم", "تكون"] },
+      { parts: ["I have", "hands and ten fingers."], hint: "من دوو دەست و دە پەنجەم هەیە.", answer: "two", wrongs: ["one", "five", "years"], arabicHint: "لدي يدان وعشرة أصابع.", arabicParts: ["لدي", "يدان وعشرة أصابع."], arabicAnswer: "اثنان", arabicWrongs: ["واحد", "خمسة", "سنوات"] },
     ],
     conversations: [
-      { situation: "یەکێک ژمارەی ئاژەڵەکانت لێ دەپرسێت", theyAsk: "How many cats do you have?", correct: "I have two cats.", wrong1: "My name is Ahmed.", wrong2: "Good morning.", wrong3: "I am fine.", explanation: "کاتێک دەپرسرێت چەند، بە ژمارە وەڵام دەدەیتەوە: 'I have two cats.'", situationAr: "شخص يسألك عن عدد بزوناتك", explanationAr: "عند السؤال عن العدد، تجيب بالرقم: عندي اثنين بزونات.", theyAskAr: "كم بزونة عندك؟", correctAr: "عندي اثنين بزونات.", wrong1Ar: "اسمي احمد.", wrong2Ar: "صباح الخير.", wrong3Ar: "اني زين." },
-    ],
+      {
+        situation: "پرسیارکردن لە تەمەنی کەسێک",
+        theyAsk: "How old are you?",
+        correct: "I am twenty years old. And you?",
+        wrong1: "I am fine, thank you.",
+        wrong2: "My name is John.",
+        wrong3: "I have two hands.",
+        explanation: "وەڵامی دروست بۆ پرسیاری تەمەن بە ژمارە دەبێت 'I am... years old'.",
+        situationAr: "السؤال عن عمر شخص ما",
+        theyAskAr: "كم عمرك؟",
+        correctAr: "عمري عشرون سنة. وأنت؟",
+        wrong1Ar: "أنا بخير، شكراً لك.",
+        wrong2Ar: "اسمي جون.",
+        wrong3Ar: "لدي يدان.",
+        explanationAr: "الجواب الصحيح عن سؤال العمر يكون بالرقم وصيغة 'I am... years old'."
+      },
+      {
+        situation: "پرسیارکردن لە ژمارەی منداڵەکان",
+        theyAsk: "How many sisters do you have?",
+        correct: "I have three sisters and one brother.",
+        wrong1: "I am five years old.",
+        wrong2: "Nice to meet you.",
+        wrong3: "Yes, please.",
+        explanation: "وەڵامی پرسیاری 'How many' پێویستی بە ژمارە هەیە (three, one).",
+        situationAr: "السؤال عن عدد الأخوات",
+        theyAskAr: "كم أخت لديك؟",
+        correctAr: "لدي ثلاث أخوات وأخ واحد.",
+        wrong1Ar: "عمري خمس سنوات.",
+        wrong2Ar: "سررت بلقائك.",
+        wrong3Ar: "نعم، من فضلك.",
+        explanationAr: "الجواب عن سؤال 'How many' يتطلب استخدام الأرقام."
+      }
+    ]
   },
 
-  // Lesson 4: Colors
+  // Lesson 4: Everyday Objects
+  {
+    topic: "Everyday Objects", topicKu: "کەلوپەلی ڕۆژانە", topicAr: "الأشياء اليومية",
+    words: [
+      { english: "Book", kurdish: "پەرتووک (کتێب)", arabic: "كتاب" },
+      { english: "Pen", kurdish: "پێنوس", arabic: "قلم" },
+      { english: "Key", kurdish: "کلیل", arabic: "مفتاح" },
+      { english: "Phone", kurdish: "مۆبایل (تەلەفۆن)", arabic: "هاتف" },
+      { english: "Bag", kurdish: "جانتا", arabic: "حقيبة" },
+      { english: "Water", kurdish: "ئاو", arabic: "ماء" },
+      { english: "Bread", kurdish: "نان", arabic: "خبز" },
+      { english: "Coffee", kurdish: "قاوە", arabic: "قهوة" },
+    ],
+    voices: [
+      { prompt: "بڵێ ئاو دەخۆیتەوە", target: "I drink water every day.", targetKurdish: "من هەموو ڕۆژێک ئاو دەخۆمەوە.", promptAr: "قل أنا أشرب الماء كل يوم", targetArabic: "أنا أشرب الماء كل يوم." },
+      { prompt: "بپرس کلیلی من لەکوێیە", target: "Where is my key?", targetKurdish: "کلیلی من لەکوێیە؟", promptAr: "اسأل أين مفتاحي", targetArabic: "أين مفتاحي؟" },
+      { prompt: "داوای قاوە بکە", target: "Do you want coffee or tea?", targetKurdish: "قاوەت دەوێت یان چا؟", promptAr: "اطلب قهوة", targetArabic: "هل تريد قهوة أم شاي؟" },
+    ],
+    sentences: [
+      { english: ["Please", "put", "the", "book", "in", "my", "bag"], kurdish: "تکایە کتێبەکە بخەرە ناو جانتاکەمەوە", arabic: "من فضلك ضع الكتاب في حقيبتي" },
+      { english: ["I", "need", "a", "pen", "to", "write", "my", "name"], kurdish: "پێویستم بە پێنوسێکە بۆ نووسینی ناوم", arabic: "أحتاج إلى قلم لكتابة اسمي" },
+      { english: ["Here", "is", "some", "fresh", "bread", "and", "water"], kurdish: "ئەمەش کەمێک نانی تازە و ئاوە", arabic: "هذا بعض الخبز الطازج والماء" },
+      { english: ["Where", "is", "your", "phone", "my", "friend"], kurdish: "مۆبایلەکەت لەکوێیە هاوڕێم؟", arabic: "أين هاتفك يا صديقي؟" },
+    ],
+    fillBlanks: [
+      { parts: ["Where is my", "? I cannot open the door."], hint: "کلیلی من لەکوێیە؟ ناتوانم دەرگاکە بکەمەوە.", answer: "key", wrongs: ["pen", "bag", "water"], arabicHint: "أين مفتاحي؟ لا أستطيع فتح الباب.", arabicParts: ["أين", "؟ لا أستطيع فتح الباب."], arabicAnswer: "مفتاحي", arabicWrongs: ["قلمي", "حقيبتي", "مائي"] },
+      { parts: ["I have a black", "for school."], hint: "جانتاکەم ڕەشە بۆ قوتابخانە.", answer: "bag", wrongs: ["key", "coffee", "phone"], arabicHint: "لدي حقيبة سوداء للمدرسة.", arabicParts: ["لدي", "سوداء للمدرسة."], arabicAnswer: "حقيبة", arabicWrongs: ["مفتاح", "قهوة", "هاتف"] },
+      { parts: ["Would you like a glass of cold", "?"], hint: "پەرداخێک ئاوی ساردت دەوێت؟", answer: "water", wrongs: ["bread", "pen", "key"], arabicHint: "هل تريد كوباً من الماء البارد؟", arabicParts: ["هل تريد كوباً من", "البارد؟"], arabicAnswer: "الماء", arabicWrongs: ["الخبز", "القلم", "المفتاح"] },
+    ],
+    conversations: [
+      {
+        situation: "داواکردنی پێنوس بۆ نووسین",
+        theyAsk: "Can you sign this document, please?",
+        correct: "Yes, but I need a pen. Do you have one?",
+        wrong1: "Where is my key?",
+        wrong2: "I drink water every day.",
+        wrong3: "The bag is black.",
+        explanation: "بۆ نووسین یان واژووکردنی بەڵگەنامە، پێویستت بە پێنوس (pen) دەبێت.",
+        situationAr: "طلب قلم للكتابة",
+        theyAskAr: "هل يمكنك توقيع هذه الوثيقة من فضلك؟",
+        correctAr: "نعم، ولكني أحتاج إلى قلم. هل لديك واحد؟",
+        wrong1Ar: "أين مفتاحي؟",
+        wrong2Ar: "أنا أشرب الماء كل يوم.",
+        wrong3Ar: "الحقيبة سوداء.",
+        explanationAr: "للكتابة أو التوقيع على الأوراق، ستحتاج إلى قلم (pen)."
+      },
+      {
+        situation: "پێشنیاری نان و ئاو بۆ میوان",
+        theyAsk: "I am very hungry after the journey.",
+        correct: "Please sit down. Here is some fresh bread and water.",
+        wrong1: "This is my phone.",
+        wrong2: "Do you want coffee in your bag?",
+        wrong3: "I have three keys.",
+        explanation: "'fresh bread and water' وەڵامێکی گونجاو و لێبوردەییە بۆ برسییەتی میوان.",
+        situationAr: "تقديم الخبز والماء للضيف",
+        theyAskAr: "أنا جائع جداً بعد السفر.",
+        correctAr: "تفضل بالجلوس. هذا بعض الخبز الطازج والماء.",
+        wrong1Ar: "هذا هاتفي.",
+        wrong2Ar: "هل تريد قهوة في حقيبتك؟",
+        wrong3Ar: "لدي ثلاثة مفاتيح.",
+        explanationAr: "تقديم الخبز والماء للضيف الجائع هو الرد اللائق والسريع."
+      }
+    ]
+  },
+
+  // Lesson 5: Simple Actions & Verbs
+  {
+    topic: "Simple Actions", topicKu: "کردارە سادەکان", topicAr: "الأفعال البسيطة",
+    words: [
+      { english: "Eat", kurdish: "خواردن", arabic: "أكل" },
+      { english: "Drink", kurdish: "خواردنەوە", arabic: "شرب" },
+      { english: "Go", kurdish: "ڕۆیشتن", arabic: "ذهاب" },
+      { english: "Come", kurdish: "هاتن", arabic: "مجيء" },
+      { english: "Want", kurdish: "ویستن (دەمەوێت)", arabic: "يريد" },
+      { english: "Like", kurdish: "حەزلێبوون", arabic: "يحب (يعجبه)" },
+      { english: "Have", kurdish: "هەبوونی شتێک", arabic: "لديه" },
+      { english: "See", kurdish: "بینین", arabic: "يرى" },
+    ],
+    voices: [
+      { prompt: "بڵێ حەزت لە قاوەیە", target: "I like coffee in the morning.", targetKurdish: "من حەزم لە قاوەیە لە بەیانیاندا.", promptAr: "قل أنا أحب القهوة صباحاً", targetArabic: "أنا أحب القهوة في الصباح." },
+      { prompt: "بڵێ دەتەوێت بچیتە ماڵەوە", target: "I want to go home now.", targetKurdish: "دەمەوێت ئێستا بچمە ماڵەوە.", promptAr: "قل أريد الذهاب للمنزل الآن", targetArabic: "أريد الذهاب إلى المنزل الآن." },
+      { prompt: "داوای هاتنە ژوورەوە بکە", target: "Come here and eat some bread.", targetKurdish: "وەرە ئێرە و کەمێک نان بخۆ.", promptAr: "اطلب منه المجيء والأكل", targetArabic: "تعال إلى هنا وكل بعض الخبز." },
+    ],
+    sentences: [
+      { english: ["I", "want", "to", "drink", "a", "glass", "of", "cold", "water"], kurdish: "دەمەوێت پەرداخێک ئاوی سارد بخۆمەوە", arabic: "أريد أن أشرب كوباً من الماء البارد" },
+      { english: ["Do", "you", "see", "the", "black", "cat", "in", "the", "garden"], kurdish: "ئایا پشیلە ڕەشەکە لە باخچەکەدا دەبینیت؟", arabic: "هل ترى القطة السوداء في الحديقة؟" },
+      { english: ["We", "have", "a", "meeting", "at", "school", "today"], kurdish: "ئێمە ئەمڕۆ کۆبوونەوەیەکمان لە قوتابخانە هەیە", arabic: "لدينا اجتماع في المدرسة اليوم" },
+      { english: ["Please", "go", "to", "the", "shop", "and", "buy", "bread"], kurdish: "تکایە بڕۆ بۆ دوکانەکە و نان بکڕە", arabic: "من فضلك اذهب إلى المتجر واشترِ خبزاً" },
+    ],
+    fillBlanks: [
+      { parts: ["I", "coffee, but I love tea."], hint: "حەزم لە قاوە هەیە، بەڵام چام خۆش دەوێت.", answer: "like", wrongs: ["want", "go", "eat"], arabicHint: "يعجبني الشاي، لكني أحب القهوة.", arabicParts: ["أنا", "القهوة، لكني أحب الشاي."], arabicAnswer: "أحب", arabicWrongs: ["أريد", "أذهب", "آكل"] },
+      { parts: ["I am hungry; I want to", "some food."], hint: "من برسیومە؛ دەمەوێت کەمێک خواردن بخۆم.", answer: "eat", wrongs: ["drink", "see", "come"], arabicHint: "أنا جائع؛ أريد أن آكل بعض الطعام.", arabicParts: ["أنا جائع؛ أريد أن", "بعض الطعام."], arabicAnswer: "آكل", arabicWrongs: ["أشرب", "أرى", "آتي"] },
+      { parts: ["Do you", "a phone in your bag?"], hint: "ئایا مۆبایلت لەناو جانتاکەتدا هەیە؟", answer: "have", wrongs: ["go", "like", "see"], arabicHint: "هل لديك هاتف في حقيبتك؟", arabicParts: ["هل", "هاتف في حقيبتك؟"], arabicAnswer: "لديك", arabicWrongs: ["تذهب", "تحب", "ترى"] },
+    ],
+    conversations: [
+      {
+        situation: "کاتێک تینووتە و داوای ئاو دەکەیت",
+        theyAsk: "Are you okay? You look thirsty.",
+        correct: "Yes, I want to drink some water, please.",
+        wrong1: "I want to go school.",
+        wrong2: "I see the black cat.",
+        wrong3: "I have a meeting.",
+        explanation: "بۆ تینوویەتی، کردارەکە 'drink water' (ئاو خواردنەوە) دەبێت.",
+        situationAr: "عندما تشعر بالعطش وتطلب الماء",
+        theyAskAr: "هل أنت بخير؟ تبدو عطشاناً.",
+        correctAr: "نعم، أريد أن أشرب بعض الماء من فضلك.",
+        wrong1Ar: "أريد الذهاب للمدرسة.",
+        wrong2Ar: "أنا أرى القطة السوداء.",
+        wrong3Ar: "لدي اجتماع.",
+        explanationAr: "للعطش، نستخدم الفعل 'drink' (يشرب) والماء."
+      },
+      {
+        situation: "پێشنیارکردنی ڕۆیشتن بۆ پارک",
+        theyAsk: "The weather is very good today.",
+        correct: "I agree! Let's go to the park together.",
+        wrong1: "Eat some bread please.",
+        wrong2: "I want to see the key.",
+        wrong3: "Come here and drink tea.",
+        explanation: "لە کاتی وەڵامدانەوەی کەشوهەوای خۆش، ڕۆیشتن بۆ پارک 'go to the park' پێکەوە زۆر گونجاوە.",
+        situationAr: "اقتراح الذهاب للحديقة بيوم مشمس",
+        theyAskAr: "الطقس جميل جداً اليوم.",
+        correctAr: "أنا أوافقك الرأي! لنذهب إلى الحديقة معاً.",
+        wrong1Ar: "كل بعض الخبز من فضلك.",
+        wrong2Ar: "أريد أن أرى المفتاح.",
+        wrong3Ar: "تعال إلى هنا واشرب الشاي.",
+        explanationAr: "عندما يكون الطقس جميلاً، فإن الذهاب للحديقة هو الاقتراح الأفضل."
+      }
+    ]
+  },
+
+  // Lesson 6: Colors
   {
     topic: "Colors", topicKu: "ڕەنگەکان", topicAr: "الألوان",
     words: [
-      { english: "Red", kurdish: "سوور", arabic: "احمر" },
-      { english: "Blue", kurdish: "شین", arabic: "ازرك" },
-      { english: "Green", kurdish: "سەوز", arabic: "اخضر" },
-      { english: "Yellow", kurdish: "زەرد", arabic: "اصفر" },
-      { english: "White", kurdish: "سپی", arabic: "ابيض" },
+      { english: "Red", kurdish: "سوور", arabic: "أحمر" },
+      { english: "Blue", kurdish: "شین", arabic: "أزرق" },
+      { english: "Green", kurdish: "سەوز", arabic: "أخضر" },
+      { english: "Yellow", kurdish: "زەرد", arabic: "أصفر" },
+      { english: "Black", kurdish: "ڕەش", arabic: "أسود" },
+      { english: "White", kurdish: "سپى", arabic: "أبيض" },
+      { english: "Orange", kurdish: "پرتەقاڵی", arabic: "برتقالي" },
+      { english: "Favorite color", kurdish: "ڕەنگی دڵخواز", arabic: "اللون المفضل" },
     ],
     voices: [
-      { prompt: "بڵێ: پشیلەی سپی", target: "A white cat.", targetKurdish: "پشیلەیەکی سپی.", promptAr: "قول بزونة بيضة", targetArabic: "بزونة بيضة." },
-      { prompt: "بڵێ: سەگی سوور", target: "A red dog.", targetKurdish: "سەگێکی سوور.", promptAr: "قول چلب احمر", targetArabic: "چلب احمر." },
+      { prompt: "بڵێ حەزت لە ڕەنگی شینە", target: "My favorite color is blue.", targetKurdish: "ڕەنگی دڵخوازی من شینە.", promptAr: "قل لوني المفضل هو الأزرق", targetArabic: "لوني المفضل هو الأزرق." },
+      { prompt: "وەسفی سێوێک بکە بە ڕەنگ", target: "This is a red apple.", targetKurdish: "ئەمە سێوێکی سوورە.", promptAr: "صف تفاحة باللون", targetArabic: "هذه تفاحة حمراء." },
+      { prompt: "بڵێ ئۆتۆمبێلەکە ڕەشە", target: "The car is black and clean.", targetKurdish: "ئۆتۆمبێلەکە ڕەش و خاوێنە.", promptAr: "قل السيارة سوداء", targetArabic: "السيارة سوداء ونظيفة." },
     ],
     sentences: [
-      { english: ["The", "car", "is", "blue"], kurdish: "ئۆتۆمبێلەکە شینە", arabic: "السيارة زركة" },
-      { english: ["I", "like", "green"], kurdish: "حەزم لە سەوزە", arabic: "احب الاخضر" },
+      { english: ["The", "sky", "is", "blue", "and", "the", "grass", "is", "green"], kurdish: "ئاسمان شینە و سەوزە گیاکەش سەوزە", arabic: "السماء زرقاء والعشب أخضر" },
+      { english: ["Do", "you", "want", "the", "white", "bag", "or", "the", "yellow", "one"], kurdish: "جانتا سپییەکەت دەوێت یان زەردەکە؟", arabic: "هل تريد الحقيبة البيضاء أم الصفراء؟" },
+      { english: ["Oranges", "are", "orange", "and", "bananas", "are", "yellow"], kurdish: "پرتەقاڵ پرتەقاڵییە و مۆز زەردە", arabic: "البرتقال برتقالي والموز أصفر" },
+      { english: ["He", "has", "a", "black", "pen", "in", "his", "hand"], kurdish: "ئەو پێنوسێکی ڕەشی لە دەستدایە", arabic: "لديه قلم أسود في يده" },
     ],
     fillBlanks: [
-      { parts: ["The paper is", "."], hint: "کاغەزەکە سپییە", answer: "white", wrongs: ["blue", "yes", "hello"], arabicHint: "الورقة بيضة", arabicParts: ["الورقة", "."], arabicAnswer: "بيضة", arabicWrongs: ["زركة", "اي", "هلو"] },
-      { parts: ["I want a", "pen."], hint: "پێنوسی سوورم دەوێت", answer: "red", wrongs: ["one", "thanks", "fine"], arabicHint: "اريد قلم احمر", arabicParts: ["اريد قلم", "."], arabicAnswer: "احمر", arabicWrongs: ["واحد", "شكراً", "زين"] },
+      { parts: ["My favorite color is", "because I love the sky."], hint: "ڕەنگی دڵخوازم شینە چونکە حەزم لە ئاسمانە.", answer: "blue", wrongs: ["red", "black", "white"], arabicHint: "لوني المفضل هو الأزرق لأني أحب السماء.", arabicParts: ["لوني المفضل هو", "لأني أحب السماء."], arabicAnswer: "الأزرق", arabicWrongs: ["الأحمر", "الأسود", "الأبيض"] },
+      { parts: ["Leaves are usually", "in summer."], hint: "گەڵاکان بە شێوەیەکی گشتی سەوزن لە هاویندا.", answer: "green", wrongs: ["yellow", "white", "black"], arabicHint: "الأوراق عادة خضراء في الصيف.", arabicParts: ["الأوراق عادة", "في الصيف."], arabicAnswer: "خضراء", arabicWrongs: ["صفراء", "بيضاء", "سوداء"] },
+      { parts: ["This is a", "banana from the market."], hint: "ئەمە مۆزێکی زەردە لە بازاڕەکەوە.", answer: "yellow", wrongs: ["blue", "orange", "black"], arabicHint: "هذه موزة صفراء من السوق.", arabicParts: ["هذه موزة", "من السوق."], arabicAnswer: "صفراء", arabicWrongs: ["زرقاء", "برتقالية", "سوداء"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک پرسیاری ڕەنگی دڵخوازت دەکات", theyAsk: "What is your favorite color?", correct: "My favorite color is blue.", wrong1: "I have five cats.", wrong2: "Nice to meet you.", wrong3: "I am fine.", explanation: "بۆ وەڵامی ڕەنگی دڵخواز، ڕەنگێک دیاری دەکەیت: 'My favorite color is blue.'", situationAr: "صديق يسألك عن لونك المفضل", explanationAr: "للجواب عن اللون المفضل، تحدد لوناً: لوني المفضل الازرك.", theyAskAr: "شنو لونك المفضل؟", correctAr: "لوني المفضل ازرك.", wrong1Ar: "عندي خمس بزونات.", wrong2Ar: "فرصة سعيدة.", wrong3Ar: "اني زين." },
-    ],
+      {
+        situation: "پرسیارکردن دەربارەی ڕەنگی دڵخواز",
+        theyAsk: "What is your favorite color?",
+        correct: "My favorite color is blue. What about you?",
+        wrong1: "The car is clean.",
+        wrong2: "This is a red apple in the bag.",
+        wrong3: "I have a black pen.",
+        explanation: "وەڵامی ڕاست ڕاستەوخۆ ناوی ڕەنگەکە دەڵێت: 'My favorite color is blue'.",
+        situationAr: "السؤال عن اللون المفضل",
+        theyAskAr: "ما هو لونك المفضل؟",
+        correctAr: "لوني المفضل هو الأزرق. ماذا عنك؟",
+        wrong1Ar: "السيارة نظيفة.",
+        wrong2Ar: "هذه تفاحة حمراء في الحقيبة.",
+        wrong3Ar: "لدي قلم أسود.",
+        explanationAr: "الجواب الصحيح يذكر اللون المفضل للمستخدم مباشرة."
+      },
+      {
+        situation: "هەڵبژاردنی جانتا لە فرۆشگا",
+        theyAsk: "We have this bag in white and black. Which one do you want?",
+        correct: "I want the black bag, please. It stays clean longer.",
+        wrong1: "The sky is blue.",
+        wrong2: "Green grass is good.",
+        wrong3: "Oranges are orange.",
+        explanation: "هەڵبژاردنی ڕەنگی گونجاو لەگەڵ 'please' نیشانەی بازاڕکردنی دروستە.",
+        situationAr: "اختيار حقيبة في المتجر",
+        theyAskAr: "لدينا هذه الحقيبة باللونين الأبيض والأسود. أي واحد تريد؟",
+        correctAr: "أريد الحقيبة السوداء من فضلك. تبقى نظيفة لفترة أطول.",
+        wrong1Ar: "السماء زرقاء.",
+        wrong2Ar: "العشب الأخضر جيد.",
+        wrong3Ar: "البرتقال برتقالي.",
+        explanationAr: "اختيار اللون المناسب مع كلمة 'من فضلك' هو الأسلوب الصحيح للتسوق."
+      }
+    ]
   },
 
-  // Lesson 5: Family
+  // Lesson 7: Family Members
   {
-    topic: "Family", topicKu: "خێزان", topicAr: "العائلة",
+    topic: "Family Members", topicKu: "خێزان", topicAr: "أفراد العائلة",
     words: [
-      { english: "Father", kurdish: "باوک", arabic: "ابويا" },
-      { english: "Mother", kurdish: "دایک", arabic: "اميا" },
-      { english: "Brother", kurdish: "برا", arabic: "اخويا" },
-      { english: "Sister", kurdish: "خوشک", arabic: "اختي" },
+      { english: "Mother", kurdish: "دایک", arabic: "أم" },
+      { english: "Father", kurdish: "باوک", arabic: "أب" },
+      { english: "Brother", kurdish: "برا", arabic: "أخ" },
+      { english: "Sister", kurdish: "خوشک", arabic: "أخت" },
+      { english: "Son", kurdish: "کوڕ", arabic: "ابن" },
+      { english: "Daughter", kurdish: "کچ", arabic: "ابنة" },
       { english: "Family", kurdish: "خێزان", arabic: "عائلة" },
+      { english: "Parents", kurdish: "دایک و باوک (سەرپەرشتیار)", arabic: "الوالدان" },
     ],
     voices: [
-      { prompt: "بڵێ: ئەمە خوشکی منە", target: "This is my sister.", targetKurdish: "ئەمە خوشکی منە.", promptAr: "قول هاي اختي", targetArabic: "هاي اختي." },
-      { prompt: "بڵێ: من برام هەیە", target: "I have a brother.", targetKurdish: "برام هەیە.", promptAr: "قول عندي اخويا", targetArabic: "عندي اخويا." },
+      { prompt: "بڵێ خێزانەکەت خۆش دەوێت", target: "I love my family very much.", targetKurdish: "خێزانەکەمم زۆر خۆش دەوێت.", promptAr: "قل أنا أحب عائلتي كثيراً", targetArabic: "أنا أحب عائلتي كثيراً." },
+      { prompt: "ناساندنی دایک", target: "This is my mother; her name is Sarah.", targetKurdish: "ئەمە دایکمە؛ ناوی سارایە.", promptAr: "تعريف بوالدتك", targetArabic: "هذه أمي؛ اسمها سارة." },
+      { prompt: "بڵێ خوشکت هەیە", target: "I have one sister and two brothers.", targetKurdish: "یەک خوشک و دوو برام هەیە.", promptAr: "قل لديك أخت وأخوين", targetArabic: "لدي أخت واحدة وأخوين." },
     ],
     sentences: [
-      { english: ["This", "is", "my", "father"], kurdish: "ئەمە باوکی منە", arabic: "هذا ابويا" },
-      { english: ["I", "love", "my", "family"], kurdish: "خێزانەکەمم خۆش دەوێت", arabic: "احب عائلتي" },
+      { english: ["My", "father", "is", "a", "doctor", "at", "the", "hospital"], kurdish: "باوکم پزیشکە لە نەخۆشخانەکە", arabic: "أبي طبيب في المستشفى" },
+      { english: ["Her", "daughter", "is", "five", "years", "old", "today"], kurdish: "کچەکەی تەمەنی پێنج ساڵە ئەمڕۆ", arabic: "ابنتها تبلغ من العمر خمس سنوات اليوم" },
+      { english: ["They", "are", "my", "parents", "and", "I", "respect", "them"], kurdish: "ئەوان دایک و باوکمن و من ڕێزیان دەگرم", arabic: "هما والداي وأنا أحترمهما" },
+      { english: ["My", "brother", "has", "a", "black", "dog", "at", "home"], kurdish: "براکەم سەگێکی ڕەشی لە ماڵەوە هەیە", arabic: "أخي لديه كلب أسود في المنزل" },
     ],
     fillBlanks: [
-      { parts: ["My", "is tall."], hint: "براکەم درێژە", answer: "brother", wrongs: ["mother", "sister", "hello"], arabicHint: "اخويا طويل", arabicParts: ["اخويا", "طويل."], arabicAnswer: "اخويا", arabicWrongs: ["اميا", "اختي", "هلو"] },
-      { parts: ["I love my", "."], hint: "دایکمم خۆش دەوێت", answer: "mother", wrongs: ["father", "one", "fine"], arabicHint: "احب اميا", arabicParts: ["احب", "."], arabicAnswer: "اميا", arabicWrongs: ["ابويا", "واحد", "زين"] },
+      { parts: ["My", "and father are my parents."], hint: "دایک و باوکم سەرپەرشتیارمن.", answer: "mother", wrongs: ["sister", "daughter", "family"], arabicHint: "أمي وأبي هما والداي.", arabicParts: ["", "وأبي هما والداي."], arabicAnswer: "أمي", arabicWrongs: ["أختي", "ابنتي", "عائلتي"] },
+      { parts: ["He is my mother's son; he is my", "."], hint: "ئەو کوڕی دایکمە؛ ئەو برای منە.", answer: "brother", wrongs: ["father", "parents", "daughter"], arabicHint: "هو ابن أمي؛ إنه أخي.", arabicParts: ["هو ابن أمي؛ إنه", "."], arabicAnswer: "أخي", arabicWrongs: ["أبي", "والداي", "ابنتي"] },
+      { parts: ["We live together; we are a happy", "."], hint: "ئێمە پێکەوە دەژین؛ ئێمە خێزانێکی دڵخۆشین.", answer: "family", wrongs: ["parents", "sister", "brother"], arabicHint: "نحن نعيش معاً؛ نحن عائلة سعيدة.", arabicParts: ["نحن نعيش معاً؛ نحن", "سعيدة."], arabicAnswer: "عائلة", arabicWrongs: ["والدان", "أخت", "أخ"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک خوشکەکەت دەبینێت و دەپرسێت ئەمە کێیە", theyAsk: "Who is this?", correct: "This is my sister, Sara.", wrong1: "I am fine, thanks.", wrong2: "Nice to meet you Sara.", wrong3: "My name is Sara.", explanation: "کاتێک دەپرسن ئەمە کێیە، خزمەکەت دەناسێنیت: 'This is my sister, Sara.'", situationAr: "صديق يرى اختك ويسأل من هذه", explanationAr: "عند السؤال من هذه، تعرّف بقريبتك: هاي اختي سارة.", theyAskAr: "منو هاي؟", correctAr: "هاي اختي، سارة.", wrong1Ar: "اني زين، شكراً.", wrong2Ar: "فرصة سعيدة سارة.", wrong3Ar: "اسمي سارة." },
-    ],
+      {
+        situation: "ناساندنی باوک لە وێنەیەکدا",
+        theyAsk: "Who is the tall man in this photo?",
+        correct: "He is my father. He is a doctor at the hospital.",
+        wrong1: "She is my mother, Sarah.",
+        wrong2: "I love my family very much.",
+        wrong3: "I have three sisters.",
+        explanation: "بۆ ناساندنی باوک (نێر) دەڵێیت 'He is my father'.",
+        situationAr: "تعريف بوالدك في صورة عائلية",
+        theyAskAr: "من الرجل الطويل في هذه الصورة؟",
+        correctAr: "هو أبي. إنه طبيب في المستشفى.",
+        wrong1Ar: "هي أمي، سارة.",
+        wrong2Ar: "أنا أحب عائلتي كثيراً.",
+        wrong3Ar: "لدي ثلاث أخوات.",
+        explanationAr: "لتعريف الأب (مذكر) نقول 'He is my father'."
+      },
+      {
+        situation: "پرسیارکردن لە ئەندامانی خێزان",
+        theyAsk: "Do you live alone in this big house?",
+        correct: "No, I live with my parents and my younger sister.",
+        wrong1: "My daughter is five years old.",
+        wrong2: "Yes, I love my family.",
+        wrong3: "He is my brother, John.",
+        explanation: "'live with my parents' وەڵامێکی دروستە بۆ پرسیارکردنی دەربارەی نیشتەجێبوون.",
+        situationAr: "السؤال عن السكن مع العائلة",
+        theyAskAr: "هل تعيش بمفردك في هذا المنزل الكبير؟",
+        correctAr: "لا، أنا أعيش مع والدي وأختي الصغيرة.",
+        wrong1Ar: "ابنتي تبلغ من العمر خمس سنوات.",
+        wrong2Ar: "نعم، أنا أحب عائلتي.",
+        wrong3Ar: "هو أخي، جون.",
+        explanationAr: "العيش مع الوالدين (live with my parents) رد مناسب على سؤال السكن."
+      }
+    ]
   },
 
-  // Lesson 6: Basic Actions
+  // Lesson 8: Basic Questions
   {
-    topic: "Basic Actions", topicKu: "کردارە سەرەتاییەکان", topicAr: "الأفعال البسيطة",
+    topic: "Basic Questions", topicKu: "پرسیارە بنەڕەتییەکان", topicAr: "الأسئلة الأساسية",
     words: [
-      { english: "Eat", kurdish: "خواردن", arabic: "ياكل" },
-      { english: "Drink", kurdish: "خواردنەوە", arabic: "يشرب" },
-      { english: "Sleep", kurdish: "خەوتن", arabic: "ينام" },
-      { english: "Read", kurdish: "خوێندنەوە", arabic: "يقرا" },
-      { english: "Walk", kurdish: "ڕۆشتن", arabic: "يمشي" },
+      { english: "Who", kurdish: "کێ", arabic: "من" },
+      { english: "What", kurdish: "چی", arabic: "ماذا (ما)" },
+      { english: "Where", kurdish: "لەکوێ", arabic: "أين" },
+      { english: "Why", kurdish: "بۆچی", arabic: "لماذا" },
+      { english: "When", kurdish: "کەی", arabic: "متى" },
+      { english: "How", kurdish: "چۆن", arabic: "كيف" },
+      { english: "Which", kurdish: "کام", arabic: "أي" },
+      { english: "Whose", kurdish: "هی کێ", arabic: "لمن" },
     ],
     voices: [
-      { prompt: "بڵێ: من نان دەخۆم", target: "I eat bread.", targetKurdish: "نان دەخۆم.", promptAr: "قول دا اكل خبز", targetArabic: "دا اكل خبز." },
-      { prompt: "بڵێ: من ئاو دەخۆمەوە", target: "I drink water.", targetKurdish: "ئاو دەخۆمەوە.", promptAr: "قول دا اشرب مي", targetArabic: "دا اشرب مي." },
+      { prompt: "بپرس ناوت چییە", target: "What is your name?", targetKurdish: "ناوت چییە؟", promptAr: "اسأل ما هو اسمك", targetArabic: "ما هو اسمك؟" },
+      { prompt: "بپرس کلیلی کێ لێرەیە", target: "Whose key is this on the table?", targetKurdish: "ئەم کلیلی کێیە لەسەر مێزەکە؟", promptAr: "اسأل لمن هذا المفتاح", targetArabic: "لمن هذا المفتاح على الطاولة؟" },
+      { prompt: "بپرس بۆچی خەمبارە", target: "Why are you sad today?", targetKurdish: "بۆچی ئەمڕۆ دڵتەنگی؟", promptAr: "اسأل لماذا أنت حزين", targetArabic: "لماذا أنت حزين اليوم؟" },
     ],
     sentences: [
-      { english: ["I", "sleep", "at", "night"], kurdish: "شەوان دەخەوم", arabic: "انام بالليل" },
-      { english: ["I", "read", "a", "book"], kurdish: "کتێبێک دەخوێنمەوە", arabic: "دا اقرا كتاب" },
+      { english: ["Where", "is", "the", "nearest", "shop", "my", "friend"], kurdish: "نزیکترین دوکان لەکوێیە، هاوڕێم؟", arabic: "أين أقرب متجر يا صديقي؟" },
+      { english: ["When", "is", "your", "brother", "coming", "home"], kurdish: "کەی براکەت دەگەڕێتەوە بۆ ماڵەوە؟", arabic: "متى سيعود أخوك إلى المنزل؟" },
+      { english: ["Which", "color", "do", "you", "prefer", "blue", "or", "red"], kurdish: "کام ڕەنگە پەسەند دەکەیت، شین یان سوور؟", arabic: "أي لون تفضل، الأزرق أم الأحمر؟" },
+      { english: ["Who", "is the", "man", "in the", "black", "car"], kurdish: "ئەو پیاوە کێیە لەناو ئۆتۆمبێلە ڕەشەکەدا؟", arabic: "من هو الرجل في السيارة السوداء؟" },
     ],
     fillBlanks: [
-      { parts: ["I", "water every day."], hint: "هەموو ڕۆژێک ئاو دەخۆمەوە", answer: "drink", wrongs: ["eat", "sleep", "walk"], arabicHint: "اشرب مي كل يوم", arabicParts: ["", "مي كل يوم."], arabicAnswer: "اشرب", arabicWrongs: ["اكل", "انام", "امشي"] },
-      { parts: ["I want to", "a book."], hint: "دەمهەوێت کتێبێک بخوێنمەوە", answer: "read", wrongs: ["drink", "sleep", "eat"], arabicHint: "اريد اقرا كتاب", arabicParts: ["اريد", "كتاب."], arabicAnswer: "اقرا", arabicWrongs: ["اشرب", "انام", "اكل"] },
+      { parts: ["", "is my phone? I cannot find it."], hint: "مۆبایلەکەم لەکوێیە؟ ناتوانم بیدۆزمەوە.", answer: "Where", wrongs: ["Who", "Why", "When"], arabicHint: "أين هاتفي؟ لا يمكنني العثور عليه.", arabicParts: ["", "هاتفي؟ لا يمكنني العثور عليه."], arabicAnswer: "أين", arabicWrongs: ["من", "لماذا", "متى"] },
+      { parts: ["", "are you laughing? Is it funny?"], hint: "بۆچی پێدەکەنی? ئایا کۆمیدییە؟", answer: "Why", wrongs: ["Who", "Where", "Whose"], arabicHint: "لماذا تضحك؟ هل الأمر مضحك؟", arabicParts: ["", "تضحك؟ هل الأمر مضحك؟"], arabicAnswer: "لماذا", arabicWrongs: ["من", "أين", "لمن"] },
+      { parts: ["", "is that girl? She is nice."], hint: "ئەو کچە کێیە؟ ئەو کچێکی باشە.", answer: "Who", wrongs: ["What", "Which", "Why"], arabicHint: "من تلك الفتاة؟ إنها لطيفة.", arabicParts: ["", "تلك الفتاة؟ إنها لطيفة."], arabicAnswer: "من", arabicWrongs: ["ماذا", "أي", "لماذا"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک لە چێشتخانە دەپرسێت چی دەکەیت", theyAsk: "What do you want to do?", correct: "I want to eat lunch.", wrong1: "I have a sister.", wrong2: "Nice to meet you.", wrong3: "I am fine.", explanation: "بۆ وەڵامی چی دەکەیت، دەڵێیت دەمەوێت نان بخۆم: 'I want to eat lunch.'", situationAr: "صديق في المطعم يسألك ماذا تريد أن تفعل", explanationAr: "للجواب عن ماذا تفعل، تقول اريد اكل غدا.", theyAskAr: "شنو تريد تسوي؟", correctAr: "اريد اكل غدا.", wrong1Ar: "عندي اخت.", wrong2Ar: "فرصة سعيدة.", wrong3Ar: "اني زين." },
-    ],
-  },
-
-  // Lesson 7: Simple Questions
-  {
-    topic: "Simple Questions", topicKu: "پرسیارە سادەکان", topicAr: "الأسئلة البسيطة",
-    words: [
-      { english: "What is this?", kurdish: "ئەمە چییە؟", arabic: "شنو هذا؟" },
-      { english: "Where is it?", kurdish: "لەکوێیە؟", arabic: "وين صاير؟" },
-      { english: "Who is that?", kurdish: "ئەوە کێیە؟", arabic: "منو هذاك؟" },
-      { english: "Why?", kurdish: "بۆچی؟", arabic: "ليش؟" },
-      { english: "When?", kurdish: "کەی؟", arabic: "شوكت؟" },
-    ],
-    voices: [
-      { prompt: "بپرس: ئەمە چییە؟", target: "What is this?", targetKurdish: "ئەمە چییە؟", promptAr: "اسأل شنو هذا", targetArabic: "شنو هذا؟" },
-      { prompt: "بپرس: لە کوێیە؟", target: "Where is it?", targetKurdish: "لەکوێیە؟", promptAr: "اسأل وين صاير", targetArabic: "وين صاير؟" },
-    ],
-    sentences: [
-      { english: ["Who", "is", "that", "man"], kurdish: "ئەو پیاوە کێیە؟", arabic: "منو هذاك الرجال؟" },
-      { english: ["When", "is", "the", "lesson"], kurdish: "وانەکە کەیە؟", arabic: "شوكت الدرس؟" },
-    ],
-    fillBlanks: [
-      { parts: ["", "is my key?"], hint: "کلیلەکەم لەکوێیە؟", answer: "Where", wrongs: ["Who", "What", "Why"], arabicHint: "وين مفتاحي؟", arabicParts: ["", "مفتاحي؟"], arabicAnswer: "وين", arabicWrongs: ["منو", "شنو", "ليش"] },
-      { parts: ["", "is this animal?"], hint: "ئەم ئاژەڵە چییە؟", answer: "What", wrongs: ["When", "Where", "Who"], arabicHint: "شنو هذا الحيوان؟", arabicParts: ["", "هذا الحيوان؟"], arabicAnswer: "شنو", arabicWrongs: ["شوكت", "وين", "منو"] },
-    ],
-    conversations: [
-      { situation: "کلیلەکانت لێ ون بووە و دەپرسیت", theyAsk: "What are you looking for?", correct: "Where is my key?", wrong1: "Yes, I am fine.", wrong2: "Nice to meet you.", wrong3: "My name is Ahmed.", explanation: "کاتێک بۆ کلیل دەگەڕێیت، دەپرسیت: 'Where is my key?'", situationAr: "مفاتيحك ضائعة وتسأل عنها", explanationAr: "عند البحث عن المفتاح، تسأل: وين مفتاحي؟", theyAskAr: "عن شنو دا تدور؟", correctAr: "وين مفتاحي؟", wrong1Ar: "اي، اني زين.", wrong2Ar: "فرصة سعيدة.", wrong3Ar: "اسمي احمد." },
-    ],
-  },
-
-  // Lesson 8: Common Objects
-  {
-    topic: "Common Objects", topicKu: "کەلوپەلە باوەکان", topicAr: "الأشياء الشائعة",
-    words: [
-      { english: "Book", kurdish: "کتێب", arabic: "كتاب" },
-      { english: "Pen", kurdish: "پێنووس", arabic: "قلم" },
-      { english: "Phone", kurdish: "مۆبایل", arabic: "تلفون" },
-      { english: "Key", kurdish: "کلیل", arabic: "مفتاح" },
-      { english: "Bag", kurdish: "جانتا", arabic: "جنطة" },
-    ],
-    voices: [
-      { prompt: "بڵێ: ئەمە مۆبایلی منە", target: "This is my phone.", targetKurdish: "ئەمە مۆبایلی منە.", promptAr: "قول هذا تلفوني", targetArabic: "هذا تلفوني." },
-      { prompt: "بڵێ: جانتای سپی", target: "A white bag.", targetKurdish: "جانتایەکی سپی.", promptAr: "قول جنطة بيضة", targetArabic: "جنطة بيضة." },
-    ],
-    sentences: [
-      { english: ["I", "have", "the", "key"], kurdish: "کلیلەکەم لایە", arabic: "المفتاح عندي" },
-      { english: ["The", "book", "is", "red"], kurdish: "کتێبەکە سوورە", arabic: "الكتاب احمر" },
-    ],
-    fillBlanks: [
-      { parts: ["Where is my", "?"], hint: "مۆبایلەکەم لەکوێیە؟", answer: "phone", wrongs: ["yes", "hello", "fine"], arabicHint: "وين تلفوني؟", arabicParts: ["وين", "؟"], arabicAnswer: "تلفوني", arabicWrongs: ["اي", "هلو", "زين"] },
-      { parts: ["I need a", "to write."], hint: "پێنووسێکم پێویستە بۆ نووسین", answer: "pen", wrongs: ["key", "book", "goodbye"], arabicHint: "اريد قلم حتى اكتب", arabicParts: ["اريد", "حتى اكتب."], arabicAnswer: "قلم", arabicWrongs: ["مفتاح", "كتاب", "مع السلامة"] },
-    ],
-    conversations: [
-      { situation: "داوای پێنووس دەکەیت بۆ نووسین", theyAsk: "Do you need anything?", correct: "Yes, I need a pen, please.", wrong1: "No, goodbye.", wrong2: "Nice to meet you.", wrong3: "I have three cats.", explanation: "کاتێک پێویستت بە نووسین بێت، داوای پێنووس دەکەیت بە ئەدەبەوە.", situationAr: "تطلب قلماً لتكتب به", explanationAr: "عند الحاجة للكتابة، تطلب قلماً بأدب.", theyAskAr: "محتاج شي؟", correctAr: "اي، اريد قلم فدوة.", wrong1Ar: "لا، مع السلامة.", wrong2Ar: "فرصة سعيدة.", wrong3Ar: "عندي تلاث بزونات." },
-    ],
+      {
+        situation: "پرسیارکردن دەربارەی کاتی گەیشتن",
+        theyAsk: "When is the English class?",
+        correct: "It is at ten o'clock in the morning. Don't be late.",
+        wrong1: "She is my mother, Sarah.",
+        wrong2: "Because I am tired.",
+        wrong3: "Which book do you want?",
+        explanation: "وەڵامی پرسیاری 'When' (کەی) پێویستی بە کات و سەعات هەیە (ten o'clock).",
+        situationAr: "السؤال عن موعد الدرس",
+        theyAskAr: "متى يبدأ درس اللغة الإنجليزية؟",
+        correctAr: "إنه في الساعة العاشرة صباحاً. لا تتأخر.",
+        wrong1Ar: "هي أمي، سارة.",
+        wrong2Ar: "لأني تعبان.",
+        wrong3Ar: "أي كتاب تريد؟",
+        explanationAr: "الجواب عن سؤال 'When' يتطلب تحديد وقت محدد."
+      },
+      {
+        situation: "پرسیارکردن دەربارەی خاوەنی جانتاکە",
+        theyAsk: "Whose bag is this in the room?",
+        correct: "It is my sister's bag. She forgot it here.",
+        wrong1: "Where is my phone?",
+        wrong2: "What is your name?",
+        wrong3: "Why are you sad?",
+        explanation: "وەڵامی 'Whose' (هی کێ) خاوەندارێتی دیار دەکات (my sister's bag).",
+        situationAr: "السؤال عن صاحب الحقيبة",
+        theyAskAr: "لمن هذه الحقيبة في الغرفة؟",
+        correctAr: "إنها حقيبة أختي. لقد نسيتها هنا.",
+        wrong1Ar: "أين هاتفي؟",
+        wrong2Ar: "ما هو اسمك؟",
+        wrong3Ar: "لماذا أنت حزين؟",
+        explanationAr: "الجواب عن 'Whose' يحدد ملكية الأشخاص للأشياء."
+      }
+    ]
   },
 
   // Lesson 9: Common Places
   {
     topic: "Common Places", topicKu: "شوێنە باوەکان", topicAr: "الأماكن الشائعة",
     words: [
-      { english: "House", kurdish: "ماڵ", arabic: "بيت" },
+      { english: "House", kurdish: "خانوو (ماڵ)", arabic: "منزل" },
       { english: "School", kurdish: "قوتابخانە", arabic: "مدرسة" },
-      { english: "Market", kurdish: "بازاڕ", arabic: "سوق" },
-      { english: "Street", kurdish: "شەقام", arabic: "شارع" },
-      { english: "Work", kurdish: "کار", arabic: "شغل" },
+      { english: "Shop", kurdish: "دوکان", arabic: "دكان (متجر)" },
+      { english: "City", kurdish: "شار", arabic: "مدينة" },
+      { english: "Work", kurdish: "کار (ئیش)", arabic: "عمل" },
+      { english: "Room", kurdish: "ژوور", arabic: "غرفة" },
+      { english: "Park", kurdish: "پارک", arabic: "حديقة" },
+      { english: "Hospital", kurdish: "نەخۆشخانە", arabic: "مستشفى" },
     ],
     voices: [
-      { prompt: "بڵێ: من لە ماڵەوەم", target: "I am at home.", targetKurdish: "من لە ماڵەوەم.", promptAr: "قول اني بالبيت", targetArabic: "اني بالبيت." },
-      { prompt: "بڵێ: من دەچم بۆ قوتابخانە", target: "I go to school.", targetKurdish: "دەچم بۆ قوتابخانە.", promptAr: "قول دا اروح للمدرسة", targetArabic: "دا اروح للمدرسة." },
+      { prompt: "بڵێ دەچیت بۆ سەر کار", target: "I am going to work now.", targetKurdish: "من ئێستا دەچم بۆ سەر کار.", promptAr: "قل أنا ذاهب للعمل الآن", targetArabic: "أنا ذاهب إلى العمل الآن." },
+      { prompt: "بڵێ لە ماڵەوەیت", target: "I am at home with my family.", targetKurdish: "من لە ماڵەوەم لەگەڵ خێزانەکەم.", promptAr: "قل أنا في المنزل مع عائلتي", targetArabic: "أنا في المنزل مع عائلتي." },
+      { prompt: "بڵێ نەخۆشخانەکە دوورە", target: "The hospital is far from this city.", targetKurdish: "نەخۆشخانەکە لەم شارەوە دوورە.", promptAr: "قل المستشفى بعيد", targetArabic: "المستشفى بعيد عن هذه المدينة." },
     ],
     sentences: [
-      { english: ["The", "market", "is", "big"], kurdish: "بازاڕەکە گەورەیە", arabic: "السوق چبير" },
-      { english: ["I", "am", "at", "work"], kurdish: "من لە سەر کارم", arabic: "اني بالشغل" },
+      { english: ["Let's", "walk", "in", "the", "green", "park", "this", "evening"], kurdish: "با ئەم ئێوارەیە لە پارکە سەوزەکەدا پیاسە بکەین", arabic: "لنلعب في الحديقة الخضراء هذا المساء" },
+      { english: ["The", "shop", "is", "open", "until", "ten", "at", "night"], kurdish: "دوکانەکە تا کاتژمێر دە لە شەودا کراوەیە", arabic: "المحل مفتوح حتى العاشرة ليلاً" },
+      { english: ["I", "live", "in", "a", "very", "beautiful", "and", "clean", "city"], kurdish: "من لە شارێکی زۆر جوان و خاوێندا دەژیم", arabic: "أنا أعيش في مدينة جميلة ونظيفة جداً" },
+      { english: ["My", "sister", "is", "at", "school", "with", "her", "friends"], kurdish: "خوشکەکەم لە قوتابخانەیە لەگەڵ هاوڕێکانی", arabic: "أختي في المدرسة مع صديقاتها" },
     ],
     fillBlanks: [
-      { parts: ["I go to", "every morning."], hint: "هەموو بەیانییەک دەچم بۆ سەر کار", answer: "work", wrongs: ["house", "hello", "fine"], arabicHint: "اروح للشغل كل صبح", arabicParts: ["اروح", "كل صبح."], arabicAnswer: "للشغل", arabicWrongs: ["للبيت", "هلو", "زين"] },
-      { parts: ["This is my", "."], hint: "ئەمە ماڵەکەی منە", answer: "house", wrongs: ["street", "name", "bye"], arabicHint: "هذا بيتي", arabicParts: ["هذا", "."], arabicAnswer: "بيتي", arabicWrongs: ["شارعي", "اسمي", "باي"] },
+      { parts: ["I am cleaning my", "because it is dirty."], hint: "ژوورەکەم پاکدەکەمەوە چونکە پیس بووە.", answer: "room", wrongs: ["city", "hospital", "work"], arabicHint: "أنا أنظف غرفتي لأنها متسخة.", arabicParts: ["أنا أنظف", "لأنها متسخة."], arabicAnswer: "غرفتي", arabicWrongs: ["مدينتي", "مستشفاي", "عملي"] },
+      { parts: ["He works at the", "; he is a doctor."], hint: "ئەو لە نەخۆشخانەکە کار دەکات؛ ئەو پزیشکە.", answer: "hospital", wrongs: ["park", "shop", "school"], arabicHint: "يعمل في المستشفى؛ إنه طبيب.", arabicParts: ["يعمل في", "؛ إنه طبيب."], arabicAnswer: "المستشفى", arabicWrongs: ["الحديقة", "المتجر", "المدرسة"] },
+      { parts: ["Let's meet at the coffee", "."], hint: "با لە دوکانی (کافی) قاوەکە یەکتر ببینین.", answer: "shop", wrongs: ["house", "park", "hospital"], arabicHint: "لنلتقِ في مقهى القهوة.", arabicParts: ["لنلتقِ في مقهى", "."], arabicAnswer: "القهوة", arabicWrongs: ["المنزل", "الحديقة", "المستشفى"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک لە تەلەفۆندا دەپرسێت لەکوێیت", theyAsk: "Where are you now?", correct: "I am at home.", wrong1: "Nice to meet you.", wrong2: "What is your name?", wrong3: "Good morning.", explanation: "لە وەڵامی پرسیاری شوێن، دەڵێیت لە ماڵەوەم: 'I am at home.'", situationAr: "صديق يسألك بالهاتف وينك", explanationAr: "جواباً عن السؤال عن المكان، تقول اني بالبيت.", theyAskAr: "وينك هسة؟", correctAr: "اني بالبيت.", wrong1Ar: "فرصة سعيدة.", wrong2Ar: "شنو اسمك؟", wrong3Ar: "صباح الخير." },
-    ],
-  },
+      {
+        situation: "پرسیارکردن دەربارەی شوێنی باوک",
+        theyAsk: "Where is your father? Is he at home?",
+        correct: "No, he is not. He is at work until ten tonight.",
+        wrong1: "The city is beautiful.",
+        wrong2: "Yes, I am cleaning my room.",
+        wrong3: "He is a doctor at the hospital.",
+        explanation: "وەڵامی گونجاو دیاریکردنی شوێنە کە کارە 'at work'.",
+        situationAr: "السؤال عن مكان تواجد الأب",
+        theyAskAr: "أين أبوك؟ هل هو في المنزل؟",
+        correctAr: "لا، ليس كذلك. إنه في العمل حتى العاشرة ليلاً.",
+        wrong1Ar: "المدينة جميلة.",
+        wrong2Ar: "نعم، أنا أنظف غرفتي.",
+        wrong3Ar: "هو طبيب في المستشفى.",
+        explanationAr: "الرد المناسب يحدد مكان التواجد بالعمل 'at work'."
+      },
+      {
+        situation: "بانگکردنی هاوڕێیەک بۆ بازاڕکردن",
+        theyAsk: "I need to buy some fresh bread.",
+        correct: "Let's go to the local shop. It is open now.",
+        wrong1: "I live in a beautiful house.",
+        wrong2: "The park is green.",
+        wrong3: "I am going to school.",
+        explanation: "بۆ کڕینی نان، چوون بۆ دوکان 'go to the shop' گونجاوترینە.",
+        situationAr: "دعوة صديق للذهاب إلى المتجر لشراء الخبز",
+        theyAskAr: "أحتاج لشراء بعض الخبز الطازج.",
+        correctAr: "لنذهب إلى المتجر المحلي. إنه مفتوح الآن.",
+        wrong1Ar: "أنا أعيش في منزل جميل.",
+        wrong2Ar: "الحديقة خضراء.",
+        wrong3Ar: "أنا ذاهب إلى المدرسة.",
+        explanationAr: "لشراء الخبز، الاقتراح المناسب هو الذهاب إلى الدكان المحلي (go to the shop)."
+      }
+    ]
+  }
 ];
 
 export default normalUnit00;

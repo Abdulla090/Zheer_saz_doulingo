@@ -115,10 +115,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
       
-      const isRTL = I18nManager.isRTL;
+      const isRTL = false;
 
       if (isRTL) {
         // Physical RTL layout: [ FAB ] gap [ Pill (reversed) ]
+        // Since Layer 2 has direction: "ltr", positions and translations are LTR-based.
+        // We calculate the direct offset from the left edge of the bar:
         if (index < tabCount) {
           const physicalSlotIndex = tabCount - 1 - index;
           return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + physicalSlotIndex * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
@@ -208,7 +210,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   }
 
   return (
-    <View style={[styles.host, { paddingBottom: bottomPad, pointerEvents: "box-none" }]}>
+    <View style={[styles.host, { paddingBottom: bottomPad, pointerEvents: "box-none", direction: "ltr" as any }]}>
       <View
         style={[
           styles.row,
@@ -218,11 +220,12 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             width: rowWidth,
             gap: TAB_BAR_ROW_GAP,
             flexDirection: "row",
+            direction: "ltr" as any,
           },
         ]}
       >
         {/* Layer 1: Glass Backgrounds */}
-        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP }]} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP, direction: "ltr" as any }]} pointerEvents="none">
           <TabBarGlassSurface
             borderRadius={TAB_BAR_CORNER_RADIUS}
             style={{ width: pillWidth, height: TAB_BAR_INNER_HEIGHT }}
@@ -250,8 +253,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         </View>
 
         {/* Layer 3: Interactive Icons */}
-        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT }]}>
-          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: "row" }]}>
+        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT, direction: "ltr" as any }]}>
+          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: "row", direction: "ltr" as any }]}>
             {pillTabs.map(({ route, label, renderIcon }) => {
               const routeIndex = state.routes.findIndex((r) => r.name === route);
               const isFocused =

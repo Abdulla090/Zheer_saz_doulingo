@@ -259,22 +259,6 @@ export function LightQuestionPrompt({
   const droplet2Y = useSharedValue(0);
 
   useEffect(() => {
-    floatY.value = withRepeat(
-      withSequence(
-        withTiming(-5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-        withTiming(5, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
-    breathe.value = withRepeat(
-      withSequence(
-        withTiming(1.02, { duration: 1700, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.99, { duration: 1700, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
     if (isKids) {
       droplet1Y.value = withRepeat(
         withSequence(
@@ -293,7 +277,7 @@ export function LightQuestionPrompt({
         true,
       );
     }
-  }, [isKids, floatY, breathe, droplet1Y, droplet2Y]);
+  }, [isKids, droplet1Y, droplet2Y]);
 
   const mascotStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: floatY.value }, { scale: breathe.value }],
@@ -1124,13 +1108,14 @@ export function LessonLiquidFeedback({
 }) {
   const { t, isKu } = useI18n();
   const isKids = variant === "kids";
+  const isPassing = correct || tier === "great" || tier === "good";
 
   if (isKids) {
-    const kidsBg = correct ? "#EAFBE0" : "#FEECEC";
-    const kidsBorder = correct ? "#58CC02" : "#EF4444";
-    const kidsShadow = correct ? "#3F9302" : "#B91C1C";
-    const kidsDeepText = correct ? "#46A302" : "#DC2626";
-    const kidsPose = correct ? "happy" : "wave";
+    const kidsBg = isPassing ? "#EAFBE0" : "#FEECEC";
+    const kidsBorder = isPassing ? "#58CC02" : "#EF4444";
+    const kidsShadow = isPassing ? "#3F9302" : "#B91C1C";
+    const kidsDeepText = isPassing ? "#46A302" : "#DC2626";
+    const kidsPose = isPassing ? "happy" : "wave";
 
     return (
       <View
@@ -1144,14 +1129,11 @@ export function LessonLiquidFeedback({
           }
         ]}
       >
-        <View style={[lh.trayHandle, { backgroundColor: correct ? "rgba(70,163,2,0.18)" : "rgba(220,38,38,0.18)" }]} />
+        <View style={[lh.trayHandle, { backgroundColor: isPassing ? "rgba(70,163,2,0.18)" : "rgba(220,38,38,0.18)" }]} />
         <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-          <Animated.View
-            entering={ZoomIn.springify().mass(0.45).stiffness(160).damping(12)}
-            style={lh.feedbackMascotCol}
-          >
-            <TwinoMascot size={74} pose={kidsPose} />
-          </Animated.View>
+          <View style={lh.feedbackMascotCol}>
+            <TwinoMascot size={90} pose={kidsPose} />
+          </View>
           
           <View style={lh.feedbackTextCol}>
             <AppText style={[lh.feedbackTitle, { color: kidsDeepText, textAlign: isKu ? "right" : "left", fontFamily: "DINNextRoundedBold" }]}>
@@ -1183,20 +1165,12 @@ export function LessonLiquidFeedback({
     );
   }
 
-  const accent = tier
-    ? TIER_COLORS[tier].accent
-    : correct
-      ? L.green
-      : L.red;
-  const titleColor = tier
-    ? TIER_COLORS[tier].deep
-    : correct
-      ? L.greenDeep
-      : L.redDeep;
+  const accent = isPassing ? L.green : L.red;
+  const titleColor = isPassing ? L.greenDeep : L.redDeep;
 
   // Decide Pingo pose based on correctness
   const isTierGoodOrGreat = tier === "good" || tier === "great";
-  const pose = correct ? (isTierGoodOrGreat ? "wink" : "happy") : "wave";
+  const pose = isPassing ? (isTierGoodOrGreat ? "wink" : "happy") : "wave";
 
   return (
     <HomeLiquidCard
@@ -1204,16 +1178,13 @@ export function LessonLiquidFeedback({
       contentStyle={[lh.feedbackInner, { paddingBottom: 16 }]}
       radius={26}
     >
-      <View style={[lh.trayHandle, { backgroundColor: correct ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)" }]} />
+      <View style={[lh.trayHandle, { backgroundColor: isPassing ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)" }]} />
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
       
       <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-        <Animated.View 
-          entering={ZoomIn.springify().mass(0.45).stiffness(160).damping(12)}
-          style={lh.feedbackMascotCol}
-        >
-          <TwinoMascot size={74} pose={pose} />
-        </Animated.View>
+        <View style={lh.feedbackMascotCol}>
+          <TwinoMascot size={90} pose={pose} />
+        </View>
         
         <View style={lh.feedbackTextCol}>
           <AppText style={[lh.feedbackTitle, { color: titleColor, textAlign: isKu ? "right" : "left" }]}>

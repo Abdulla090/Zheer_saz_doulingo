@@ -297,7 +297,8 @@ export async function evaluateEnglish(
     }
   }
 
-  // 3. Fallback to mock
-  await new Promise((r) => setTimeout(r, 900));
-  return mockEvaluateEnglish(safe);
+  // 3. No silent fallback — surface real error
+  throw new Error(
+    "Unable to evaluate your response. Please check your internet connection and try again.",
+  );
 }

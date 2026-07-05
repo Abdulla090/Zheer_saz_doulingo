@@ -1,5 +1,6 @@
 /**
- * Reusable iOS 26 light liquid glass — backdrop blur + edge shading.
+ * Reusable iOS 27 light liquid glass — backdrop blur + edge shading.
+ * Includes iOS 27 adjustable intensity customization support for Web, Android, and iOS.
  */
 
 import { LIQUID_GLASS, liquidFrostBase, liquidGlassShellShadow } from "../constants/liquid-glass";
@@ -28,23 +29,38 @@ try {
 function FrostWash({
   borderRadius,
   minimal,
+  intensity = 0.5,
 }: {
   borderRadius: number;
   minimal?: boolean;
+  intensity?: number;
 }) {
+  // Scale overlay opacities dynamically based on iOS 27 intensity
+  const opacityMultiplier = intensity * 1.2;
+
   if (minimal) {
     return (
       <>
         <View
           style={[
             StyleSheet.absoluteFill,
-            { borderRadius, backgroundColor: LIQUID_GLASS.frostUnderlay, pointerEvents: "none" },
+            {
+              borderRadius,
+              backgroundColor: LIQUID_GLASS.frostUnderlay,
+              opacity: Math.min(1, opacityMultiplier),
+              pointerEvents: "none",
+            },
           ]}
         />
         <View
           style={[
             StyleSheet.absoluteFill,
-            { borderRadius, backgroundColor: LIQUID_GLASS.tintWash, pointerEvents: "none" },
+            {
+              borderRadius,
+              backgroundColor: LIQUID_GLASS.tintWash,
+              opacity: Math.min(1, opacityMultiplier * 0.8),
+              pointerEvents: "none",
+            },
           ]}
         />
       </>
@@ -57,26 +73,52 @@ function FrostWash({
       <View
         style={[
           StyleSheet.absoluteFill,
-          { borderRadius, backgroundColor: LIQUID_GLASS.frostUnderlay, pointerEvents: "none" },
+          {
+            borderRadius,
+            backgroundColor: LIQUID_GLASS.frostUnderlay,
+            opacity: Math.min(1, opacityMultiplier * 0.8),
+            pointerEvents: "none",
+          },
         ]}
       />
       <View
         style={[
           StyleSheet.absoluteFill,
-          { borderRadius, backgroundColor: frost, pointerEvents: "none" },
+          {
+            borderRadius,
+            backgroundColor: frost,
+            opacity: Math.min(1, opacityMultiplier),
+            pointerEvents: "none",
+          },
         ]}
       />
       <View
         style={[
           StyleSheet.absoluteFill,
-          { borderRadius, backgroundColor: LIQUID_GLASS.tintWash, pointerEvents: "none" },
+          {
+            borderRadius,
+            backgroundColor: LIQUID_GLASS.tintWash,
+            opacity: Math.min(1, opacityMultiplier * 0.9),
+            pointerEvents: "none",
+          },
         ]}
       />
     </>
   );
 }
 
-function WebLiquidBackdrop({ borderRadius }: { borderRadius: number }) {
+function WebLiquidBackdrop({
+  borderRadius,
+  intensity = 0.5,
+}: {
+  borderRadius: number;
+  intensity?: number;
+}) {
+  const blurVal = Math.round(12 + intensity * 24); // 12px to 36px blur
+  const satVal = Math.round(120 + intensity * 90); // 120% to 210% saturation
+  const contrastVal = (0.95 + intensity * 0.18).toFixed(2); // 0.95 to 1.13 contrast
+  const opacityVal = (0.22 + intensity * 0.48).toFixed(2); // 0.22 to 0.70 opacity
+
   return (
     <View
       style={[
@@ -84,9 +126,9 @@ function WebLiquidBackdrop({ borderRadius }: { borderRadius: number }) {
         {
           borderRadius,
           overflow: "hidden",
-          backgroundColor: LIQUID_GLASS.frostWeb,
-          backdropFilter: "blur(24px) saturate(165%) contrast(1.04)",
-          WebkitBackdropFilter: "blur(24px) saturate(165%) contrast(1.04)",
+          backgroundColor: `rgba(226, 232, 240, ${opacityVal})`,
+          backdropFilter: `blur(${blurVal}px) saturate(${satVal}%) contrast(${contrastVal})`,
+          WebkitBackdropFilter: `blur(${blurVal}px) saturate(${satVal}%) contrast(${contrastVal})`,
           pointerEvents: "none",
         } as ViewStyle,
       ]}
@@ -95,12 +137,19 @@ function WebLiquidBackdrop({ borderRadius }: { borderRadius: number }) {
 }
 
 /**
- * iOS 26 edge shading fallback (web / Android / iOS without GlassView API).
- * On native GlassView, the system composes specular + rim — do not duplicate.
+ * iOS 27 edge shading fallback (web / Android / iOS without GlassView API).
+ * High-fidelity specular, Fresnel left/right grazing angles, and lensing bottom shades.
  */
-export function LiquidGlassEdgeShading({ borderRadius }: { borderRadius: number }) {
+export function LiquidGlassEdgeShading({
+  borderRadius,
+  intensity = 0.5,
+}: {
+  borderRadius: number;
+  intensity?: number;
+}) {
   const r = borderRadius;
   const inset = Math.max(6, r * 0.22);
+  const opacityMultiplier = intensity * 1.5;
 
   return (
     <>
@@ -110,7 +159,11 @@ export function LiquidGlassEdgeShading({ borderRadius }: { borderRadius: number 
         locations={[0, 0.32, 1]}
         style={[
           styles.specularArc,
-          { borderTopLeftRadius: r, borderTopRightRadius: r },
+          {
+            borderTopLeftRadius: r,
+            borderTopRightRadius: r,
+            opacity: Math.min(1, opacityMultiplier),
+          },
         ]}
       />
       {/* Layer 2 — Fresnel left rim */}
@@ -118,14 +171,28 @@ export function LiquidGlassEdgeShading({ borderRadius }: { borderRadius: number 
         colors={[LIQUID_GLASS.edgeFresnel, "rgba(255,255,255,0)"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
-        style={[styles.fresnelLeft, { borderTopLeftRadius: r, borderBottomLeftRadius: r }]}
+        style={[
+          styles.fresnelLeft,
+          {
+            borderTopLeftRadius: r,
+            borderBottomLeftRadius: r,
+            opacity: Math.min(1, opacityMultiplier * 0.8),
+          },
+        ]}
       />
       {/* Layer 3 — Fresnel right rim */}
       <LinearGradient
         colors={["rgba(255,255,255,0)", LIQUID_GLASS.edgeFresnel]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
-        style={[styles.fresnelRight, { borderTopRightRadius: r, borderBottomRightRadius: r }]}
+        style={[
+          styles.fresnelRight,
+          {
+            borderTopRightRadius: r,
+            borderBottomRightRadius: r,
+            opacity: Math.min(1, opacityMultiplier * 0.8),
+          },
+        ]}
       />
       {/* Layer 4 — bottom thickness / lensing shade */}
       <LinearGradient
@@ -133,7 +200,11 @@ export function LiquidGlassEdgeShading({ borderRadius }: { borderRadius: number 
         locations={[0.5, 1]}
         style={[
           styles.bottomShade,
-          { borderBottomLeftRadius: r, borderBottomRightRadius: r },
+          {
+            borderBottomLeftRadius: r,
+            borderBottomRightRadius: r,
+            opacity: Math.min(1, opacityMultiplier),
+          },
         ]}
       />
       {/* Layer 5 — top catch light (1px) */}
@@ -144,17 +215,29 @@ export function LiquidGlassEdgeShading({ borderRadius }: { borderRadius: number 
             left: inset,
             right: inset,
             backgroundColor: LIQUID_GLASS.edgeTopLine,
+            opacity: Math.min(1, opacityMultiplier),
           },
         ]}
       />
       {/* Layer 6 — dual rim (Increased Contrast–style separation) */}
       <View
-        style={[styles.outerRim, { borderRadius: r, borderColor: LIQUID_GLASS.border }]}
+        style={[
+          styles.outerRim,
+          {
+            borderRadius: r,
+            borderColor: LIQUID_GLASS.border,
+            opacity: Math.min(1, opacityMultiplier * 0.6),
+          },
+        ]}
       />
       <View
         style={[
           styles.innerRim,
-          { borderRadius: Math.max(0, r - 1), borderColor: LIQUID_GLASS.borderInner },
+          {
+            borderRadius: Math.max(0, r - 1),
+            borderColor: LIQUID_GLASS.borderInner,
+            opacity: Math.min(1, opacityMultiplier * 0.8),
+          },
         ]}
       />
     </>
@@ -169,6 +252,8 @@ type Props = {
   shadowDepth?: "tab" | "button";
   /** false when native GlassView draws system edge shading (iOS 26+) */
   edgeShading?: boolean;
+  /** iOS 27 Liquid Glass slider adjustment (0.0 to 1.0, default 0.5) */
+  intensity?: number;
 };
 
 export function LiquidGlassSurface({
@@ -178,12 +263,15 @@ export function LiquidGlassSurface({
   contentStyle,
   shadowDepth = "button",
   edgeShading,
+  intensity = 0.5,
 }: Props) {
   const nativeGlass =
     Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
   const GlassView = GlassViewComponent;
   const isWeb = Platform.OS === "web";
-  const iosBlurFallback = Platform.OS === "ios" && !nativeGlass;
+  
+  // Enable native BlurView support for Android in Expo SDK 56!
+  const showBlurFallback = (Platform.OS === "ios" || Platform.OS === "android") && !nativeGlass;
   const showEdgeShading = edgeShading ?? !nativeGlass;
 
   return (
@@ -195,10 +283,10 @@ export function LiquidGlassSurface({
         style,
       ]}
     >
-      <FrostWash borderRadius={borderRadius} minimal={isWeb || nativeGlass} />
+      <FrostWash borderRadius={borderRadius} minimal={isWeb || nativeGlass} intensity={intensity} />
 
       {isWeb ? (
-        <WebLiquidBackdrop borderRadius={borderRadius} />
+        <WebLiquidBackdrop borderRadius={borderRadius} intensity={intensity} />
       ) : nativeGlass && GlassView ? (
         <GlassView
           style={[StyleSheet.absoluteFill, { borderRadius }]}
@@ -206,15 +294,15 @@ export function LiquidGlassSurface({
           colorScheme="light"
           isInteractive
         />
-      ) : iosBlurFallback ? (
+      ) : showBlurFallback ? (
         <BlurView
-          intensity={68}
+          intensity={Math.round(40 + intensity * 50)} // 40 to 90 blur intensity
           tint={LIQUID_GLASS.blurTint}
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: "hidden" }]}
         />
       ) : null}
 
-      {showEdgeShading ? <LiquidGlassEdgeShading borderRadius={borderRadius} /> : null}
+      {showEdgeShading ? <LiquidGlassEdgeShading borderRadius={borderRadius} intensity={intensity} /> : null}
 
       {!nativeGlass ? (
         <LinearGradient
@@ -222,7 +310,11 @@ export function LiquidGlassSurface({
           locations={[0, 0.45, 1]}
           style={[
             styles.topSheen,
-            { borderTopLeftRadius: borderRadius, borderTopRightRadius: borderRadius },
+            {
+              borderTopLeftRadius: borderRadius,
+              borderTopRightRadius: borderRadius,
+              opacity: Math.min(1, intensity * 1.3),
+            },
           ]}
         />
       ) : null}

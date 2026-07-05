@@ -271,15 +271,15 @@ export default function LessonScreen() {
         tier: isConversationPick ? tier : undefined,
         explanation,
       });
-      sheetY.value = withSpring(0, {
-        damping: 15,
-        stiffness: 120,
+      sheetY.value = withTiming(0, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
       });
-      sheetScale.value = withSpring(1, {
-        damping: 14,
-        stiffness: 110,
+      sheetScale.value = withTiming(1, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
       });
-      sheetOpacity.value = withTiming(1, { duration: 180 });
+      sheetOpacity.value = withTiming(1, { duration: 160 });
     },
     [current, hearts, questions],
   );

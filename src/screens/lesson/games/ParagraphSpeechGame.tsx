@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, I18nManager } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, cancelAnimation } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
 import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
@@ -101,7 +101,7 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     }
 
     return (
-      <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" }}>
+      <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", flexWrap: "wrap", justifyContent: "flex-start" }}>
         {evaluation.wordAnalysis.map((item, idx) => (
           <AppText
             key={idx}

@@ -55,18 +55,19 @@ function buildTutorSystem(
 ): string {
   const nativeName = getLanguageName(nativeLang);
   const targetName = getLanguageName(targetLang);
+  const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
 
-  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string }> = {
-    1: { cefr: "Beginner (A1)", pace: "very slowly, with long pauses between words", vocab: "very simple words, sentences max 4 words", feedback: "Kurdish" },
-    2: { cefr: "Beginner (A1)", pace: "very slowly", vocab: "basic A1 words, sentences max 5 words", feedback: "Kurdish" },
-    3: { cefr: "Elementary (A2)", pace: "slowly", vocab: "simple daily vocabulary, sentences max 6 words", feedback: "Kurdish" },
-    4: { cefr: "Elementary (A2)", pace: "slowly", vocab: "standard A2 vocabulary, sentences max 7 words", feedback: "English" },
-    5: { cefr: "Intermediate (B1)", pace: "moderately slowly", vocab: "everyday intermediate B1 vocabulary, sentences max 8-10 words", feedback: "English" },
-    6: { cefr: "Intermediate (B1)", pace: "normal pace", vocab: "B1 vocabulary, varied sentence structures", feedback: "English" },
-    7: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "rich vocabulary and expressions", feedback: "English" },
-    8: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "B2 level vocabulary, idiomatic phrases", feedback: "English" },
-    9: { cefr: "Advanced (C1)", pace: "natural native speed", vocab: "slang, idioms, and advanced professional phrasing", feedback: "English" },
-    10: { cefr: "Advanced / Fluent (C2)", pace: "fast natural native speed", vocab: "nuanced vocabulary, abstract themes, and professional jargon", feedback: "English" },
+  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string; desc: string }> = {
+    1: { cefr: "Pre-A1", pace: "very slowly, with long pauses between words", vocab: "greetings, numbers, colors, family words", feedback: nativeName, desc: "Greetings, numbers, colors, family words" },
+    2: { cefr: "A1", pace: "very slowly", vocab: "everyday nouns/verbs", feedback: nativeName, desc: "Everyday nouns/verbs" },
+    3: { cefr: "A1+", pace: "slowly", vocab: "daily routine vocabulary", feedback: nativeName, desc: "Daily routine vocab" },
+    4: { cefr: "A2", pace: "slowly", vocab: "common objects, feelings", feedback: targetName, desc: "Common objects, feelings" },
+    5: { cefr: "A2+", pace: "moderately slowly", vocab: "shopping, travel, work basics", feedback: targetName, desc: "Shopping, travel, work basics" },
+    6: { cefr: "B1", pace: "normal pace", vocab: "opinions, descriptions", feedback: targetName, desc: "Opinions, descriptions" },
+    7: { cefr: "B1+", pace: "natural conversational speed", vocab: "idiomatic everyday phrases", feedback: targetName, desc: "Idiomatic everyday phrases" },
+    8: { cefr: "B2", pace: "natural conversational speed", vocab: "abstract topics (news, work, plans)", feedback: targetName, desc: "Abstract topics (news, work, plans)" },
+    9: { cefr: "B2+/C1", pace: "natural native speed", vocab: "professional/academic vocabulary", feedback: targetName, desc: "Professional/academic vocab" },
+    10: { cefr: "C1/C2", pace: "fast natural native speed", vocab: "native-like range", feedback: targetName, desc: "Near-native conversation" },
   };
 
   const currentLevel = levelMapping[englishLevel] || levelMapping[5];
@@ -75,43 +76,55 @@ function buildTutorSystem(
     ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
     : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
 
-  return [
-    `You are Twino — a warm, natural, world-class ${targetName} conversation tutor for ${nativeName} speakers.`,
+  const systemRules = [
+    `You are Twino — a disciplined private English tutor speaking with a ${nativeName}-speaking student.`,
     `The learner's age group is: ${ageGroup}`,
-    `The learner's English level is: ${englishLevel}/10 which corresponds to CEFR ${currentLevel.cefr}.`,
-    "Your tone is calm, friendly, encouraging, and modern — like a trusted friend who happens to be fluent.",
-    "Never sound robotic, never over-explain, never repeat yourself unnecessarily.",
-    "",
-    "=== PHASE: intro_ku ===",
-    `Speak ONLY in ${nativeName}. Keep it warm and brief (2–3 sentences max).`,
-    `Introduce yourself naturally, say you'll practice real ${targetName} together, and ask if they're ready.`,
-    "Wait for a clear readiness signal before switching phases.",
-    "",
-    "=== PHASE: english ===",
-    `Conduct a natural back-and-forth ${targetName} conversation adapted to CEFR ${currentLevel.cefr}.`,
-    `- Speak ${currentLevel.pace}.`,
-    `- Use ${currentLevel.vocab}.`,
-    `- Respond naturally to what the learner said.`,
-    `- Offer gentle corrections and linguistic feedback in ${currentLevel.feedback}.`,
-    "Each turn: (1) respond naturally to what the learner said, (2) offer gentle correction if needed with a natural restatement — never lecture, (3) introduce ONE new useful word or phrase organically in context.",
-    "Keep replies concise (2–4 sentences). Vary your topics based on age and interests.",
-    "After 3–4 successful exchanges on a topic, smoothly transition to a new topic.",
-    "Sound human: use contractions, casual phrasing, short affirmations like 'Exactly!', 'Nice!', 'Love that!'",
-    `teachNote: 1 short ${nativeName} sentence explaining the key ${targetName} thing you just modeled.`,
-    `wordHighlight: the single most important ${targetName} word or phrase from this turn (max 3 words).`,
-    "",
-    "=== READY SIGNALS ===",
-    "Accepted: ready, yes, ok, sure, let's go, start, ئامادەم, بەڵێ, دەست پێ بکە, or userReadySignal=true.",
-    `On detection: set readyDetected=true, phase=english, give a warm 1-sentence welcome + first ${targetName} prompt.`,
-    "",
-    "=== AUDIO TRANSCRIPTION ===",
-    "If audio is attached, transcribe carefully. If speech is unclear, make your best guess and continue naturally.",
-    "Set userTranscript to the transcribed text.",
-    "",
-    "=== OUTPUT FORMAT ===",
-    "Reply ONLY with a single valid JSON object. No markdown, no code fences, no extra text before or after.",
-    '{"phase":"intro_ku"|"english","reply":"...","replyLang":"ku"|"en","teachNote":"optional string","wordHighlight":"optional string","readyDetected":false,"userTranscript":"optional string"}',
-  ].join("\n");
+    `Your tone is calm, friendly, encouraging, and modern.`,
+    `Never sound robotic, never over-explain, never repeat yourself unnecessarily.`,
+    ``,
+    `STRICT RULES FOR EVERY TURN:`,
+    `- Keep every turn to 1–3 short sentences. Never lecture.`,
+    `- Ask ONE question, then STOP and wait for the student's answer. Never stack questions.`,
+    `- No filler phrases. Acknowledge briefly ("Good.", "Nice try.", "Almost!") and move on.`,
+    `- Corrections are always short: state the fixed sentence once, no grammar essays.`,
+    `- Never break character to explain what you are doing.`,
+  ];
+
+  if (!onboardingComplete) {
+    systemRules.push(
+      `=== PHASE: intro_ku ===`,
+      `You are in the onboarding phase. Greet the student with exactly one sentence in English: 'Hi! I'm your English tutor.'`,
+      `Immediately after greeting, ask the level question in Kurdish Sorani: 'لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'`,
+      `Wait for a clear readiness/number response.`,
+      `Output ONLY valid JSON matching the format below.`
+    );
+  } else {
+    systemRules.push(
+      `=== PHASE: english ===`,
+      `Conduct English practice adapted to CEFR ${currentLevel.cefr}.`,
+      `- Speak ${currentLevel.pace}.`,
+      `- Use ${currentLevel.vocab}.`,
+      `- Offer gentle corrections in ${currentLevel.feedback}.`,
+      ``,
+      `WORD-FIRST PEDAGOGY LOOP:`,
+      `Introduce words from the level's word list:`,
+      `1. Ask: 'Do you know the word [word]?'`,
+      `2. If yes: ask them to 'Use it in a sentence.'`,
+      `3. If no: give a one-line definition and one example, then ask them to make their own sentence.`,
+      `Every 3 words, run a short 2-4 line conversation using the recent words.`,
+      `teachNote: 1 short ${nativeName} sentence explaining the key grammar/vocab thing you just modeled.`,
+      `wordHighlight: the single most important English word or phrase from this turn (max 3 words).`
+    );
+  }
+
+  systemRules.push(
+    ``,
+    `=== OUTPUT FORMAT ===`,
+    `Reply ONLY with a single valid JSON object. No markdown, no code fences, no extra text.`,
+    '{"phase":"intro_ku"|"english","reply":"...","replyLang":"ku"|"en","teachNote":"optional string","wordHighlight":"optional string","readyDetected":false,"userTranscript":"optional string"}'
+  );
+
+  return systemRules.join("\n");
 }
 
 type GeminiGenerateResponse = {
@@ -209,62 +222,12 @@ function historyToContents(history: TutorMessage[]) {
 
 export { isGeminiConfigured };
 
-export function mockTutorTurn(input: TutorTurnInput): TutorTurnResponse {
-  if (input.sessionStart) {
-    return {
-      phase: "intro_ku",
-      reply:
-        "سڵاو! من فینگۆم، مامۆستای ئینگلیزیت. کاتێک ئامادە بوویت، پێکەوە ئینگلیزی فێر دەبین. ئامادەیت دەست پێ بکەین؟",
-      replyLang: "ku",
-      readyDetected: false,
-    };
-  }
-
-  const ready =
-    input.userReadySignal ||
-    /ready|yes|start|ئاماد|بەڵێ|دەست پێ/i.test(input.userText ?? "");
-
-  if (input.phase === "intro_ku" && ready) {
-    return {
-      phase: "english",
-      reply: "Perfect! Let's begin. Say this with me: Hello — it means سڵاو. Your turn!",
-      replyLang: "en",
-      teachNote: "Hello واتە سڵاو — بەردەوام بیت!",
-      wordHighlight: "Hello",
-      readyDetected: true,
-      userTranscript: input.userText,
-    };
-  }
-
-  if (input.phase === "english") {
-    const user = input.userText?.trim() || "…";
-    return {
-      phase: "english",
-      reply: `Nice try! You said "${user}". Now let's learn: Thank you — use it when someone helps you.`,
-      replyLang: "en",
-      teachNote: "Thank you واتە سوپاس — زۆر بەسوودە!",
-      wordHighlight: "Thank you",
-      readyDetected: false,
-      userTranscript: user,
-    };
-  }
-
-  return {
-    phase: "intro_ku",
-    reply: "زۆر باش! کاتێک ئامادە بوویت، دوگمەی «ئامادەم» دابگرە یان بڵێ «ئامادەم».",
-    replyLang: "ku",
-    readyDetected: false,
-    userTranscript: input.userText,
-  };
-}
-
 export async function sendTutorTurn(
   input: TutorTurnInput,
 ): Promise<TutorTurnResponse> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    await new Promise((r) => setTimeout(r, 700));
-    return mockTutorTurn(input);
+    throw new Error("Gemini API key is not configured.");
   }
 
   const userPrompt = buildUserPrompt(input);
@@ -313,7 +276,7 @@ export async function sendTutorTurn(
           contents,
           generationConfig: {
             temperature: 0.65,
-            maxOutputTokens: 512,
+            maxOutputTokens: 200,
           },
         }),
         signal: controller.signal,

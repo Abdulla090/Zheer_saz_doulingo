@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../../components/animations/skia-gsap-openin
 
 export default function KidsProfileRoute() {
   return (
-    <ScreenOpeningShell variant="fade">
+    <ScreenOpeningShell variant="settings">
       <SettingsScreen isKidsMode={true} />
     </ScreenOpeningShell>
   );

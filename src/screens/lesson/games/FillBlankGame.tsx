@@ -2,7 +2,7 @@
  
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, View, Pressable, Platform } from "react-native";
+import { StyleSheet, View, Pressable, Platform, I18nManager } from "react-native";
 import * as Haptics from "expo-haptics";
 import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
 import Animated, {
@@ -267,7 +267,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: isKu ? (isRtlText(question.sentenceParts.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.sentenceParts.join(" ")) ? "row-reverse" : "row") }]}>
+          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
             {question.sentenceParts[0] ? (
               <AppText style={s.sentenceText}>{question.sentenceParts[0]} </AppText>
             ) : null}
@@ -310,7 +310,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         </LightSurfaceCard>
       </Animated.View>
 
-      <View style={[s.chipsWrap, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={[s.chipsWrap, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
         {shuffledOptions.map((w) => {
           const isFlying = flySession?.word === w;
           const isSelected = selected === w;
@@ -381,7 +381,6 @@ const s = StyleSheet.create({
     gap: 24,
   },
   sentenceRow: {
-    flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
@@ -421,7 +420,6 @@ const s = StyleSheet.create({
     opacity: 0.35,
   },
   chipsWrap: {
-    flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     justifyContent: "center",

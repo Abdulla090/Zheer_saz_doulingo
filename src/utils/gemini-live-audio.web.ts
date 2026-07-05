@@ -94,6 +94,7 @@ export class LivePcmPlayer {
   }
 
   private flushBuffer() {
+    this.flushTimeout = null;
     if (this.destroyed || this.pendingBytes.length === 0) return;
 
     try {
@@ -186,7 +187,7 @@ export class LivePcmPlayer {
   }
 
   get isPlaying() {
-    return this.playing;
+    return this.playing || this.wavQueue.length > 0 || this.pendingBytes.length > 0 || this.flushTimeout !== null;
   }
 }
 
@@ -212,6 +213,18 @@ export async function startMicPcmStream(
   processor.onaudioprocess = (e) => {
     const inputData = e.inputBuffer.getChannelData(0);
     
+    // Calculate RMS to filter background noise
+    let sum = 0;
+    for (let i = 0; i < inputData.length; i++) {
+      sum += inputData[i] * inputData[i];
+    }
+    const rms = Math.sqrt(sum / inputData.length);
+    
+    // Threshold of 0.004 filters quiet room noise
+    if (rms < 0.004) {
+      return;
+    }
+
     // Convert Float32Array to 16-bit signed PCM
     const buffer = new ArrayBuffer(inputData.length * 2);
     const view = new DataView(buffer);

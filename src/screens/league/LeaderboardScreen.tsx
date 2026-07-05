@@ -32,13 +32,16 @@ const Colors = {
   promotion: "#22C55E",
   promotionBg: "rgba(34, 197, 94, 0.08)",
   currentUser: "#0F172A",
-  currentUserBg: "#EEF2FF",
-  currentUserBorder: "#4F46E5",
+  currentUserBg: "#FFF7ED", // soft orange bg
+  currentUserBorder: "#FF963C", // soft orange border
+  purpleText: "#6B5AED", // sophisticated slate-purple (not AI slop purple)
+  purpleBg: "#F5F3FF", // soft lavender bg
 };
 
 export const LeaderboardScreen = () => {
   const insets = useSafeAreaInsets();
-  const { t, isKu } = useI18n();
+  const { t, locale, isKu } = useI18n();
+  const isRtl = isKu || locale === 'ar';
 
   const top3 = useMemo(() => LEAGUE_ENTRIES.slice(0, 3), []);
   const rest = useMemo(() => LEAGUE_ENTRIES.slice(3), []);
@@ -56,25 +59,25 @@ export const LeaderboardScreen = () => {
     const avatarSize = isFirst ? 76 : 60;
     const pedestalHeight = isFirst ? 110 : isSecond ? 80 : 64;
 
-    // Playful 3D Pedestal Colors
-    let pedestalBg = "#FFEDD5"; // Bronze
-    let pedestalBorder = "#FDBA74";
-    let pedestalBottom = "#F97316";
-    let badgeColor = "#D97706";
-    let trophyColor = "#D97706";
+    // Playful 3D Pedestal Colors - Rank 3 is soft blue
+    let pedestalBg = "#EFF6FF"; 
+    let pedestalBorder = "#BFDBFE";
+    let pedestalBottom = "#3B82F6";
+    let badgeColor = "#3B82F6";
+    let trophyColor = "#3B82F6";
 
     if (isFirst) {
-      pedestalBg = "#FEF08A"; // Gold
-      pedestalBorder = "#FACC15";
-      pedestalBottom = "#EAB308";
-      badgeColor = "#CA8A04";
-      trophyColor = "#EAB308";
+      pedestalBg = "#FFF7ED"; // Soft Orange
+      pedestalBorder = "#FFD8A8";
+      pedestalBottom = "#FF963C";
+      badgeColor = "#FF963C";
+      trophyColor = "#FF963C";
     } else if (isSecond) {
-      pedestalBg = "#F1F5F9"; // Silver
-      pedestalBorder = "#CBD5E1";
-      pedestalBottom = "#94A3B8";
-      badgeColor = "#475569";
-      trophyColor = "#94A3B8";
+      pedestalBg = "#F5F3FF"; // Soft Purple
+      pedestalBorder = "#D8D4FD";
+      pedestalBottom = "#6B5AED";
+      badgeColor = "#6B5AED";
+      trophyColor = "#6B5AED";
     }
 
     return (
@@ -82,7 +85,7 @@ export const LeaderboardScreen = () => {
         {/* Crown/Star overlay on top of 1st place */}
         {isFirst && (
           <View style={styles.crownContainer}>
-            <HugeiconsIcon icon={StarIcon} size={18} color="#EAB308" strokeWidth={2.5} />
+            <HugeiconsIcon icon={StarIcon} size={18} color="#FF963C" strokeWidth={2.5} />
           </View>
         )}
 
@@ -190,7 +193,7 @@ export const LeaderboardScreen = () => {
         />
 
         {/* Name and Level */}
-        <View style={styles.listNameCol}>
+        <View style={[styles.listNameCol, isRtl && { alignItems: "flex-end" }]}>
           <AppText
             style={[styles.listName, isMe && styles.listNameMe]}
             numberOfLines={1}
@@ -230,14 +233,14 @@ export const LeaderboardScreen = () => {
       <GsapEnterBlock index={0}>
         <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 8 }]}>
           <View style={styles.headerTop}>
-            <View>
-              <AppText style={styles.headerTitle} forceLatinFont latinRole="bold">
+            <View style={isRtl && { alignItems: "flex-end" }}>
+              <AppText style={[styles.headerTitle, isRtl && { textAlign: "right" }]} forceLatinFont={!isRtl} latinRole="bold">
                 {t("league.title")}
               </AppText>
               {/* Promotion zone indicator */}
               <View style={styles.promotionBadge}>
                 <HugeiconsIcon icon={ArrowUp01Icon} size={12} color={Colors.promotion} strokeWidth={2.5} />
-                <AppText style={styles.promotionText} forceLatinFont latinRole="bold">
+                <AppText style={styles.promotionText} forceLatinFont={!isRtl} latinRole="bold">
                   {t("league.promotionZone")}
                 </AppText>
               </View>
@@ -245,7 +248,7 @@ export const LeaderboardScreen = () => {
             
             <View style={styles.headerTimeBadge}>
               <HugeiconsIcon icon={Clock01Icon} size={14} color={Colors.mutedForeground} strokeWidth={2} />
-              <AppText style={styles.headerTimeText} forceLatinFont latinRole="bold">
+              <AppText style={styles.headerTimeText} forceLatinFont={!isRtl} latinRole="bold">
                 {t("league.daysLeft").replace("{count}", "5")}
               </AppText>
             </View>
@@ -438,8 +441,8 @@ const styles = StyleSheet.create({
   },
   listRowMe: {
     backgroundColor: Colors.currentUserBg,
-    borderColor: "#C7D2FE",
-    borderBottomColor: "#A5B4FC",
+    borderColor: "#FFE4D6",
+    borderBottomColor: "#FFC29E",
   },
   listRankWrap: {
     width: 24,
@@ -458,11 +461,11 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor: "#F1F5F9",
-    marginLeft: 8,
+    marginStart: 8,
   },
   listNameCol: {
     flex: 1,
-    marginLeft: 12,
+    marginStart: 12,
   },
   listName: {
     fontSize: 14,
@@ -505,8 +508,8 @@ const styles = StyleSheet.create({
   },
   xpChipMe: {
     backgroundColor: Colors.currentUserBorder,
-    borderColor: "#4338CA",
-    borderBottomColor: "#312E81",
+    borderColor: "#EA580C",
+    borderBottomColor: "#C2410C",
   },
   listXp: {
     fontSize: 12,

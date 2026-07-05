@@ -78,13 +78,13 @@ export function KidsEnglishPathScreen() {
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    Math.max(2, currentUnitIndex + 1)
+    localizedSections.length
   );
 
-  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
   useEffect(() => {
-    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
-  }, [currentUnitIndex]);
+    setVisibleUnitsCount((prev) => Math.max(prev, localizedSections.length));
+  }, [localizedSections.length]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),

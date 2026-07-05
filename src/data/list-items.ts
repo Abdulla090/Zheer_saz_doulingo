@@ -34,9 +34,7 @@ export function resolveLessonStatus(
   isFirstInUnit: boolean = false
 ): LessonStatus {
   if (pathIndex < nextLessonPathIndex) return "completed";
-  if (pathIndex === nextLessonPathIndex) return "current";
-  if (isFirstInUnit) return "current";
-  return "locked";
+  return "current"; // Make all future lessons current/unlocked so developer can test them all
 }
 
 export type SectionDataItem = {

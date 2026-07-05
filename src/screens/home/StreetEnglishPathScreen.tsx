@@ -73,13 +73,13 @@ export const StreetEnglishPathScreen = () => {
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    Math.max(2, currentUnitIndex + 1)
+    localizedSections.length
   );
 
-  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
   useEffect(() => {
-    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
-  }, [currentUnitIndex]);
+    setVisibleUnitsCount((prev) => Math.max(prev, localizedSections.length));
+  }, [localizedSections.length]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),
@@ -89,35 +89,33 @@ export const StreetEnglishPathScreen = () => {
   const hasMore = visibleUnitsCount < localizedSections.length;
 
   const renderFooter = useCallback(() => {
-    if (hasMore) {
-      return (
-        <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
-          <PressableScale
+    if (!hasMore) return null;
+    return (
+      <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+        <PressableScale
+          style={{
+            paddingVertical: 14,
+            paddingHorizontal: 28,
+            backgroundColor: "#0F172A",
+            borderRadius: 20,
+            borderBottomWidth: 4,
+            borderBottomColor: "#020617",
+          }}
+          onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
+        >
+          <AppText
             style={{
-              paddingVertical: 14,
-              paddingHorizontal: 28,
-              backgroundColor: "#0F172A",
-              borderRadius: 20,
-              borderBottomWidth: 4,
-              borderBottomColor: "#020617",
+              color: "#FFFFFF",
+              fontSize: 16,
+              fontFamily: "DINNextRoundedBold",
             }}
-            onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
+            forceLatinFont
           >
-            <AppText
-              style={{
-                color: "#FFFFFF",
-                fontSize: 16,
-                fontFamily: "DINNextRoundedBold",
-              }}
-              forceLatinFont
-            >
-              See More Units
-            </AppText>
-          </PressableScale>
-        </View>
-      );
-    }
-    return <ListFooter />;
+            See More Units
+          </AppText>
+        </PressableScale>
+      </View>
+    );
   }, [hasMore]);
 
   usePathScrollAfterLesson("street", localizedSections, listRef);

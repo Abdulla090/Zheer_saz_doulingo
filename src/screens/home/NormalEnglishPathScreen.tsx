@@ -12,6 +12,8 @@ import { getUnitsForPath } from "../../data/content-access";
 import { resolveLessonStatus, type LessonType } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { useCurrentProgress } from "../../stores/useProgressStore";
+import { getSkippedUnitsCount, normalSectionConfigs } from "../../data/normal-english";
+import { ListFooter } from "./components/list-footer";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   getPathUnitTitle,
@@ -86,10 +88,13 @@ export function NormalEnglishPathScreen() {
 
   const localizedSections = useMemo(() => {
     const units = getUnitsForPath("normal");
-    let pathIndex = 0;
+    const skipCount = getSkippedUnitsCount(englishLevel || 5);
+    const activeConfigs = normalSectionConfigs.slice(skipCount);
+    let pathIndex = skipCount * 10;
     
     const sections: SectionDataItem[] = units.map((unit, unitIndex) => {
-      const displayTheme: SectionTheme = unitIndex % 2 === 0 ? "blue" : "purple";
+      const config = activeConfigs[unitIndex] || { theme: "blue", displayTheme: "blue" };
+      const displayTheme = config.displayTheme;
       
       const data: LessonListItem[] = unit.map((lesson, lessonIndex) => {
         const itemStatus = resolveLessonStatus(pathIndex, normalNextLessonPathIndex, lessonIndex === 0);
@@ -105,12 +110,12 @@ export function NormalEnglishPathScreen() {
           status: itemStatus,
           isCurrent: itemStatus === "current",
           progressSegments: itemStatus === "current" ? 2 : 0,
-          lessonId: lessonIndex, // Or unitIndex? Actually unitIndex * 100 + lessonIndex
+          lessonId: unitIndex + skipCount,
         };
       });
 
       return {
-        unitIndex,
+        unitIndex: unitIndex + skipCount,
         title: "",
         theme: displayTheme,
         displayTheme,
@@ -119,7 +124,7 @@ export function NormalEnglishPathScreen() {
     });
 
     return localizePathSections(sections, "normal", locale);
-  }, [locale, normalNextLessonPathIndex]);
+  }, [locale, normalNextLessonPathIndex, englishLevel]);
 
   // Find the unit index of the user's active/current lesson
   const currentUnitIndex = useMemo(() => {
@@ -130,13 +135,13 @@ export function NormalEnglishPathScreen() {
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    Math.max(2, currentUnitIndex + 1)
+    localizedSections.length
   );
 
-  // Sync visibleUnitsCount if user's currentUnitIndex advances
+  // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
   useEffect(() => {
-    setVisibleUnitsCount((prev) => Math.max(prev, currentUnitIndex + 1));
-  }, [currentUnitIndex]);
+    setVisibleUnitsCount((prev) => Math.max(prev, localizedSections.length));
+  }, [localizedSections.length]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),

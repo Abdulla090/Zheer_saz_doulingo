@@ -38,7 +38,8 @@ function getLanguageName(code: string): string {
 function buildLiveTutorSystem(): string {
   const level = useSettingsStore.getState().englishLevel || 5;
   const age = useSettingsStore.getState().userAge || "";
-  const name = useSettingsStore.getState().userName || "Friend";
+  const name = useSettingsStore.getState().userName || "Student";
+  const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
 
   const sourceLangCode = useLocaleStore.getState().selectedSourceLanguage || "ku";
   const targetLangCode = useLocaleStore.getState().selectedTargetLanguage || "en";
@@ -46,17 +47,17 @@ function buildLiveTutorSystem(): string {
   const sourceLangName = getLanguageName(sourceLangCode);
   const targetLangName = getLanguageName(targetLangCode);
 
-  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string }> = {
-    1: { cefr: "Beginner (A1)", pace: "very slowly, with long pauses between words", vocab: "very simple words, sentences max 4 words", feedback: sourceLangName },
-    2: { cefr: "Beginner (A1)", pace: "very slowly", vocab: "basic A1 words, sentences max 5 words", feedback: sourceLangName },
-    3: { cefr: "Elementary (A2)", pace: "slowly", vocab: "simple daily vocabulary, sentences max 6 words", feedback: sourceLangName },
-    4: { cefr: "Elementary (A2)", pace: "slowly", vocab: "standard A2 vocabulary, sentences max 7 words", feedback: targetLangName },
-    5: { cefr: "Intermediate (B1)", pace: "moderately slowly", vocab: "everyday intermediate B1 vocabulary, sentences max 8-10 words", feedback: targetLangName },
-    6: { cefr: "Intermediate (B1)", pace: "normal pace", vocab: "B1 vocabulary, varied sentence structures", feedback: targetLangName },
-    7: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "rich vocabulary and expressions", feedback: targetLangName },
-    8: { cefr: "Upper-Intermediate (B2)", pace: "natural conversational speed", vocab: "B2 level vocabulary, idiomatic phrases", feedback: targetLangName },
-    9: { cefr: "Advanced (C1)", pace: "natural native speed", vocab: "slang, idioms, and advanced professional phrasing", feedback: targetLangName },
-    10: { cefr: "Advanced / Fluent (C2)", pace: "fast natural native speed", vocab: "nuanced vocabulary, abstract themes, and professional jargon", feedback: targetLangName },
+  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string; desc: string }> = {
+    1: { cefr: "Pre-A1", pace: "very slowly, with long pauses between words", vocab: "greetings, numbers, colors, family words", feedback: sourceLangName, desc: "Greetings, numbers, colors, family words" },
+    2: { cefr: "A1", pace: "very slowly", vocab: "everyday nouns/verbs", feedback: sourceLangName, desc: "Everyday nouns/verbs" },
+    3: { cefr: "A1+", pace: "slowly", vocab: "daily routine vocabulary", feedback: sourceLangName, desc: "Daily routine vocab" },
+    4: { cefr: "A2", pace: "slowly", vocab: "common objects, feelings", feedback: targetLangName, desc: "Common objects, feelings" },
+    5: { cefr: "A2+", pace: "moderately slowly", vocab: "shopping, travel, work basics", feedback: targetLangName, desc: "Shopping, travel, work basics" },
+    6: { cefr: "B1", pace: "normal pace", vocab: "opinions, descriptions", feedback: targetLangName, desc: "Opinions, descriptions" },
+    7: { cefr: "B1+", pace: "natural conversational speed", vocab: "idiomatic everyday phrases", feedback: targetLangName, desc: "Idiomatic everyday phrases" },
+    8: { cefr: "B2", pace: "natural conversational speed", vocab: "abstract topics (news, work, plans)", feedback: targetLangName, desc: "Abstract topics (news, work, plans)" },
+    9: { cefr: "B2+/C1", pace: "natural native speed", vocab: "professional/academic vocabulary", feedback: targetLangName, desc: "Professional/academic vocab" },
+    10: { cefr: "C1/C2", pace: "fast natural native speed", vocab: "native-like range", feedback: targetLangName, desc: "Near-native conversation" },
   };
 
   const currentLevel = levelMapping[level] || levelMapping[5];
@@ -65,31 +66,54 @@ function buildLiveTutorSystem(): string {
     ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
     : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
 
-  let readySignals = "ready, yes, start, go";
-  if (sourceLangCode === "ku") {
-    readySignals += ", ئامادەم, بەڵێ, دەست پێ بکە";
-  } else if (sourceLangCode === "ar") {
-    readySignals += ", جاهز, نعم, ابدأ, مستعد";
-  }
-
-  return [
-    `You are Twino — a live voice ${targetLangName} tutor for ${sourceLangName} speakers.`,
-    `The learner's name is ${name}.`,
-    `The learner's age group is: ${ageGroup}`,
-    `The learner's ${targetLangName} level is: ${level}/10 which corresponds to CEFR ${currentLevel.cefr}.`,
-    `VOICE ONLY. The learner uses spoken audio only. You reply with spoken audio only.`,
-    `Never ask the learner to type, read text on screen, or press a ready button.`,
+  const systemRules = [
+    `You are Twino — a disciplined private English tutor speaking with a ${sourceLangName}-speaking student named ${name}.`,
+    `The student's age group is: ${ageGroup}`,
+    `VOICE ONLY. The student uses spoken audio only. You reply with spoken audio only.`,
     `Your tone is calm, friendly, encouraging, and modern.`,
     ``,
-    `Start in ${sourceLangName}: warm welcome greeting ${name}, explain you'll practice ${targetLangName} together, ask if ready.`,
-    `When the learner says they are ready by voice, switch to ${targetLangName}.`,
-    `When speaking ${targetLangName}, adapt strictly to their level:`,
-    `- Speak ${currentLevel.pace}.`,
-    `- Use ${currentLevel.vocab}.`,
-    `- Give any linguistic correction/feedback in ${currentLevel.feedback}.`,
-    `Teach exactly one useful word or phrase per turn. Keep spoken replies short (2–4 sentences).`,
-    `Ready signals: ${readySignals}.`,
-  ].join("\n");
+    `STRICT RULES FOR EVERY TURN:`,
+    `- Keep every turn to 1–3 short sentences (roughly 10–25 words). Never lecture.`,
+    `- Ask ONE question, then STOP and wait for the student's answer. Never stack multiple questions.`,
+    `- No filler phrases (e.g. 'Great question!', 'Sure, let's dive in!', 'Awesome!').`,
+    `- Acknowledge briefly ('Good.', 'Nice try.', 'Almost!') and move on.`,
+    `- Corrections are always short: state the fixed sentence once, no grammar essays or unsolicited lectures.`,
+    `- Never break character to explain what you are doing.`,
+  ];
+
+  if (!onboardingComplete) {
+    systemRules.push(
+      `=== ONBOARDING FLOW ===`,
+      `You are in the onboarding phase. Follow these steps exactly:`,
+      `1. Greet the student with exactly one sentence in English: 'Hi! I'm your English tutor.'`,
+      `2. Immediately after greeting, ask the level question in Kurdish Sorani: 'لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'`,
+      `3. Wait for the student's answer. They will say a number (1-10) or natural language (e.g. 'I am beginner').`,
+      `4. Once they state their level, say 'Perfect! Let's start.' in English and set your state to 'teaching'.`,
+      `5. Important: Your first response must be exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'`
+    );
+  } else {
+    systemRules.push(
+      `=== TEACHING LOOP (Level ${level}/10 - CEFR ${currentLevel.cefr}) ===`,
+      `Student's level focuses on: ${currentLevel.desc}.`,
+      `Use vocabulary and sentence complexity appropriate for level ${level} (CEFR ${currentLevel.cefr}).`,
+      `Speak ${currentLevel.pace}.`,
+      `Use vocabulary like: ${currentLevel.vocab}.`,
+      `Give any linguistic corrections or feedback in ${currentLevel.feedback}.`,
+      ``,
+      `WORD-FIRST PEDAGOGY LOOP:`,
+      `You will introduce words from the level's word list. Do the following for each word:`,
+      `1. Ask: 'Do you know the word [word]?'`,
+      `2. If the student answers 'yes': ask them to 'Use it in a sentence.'`,
+      `   - When they reply, evaluate their sentence. Give brief confirmation or a one-line correction/better sentence.`,
+      `3. If the student answers 'no' or is unsure: give a one-line definition and one example sentence at their level.`,
+      `   - Then ask them to make their own sentence: 'Now, try to make your own sentence using [word].'`,
+      `   - Correct/confirm their sentence briefly.`,
+      `4. Repeat this loop. Every 3 words taught, pause the word drills and run a short, guided conversation (2-4 turns) reusing the words just practiced.`,
+      `5. Do not output JSON. Reply with natural spoken lines only.`
+    );
+  }
+
+  return systemRules.join("\n");
 }
 
 function parseServerMessage(raw: string): LiveServerMessage | null {
@@ -262,6 +286,7 @@ export class GeminiLiveSession {
               prebuilt_voice_config: { voice_name: "Kore" },
             },
           },
+          max_output_tokens: 150, // Hard limit to enforce turn length constraint
         },
         system_instruction: {
           parts: [{ text: buildLiveTutorSystem() }],
@@ -271,12 +296,17 @@ export class GeminiLiveSession {
   }
 
   startGreeting() {
+    const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
+    const promptText = onboardingComplete
+      ? "Start this live voice tutor session now. Greet the student briefly in English, and ask if they are ready for their first word drill."
+      : "Start this live voice tutor session now. Greet the student with exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'";
+
     this.send({
       client_content: {
         turns: [
           {
             role: "user",
-            parts: [{ text: "Start this live voice tutor session now. Greet the learner in Kurdish Sorani by voice and ask them to say when they are ready. Speak only." }],
+            parts: [{ text: promptText }],
           },
         ],
         turn_complete: true,

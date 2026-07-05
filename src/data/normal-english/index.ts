@@ -16,6 +16,9 @@ import unit10HealthEmergencies from "./unit-10-health-emergencies";
 import unit11MoneyShopping from "./unit-11-money-shopping";
 import unit12RealWorldMastery from "./unit-12-real-world-mastery";
 import unit13OpinionsAndConfidence from "./unit-13-opinions-and-confidence";
+import unit14FoodDiningStorytelling from "./unit-14-food-dining-storytelling";
+import unit15LogicPlansHypotheticals from "./unit-15-logic-plans-hypotheticals";
+import unit16ScienceMediaModernIssues from "./unit-16-science-media-modern-issues";
 import {
   resolveLessonStatus,
   type LessonListItem,
@@ -26,21 +29,24 @@ import {
 import type { UnitBank } from "../types";
 
 export const NORMAL_UNITS: UnitBank[] = [
-  unit0BasicGreetingsAndIntroductions,
-  unit0bElementarySituations,
-  unit1EverydayEssentials,
-  unit2SocialAndDailyLife,
-  unit3WorkAndBusiness,
-  unit4DeepConversations,
-  unit5SpecialEncounters,
-  unit6TravelAndExploring,
-  unit7IdiomsAndSlang,
-  unit8DigitalLife,
-  unit9Relationships,
-  unit10HealthEmergencies,
-  unit11MoneyShopping,
-  unit12RealWorldMastery,
-  unit13OpinionsAndConfidence,
+  unit0BasicGreetingsAndIntroductions, // Unit 1 (A1)
+  unit0bElementarySituations,         // Unit 2 (A1-A2)
+  unit1EverydayEssentials,            // Unit 3 (A2)
+  unit11MoneyShopping,                // Unit 4 (A2)
+  unit6TravelAndExploring,            // Unit 5 (A2-B1)
+  unit14FoodDiningStorytelling,       // Unit 6 (A2-B1 - New)
+  unit2SocialAndDailyLife,            // Unit 7 (B1)
+  unit9Relationships,                 // Unit 8 (B1-B2)
+  unit8DigitalLife,                   // Unit 9 (B1-B2)
+  unit15LogicPlansHypotheticals,      // Unit 10 (B2 - New)
+  unit3WorkAndBusiness,               // Unit 11 (B2)
+  unit10HealthEmergencies,            // Unit 12 (B2)
+  unit13OpinionsAndConfidence,        // Unit 13 (B2-C1)
+  unit16ScienceMediaModernIssues,     // Unit 14 (B2-C1 - New)
+  unit7IdiomsAndSlang,                // Unit 15 (C1)
+  unit4DeepConversations,             // Unit 16 (C1)
+  unit12RealWorldMastery,             // Unit 17 (C1-C2)
+  unit5SpecialEncounters,             // Unit 18 (C2)
 ];
 
 export const normalSectionConfigs: {
@@ -62,6 +68,9 @@ export const normalSectionConfigs: {
   { theme: "yellow", displayTheme: "yellow" },
   { theme: "mint", displayTheme: "mint" },
   { theme: "purple", displayTheme: "purple" },
+  { theme: "blue", displayTheme: "blue" },
+  { theme: "green", displayTheme: "green" },
+  { theme: "orange", displayTheme: "orange" },
 ];
 
 const BASE_PATTERN: LessonType[] = [
@@ -79,10 +88,7 @@ const BASE_PATTERN: LessonType[] = [
 
 /** Build normal-English path sections from persisted progress (0 = first lesson current). */
 export function getSkippedUnitsCount(level: number): number {
-  if (level <= 4) return 0;
-  if (level <= 6) return 2; // skip A1, A2
-  if (level <= 8) return 4; // skip A1, A2, B1
-  return 6; // skip A1, A2, B1, B2
+  return 0; // Disabled skipping for developer testing
 }
 
 export function buildNormalSectionData(

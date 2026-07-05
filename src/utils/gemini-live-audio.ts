@@ -122,6 +122,7 @@ export class LivePcmPlayer {
   }
 
   private flushBuffer() {
+    this.flushTimeout = null;
     if (this.destroyed || this.pendingBytes.length === 0) return;
 
     try {
@@ -307,7 +308,7 @@ export class LivePcmPlayer {
   }
 
   get isPlaying() {
-    return this.playing;
+    return this.playing || this.wavQueue.length > 0 || this.pendingBytes.length > 0 || this.flushTimeout !== null;
   }
 }
 
@@ -353,6 +354,25 @@ export async function startMicPcmStream(
 
   const subscription = stream.addListener("audioStreamBuffer", (event) => {
     const bytes = new Uint8Array(event.data);
+
+    // Calculate RMS to filter ambient background noise and quiet spillover
+    let sum = 0;
+    const samples = bytes.length / 2;
+    for (let i = 0; i < samples; i++) {
+      const byte1 = bytes[i * 2] || 0;
+      const byte2 = bytes[i * 2 + 1] || 0;
+      let val = (byte2 << 8) | byte1;
+      if (val & 0x8000) val |= ~0xffff; // Convert to signed 16-bit
+      const norm = val / 32768;
+      sum += norm * norm;
+    }
+    const rms = Math.sqrt(sum / samples);
+
+    // Threshold of 0.004 filters silent rooms and low echoes
+    if (rms < 0.004) {
+      return;
+    }
+
     const b64 = encodeBase64(bytes);
     onData(b64);
   });

@@ -32,6 +32,11 @@ const NORMAL_UNIT_KEYS = [
   "path.normal.unit11",
   "path.normal.unit12",
   "path.normal.unit13",
+  "path.normal.unit14",
+  "path.normal.unit15",
+  "path.normal.unit16",
+  "path.normal.unit17",
+  "path.normal.unit18",
 ] as const satisfies readonly I18nKey[];
 
 const KIDS_UNIT_KEYS = [

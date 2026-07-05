@@ -1,5 +1,6 @@
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
+import type { RealAnalysis } from "../data/voice-tutor-types";
 
 const STORAGE_KEY = "twino.app.settings";
 
@@ -17,6 +18,11 @@ interface SettingsState {
   userName: string;
   userAge: string;
   englishLevel: number;
+  // ── Voice tutor state ──
+  knownWords: string[];
+  wordsInProgress: string[];
+  lastAnalysis: RealAnalysis | null;
+  tutorOnboardingComplete: boolean;
   setHapticsEnabled: (v: boolean) => void;
   setSoundsEnabled: (v: boolean) => void;
   setPathMode: (mode: PathMode) => void;
@@ -26,6 +32,11 @@ interface SettingsState {
   setUserName: (name: string) => void;
   setUserAge: (age: string) => void;
   setEnglishLevel: (level: number) => void;
+  // ── Voice tutor setters ──
+  addKnownWords: (words: string[]) => void;
+  addWordsInProgress: (words: string[]) => void;
+  setLastAnalysis: (analysis: RealAnalysis | null) => void;
+  setTutorOnboardingComplete: (v: boolean) => void;
 }
 
 function persist(partial: Partial<SettingsState>) {
@@ -54,6 +65,10 @@ const initialSettings = (() => {
       userName: "",
       userAge: "",
       englishLevel: 5,
+      knownWords: [],
+      wordsInProgress: [],
+      lastAnalysis: null,
+      tutorOnboardingComplete: false,
     };
   }
   try {
@@ -72,6 +87,10 @@ const initialSettings = (() => {
       userName: typeof parsed.userName === "string" ? parsed.userName : "",
       userAge: typeof parsed.userAge === "string" ? parsed.userAge : "",
       englishLevel: typeof parsed.englishLevel === "number" ? parsed.englishLevel : 5,
+      knownWords: Array.isArray((parsed as any).knownWords) ? (parsed as any).knownWords : [],
+      wordsInProgress: Array.isArray((parsed as any).wordsInProgress) ? (parsed as any).wordsInProgress : [],
+      lastAnalysis: (parsed as any).lastAnalysis ?? null,
+      tutorOnboardingComplete: Boolean((parsed as any).tutorOnboardingComplete),
     };
   } catch {
     return {
@@ -84,6 +103,10 @@ const initialSettings = (() => {
       userName: "",
       userAge: "",
       englishLevel: 5,
+      knownWords: [],
+      wordsInProgress: [],
+      lastAnalysis: null,
+      tutorOnboardingComplete: false,
     };
   }
 })();
@@ -135,6 +158,32 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setEnglishLevel: (englishLevel) => {
     set({ englishLevel });
     persist({ englishLevel });
+  },
+
+  // ── Voice tutor setters ──
+
+  addKnownWords: (words) => {
+    const cur = useSettingsStore.getState().knownWords;
+    const merged = [...new Set([...cur, ...words])];
+    set({ knownWords: merged });
+    persist({ knownWords: merged } as any);
+  },
+
+  addWordsInProgress: (words) => {
+    const cur = useSettingsStore.getState().wordsInProgress;
+    const merged = [...new Set([...cur, ...words])];
+    set({ wordsInProgress: merged });
+    persist({ wordsInProgress: merged } as any);
+  },
+
+  setLastAnalysis: (lastAnalysis) => {
+    set({ lastAnalysis });
+    persist({ lastAnalysis } as any);
+  },
+
+  setTutorOnboardingComplete: (tutorOnboardingComplete) => {
+    set({ tutorOnboardingComplete });
+    persist({ tutorOnboardingComplete } as any);
   },
 }));
 

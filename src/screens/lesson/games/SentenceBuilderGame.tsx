@@ -15,6 +15,7 @@ import {
   StyleSheet,
   View,
   type View as RNView,
+  I18nManager,
 } from "react-native";
 import Animated, {
   Easing,
@@ -345,7 +346,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             </LightQuestionPrompt>
 
             <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <Animated.View style={[s.slotsRow, { flexDirection: isKu ? (isRtlText(question.correctWords.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row") }]}>
+              <Animated.View style={[s.slotsRow, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
                 {Array.from({ length: slotCount }).map((_, i) => {
                   const placed = sentence[i];
                   const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
@@ -384,7 +385,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               </Animated.View>
             </Animated.View>
 
-            <Animated.View style={[s.bank, { flexDirection: isKu ? (isRtlText(question.correctWords.join(" ")) ? "row" : "row-reverse") : (isRtlText(question.correctWords.join(" ")) ? "row-reverse" : "row") }]}>
+            <Animated.View style={[s.bank, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
               {shuffledWordBank.map((w, i) => {
                 const taken = usedBank[i];
                 return (
@@ -399,6 +400,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                     collapsable={false}
                     style={s.bankCell}
                   >
+                    <View style={s.bankPlaceholder} />
                     <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
                       <LightWordTile
                         label={w}
@@ -465,7 +467,6 @@ const s = StyleSheet.create({
     borderTopColor: L.border,
   },
   bank: {
-    flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     justifyContent: "center",
@@ -474,6 +475,18 @@ const s = StyleSheet.create({
   bankCell: {
     position: "relative",
   },
+  bankPlaceholder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: L.slotDash,
+    backgroundColor: L.bgSoft,
+  },
   bankTileHidden: {
     opacity: 0,
   },
@@ -481,7 +494,6 @@ const s = StyleSheet.create({
     paddingVertical: 6,
   },
   slotsRow: {
-    flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     justifyContent: "center",
