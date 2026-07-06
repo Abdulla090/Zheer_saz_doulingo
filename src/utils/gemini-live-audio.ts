@@ -78,12 +78,16 @@ export class LivePcmPlayer {
   private playerB: ReturnType<typeof createAudioPlayer> | null = null;
   private activeSlot: "A" | "B" = "A";
   private listenerSub: { remove: () => void } | null = null;
+  private playerALoadedUri: string | null = null;
+  private playerBLoadedUri: string | null = null;
+
+  constructor(private onPlayingStateChange?: (isPlaying: boolean) => void) {}
 
   /**
-   * Buffer threshold: ~0.5s of 24kHz 16-bit mono PCM = 24000 samples/s * 2 bytes * 0.5s = 24000 bytes.
+   * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM = 24000 samples/s * 2 bytes * 0.33s = 16000 bytes.
    * Larger buffers → fewer player swaps → smoother playback.
    */
-  private static BUFFER_THRESHOLD = 24_000;
+  private static BUFFER_THRESHOLD = 16_000;
 
   /**
    * Flush delay: how long to wait for more data before flushing a partial buffer.
@@ -166,6 +170,7 @@ export class LivePcmPlayer {
   private async drain() {
     if (this.playing || this.destroyed || this.wavQueue.length === 0) return;
     this.playing = true;
+    this.onPlayingStateChange?.(true);
 
     await this.ensureAudioMode();
 
@@ -183,6 +188,8 @@ export class LivePcmPlayer {
     // Check if more data arrived while we were playing
     if (this.wavQueue.length > 0 && !this.destroyed) {
       void this.drain();
+    } else {
+      this.onPlayingStateChange?.(false);
     }
   }
 
@@ -194,6 +201,7 @@ export class LivePcmPlayer {
       }
 
       const player = this.getActivePlayer();
+      const loadedUri = this.activeSlot === "A" ? this.playerALoadedUri : this.playerBLoadedUri;
 
       // Clean up previous listener
       if (this.listenerSub) {
@@ -221,14 +229,23 @@ export class LivePcmPlayer {
       });
 
       try {
-        player.replace(uri);
+        if (loadedUri !== uri) {
+          player.replace(uri);
+          if (this.activeSlot === "A") {
+            this.playerALoadedUri = uri;
+          } else {
+            this.playerBLoadedUri = uri;
+          }
+        }
         player.play();
-      } catch {
+      } catch (err) {
+        console.warn("LivePcmPlayer: replace/play failed, recreating player", err);
         // If replace fails, recreate the player
         try {
           if (this.activeSlot === "A") {
             this.playerA?.remove();
             this.playerA = createAudioPlayer(uri);
+            this.playerALoadedUri = uri;
             this.playerA.play();
 
             if (this.listenerSub) this.listenerSub.remove();
@@ -240,6 +257,7 @@ export class LivePcmPlayer {
           } else {
             this.playerB?.remove();
             this.playerB = createAudioPlayer(uri);
+            this.playerBLoadedUri = uri;
             this.playerB.play();
 
             if (this.listenerSub) this.listenerSub.remove();
@@ -252,6 +270,40 @@ export class LivePcmPlayer {
         } catch (innerErr) {
           console.warn("LivePcmPlayer: recreate failed", innerErr);
           finish();
+        }
+      }
+
+      // Preload next chunk on the other player
+      const nextUri = this.wavQueue[0];
+      if (nextUri) {
+        const otherSlot = this.activeSlot === "A" ? "B" : "A";
+        let otherPlayer = otherSlot === "A" ? this.playerA : this.playerB;
+        if (!otherPlayer) {
+          try {
+            if (otherSlot === "A") {
+              this.playerA = createAudioPlayer("");
+              otherPlayer = this.playerA;
+            } else {
+              this.playerB = createAudioPlayer("");
+              otherPlayer = this.playerB;
+            }
+          } catch (e) {
+            console.warn("LivePcmPlayer: background player init failed", e);
+          }
+        }
+        const otherLoadedUri = otherSlot === "A" ? this.playerALoadedUri : this.playerBLoadedUri;
+
+        if (otherPlayer && otherLoadedUri !== nextUri) {
+          try {
+            otherPlayer.replace(nextUri);
+            if (otherSlot === "A") {
+              this.playerALoadedUri = nextUri;
+            } else {
+              this.playerBLoadedUri = nextUri;
+            }
+          } catch (preloadErr) {
+            console.warn("LivePcmPlayer: background preload failed", preloadErr);
+          }
         }
       }
 
@@ -287,7 +339,13 @@ export class LivePcmPlayer {
     } catch {
       /* noop */
     }
+    this.playerALoadedUri = null;
+    this.playerBLoadedUri = null;
+    const wasPlaying = this.playing;
     this.playing = false;
+    if (wasPlaying) {
+      this.onPlayingStateChange?.(false);
+    }
   }
 
   destroy() {
@@ -305,6 +363,8 @@ export class LivePcmPlayer {
     }
     this.playerA = null;
     this.playerB = null;
+    this.playerALoadedUri = null;
+    this.playerBLoadedUri = null;
   }
 
   get isPlaying() {

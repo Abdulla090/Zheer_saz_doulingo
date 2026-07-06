@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <!-- Circular Background -->
+  <circle cx="50" cy="50" r="48" fill="#D1FAE5" stroke="#A7F3D0" stroke-width="2" />
+  
+  <!-- Dino Spikes on Back -->
+  <path d="M 28,42 L 20,40 L 25,48 Z" fill="#FBBF24" />
+  <path d="M 25,52 L 16,52 L 23,60 Z" fill="#FBBF24" />
+  <path d="M 26,64 L 18,68 L 27,72 Z" fill="#FBBF24" />
+  
+  <!-- Dino Head and Body -->
+  <path d="M 32,74 C 26,60 26,44 38,36 C 50,28 66,28 72,38 C 78,48 76,62 70,68 C 64,74 54,78 46,78 C 38,78 35,76 32,74 Z" fill="#10B981" />
+  
+  <!-- Dino Snout -->
+  <path d="M 64,42 C 72,42 78,48 78,54 C 78,60 72,66 64,66 C 60,66 58,60 58,54 C 58,48 60,42 64,42 Z" fill="#34D399" />
+  <circle cx="70" cy="50" r="1.5" fill="#0F172A" />
+  
+  <!-- Cheeks -->
+  <circle cx="52" cy="56" r="4" fill="#FCA5A5" opacity="0.6" />
+  
+  <!-- Eyes -->
+  <circle cx="48" cy="44" r="3.5" fill="#0F172A" />
+  <circle cx="49" cy="43" r="1" fill="#FFFFFF" />
+  
+  <!-- Friendly Tooth Smile -->
+  <path d="M 62,56 C 64,59 67,59 68,57" stroke="#0F172A" stroke-width="2" stroke-linecap="round" fill="none" />
+  <polygon points="63,57 65,60 66,57" fill="#FFFFFF" />
+</svg>

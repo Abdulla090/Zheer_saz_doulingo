@@ -118,9 +118,11 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   }, [targetLang]);
   
   const theme = useSettingsStore((s) => s.theme);
+  const tutorVoice = useSettingsStore((s) => s.tutorVoice);
   const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const setTutorVoice = useSettingsStore((s) => s.setTutorVoice);
 
   const [apiKeyInput, setApiKeyInput] = React.useState("");
 
@@ -414,6 +416,59 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   trackColor={{ true: colors.primary }}
                 />
               </View>
+            </View>
+
+            <AppText
+              style={[styles.sectionLabel, styles.sectionSpaced]}
+              forceKurdishFont={isKu}
+            >
+              {t("settings.tutorVoice")}
+            </AppText>
+            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
+              {t("settings.tutorVoiceHint")}
+            </AppText>
+            <View style={styles.card}>
+              {[
+                { id: "Aoede", labelKey: "settings.tutorVoiceAoede" },
+                { id: "Puck", labelKey: "settings.tutorVoicePuck" },
+                { id: "Charon", labelKey: "settings.tutorVoiceCharon" },
+                { id: "Fenrir", labelKey: "settings.tutorVoiceFenrir" },
+                { id: "Kore", labelKey: "settings.tutorVoiceKore" },
+              ].map((opt, index, arr) => {
+                const selected = tutorVoice === opt.id;
+                return (
+                  <PressableScale
+                    key={opt.id}
+                    onPress={() => {
+                      setTutorVoice(opt.id);
+                      if (haptics) {
+                        try {
+                          const { hapticImpact } = require("../../utils/haptics");
+                          hapticImpact();
+                        } catch {}
+                      }
+                    }}
+                    scaleDown={0.98}
+                    style={[
+                      styles.row,
+                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      index < arr.length - 1 && styles.rowBorder,
+                    ]}
+                  >
+                    <AppText
+                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
+                      forceKurdishFont={isKu}
+                    >
+                      {t(opt.labelKey as any)}
+                    </AppText>
+                    {selected ? (
+                      <Icon3DCheckCircle size={22} />
+                    ) : (
+                      <View style={styles.radioEmpty} />
+                    )}
+                  </PressableScale>
+                );
+              })}
             </View>
 
             <AppText

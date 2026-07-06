@@ -143,7 +143,14 @@
     "resetProgressHint": "Clears XP, streak, and path progress on this device.",
     "resetConfirm": "Reset",
     "nativeLanguage": "Native Language",
-    "learningLanguage": "Learning Language"
+    "learningLanguage": "Learning Language",
+    "tutorVoice": "AI Tutor Voice",
+    "tutorVoiceHint": "Choose the voice for your live English tutor (powered by Gemini Live).",
+    "tutorVoiceAoede": "Aoede (Warm & Clear)",
+    "tutorVoicePuck": "Puck (Sprightly & Friendly)",
+    "tutorVoiceCharon": "Charon (Deep & Calm)",
+    "tutorVoiceFenrir": "Fenrir (Casual & Rugged)",
+    "tutorVoiceKore": "Kore (Bright & Energetic)"
   },
   "aiTeacher": {
     "title": "AI Teacher",

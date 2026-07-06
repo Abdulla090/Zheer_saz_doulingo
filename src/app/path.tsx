@@ -23,6 +23,14 @@ export default function PathRoute() {
     [setPathMode],
   );
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)");
+    }
+  }, [router]);
+
   return (
     <View style={styles.root}>
       {/* Full-screen path content */}
@@ -38,7 +46,7 @@ export default function PathRoute() {
       >
         {/* Back button - absolutely positioned above tabs */}
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={[styles.backButton, { top: Math.max(insets.top, 20) + 4 }]}
           activeOpacity={0.8}
         >

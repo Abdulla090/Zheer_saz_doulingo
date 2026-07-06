@@ -157,7 +157,18 @@ export function useGeminiLiveTutor() {
     activeWordRef.current = null;
 
     playerRef.current?.destroy();
-    playerRef.current = new LivePcmPlayer();
+    playerRef.current = new LivePcmPlayer((isPlaying) => {
+      setSpeaking(isPlaying);
+      if (isPlaying) {
+        setStatus("speaking");
+      } else {
+        if (autoLiveRef.current) {
+          void startMic();
+        } else {
+          setStatus("live");
+        }
+      }
+    });
 
     const session = new GeminiLiveSession();
     sessionRef.current = session;
@@ -170,9 +181,9 @@ export function useGeminiLiveTutor() {
         },
         onAudio: (pcm) => {
           micMutedRef.current = true;
-          if (statusRef.current !== "speaking") setTranscript("");
-          setSpeaking(true);
-          setStatus("speaking");
+          if (statusRef.current !== "speaking" && statusRef.current !== "listening") {
+            setTranscript("");
+          }
           playerRef.current?.enqueueBase64Pcm(pcm);
           if (micActiveRef.current) {
             void stopMic();
@@ -182,7 +193,6 @@ export function useGeminiLiveTutor() {
           setTranscript((prev) => prev + text);
         },
         onTurnComplete: () => {
-          setSpeaking(false);
           const aiResponseText = transcript.trim();
 
           // 1. Process AI response text for word introductions
@@ -223,33 +233,25 @@ export function useGeminiLiveTutor() {
             ]);
           }
 
-          // 3. Keep listening if autoLive is enabled
-          if (autoLiveRef.current) {
-            const checkAndStartMic = () => {
-              if (playerRef.current?.isPlaying) {
-                setTimeout(checkAndStartMic, 50);
-              } else {
-                void startMic();
-              }
-            };
-            checkAndStartMic();
-          } else {
-            setStatus("live");
+          // 3. Fallback: if player isn't playing and has no pending chunks, recover state
+          if (!playerRef.current?.isPlaying) {
+            setSpeaking(false);
+            if (autoLiveRef.current) {
+              void startMic();
+            } else {
+              setStatus("live");
+            }
           }
         },
         onInterrupted: () => {
           stopPlayer();
-          if (autoLiveRef.current) {
-            const checkAndStartMic = () => {
-              if (playerRef.current?.isPlaying) {
-                setTimeout(checkAndStartMic, 50);
-              } else {
-                void startMic();
-              }
-            };
-            checkAndStartMic();
-          } else {
-            setStatus("live");
+          if (!playerRef.current?.isPlaying) {
+            setSpeaking(false);
+            if (autoLiveRef.current) {
+              void startMic();
+            } else {
+              setStatus("live");
+            }
           }
         },
         onError: (msg) => {

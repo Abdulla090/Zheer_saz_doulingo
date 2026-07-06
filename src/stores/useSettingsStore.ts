@@ -18,6 +18,10 @@ interface SettingsState {
   userName: string;
   userAge: string;
   englishLevel: number;
+  tutorVoice: string;
+  avatarUrl: string;
+  isPremium: boolean;
+  subscriptionTier: string | null;
   // ── Voice tutor state ──
   knownWords: string[];
   wordsInProgress: string[];
@@ -32,6 +36,10 @@ interface SettingsState {
   setUserName: (name: string) => void;
   setUserAge: (age: string) => void;
   setEnglishLevel: (level: number) => void;
+  setTutorVoice: (voice: string) => void;
+  setAvatarUrl: (url: string) => void;
+  setIsPremium: (isPremium: boolean) => void;
+  setSubscriptionTier: (tier: string | null) => void;
   // ── Voice tutor setters ──
   addKnownWords: (words: string[]) => void;
   addWordsInProgress: (words: string[]) => void;
@@ -65,6 +73,10 @@ const initialSettings = (() => {
       userName: "",
       userAge: "",
       englishLevel: 5,
+      tutorVoice: "Aoede",
+      avatarUrl: "",
+      isPremium: false,
+      subscriptionTier: null,
       knownWords: [],
       wordsInProgress: [],
       lastAnalysis: null,
@@ -87,6 +99,10 @@ const initialSettings = (() => {
       userName: typeof parsed.userName === "string" ? parsed.userName : "",
       userAge: typeof parsed.userAge === "string" ? parsed.userAge : "",
       englishLevel: typeof parsed.englishLevel === "number" ? parsed.englishLevel : 5,
+      tutorVoice: typeof parsed.tutorVoice === "string" ? parsed.tutorVoice : "Aoede",
+      avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : "",
+      isPremium: parsed.isPremium === true,
+      subscriptionTier: typeof parsed.subscriptionTier === "string" ? parsed.subscriptionTier : null,
       knownWords: Array.isArray((parsed as any).knownWords) ? (parsed as any).knownWords : [],
       wordsInProgress: Array.isArray((parsed as any).wordsInProgress) ? (parsed as any).wordsInProgress : [],
       lastAnalysis: (parsed as any).lastAnalysis ?? null,
@@ -103,6 +119,10 @@ const initialSettings = (() => {
       userName: "",
       userAge: "",
       englishLevel: 5,
+      tutorVoice: "Aoede",
+      avatarUrl: "",
+      isPremium: false,
+      subscriptionTier: null,
       knownWords: [],
       wordsInProgress: [],
       lastAnalysis: null,
@@ -158,6 +178,26 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setEnglishLevel: (englishLevel) => {
     set({ englishLevel });
     persist({ englishLevel });
+  },
+
+  setTutorVoice: (tutorVoice) => {
+    set({ tutorVoice });
+    persist({ tutorVoice });
+  },
+
+  setAvatarUrl: (avatarUrl) => {
+    set({ avatarUrl });
+    persist({ avatarUrl });
+  },
+
+  setIsPremium: (isPremium) => {
+    set({ isPremium });
+    persist({ isPremium });
+  },
+
+  setSubscriptionTier: (subscriptionTier) => {
+    set({ subscriptionTier });
+    persist({ subscriptionTier });
   },
 
   // ── Voice tutor setters ──

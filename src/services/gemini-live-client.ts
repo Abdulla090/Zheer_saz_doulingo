@@ -3,6 +3,8 @@ import {
   GEMINI_LIVE_MODEL,
   getGeminiLiveWebSocketUrl,
 } from "../constants/gemini";
+import { useSettingsStore } from "../stores/useSettingsStore";
+import { useLocaleStore } from "../stores/useLocaleStore";
 
 export type LiveSessionPhase = "intro_ku" | "english";
 
@@ -18,9 +20,6 @@ export type LiveSessionCallbacks = {
   onClose?: (reason?: string) => void;
   onError?: (message: string) => void;
 };
-
-import { useSettingsStore } from "../stores/useSettingsStore";
-import { useLocaleStore } from "../stores/useLocaleStore";
 
 function getLanguageName(code: string): string {
   switch (code?.toLowerCase()) {
@@ -283,7 +282,7 @@ export class GeminiLiveSession {
           response_modalities: ["AUDIO"],
           speech_config: {
             voice_config: {
-              prebuilt_voice_config: { voice_name: "Kore" },
+              prebuilt_voice_config: { voice_name: useSettingsStore.getState().tutorVoice || "Aoede" },
             },
           },
           max_output_tokens: 150, // Hard limit to enforce turn length constraint

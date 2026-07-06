@@ -13,6 +13,7 @@ export type LessonRouteParams = {
     pi: string;
     mode: LessonPathMode;
     q: string;
+    fromPath?: string;
   };
 };
 
@@ -74,6 +75,7 @@ export function buildLessonRouteForMode(
   streetNextIndex: number,
   normalNextIndex: number,
   kidsNextIndex = 0,
+  fromPath = false,
 ): LessonRouteParams | null {
   const meta = getCurrentLessonMeta(
     mode,
@@ -92,6 +94,7 @@ export function buildLessonRouteForMode(
       pi: String(meta.item.pathIndex),
       mode,
       q: "0",
+      fromPath: fromPath ? "true" : undefined,
     },
   };
 }
@@ -103,7 +106,10 @@ export function buildPathReturnRoute(pathMode: LessonPathMode) {
   };
 }
 
-export function buildLessonRouteFromMeta(meta: CurrentLessonMeta): LessonRouteParams {
+export function buildLessonRouteFromMeta(
+  meta: CurrentLessonMeta,
+  fromPath = false,
+): LessonRouteParams {
   return {
     pathname: "/lesson",
     params: {
@@ -112,6 +118,7 @@ export function buildLessonRouteFromMeta(meta: CurrentLessonMeta): LessonRoutePa
       pi: String(meta.item.pathIndex),
       mode: meta.mode,
       q: "0",
+      fromPath: fromPath ? "true" : undefined,
     },
   };
 }

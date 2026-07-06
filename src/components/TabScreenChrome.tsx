@@ -2,7 +2,7 @@ import { ScreenOpeningShell, type ScreenOpeningVariant } from "./animations/skia
 import { TabScreenTransition } from "./TabScreenTransition";
 import { usesJsTabBar } from "../constants/tab-mode";
 import React, { useState, useEffect } from "react";
-import { View } from "react-native";
+import { View, Platform } from "react-native";
 
 import Animated, { FadeIn } from "react-native-reanimated";
 
@@ -54,7 +54,8 @@ export function TabScreenChrome({
     );
   }
 
-  if (lazy) {
+  const shouldLazy = lazy && Platform.OS !== "web";
+  if (shouldLazy) {
     content = <TabLazyWrapper>{content}</TabLazyWrapper>;
   }
 

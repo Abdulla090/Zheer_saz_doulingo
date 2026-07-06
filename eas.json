@@ -17,6 +17,7 @@
       }
     },
     "preview": {
+      "channel": "preview",
       "distribution": "internal",
       "env": {
         "EAS_GRADLE_CACHE": "1",
@@ -30,6 +31,7 @@
       }
     },
     "production": {
+      "channel": "production",
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",

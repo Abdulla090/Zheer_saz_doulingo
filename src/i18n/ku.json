@@ -143,7 +143,14 @@
     "resetProgressHint": "XP و streak و ڕێڕەو لەم ئامێرەدا دەسڕێتەوە.",
     "resetConfirm": "سڕینەوە",
     "nativeLanguage": "زمانی دایک",
-    "learningLanguage": "زمانی فێربوون"
+    "learningLanguage": "زمانی فێربوون",
+    "tutorVoice": "دەنگی ڕاهێنەری AI",
+    "tutorVoiceHint": "دەنگی ڕاهێنەری ئینگلیزی ڕاستەوخۆت هەڵبژێرە (لەلایەن Gemini Live).",
+    "tutorVoiceAoede": "ئاوێدە (گەرم و ڕوون)",
+    "tutorVoicePuck": "پەک (چالاک و دۆستانە)",
+    "tutorVoiceCharon": "کارۆن (قووڵ و ئارام)",
+    "tutorVoiceFenrir": "فێنریر (ڕووبەڕوو و سادە)",
+    "tutorVoiceKore": "کۆری (ڕووناک و بەپەرۆش)"
   },
   "aiTeacher": {
     "title": "مامۆستای AI",

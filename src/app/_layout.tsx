@@ -30,6 +30,7 @@ import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 
 initSentry();
 
@@ -59,7 +60,7 @@ function applyGlobalFont(kurdishFontFamily: string) {
   }
 }
 
-function RootLayout() {
+function InnerLayout() {
   useAndroidImmersiveChrome();
 
   const { selectedFont, ready: fontStoreReady } = useFontStore();
@@ -69,6 +70,7 @@ function RootLayout() {
   const onboardingReady = useOnboardingStore((s) => s.ready);
   const onboardingComplete = useOnboardingStore((s) => s.completed);
   const locale = useLocaleStore((s) => s.locale);
+  const { loading: authLoading } = useAuth();
 
   const [kurdishFontLoaded, setKurdishFontLoaded] = React.useState(false);
 
@@ -103,7 +105,8 @@ function RootLayout() {
     progressReady &&
     settingsReady &&
     contentAdminReady &&
-    onboardingReady;
+    onboardingReady &&
+    !authLoading;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
@@ -218,6 +221,16 @@ function RootLayout() {
         </GestureHandlerRootView>
       </KeyboardProvider>
     </SafeAreaProvider>
+  );
+}
+
+const WrappedInnerLayout = Sentry.wrap(InnerLayout);
+
+function RootLayout() {
+  return (
+    <AuthProvider>
+      <WrappedInnerLayout />
+    </AuthProvider>
   );
 }
 

@@ -112,6 +112,7 @@ export default function LessonScreen() {
   const pathIndex = parseInt(
     (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
   );
+  const fromPath = (Array.isArray(params.fromPath) ? params.fromPath[0] : params.fromPath) === "true";
   const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
   const requestPathScrollAfterLesson = useProgressStore(
     (s) => s.requestPathScrollAfterLesson,
@@ -168,8 +169,12 @@ export default function LessonScreen() {
 
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
-    router.replace(buildPathReturnRoute(pathMode));
-  }, [pathMode, router, setPathMode]);
+    if (fromPath && router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(buildPathReturnRoute(pathMode));
+    }
+  }, [fromPath, pathMode, router, setPathMode]);
 
   /* Animations */
   const progressW = useSharedValue(0);

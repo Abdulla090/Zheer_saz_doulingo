@@ -28,21 +28,134 @@ import {
   Dimensions,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabase";
+import { PREMADE_AVATARS, getLocalPremadeAvatar } from "../../constants/avatars";
 import { PressableScale, GlassCard } from "../../components/animations";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { HomeMeshBackground, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
+import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
 import { TwinoMascot, type TwinoPose } from "../../components/mascot/TwinoMascot";
 
 const { width } = Dimensions.get("window");
+
+const CameraIconSvg = ({ size = 14, color = "#FFFFFF" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <Circle cx="12" cy="13" r="4" />
+  </Svg>
+);
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, isKu } = useI18n();
+
+  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
+  const setAvatarUrl = useSettingsStore((s) => s.setAvatarUrl);
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+
+  const handleDeviceUpload = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert(isKu ? "مۆڵەتی دەستگەیشتن بە گالێری پێویستە" : "Gallery access permission is required");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const selectedUri = result.assets[0].uri;
+      setUploading(true);
+
+      if (user) {
+        const fileExt = selectedUri.split(".").pop() || "jpg";
+        const fileName = `avatar_${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const response = await fetch(selectedUri);
+        const blob = await response.blob();
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, blob, {
+            contentType: `image/${fileExt === "png" ? "png" : "jpeg"}`,
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(filePath);
+
+        setAvatarUrl(publicUrl);
+        hapticSelection();
+      } else {
+        setAvatarUrl(selectedUri);
+        hapticSelection();
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      alert(isKu ? "شکست لە بارکردنی وێنەکە" : "Failed to upload image: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const renderAvatarContent = (size = 80) => {
+    if (uploading) {
+      return (
+        <View style={[styles.avatarPlaceholder, { width: size, height: size, borderRadius: size / 2 }]}>
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        </View>
+      );
+    }
+
+    const SVGComponent = getLocalPremadeAvatar(avatarUrl);
+    if (SVGComponent) {
+      return <SVGComponent width={size} height={size} style={{ borderRadius: size / 2 }} />;
+    }
+
+    if (avatarUrl && (avatarUrl.startsWith("http") || avatarUrl.startsWith("file") || avatarUrl.startsWith("content") || avatarUrl.startsWith("data"))) {
+      return (
+        <ExpoImage
+          source={{ uri: avatarUrl }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+          contentFit="cover"
+        />
+      );
+    }
+
+    // Default fallback to initials
+    return (
+      <LinearGradient
+        colors={["#4F46E5", "#3B82F6"]}
+        style={[styles.avatarGradient, { width: size, height: size, borderRadius: size / 2 }]}
+      >
+        <AppText style={styles.avatarText} forceLatinFont latinRole="bold">
+          {userName ? userName.charAt(0).toUpperCase() : "U"}
+        </AppText>
+        <View style={styles.avatarRing} />
+      </LinearGradient>
+    );
+  };
 
   const streakDays = useProgressStore((s) => s.streakDays);
   const totalXp = useProgressStore((s) => s.totalXp);
@@ -211,15 +324,16 @@ export default function ProfileScreen() {
         <GsapEnterBlock index={1}>
           <GlassCard style={styles.profileCard} intensity={35} borderRadius={24}>
             <View style={styles.profileCardTop}>
-              <LinearGradient
-                colors={["#4F46E5", "#3B82F6"]}
-                style={styles.avatarGradient}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleDeviceUpload}
+                style={styles.avatarTouchable}
               >
-                <AppText style={styles.avatarText} forceLatinFont latinRole="bold">
-                  {userName ? userName.charAt(0).toUpperCase() : "U"}
-                </AppText>
-                <View style={styles.avatarRing} />
-              </LinearGradient>
+                {renderAvatarContent(80)}
+                <View style={styles.cameraOverlay}>
+                  <CameraIconSvg size={11} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
 
               <View style={styles.profileInfo}>
                 {isEditingName ? (
@@ -270,6 +384,42 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </View>
+          </GlassCard>
+        </GsapEnterBlock>
+
+        {/* CUSTOM SVG AVATARS SELECTOR */}
+        <GsapEnterBlock index={2}>
+          <GlassCard style={styles.customAvatarsSection} intensity={25} borderRadius={24}>
+            <AppText style={styles.customAvatarsTitle} forceLatinFont latinRole="bold">
+              {isKu ? "هەڵبژاردنی کاراکتەری ٢دی" : "Choose 2D Avatar"}
+            </AppText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.customAvatarsList}
+            >
+              {PREMADE_AVATARS.map((av) => {
+                const publicUrl = supabase.storage.from("avatars").getPublicUrl(av.dbPath).data.publicUrl;
+                const isSelected = avatarUrl === publicUrl || (avatarUrl && avatarUrl.includes(av.dbPath));
+                const AvatarComponent = av.Component;
+                return (
+                  <TouchableOpacity
+                    key={av.id}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      hapticSelection();
+                      setAvatarUrl(publicUrl);
+                    }}
+                    style={[
+                      styles.customAvatarCircle,
+                      isSelected && styles.customAvatarCircleSelected,
+                    ]}
+                  >
+                    <AvatarComponent width={44} height={44} style={{ borderRadius: 22 }} />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </GlassCard>
         </GsapEnterBlock>
 
@@ -647,6 +797,64 @@ const styles = StyleSheet.create({
     borderRadius: 41,
     borderWidth: 3,
     borderColor: "rgba(255, 255, 255, 0.8)",
+  },
+  avatarTouchable: {
+    position: "relative",
+    width: 80,
+    height: 80,
+  },
+  cameraOverlay: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    backgroundColor: "#18181B",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    elevation: 2,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+  },
+  avatarPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#27272A",
+  },
+  customAvatarsSection: {
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  customAvatarsTitle: {
+    fontSize: 14,
+    color: "#64748B",
+    marginBottom: 12,
+    fontFamily: "DINNextRoundedBold",
+  },
+  customAvatarsList: {
+    gap: 12,
+    paddingVertical: 4,
+  },
+  customAvatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+    backgroundColor: "rgba(255, 255, 255, 0.6)",
+  },
+  customAvatarCircleSelected: {
+    borderColor: "#0F172A",
+    transform: [{ scale: 1.05 }],
   },
   avatarText: {
     fontSize: 32,

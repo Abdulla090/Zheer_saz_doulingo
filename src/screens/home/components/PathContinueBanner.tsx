@@ -43,8 +43,8 @@ export function PathContinueBanner() {
       kidsNext,
     );
     const route = meta
-      ? buildLessonRouteFromMeta(meta)
-      : buildLessonRouteForMode(activeMode, streetNext, normalNext, kidsNext);
+      ? buildLessonRouteFromMeta(meta, true)
+      : buildLessonRouteForMode(activeMode, streetNext, normalNext, kidsNext, true);
     if (route) router.push(route);
   }, [activeMode, kidsNext, locale, normalNext, router, streetNext]);
 

@@ -15,6 +15,8 @@ import { AppText } from "../../components/ui/AppText";
 import { useI18n } from "../../hooks/useI18n";
 import { PressableScale } from "../../components/animations";
 import { hapticImpact } from "../../utils/haptics";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { getLocalPremadeAvatar } from "../../constants/avatars";
 import React from "react";
 
 const getAvatarUrl = (seed: string) =>
@@ -24,6 +26,32 @@ const keyExtractor = (item: LeagueEntry) => item.id;
 
 export const LeagueScreen = () => {
   const { t, isKu } = useI18n();
+
+  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
+  const userName = useSettingsStore((s) => s.userName);
+
+  const renderAvatar = (item: LeagueEntry, size: number, style: any) => {
+    if (item.isCurrentUser && avatarUrl) {
+      const SVGComponent = getLocalPremadeAvatar(avatarUrl);
+      if (SVGComponent) {
+        return <SVGComponent width={size} height={size} style={style} />;
+      }
+      return (
+        <Image
+          source={{ uri: avatarUrl }}
+          contentFit="cover"
+          style={style}
+        />
+      );
+    }
+    return (
+      <Image
+        source={{ uri: getAvatarUrl(item.avatarSeed) }}
+        contentFit="cover"
+        style={style}
+      />
+    );
+  };
 
   const renderRankBadge = (item: LeagueEntry) => {
     if (item.rank === 1) {
@@ -64,11 +92,7 @@ export const LeagueScreen = () => {
         <View style={styles.badgeWrap}>
           {renderRankBadge(item)}
         </View>
-        <Image
-          source={{ uri: getAvatarUrl(item.avatarSeed) }}
-          contentFit="cover"
-          style={styles.avatar}
-        />
+        {renderAvatar(item, 40, styles.avatar)}
         <View style={[styles.nameCol, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
           <AppText
             style={[
@@ -78,7 +102,7 @@ export const LeagueScreen = () => {
             numberOfLines={1}
             forceLatinFont
           >
-            {item.name}
+            {item.isCurrentUser ? (userName || item.name) : item.name}
           </AppText>
           <AppText
             style={[

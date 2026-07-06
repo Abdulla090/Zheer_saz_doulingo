@@ -13,6 +13,8 @@ import { useI18n } from "../../hooks/useI18n";
 import { PressableScale } from "../../components/animations";
 import { hapticImpact } from "../../utils/haptics";
 import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { getLocalPremadeAvatar } from "../../constants/avatars";
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,6 +44,32 @@ export const LeaderboardScreen = () => {
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
   const isRtl = isKu || locale === 'ar';
+
+  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
+  const userName = useSettingsStore((s) => s.userName);
+
+  const renderAvatar = (item: LeagueEntry, size: number, style: any) => {
+    if (item.isCurrentUser && avatarUrl) {
+      const SVGComponent = getLocalPremadeAvatar(avatarUrl);
+      if (SVGComponent) {
+        return <SVGComponent width={size} height={size} style={style} />;
+      }
+      return (
+        <Image
+          source={{ uri: avatarUrl }}
+          contentFit="cover"
+          style={style}
+        />
+      );
+    }
+    return (
+      <Image
+        source={{ uri: getAvatarUrl(item.avatarSeed) }}
+        contentFit="cover"
+        style={style}
+      />
+    );
+  };
 
   const top3 = useMemo(() => LEAGUE_ENTRIES.slice(0, 3), []);
   const rest = useMemo(() => LEAGUE_ENTRIES.slice(3), []);
@@ -103,18 +131,14 @@ export const LeaderboardScreen = () => {
               },
             ]}
           >
-            <Image
-              source={{ uri: getAvatarUrl(item.avatarSeed) }}
-              contentFit="cover"
-              style={[
-                styles.podiumAvatar,
-                {
-                  width: avatarSize,
-                  height: avatarSize,
-                  borderRadius: avatarSize / 2,
-                },
-              ]}
-            />
+            {renderAvatar(item, avatarSize, [
+              styles.podiumAvatar,
+              {
+                width: avatarSize,
+                height: avatarSize,
+                borderRadius: avatarSize / 2,
+              },
+            ])}
           </View>
           
           {/* Badge */}
@@ -132,7 +156,7 @@ export const LeaderboardScreen = () => {
           forceLatinFont
           latinRole="bold"
         >
-          {item.name.split(" ")[0]}
+          {item.isCurrentUser ? (userName ? userName.split(" ")[0] : item.name.split(" ")[0]) : item.name.split(" ")[0]}
         </AppText>
 
         {/* XP */}
@@ -186,11 +210,7 @@ export const LeaderboardScreen = () => {
         </View>
 
         {/* Avatar */}
-        <Image
-          source={{ uri: getAvatarUrl(item.avatarSeed) }}
-          contentFit="cover"
-          style={styles.listAvatar}
-        />
+        {renderAvatar(item, 44, styles.listAvatar)}
 
         {/* Name and Level */}
         <View style={[styles.listNameCol, isRtl && { alignItems: "flex-end" }]}>
@@ -200,7 +220,7 @@ export const LeaderboardScreen = () => {
             forceLatinFont
             latinRole="bold"
           >
-            {item.name}
+            {isMe ? (userName || item.name) : item.name}
           </AppText>
           <View style={styles.metaRow}>
             <AppText style={styles.flagText}>{item.countryFlag}</AppText>

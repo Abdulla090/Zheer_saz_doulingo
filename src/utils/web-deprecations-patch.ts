@@ -8,6 +8,7 @@
 
 import * as RN from "react-native";
 import React from "react";
+import { useFontStore } from "../stores/useFontStore";
 
 const { Platform, StyleSheet } = RN;
 
@@ -226,4 +227,57 @@ if (Platform.OS === "web") {
       jsxDevRuntime.jsxDEV.__patched = true;
     }
   } catch (e) {}
+}
+
+// ── Global React Native Text Patch ──
+// Overrides the default React Native Text component to automatically use the selected Kurdish font.
+try {
+  const OriginalText = RN.Text as any;
+
+  if (OriginalText) {
+    const CustomTextRenderer = (props: any, ref: any) => {
+      // Dynamically subscribe to the selected font
+      const selectedFont = useFontStore((s) => s.selectedFont);
+      const style = props.style;
+      let hasFont = false;
+
+      if (style) {
+        if (Array.isArray(style)) {
+          const flat = RN.StyleSheet.flatten(style);
+          hasFont = !!(flat && flat.fontFamily);
+        } else {
+          hasFont = !!style.fontFamily;
+        }
+      }
+
+      // Default to the selected Kurdish font if no fontFamily is explicitly defined
+      let newStyle = style;
+      if (!hasFont && selectedFont) {
+        newStyle = [style, { fontFamily: selectedFont }];
+      }
+
+      return React.createElement(OriginalText, {
+        ...props,
+        style: newStyle,
+        ref,
+      });
+    };
+
+    const CustomText = React.forwardRef(CustomTextRenderer);
+
+    (CustomText as any).displayName = "Text";
+
+    try {
+      Object.defineProperty(RN, "Text", {
+        get() {
+          return CustomText;
+        },
+        configurable: true,
+      });
+    } catch {
+      (RN as any).Text = CustomText;
+    }
+  }
+} catch (err) {
+  console.warn("Global RN.Text patch failed:", err);
 }
