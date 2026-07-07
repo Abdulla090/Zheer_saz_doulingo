@@ -41,7 +41,7 @@ export function EmojiSticker({
     } else {
       scale.value = 1;
     }
-  }, [emoji, animateOnMount]);
+  }, [animateOnMount, emoji, scale]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {

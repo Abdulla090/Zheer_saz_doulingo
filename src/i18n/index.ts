@@ -1,6 +1,6 @@
-import i18n from "i18next";
+/* eslint-disable import/no-named-as-default-member */
+import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
-import { getLocales } from "expo-localization";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
 import en from "./en.json";
@@ -22,7 +22,7 @@ const initI18n = () => {
   const savedLocale = useLocaleStore.getState().selectedSourceLanguage || "en";
   const appLocale = savedLocale;
   
-  i18n
+  i18next
     .use(initReactI18next)
     .init({
       resources,
@@ -40,7 +40,7 @@ initI18n();
 useLocaleStore.subscribe((state, prevState) => {
   if (state.selectedSourceLanguage !== prevState?.selectedSourceLanguage) {
     const appLang = state.selectedSourceLanguage;
-    i18n.changeLanguage(appLang);
+    i18next.changeLanguage(appLang);
   }
 });
 
@@ -48,7 +48,7 @@ export type AppLocale = string;
 export type I18nKey = string;
 
 export function translate(locale: string, key: string): string {
-  return i18n.t(key, { lng: locale }) as string;
+  return i18next.t(key, { lng: locale }) as string;
 }
 
-export default i18n;
+export default i18next;

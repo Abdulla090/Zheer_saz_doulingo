@@ -1,557 +1,801 @@
-import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, ActivityIndicator, ScrollView, Pressable } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, cancelAnimation, FadeInDown } from "react-native-reanimated";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  BookOpen02Icon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+  Mic01Icon,
+  RefreshIcon,
+  Target02Icon,
+  VolumeHighIcon,
+} from "@hugeicons/core-free-icons";
 
-import { AppText } from "../../components/ui/AppText";
-import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
-import { useSpeechCapture } from "../../hooks/use-speech-capture";
-import { generateReadingPracticeParagraphs } from "../../services/gemini-speech-service";
-import { useI18n } from "../../hooks/useI18n";
-import { useThemeColors } from "../../hooks/useThemeColors";
 import { PressableScale } from "../../components/animations";
-import { HomeMeshBackground, HomeLiquidButton, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
-// @ts-expect-error no types
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error no types
-import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
+import { AppText } from "../../components/ui/AppText";
+import {
+  HomeLiquidButton,
+  HomeLiquidCard,
+  HomeMeshBackground,
+  HomePalette as C,
+} from "../../components/ui/ios-liquid-home";
+import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useI18n } from "../../hooks/useI18n";
+import { generateReadingPracticeParagraphs } from "../../services/gemini-speech-service";
+import { hapticImpact } from "../../utils/haptics";
 
 type Difficulty = "Beginner" | "Intermediate" | "Advanced";
-type State = "setup" | "generating" | "idle" | "listening" | "processing" | "success" | "fail";
+type PracticeState = "setup" | "generating" | "preview" | "reading" | "processing" | "results";
 type Speed = "Slow" | "Normal" | "Fast";
+type SourceMode = "ai" | "template";
 
-type ParagraphSpeechEvaluation = {
-  accuracyScore: number;
-  wordAnalysis: {
-    word: string;
-    correct: boolean;
-  }[];
-  transcript: string;
+type WordResult = {
+  word: string;
+  normalized: string;
+  spoken: boolean;
+  orderCorrect: boolean;
 };
 
-const TEMPLATES: Record<Difficulty, { title: string; paragraphs: string[] }[]> = {
+type ReadingEvaluation = {
+  accuracyScore: number;
+  coverageScore: number;
+  orderScore: number;
+  fluencyScore: number;
+  wpm: number;
+  durationSeconds: number;
+  transcript: string;
+  wordResults: WordResult[];
+  missedWords: string[];
+  strengths: string[];
+  nextSteps: string[];
+};
+
+type TemplateSet = {
+  title: string;
+  description: string;
+  paragraphs: string[];
+};
+
+const DIFFICULTIES: Difficulty[] = ["Beginner", "Intermediate", "Advanced"];
+const SPEEDS: Speed[] = ["Slow", "Normal", "Fast"];
+
+const TARGET_WPM: Record<Difficulty, number> = {
+  Beginner: 90,
+  Intermediate: 120,
+  Advanced: 145,
+};
+
+const SPEED_MULTIPLIER: Record<Speed, number> = {
+  Slow: 42,
+  Normal: 30,
+  Fast: 22,
+};
+
+const TEMPLATES: Record<Difficulty, TemplateSet[]> = {
   Beginner: [
     {
-      title: "Daily Walk",
+      title: "Morning Market",
+      description: "Clear daily vocabulary with short sentences.",
       paragraphs: [
-        "The weather is beautiful and warm today. The yellow sun is shining and the small birds are singing in the garden. I like to walk in the quiet park with my friends. We see many colorful flowers and tall green trees. It is a wonderful day to be outside, play games, and enjoy nature together."
-      ]
+        "This morning, I went to the market with my brother. We bought fresh bread, red apples, and cold water. The shopkeeper was kind and smiled at us. After that, we walked home slowly and talked about our plans for the day.",
+      ],
     },
     {
-      title: "My Family",
+      title: "A Good Friend",
+      description: "Warm beginner story for confidence.",
       paragraphs: [
-        "I love my family very much. We eat a delicious dinner together every evening at home. We talk about our day and tell funny stories. On the weekends, we go to the busy market or play games in the backyard. We are very happy and help each other every day."
-      ]
-    }
+        "My best friend is very helpful. She listens when I have a problem and gives me good advice. We study English together after school. Sometimes we make mistakes, but we laugh and try again. Learning is easier with a good friend.",
+      ],
+    },
   ],
   Intermediate: [
     {
       title: "Learning Languages",
+      description: "Balanced vocabulary and connected ideas.",
       paragraphs: [
-        "Learning a new language opens up many exciting opportunities in life. It helps you connect with people from different countries and understand their culture deeply. While it takes time and practice to master new vocabulary, the process is rewarding. Speaking every day is the best way to build confidence."
-      ]
+        "Learning a new language opens many opportunities in life. It helps you connect with people from different countries and understand their culture more deeply. The process takes time, but daily speaking practice builds confidence and makes new vocabulary easier to remember.",
+      ],
     },
     {
       title: "Smart Devices",
+      description: "Modern topic with natural pronunciation challenges.",
       paragraphs: [
-        "Technology is changing the way we learn, communicate, and work. With modern smartphones, tablets, and artificial intelligence, we can practice speaking English anytime and anywhere. These smart devices provide instant feedback, making education more accessible to everyone around the world."
-      ]
-    }
+        "Technology is changing the way we learn, communicate, and work. With smartphones, tablets, and artificial intelligence, students can practice English almost anywhere. These tools provide quick feedback, but real progress still depends on focus, repetition, and curiosity.",
+      ],
+    },
   ],
   Advanced: [
     {
-      title: "Art of Focus",
+      title: "The Art of Focus",
+      description: "Longer rhythm with academic phrasing.",
       paragraphs: [
-        "Consistency is the ultimate key to mastering any complex intellectual or physical skill. By dedicating even fifteen minutes a day to active reading and pronunciation practice, you will make significant and measurable progress. Eliminating distractions and maintaining focus allows the brain to build strong neural pathways."
-      ]
+        "Consistency is the foundation of mastering any complex intellectual skill. By dedicating focused time to active reading and pronunciation practice, learners create measurable progress. Eliminating distractions allows the brain to build stronger patterns and respond more naturally under pressure.",
+      ],
     },
     {
-      title: "Future of Earth",
+      title: "Sustainable Cities",
+      description: "Advanced vocabulary with longer clauses.",
       paragraphs: [
-        "Environmental sustainability is undoubtedly one of the most critical challenges facing our generation. Preserving global biodiversity and protecting ecosystems requires collective international action, sustainable policies, and innovative technological solutions to reduce carbon emissions and combat climate change."
-      ]
-    }
-  ]
+        "Urban sustainability requires more than modern buildings and efficient transportation. Cities must protect public spaces, reduce waste, and design neighborhoods where people can live safely without depending on long daily commutes. These choices shape health, opportunity, and the environment.",
+      ],
+    },
+  ],
 };
 
-function evaluateSpeechLocally(transcript: string, paragraphs: string[]): ParagraphSpeechEvaluation {
-  const normalize = (str: string) =>
-    str
-      .toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+const normalizeWord = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'“”‘’]/g, "")
+    .trim();
 
-  const targetWords = paragraphs.join(" ").split(/\s+/).filter(Boolean);
-  const spokenWords = new Set(normalize(transcript).split(/\s+/).filter(Boolean));
+const tokenize = (value: string) =>
+  value
+    .split(/\s+/)
+    .map((word) => normalizeWord(word))
+    .filter(Boolean);
 
-  let correctCount = 0;
-  const wordAnalysis = targetWords.map((originalWord) => {
-    const normalizedTarget = normalize(originalWord);
-    const correct = spokenWords.has(normalizedTarget);
-    if (correct) {
-      correctCount++;
+const getTargetWords = (paragraphs: string[]) =>
+  paragraphs
+    .join(" ")
+    .split(/\s+/)
+    .map((word) => ({
+      word,
+      normalized: normalizeWord(word),
+    }))
+    .filter((item) => item.normalized.length > 0);
+
+function evaluateReading(
+  transcript: string,
+  paragraphs: string[],
+  difficulty: Difficulty,
+  startedAt: number,
+  endedAt: number,
+): ReadingEvaluation {
+  const targetWords = getTargetWords(paragraphs);
+  const spokenWords = tokenize(transcript);
+  const spokenCounts = new Map<string, number>();
+
+  spokenWords.forEach((word) => {
+    spokenCounts.set(word, (spokenCounts.get(word) ?? 0) + 1);
+  });
+
+  let orderedCursor = 0;
+  let spokenCount = 0;
+  let orderCount = 0;
+
+  const wordResults = targetWords.map((target) => {
+    const available = spokenCounts.get(target.normalized) ?? 0;
+    const spoken = available > 0;
+    if (spoken) {
+      spokenCounts.set(target.normalized, available - 1);
+      spokenCount++;
     }
-    
+
+    let orderCorrect = false;
+    if (spoken) {
+      const foundAt = spokenWords.indexOf(target.normalized, orderedCursor);
+      if (foundAt >= 0) {
+        orderCorrect = true;
+        orderCount++;
+        orderedCursor = foundAt + 1;
+      }
+    }
+
     return {
-      word: originalWord,
-      correct,
+      ...target,
+      spoken,
+      orderCorrect,
     };
   });
 
-  const accuracyScore = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
+  const durationSeconds = Math.max(1, Math.round((endedAt - startedAt) / 1000));
+  const wpm = Math.round((spokenWords.length / durationSeconds) * 60);
+  const coverageScore = targetWords.length > 0 ? Math.round((spokenCount / targetWords.length) * 100) : 0;
+  const orderScore = spokenCount > 0 ? Math.round((orderCount / spokenCount) * 100) : 0;
+  const fluencyTarget = TARGET_WPM[difficulty];
+  const fluencyScore = Math.max(0, Math.min(100, Math.round((wpm / fluencyTarget) * 100)));
+  const accuracyScore = Math.round(coverageScore * 0.62 + orderScore * 0.23 + fluencyScore * 0.15);
+  const missedWords = wordResults.filter((word) => !word.spoken).slice(0, 12).map((word) => word.word);
+
+  const strengths: string[] = [];
+  const nextSteps: string[] = [];
+
+  if (coverageScore >= 85) strengths.push("You covered most of the passage clearly.");
+  else nextSteps.push("Read slower and focus on finishing each sentence.");
+
+  if (orderScore >= 82) strengths.push("Your word order stayed close to the passage.");
+  else nextSteps.push("Follow the line visually instead of jumping between phrases.");
+
+  if (wpm >= fluencyTarget * 0.75 && wpm <= fluencyTarget * 1.25) {
+    strengths.push("Your pace was controlled for this level.");
+  } else if (wpm < fluencyTarget * 0.75) {
+    nextSteps.push("Practice the same passage once more at a slightly faster pace.");
+  } else {
+    nextSteps.push("Slow down so pronunciation stays clean.");
+  }
 
   return {
     accuracyScore,
-    wordAnalysis,
+    coverageScore,
+    orderScore,
+    fluencyScore,
+    wpm,
+    durationSeconds,
     transcript,
+    wordResults,
+    missedWords,
+    strengths: strengths.slice(0, 3),
+    nextSteps: nextSteps.slice(0, 3),
   };
+}
+
+function OptionChip({
+  label,
+  active,
+  onPress,
+  flex = true,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  flex?: boolean;
+}) {
+  return (
+    <PressableScale
+      onPress={onPress}
+      scaleDown={0.95}
+      style={[
+        styles.optionChip,
+        flex && styles.optionChipFlex,
+        active && styles.optionChipActive,
+      ]}
+    >
+      <AppText
+        style={[
+          styles.optionChipText,
+          active && styles.optionChipTextActive,
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </AppText>
+    </PressableScale>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  tone = "blue",
+}: {
+  label: string;
+  value: string;
+  tone?: "blue" | "green" | "red";
+}) {
+  const color = tone === "green" ? "#10B981" : tone === "red" ? "#EF4444" : C.blue;
+  return (
+    <View style={styles.metricCard}>
+      <AppText style={styles.metricValue} forceLatinFont>
+        {value}
+      </AppText>
+      <AppText style={[styles.metricLabel, { color }]}>{label}</AppText>
+    </View>
+  );
 }
 
 export default function ReadingPracticeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, isKu } = useI18n();
+  const { width } = useWindowDimensions();
+  const { t, isKu, isAr } = useI18n();
+  const isRtl = isKu || isAr;
   const speech = useSpeechCapture("en-US");
-  const { colors, isDark } = useThemeColors();
 
-  const [state, setState] = useState<State>("setup");
-  const [sourceMode, setSourceMode] = useState<"ai" | "template">("ai");
+  const [state, setState] = useState<PracticeState>("setup");
+  const [sourceMode, setSourceMode] = useState<SourceMode>("ai");
   const [difficulty, setDifficulty] = useState<Difficulty>("Intermediate");
-  const [paraCount, setParaCount] = useState<number>(1);
-  const [wordCount, setWordCount] = useState<number>(80);
+  const [paragraphCount, setParagraphCount] = useState(1);
+  const [wordCount, setWordCount] = useState(90);
   const [speed, setSpeed] = useState<Speed>("Normal");
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
   const [paragraphs, setParagraphs] = useState<string[]>([]);
-  const [evaluation, setEvaluation] = useState<ParagraphSpeechEvaluation | null>(null);
+  const [evaluation, setEvaluation] = useState<ReadingEvaluation | null>(null);
+  const [containerHeight, setContainerHeight] = useState(420);
+  const [textHeight, setTextHeight] = useState(160);
 
-  const [containerHeight, setContainerHeight] = useState(300);
-  const [textHeight, setTextHeight] = useState(100);
-
-  const scrollY = useSharedValue(140);
   const transcriptRef = useRef("");
+  const startedAtRef = useRef(0);
+  const scrollY = useSharedValue(0);
 
-  // Position text at the bottom in idle state (starts at bottom of screen, scrolls up)
-  useEffect(() => {
-    if (state === "idle" && containerHeight > 0) {
-      scrollY.value = containerHeight - 160;
-    }
-  }, [state, containerHeight]);
+  const compact = width < 380;
+  const fullText = paragraphs.join("\n\n");
+  const targetWords = useMemo(() => getTargetWords(paragraphs), [paragraphs]);
+  const estimatedMinutes = Math.max(1, Math.round(targetWords.length / TARGET_WPM[difficulty]));
+  const activeTemplate = TEMPLATES[difficulty][selectedTemplateIndex] ?? TEMPLATES[difficulty][0];
 
   useEffect(() => {
     return () => {
       speech.abort();
     };
-  }, []);
+  }, [speech]);
 
-  // Reset selected template if difficulty changes
   useEffect(() => {
     setSelectedTemplateIndex(0);
   }, [difficulty]);
 
-  const handleStartGenerate = async () => {
-    setState("generating");
-    try {
-      const generated = await generateReadingPracticeParagraphs(difficulty, paraCount, wordCount);
-      setParagraphs(generated);
-      setEvaluation(null);
-      setState("idle");
-    } catch (e) {
-      console.warn("Failed to generate", e);
-      // Fallback templates based on difficulty
-      const defaults = TEMPLATES[difficulty][0]?.paragraphs || ["Hello! I am learning English today."];
-      setParagraphs(defaults);
-      setEvaluation(null);
-      setState("idle");
-    }
-  };
+  const resetScrollPosition = useCallback(() => {
+    const start = Math.max(80, containerHeight - 180);
+    scrollY.value = start;
+  }, [containerHeight, scrollY]);
 
-  const handleStartTemplate = () => {
-    const selected = TEMPLATES[difficulty][selectedTemplateIndex];
-    if (selected) {
-      setParagraphs(selected.paragraphs);
-      setEvaluation(null);
-      setState("idle");
+  useEffect(() => {
+    if (state === "preview" || state === "results") {
+      resetScrollPosition();
     }
-  };
+  }, [resetScrollPosition, state]);
 
-  const handleStart = () => {
-    if (sourceMode === "ai") {
-      void handleStartGenerate();
-    } else {
-      handleStartTemplate();
+  const handleBack = useCallback(() => {
+    if (state !== "setup") {
+      speech.abort();
+      cancelAnimation(scrollY);
+      setState("setup");
+      return;
     }
-  };
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)/play");
+  }, [router, scrollY, speech, state]);
 
-  const handleStartListen = async () => {
-    setState("listening");
+  const loadTemplate = useCallback(() => {
+    const selected = TEMPLATES[difficulty][selectedTemplateIndex] ?? TEMPLATES[difficulty][0];
+    setParagraphs(selected.paragraphs);
     setEvaluation(null);
-    transcriptRef.current = "";
-    
-    const startPos = containerHeight > 0 ? containerHeight - 160 : 140;
-    scrollY.value = startPos;
-    
-    const distance = startPos + textHeight;
-    const speedMultiplier = speed === "Slow" ? 40 : speed === "Fast" ? 18 : 28;
-    const duration = distance * speedMultiplier;
-    
-    const started = await speech.start({
-      onResult: (text: string, _isFinal: boolean) => {
-        transcriptRef.current = text;
-      },
-      onError: () => { if (state === "listening") void handleStopListen(); }
-    });
+    setState("preview");
+    hapticImpact();
+  }, [difficulty, selectedTemplateIndex]);
 
-    if (started) {
-      scrollY.value = withTiming(-textHeight, { duration, easing: Easing.linear });
-    } else {
-        setState("idle");
-        scrollY.value = startPos;
+  const generatePassage = useCallback(async () => {
+    setState("generating");
+    setEvaluation(null);
+    try {
+      const generated = await generateReadingPracticeParagraphs(difficulty, paragraphCount, wordCount);
+      setParagraphs(generated.filter(Boolean));
+      setState("preview");
+    } catch (error) {
+      console.warn("Reading passage generation failed; using template fallback.", error);
+      const fallback = TEMPLATES[difficulty][0]?.paragraphs ?? ["Today I will practice reading clearly and slowly."];
+      setParagraphs(fallback);
+      setState("preview");
     }
-  };
+  }, [difficulty, paragraphCount, wordCount]);
 
-  const handleStopListen = async () => {
+  const handleBuildPractice = useCallback(() => {
+    if (sourceMode === "ai") void generatePassage();
+    else loadTemplate();
+  }, [generatePassage, loadTemplate, sourceMode]);
+
+  async function stopReading() {
+    if (state === "processing") return;
     setState("processing");
     cancelAnimation(scrollY);
-    
-    try {
-      speech.stop();
-      const lastTranscript = transcriptRef.current;
-      const evalResult = evaluateSpeechLocally(lastTranscript, paragraphs);
-      setEvaluation(evalResult);
-      setState(evalResult.accuracyScore >= 60 ? "success" : "fail");
-    } catch (err) {
-      console.warn("Speech error", err);
-      setState("fail");
-    }
-  };
+    speech.stop();
 
-  const handleMicPress = () => {
-    if (state === "processing" || state === "generating") return;
-    if (state === "listening") {
-      void handleStopListen();
-    } else {
-      void handleStartListen();
+    const result = evaluateReading(
+      transcriptRef.current,
+      paragraphs,
+      difficulty,
+      startedAtRef.current,
+      Date.now(),
+    );
+    setEvaluation(result);
+    setState("results");
+  }
+
+  async function startReading() {
+    if (paragraphs.length === 0) return;
+    transcriptRef.current = "";
+    startedAtRef.current = Date.now();
+    setEvaluation(null);
+    setState("reading");
+    resetScrollPosition();
+
+    const start = Math.max(80, containerHeight - 180);
+    const distance = start + textHeight + 120;
+    const duration = Math.max(12_000, distance * SPEED_MULTIPLIER[speed]);
+
+    const started = await speech.start({
+      onResult: (text) => {
+        transcriptRef.current = text;
+      },
+      onError: () => {
+        void stopReading();
+      },
+    });
+
+    if (!started) {
+      setState("preview");
+      return;
     }
-  };
+
+    scrollY.value = start;
+    scrollY.value = withTiming(-textHeight - 80, {
+      duration,
+      easing: Easing.linear,
+    });
+    hapticImpact();
+  }
+
+  function handleMicPress() {
+    if (state === "reading") void stopReading();
+    else if (state === "preview" || state === "results") void startReading();
+  }
+
+  const teleprompterTextStyle = useMemo(
+    () => [
+      styles.passageText,
+      compact && styles.passageTextCompact,
+      { textAlign: isRtl ? "right" as const : "left" as const },
+    ],
+    [compact, isRtl],
+  );
 
   const scrollStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: scrollY.value }],
   }));
 
-  const fullText = paragraphs.join("\n\n");
-
-  const renderText = () => {
+  const renderPassage = () => {
     if (!evaluation) {
       return (
-        <AppText style={styles.paragraphText}>
+        <AppText style={teleprompterTextStyle} forceLatinFont>
           {fullText}
         </AppText>
       );
     }
+
     return (
-      <View style={styles.wordWrapRow}>
-        {evaluation.wordAnalysis.map((item, i) => {
-          return (
-            <AppText
-              key={i}
-              style={[
-                styles.wordText,
-                { color: item.correct ? "#10B981" : "#EF4444" },
-              ]}
-            >
-              {item.word}{" "}
-            </AppText>
-          );
-        })}
+      <View style={[styles.wordWrap, isRtl && { justifyContent: "flex-end" }]}>
+        {evaluation.wordResults.map((item, index) => (
+          <AppText
+            key={`${item.word}-${index}`}
+            style={[
+              styles.wordText,
+              item.spoken ? styles.wordCorrect : styles.wordMissed,
+              item.spoken && !item.orderCorrect && styles.wordOutOfOrder,
+            ]}
+            forceLatinFont
+          >
+            {item.word}{" "}
+          </AppText>
+        ))}
       </View>
     );
   };
 
-  // High contrast Black & White styles for setup settings
-  const getPillStyle = (active: boolean): any => {
-    return [
-      styles.pillCard,
-      {
-        backgroundColor: "#FFFFFF",
-        borderColor: "#E2E8F0"
-      },
-      active ? {
-        backgroundColor: "#000000",
-        borderColor: "#000000"
-      } : null
-    ];
-  };
+  const header = (
+    <View style={[styles.header, { paddingTop: insets.top + 12, flexDirection: isRtl ? "row-reverse" : "row" }]}>
+      <Pressable style={styles.backButton} onPress={handleBack}>
+        <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={22} color={C.navy} strokeWidth={2.4} />
+      </Pressable>
+      <View style={[styles.headerTitleWrap, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+        <AppText style={[styles.headerKicker, { textAlign: isRtl ? "right" : "left" }]}>
+          {isKu ? "ڕاهێنانی خوێندنەوە" : "Reading lab"}
+        </AppText>
+        <AppText style={[styles.headerTitle, { textAlign: isRtl ? "right" : "left" }]}>
+          {isKu ? "خوێندنەوەی دەنگی" : "Read out loud"}
+        </AppText>
+      </View>
+    </View>
+  );
 
-  const getPillTextStyle = (active: boolean): any => {
-    return [
-      styles.pillText,
-      { color: "#0F172A" },
-      active ? {
-        color: "#FFFFFF",
-        fontWeight: "800" as const
-      } : null
-    ];
-  };
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)");
-    }
-  };
-
-  if (state === "setup") {
+  if (state === "setup" || state === "generating") {
     return (
       <View style={styles.root}>
         <HomeMeshBackground />
-        <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: isKu ? "row-reverse" : "row" }]}>
-          <Pressable style={styles.backButton} onPress={handleBack}>
-            <HugeiconsIcon icon={isKu ? ArrowRight01Icon : ArrowLeft01Icon} size={24} color="#090D16" />
-          </Pressable>
-        </View>
-        <ScrollView contentContainerStyle={styles.setupContent} showsVerticalScrollIndicator={false}>
-          <Animated.View entering={FadeInDown.delay(100)} style={styles.welcomeSection}>
-            <View style={styles.aiBadge}>
-              <AppText style={styles.aiBadgeText}>AI POWERED</AppText>
+        {header}
+
+        <ScrollView
+          contentContainerStyle={[styles.setupContent, { paddingBottom: insets.bottom + 42 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeInDown.duration(360)} style={[styles.heroBlock, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+            <View style={[styles.modeBadge, isRtl && { flexDirection: "row-reverse" }]}>
+              <HugeiconsIcon icon={BookOpen02Icon} size={15} color={C.blue} strokeWidth={2.2} />
+              <AppText style={styles.modeBadgeText}>TWINO READING</AppText>
             </View>
-            <AppText style={[styles.title, { textAlign: isKu ? "right" : "left" }]}>
+            <AppText style={[styles.title, { textAlign: isRtl ? "right" : "left" }]}>
               {t("games.paragraphSpeechTitle") || "Reading Practice"}
             </AppText>
-            <AppText style={[styles.subtitle, { textAlign: isKu ? "right" : "left" }]}>
-              {t("games.paragraphSpeechSub") || "Improve your reading fluency and pronunciation with AI-generated passages."}
+            <AppText style={[styles.subtitle, { textAlign: isRtl ? "right" : "left" }]}>
+              {isKu
+                ? "دەق بخوێنەوە، دەنگت تۆمار بکە، پاشان وشە بە وشە فیدباک و خێرایی و وردی ببینە."
+                : "Read a passage aloud, track your pacing, and get word-level feedback on coverage, order, and fluency."}
             </AppText>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(200)} style={{ marginBottom: 28 }}>
-            <HomeLiquidCard contentStyle={{ padding: 18, gap: 20 }}>
-              
-              {/* Source Mode Selection */}
+          <Animated.View entering={FadeInDown.delay(80).duration(360)}>
+            <HomeLiquidCard contentStyle={styles.setupCard}>
               <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Source Mode</AppText>
-                <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                  <PressableScale
-                    onPress={() => setSourceMode("ai")}
-                    style={getPillStyle(sourceMode === "ai")}
-                  >
-                    <AppText style={getPillTextStyle(sourceMode === "ai")}>
-                      AI Generated
-                    </AppText>
-                  </PressableScale>
-                  <PressableScale
-                    onPress={() => setSourceMode("template")}
-                    style={getPillStyle(sourceMode === "template")}
-                  >
-                    <AppText style={getPillTextStyle(sourceMode === "template")}>
-                      Built-in Templates
-                    </AppText>
-                  </PressableScale>
+                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Source</AppText>
+                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
+                  <OptionChip label="AI passage" active={sourceMode === "ai"} onPress={() => setSourceMode("ai")} />
+                  <OptionChip label="Built-in" active={sourceMode === "template"} onPress={() => setSourceMode("template")} />
                 </View>
               </View>
 
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, width: "100%" }} />
+              <View style={styles.divider} />
 
-              {/* Difficulty Selection */}
               <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Difficulty</AppText>
-                <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                  {(["Beginner", "Intermediate", "Advanced"] as Difficulty[]).map(d => (
-                    <PressableScale
-                      key={d}
-                      onPress={() => setDifficulty(d)}
-                      scaleDown={0.95}
-                      style={getPillStyle(difficulty === d)}
-                    >
-                      <AppText style={getPillTextStyle(difficulty === d)}>
-                        {d}
-                      </AppText>
-                    </PressableScale>
+                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Difficulty</AppText>
+                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
+                  {DIFFICULTIES.map((item) => (
+                    <OptionChip key={item} label={item} active={difficulty === item} onPress={() => setDifficulty(item)} />
                   ))}
                 </View>
               </View>
 
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, width: "100%" }} />
-
-              {/* Dynamic Option depending on Source Mode */}
               {sourceMode === "ai" ? (
                 <>
-                  <View style={styles.settingsGroup}>
-                    <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Paragraphs</AppText>
-                    <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                      {[1, 2, 3].map(n => (
-                        <PressableScale
-                          key={n}
-                          onPress={() => setParaCount(n)}
-                          scaleDown={0.95}
-                          style={getPillStyle(paraCount === n)}
-                        >
-                          <AppText style={getPillTextStyle(paraCount === n)}>
-                            {n}
-                          </AppText>
-                        </PressableScale>
-                      ))}
+                  <View style={styles.divider} />
+                  <View style={styles.splitSettings}>
+                    <View style={styles.settingsGroupHalf}>
+                      <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Paragraphs</AppText>
+                      <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
+                        {[1, 2, 3].map((item) => (
+                          <OptionChip key={item} label={`${item}`} active={paragraphCount === item} onPress={() => setParagraphCount(item)} />
+                        ))}
+                      </View>
+                    </View>
+                    <View style={styles.settingsGroupHalf}>
+                      <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Words</AppText>
+                      <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
+                        {[60, 90, 130].map((item) => (
+                          <OptionChip key={item} label={`${item}`} active={wordCount === item} onPress={() => setWordCount(item)} />
+                        ))}
+                      </View>
                     </View>
                   </View>
-
-                  <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, width: "100%", marginVertical: 8 }} />
-
+                </>
+              ) : (
+                <>
+                  <View style={styles.divider} />
                   <View style={styles.settingsGroup}>
-                    <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Words per Paragraph</AppText>
-                    <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                      {([50, 100, 150] as const).map(w => (
+                    <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Template</AppText>
+                    <View style={[styles.templateGrid, isRtl && styles.rowReverse]}>
+                      {TEMPLATES[difficulty].map((template, index) => (
                         <PressableScale
-                          key={w}
-                          onPress={() => setWordCount(w)}
-                          scaleDown={0.95}
-                          style={getPillStyle(wordCount === w)}
+                          key={template.title}
+                          onPress={() => setSelectedTemplateIndex(index)}
+                          style={[
+                            styles.templateCard,
+                            selectedTemplateIndex === index && styles.templateCardActive,
+                          ]}
                         >
-                          <AppText style={getPillTextStyle(wordCount === w)}>
-                            {w}
-                          </AppText>
+                          <AppText style={styles.templateTitle}>{template.title}</AppText>
+                          <AppText style={styles.templateDescription}>{template.description}</AppText>
                         </PressableScale>
                       ))}
                     </View>
                   </View>
                 </>
-              ) : (
-                <View style={styles.settingsGroup}>
-                  <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Select Template</AppText>
-                  <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row", flexWrap: "wrap", gap: 10 }]}>
-                    {TEMPLATES[difficulty].map((temp, index) => (
-                      <PressableScale
-                        key={index}
-                        onPress={() => setSelectedTemplateIndex(index)}
-                        style={getPillStyle(selectedTemplateIndex === index)}
-                      >
-                        <AppText style={getPillTextStyle(selectedTemplateIndex === index)}>
-                          {temp.title}
-                        </AppText>
-                      </PressableScale>
-                    ))}
-                  </View>
-                </View>
               )}
 
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, width: "100%" }} />
+              <View style={styles.divider} />
 
-              {/* Speed Selection */}
               <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isKu ? "right" : "left" }]}>Scroll Speed</AppText>
-                <View style={[styles.pillRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-                  {(["Slow", "Normal", "Fast"] as Speed[]).map(s => (
-                    <PressableScale
-                      key={s}
-                      onPress={() => setSpeed(s)}
-                      scaleDown={0.95}
-                      style={getPillStyle(speed === s)}
-                    >
-                      <AppText style={getPillTextStyle(speed === s)}>
-                        {s}
-                      </AppText>
-                    </PressableScale>
+                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Teleprompter speed</AppText>
+                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
+                  {SPEEDS.map((item) => (
+                    <OptionChip key={item} label={item} active={speed === item} onPress={() => setSpeed(item)} />
                   ))}
                 </View>
               </View>
-
             </HomeLiquidCard>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(400)} style={{ marginTop: 12 }}>
+          <View style={styles.setupFooter}>
+            <View style={[styles.practiceSummary, isRtl && styles.rowReverse]}>
+              <View style={styles.summaryItem}>
+                <HugeiconsIcon icon={Clock01Icon} size={16} color={C.gray} strokeWidth={2.2} />
+                <AppText style={styles.summaryText}>{estimatedMinutes} min</AppText>
+              </View>
+              <View style={styles.summaryItem}>
+                <HugeiconsIcon icon={Target02Icon} size={16} color={C.gray} strokeWidth={2.2} />
+                <AppText style={styles.summaryText}>{sourceMode === "template" ? activeTemplate.title : `${wordCount} words`}</AppText>
+              </View>
+            </View>
+
             <HomeLiquidButton
-              label={sourceMode === "ai" ? "Generate & Start" : "Start Practice"}
-              onPress={handleStart}
+              label={
+                state === "generating"
+                  ? "Creating passage..."
+                  : sourceMode === "ai"
+                    ? "Generate passage"
+                    : "Preview template"
+              }
+              onPress={state === "generating" ? () => {} : handleBuildPractice}
             />
-          </Animated.View>
+          </View>
         </ScrollView>
+
+        {state === "generating" ? (
+          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.generatingOverlay}>
+            <ActivityIndicator size="large" color={C.blue} />
+            <AppText style={styles.generatingText}>Creating a focused reading passage...</AppText>
+          </Animated.View>
+        ) : null}
       </View>
     );
   }
-
-  if (state === "generating") {
-    return (
-      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <HomeMeshBackground />
-        <ActivityIndicator size="large" color="#4F46E5" />
-        <AppText style={{ marginTop: 16, fontSize: 18, color: "#090D16", fontFamily: "DINNextRoundedBold" }}>
-          Generating your reading material...
-        </AppText>
-      </View>
-    );
-  }
-
-  const containerContent = (
-    <Animated.View 
-      style={[styles.scrollContent, state === "listening" ? scrollStyle : null]}
-      onLayout={(e) => setTextHeight(e.nativeEvent.layout.height)}
-    >
-      {renderText()}
-    </Animated.View>
-  );
 
   return (
     <View style={styles.root}>
       <HomeMeshBackground />
-      <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: isKu ? "row-reverse" : "row" }]}>
-        <Pressable style={styles.backButton} onPress={() => setState("setup")}>
-          <HugeiconsIcon icon={isKu ? ArrowRight01Icon : ArrowLeft01Icon} size={24} color="#090D16" />
-        </Pressable>
+      {header}
+
+      <View style={styles.stageHeader}>
+        <View style={[styles.stageStats, isRtl && styles.rowReverse]}>
+          <View style={styles.stageStat}>
+            <HugeiconsIcon icon={BookOpen02Icon} size={16} color={C.blue} strokeWidth={2.2} />
+            <AppText style={styles.stageStatText}>{targetWords.length} words</AppText>
+          </View>
+          <View style={styles.stageStat}>
+            <HugeiconsIcon icon={VolumeHighIcon} size={16} color={C.blue} strokeWidth={2.2} />
+            <AppText style={styles.stageStatText}>{speed}</AppText>
+          </View>
+        </View>
+        <AppText style={[styles.stageHint, { textAlign: isRtl ? "right" : "left" }]}>
+          {state === "reading"
+            ? "Read with the moving text. Tap the mic when you finish."
+            : state === "results"
+              ? "Review your marked words, then retry the same passage or generate a new one."
+              : "Preview the passage, then tap the mic to start."}
+        </AppText>
       </View>
 
-      <View 
-        style={styles.teleprompterContainer}
-        onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
+      <View
+        style={styles.teleprompter}
+        onLayout={(event) => setContainerHeight(event.nativeEvent.layout.height)}
       >
-        {state === "listening" ? (
-          <View style={{ flex: 1, overflow: "hidden" }}>
-            {containerContent}
+        {state === "reading" ? (
+          <View style={styles.teleprompterMask}>
+            <Animated.View
+              style={[styles.passageWrap, scrollStyle]}
+              onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}
+            >
+              {renderPassage()}
+            </Animated.View>
           </View>
         ) : (
-          <ScrollView 
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
-            showsVerticalScrollIndicator={true}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.previewScrollContent}
           >
-            {containerContent}
+            <View onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}>
+              {renderPassage()}
+            </View>
           </ScrollView>
         )}
-        <LinearGradient 
-          colors={["#F8FAFC", "rgba(248, 250, 252, 0)"]} 
-          style={styles.gradientOverlayTop} 
-          pointerEvents="none" 
+
+        <LinearGradient
+          colors={["#F8FAFC", "rgba(248,250,252,0)"]}
+          style={styles.gradientTop}
+          pointerEvents="none"
         />
-        <LinearGradient 
-          colors={["rgba(248, 250, 252, 0)", "#F8FAFC"]} 
-          style={styles.gradientOverlayBottom} 
-          pointerEvents="none" 
+        <LinearGradient
+          colors={["rgba(248,250,252,0)", "#F8FAFC"]}
+          style={styles.gradientBottom}
+          pointerEvents="none"
         />
       </View>
 
-      <View style={[styles.micStage, { paddingBottom: insets.bottom + 24 }]}>
-        {state === "processing" ? (
-          <View style={styles.processingWrap}>
-             <ActivityIndicator size="large" color="#4F46E5" />
-             <AppText style={styles.processingText}>Grading pronunciation...</AppText>
+      {evaluation ? (
+        <Animated.View entering={FadeInDown.duration(280)} style={styles.resultsPanel}>
+          <View style={[styles.scoreHeader, isRtl && styles.rowReverse]}>
+            <View style={styles.scoreCoin}>
+              <AppText style={styles.scoreValue} forceLatinFont>
+                {evaluation.accuracyScore}
+              </AppText>
+            </View>
+            <View style={[styles.scoreCopy, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+              <AppText style={[styles.scoreTitle, { textAlign: isRtl ? "right" : "left" }]}>
+                {evaluation.accuracyScore >= 80 ? "Strong reading" : evaluation.accuracyScore >= 60 ? "Good base" : "Needs another pass"}
+              </AppText>
+              <AppText style={[styles.scoreSubtitle, { textAlign: isRtl ? "right" : "left" }]}>
+                Transcript: {evaluation.transcript || "No clear speech captured."}
+              </AppText>
+            </View>
           </View>
-        ) : state === "success" || state === "fail" ? (
-          <View style={{ width: '100%', paddingHorizontal: 24 }}>
-            <HomeLiquidButton 
-              label={state === "success" ? "Great job! Try again" : "Keep practicing! Try again"} 
-              onPress={() => {
-                setEvaluation(null);
-                setState("idle");
-                scrollY.value = containerHeight > 0 ? containerHeight - 160 : 140;
-              }} 
-            />
+
+          <View style={styles.metricsRow}>
+            <MetricCard label="Coverage" value={`${evaluation.coverageScore}%`} tone="green" />
+            <MetricCard label="Order" value={`${evaluation.orderScore}%`} />
+            <MetricCard label="WPM" value={`${evaluation.wpm}`} tone={evaluation.fluencyScore >= 70 ? "green" : "red"} />
+          </View>
+
+          <View style={styles.feedbackGrid}>
+            <View style={styles.feedbackBlock}>
+              <View style={styles.feedbackTitleRow}>
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} color="#10B981" strokeWidth={2.4} />
+                <AppText style={styles.feedbackTitle}>What worked</AppText>
+              </View>
+              {(evaluation.strengths.length ? evaluation.strengths : ["You completed a full reading attempt."]).map((item) => (
+                <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
+              ))}
+            </View>
+
+            <View style={styles.feedbackBlock}>
+              <View style={styles.feedbackTitleRow}>
+                <HugeiconsIcon icon={RefreshIcon} size={16} color={C.red} strokeWidth={2.4} />
+                <AppText style={styles.feedbackTitle}>Next pass</AppText>
+              </View>
+              {(evaluation.nextSteps.length ? evaluation.nextSteps : ["Try the same passage again."]).map((item) => (
+                <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+      ) : null}
+
+      <View style={[styles.controlDock, { paddingBottom: insets.bottom + 14 }]}>
+        {state === "processing" ? (
+          <View style={styles.processingPill}>
+            <ActivityIndicator size="small" color={C.blue} />
+            <AppText style={styles.processingText}>Scoring your reading...</AppText>
           </View>
         ) : (
-          <MicCaptureOrb
-            listening={state === "listening"}
-            onPress={handleMicPress}
-            size={90}
-          />
+          <>
+            <View style={styles.micWrap}>
+              <MicCaptureOrb
+                listening={state === "reading"}
+                onPress={handleMicPress}
+                size={compact ? 78 : 90}
+              />
+              <View style={[styles.micCaption, state === "reading" && styles.micCaptionLive]}>
+                <HugeiconsIcon icon={Mic01Icon} size={14} color={state === "reading" ? "#FFFFFF" : C.blue} strokeWidth={2.3} />
+                <AppText style={[styles.micCaptionText, state === "reading" && { color: "#FFFFFF" }]}>
+                  {state === "reading" ? "Stop reading" : "Start reading"}
+                </AppText>
+              </View>
+            </View>
+
+            <View style={styles.secondaryActions}>
+              <PressableScale
+                style={styles.secondaryButton}
+                onPress={() => {
+                  setEvaluation(null);
+                  setState("preview");
+                  resetScrollPosition();
+                }}
+              >
+                <AppText style={styles.secondaryButtonText}>Retry</AppText>
+              </PressableScale>
+              <PressableScale style={styles.secondaryButton} onPress={handleBuildPractice}>
+                <AppText style={styles.secondaryButtonText}>New passage</AppText>
+              </PressableScale>
+            </View>
+          </>
         )}
       </View>
     </View>
@@ -559,134 +803,451 @@ export default function ReadingPracticeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F8FAFC" },
+  root: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
   header: {
-    paddingHorizontal: 24,
-    marginBottom: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
     alignItems: "center",
-    height: 48,
+    gap: 12,
   },
   backButton: {
-    padding: 8,
-    marginLeft: -8,
-    borderRadius: 99,
-    backgroundColor: "rgba(9, 13, 22, 0.03)",
-    borderWidth: 1.5,
-    borderColor: "rgba(9, 13, 22, 0.08)",
-  },
-  setupContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  welcomeSection: {
-    marginBottom: 20,
-  },
-  aiBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.86)",
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.2)",
-    marginBottom: 16,
+    borderColor: "rgba(15,23,42,0.08)",
   },
-  aiBadgeText: {
-    color: "#6366F1",
+  headerTitleWrap: {
+    flex: 1,
+  },
+  headerKicker: {
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.5,
+    color: C.gray,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  headerTitle: {
+    fontSize: 21,
+    fontWeight: "900",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  setupContent: {
+    paddingHorizontal: 20,
+    gap: 18,
+  },
+  heroBlock: {
+    gap: 10,
+  },
+  modeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(59,130,246,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(59,130,246,0.16)",
+  },
+  modeBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: C.blue,
+    letterSpacing: 1.1,
   },
   title: {
-    fontSize: 34,
+    fontSize: 36,
+    lineHeight: 39,
     fontWeight: "900",
-    color: "#090D16",
-    marginBottom: 10,
+    color: C.navy,
     fontFamily: "DINNextRoundedBold",
   },
   subtitle: {
     fontSize: 15,
-    color: "rgba(9, 13, 22, 0.6)",
-    lineHeight: 22,
+    lineHeight: 23,
+    color: "rgba(26,43,72,0.66)",
+  },
+  setupCard: {
+    padding: 18,
+    gap: 18,
   },
   settingsGroup: {
-    marginBottom: 16,
+    gap: 10,
+  },
+  settingsGroupHalf: {
+    flex: 1,
+    gap: 10,
+  },
+  splitSettings: {
+    flexDirection: "row",
+    gap: 14,
   },
   label: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "rgba(9, 13, 22, 0.4)",
+    fontSize: 11,
+    fontWeight: "900",
+    color: C.gray,
+    letterSpacing: 1.2,
     textTransform: "uppercase",
-    letterSpacing: 1.5,
+  },
+  optionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  rowReverse: {
+    flexDirection: "row-reverse",
+  },
+  optionChip: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.08)",
+  },
+  optionChipFlex: {
+    flex: 1,
+  },
+  optionChipActive: {
+    backgroundColor: C.navy,
+    borderColor: C.navy,
+  },
+  optionChipText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  optionChipTextActive: {
+    color: "#FFFFFF",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(15,23,42,0.08)",
+  },
+  templateGrid: {
+    flexDirection: "row",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  templateCard: {
+    width: "48%",
+    minHeight: 98,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.08)",
+    justifyContent: "space-between",
+  },
+  templateCardActive: {
+    borderColor: C.blue,
+    backgroundColor: "rgba(59,130,246,0.08)",
+  },
+  templateTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  templateDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: C.gray,
+  },
+  setupFooter: {
+    gap: 14,
+  },
+  practiceSummary: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  summaryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.72)",
+  },
+  summaryText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: C.gray,
+  },
+  generatingOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(248,250,252,0.86)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+  },
+  generatingText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: C.navy,
+  },
+  stageHeader: {
+    paddingHorizontal: 20,
+    gap: 10,
     marginBottom: 10,
   },
-  pillRow: {
+  stageStats: {
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
   },
-  pillCard: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  pillText: {
-    fontSize: 15,
-    fontFamily: "DINNextRoundedBold",
-  },
-  teleprompterContainer: {
-    flex: 1,
-    marginHorizontal: 24,
-    marginBottom: 32,
-    overflow: "hidden",
-    justifyContent: "flex-start",
-  },
-  scrollContent: {
-    paddingVertical: 132,
+  stageStat: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.06)",
   },
-  paragraphText: {
-    fontSize: 22,
-    lineHeight: 30,
-    color: "#090D16",
+  stageStatText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: C.navy,
+  },
+  stageHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: C.gray,
+  },
+  teleprompter: {
+    flex: 1,
+    marginHorizontal: 20,
+    borderRadius: 30,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.06)",
+  },
+  teleprompterMask: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  passageWrap: {
+    paddingHorizontal: 22,
+    paddingVertical: 150,
+  },
+  previewScrollContent: {
+    paddingHorizontal: 22,
+    paddingVertical: 42,
+  },
+  passageText: {
+    fontSize: 23,
+    lineHeight: 35,
+    color: C.navy,
     fontFamily: "DINNextRoundedBold",
-    textAlign: "center",
   },
-  wordWrapRow: {
+  passageTextCompact: {
+    fontSize: 20,
+    lineHeight: 31,
+  },
+  wordWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
   },
   wordText: {
     fontSize: 22,
-    lineHeight: 30,
+    lineHeight: 34,
     fontFamily: "DINNextRoundedBold",
   },
-  micStage: {
+  wordCorrect: {
+    color: "#10B981",
+  },
+  wordMissed: {
+    color: "#EF4444",
+    textDecorationLine: "underline",
+  },
+  wordOutOfOrder: {
+    color: "#F59E0B",
+  },
+  gradientTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 92,
+  },
+  gradientBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 92,
+  },
+  resultsPanel: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.08)",
+    gap: 14,
+  },
+  scoreHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  scoreCoin: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    height: 140,
+    backgroundColor: C.navy,
   },
-  processingWrap: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  processingText: {
-    fontSize: 16,
-    color: "rgba(9, 13, 22, 0.6)",
-    fontWeight: '700',
+  scoreValue: {
+    fontSize: 23,
+    fontWeight: "900",
+    color: "#FFFFFF",
     fontFamily: "DINNextRoundedBold",
   },
-  gradientOverlayTop: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, height: 120,
+  scoreCopy: {
+    flex: 1,
+    gap: 4,
   },
-  gradientOverlayBottom: {
-    position: "absolute",
-    bottom: 0, left: 0, right: 0, height: 120,
-  }
+  scoreTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  scoreSubtitle: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: C.gray,
+  },
+  metricsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  metricCard: {
+    flex: 1,
+    minHeight: 72,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: C.navy,
+    fontFamily: "DINNextRoundedBold",
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  feedbackGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  feedbackBlock: {
+    flex: 1,
+    gap: 8,
+  },
+  feedbackTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  feedbackTitle: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: C.navy,
+  },
+  feedbackText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: C.gray,
+  },
+  controlDock: {
+    minHeight: 132,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingTop: 12,
+  },
+  micWrap: {
+    alignItems: "center",
+    gap: 8,
+  },
+  micCaption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(59,130,246,0.09)",
+  },
+  micCaptionLive: {
+    backgroundColor: C.red,
+  },
+  micCaptionText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: C.blue,
+  },
+  secondaryActions: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 20,
+  },
+  secondaryButton: {
+    minWidth: 120,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.78)",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.08)",
+  },
+  secondaryButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: C.navy,
+  },
+  processingPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.88)",
+  },
+  processingText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: C.navy,
+  },
 });

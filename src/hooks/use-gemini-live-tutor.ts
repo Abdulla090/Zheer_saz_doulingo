@@ -64,6 +64,9 @@ export function useGeminiLiveTutor() {
   const micActiveRef = useRef(false);
   const autoLiveRef = useRef(false);
   const micMutedRef = useRef(false);
+  const sessionTokenRef = useRef(0);
+  const aiTurnTextRef = useRef("");
+  const userTurnTextRef = useRef("");
 
   const [phase, setPhase] = useState<LiveSessionPhase>("intro_ku");
   const [status, setStatus] = useState<LiveTutorStatus>("idle");
@@ -122,7 +125,64 @@ export function useGeminiLiveTutor() {
     setSpeaking(false);
   }, []);
 
+  const appendAiText = useCallback((text: string) => {
+    const next = text.trimStart();
+    if (!next) return;
+
+    const current = aiTurnTextRef.current;
+    if (next === current || current.endsWith(next)) {
+      return;
+    }
+
+    aiTurnTextRef.current = next.startsWith(current)
+      ? next
+      : current + next;
+    setTranscript(aiTurnTextRef.current);
+  }, []);
+
+  const recordUserTurn = useCallback((text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+
+    if (activeWordRef.current) {
+      const target = activeWordRef.current;
+      const userSpokeWord = new RegExp(`\\b${target}\\b`, "i").test(cleanText);
+
+      setSessionWords((prev) => {
+        if (userSpokeWord) {
+          const isAlreadyCorrect = prev.correct.includes(target);
+          return {
+            ...prev,
+            correct: isAlreadyCorrect ? prev.correct : [...prev.correct, target],
+            needsReview: prev.needsReview.filter((w) => w !== target),
+          };
+        }
+
+        const isAlreadyWrong = prev.needsReview.includes(target);
+        return {
+          ...prev,
+          needsReview: isAlreadyWrong ? prev.needsReview : [...prev.needsReview, target],
+        };
+      });
+    }
+
+    setTurns((prev) => [
+      ...prev,
+      {
+        id: `user-${Date.now()}`,
+        sender: "user",
+        text: cleanText,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        targetWord: activeWordRef.current || undefined,
+        wordCorrect: activeWordRef.current
+          ? new RegExp(`\\b${activeWordRef.current}\\b`, "i").test(cleanText)
+          : undefined,
+      },
+    ]);
+  }, []);
+
   const stopAll = useCallback(() => {
+    sessionTokenRef.current += 1;
     void stopMic();
     stopPlayer();
     sessionRef.current?.disconnect();
@@ -133,6 +193,8 @@ export function useGeminiLiveTutor() {
     setStatus("idle");
     setSpeaking(false);
     setTranscript("");
+    aiTurnTextRef.current = "";
+    userTurnTextRef.current = "";
     setPhase("intro_ku");
     autoLiveRef.current = false;
     activeWordRef.current = null;
@@ -142,10 +204,14 @@ export function useGeminiLiveTutor() {
 
   const connectSession = useCallback(async () => {
     if (!configured) {
-      setError("Add EXPO_PUBLIC_GEMINI_API_KEY to enable Live Voice Tutor.");
+      setError("Live Voice Tutor is not available right now. Try Role Play or Reading Practice.");
       setStatus("error");
       return;
     }
+
+    const sessionToken = sessionTokenRef.current + 1;
+    sessionTokenRef.current = sessionToken;
+    const isCurrentSession = () => sessionTokenRef.current === sessionToken;
 
     setError(null);
     setStatus("connecting");
@@ -155,6 +221,9 @@ export function useGeminiLiveTutor() {
     setSessionWords(createEmptySessionWordState());
     sessionStartTimeRef.current = Date.now();
     activeWordRef.current = null;
+    aiTurnTextRef.current = "";
+    userTurnTextRef.current = "";
+    setTranscript("");
 
     playerRef.current?.destroy();
     playerRef.current = new LivePcmPlayer((isPlaying) => {
@@ -176,24 +245,44 @@ export function useGeminiLiveTutor() {
     try {
       await session.connect({
         onSetupComplete: () => {
+          if (!isCurrentSession()) return;
           setStatus("live");
           session.startGreeting();
         },
         onAudio: (pcm) => {
+          if (!isCurrentSession()) return;
           micMutedRef.current = true;
-          if (statusRef.current !== "speaking" && statusRef.current !== "listening") {
-            setTranscript("");
-          }
           playerRef.current?.enqueueBase64Pcm(pcm);
           if (micActiveRef.current) {
             void stopMic();
           }
         },
         onText: (text) => {
-          setTranscript((prev) => prev + text);
+          if (!isCurrentSession()) return;
+          appendAiText(text);
+        },
+        onInputTranscription: (text) => {
+          if (!isCurrentSession()) return;
+          const next = text.trim();
+          if (!next) return;
+          const current = userTurnTextRef.current;
+          userTurnTextRef.current = next.startsWith(current) ? next : `${current} ${next}`.trim();
+        },
+        onOutputTranscription: (text) => {
+          if (!isCurrentSession()) return;
+          appendAiText(text);
         },
         onTurnComplete: () => {
-          const aiResponseText = transcript.trim();
+          if (!isCurrentSession()) return;
+          const userResponseText = userTurnTextRef.current.trim();
+          if (userResponseText) {
+            recordUserTurn(userResponseText);
+            userTurnTextRef.current = "";
+          }
+
+          const aiResponseText = aiTurnTextRef.current.trim();
+          aiTurnTextRef.current = "";
+          setTranscript(aiResponseText);
 
           // 1. Process AI response text for word introductions
           const currentLevel = useSettingsStore.getState().englishLevel || 5;
@@ -244,6 +333,10 @@ export function useGeminiLiveTutor() {
           }
         },
         onInterrupted: () => {
+          if (!isCurrentSession()) return;
+          aiTurnTextRef.current = "";
+          userTurnTextRef.current = "";
+          setTranscript("");
           stopPlayer();
           if (!playerRef.current?.isPlaying) {
             setSpeaking(false);
@@ -255,6 +348,7 @@ export function useGeminiLiveTutor() {
           }
         },
         onError: (msg) => {
+          if (!isCurrentSession()) return;
           setError(msg);
           setStatus("error");
         },
@@ -264,7 +358,7 @@ export function useGeminiLiveTutor() {
       setError(msg);
       setStatus("error");
     }
-  }, [configured, startMic, stopMic, stopPlayer]);
+  }, [appendAiText, configured, recordUserTurn, startMic, stopMic, stopPlayer]);
 
   // Intercept client inputs to track speech and parse onboarding
   const sendClientTextWithTracking = useCallback((text: string) => {
@@ -288,45 +382,11 @@ export function useGeminiLiveTutor() {
       }
     }
 
-    // 2. Word mastery evaluation tracking
-    if (activeWordRef.current) {
-      const target = activeWordRef.current;
-      const userSpokeWord = new RegExp(`\\b${target}\\b`, 'i').test(cleanText);
-      
-      setSessionWords((prev) => {
-        if (userSpokeWord) {
-          const isAlreadyCorrect = prev.correct.includes(target);
-          return {
-            ...prev,
-            correct: isAlreadyCorrect ? prev.correct : [...prev.correct, target],
-            needsReview: prev.needsReview.filter((w) => w !== target),
-          };
-        } else {
-          const isAlreadyWrong = prev.needsReview.includes(target);
-          return {
-            ...prev,
-            needsReview: isAlreadyWrong ? prev.needsReview : [...prev.needsReview, target],
-          };
-        }
-      });
-    }
-
-    // 3. Add User turn to history
-    setTurns((prev) => [
-      ...prev,
-      {
-        id: `user-${Date.now()}`,
-        sender: "user",
-        text: cleanText,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        targetWord: activeWordRef.current || undefined,
-        wordCorrect: activeWordRef.current ? new RegExp(`\\b${activeWordRef.current}\\b`, 'i').test(cleanText) : undefined,
-      },
-    ]);
+    recordUserTurn(cleanText);
 
     // Send chunk to Gemini Live socket
     sessionRef.current?.sendClientText(cleanText);
-  }, [connectSession, stopAll]);
+  }, [connectSession, recordUserTurn, stopAll]);
 
   // Intercept microphone press to use text tracking when sending transcripts
   const handleMicPress = useCallback(() => {

@@ -29,9 +29,10 @@ export function ScreenOpeningShell({ variant, children }: Props) {
     setPlayKey((k) => k + 1);
 
     let animationFrame: number | undefined;
+    const contentNode = contentRef.current;
 
     if (Platform.OS === "web") {
-      resetGsapEnterBlocks(contentRef.current);
+      resetGsapEnterBlocks(contentNode);
       animationFrame = requestAnimationFrame(runContentEntrance);
     }
 
@@ -40,7 +41,7 @@ export function ScreenOpeningShell({ variant, children }: Props) {
         if (animationFrame !== undefined) {
           cancelAnimationFrame(animationFrame);
         }
-        resetGsapEnterBlocks(contentRef.current);
+        resetGsapEnterBlocks(contentNode);
       }
     };
   }, [runContentEntrance]);

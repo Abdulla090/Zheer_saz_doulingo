@@ -90,7 +90,7 @@ export function AppText({
       ...rest,
       fontFamily,
     };
-  }, [style, direction, fontFamily]);
+  }, [colors.foreground, style, direction, fontFamily]);
 
   return (
     <Text

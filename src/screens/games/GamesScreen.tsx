@@ -1,11 +1,10 @@
 import { PremiumPressable } from '../../components/PremiumPressable';
 import { crossShadow } from '../../utils/shadows';
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Fire from '../../../assets/images/svg/header/fire.svg';
 import Dictionary from '../../../assets/images/svg/dictionary.svg';
 import AiTeacher from '../../../assets/images/svg/aiteacher.svg';
 import ReadingPractice from '../../../assets/images/svg/readingpractice.svg';
@@ -19,21 +18,14 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import { 
   HeadphonesIcon, 
   Mic01Icon, 
-  Message01Icon, 
   Robot02Icon, 
-  Book01Icon, 
-  BookOpen02Icon,
   CrownIcon,
   FireIcon,
   StarIcon,
   Diamond01Icon,
-  ChartBarLineIcon,
   Chatting01Icon,
   MaskTheater02Icon,
-  TeacherIcon
 } from "@hugeicons/core-free-icons";
-
-const { width } = Dimensions.get('window');
 
 function getDesignTokens(isDark: boolean) {
   return {
@@ -69,7 +61,7 @@ export function GamesScreen() {
   const router = useRouter();
   const { dailyXp, dailyGoalXp, streakDays, totalXp } = useProgressStore();
   const { t, locale, isKu } = useI18n();
-  const { colors, isDark } = useThemeColors();
+  const { isDark } = useThemeColors();
   const isRtl = isKu || locale === 'ar';
 
   const C = useMemo(() => getDesignTokens(isDark), [isDark]);
@@ -115,7 +107,6 @@ export function GamesScreen() {
               <HugeiconsIcon icon={HeadphonesIcon} size={26} color={C.violet} strokeWidth={2} />
             </View>
             <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.listenTitle")}</AppText>
-            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.listenSub")}</AppText>
           </PremiumPressable>
 
           <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
@@ -123,7 +114,6 @@ export function GamesScreen() {
               <HugeiconsIcon icon={Mic01Icon} size={26} color={C.blue} strokeWidth={2} />
             </View>
             <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.speakTitle")}</AppText>
-            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.speakSub")}</AppText>
           </PremiumPressable>
 
           <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
@@ -131,7 +121,6 @@ export function GamesScreen() {
               <HugeiconsIcon icon={Chatting01Icon} size={26} color={C.orange} strokeWidth={2} />
             </View>
             <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.conversationTitle")}</AppText>
-            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.conversationSub")}</AppText>
           </PremiumPressable>
         </View>
       </View>
@@ -144,7 +133,7 @@ export function GamesScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={[styles.goalLeft, isRtl ? { paddingLeft: 110, paddingRight: 0 } : {}]}>
+          <View style={[styles.goalLeft, isRtl ? { paddingLeft: 128, paddingRight: 0 } : {}]}>
             <View style={[styles.goalHeaderRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
               <View style={styles.goalTextCol}>
                 <AppText style={[styles.goalTitle, { textAlign: isRtl ? 'right' : 'left' }]} forceKurdishFont={isKu}>{t("games.timeToLearn")}</AppText>
@@ -161,7 +150,7 @@ export function GamesScreen() {
           
           <Image
             source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
-            style={[styles.mascotImg, isRtl ? { left: -16, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -5, left: 'auto' }]}
+            style={[styles.mascotImg, isRtl ? { left: 0, right: 'auto', transform: [{ scaleX: -1 }] } : { right: 0, left: 'auto' }]}
             resizeMode="contain"
           />
         </LinearGradient>
@@ -302,7 +291,7 @@ export function GamesScreen() {
           <View style={[styles.widgetRow, isRtl && { flexDirection: 'row-reverse' }]}>
             
             {/* Left/Stats Section */}
-            <View style={[styles.widgetLeftSection, isRtl ? { marginLeft: 65, marginRight: 0 } : { marginRight: 65 }]}>
+            <View style={[styles.widgetLeftSection, isRtl ? { marginLeft: 76, marginRight: 0 } : { marginRight: 76 }]}>
               {/* 2x2 Grid */}
               <View style={styles.gridContainer}>
                 <View style={styles.gridDividerH} />
@@ -359,7 +348,7 @@ export function GamesScreen() {
           {/* Mascot */}
           <Image
             source={require('../../../assets/images/svg/gamescreenmascotpurple.png')}
-            style={[styles.purpleMascotImg, isRtl ? { left: -8, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -8, left: 'auto' }]}
+            style={[styles.purpleMascotImg, isRtl ? { left: -6, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -6, left: 'auto' }]}
             resizeMode="contain"
           />
         </LinearGradient>
@@ -498,7 +487,7 @@ function createStyles(C: any, isDark: boolean) {
   dailyGoalCard: {
     borderRadius: 24,
     paddingHorizontal: 20,
-    paddingVertical: 22,
+    paddingVertical: 20,
     minHeight: 145,
     flexDirection: 'row',
     position: 'relative',
@@ -507,7 +496,8 @@ function createStyles(C: any, isDark: boolean) {
   },
   goalLeft: {
     flex: 1,
-    paddingRight: 80,
+    paddingRight: 128,
+    zIndex: 2,
   },
   goalHeaderRow: {
     flexDirection: 'row',
@@ -558,17 +548,13 @@ function createStyles(C: any, isDark: boolean) {
     fontWeight: '800',
     color: '#FFFFFF',
   },
-  goalRight: {
-    width: 130,
-    justifyContent: 'flex-end',
-    position: 'relative',
-  },
   mascotImg: {
-    width: 130,
-    height: 115,
+    width: 148,
+    height: 166,
     position: 'absolute',
-    bottom: -5,
-    right: -5,
+    bottom: -24,
+    right: 0,
+    zIndex: 1,
   },
 
   /* ── Quick Actions ── */
@@ -580,15 +566,15 @@ function createStyles(C: any, isDark: boolean) {
     flexDirection: 'row',
     backgroundColor: C.card,
     borderRadius: 24,
-    paddingVertical: 20,
+    paddingVertical: 18,
     paddingHorizontal: 8,
     ...crossShadow({ color: '#000', offsetY: 6, blur: 24, opacity: 0.08 }),
   },
   quickItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 4,
+    gap: 8,
+    paddingHorizontal: 5,
   },
   quickIcon: {
     width: 56,
@@ -603,17 +589,8 @@ function createStyles(C: any, isDark: boolean) {
     color: C.text,
     textAlign: 'center',
     flexShrink: 1,
+    lineHeight: 18,
   },
-  quickSub: {
-    fontSize: 11,
-    color: C.sub,
-    fontWeight: '500',
-    textAlign: 'center',
-    lineHeight: 15,
-    flexShrink: 1,
-    width: '100%',
-  },
-
   /* ── Bento Grid ── */
   bentoGrid: {
     flexDirection: 'row',
@@ -891,11 +868,11 @@ function createStyles(C: any, isDark: boolean) {
     lineHeight: 13,
   },
   purpleMascotImg: {
-    width: 90,
-    height: 110,
+    width: 92,
+    height: 124,
     position: 'absolute',
-    bottom: -5,
-    zIndex: 3,
+    bottom: -12,
+    zIndex: 4,
   },
   bentoContainer: {
     paddingHorizontal: 24,

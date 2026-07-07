@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Twino",
-    "slug": "duolingo-clone",
+    "name": "TWINO",
+    "slug": "twino",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/real-app-icon.png",
-    "scheme": "duolingoclone",
+    "scheme": "twino",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
       "hidden": true,
@@ -14,7 +14,7 @@
     },
     "ios": {
       "icon": "./assets/images/real-app-icon.png",
-      "bundleIdentifier": "com.hewad.mubariz.duolingoclone",
+      "bundleIdentifier": "com.hewad.mubariz.twino",
       "supportsTablet": false,
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow Twino English to transcribe your speech for lessons and AI feedback.",
@@ -28,7 +28,7 @@
       },
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": true,
-      "package": "com.hewad.mubariz.duolingoclone",
+      "package": "com.hewad.mubariz.twino",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -99,7 +99,7 @@
       [
         "expo-widgets",
         {
-          "groupIdentifier": "group.com.hewad.mubariz.duolingoclone",
+          "groupIdentifier": "group.com.hewad.mubariz.twino",
           "widgets": [
             {
               "name": "TwinoHome",
@@ -144,10 +144,19 @@
               "appExtensions": [
                 {
                   "targetName": "ExpoWidgetsTarget",
-                  "bundleIdentifier": "com.hewad.mubariz.duolingoclone.ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.twino.ExpoWidgetsTarget",
                   "entitlements": {
                     "com.apple.security.application-groups": [
-                      "group.com.hewad.mubariz.duolingoclone"
+                      "group.com.hewad.mubariz.twino"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.twino.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.hewad.mubariz.twino"
                     ]
                   }
                 }
@@ -155,7 +164,11 @@
             }
           }
         },
-        "projectId": "ddd179c2-af80-49a4-9bdf-bf85f09294a3"
+        "projectId": "9a50c2c3-e5b5-47df-80e9-7bedd8697de7"
+      },
+      "expo-navigation-bar": {
+        "enforceContrast": false,
+        "hidden": true
       }
     },
     "owner": "abdullla001"

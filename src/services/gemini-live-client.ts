@@ -15,6 +15,8 @@ export type LiveSessionCallbacks = {
   onSetupComplete?: () => void;
   onAudio?: (pcmBase64: string) => void;
   onText?: (text: string) => void;
+  onInputTranscription?: (text: string) => void;
+  onOutputTranscription?: (text: string) => void;
   onTurnComplete?: () => void;
   onInterrupted?: () => void;
   onClose?: (reason?: string) => void;
@@ -168,6 +170,18 @@ function extractTextParts(msg: LiveServerMessage): string[] {
   return textParts;
 }
 
+function extractTranscriptionText(
+  msg: LiveServerMessage,
+  field: "inputTranscription" | "outputTranscription",
+): string | null {
+  const serverContent = pick<Record<string, unknown>>(msg, "serverContent", "server_content");
+  const snakeField = field === "inputTranscription" ? "input_transcription" : "output_transcription";
+  const transcription = (serverContent?.[field] ?? serverContent?.[snakeField]) as
+    | { text?: unknown }
+    | undefined;
+  return typeof transcription?.text === "string" ? transcription.text : null;
+}
+
 export class GeminiLiveSession {
   private ws: WebSocket | null = null;
   private callbacks: LiveSessionCallbacks = {};
@@ -203,7 +217,6 @@ export class GeminiLiveSession {
         } else if (event.data?.text) {
           data = await event.data.text();
         }
-        console.log("WS MESSAGE:", data?.substring(0, 500));
         if (!data) return;
 
         const msg = parseServerMessage(data);
@@ -235,6 +248,16 @@ export class GeminiLiveSession {
 
         for (const text of extractTextParts(msg)) {
           this.callbacks.onText?.(text);
+        }
+
+        const inputTranscription = extractTranscriptionText(msg, "inputTranscription");
+        if (inputTranscription) {
+          this.callbacks.onInputTranscription?.(inputTranscription);
+        }
+
+        const outputTranscription = extractTranscriptionText(msg, "outputTranscription");
+        if (outputTranscription) {
+          this.callbacks.onOutputTranscription?.(outputTranscription);
         }
 
         const serverContent = pick<Record<string, unknown>>(msg, "serverContent", "server_content");
@@ -274,22 +297,23 @@ export class GeminiLiveSession {
   }
 
   private sendSetup() {
-    // Raw WebSocket wire format uses snake_case (see Google cookbook).
     this.send({
       setup: {
         model: `models/${GEMINI_LIVE_MODEL}`,
-        generation_config: {
-          response_modalities: ["AUDIO"],
-          speech_config: {
-            voice_config: {
-              prebuilt_voice_config: { voice_name: useSettingsStore.getState().tutorVoice || "Aoede" },
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: useSettingsStore.getState().tutorVoice || "Aoede" },
             },
           },
-          max_output_tokens: 150, // Hard limit to enforce turn length constraint
+          maxOutputTokens: 150,
         },
-        system_instruction: {
+        systemInstruction: {
           parts: [{ text: buildLiveTutorSystem() }],
         },
+        inputAudioTranscription: {},
+        outputAudioTranscription: {},
       },
     });
   }
@@ -301,14 +325,14 @@ export class GeminiLiveSession {
       : "Start this live voice tutor session now. Greet the student with exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'";
 
     this.send({
-      client_content: {
+      clientContent: {
         turns: [
           {
             role: "user",
             parts: [{ text: promptText }],
           },
         ],
-        turn_complete: true,
+        turnComplete: true,
       },
     });
   }
@@ -321,40 +345,40 @@ export class GeminiLiveSession {
     // Use the new `realtime_input.audio` format.
     // `media_chunks` was deprecated and causes 1007 WebSocket close on newer models.
     this.send({
-      realtime_input: {
-        audio: { data: base64, mime_type: mimeType },
+      realtimeInput: {
+        audio: { data: base64, mimeType },
       },
     });
   }
 
   sendAudioStreamEnd() {
-    this.send({ client_content: { turn_complete: true } });
+    this.send({ realtimeInput: { audioStreamEnd: true } });
   }
 
   sendClientAudio(base64: string, mimeType: string) {
     this.send({
-      client_content: {
+      clientContent: {
         turns: [
           {
             role: "user",
-            parts: [{ inline_data: { mime_type: mimeType, data: base64 } }],
+            parts: [{ inlineData: { mimeType, data: base64 } }],
           },
         ],
-        turn_complete: true,
+        turnComplete: true,
       },
     });
   }
 
   sendClientText(text: string) {
     this.send({
-      client_content: {
+      clientContent: {
         turns: [
           {
             role: "user",
             parts: [{ text }],
           },
         ],
-        turn_complete: true,
+        turnComplete: true,
       },
     });
   }

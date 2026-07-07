@@ -12,3 +12,8 @@ declare module '@rive-app/react-canvas' {
   export const useViewModelInstanceNumber: any;
   export const useViewModelInstanceTrigger: any;
 }
+
+declare module "*.riv" {
+  const source: number;
+  export default source;
+}

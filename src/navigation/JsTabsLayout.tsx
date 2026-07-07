@@ -45,13 +45,13 @@ function JsTabsLayoutInner() {
     >
       {/* Pill: Home · Games · Leaderboard — FAB: Profile */}
       <Tabs.Screen name="index" />
+      <Tabs.Screen name="play" />
+      <Tabs.Screen name="dashboard" />
+      <Tabs.Screen name="more" />
       <Tabs.Screen
         name="subscription"
         options={{ href: null }}
       />
-      <Tabs.Screen name="play" />
-      <Tabs.Screen name="dashboard" />
-      <Tabs.Screen name="more" />
     </Tabs>
   );
 }

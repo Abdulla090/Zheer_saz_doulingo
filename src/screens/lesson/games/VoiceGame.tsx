@@ -1,7 +1,7 @@
 /* eslint-disable */
 /**
  * VoiceGame — mic-first speaking practice.
- * Prefers Gemini audio evaluation when EXPO_PUBLIC_GEMINI_API_KEY is set;
+ * Prefers Gemini audio evaluation when AI speech grading is configured;
  * falls back to expo-speech-recognition (Web Speech API on web), then manual self-check.
  */
 

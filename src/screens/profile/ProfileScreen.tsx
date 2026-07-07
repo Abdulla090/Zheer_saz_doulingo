@@ -26,7 +26,6 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  Dimensions,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
@@ -42,9 +41,6 @@ import { tabBarScrollPadding } from "../../constants/layout";
 import { HomeMeshBackground, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
-import { TwinoMascot, type TwinoPose } from "../../components/mascot/TwinoMascot";
-
-const { width } = Dimensions.get("window");
 
 const CameraIconSvg = ({ size = 14, color = "#FFFFFF" }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -336,8 +332,8 @@ export default function ProfileScreen() {
                 </View>
                 <AppText style={styles.guestBannerDesc}>
                   {isKu
-                    ? "ئەکاونتەکەت بە Supabaseـەوە ببەستەرەوە بۆ پاراستنی خاڵەکان، دەستکەوتەکان، و ڕۆژەکانی بەردەوامیت."
-                    : "Connect your account to Supabase to preserve your XP, achievements, and day streaks in the cloud."}
+                    ? "ئەکاونتەکەت ببەستەرەوە بۆ پاراستنی خاڵەکان، دەستکەوتەکان، و ڕۆژەکانی بەردەوامیت لە هەوردا."
+                    : "Connect your account to preserve your XP, achievements, and day streaks in the cloud."}
                 </AppText>
                 <TouchableOpacity
                   activeOpacity={0.8}

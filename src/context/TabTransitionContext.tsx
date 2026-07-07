@@ -8,9 +8,9 @@ import React, {
 } from "react";
 
 type TabTransitionContextValue = {
-  /** -1 = moving left in tab bar, 1 = moving right, 0 = none */
+  /** -1 = new page enters from left, 1 = new page enters from right, 0 = none */
   consumeDirection: () => number;
-  prepareTransition: (fromRoute: string, toRoute: string) => void;
+  prepareTransition: (fromRoute: string, toRoute: string, isRtl?: boolean) => void;
 };
 
 const TabTransitionContext = createContext<TabTransitionContextValue | null>(
@@ -24,14 +24,15 @@ export function TabTransitionProvider({
 }) {
   const pendingDirection = useRef(0);
 
-  const prepareTransition = useCallback((fromRoute: string, toRoute: string) => {
+  const prepareTransition = useCallback((fromRoute: string, toRoute: string, isRtl = false) => {
     const from = getTabVisualIndex(fromRoute);
     const to = getTabVisualIndex(toRoute);
     if (from === to) {
       pendingDirection.current = 0;
       return;
     }
-    pendingDirection.current = to > from ? 1 : -1;
+    const ltrDirection = to > from ? 1 : -1;
+    pendingDirection.current = isRtl ? -ltrDirection : ltrDirection;
   }, []);
 
   const consumeDirection = useCallback(() => {

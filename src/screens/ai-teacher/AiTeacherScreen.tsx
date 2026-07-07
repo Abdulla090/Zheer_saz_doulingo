@@ -25,7 +25,7 @@ import { PressableScale } from "../../components/animations";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, RobotIcon, InformationCircleIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { ArrowLeft01Icon, RobotIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import {
   ActivityIndicator,
   Pressable,
@@ -145,9 +145,17 @@ function BrandPrimaryButton({
 export function AiTeacherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t, isKu } = useI18n();
+  const { t, locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
+  const directionStyle = useMemo(
+    () => ({
+      textAlign: isRtl ? "right" : "left",
+      writingDirection: isRtl ? "rtl" : "ltr",
+    }) as const,
+    [isRtl],
+  );
 
   const [mode, setMode] = useState<AiTeacherMode>("speaking");
   const [prompt, setPrompt] = useState<AiTeacherPrompt>(AI_TEACHER_PROMPTS[0]);
@@ -280,13 +288,14 @@ export function AiTeacherScreen() {
           paddingTop: Math.max(insets.top, 20),
           paddingBottom: insets.bottom + 32,
           paddingHorizontal: 24,
+          direction: isRtl ? "rtl" : "ltr",
         }}
         keyboardShouldPersistTaps="handled"
       >
         <View
           style={[
             styles.topBar,
-            { flexDirection: isKu ? "row-reverse" : "row" },
+            { flexDirection: isRtl ? "row-reverse" : "row" },
           ]}
         >
           <PressableScale
@@ -294,7 +303,7 @@ export function AiTeacherScreen() {
             style={styles.backBtn}
             scaleDown={0.9}
           >
-            <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
               <HugeiconsIcon
                 icon={ArrowLeft01Icon}
                 size={22}
@@ -306,13 +315,21 @@ export function AiTeacherScreen() {
           <View
             style={[
               styles.topTitles,
-              { alignItems: isKu ? "flex-end" : "flex-start" },
+              { alignItems: isRtl ? "flex-end" : "flex-start" },
             ]}
           >
-            <AppText style={styles.pageTitle} forceLatinFont latinRole="bold">
+            <AppText
+              style={[styles.pageTitle, directionStyle]}
+              forceKurdishFont={isKu}
+              latinRole="bold"
+            >
               {t("aiTeacher.title")}
             </AppText>
-            <AppText style={styles.pageSub} forceLatinFont latinRole="medium">
+            <AppText
+              style={[styles.pageSub, directionStyle]}
+              forceKurdishFont={isKu}
+              latinRole="medium"
+            >
               {t("aiTeacher.subtitle")}
             </AppText>
           </View>
@@ -323,17 +340,18 @@ export function AiTeacherScreen() {
             result={result}
             onTryAgain={onTryAgain}
             onSave={onSave}
+            isRtl={isRtl}
           />
         ) : (
           <>
             <View
               style={[
                 styles.modeRow,
-                { flexDirection: isKu ? "row-reverse" : "row" },
+                { flexDirection: isRtl ? "row-reverse" : "row" },
               ]}
             >
               {(
-                (isKu
+                (isRtl
                   ? ["writing", "speaking"]
                   : ["speaking", "writing"]) as AiTeacherMode[]
               ).map((m) => (
@@ -360,11 +378,8 @@ export function AiTeacherScreen() {
             </View>
 
             <AppText
-              style={[
-                styles.sectionTitle,
-                { textAlign: isKu ? "right" : "left" },
-              ]}
-              forceLatinFont
+              style={[styles.sectionTitle, directionStyle]}
+              forceKurdishFont={isKu}
               latinRole="bold"
             >
               {t("aiTeacher.choosePrompt")}
@@ -374,10 +389,10 @@ export function AiTeacherScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={[
                 styles.promptScroll,
-                { flexDirection: isKu ? "row-reverse" : "row" },
+                { flexDirection: isRtl ? "row-reverse" : "row" },
               ]}
             >
-              {(isKu ? [...promptsForMode].reverse() : promptsForMode).map(
+              {(isRtl ? [...promptsForMode].reverse() : promptsForMode).map(
                 (p) => (
                   <PressableScale
                     key={p.id}
@@ -389,7 +404,10 @@ export function AiTeacherScreen() {
                     scaleDown={0.96}
                   >
                     <AppText
-                      style={styles.promptTitle}
+                      style={[
+                        styles.promptTitle,
+                        { textAlign: isRtl ? "right" : "left" },
+                      ]}
                       forceLatinFont
                       latinRole="bold"
                     >
@@ -405,17 +423,14 @@ export function AiTeacherScreen() {
               contentStyle={styles.taskCardInner}
             >
               <AppText
-                style={styles.promptScenarioLabel}
-                forceLatinFont
+                style={[styles.promptScenarioLabel, directionStyle]}
+                forceKurdishFont={isKu}
                 latinRole="bold"
               >
                 {t("aiTeacher.yourTask")}
               </AppText>
               <AppText
-                style={[
-                  styles.promptScenario,
-                  { textAlign: isKu ? "right" : "left" },
-                ]}
+                style={[styles.promptScenario, directionStyle]}
                 forceLatinFont
                 latinRole="medium"
               >
@@ -424,11 +439,8 @@ export function AiTeacherScreen() {
             </BrandCard>
 
             <AppText
-              style={[
-                styles.sectionTitle,
-                { textAlign: isKu ? "right" : "left" },
-              ]}
-              forceLatinFont
+              style={[styles.sectionTitle, directionStyle]}
+              forceKurdishFont={isKu}
               latinRole="bold"
             >
               {t("aiTeacher.yourAnswer")}
@@ -448,7 +460,7 @@ export function AiTeacherScreen() {
                   onPress={toggleMic}
                 />
                 {answer.trim().length > 0 ? (
-                  <AppText style={styles.speakingTranscript} forceLatinFont>
+                  <AppText style={[styles.speakingTranscript, directionStyle]} forceLatinFont>
                     {answer}
                   </AppText>
                 ) : null}
@@ -480,7 +492,7 @@ export function AiTeacherScreen() {
                   multiline
                   style={[
                     styles.textInput,
-                    { textAlign: isKu ? "right" : "left" },
+                    directionStyle,
                   ]}
                   editable={phase !== "loading"}
                 />
@@ -489,7 +501,7 @@ export function AiTeacherScreen() {
                     onPress={() => setShowTyping(false)}
                     style={[
                       styles.typeInsteadBtnInline,
-                      { alignSelf: isKu ? "flex-end" : "flex-start" },
+                      { alignSelf: isRtl ? "flex-end" : "flex-start" },
                     ]}
                     scaleDown={0.96}
                   >
@@ -507,8 +519,8 @@ export function AiTeacherScreen() {
 
             {error || speech.error ? (
               <AppText
-                style={styles.errorText}
-                forceLatinFont
+                style={[styles.errorText, directionStyle]}
+                forceKurdishFont={isKu}
                 latinRole="medium"
               >
                 {error || speech.error}
@@ -519,10 +531,10 @@ export function AiTeacherScreen() {
               <View style={styles.loadingBox}>
                 <ActivityIndicator color={Colors.accent} size="large" />
                 <AppText
-                  style={styles.loadingText}
-                  forceLatinFont
-                  latinRole="medium"
-                >
+                style={[styles.loadingText, directionStyle]}
+                forceKurdishFont={isKu}
+                latinRole="medium"
+              >
                   {t("aiTeacher.checking")}
                 </AppText>
               </View>
@@ -540,23 +552,23 @@ export function AiTeacherScreen() {
                 contentStyle={styles.historyInner}
               >
                 <AppText
-                  style={styles.historyLabel}
-                  forceLatinFont
-                  latinRole="bold"
-                >
+                style={[styles.historyLabel, directionStyle]}
+                forceKurdishFont={isKu}
+                latinRole="bold"
+              >
                   {isKu ? "دواین ھەوڵی پاشەکەوتکراو" : "Last saved attempt"}
                 </AppText>
                 <AppText
-                  style={styles.historyBand}
-                  forceLatinFont
-                  latinRole="bold"
-                >
+                style={[styles.historyBand, directionStyle]}
+                forceKurdishFont={isKu}
+                latinRole="bold"
+              >
                   {isKu
                     ? `باند ${lastSaved.overallBand} · ${lastSaved.mode === "speaking" ? "قسەکردن" : "نووسین"}`
                     : `Band ${lastSaved.overallBand} · ${lastSaved.mode}`}
                 </AppText>
                 <AppText
-                  style={styles.historyExcerpt}
+                  style={[styles.historyExcerpt, directionStyle]}
                   numberOfLines={2}
                   forceLatinFont
                 >
@@ -564,28 +576,6 @@ export function AiTeacherScreen() {
                 </AppText>
               </BrandCard>
             ) : null}
-
-            <BrandCard
-              style={styles.tipCard}
-              contentStyle={[
-                styles.tipStrip,
-                { flexDirection: isKu ? "row-reverse" : "row" },
-              ]}
-            >
-              <View style={styles.tipIconWrap}>
-                <HugeiconsIcon
-                  icon={InformationCircleIcon}
-                  size={20}
-                  color={Colors.chart1}
-                  strokeWidth={2.5}
-                />
-              </View>
-              <AppText style={styles.tipText} forceLatinFont latinRole="medium">
-                {isKu
-                  ? "نمرەکان تەنها وەک ئاماژەیەک وان — ئامرازێکی ڕاھێنانە نەک نمرەی فەرمی IELTS. زانیاری زیاتر لە ڕێکخستنەکاندا ببینە."
-                  : "Indicative bands only — practice tool, not an official IELTS score. See AI & practice info in Settings."}
-              </AppText>
-            </BrandCard>
           </>
         )}
       </KeyboardAwareScrollView>
@@ -597,12 +587,18 @@ function ResultsView({
   result,
   onTryAgain,
   onSave,
+  isRtl,
 }: {
   result: AiTeacherResult;
   onTryAgain: () => void;
   onSave: () => void;
+  isRtl: boolean;
 }) {
   const { isKu } = useI18n();
+  const directionStyle = {
+    textAlign: isRtl ? "right" : "left",
+    writingDirection: isRtl ? "rtl" : "ltr",
+  } as const;
   return (
     <Animated.View entering={FadeInDown.duration(320)}>
       <BrandCard contentStyle={styles.overallCard}>
@@ -621,20 +617,20 @@ function ResultsView({
             AI TEACHER
           </AppText>
         </View>
-        <AppText style={styles.overallLabel} forceLatinFont latinRole="bold">
+        <AppText style={[styles.overallLabel, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="bold">
           {isKu ? "نمرەی گشتی پێشبینیکراو" : "Overall indicative band"}
         </AppText>
         <AppText style={styles.overallBand} forceLatinFont latinRole="bold">
           {result.overallBand}
         </AppText>
-        <AppText style={styles.overallHint} forceLatinFont latinRole="medium">
+        <AppText style={[styles.overallHint, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="medium">
           {isKu ? "لە دەوری ٩.٠ (شێوازی IELTS)" : "Out of 9.0 (IELTS-style)"}
         </AppText>
       </BrandCard>
 
       <AppText
-        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
-        forceLatinFont
+        style={[styles.sectionTitle, directionStyle]}
+        forceKurdishFont={isKu}
         latinRole="bold"
       >
         {isKu ? "پێوەرەکان" : "Criteria"}
@@ -644,16 +640,17 @@ function ResultsView({
           <View
             style={[
               styles.criterionTop,
-              { flexDirection: isKu ? "row-reverse" : "row" },
+              { flexDirection: isRtl ? "row-reverse" : "row" },
             ]}
           >
             <AppText
               style={[
                 styles.criterionLabel,
                 {
-                  textAlign: isKu ? "right" : "left",
-                  paddingRight: isKu ? 0 : 8,
-                  paddingLeft: isKu ? 8 : 0,
+                  textAlign: isRtl ? "right" : "left",
+                  writingDirection: isRtl ? "rtl" : "ltr",
+                  paddingRight: isRtl ? 0 : 8,
+                  paddingLeft: isRtl ? 8 : 0,
                 },
               ]}
               forceLatinFont
@@ -677,7 +674,7 @@ function ResultsView({
           <AppText
             style={[
               styles.criterionNote,
-              { textAlign: isKu ? "right" : "left" },
+              directionStyle,
             ]}
             forceLatinFont
             latinRole="medium"
@@ -688,8 +685,8 @@ function ResultsView({
       ))}
 
       <AppText
-        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
-        forceLatinFont
+        style={[styles.sectionTitle, directionStyle]}
+        forceKurdishFont={isKu}
         latinRole="bold"
       >
         {isKu ? "خاڵە بەهێزەکان" : "Strengths"}
@@ -698,7 +695,7 @@ function ResultsView({
         {result.strengths.map((s) => (
           <AppText
             key={s}
-            style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]}
+            style={[styles.bullet, directionStyle]}
             forceLatinFont
             latinRole="medium"
           >
@@ -708,8 +705,8 @@ function ResultsView({
       </BrandCard>
 
       <AppText
-        style={[styles.sectionTitle, { textAlign: isKu ? "right" : "left" }]}
-        forceLatinFont
+        style={[styles.sectionTitle, directionStyle]}
+        forceKurdishFont={isKu}
         latinRole="bold"
       >
         {isKu ? "خاڵەکان بۆ باشترکردن" : "To improve"}
@@ -718,7 +715,7 @@ function ResultsView({
         {result.improvements.map((s) => (
           <AppText
             key={s}
-            style={[styles.bullet, { textAlign: isKu ? "right" : "left" }]}
+            style={[styles.bullet, directionStyle]}
             forceLatinFont
             latinRole="medium"
           >
@@ -732,9 +729,9 @@ function ResultsView({
           <AppText
             style={[
               styles.sectionTitle,
-              { textAlign: isKu ? "right" : "left" },
+              directionStyle,
             ]}
-            forceLatinFont
+            forceKurdishFont={isKu}
             latinRole="bold"
           >
             {isKu ? "نموونەی نووسینی باشترکراو" : "Sample upgrade"}
@@ -743,7 +740,7 @@ function ResultsView({
             <AppText
               style={[
                 styles.rewriteText,
-                { textAlign: isKu ? "right" : "left" },
+                directionStyle,
               ]}
               forceLatinFont
               latinRole="medium"

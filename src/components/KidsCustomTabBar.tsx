@@ -19,7 +19,7 @@ function TabBarButton({ routeName, isFocused, onPress }: TabBarButtonProps) {
     scale.value = withSpring(isFocused ? 1.15 : 1.0, { damping: 10, stiffness: 120 });
     indicatorOpacity.value = withSpring(isFocused ? 1.0 : 0.0, { damping: 12 });
     indicatorScale.value = withSpring(isFocused ? 1.0 : 0.4, { damping: 10, stiffness: 120 });
-  }, [isFocused]);
+  }, [indicatorOpacity, indicatorScale, isFocused, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

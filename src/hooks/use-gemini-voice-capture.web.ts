@@ -140,7 +140,7 @@ export function useGeminiVoiceCapture() {
             mr.requestData();
           }
           mr.stop();
-        } catch (err) {
+        } catch {
           clearTimeout(safetyTimeout);
           cleanupWebStream();
           resolve(null);

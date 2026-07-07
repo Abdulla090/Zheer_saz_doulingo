@@ -69,7 +69,6 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const scrollY = useSharedValue(0);
 
   const [state, setState] = useState<ListenState>("idle");
-  const [transcript, setTranscript] = useState("");
   const [evaluation, setEvaluation] = useState<ParagraphSpeechEvaluation | null>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [textHeight, setTextHeight] = useState(0);
@@ -81,11 +80,10 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     return () => {
       speech.abort();
     };
-  }, []);
+  }, [speech]);
 
   const handleStart = async () => {
     setState("listening");
-    setTranscript("");
     transcriptRef.current = "";
     setEvaluation(null);
     scrollY.value = containerHeight;
@@ -96,7 +94,6 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     const started = await speech.start({
       onResult: (text: string, _isFinal: boolean) => {
         transcriptRef.current = text;
-        setTranscript(text);
       },
       onError: (code: string, message: string) => {
         console.warn("Speech recognition error:", code, message);

@@ -76,9 +76,6 @@ export async function generateCustomCurriculum(config: GenerationConfig): Promis
     ];
   }
 
-  // Adjust complexity based on level
-  const wordComplexity = isBeginner ? "simple" : "advanced";
-
   const createLesson = (topic: string, index: number): LessonBank => {
     // We create realistic mock data tailored to the topic
     return {

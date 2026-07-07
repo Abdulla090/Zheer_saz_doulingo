@@ -75,7 +75,8 @@ const formatTime = (seconds: number) => {
 export function AiPodcastScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { isKu } = useI18n();
+  const { locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -134,9 +135,9 @@ export function AiPodcastScreen() {
     <View style={styles.root}>
       <HomeMeshBackground />
       
-      <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: isRtl ? "row-reverse" : "row" }]}>
         <PressableScale onPress={() => { stopPodcastSpeaking(); router.back(); }} style={styles.backBtn}>
-          <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
           </View>
         </PressableScale>
@@ -167,15 +168,15 @@ export function AiPodcastScreen() {
           <View style={styles.progressBarBg}>
             <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
           </View>
-          <View style={[styles.timeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[styles.timeRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <AppText style={styles.timeText}>{formatTime(currentIdx * 3.5)}</AppText>
             <AppText style={styles.timeText}>{formatTime(PODCAST_EPISODE.length * 3.5)}</AppText>
           </View>
         </View>
 
-        <View style={[styles.controlsRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={[styles.controlsRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
           <PressableScale onPress={handleRewind} style={styles.controlBtn}>
-            <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
               <HugeiconsIcon icon={BackwardIcon} size={32} color="#0F1A30" />
             </View>
           </PressableScale>
@@ -189,13 +190,13 @@ export function AiPodcastScreen() {
           </PressableScale>
 
           <PressableScale onPress={handleFastForward} style={styles.controlBtn}>
-            <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
               <HugeiconsIcon icon={ForwardIcon} size={32} color="#0F1A30" />
             </View>
           </PressableScale>
         </View>
         
-        <View style={[styles.volumeArea, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={[styles.volumeArea, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
            <HugeiconsIcon icon={VolumeHighIcon} size={20} color="#9CA3AF" />
            <View style={styles.volumeBarBg}>
              <View style={[styles.volumeBarFill, { width: "70%" }]} />

@@ -2,13 +2,12 @@ import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { useRive } from "@rive-app/react-canvas";
 import { Asset } from "expo-asset";
-
-const DUO_SOURCE = require("../../../assets/rive/duo.riv");
-const GIRL_SOURCE = require("../../../assets/rive/girl.riv");
-const MAN_SOURCE = require("../../../assets/rive/man.riv");
+import DUO_SOURCE from "../../../assets/rive/duo.riv";
+import GIRL_SOURCE from "../../../assets/rive/girl.riv";
+import MAN_SOURCE from "../../../assets/rive/man.riv";
 
 type MascotConfig = {
-  source: any;
+  source: number;
   artboard: string;
   stateMachine: string;
   trigger?: string;
@@ -100,7 +99,7 @@ export default function RiveMascotImpl({ size, pose }: Props) {
     } catch (e) {
       console.warn("[RiveMascot] Failed to trigger input:", e);
     }
-  }, [rive, isRiveLoaded, pose, config.trigger]);
+  }, [rive, isRiveLoaded, pose, config.stateMachine, config.trigger]);
 
   return (
     <View key={assetUri} style={[styles.container, { width: size, height: size }]}>

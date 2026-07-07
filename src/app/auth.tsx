@@ -4,9 +4,6 @@ import { supabase } from "../lib/supabase";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  Mail01Icon,
-  LockIcon,
-  UserIcon,
   ArrowLeft02Icon,
   CheckmarkCircle02Icon,
   Cancel01Icon,
@@ -30,7 +27,8 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { redirect, showSkip } = useLocalSearchParams<{ redirect?: string; showSkip?: string }>();
-  const { isKu } = useI18n();
+  const { locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const { selectedFont } = useFontStore();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -164,10 +162,20 @@ export default function AuthScreen() {
         >
           {/* Back Button */}
           <TouchableOpacity
-            style={[styles.backBtn, { top: insets.top + 16 }]}
+            style={[
+              styles.backBtn,
+              { top: insets.top + 16 },
+              isRtl ? { right: 20, left: "auto" } : { left: 20, right: "auto" },
+            ]}
             onPress={() => router.back()}
           >
-            <HugeiconsIcon icon={ArrowLeft02Icon} size={20} color="#09090B" strokeWidth={2.5} />
+            <HugeiconsIcon
+              icon={ArrowLeft02Icon}
+              size={20}
+              color="#09090B"
+              strokeWidth={2.5}
+              style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
+            />
           </TouchableOpacity>
 
           <View style={styles.shadcnContainer}>
@@ -375,7 +383,6 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: "absolute",
-    left: 20,
     width: 38,
     height: 38,
     borderRadius: 8,

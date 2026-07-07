@@ -199,7 +199,7 @@
     "learning": "تعلم",
     "note": "بالكردية",
     "typePlaceholder": "اكتب رسالة...",
-    "demoMode": "أضف EXPO_PUBLIC_GEMINI_API_KEY في .env لتمكين الصوت المباشر",
+    "demoMode": "الصوت المباشر غير متاح حالياً",
     "disclaimer": "تدريب بالذكاء الاصطناعي صوتي فقط — ليس بديلاً عن التعليم الاحترافي."
   },
   "lessons": {
@@ -246,7 +246,7 @@
     "voiceListenHint": "انقر على مكبر الصوت لسماع العبارة",
     "voiceUnavailable": "التعرف على الكلام غير متاح هنا",
     "voiceManualFallback": "لا تستطيع التحدث الآن؟ انتقل إلى الفحص الذاتي",
-    "voiceGeminiKeyHint": "اختياري: أضف EXPO_PUBLIC_GEMINI_API_KEY إلى .env لتقييم الكلام بالذكاء الاصطناعي",
+    "voiceGeminiKeyHint": "يعمل تقييم الكلام بالذكاء الاصطناعي تلقائياً عندما يكون متاحاً",
     "listening": "استماع...",
     "startingMic": "جاري تشغيل الميكروفون...",
     "imageChoiceTitle": "اختر الكلمة الصحيحة",

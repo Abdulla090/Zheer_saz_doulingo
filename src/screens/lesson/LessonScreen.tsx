@@ -34,13 +34,10 @@ import Animated, {
     useAnimatedProps,
     withSequence,
     withTiming,
-    withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Svg, { Circle } from "react-native-svg";
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 import { GameQuestion, getLessonQuestions, type LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
@@ -70,6 +67,8 @@ import PictureMatchGame from "./games/PictureMatchGame";
 import ImageMultipleChoiceGame from "./games/ImageMultipleChoiceGame";
 import MemoryFlipGame from "./games/MemoryFlipGame";
 import ParagraphSpeechGame from "./games/ParagraphSpeechGame";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
@@ -308,11 +307,6 @@ export default function LessonScreen() {
     }, 260);
   }, [questions.length, insets.bottom]);
 
-  const giveUpQuestion = useCallback(() => {
-    if (feedback !== null) return;
-    handleAnswer("skip", t("lessons.feedbackSkippedSub"));
-  }, [feedback, handleAnswer, t]);
-
   const renderGame = (q: GameQuestion) => {
     const shared = { onAnswer: handleAnswer, pathMode, questionIndex: current, totalQuestions: questions.length };
     const key = q.type;
@@ -417,7 +411,6 @@ export default function LessonScreen() {
               color={ok ? (isKidsMode ? "#58CC02" : L.green) : (isKidsMode ? "#1CB0F6" : L.blue)}
               onPress={() => {
                 if (ok && !Number.isNaN(pathIndex)) {
-                  const snap = useProgressStore.getState();
                   const currentProgress = getCurrentProgress();
                   const locale = useLocaleStore.getState().locale;
                   const meta = getCurrentLessonMeta(

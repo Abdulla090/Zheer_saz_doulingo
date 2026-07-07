@@ -84,16 +84,16 @@ export class LivePcmPlayer {
   constructor(private onPlayingStateChange?: (isPlaying: boolean) => void) {}
 
   /**
-   * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM = 24000 samples/s * 2 bytes * 0.33s = 16000 bytes.
-   * Larger buffers → fewer player swaps → smoother playback.
+   * Buffer threshold: ~0.17s of 24kHz 16-bit mono PCM.
+   * Keeps native playback responsive without creating excessive player swaps.
    */
-  private static BUFFER_THRESHOLD = 16_000;
+  private static BUFFER_THRESHOLD = 8_192;
 
   /**
    * Flush delay: how long to wait for more data before flushing a partial buffer.
-   * Shorter = lower latency for the very first chunk. Longer = fewer tiny chunks.
+   * Shorter = lower latency for the first audible tutor response.
    */
-  private static FLUSH_DELAY_MS = 80;
+  private static FLUSH_DELAY_MS = 40;
 
   enqueueBase64Pcm(base64: string) {
     if (this.destroyed) return;

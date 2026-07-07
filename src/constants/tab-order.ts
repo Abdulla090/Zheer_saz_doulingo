@@ -1,11 +1,5 @@
-import { ENABLE_SHOP } from "./feature-flags";
-
 /** Icons inside the main glass pill (left → right). */
-export const TAB_PILL_ROUTES = (
-  ENABLE_SHOP
-    ? (["index", "feed", "dashboard", "subscription"] as const)
-    : (["index", "feed", "dashboard"] as const)
-);
+export const TAB_PILL_ROUTES = ["index", "play", "dashboard"] as const;
 
 /** Detached circular button — profile / settings. */
 export const TAB_FAB_ROUTE = "more" as const;

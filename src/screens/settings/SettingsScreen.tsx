@@ -2,8 +2,6 @@
 import { PressableScale } from "../../components/animations";
 import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import {
-  Icon3DCheckCircle,
-  Icon3DChevronRight,
   Icon3DSettings,
 } from "../../components/icons/Icon3D";
 import { AppText } from "../../components/ui/AppText";
@@ -37,23 +35,19 @@ import { useAuth } from "../../context/AuthContext";
 import * as Font from "expo-font";
 import { fontMap } from "../../fontMap";
 import {
-  Alert,
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
-  TextInput,
   View,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolateColor,
-} from "react-native-reanimated";
-import { Pressable } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  CheckmarkCircle02Icon,
+} from "@hugeicons/core-free-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
  
@@ -102,93 +96,61 @@ const FontPreviewText = React.memo(
   },
 );
 
-function IosSwitch({
+function SettingsSwitch({
   value,
   onValueChange,
-  activeColor = "#34C759",
+  activeColor,
 }: {
   value: boolean;
   onValueChange: (val: boolean) => void;
-  activeColor?: string;
+  activeColor: string;
 }) {
-  const t = useSharedValue(value ? 1 : 0);
-
-  React.useEffect(() => {
-    t.value = withTiming(value ? 1 : 0, { duration: 200 });
-  }, [value]);
-
-  const animatedTrackStyle = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(
-      t.value,
-      [0, 1],
-      ["#E5E5EA", activeColor]
-    );
-    return {
-      backgroundColor,
-    };
-  });
-
-  const animatedThumbStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          translateX: t.value * 20,
-        },
-      ],
-    };
-  });
-
   return (
-    <Pressable
-      onPress={() => onValueChange(!value)}
-      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
-    >
-      <Animated.View
-        style={[
-          {
-            width: 51,
-            height: 31,
-            borderRadius: 16,
-            padding: 2,
-            justifyContent: "center",
-          },
-          animatedTrackStyle,
-        ]}
-      >
-        <Animated.View
-          style={[
-            {
-              width: 27,
-              height: 27,
-              borderRadius: 13.5,
-              backgroundColor: "#FFFFFF",
-              ...Platform.select({
-                ios: {
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 3,
-                },
-                android: {
-                  elevation: 2,
-                },
-                web: {
-                  boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.15)",
-                },
-              }),
-            },
-            animatedThumbStyle,
-          ]}
-        />
-      </Animated.View>
-    </Pressable>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: "#E5E5EA", true: activeColor }}
+      thumbColor="#FFFFFF"
+      ios_backgroundColor="#E5E5EA"
+      style={stylesStatic.nativeSwitch}
+    />
   );
 }
+
+function SelectedMark({ color }: { color: string }) {
+  return (
+    <HugeiconsIcon
+      icon={CheckmarkCircle02Icon}
+      size={24}
+      color={color}
+      strokeWidth={2.4}
+    />
+  );
+}
+
+function RowChevron({ isRtl, color }: { isRtl: boolean; color: string }) {
+  return (
+    <HugeiconsIcon
+      icon={ArrowRight01Icon}
+      size={20}
+      color={color}
+      strokeWidth={2.3}
+      style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
+    />
+  );
+}
+
+const stylesStatic = StyleSheet.create({
+  nativeSwitch: {
+    transform: [{ scaleX: 0.94 }, { scaleY: 0.94 }],
+  },
+});
 
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale, setLocale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const { user, signOut } = useAuth();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -216,66 +178,6 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const setTutorVoice = useSettingsStore((s) => s.setTutorVoice);
-
-  const [apiKeyInput, setApiKeyInput] = React.useState("");
-
-  React.useEffect(() => {
-    if (Platform.OS !== "web") {
-      try {
-        const SecureStore = require("expo-secure-store");
-        SecureStore.getItemAsync("twino.gemini.apikey")
-          .then((key: string | null) => {
-            if (key) setApiKeyInput(key);
-          })
-          .catch(() => {});
-      } catch {}
-    } else {
-      try {
-        if (typeof localStorage !== "undefined") {
-          const key = localStorage.getItem("twino.gemini.apikey");
-          if (key) setApiKeyInput(key);
-        }
-      } catch {}
-    }
-  }, []);
-
-  const saveApiKey = async () => {
-    try {
-      const { setRuntimeGeminiApiKey } = require("../../constants/gemini");
-      const keyToSave = apiKeyInput.trim();
-
-      if (Platform.OS !== "web") {
-        const SecureStore = require("expo-secure-store");
-        if (keyToSave) {
-          await SecureStore.setItemAsync("twino.gemini.apikey", keyToSave);
-        } else {
-          await SecureStore.deleteItemAsync("twino.gemini.apikey");
-        }
-      } else {
-        if (typeof localStorage !== "undefined") {
-          if (keyToSave) {
-            localStorage.setItem("twino.gemini.apikey", keyToSave);
-          } else {
-            localStorage.removeItem("twino.gemini.apikey");
-          }
-        }
-      }
-
-      setRuntimeGeminiApiKey(keyToSave || undefined);
-
-      Alert.alert(
-        isKu ? "سەرکەوتوو بوو" : "Success",
-        isKu
-          ? "کلیلی API بە سەرکەوتوویی پاشەکەوت کرا."
-          : "API Key updated successfully.",
-      );
-    } catch (err) {
-      Alert.alert(
-        isKu ? "کێشەیەک ڕوویدا" : "Error",
-        isKu ? "پاشەکەوتکردن سەرکەوتوو نەبوو." : "Failed to update API key.",
-      );
-    }
-  };
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -309,7 +211,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
         <View
           style={[
             styles.header,
-            { flexDirection: isKu ? "row-reverse" : "row" },
+            { flexDirection: isRtl ? "row-reverse" : "row" },
           ]}
         >
           <PressableScale
@@ -326,7 +228,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
             style={styles.backButton}
           >
             <HugeiconsIcon
-              icon={isKu ? ArrowRight01Icon : ArrowLeft01Icon}
+              icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
               size={22}
               color={colors.foreground}
               strokeWidth={2.5}
@@ -335,7 +237,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
 
           <Icon3DSettings size={28} />
           <View
-            style={{ flex: 1, alignItems: isKu ? "flex-end" : "flex-start" }}
+            style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}
           >
             <AppText style={styles.title} forceKurdishFont={isKu}>
               {t("settings.title")}
@@ -372,7 +274,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     scaleDown={0.98}
                     style={[
                       styles.row,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      { flexDirection: isRtl ? "row-reverse" : "row" },
                       index < 2 && styles.rowBorder,
                     ]}
                   >
@@ -383,7 +285,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                       {opt.label}
                     </AppText>
                     {selected ? (
-                      <Icon3DCheckCircle size={22} />
+                      <SelectedMark color={colors.secondary} />
                     ) : (
                       <View style={styles.radioEmpty} />
                     )}
@@ -410,7 +312,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     scaleDown={0.98}
                     style={[
                       styles.row,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      { flexDirection: isRtl ? "row-reverse" : "row" },
                       index < SOURCE_LANGUAGES.length - 1 && styles.rowBorder,
                     ]}
                   >
@@ -421,7 +323,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                       {lang.nativeName}
                     </AppText>
                     {selected ? (
-                      <Icon3DCheckCircle size={22} />
+                      <SelectedMark color={colors.secondary} />
                     ) : (
                       <View style={styles.radioEmpty} />
                     )}
@@ -446,7 +348,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     scaleDown={0.98}
                     style={[
                       styles.row,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      { flexDirection: isRtl ? "row-reverse" : "row" },
                       index < TARGET_LANGUAGES.length - 1 && styles.rowBorder,
                     ]}
                   >
@@ -457,7 +359,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                       {lang.nativeName}
                     </AppText>
                     {selected ? (
-                      <Icon3DCheckCircle size={22} />
+                      <SelectedMark color={colors.secondary} />
                     ) : (
                       <View style={styles.radioEmpty} />
                     )}
@@ -472,13 +374,13 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
               <View
                 style={[
                   styles.toggleRow,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
+                  { flexDirection: isRtl ? "row-reverse" : "row" },
                 ]}
               >
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.haptics")}
                 </AppText>
-                <IosSwitch
+                <SettingsSwitch
                   value={haptics}
                   onValueChange={setHaptics}
                   activeColor={colors.primary}
@@ -488,13 +390,13 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 style={[
                   styles.toggleRow,
                   styles.toggleRowLast,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
+                  { flexDirection: isRtl ? "row-reverse" : "row" },
                 ]}
               >
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.sounds")}
                 </AppText>
-                <IosSwitch
+                <SettingsSwitch
                   value={sounds}
                   onValueChange={setSounds}
                   activeColor={colors.primary}
@@ -516,13 +418,13 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 style={[
                   styles.toggleRow,
                   styles.toggleRowLast,
-                  { flexDirection: isKu ? "row-reverse" : "row" },
+                  { flexDirection: isRtl ? "row-reverse" : "row" },
                 ]}
               >
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.kidsArabic")}
                 </AppText>
-                <IosSwitch
+                <SettingsSwitch
                   value={targetLang === "ar"}
                   onValueChange={(val: boolean) => {
                     setLanguagePair(nativeLang, val ? "ar" : prevNonArTargetRef.current);
@@ -565,7 +467,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     scaleDown={0.98}
                     style={[
                       styles.row,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      { flexDirection: isRtl ? "row-reverse" : "row" },
                       index < arr.length - 1 && styles.rowBorder,
                     ]}
                   >
@@ -576,7 +478,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                       {t(opt.labelKey as any)}
                     </AppText>
                     {selected ? (
-                      <Icon3DCheckCircle size={22} />
+                      <SelectedMark color={colors.secondary} />
                     ) : (
                       <View style={styles.radioEmpty} />
                     )}
@@ -605,7 +507,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     scaleDown={0.98}
                     style={[
                       styles.fontRow,
-                      { flexDirection: isKu ? "row-reverse" : "row" },
+                      { flexDirection: isRtl ? "row-reverse" : "row" },
                       index < ALL_RABAR_FONTS.length - 1 && styles.rowBorder,
                       selected && styles.fontRowSelected,
                     ]}
@@ -613,11 +515,11 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     <View
                       style={[
                         styles.fontRowLeft,
-                        { flexDirection: isKu ? "row-reverse" : "row" },
+                        { flexDirection: isRtl ? "row-reverse" : "row" },
                       ]}
                     >
                       {selected ? (
-                        <Icon3DCheckCircle size={22} />
+                        <SelectedMark color={colors.secondary} />
                       ) : (
                         <View style={styles.radioEmpty} />
                       )}
@@ -631,54 +533,11 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                         {t("settings.previewSample")}
                       </FontPreviewText>
                     </View>
-                    <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                      <Icon3DChevronRight size={20} />
-                    </View>
+                    <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
                   </PressableScale>
                 );
               })}
             </View>
-
-            {!isKidsMode && (
-              <>
-                <AppText
-                  style={[styles.sectionLabel, styles.sectionSpaced]}
-                  forceKurdishFont={isKu}
-                >
-                  {isKu ? "مفتاحی Gemini API" : "Gemini API Key"}
-                </AppText>
-                <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-                  {Platform.OS === "web"
-                    ? (isKu
-                        ? "کلیلەکەت لە بیرگەی ناوخۆیی وێبگەڕەکەتدا پاشەکەوت دەکرێت."
-                        : "Your key is stored in your browser's local storage.")
-                    : (isKu
-                        ? "کلیلەکەت بە شێوەیەکی پارێزراو لەسەر مۆبایلەکەت پاشەکەوت دەکرێت."
-                        : "Your key is stored securely in the device's native Keychain/Keystore.")}
-                </AppText>
-                <View style={[styles.card, { padding: 16, gap: 12 }]}>
-                  <TextInput
-                    secureTextEntry
-                    placeholder={
-                      isKu ? "کلیلەکە لێرە بنووسە..." : "Enter Gemini API key..."
-                    }
-                    placeholderTextColor={colors.mutedForeground}
-                    value={apiKeyInput}
-                    onChangeText={setApiKeyInput}
-                    style={[styles.inputField, isKu && { textAlign: "right" }]}
-                  />
-                  <PressableScale
-                    onPress={saveApiKey}
-                    scaleDown={0.98}
-                    style={styles.saveBtn}
-                  >
-                    <AppText style={styles.saveBtnText} forceKurdishFont={isKu}>
-                      {isKu ? "پاشەکەوتکردن" : "Save Key"}
-                    </AppText>
-                  </PressableScale>
-                </View>
-              </>
-            )}
 
             {!isKidsMode && ENABLE_ADMIN ? (
               <>
@@ -699,16 +558,14 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     styles.card,
                     {
                       marginTop: 0,
-                      flexDirection: isKu ? "row-reverse" : "row",
+                      flexDirection: isRtl ? "row-reverse" : "row",
                     },
                   ]}
                 >
                   <AppText style={styles.rowLabel} forceLatinFont>
                     Open admin panel
                   </AppText>
-                  <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                    <Icon3DChevronRight size={20} />
-                  </View>
+                  <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
                 </PressableScale>
               </>
             ) : null}
@@ -727,15 +584,13 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 style={[
                   styles.supportRow,
                   styles.card,
-                  { marginTop: 0, flexDirection: isKu ? "row-reverse" : "row" },
+                  { marginTop: 0, flexDirection: isRtl ? "row-reverse" : "row" },
                 ]}
               >
                 <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
                   {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
                 </AppText>
-                <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                  <Icon3DChevronRight size={20} />
-                </View>
+                <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
               </PressableScale>
             ) : null}
 
@@ -747,16 +602,14 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   scaleDown={0.98}
                   style={[
                     styles.row,
-                    { flexDirection: isKu ? "row-reverse" : "row" },
+                    { flexDirection: isRtl ? "row-reverse" : "row" },
                     index < LEGAL_LINKS.length - 1 && styles.rowBorder,
                   ]}
                 >
                   <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
                     {t(link.labelKey)}
                   </AppText>
-                  <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                    <Icon3DChevronRight size={20} />
-                  </View>
+                  <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
                 </PressableScale>
               ))}
             </View>
@@ -767,25 +620,23 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
               style={[
                 styles.supportRow,
                 styles.card,
-                { flexDirection: isKu ? "row-reverse" : "row" },
+                { flexDirection: isRtl ? "row-reverse" : "row" },
               ]}
             >
-              <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
+              <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
                 <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
                   {t("settings.support")}
                 </AppText>
                 <Text
                   style={[
                     styles.supportEmail,
-                    { textAlign: isKu ? "right" : "left" },
+                    { textAlign: isRtl ? "right" : "left" },
                   ]}
                 >
                   {SUPPORT_EMAIL}
                 </Text>
               </View>
-              <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
-                <Icon3DChevronRight size={20} />
-              </View>
+              <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
             </PressableScale>
 
             <Text style={styles.versionText}>

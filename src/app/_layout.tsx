@@ -68,7 +68,6 @@ function InnerLayout() {
   const settingsReady = useSettingsStore((s) => s.ready);
   const contentAdminReady = useContentAdminStore((s) => s.ready);
   const onboardingReady = useOnboardingStore((s) => s.ready);
-  const onboardingComplete = useOnboardingStore((s) => s.completed);
   const locale = useLocaleStore((s) => s.locale);
   const { loading: authLoading } = useAuth();
 

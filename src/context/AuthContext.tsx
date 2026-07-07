@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useProgressStore } from "../stores/useProgressStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -42,8 +42,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const pushProgressToDatabase = useCallback(async (userId: string, state: any) => {
+    try {
+      const { error } = await supabase
+        .from("user_progress")
+        .upsert({
+          user_id: userId,
+          path_indexes: state.pathIndexes,
+          normal_path_indexes: state.normalPathIndexes,
+          kids_path_indexes: state.kidsPathIndexes,
+          total_xp: state.totalXp,
+          daily_xp: state.dailyXp,
+          streak_days: state.streakDays,
+          last_active_date: state.lastActiveDate,
+          last_activity: state.lastActivity,
+        });
+
+      if (error) {
+        console.error("Failed to sync progress to Supabase:", error.message);
+      }
+    } catch (e) {
+      console.error("Database sync error:", e);
+    }
+  }, []);
+
+  const pushSettingsToDatabase = useCallback(async (userId: string, state: any) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          display_name: state.userName,
+          age: state.userAge ? parseInt(state.userAge, 10) : null,
+          path_mode: state.pathMode,
+          tutor_voice: state.tutorVoice,
+          avatar_url: state.avatarUrl || null,
+          is_premium: state.isPremium,
+          subscription_tier: state.subscriptionTier || null,
+        })
+        .eq("id", userId);
+
+      if (error) {
+        console.error("Failed to sync settings to Supabase profiles:", error.message);
+      }
+    } catch (e) {
+      console.error("Profiles database sync error:", e);
+    }
+  }, []);
+
   // Load profile and sync progress on user login
-  const handleUserLogin = async (loggedUser: User) => {
+  const handleUserLogin = useCallback(async (loggedUser: User) => {
     try {
       // 1. Fetch Profile
       const { data: profileData, error: profileErr } = await supabase
@@ -110,54 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       isInitialLoad.current = false;
     }
-  };
-
-  const pushProgressToDatabase = async (userId: string, state: any) => {
-    try {
-      const { error } = await supabase
-        .from("user_progress")
-        .upsert({
-          user_id: userId,
-          path_indexes: state.pathIndexes,
-          normal_path_indexes: state.normalPathIndexes,
-          kids_path_indexes: state.kidsPathIndexes,
-          total_xp: state.totalXp,
-          daily_xp: state.dailyXp,
-          streak_days: state.streakDays,
-          last_active_date: state.lastActiveDate,
-          last_activity: state.lastActivity,
-        });
-
-      if (error) {
-        console.error("Failed to sync progress to Supabase:", error.message);
-      }
-    } catch (e) {
-      console.error("Database sync error:", e);
-    }
-  };
-
-  const pushSettingsToDatabase = async (userId: string, state: any) => {
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          display_name: state.userName,
-          age: state.userAge ? parseInt(state.userAge, 10) : null,
-          path_mode: state.pathMode,
-          tutor_voice: state.tutorVoice,
-          avatar_url: state.avatarUrl || null,
-          is_premium: state.isPremium,
-          subscription_tier: state.subscriptionTier || null,
-        })
-        .eq("id", userId);
-
-      if (error) {
-        console.error("Failed to sync settings to Supabase profiles:", error.message);
-      }
-    } catch (e) {
-      console.error("Profiles database sync error:", e);
-    }
-  };
+  }, [pushProgressToDatabase, pushSettingsToDatabase]);
 
   // Listen for session/auth changes
   useEffect(() => {
@@ -188,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [handleUserLogin]);
 
   // Sync local progress changes to Supabase (debounced to protect the DB)
   useEffect(() => {
@@ -211,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     };
-  }, [user]);
+  }, [pushProgressToDatabase, user]);
 
   // Sync local settings changes to Supabase (debounced to protect the DB)
   useEffect(() => {
@@ -234,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       if (settingsSyncTimeoutRef.current) clearTimeout(settingsSyncTimeoutRef.current);
     };
-  }, [user]);
+  }, [pushSettingsToDatabase, user]);
 
   const signOut = async () => {
     try {

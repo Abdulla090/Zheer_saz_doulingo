@@ -25,17 +25,22 @@ export function LegalDocumentScreen({ docId }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const doc = getLegalDocument(docId, locale);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={[styles.topBar, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={[styles.topBar, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-          <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
           </View>
         </Pressable>
-        <AppText style={styles.title} forceKurdishFont={isKu} numberOfLines={2}>
+        <AppText
+          style={[styles.title, { textAlign: isRtl ? "right" : "left", writingDirection: isRtl ? "rtl" : "ltr" }]}
+          forceKurdishFont={isKu}
+          numberOfLines={2}
+        >
           {doc.title}
         </AppText>
         <View style={styles.backSpacer} />

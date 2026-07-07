@@ -19,12 +19,84 @@ type GeminiGenerateResponse = {
   error?: { message?: string };
 };
 
+type GeminiGenerateBody = {
+  contents: {
+    role?: "user" | "model";
+    parts: ({ text: string } | { inline_data: { mime_type: string; data: string } })[];
+  }[];
+  generationConfig?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+  };
+};
+
+function extractGeminiText(data: GeminiGenerateResponse): string {
+  return (
+    data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim() ?? ""
+  );
+}
+
+async function requestGeminiGenerateContent(
+  body: GeminiGenerateBody,
+  timeoutMs = API_TIMEOUT_MS,
+): Promise<GeminiGenerateResponse> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      },
+    );
+
+    const data = (await res.json()) as GeminiGenerateResponse;
+    if (!res.ok) {
+      throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
+    }
+
+    return data;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Network timeout: Gemini request took too long.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function extractJsonObject(text: string): string | null {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = (fenced?.[1] ?? trimmed).trim();
   const start = candidate.indexOf("{");
   const end = candidate.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  return candidate.slice(start, end + 1);
+}
+
+function extractJsonArray(text: string): string | null {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced?.[1] ?? trimmed).trim();
+  const start = candidate.indexOf("[");
+  const end = candidate.lastIndexOf("]");
   if (start === -1 || end <= start) return null;
   return candidate.slice(start, end + 1);
 }
@@ -86,8 +158,6 @@ export async function evaluateSpeechWithGemini(input: {
   }
 
   const mimeType = normalizeGeminiMimeType(input.mimeType);
-  console.log("[evaluateSpeechWithGemini] Sending speech grading request to Gemini API...");
-  console.log(`[evaluateSpeechWithGemini] Target Phrase: "${input.targetPhrase}" | MIME: "${mimeType}" | Base64 Length: ${input.audioBase64.length}`);
 
   const prompt = [
     "You evaluate English speaking practice for language learners.",
@@ -181,11 +251,6 @@ export async function generateRolePlayResponse(
   userText: string,
   history: { sender: "user" | "ai"; text: string }[]
 ): Promise<string> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
   const scenarioDetails: Record<string, { role: string; instructions: string }> = {
     cafe: {
       role: "a polite French café barista",
@@ -211,6 +276,7 @@ export async function generateRolePlayResponse(
   };
 
   const historyPrompt = history
+    .slice(-8)
     .map((h) => `${h.sender === "user" ? "Learner" : "You (AI roleplayer)"}: ${h.text}`)
     .join("\n");
 
@@ -225,40 +291,18 @@ export async function generateRolePlayResponse(
     `You (AI roleplayer):`
   ].join("\n");
 
-  const controller = new AbortController();
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+  const data = await requestGeminiGenerateContent(
     {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.65,
+        maxOutputTokens: 96,
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 128,
-        }
-      }),
-      signal: controller.signal
-    }
+    },
+    12_000,
   );
 
-  const data = (await res.json()) as GeminiGenerateResponse;
-  if (!res.ok) {
-    throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
-  }
-
-  const text =
-    data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text ?? "")
-      .join("")
-      .trim() ?? "";
+  const text = extractGeminiText(data);
 
   return text || "Of course! Let's continue.";
 }
@@ -389,11 +433,6 @@ export async function generateReadingPracticeParagraphs(
   paragraphCount: number,
   wordCountPerParagraph: number = 80
 ): Promise<string[]> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
   const prompt = `You are an expert English teacher. Create a reading practice exercise for a language learner.
 The difficulty is ${difficulty}.
 You must generate exactly ${paragraphCount} paragraph(s).
@@ -403,24 +442,19 @@ Respond with ONLY a JSON array of strings, where each string is a paragraph. Do 
 Example: ["Paragraph 1 text.", "Paragraph 2 text."]`;
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const data = await requestGeminiGenerateContent(
+      {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
+          maxOutputTokens: 1200,
         },
-      }),
-    });
+      },
+      18_000,
+    );
 
-    if (!res.ok) {
-      throw new Error(`Gemini API error: ${res.status}`);
-    }
-
-    const data = (await res.json()) as GeminiGenerateResponse;
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    const jsonText = extractJsonObject(text) || text.trim();
+    const text = extractGeminiText(data);
+    const jsonText = extractJsonArray(text) || text.trim();
     
     try {
       const parsed = JSON.parse(jsonText);

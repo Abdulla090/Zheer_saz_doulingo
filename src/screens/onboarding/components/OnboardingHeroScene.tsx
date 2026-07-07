@@ -38,7 +38,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Hello! 👋
               </AppText>
             </View>
-            <Image source={MascotOrange} style={{ width: 120, height: 140 }} resizeMode="contain" />
+            <Image source={MascotOrange} style={{ width: 156, height: 182 }} resizeMode="contain" />
           </View>
         </View>
       </View>
@@ -55,7 +55,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Ready? 🚀
               </AppText>
             </View>
-            <Image source={MascotPurple} style={{ width: 130, height: 130 }} resizeMode="contain" />
+            <Image source={MascotPurple} style={{ width: 164, height: 164 }} resizeMode="contain" />
           </View>
         </View>
       </View>
@@ -67,17 +67,17 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
       <View style={styles.mascotsRow}>
         <View style={styles.mascotWrapper}>
           <View style={[styles.orangeMascotCropper, { transform: [{ scaleX: -1 }] }]}>
-            <Image source={MascotOrange} style={{ width: 110, height: 130 }} resizeMode="contain" />
+            <Image source={MascotOrange} style={{ width: 146, height: 172 }} resizeMode="contain" />
           </View>
         </View>
 
         <View style={[styles.mascotWrapper, { marginTop: 12 }]}>
           <View style={styles.helloBubble}>
             <AppText style={styles.helloBubbleText} forceLatinFont latinRole="bold">
-              Let's go! ✨
+              {"Let's go! ✨"}
             </AppText>
           </View>
-          <Image source={MascotPurple} style={{ width: 120, height: 120 }} resizeMode="contain" />
+          <Image source={MascotPurple} style={{ width: 154, height: 154 }} resizeMode="contain" />
         </View>
       </View>
     </View>
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   orangeMascotCropper: {
-    width: 90,
-    height: 135,
+    width: 126,
+    height: 174,
     overflow: "hidden",
     alignItems: "flex-start",
     justifyContent: "flex-end",

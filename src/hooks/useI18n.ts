@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
 export function useI18n() {
-  const { t: baseT, i18n } = useTranslation();
+  const { t: baseT } = useTranslation();
   const locale = useLocaleStore((s) => s.selectedSourceLanguage);
   const ready = useLocaleStore((s) => s.ready);
   const setLocale = useLocaleStore((s) => s.setLocale); // Legacy alias

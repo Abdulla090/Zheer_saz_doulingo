@@ -15,7 +15,6 @@ import {
   HomeType,
 } from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
-import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
@@ -23,7 +22,7 @@ import { useRouter } from "expo-router";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, Mic01Icon, Airplane01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -32,9 +31,6 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import {
-  KeyboardAwareScrollView,
-} from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
@@ -241,7 +237,7 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
             : [st.userBubble, { backgroundColor: accent + "12", borderColor: accent + "20" }],
         ]}
       >
-        <AppText style={[st.bubbleText, { textAlign: isKu && isAi ? "right" : "left" }]}>
+        <AppText style={[st.bubbleText, isKu && { textAlign: "right", writingDirection: "rtl" }]}>
           {text}
         </AppText>
       </View>
@@ -254,8 +250,8 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
 export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t, isKu } = useI18n();
-  const { colors } = useThemeColors();
+  const { t, locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
 
@@ -267,7 +263,14 @@ export function RolePlayScreen() {
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const responseRequestIdRef = useRef(0);
+  const finalTranscriptHandledRef = useRef(false);
   const historyRef = useRef(history);
+
+  const setStatusNow = useCallback((next: Status) => {
+    statusRef.current = next;
+    setStatus(next);
+  }, []);
 
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { statusRef.current = status; }, [status]);
@@ -312,6 +315,7 @@ export function RolePlayScreen() {
   }
 
   function stopAll() {
+    responseRequestIdRef.current += 1;
     stopSpeaking();
     stopListening();
   }
@@ -334,46 +338,58 @@ export function RolePlayScreen() {
               v.name.includes("Samantha")),
         );
         if (pref) utterance.voice = pref;
-        utterance.onstart = () => setStatus("speaking");
+        utterance.onstart = () => setStatusNow("speaking");
         utterance.onend = () => {
           if (statusRef.current === "speaking") void startListening();
         };
         utterance.onerror = () => {
-          if (statusRef.current === "speaking") setStatus("idle");
+          if (statusRef.current === "speaking") setStatusNow("idle");
         };
         synthRef.current.speak(utterance);
-        setStatus("speaking");
+        setStatusNow("speaking");
       }
     } else {
-      setStatus("speaking");
+      setStatusNow("speaking");
       Speech.stop();
       Speech.speak(text, {
         language: "en-US",
         pitch: sc.voicePitch,
         rate: sc.voiceRate,
-        onStart: () => setStatus("speaking"),
+        onStart: () => setStatusNow("speaking"),
         onDone: () => {
           if (statusRef.current === "speaking") void startListening();
         },
         onStopped: () => {
-          if (statusRef.current === "speaking") setStatus("idle");
+          if (statusRef.current === "speaking") setStatusNow("idle");
         },
         onError: () => {
-          if (statusRef.current === "speaking") setStatus("idle");
+          if (statusRef.current === "speaking") setStatusNow("idle");
         },
       });
     }
   }
 
   const handleUserResponse = useCallback(async (userText: string) => {
-    setHistory((p) => [...p, { sender: "user", text: userText }]);
-    setStatus("thinking");
+    const cleanText = userText.trim();
+    if (!cleanText) {
+      setStatusNow("idle");
+      return;
+    }
+
+    const requestId = responseRequestIdRef.current + 1;
+    responseRequestIdRef.current = requestId;
+
+    setHistory((p) => [...p, { sender: "user", text: cleanText }]);
+    setStatusNow("thinking");
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     if (isGeminiConfigured()) {
       try {
         const currentHistory = historyRef.current;
-        const r = await generateRolePlayResponse(scenarioRef.current.id, userText, currentHistory);
+        const r = await generateRolePlayResponse(scenarioRef.current.id, cleanText, currentHistory);
+        if (responseRequestIdRef.current !== requestId || statusRef.current !== "thinking") {
+          return;
+        }
         setHistory((p) => [...p, { sender: "ai", text: r }]);
         speak(r);
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
@@ -387,7 +403,11 @@ export function RolePlayScreen() {
     setTimeout(() => {
       const sc = scenarioRef.current;
       let r = "";
-      const lower = userText.toLowerCase();
+      if (responseRequestIdRef.current !== requestId || statusRef.current !== "thinking") {
+        return;
+      }
+
+      const lower = cleanText.toLowerCase();
 
       if (sc.id === "cafe") {
         r =
@@ -407,7 +427,7 @@ export function RolePlayScreen() {
             ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
             : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
       } else {
-        const nums = userText.match(/\d+/g);
+        const nums = cleanText.match(/\d+/g);
         r = nums
           ? parseInt(nums[0], 10) < 300
             ? "You break my heart! Four hundred is my final offer!"
@@ -423,27 +443,30 @@ export function RolePlayScreen() {
 
   const startListening = useCallback(async () => {
     if (!speech.available) {
-      setStatus("idle");
+      setStatusNow("idle");
       return;
     }
 
     stopSpeaking();
-    setStatus("listening");
+    finalTranscriptHandledRef.current = false;
+    setStatusNow("listening");
 
     const started = await speech.start({
       onResult: (text, isFinal) => {
         if (!isFinal) return;
+        if (finalTranscriptHandledRef.current) return;
+        finalTranscriptHandledRef.current = true;
         clearListenTimeout();
-        setStatus("thinking");
+        setStatusNow("thinking");
         handleUserResponse(text);
       },
       onEnd: () => {
-        if (statusRef.current === "listening") setStatus("idle");
+        if (statusRef.current === "listening") setStatusNow("idle");
       },
     });
 
     if (!started) {
-      setStatus("idle");
+      setStatusNow("idle");
       return;
     }
 
@@ -451,10 +474,10 @@ export function RolePlayScreen() {
     listenTimeoutRef.current = setTimeout(() => {
       if (statusRef.current === "listening") {
         speech.stop();
-        setStatus("idle");
+        setStatusNow("idle");
       }
     }, 12000);
-  }, [handleUserResponse, speech]);
+  }, [handleUserResponse, setStatusNow, speech]);
 
   function startSession() {
     stopAll();
@@ -468,7 +491,7 @@ export function RolePlayScreen() {
     stopAll();
     hapticImpact();
     setHistory([]);
-    setStatus("idle");
+    setStatusNow("idle");
   }
 
   const handleMicTap = () => {
@@ -485,10 +508,11 @@ export function RolePlayScreen() {
         break;
       case "listening":
         stopListening();
-        setStatus("idle");
+        setStatusNow("idle");
         break;
       case "thinking":
-        setStatus("idle");
+        responseRequestIdRef.current += 1;
+        setStatusNow("idle");
         break;
     }
   };
@@ -513,13 +537,13 @@ export function RolePlayScreen() {
         <HomeMeshBackground />
 
         {/* Header */}
-        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
           </HomeLiquidPill>
-          <View style={[st.headerCenter, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={36} />
-            <View style={{ alignItems: isKu ? "flex-end" : "flex-start" }}>
+            <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
               <AppText style={st.headerTitle} forceKurdishFont>{t("rolePlay.headerTitle")}</AppText>
               <AppText style={st.headerSub} forceKurdishFont>{t("rolePlay.headerSub")}</AppText>
             </View>
@@ -633,9 +657,9 @@ export function RolePlayScreen() {
       <HomeMeshBackground />
 
       {/* Session Header */}
-      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
         <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }} />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
         </HomeLiquidPill>
 
         {/* Active scenario chip */}

@@ -3,19 +3,19 @@ module.exports = ({ config }) => {
   
   const finalConfig = {
     ...config,
-    name: isKids ? "PINGO Kids" : "PINGO",
-    slug: isKids ? "pingo-kids" : "duolingo-clone",
+    name: isKids ? "TWINO Kids" : "TWINO",
+    slug: isKids ? "twino-kids" : "twino",
   };
 
   if (isKids) {
     // Override identifier/package name to build as a separate app
     finalConfig.ios = {
       ...finalConfig.ios,
-      bundleIdentifier: "com.hewad.mubariz.pingokids",
+      bundleIdentifier: "com.hewad.mubariz.twinokids",
     };
     finalConfig.android = {
       ...finalConfig.android,
-      package: "com.hewad.mubariz.pingokids",
+      package: "com.hewad.mubariz.twinokids",
     };
   }
 

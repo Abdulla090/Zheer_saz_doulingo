@@ -33,31 +33,31 @@ export function TabScreenTransition({ children }: Props) {
         return;
       }
 
-      const offset = width * 0.45 * direction;
+      const offset = width * 0.22 * direction;
       translateX.value = offset;
-      opacity.value = 0.5;
+      opacity.value = 1;
 
       const runAnimation = () => {
         if (Platform.OS === "web") {
           translateX.value = withTiming(0, {
-            duration: 380,
-            easing: Easing.bezier(0.25, 1, 0.5, 1),
+            duration: 320,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
           });
           opacity.value = withTiming(1, {
-            duration: 380,
-            easing: Easing.bezier(0.25, 1, 0.5, 1),
+            duration: 220,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
           });
         } else {
           translateX.value = withSpring(0, {
-            damping: 28,
-            stiffness: 220,
-            mass: 0.8,
+            damping: 34,
+            stiffness: 320,
+            mass: 0.72,
             overshootClamping: true,
           });
           opacity.value = withSpring(1, {
-            damping: 28,
-            stiffness: 220,
-            mass: 0.8,
+            damping: 34,
+            stiffness: 320,
+            mass: 0.72,
             overshootClamping: true,
           });
         }
@@ -67,7 +67,7 @@ export function TabScreenTransition({ children }: Props) {
         const raf = requestAnimationFrame(runAnimation);
         return () => cancelAnimationFrame(raf);
       } else {
-        const timer = setTimeout(runAnimation, 35);
+        const timer = setTimeout(runAnimation, 16);
         return () => clearTimeout(timer);
       }
     }, [consumeDirection, opacity, translateX, width]),
@@ -86,5 +86,6 @@ export function TabScreenTransition({ children }: Props) {
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
+    backgroundColor: "transparent",
   },
 });

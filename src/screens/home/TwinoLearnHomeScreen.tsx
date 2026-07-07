@@ -97,7 +97,6 @@ export function TwinoLearnHomeScreen() {
 
   const ready = useProgressStore((s) => s.ready);
   const dailyXp = useProgressStore((s) => s.dailyXp);
-  const englishLevel = useSettingsStore((s) => s.englishLevel);
   
   // Calculate practice minutes: estimate 3 minutes per 10 XP
   const practiceMinutes = ready ? Math.round(dailyXp * 0.3) : null;
@@ -107,7 +106,7 @@ export function TwinoLearnHomeScreen() {
     if (pathMode === "normal") return buildNormalSectionData(normalNext);
     if (pathMode === "kids") return buildKidsSectionData(kidsNext);
     return buildSectionData(streetNext);
-  }, [pathMode, normalNext, kidsNext, streetNext, englishLevel]);
+  }, [pathMode, normalNext, kidsNext, streetNext]);
 
   const allLessons = React.useMemo(() => {
     return sections.flatMap((section) => section.data);
@@ -133,19 +132,6 @@ export function TwinoLearnHomeScreen() {
     if (!lockedItem) return undefined;
     return getLessonBank(pathMode, lockedItem.lessonId, lockedItem.sectionItemIndex);
   }, [pathMode, lockedItem]);
-
-  const getLessonCategory = (type: string) => {
-    switch (type) {
-      case "speaking":
-        return "Speaking";
-      case "conversation":
-        return "Conversation";
-      case "gift":
-        return "Bonus";
-      default:
-        return "Practice";
-    }
-  };
 
   const getLessonIcon = (type: string) => {
     if (type === "speaking") return Mic01Icon;

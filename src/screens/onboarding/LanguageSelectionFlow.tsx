@@ -1,9 +1,8 @@
-import { useI18n } from "../../hooks/useI18n";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -38,7 +37,6 @@ import {
   CloudLightningIcon
 } from "@hugeicons/core-free-icons";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
-import { generateCustomCurriculum } from "../../services/curriculum-generator";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getSkippedUnitsCount } from "../../data/normal-english";
 
@@ -100,7 +98,6 @@ const LEVELS = [
 ];
 
 export function LanguageSelectionFlow({ onFinish }: Props) {
-  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -119,6 +116,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   const [selectedGoal, setSelectedGoal] = useState<string>("conversations");
   const [name, setName] = useState(userName || "");
   const [age, setAge] = useState(userAge || "");
+  const isRtl = selectedLang === "ku" || selectedLang === "ar";
 
   const handleProfileContinue = useCallback(() => {
     if (!name.trim()) {
@@ -193,11 +191,16 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
     <View style={styles.root}>
       <OnboardingSkiaBg scrollX={bgScrollX} />
       {/* HEADER: Back Button & Step Indicators */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
-        <View style={styles.headerLeft}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20), flexDirection: isRtl ? "row-reverse" : "row" }]}>
+        <View style={[styles.headerLeft, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
           {step !== "profile" ? (
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#0F172A" strokeWidth={2.5} />
+              <HugeiconsIcon
+                icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+                size={22}
+                color="#0F172A"
+                strokeWidth={2.5}
+              />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 40 }} />
@@ -231,8 +234,8 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             style={styles.contentWrap}
           >
             <Text style={styles.stepNumLabel}>STEP 1 OF 4</Text>
-            <Text style={styles.title}>What's your name?</Text>
-            <Text style={styles.subtitle}>We'll personalize your learning journey for you.</Text>
+            <Text style={styles.title}>{"What's your name?"}</Text>
+            <Text style={styles.subtitle}>{"We'll personalize your learning journey for you."}</Text>
 
 
 
@@ -388,8 +391,8 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             style={styles.contentWrap}
           >
             <Text style={styles.stepNumLabel}>STEP 4 OF 4</Text>
-            <Text style={styles.title}>What's your main goal?</Text>
-            <Text style={styles.subtitle}>We'll personalize your journey based on your goal.</Text>
+            <Text style={styles.title}>{"What's your main goal?"}</Text>
+            <Text style={styles.subtitle}>{"We'll personalize your journey based on your goal."}</Text>
 
 
 
@@ -425,7 +428,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               activeOpacity={0.85}
               onPress={handleGoalContinue}
             >
-              <Text style={styles.primaryButtonText}>Let's Get Started</Text>
+              <Text style={styles.primaryButtonText}>{"Let's Get Started"}</Text>
               <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
             </TouchableOpacity>
           </Animated.View>

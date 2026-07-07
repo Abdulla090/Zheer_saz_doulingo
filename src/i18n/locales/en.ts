@@ -172,7 +172,7 @@ export const en = {
     learning: "Learning",
     note: "In Kurdish",
     typePlaceholder: "Type a message…",
-    demoMode: "Add EXPO_PUBLIC_GEMINI_API_KEY in .env to enable live voice",
+    demoMode: "Live voice is unavailable right now",
     disclaimer:
       "Voice-only AI practice — not a substitute for professional instruction.",
   },
@@ -221,7 +221,7 @@ export const en = {
     voiceUnavailable: "Speech recognition is not available here",
     voiceManualFallback: "Can't speak right now? Switch to self-check",
     voiceGeminiKeyHint:
-      "Optional: add EXPO_PUBLIC_GEMINI_API_KEY to .env for AI speech grading",
+      "AI speech grading turns on automatically when available",
     listening: "Listening…",
     startingMic: "Starting microphone...",
     imageChoiceTitle: "Choose the Correct Word",

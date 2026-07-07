@@ -1,35 +1,9 @@
 import { ScreenOpeningShell, type ScreenOpeningVariant } from "./animations/skia-gsap-opening";
 import { TabScreenTransition } from "./TabScreenTransition";
 import { usesJsTabBar } from "../constants/tab-mode";
-import React, { useState, useEffect } from "react";
-import { View, Platform } from "react-native";
+import React, { useEffect, useState } from "react";
 
-import Animated, { FadeIn } from "react-native-reanimated";
-
-/**
- * Lazy wrapper to defer mounting heavy tab screen contents during tab transitions.
- * Prevents JavaScript thread swamping and UI freezes on first load.
- */
-function TabLazyWrapper({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMounted(true);
-    }, 160); // 160ms lets the tab transition complete first, avoiding animation lag
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!mounted) {
-    return <View style={{ flex: 1, backgroundColor: "transparent" }} />;
-  }
-
-  return (
-    <Animated.View style={{ flex: 1 }} entering={FadeIn.duration(220)}>
-      {children}
-    </Animated.View>
-  );
-}
+const playedOpeningVariants = new Set<ScreenOpeningVariant>();
 
 /**
  * TabScreenChrome wraps each tab screen.
@@ -46,18 +20,28 @@ export function TabScreenChrome({
   lazy?: boolean;
   openingVariant?: ScreenOpeningVariant;
 }) {
+  const [shouldPlayOpening, setShouldPlayOpening] = useState(
+    () => !!openingVariant && !playedOpeningVariants.has(openingVariant),
+  );
+
+  useEffect(() => {
+    if (!openingVariant) return;
+    if (playedOpeningVariants.has(openingVariant)) {
+      setShouldPlayOpening(false);
+      return;
+    }
+    playedOpeningVariants.add(openingVariant);
+  }, [openingVariant]);
+
   let content = children;
 
-  if (openingVariant) {
+  if (openingVariant && shouldPlayOpening) {
     content = (
       <ScreenOpeningShell variant={openingVariant}>{content}</ScreenOpeningShell>
     );
   }
 
-  const shouldLazy = lazy && Platform.OS !== "web";
-  if (shouldLazy) {
-    content = <TabLazyWrapper>{content}</TabLazyWrapper>;
-  }
+  void lazy;
 
   if (usesJsTabBar()) {
     return <TabScreenTransition>{content}</TabScreenTransition>;

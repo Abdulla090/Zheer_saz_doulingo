@@ -1,5 +1,5 @@
 import { AppText } from "../../components/ui/AppText";
-import { hapticImpact, hapticSelection } from "../../utils/haptics";
+import { hapticSelection } from "../../utils/haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";

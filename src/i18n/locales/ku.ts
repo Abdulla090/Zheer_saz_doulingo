@@ -175,7 +175,7 @@ export const ku = {
     learning: "فێربوون",
     note: "بە کوردی",
     typePlaceholder: "پەیامێک بنووسە…",
-    demoMode: "EXPO_PUBLIC_GEMINI_API_KEY زیاد بکە بۆ Gemini Live",
+    demoMode: "دەنگی ڕاستەوخۆ لە ئێستادا بەردەست نییە",
     disclaimer:
       "تەنها ڕاهێنانی دەنگی AI — جێگری فێرکردنی پیشەیی نییە.",
   },
@@ -224,7 +224,7 @@ export const ku = {
     voiceUnavailable: "ناسینەوەی دەنگ لەم ئامێرەدا بەردەست نییە",
     voiceManualFallback: "ناتوانی ئێستا قسە بکەیت؟ بیگۆڕە بۆ پشکنینی خۆیی",
     voiceGeminiKeyHint:
-      "ئارەزوومەندانە: EXPO_PUBLIC_GEMINI_API_KEY لە .env زیاد بکە بۆ پشکنینی دەنگ بە AI",
+      "پشکنینی دەنگی AI کاتێک بەردەست بێت خۆکارانە کاردەکات",
     listening: "گوێم لێیە…",
     startingMic: "مایک دەستپێدەکات...",
     imageChoiceTitle: "وشەی دروست هەڵبژێرە",

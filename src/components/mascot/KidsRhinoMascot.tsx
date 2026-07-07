@@ -1,8 +1,6 @@
-import Constants, { ExecutionEnvironment } from "expo-constants";
 import React from "react";
-import { Image, Platform, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const RHINO_IMG = require("../../../assets/images/characters/kids-rhino-mascot.png");
 
 type Props = { size?: number };

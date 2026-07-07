@@ -8,7 +8,7 @@ interface OnboardingState {
   ready: boolean;
   completed: boolean;
   replayNonce: number;
-  completeOnboarding: () => void;
+  completeOnboarding: (nextRoute?: string) => void;
   replayOnboarding: () => Promise<void>;
   /** @deprecated Use replayOnboarding */
   resetOnboarding: () => Promise<void>;
@@ -21,10 +21,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   completed: savedOnboarding,
   replayNonce: 0,
 
-  completeOnboarding: () => {
+  completeOnboarding: (nextRoute = "/(tabs)") => {
     appStorage.setItemSync(STORAGE_KEY, "true");
     set({ completed: true });
-    router.replace("/(tabs)" as any);
+    router.replace(nextRoute as any);
   },
 
   replayOnboarding: async () => {

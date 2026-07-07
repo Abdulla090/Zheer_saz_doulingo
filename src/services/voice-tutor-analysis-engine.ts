@@ -131,8 +131,7 @@ ${transcriptText}
         }),
         signal: controller.signal,
       }
-    );
-    clearTimeout(timeout);
+    ).finally(() => clearTimeout(timeout));
 
     if (!res.ok) {
       throw new Error(`Gemini service failed with status ${res.status}`);

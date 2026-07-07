@@ -21,47 +21,22 @@ function encodeBase64(bytes: Uint8Array): string {
   return window.btoa(binary);
 }
 
-function pcmBytesToWavBase64(pcmBytes: Uint8Array, sampleRate: number): string {
-  const header = new ArrayBuffer(44);
-  const view = new DataView(header);
-  const dataSize = pcmBytes.length;
-
-  const writeStr = (offset: number, str: string) => {
-    for (let i = 0; i < str.length; i++) {
-      view.setUint8(offset + i, str.charCodeAt(i));
-    }
-  };
-
-  writeStr(0, "RIFF");
-  view.setUint32(4, 36 + dataSize, true);
-  writeStr(8, "WAVE");
-  writeStr(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeStr(36, "data");
-  view.setUint32(40, dataSize, true);
-
-  const wav = new Uint8Array(44 + dataSize);
-  wav.set(new Uint8Array(header), 0);
-  wav.set(pcmBytes, 44);
-  return encodeBase64(wav);
-}
-
 export class LivePcmPlayer {
   private pendingBytes = new Uint8Array(0);
   private flushTimeout: ReturnType<typeof setTimeout> | null = null;
-  private wavQueue: string[] = [];
+  private audioCtx: AudioContext | null = null;
+  private scheduledSources = new Set<AudioBufferSourceNode>();
+  private nextStartTime = 0;
   private playing = false;
   private destroyed = false;
-  private currentAudio: HTMLAudioElement | null = null;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
-  private static BUFFER_THRESHOLD = 24_000;
-  private static FLUSH_DELAY_MS = 80;
+  // ~85 ms at 24 kHz/16-bit mono. Small enough for low latency, large enough to avoid tiny-buffer overhead.
+  private static BUFFER_THRESHOLD = 4_096;
+  private static FLUSH_DELAY_MS = 24;
+  private static START_LEAD_SECONDS = 0.035;
+
+  constructor(private onPlayingStateChange?: (isPlaying: boolean) => void) {}
 
   enqueueBase64Pcm(base64: string) {
     if (this.destroyed) return;
@@ -98,73 +73,82 @@ export class LivePcmPlayer {
     if (this.destroyed || this.pendingBytes.length === 0) return;
 
     try {
-      const pcmBytes = this.pendingBytes;
-      this.pendingBytes = new Uint8Array(0);
+      const evenLength = this.pendingBytes.length - (this.pendingBytes.length % 2);
+      if (evenLength <= 0) return;
 
-      const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
-      const uri = `data:audio/wav;base64,${wavB64}`;
-
-      this.wavQueue.push(uri);
-      void this.drain();
+      const pcmBytes = this.pendingBytes.slice(0, evenLength);
+      this.pendingBytes = this.pendingBytes.slice(evenLength);
+      void this.schedulePcm(pcmBytes);
     } catch (e) {
-      console.warn("LivePcmPlayer (Web): flush failed", e);
+      console.warn("LivePcmPlayer (Web): schedule failed", e);
     }
   }
 
-  private async drain() {
-    if (this.playing || this.destroyed || this.wavQueue.length === 0) return;
-    this.playing = true;
-
-    while (this.wavQueue.length > 0 && !this.destroyed) {
-      const uri = this.wavQueue.shift()!;
-      try {
-        await this.playOneChunk(uri);
-      } catch (err) {
-        console.warn("LivePcmPlayer (Web): play chunk failed", err);
-      }
+  private getAudioContext() {
+    if (!this.audioCtx) {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      this.audioCtx = new AudioContextClass({ sampleRate: GEMINI_LIVE_OUTPUT_RATE });
     }
-
-    this.playing = false;
-
-    if (this.wavQueue.length > 0 && !this.destroyed) {
-      void this.drain();
-    }
+    return this.audioCtx;
   }
 
-  private playOneChunk(uri: string): Promise<void> {
-    return new Promise<void>((resolve) => {
-      if (this.destroyed) {
-        resolve();
-        return;
+  private async schedulePcm(pcmBytes: Uint8Array) {
+    if (this.destroyed || pcmBytes.length < 2) return;
+
+    const audioCtx = this.getAudioContext();
+    if (audioCtx.state === "suspended") {
+      await audioCtx.resume();
+    }
+
+    const sampleCount = Math.floor(pcmBytes.length / 2);
+    const audioBuffer = audioCtx.createBuffer(1, sampleCount, GEMINI_LIVE_OUTPUT_RATE);
+    const channel = audioBuffer.getChannelData(0);
+    const view = new DataView(pcmBytes.buffer, pcmBytes.byteOffset, pcmBytes.byteLength);
+
+    for (let i = 0; i < sampleCount; i++) {
+      channel[i] = view.getInt16(i * 2, true) / 32768;
+    }
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    const startAt = Math.max(now + LivePcmPlayer.START_LEAD_SECONDS, this.nextStartTime);
+    this.nextStartTime = startAt + audioBuffer.duration;
+
+    this.scheduledSources.add(source);
+    source.onended = () => {
+      this.scheduledSources.delete(source);
+      this.updateIdleState();
+    };
+
+    if (!this.playing) {
+      this.playing = true;
+      this.onPlayingStateChange?.(true);
+    }
+
+    source.start(startAt);
+    this.updateIdleState();
+  }
+
+  private updateIdleState() {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+
+    const audioCtx = this.audioCtx;
+    if (!audioCtx || this.destroyed) return;
+
+    const delayMs = Math.max(0, (this.nextStartTime - audioCtx.currentTime) * 1000) + 40;
+    this.idleTimer = setTimeout(() => {
+      if (this.destroyed) return;
+      if (this.scheduledSources.size === 0 && this.pendingBytes.length === 0 && !this.flushTimeout) {
+        this.playing = false;
+        this.onPlayingStateChange?.(false);
       }
-
-      const audio = new Audio(uri);
-      this.currentAudio = audio;
-
-      let resolved = false;
-      const finish = () => {
-        if (resolved) return;
-        resolved = true;
-        this.currentAudio = null;
-        resolve();
-      };
-
-      audio.onended = finish;
-      audio.onerror = finish;
-
-      audio.play().catch((e) => {
-        console.warn("LivePcmPlayer (Web): autoplay blocked or failed", e);
-        finish();
-      });
-
-      // Safety timeout: WAV chunks are usually < 4s, resolve after 6s max
-      setTimeout(() => {
-        if (!resolved) {
-          console.warn("LivePcmPlayer (Web): safety timeout triggered");
-          finish();
-        }
-      }, 6000);
-    });
+    }, delayMs);
   }
 
   stop() {
@@ -173,21 +157,37 @@ export class LivePcmPlayer {
       this.flushTimeout = null;
     }
     this.pendingBytes = new Uint8Array(0);
-    this.wavQueue = [];
+    this.nextStartTime = this.audioCtx?.currentTime ?? 0;
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     try {
-      this.currentAudio?.pause();
+      for (const source of this.scheduledSources) {
+        try {
+          source.stop();
+        } catch {}
+      }
     } catch {}
-    this.currentAudio = null;
+    this.scheduledSources.clear();
+    const wasPlaying = this.playing;
     this.playing = false;
+    if (wasPlaying) {
+      this.onPlayingStateChange?.(false);
+    }
   }
 
   destroy() {
     this.destroyed = true;
     this.stop();
+    try {
+      void this.audioCtx?.close();
+    } catch {}
+    this.audioCtx = null;
   }
 
   get isPlaying() {
-    return this.playing || this.wavQueue.length > 0 || this.pendingBytes.length > 0 || this.flushTimeout !== null;
+    return this.playing || this.scheduledSources.size > 0 || this.pendingBytes.length > 0 || this.flushTimeout !== null;
   }
 }
 

@@ -1,4 +1,4 @@
-import gsap from "gsap";
+import { gsap } from "gsap";
 import { Platform } from "react-native";
 
 const ENTER_SELECTOR = "[data-skia-gsap-enter]";

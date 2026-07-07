@@ -2,6 +2,9 @@ import type { LessonPathMode } from "../data/types";
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
+import { migrateProgress } from "../lib/migrate-progress";
+import { useLocaleStore } from "./useLocaleStore";
+
 const STORAGE_KEY = "twino.app.progress";
 const DAILY_GOAL_XP = 15;
 
@@ -102,9 +105,6 @@ function persistProgress(state: ProgressSnapshot) {
     /* noop */
   }
 }
-
-import { migrateProgress } from "../lib/migrate-progress";
-import { useLocaleStore } from "./useLocaleStore";
 
 // Run migration before initialization
 migrateProgress();

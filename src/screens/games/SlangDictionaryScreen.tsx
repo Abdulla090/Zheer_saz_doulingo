@@ -266,6 +266,7 @@ export function SlangDictionaryScreen() {
   const awardXp = useProgressStore((s) => s.awardXp);
 
   const isKurdish = locale === "ku";
+  const isRtl = isKurdish || locale === "ar";
 
   // States
   const [searchQuery, setSearchQuery] = useState("");
@@ -422,9 +423,9 @@ export function SlangDictionaryScreen() {
       <HomeMeshBackground />
 
       {/* Screen Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
-          <View style={{ transform: [{ scaleX: isKurdish ? -1 : 1 }] }}>
+          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.darkNavy} strokeWidth={2.0} />
           </View>
         </PressableScale>

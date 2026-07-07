@@ -6,19 +6,22 @@ import {
 import { useGeminiLiveTutor } from "../../hooks/use-gemini-live-tutor";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
 import { hapticImpact } from "../../utils/haptics";
 import { useRouter } from "expo-router";
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator , StyleSheet, View, Dimensions, ScrollView, PanResponder, Image } from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  AlertCircleIcon,
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Cancel01Icon,
+  RefreshIcon,
+} from "@hugeicons/core-free-icons";
 
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-
-import React, { useEffect, useMemo, useState, useRef } from "react";
-import { StyleSheet, View, Dimensions, ScrollView, PanResponder, Image } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PressableScale } from "../../components/animations";
 import Animated, {
   useAnimatedStyle,
@@ -29,39 +32,13 @@ import Animated, {
   withSpring,
   Easing,
   useAnimatedProps,
-  SharedValue,
   runOnJS,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur"; // For glassmorphism
 
-/* eslint-disable @typescript-eslint/no-require-imports */
-const {
-  Cancel01Icon,
-  Mic01Icon,
-  MagicWandIcon,
-  VolumeHighIcon,
-  VolumeMuteIcon,
-  Airplane01Icon,
-  Coffee01Icon,
-  Briefcase01Icon,
-  Message01Icon,
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  Star01Icon,
-  CheckmarkCircle02Icon,
-  AlertCircleIcon,
-  Tick01Icon,
-  RefreshIcon,
-} = require("@hugeicons/core-free-icons/dist/cjs/index.js");
-/* eslint-enable @typescript-eslint/no-require-imports */
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const BRAND_LOGO = require("../../../assets/images/logo-compressed.png");
 
 const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
-
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -72,63 +49,13 @@ const IOS_SPRING_CONFIG = {
   overshootClamping: true, // Prevents any bouncing/overshoot completely
 };
 
-const DynamicWave = ({ 
-  isTop, 
-  color, 
-  opacity,
-  amplitude,
-  phase
-}: { 
-  isTop: boolean; 
-  color: string; 
-  opacity: number;
-  amplitude: SharedValue<number>;
-  phase: SharedValue<number>;
-}) => {
-  const animatedProps = useAnimatedProps(() => {
-    const numPoints = 40;
-    const points = [];
-    const midline = 80; // Symmetrical fixed midline for both top and bottom
-    
-    for (let i = 0; i <= numPoints; i++) {
-      const x = (i / numPoints) * screenWidth;
-      // 1 full cycle across screen width
-      const angle = (i / numPoints) * 2 * Math.PI + (isTop ? -phase.value : phase.value);
-      const y = midline + amplitude.value * Math.sin(angle);
-      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-    }
-    
-    const fillY = isTop ? 0 : 200;
-    const d = `M 0,${fillY} L ${points.join(" L ")} L ${screenWidth},${fillY} Z`;
-    return { d };
-  });
-
-  return (
-    <View
-      style={{
-        position: "absolute",
-        [isTop ? "top" : "bottom"]: -20,
-        left: 0,
-        width: screenWidth,
-        height: 200,
-        opacity,
-        zIndex: 1,
-      }}
-      pointerEvents="none"
-    >
-      <Svg width={screenWidth} height={200} viewBox={`0 0 ${screenWidth} 200`} preserveAspectRatio="none">
-        <AnimatedPath animatedProps={animatedProps} fill={color} />
-      </Svg>
-    </View>
-  );
-};
-
 export function VoiceTutorScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const isRtl = isKu || isAr;
   const tutor = useGeminiLiveTutor();
-  const { colors, isDark } = useThemeColors();
+  const { colors } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const level = useSettingsStore((s) => s.englishLevel) || 5;
@@ -185,19 +112,16 @@ export function VoiceTutorScreen() {
     } else {
       waveAmplitude.value = withTiming(8, { duration: 800 });
     }
-  }, [tutor.speaking, tutor.listening, tutor.thinking]);
+  }, [tutor.speaking, tutor.listening, tutor.thinking, waveAmplitude]);
 
-  const targetLang = useLocaleStore((s) => s.selectedTargetLanguage);
-  const langBadgeText = (targetLang || "en").toUpperCase();
-
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     tutor.stopAll();
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace("/");
     }
-  };
+  }, [router, tutor]);
 
   const statusLabel = useMemo(() => {
     if (tutor.thinking) return t("voiceTutor.statusThinking");
@@ -207,68 +131,6 @@ export function VoiceTutorScreen() {
     if (!tutor.sessionActive) return t("voiceTutor.statusConnect");
     return t("voiceTutor.statusWaiting");
   }, [tutor, t]);
-
-  // Breathing animation for the glass orb glow
-  const glowOpacity = useSharedValue(0.1);
-  const glowScale = useSharedValue(1);
-
-  useEffect(() => {
-    if (tutor.speaking || tutor.thinking) {
-      glowOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.6, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          withTiming(0.2, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-          }),
-        ),
-        -1,
-        true,
-      );
-      glowScale.value = withRepeat(
-        withSequence(
-          withTiming(1.2, {
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        ),
-        -1,
-        true,
-      );
-    } else if (tutor.listening) {
-      glowOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.8, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.3, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        ),
-        -1,
-        true,
-      );
-      glowScale.value = withRepeat(
-        withSequence(
-          withTiming(1.05, {
-            duration: 800,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        ),
-        -1,
-        true,
-      );
-    } else {
-      glowOpacity.value = withTiming(0.1, { duration: 500 });
-      glowScale.value = withTiming(1, { duration: 500 });
-    }
-  }, [glowOpacity, glowScale, tutor.speaking, tutor.thinking, tutor.listening]);
-
-  const glowAnim = useAnimatedStyle(() => ({
-    transform: [{ scale: glowScale.value }],
-    opacity: glowOpacity.value,
-  }));
 
   const logoScale = useSharedValue(1);
 
@@ -323,10 +185,10 @@ export function VoiceTutorScreen() {
     tutor.runAnalysis();
   };
 
-  const closeAnalysis = () => {
+  const closeAnalysis = useCallback(() => {
     bottomSheetY.value = withSpring(screenHeight, IOS_SPRING_CONFIG);
     setAnalysisOpen(false);
-  };
+  }, [bottomSheetY]);
 
   const analysisAnim = useAnimatedStyle(() => ({
     transform: [{ translateY: bottomSheetY.value }],
@@ -371,8 +233,8 @@ export function VoiceTutorScreen() {
   });
 
   // Gesture responder for real-time swipe down (return to path) and swipe up (open analysis)
-  const panResponder = useRef(
-    PanResponder.create({
+  const panHandlers = useMemo(
+    () => PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
         if (analysisOpen) return false;
@@ -410,12 +272,13 @@ export function VoiceTutorScreen() {
         }
         isDragging.value = "none";
       },
-    })
-  ).current;
+    }).panHandlers,
+    [analysisOpen, bottomSheetY, handleBack, isDragging, topSheetY, tutor],
+  );
 
   // Analysis drag-handle responder
-  const analysisClosePan = useRef(
-    PanResponder.create({
+  const analysisCloseHandlers = useMemo(
+    () => PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
         const { dy } = gestureState;
@@ -431,11 +294,12 @@ export function VoiceTutorScreen() {
           bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
         }
       }
-    })
-  ).current;
+    }).panHandlers,
+    [bottomSheetY, closeAnalysis],
+  );
 
   return (
-    <View style={styles.root} {...panResponder.panHandlers}>
+    <View style={styles.root} {...panHandlers}>
       <HomeMeshBackground />
 
       {/* ── TOP LIQUID SHEET (Pulls down from top) ── */}
@@ -517,22 +381,22 @@ export function VoiceTutorScreen() {
             {statusLabel}
           </AppText>
           {tutor.speaking && tutor.transcript ? (
-            <AppText style={styles.transcriptText}>{tutor.transcript}</AppText>
+          <AppText style={[styles.transcriptText, isRtl && styles.rtlText]}>{tutor.transcript}</AppText>
           ) : tutor.speaking ? (
-            <AppText style={[styles.transcriptText, { opacity: 0.5 }]}>
+            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.5 }]}>
               ...
             </AppText>
           ) : tutor.sessionActive ? (
-            <AppText style={[styles.transcriptText, { opacity: 0.75, fontSize: 16 }]}>
+            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.75, fontSize: 16 }]}>
               {isKu ? "مایکی لایڤ کاردەکات. دەست بکە بە قسەکردن." : "Live microphone active. Start speaking."}
             </AppText>
           ) : (
-            <AppText style={[styles.transcriptText, { opacity: 0.45, fontSize: 15 }]}>
+            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.45, fontSize: 15 }]}>
               {isKu ? "دەست لە گۆکە بدە بۆ دەستپێکردن" : "Tap the central logo to connect"}
             </AppText>
           )}
           {tutor.error && (
-            <AppText style={[styles.transcriptText, { color: C.red, fontSize: 14, marginTop: 8 }]}>
+            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { color: C.red, fontSize: 14, marginTop: 8 }]}>
               {tutor.error}
             </AppText>
           )}
@@ -579,13 +443,13 @@ export function VoiceTutorScreen() {
           ]}
         >
           {/* Header Drag-handle */}
-          <View style={styles.dragHandleArea} {...analysisClosePan.panHandlers}>
+          <View style={styles.dragHandleArea} {...analysisCloseHandlers}>
             <View style={styles.analysisHandle} />
           </View>
 
           {/* Analysis Header */}
-          <View style={styles.analysisHeader}>
-            <AppText style={styles.analysisHeaderTitle}>
+          <View style={[styles.analysisHeader, isRtl && styles.rtlRow]}>
+            <AppText style={[styles.analysisHeaderTitle, isRtl && styles.rtlText]}>
               {isKu ? "شیکردنەوەی گفتوگۆکەت" : "Conversation Analysis"}
             </AppText>
             <PressableScale
@@ -603,38 +467,38 @@ export function VoiceTutorScreen() {
 
           {tutor.turns.length === 0 ? (
             <View style={styles.emptyState}>
-              <AppText style={styles.emptyText}>
+              <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
                 {isKu ? "سەرەتا گفتوگۆیەک ئەنجام بدە بۆ بینینی شیکردنەوە." : "Complete a dialogue first to view linguistic stats!"}
               </AppText>
             </View>
           ) : tutor.analysisLoading ? (
             <View style={styles.emptyState}>
               <ActivityIndicator size="large" color="#4F46E5" style={{ marginBottom: 16 }} />
-              <AppText style={styles.emptyText}>
+              <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
                 {isKu ? "شیکردنەوەی دەقی گفتوگۆکە دەکرێت..." : "Analyzing conversation transcripts..."}
               </AppText>
             </View>
           ) : !analysisData ? (
             <View style={styles.emptyState}>
-              <AppText style={styles.emptyText}>
+              <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
                 {isKu ? "شیکردنەوە بەردەست نییە. تکایە دووبارە تاقیبکەرەوە." : "No analysis data compiled yet."}
               </AppText>
               <PressableScale style={[styles.vocabTag, { marginTop: 16 }]} onPress={() => tutor.runAnalysis()}>
-                <AppText style={styles.vocabTagText}>{isKu ? "شیکردنەوە بکە" : "Compute Analysis"}</AppText>
+                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>{isKu ? "شیکردنەوە بکە" : "Compute Analysis"}</AppText>
               </PressableScale>
             </View>
           ) : analysisData.analysisError ? (
             <View style={styles.emptyState}>
               <HugeiconsIcon icon={AlertCircleIcon} size={48} color={C.red} style={{ marginBottom: 16 }} />
-              <AppText style={[styles.emptyText, { color: C.red, fontWeight: "600" }]}>
+              <AppText style={[styles.emptyText, isRtl && styles.rtlText, { color: C.red, fontWeight: "600" }]}>
                 {analysisData.analysisError}
               </AppText>
-              <PressableScale 
-                style={[styles.vocabTag, { marginTop: 16, flexDirection: "row", alignItems: "center", gap: 8 }]} 
+              <PressableScale
+                style={[styles.vocabTag, { marginTop: 16, flexDirection: isRtl ? "row-reverse" : "row", alignItems: "center", gap: 8 }]}
                 onPress={() => tutor.runAnalysis()}
               >
                 <HugeiconsIcon icon={RefreshIcon} size={16} color="#4F46E5" />
-                <AppText style={styles.vocabTagText}>{isKu ? "دووبارە هەوڵبدەرەوە" : "Retry"}</AppText>
+                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>{isKu ? "دووبارە هەوڵبدەرەوە" : "Retry"}</AppText>
               </PressableScale>
             </View>
           ) : (
@@ -644,7 +508,7 @@ export function VoiceTutorScreen() {
               showsVerticalScrollIndicator={false}
             >
               {/* METRIC SCORE SUMMARY */}
-              <View style={styles.metricsRow}>
+              <View style={[styles.metricsRow, isRtl && styles.rtlRow]}>
                 {/* Score */}
                 <View style={styles.metricCard}>
                   <AppText style={styles.metricLabel}>{isKu ? "نمرە" : "SCORE"}</AppText>
@@ -675,8 +539,8 @@ export function VoiceTutorScreen() {
 
               {/* VOCABULARY HIGHLIGHTS */}
               <View style={styles.sectionWrap}>
-                <AppText style={styles.sectionHeading}>{isKu ? "وشە نوێیەکانی ئەم دانیشتنە" : "Vocabulary Taught this Session"}</AppText>
-                <View style={styles.vocabTagsWrap}>
+                <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "وشە نوێیەکانی ئەم دانیشتنە" : "Vocabulary Taught this Session"}</AppText>
+                <View style={[styles.vocabTagsWrap, isRtl && styles.rtlRow]}>
                   {analysisData.wordsIntroduced.length > 0 ? (
                     analysisData.wordsIntroduced.map((w: string, idx: number) => {
                       const isMastered = analysisData.wordsMastered.includes(w);
@@ -703,7 +567,7 @@ export function VoiceTutorScreen() {
                       );
                     })
                   ) : (
-                    <AppText style={{ fontSize: 13, color: C.gray }}>
+                    <AppText style={[{ fontSize: 13, color: C.gray }, isRtl && styles.rtlText]}>
                       {isKu ? "هیچ وشەیەکی نوێ فێرنەکراوە." : "No new words introduced yet."}
                     </AppText>
                   )}
@@ -712,7 +576,7 @@ export function VoiceTutorScreen() {
 
               {/* DIALOGUE TRANSCRIPT & RED WORD HIGHLIGHTING */}
               <View style={styles.sectionWrap}>
-                <AppText style={styles.sectionHeading}>{isKu ? "دەقی گفتوگۆکە" : "Linguistic Transcript"}</AppText>
+                <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "دەقی گفتوگۆکە" : "Linguistic Transcript"}</AppText>
                 <View style={styles.transcriptLog}>
                   {tutor.turns.map((turn) => {
                     const isUser = turn.sender === "user";
@@ -721,21 +585,24 @@ export function VoiceTutorScreen() {
                         key={turn.id}
                         style={[
                           styles.chatRow,
-                          isUser ? { justifyContent: "flex-end" } : { justifyContent: "flex-start" }
+                          isUser
+                            ? { justifyContent: isRtl ? "flex-start" : "flex-end" }
+                            : { justifyContent: isRtl ? "flex-end" : "flex-start" }
                         ]}
                       >
                         <View
                           style={[
                             styles.bubble,
-                            isUser ? styles.userBubble : styles.aiBubble
+                            isUser ? styles.userBubble : styles.aiBubble,
+                            isRtl && (isUser ? styles.userBubbleRtl : styles.aiBubbleRtl),
                           ]}
                         >
-                          <AppText style={isUser ? styles.userBubbleSender : styles.aiBubbleSender}>
+                          <AppText style={[isUser ? styles.userBubbleSender : styles.aiBubbleSender, isRtl && styles.rtlText]}>
                             {isUser ? (isKu ? "تۆ" : "YOU") : "TWINO"}
                           </AppText>
 
                           {isUser ? (
-                            <AppText style={styles.userBubbleText}>
+                            <AppText style={[styles.userBubbleText, isRtl && styles.rtlText]}>
                               {turn.text.split(" ").map((word: string, idx: number) => {
                                 const clean = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").toLowerCase();
                                 const isTargetWord = turn.targetWord?.toLowerCase() === clean;
@@ -752,11 +619,11 @@ export function VoiceTutorScreen() {
                               })}
                             </AppText>
                           ) : (
-                            <AppText style={styles.aiBubbleText} forceLatinFont>
+                            <AppText style={[styles.aiBubbleText, isRtl && styles.rtlText]} forceLatinFont>
                               {turn.text}
                             </AppText>
                           )}
-                          <AppText style={styles.bubbleTime}>{turn.timestamp}</AppText>
+                          <AppText style={[styles.bubbleTime, isRtl && styles.bubbleTimeRtl]}>{turn.timestamp}</AppText>
                         </View>
                       </View>
                     );
@@ -767,30 +634,30 @@ export function VoiceTutorScreen() {
               {/* LINGUISTIC MISTAKES & RECOMMENDATIONS */}
               {analysisData.grammarErrors.length > 0 && (
                 <View style={styles.sectionWrap}>
-                  <AppText style={styles.sectionHeading}>{isKu ? "پێشنیارەکانی باشترکردن" : "Weak Phrases & Improvements"}</AppText>
+                  <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "پێشنیارەکانی باشترکردن" : "Weak Phrases & Improvements"}</AppText>
                   {analysisData.grammarErrors.map((error, idx) => (
-                    <View key={idx} style={styles.recommendationCard}>
+                    <View key={idx} style={[styles.recommendationCard, isRtl && { alignItems: "flex-end" }]}>
                       <View style={styles.recOriginal}>
-                        <View style={[styles.recBadge, { backgroundColor: "rgba(239, 68, 68, 0.1)" }]}>
-                          <AppText style={[styles.recBadgeText, { color: C.red }]}>{isKu ? "وتت" : "YOU SAID"}</AppText>
+                        <View style={[styles.recBadge, isRtl && styles.recBadgeRtl, { backgroundColor: "rgba(239, 68, 68, 0.1)" }]}>
+                          <AppText style={[styles.recBadgeText, isRtl && styles.rtlText, { color: C.red }]}>{isKu ? "وتت" : "YOU SAID"}</AppText>
                         </View>
-                        <AppText style={styles.recOriginalText} forceLatinFont>
-                          "{error.original}"
+                        <AppText style={[styles.recOriginalText, isRtl && styles.rtlText]} forceLatinFont>
+                          {`"${error.original}"`}
                         </AppText>
                       </View>
                       
                       <View style={styles.recBetter}>
-                        <View style={[styles.recBadge, { backgroundColor: "rgba(34, 197, 94, 0.1)" }]}>
-                          <AppText style={[styles.recBadgeText, { color: "#10B981" }]}>{isKu ? "باشتر وایە" : "SUGGESTION"}</AppText>
+                        <View style={[styles.recBadge, isRtl && styles.recBadgeRtl, { backgroundColor: "rgba(34, 197, 94, 0.1)" }]}>
+                          <AppText style={[styles.recBadgeText, isRtl && styles.rtlText, { color: "#10B981" }]}>{isKu ? "باشتر وایە" : "SUGGESTION"}</AppText>
                         </View>
-                        <AppText style={styles.recBetterText} forceLatinFont>
+                        <AppText style={[styles.recBetterText, isRtl && styles.rtlText]} forceLatinFont>
                           {error.corrected}
                         </AppText>
                       </View>
 
                       {error.explanation ? (
                         <View style={{ marginTop: 4 }}>
-                          <AppText style={{ fontSize: 12, color: C.gray, lineHeight: 18 }} forceLatinFont>
+                          <AppText style={[{ fontSize: 12, color: C.gray, lineHeight: 18 }, isRtl && styles.rtlText]} forceLatinFont>
                             {error.explanation}
                           </AppText>
                         </View>
@@ -812,6 +679,13 @@ const createStyles = (colors: any) =>
     root: {
       flex: 1,
       backgroundColor: C.meshBottom,
+    },
+    rtlRow: {
+      flexDirection: "row-reverse",
+    },
+    rtlText: {
+      textAlign: "right",
+      writingDirection: "rtl",
     },
     topSwipeContainer: {
       position: "absolute",
@@ -1140,11 +1014,19 @@ const createStyles = (colors: any) =>
       shadowOpacity: 0.15,
       shadowRadius: 8,
     },
+    userBubbleRtl: {
+      borderTopRightRadius: 20,
+      borderTopLeftRadius: 4,
+    },
     aiBubble: {
       backgroundColor: "#F3F4F6",
       borderTopLeftRadius: 4,
       borderWidth: 1,
       borderColor: "rgba(26, 43, 72, 0.04)",
+    },
+    aiBubbleRtl: {
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 4,
     },
     userBubbleSender: {
       fontSize: 8,
@@ -1178,6 +1060,9 @@ const createStyles = (colors: any) =>
       alignSelf: "flex-end",
       marginTop: 4,
     },
+    bubbleTimeRtl: {
+      alignSelf: "flex-start",
+    },
     recommendationCard: {
       width: "100%",
       backgroundColor: "#FFFFFF",
@@ -1201,6 +1086,9 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 6,
+    },
+    recBadgeRtl: {
+      alignSelf: "flex-end",
     },
     recBadgeText: {
       fontSize: 9,

@@ -33,7 +33,7 @@ export function PlayScreen() {
       -1,
       true
     );
-  }, []);
+  }, [rotation]);
 
   const animatedBotStyle = useAnimatedStyle(() => {
     return {

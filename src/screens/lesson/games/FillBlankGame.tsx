@@ -2,7 +2,7 @@
  
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, View, Pressable, Platform, I18nManager } from "react-native";
+import { StyleSheet, View, Platform, I18nManager } from "react-native";
 import * as Haptics from "expo-haptics";
 import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
 import Animated, {
@@ -18,7 +18,7 @@ import { AppText } from "../../../components/ui/AppText";
 
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { ltrText, isRtlText } from "./game-text";
+import { ltrText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
 import {
@@ -108,7 +108,7 @@ type Props = {
 };
 
 export default function FillBlankGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
-  const { t, isKu } = useI18n();
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);

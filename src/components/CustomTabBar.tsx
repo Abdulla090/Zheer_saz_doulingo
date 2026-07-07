@@ -7,8 +7,6 @@ import {
 } from "./icons/HomeDashboardIcons";
 import { TabBarGlassSurface } from "./TabBarGlassSurface";
 import { PremiumPressable } from "./PremiumPressable";
-import { PanResponder } from "react-native";
-import { hapticSelection } from "../utils/haptics";
 import {
   TAB_BAR_ACTIVE_CHIP,
   TAB_BAR_CORNER_RADIUS,
@@ -31,29 +29,29 @@ import { useTabTransition } from "../context/TabTransitionContext";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Platform, StyleSheet, useWindowDimensions, View, I18nManager } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TAB_BAR_GLASS } from "../constants/tab-bar-glass";
+import { crossShadow } from "../utils/shadows";
+import { AppText } from "./ui/AppText";
 
 const smoothTransition = (to: number) => {
   "worklet";
   if (Platform.OS === "web") {
     return withTiming(to, {
-      duration: 350,
-      easing: Easing.bezier(0.25, 1, 0.5, 1),
+      duration: 420,
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
     });
   }
   return withSpring(to, {
-    damping: 30,
-    stiffness: 300,
-    mass: 0.8,
+    damping: 36,
+    stiffness: 380,
+    mass: 0.74,
     overshootClamping: true,
   });
 };
-import { TAB_BAR_GLASS } from "../constants/tab-bar-glass";
-import { springMotion } from "../utils/motion-spring";
-import { crossShadow } from "../utils/shadows";
-import { AppText } from "./ui/AppText";
 
 const ACTIVE = TAB_BAR_GLASS.iconActive;
 const INACTIVE = TAB_BAR_GLASS.iconInactive;
@@ -89,21 +87,23 @@ const PILL_TABS: {
 ];
 
 // Animated label that fades in/out next to the active icon
-function ActiveTabLabel({ label }: { label: string }) {
+function ActiveTabLabel({ label, isRtl }: { label: string; isRtl: boolean }) {
   return (
     <Animated.View
       entering={FadeIn.duration(200)}
       exiting={FadeOut.duration(150)}
+      style={styles.activeLabelWrap}
     >
       <AppText
-        style={{
-          fontSize: 12,
-          fontWeight: "700",
-          color: ACTIVE,
-          marginLeft: 4,
-        }}
-        forceLatinFont
+        style={[
+          styles.activeLabel,
+          isRtl
+            ? { marginRight: 5, textAlign: "right", writingDirection: "rtl" }
+            : { marginLeft: 5, textAlign: "left", writingDirection: "ltr" },
+        ]}
+        forceLatinFont={!isRtl}
         latinRole="bold"
+        numberOfLines={1}
       >
         {label}
       </AppText>
@@ -115,9 +115,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
   const { prepareTransition } = useTabTransition();
   const activeRouteName = state.routes[state.index]?.name;
+  const isRtl = isKu || isAr;
 
   const pillTabs = useMemo(
     () =>
@@ -149,7 +150,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
       
-      const isRTL = false;
+      const isRTL = isRtl;
       const targetWidth = index >= 0 && index < tabCount ? ACTIVE_CHIP_WITH_LABEL : TAB_BAR_ACTIVE_CHIP;
 
       if (isRTL) {
@@ -165,7 +166,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       }
     },
-    [slotWidth, tabCount, pillWidth, ACTIVE_CHIP_WITH_LABEL]
+    [slotWidth, tabCount, pillWidth, ACTIVE_CHIP_WITH_LABEL, isRtl]
   );
 
   const indicatorX = useSharedValue(indicatorTargetX(focusedIndex));
@@ -174,7 +175,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   );
   const indicatorOpacity = useSharedValue(focusedIndex >= 0 ? 1 : 0);
   const prevFocusedIndex = useRef(focusedIndex);
-  const optimisticPress = useRef(false);
 
   const moveIndicator = useCallback(
     (index: number, animated: boolean) => {
@@ -187,102 +187,141 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     [indicatorTargetX, indicatorX, indicatorWidth, slotWidth, tabCount, ACTIVE_CHIP_WITH_LABEL],
   );
 
-  const focusedIndexRef = useRef(focusedIndex);
-  const tabCountRef = useRef(tabCount);
-  const ACTIVE_CHIP_WITH_LABEL_Ref = useRef(ACTIVE_CHIP_WITH_LABEL);
-  const pillWidthRef = useRef(pillWidth);
-  const slotWidthRef = useRef(slotWidth);
-  const stateIndexRef = useRef(state.index);
-  const navigateRef = useRef<any>(null);
-  const moveIndicatorRef = useRef<any>(null);
-  const pillTabsRef = useRef(pillTabs);
+  const navigate = useCallback((
+    route: string,
+    isFocused: boolean,
+  ) => {
+    if (isFocused) {
+      return;
+    }
 
-  useEffect(() => {
-    focusedIndexRef.current = focusedIndex;
-    tabCountRef.current = tabCount;
-    ACTIVE_CHIP_WITH_LABEL_Ref.current = ACTIVE_CHIP_WITH_LABEL;
-    pillWidthRef.current = pillWidth;
-    slotWidthRef.current = slotWidth;
-    stateIndexRef.current = state.index;
-    navigateRef.current = navigate;
-    moveIndicatorRef.current = moveIndicator;
-    pillTabsRef.current = pillTabs;
-  });
+    let nextIdx = pillTabs.findIndex((tab) => tab.route === route);
+    if (nextIdx < 0 && route === TAB_FAB_ROUTE) {
+      nextIdx = tabCount;
+    }
+    if (nextIdx >= 0) {
+      moveIndicator(nextIdx, true);
+      indicatorOpacity.value = 1;
+    }
+    prepareTransition(activeRouteName ?? "index", route, isRtl);
+    navigation.navigate(route);
+  }, [
+    activeRouteName,
+    indicatorOpacity,
+    moveIndicator,
+    navigation,
+    pillTabs,
+    prepareTransition,
+    isRtl,
+    tabCount,
+  ]);
 
-  const isDragging = useRef(false);
-  const startDragX = useRef(0);
-  const currentDragIndex = useRef(focusedIndex);
+  const indexFromPageX = useCallback(
+    (pageX: number) => {
+      const rowLeft = TAB_BAR_FLOAT_MARGIN_H;
+      const fabLeft = isRtl
+        ? rowLeft
+        : rowLeft + pillWidth + TAB_BAR_ROW_GAP;
+      const pillLeft = isRtl
+        ? rowLeft + TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP
+        : rowLeft;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > 8;
-      },
-      onPanResponderGrant: (evt, gestureState) => {
-        isDragging.current = true;
-        startDragX.current = indicatorX.value;
-        currentDragIndex.current = focusedIndexRef.current;
-        if (Platform.OS !== "web") {
-          hapticSelection();
-        }
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        if (!isDragging.current) return;
-
-        const targetWidth = focusedIndexRef.current >= 0 && focusedIndexRef.current < tabCountRef.current ? ACTIVE_CHIP_WITH_LABEL_Ref.current : TAB_BAR_ACTIVE_CHIP;
-        let newX = startDragX.current + gestureState.dx;
-        const maxLimit = pillWidthRef.current - targetWidth;
-        newX = Math.max(0, Math.min(newX, maxLimit));
-
-        const stretch = Math.min(Math.abs(gestureState.dx) * 0.35, 40);
-
-        indicatorX.value = newX - stretch / 2;
-        indicatorWidth.value = targetWidth + stretch;
-
-        const dragCenter = newX + targetWidth / 2;
-        const nearestIndex = Math.max(0, Math.min(Math.floor(dragCenter / slotWidthRef.current), tabCountRef.current - 1));
-        if (nearestIndex !== currentDragIndex.current) {
-          currentDragIndex.current = nearestIndex;
-          if (Platform.OS !== "web") {
-            hapticSelection();
-          }
-        }
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        isDragging.current = false;
-        const finalIndex = currentDragIndex.current;
-        const targetRoute = pillTabsRef.current[finalIndex]?.route;
-        
-        if (targetRoute && finalIndex !== focusedIndexRef.current) {
-          const isFocused = stateIndexRef.current === finalIndex;
-          navigateRef.current(targetRoute, isFocused);
-        } else {
-          moveIndicatorRef.current(focusedIndexRef.current, true);
-        }
-      },
-      onPanResponderTerminate: (evt, gestureState) => {
-        isDragging.current = false;
-        moveIndicatorRef.current(focusedIndexRef.current, true);
+      if (pageX >= fabLeft && pageX <= fabLeft + TAB_BAR_FAB_SIZE) {
+        return tabCount;
       }
-    })
-  ).current;
+
+      if (pageX < pillLeft || pageX > pillLeft + pillWidth || slotWidth <= 0) {
+        return -1;
+      }
+
+      const physicalSlotIndex = Math.min(
+        tabCount - 1,
+        Math.max(0, Math.floor((pageX - pillLeft) / slotWidth)),
+      );
+      return isRtl ? tabCount - 1 - physicalSlotIndex : physicalSlotIndex;
+    },
+    [isRtl, pillWidth, slotWidth, tabCount],
+  );
+
+  const previewIndex = useCallback(
+    (index: number) => {
+      if (index < 0 || index > tabCount) return;
+      indicatorOpacity.value = 1;
+      moveIndicator(index, true);
+    },
+    [indicatorOpacity, moveIndicator, tabCount],
+  );
+
+  const restoreFocusedIndicator = useCallback(() => {
+    indicatorOpacity.value = smoothTransition(focusedIndex >= 0 ? 1 : 0);
+    moveIndicator(focusedIndex, true);
+  }, [focusedIndex, indicatorOpacity, moveIndicator]);
+
+  const previewFromPageX = useCallback(
+    (pageX: number) => {
+      previewIndex(indexFromPageX(pageX));
+    },
+    [indexFromPageX, previewIndex],
+  );
+
+  const commitFromPageX = useCallback(
+    (pageX: number) => {
+      const index = indexFromPageX(pageX);
+      if (index < 0) {
+        restoreFocusedIndicator();
+        return;
+      }
+
+      if (index === tabCount) {
+        navigate(TAB_FAB_ROUTE, fabFocused);
+        return;
+      }
+
+      const route = pillTabs[index]?.route;
+      if (!route) {
+        restoreFocusedIndicator();
+        return;
+      }
+      const routeIndex = state.routes.findIndex((r) => r.name === route);
+      navigate(route, routeIndex >= 0 && state.index === routeIndex);
+    },
+    [
+      fabFocused,
+      indexFromPageX,
+      navigate,
+      pillTabs,
+      restoreFocusedIndicator,
+      state.index,
+      state.routes,
+      tabCount,
+    ],
+  );
+
+  const scrubGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .minDistance(6)
+        .runOnJS(true)
+        .onBegin((event) => {
+          previewFromPageX(event.absoluteX);
+        })
+        .onUpdate((event) => {
+          previewFromPageX(event.absoluteX);
+        })
+        .onEnd((event) => {
+          commitFromPageX(event.absoluteX);
+        }),
+    [commitFromPageX, previewFromPageX],
+  );
 
   useEffect(() => {
     indicatorOpacity.value = smoothTransition(focusedIndex >= 0 ? 1 : 0);
 
-    if (optimisticPress.current) {
-      optimisticPress.current = false;
-      prevFocusedIndex.current = focusedIndex;
-      return;
-    }
-
     const indexChanged = prevFocusedIndex.current !== focusedIndex;
     prevFocusedIndex.current = focusedIndex;
-    // Always recalculate position (covers isKu direction change)
+    // Always recalculate position (covers RTL direction changes)
     moveIndicator(focusedIndex, indexChanged);
-  }, [focusedIndex, slotWidth, indicatorOpacity, moveIndicator, isKu]);
+  }, [focusedIndex, slotWidth, indicatorOpacity, moveIndicator, isRtl]);
 
   const activeCircleTop = (TAB_BAR_INNER_HEIGHT - TAB_BAR_ACTIVE_CHIP) / 2;
 
@@ -293,33 +332,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     opacity: indicatorOpacity.value,
   }));
 
-  const navigate = useCallback(
-    (route: string, isFocused: boolean) => {
-      if (!isFocused) {
-        let nextIdx = pillTabs.findIndex((tab) => tab.route === route);
-        if (nextIdx < 0 && route === TAB_FAB_ROUTE) {
-          nextIdx = tabCount;
-        }
-        if (nextIdx >= 0) {
-          optimisticPress.current = true;
-          moveIndicator(nextIdx, true);
-          indicatorOpacity.value = 1;
-        }
-        prepareTransition(activeRouteName ?? "index", route);
-        navigation.navigate(route);
-      }
-    },
-    [
-      activeRouteName,
-      indicatorOpacity,
-      moveIndicator,
-      navigation,
-      pillTabs,
-      prepareTransition,
-      tabCount,
-    ],
-  );
-
   if (
     pathnameHidesTabBar(pathname) ||
     (activeRouteName && TAB_BAR_HIDDEN_ROUTES.has(activeRouteName))
@@ -329,21 +341,32 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={[styles.host, { paddingBottom: bottomPad, pointerEvents: "box-none", direction: "ltr" as any }]}>
-      <View
-        style={[
-          styles.row,
-          {
-            marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
-            marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
-            width: rowWidth,
-            gap: TAB_BAR_ROW_GAP,
-            flexDirection: "row",
-            direction: "ltr" as any,
-          },
-        ]}
-      >
+      <GestureDetector gesture={scrubGesture}>
+        <View
+          style={[
+            styles.row,
+            {
+              marginHorizontal: TAB_BAR_FLOAT_MARGIN_H,
+              marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
+              width: rowWidth,
+              gap: TAB_BAR_ROW_GAP,
+              flexDirection: isRtl ? "row-reverse" : "row",
+              direction: "ltr" as any,
+            },
+          ]}
+        >
         {/* Layer 1: Glass Backgrounds */}
-        <View style={[StyleSheet.absoluteFill, { flexDirection: "row", gap: TAB_BAR_ROW_GAP, direction: "ltr" as any }]} pointerEvents="none">
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              flexDirection: isRtl ? "row-reverse" : "row",
+              gap: TAB_BAR_ROW_GAP,
+              direction: "ltr" as any,
+              pointerEvents: "none",
+            },
+          ]}
+        >
           <TabBarGlassSurface
             borderRadius={TAB_BAR_CORNER_RADIUS}
             style={{ width: pillWidth, height: TAB_BAR_INNER_HEIGHT }}
@@ -373,9 +396,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
         {/* Layer 3: Interactive Icons + Active Label */}
         <View 
           style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT, direction: "ltr" as any }]}
-          {...panResponder.panHandlers}
         >
-          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: "row", direction: "ltr" as any }]}>
+          <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: isRtl ? "row-reverse" : "row", direction: "ltr" as any }]}>
             {pillTabs.map(({ route, label, renderIcon }) => {
               const routeIndex = state.routes.findIndex((r) => r.name === route);
               const isFocused =
@@ -392,12 +414,18 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                   pressScale={0.92}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isFocused }}
+                  {...(Platform.OS === "web"
+                    ? ({
+                        "aria-selected": isFocused,
+                        "data-selected": isFocused ? "true" : "false",
+                      } as any)
+                    : null)}
                   accessibilityLabel={label}
                   hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
                 >
-                  <View style={styles.slotInner}>
+                  <View style={[styles.slotInner, isRtl && styles.slotInnerRtl]}>
                     {renderIcon(isFocused, iconSize)}
-                    {isFocused && <ActiveTabLabel label={label} />}
+                    {isFocused && <ActiveTabLabel label={label} isRtl={isRtl} />}
                   </View>
                 </PremiumPressable>
               );
@@ -412,7 +440,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => navigate(TAB_FAB_ROUTE, fabFocused)}
               style={[styles.fabBtn]}
               pressScale={0.94}
-              accessibilityRole="button"
+              accessibilityRole="tab"
+              accessibilityState={{ selected: fabFocused }}
+              {...(Platform.OS === "web"
+                ? ({
+                    "aria-selected": fabFocused,
+                    "data-selected": fabFocused ? "true" : "false",
+                  } as any)
+                : null)}
               accessibilityLabel={t("tabs.profile")}
               hitSlop={8}
             >
@@ -423,7 +458,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             </PremiumPressable>
           </View>
         </View>
-      </View>
+        </View>
+      </GestureDetector>
     </View>
   );
 }
@@ -464,6 +500,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  slotInnerRtl: {
+    flexDirection: "row-reverse",
+  },
+  activeLabelWrap: {
+    minWidth: 0,
+    maxWidth: "62%",
+  },
+  activeLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: ACTIVE,
+  },
   activeCircle: {
     position: "absolute",
     left: 0,
@@ -472,7 +520,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TAB_BAR_GLASS.activeCircleBorder,
     ...crossShadow({
-      color: "#000000",
+      color: "#0F172A",
       offsetY: 2,
       blur: 6,
       opacity: 0.12,

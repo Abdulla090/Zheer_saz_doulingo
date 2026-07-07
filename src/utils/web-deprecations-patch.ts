@@ -197,6 +197,7 @@ if (Platform.OS === "web") {
 
   // 5. Try patching the React JSX runtimes (for React 17+ and React 19 / Compiler templates)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jsxRuntime = require("react/jsx-runtime");
     const originalJsx = jsxRuntime.jsx;
     const originalJsxs = jsxRuntime.jsxs;
@@ -214,9 +215,10 @@ if (Platform.OS === "web") {
       };
       jsxRuntime.jsxs.__patched = true;
     }
-  } catch (e) {}
+  } catch {}
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jsxDevRuntime = require("react/jsx-dev-runtime");
     const originalJsxDEV = jsxDevRuntime.jsxDEV;
     if (originalJsxDEV && !originalJsxDEV.__patched) {
@@ -226,7 +228,7 @@ if (Platform.OS === "web") {
       };
       jsxDevRuntime.jsxDEV.__patched = true;
     }
-  } catch (e) {}
+  } catch {}
 }
 
 // ── Global React Native Text Patch ──
@@ -235,6 +237,14 @@ try {
   const OriginalText = RN.Text as any;
 
   if (OriginalText) {
+    const textDescriptor = Object.getOwnPropertyDescriptor(RN, "Text");
+    const canPatchText =
+      !textDescriptor || textDescriptor.configurable || Boolean(textDescriptor.writable);
+
+    if (!canPatchText) {
+      throw null;
+    }
+
     const CustomTextRenderer = (props: any, ref: any) => {
       // Dynamically subscribe to the selected font
       const selectedFont = useFontStore((s) => s.selectedFont);
@@ -274,10 +284,13 @@ try {
         },
         configurable: true,
       });
-    } catch {
+    } catch (err) {
+      if (textDescriptor && !textDescriptor.writable) throw err;
       (RN as any).Text = CustomText;
     }
   }
 } catch (err) {
-  console.warn("Global RN.Text patch failed:", err);
+  if (err) {
+    console.warn("Global RN.Text patch failed:", err);
+  }
 }

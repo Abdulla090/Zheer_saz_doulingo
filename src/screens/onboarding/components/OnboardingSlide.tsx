@@ -29,7 +29,7 @@ export function OnboardingSlide({ slide }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <OnboardingHeroScene variant={slide.id as OnboardingSceneVariant} height={260} />
+        <OnboardingHeroScene variant={slide.id as OnboardingSceneVariant} height={292} />
       </View>
       
       <View style={styles.textContainer}>
@@ -55,10 +55,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   iconContainer: {
     width: "100%",
-    height: 260,
+    height: 292,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
+    marginBottom: 22,
     backgroundColor: "transparent",
   },
   textContainer: {

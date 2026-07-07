@@ -1,6 +1,6 @@
 import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
 import { useI18n } from "../../../hooks/useI18n";
-import { useProgressStore, useCurrentProgress } from "../../../stores/useProgressStore";
+import { useCurrentProgress } from "../../../stores/useProgressStore";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import {
   buildLessonRouteForMode,
