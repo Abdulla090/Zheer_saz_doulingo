@@ -553,22 +553,6 @@ export default function LessonScreen() {
           variant={isKidsMode ? "kids" : "default"}
         />
 
-        {!isKidsMode ? (
-          <View style={sL.skipRow}>
-            <Pressable
-              onPress={giveUpQuestion}
-              disabled={feedback !== null}
-              style={({ pressed }) => [
-                sL.skipButton,
-                pressed && sL.skipPressed,
-                feedback !== null && sL.skipDisabled,
-              ]}
-            >
-              <AppText style={sL.skipText}>{t("lessons.dontKnow")}</AppText>
-            </Pressable>
-          </View>
-        ) : null}
-
         <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, isKidsMode ? 20 : 12) }]}>
           <Animated.View
             entering={enterGame}

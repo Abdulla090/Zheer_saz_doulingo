@@ -58,7 +58,8 @@ const BENIGN_SPEECH_ERRORS = new Set([
 ]);
 
 export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
   const { speak } = useTTS();
   const speech = useSpeechCapture("en-US");
 
@@ -348,7 +349,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           ? t("lessons.voiceTryAgainStatus")
           : t("lessons.voiceTapMicSpeak");
 
-  const heroPrompt = question.prompt || t("lessons.sayOutLoudSub");
+  const instruction = isAr && question.promptAr ? question.promptAr : (question.prompt || t("lessons.sayOutLoudSub"));
+  const targetText = isAr && question.targetArabic ? question.targetArabic : question.targetKurdish;
+
   const showTranscript =
     transcript.length > 0 &&
     (state === "listening" || state === "processing" || state === "success" || state === "fail");
@@ -357,7 +360,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     <GameRoot style={s.root}>
       <GameHeader>
         <LightGameHeading
-          title={t("lessons.sayOutLoud")}
+          title={instruction}
         />
       </GameHeader>
 
@@ -365,7 +368,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         label={t("lessons.questionLabel")}
         variant={pathMode === "kids" ? "kids" : "default"}
       >
-        {heroPrompt}
+        {targetText || ""}
       </LightQuestionPrompt>
 
       {question.imageRequire && (
@@ -397,10 +400,10 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </Animated.View>
       ) : (
         <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
-          <AppText style={s.targetLabel}>{t("lessons.voiceTargetLabel")}</AppText>
+          <AppText style={[s.targetLabel, { textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
 
-          <View style={[s.targetRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <AppText style={s.targetEn} forceLatinFont latinRole="bold">
+          <View style={s.targetRow}>
+            <AppText style={[s.targetEn, { textAlign: rtl ? "right" : "center" }]} forceLatinFont latinRole="bold">
               {question.targetWord}
             </AppText>
             <SpringPressable
@@ -440,7 +443,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       {state !== "success" ? (
         <GameFooter delay={120}>
-          <AppText style={s.skipLink} onPress={() => fireAnswer("skip")}>
+          <AppText style={[s.skipLink, { textAlign: rtl ? "right" : "center" }]} onPress={() => fireAnswer("skip")}>
             {t("lessons.dontKnow")}
           </AppText>
         </GameFooter>

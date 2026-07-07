@@ -296,8 +296,8 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
         <LightGameHeading title="Match the Pairs" subtitle="Match the images with their names" />
       </GameHeader>
 
-      <View style={[s.progressRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-        <View style={[s.progressTrack, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={s.progressRow}>
+        <View style={s.progressTrack}>
           {Array.from({ length: total }).map((_, i) => (
             <View
               key={i}
@@ -314,7 +314,7 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
       </View>
 
       <View style={s.boardArea}>
-        <View style={[s.colLabels, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={s.colLabels}>
           <AppText style={[LightType.label, s.colLabel]} forceLatinFont>
             Picture
           </AppText>
@@ -323,7 +323,7 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
           </AppText>
         </View>
 
-        <View style={[s.board, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={s.board}>
           <View style={s.column}>
             {leftItems.map((item, i) => (
               <ImageTile

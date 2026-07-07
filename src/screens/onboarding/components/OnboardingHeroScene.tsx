@@ -1,8 +1,8 @@
 import { AppText } from "../../../components/ui/AppText";
 import React from "react";
 import { StyleSheet, View, Image, Platform } from "react-native";
-import MascotOrange from "../../../../assets/images/svg/newmascotorange.svg";
-import MascotPurple from "../../../../assets/images/svg/newmascotpurple.svg";
+const MascotOrange = require("../../../../assets/images/svg/gamescreenmascotorange.png");
+const MascotPurple = require("../../../../assets/images/svg/gamescreenmascotpurple.png");
 
 
 export type OnboardingSceneVariant =
@@ -38,7 +38,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Hello! 👋
               </AppText>
             </View>
-            <MascotOrange width={120} height={140} />
+            <Image source={MascotOrange} style={{ width: 120, height: 140 }} resizeMode="contain" />
           </View>
         </View>
       </View>
@@ -55,7 +55,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Ready? 🚀
               </AppText>
             </View>
-            <MascotPurple width={130} height={130} />
+            <Image source={MascotPurple} style={{ width: 130, height: 130 }} resizeMode="contain" />
           </View>
         </View>
       </View>
@@ -67,7 +67,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
       <View style={styles.mascotsRow}>
         <View style={styles.mascotWrapper}>
           <View style={[styles.orangeMascotCropper, { transform: [{ scaleX: -1 }] }]}>
-            <MascotOrange width={110} height={130} />
+            <Image source={MascotOrange} style={{ width: 110, height: 130 }} resizeMode="contain" />
           </View>
         </View>
 
@@ -77,7 +77,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
               Let's go! ✨
             </AppText>
           </View>
-          <MascotPurple width={120} height={120} />
+          <Image source={MascotPurple} style={{ width: 120, height: 120 }} resizeMode="contain" />
         </View>
       </View>
     </View>

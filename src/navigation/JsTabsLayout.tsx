@@ -1,5 +1,4 @@
 import { CustomTabBar } from "../components/CustomTabBar";
-import { ENABLE_SHOP } from "../constants/feature-flags";
 import {
   TabBarVisibilityProvider,
   useTabBarVisibility,
@@ -44,11 +43,11 @@ function JsTabsLayoutInner() {
             },
       }}
     >
-      {/* Pill: Home · Games · Path · Shop? — FAB: Profile */}
+      {/* Pill: Home · Games · Leaderboard — FAB: Profile */}
       <Tabs.Screen name="index" />
       <Tabs.Screen
         name="subscription"
-        options={{ href: ENABLE_SHOP ? undefined : null }}
+        options={{ href: null }}
       />
       <Tabs.Screen name="play" />
       <Tabs.Screen name="dashboard" />

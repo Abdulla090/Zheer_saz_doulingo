@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, View, I18nManager } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { StyleSheet, View, I18nManager, ScrollView } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, cancelAnimation } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
 import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
 import { ParagraphSpeechQuestion } from "../../../data/types";
-import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
+import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { LightGameHeading, LightCheckButton } from "./lesson-light-primitives";
-import { evaluateParagraphSpeechWithGemini, type ParagraphSpeechEvaluation } from "../../../services/gemini-speech-service";
 import { L } from "./lesson-light-design";
+import { useI18n } from "../../../hooks/useI18n";
 
 type Props = {
   question: ParagraphSpeechQuestion;
@@ -17,15 +17,64 @@ type Props = {
 
 type ListenState = "idle" | "listening" | "processing" | "success" | "fail";
 
+type ParagraphSpeechEvaluation = {
+  accuracyScore: number;
+  wordAnalysis: {
+    word: string;
+    correct: boolean;
+  }[];
+  transcript: string;
+};
+
+function evaluateSpeechLocally(transcript: string, paragraphs: string[]): ParagraphSpeechEvaluation {
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Split target paragraphs into clean individual words
+  const targetWords = paragraphs.join(" ").split(/\s+/).filter(Boolean);
+  
+  // Create a normalized set of spoken words for quick lookup
+  const spokenWords = new Set(normalize(transcript).split(/\s+/).filter(Boolean));
+
+  let correctCount = 0;
+  const wordAnalysis = targetWords.map((originalWord) => {
+    const normalizedTarget = normalize(originalWord);
+    const correct = spokenWords.has(normalizedTarget);
+    if (correct) {
+      correctCount++;
+    }
+    
+    return {
+      word: originalWord,
+      correct,
+    };
+  });
+
+  const accuracyScore = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
+
+  return {
+    accuracyScore,
+    wordAnalysis,
+    transcript,
+  };
+}
+
 export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
-  const speech = useGeminiVoiceCapture();
+  const { t } = useI18n();
+  const speech = useSpeechCapture("en-US");
   const scrollY = useSharedValue(0);
 
   const [state, setState] = useState<ListenState>("idle");
+  const [transcript, setTranscript] = useState("");
   const [evaluation, setEvaluation] = useState<ParagraphSpeechEvaluation | null>(null);
   const [containerHeight, setContainerHeight] = useState(0);
   const [textHeight, setTextHeight] = useState(0);
 
+  const transcriptRef = useRef("");
   const fullText = question.paragraphs.join("\n\n");
 
   useEffect(() => {
@@ -36,21 +85,30 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
 
   const handleStart = async () => {
     setState("listening");
+    setTranscript("");
+    transcriptRef.current = "";
+    setEvaluation(null);
     scrollY.value = containerHeight;
     
     const distance = containerHeight + textHeight;
     const duration = distance * 28;
     
     const started = await speech.start({
-      onResult: () => {},
-      onError: () => { if (state === "listening") void handleStop(); }
+      onResult: (text: string, _isFinal: boolean) => {
+        transcriptRef.current = text;
+        setTranscript(text);
+      },
+      onError: (code: string, message: string) => {
+        console.warn("Speech recognition error:", code, message);
+        setState("fail");
+      }
     });
 
     if (started) {
       scrollY.value = withTiming(-textHeight, { duration, easing: Easing.linear });
     } else {
-        setState("idle");
-        scrollY.value = 0;
+      setState("idle");
+      scrollY.value = 0;
     }
   };
 
@@ -59,21 +117,19 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     cancelAnimation(scrollY);
     
     try {
-      const result = await speech.stopAndGetAudio();
+      speech.stop();
+      
+      const lastTranscript = transcriptRef.current;
+      const evalResult = evaluateSpeechLocally(lastTranscript, question.paragraphs);
+      setEvaluation(evalResult);
+      
       if (question.mode === "practice") {
         setState("success");
       } else {
-        if (!result?.base64) throw new Error("No audio recorded");
-        const evalResult = await evaluateParagraphSpeechWithGemini(
-          result.base64,
-          result.mimeType || "audio/m4a",
-          question.paragraphs
-        );
-        setEvaluation(evalResult);
         setState(evalResult.accuracyScore >= 60 ? "success" : "fail");
       }
     } catch (err) {
-      console.warn("Speech error", err);
+      console.warn("Speech evaluation error:", err);
       setState("fail");
     }
   };
@@ -118,24 +174,52 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   };
 
   const micColor = state === "listening" || speech.listening ? L.blue : state === "processing" ? L.blue : state === "success" ? L.green : state === "fail" ? L.red : L.blue;
-  const statusText = state === "processing" ? "Analyzing..." : state === "listening" ? "Listening..." : state === "success" ? (question.mode === "practice" ? "Great job!" : `Score: ${evaluation?.accuracyScore}%`) : state === "fail" ? "Try again" : "Tap Mic to Start";
+  
+  const statusText =
+    state === "processing"
+      ? t("lessons.voiceProcessing")
+      : state === "listening"
+      ? t("lessons.listening")
+      : state === "success"
+      ? (question.mode === "practice"
+        ? t("lessons.nice")
+        : t("lessons.scoreLabel").replace("{score}", String(evaluation?.accuracyScore || 0)))
+      : state === "fail"
+      ? t("lessons.tryAgain")
+      : t("lessons.tapMicSpeak");
+
+  const containerContent = (
+    <Animated.View 
+      style={[styles.scrollContent, state === "listening" ? scrollStyle : null]}
+      onLayout={(e) => setTextHeight(e.nativeEvent.layout.height)}
+    >
+      {renderText()}
+    </Animated.View>
+  );
 
   return (
     <GameRoot style={styles.root}>
       <GameHeader>
-        <LightGameHeading title={question.mode === "quiz" ? "Reading Quiz" : "Reading Practice"} />
+        <LightGameHeading title={question.mode === "quiz" ? t("lessons.readingQuiz") : t("lessons.readingPractice")} />
       </GameHeader>
 
       <View 
         style={styles.teleprompterContainer}
         onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
       >
-        <Animated.View 
-          style={[styles.scrollContent, scrollStyle]}
-          onLayout={(e) => setTextHeight(e.nativeEvent.layout.height)}
-        >
-          {renderText()}
-        </Animated.View>
+        {state === "listening" ? (
+          <View style={{ flex: 1, overflow: "hidden" }}>
+            {containerContent}
+          </View>
+        ) : (
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+            showsVerticalScrollIndicator={true}
+          >
+            {containerContent}
+          </ScrollView>
+        )}
         <View style={styles.gradientOverlayTop} pointerEvents="none" />
         <View style={styles.gradientOverlayBottom} pointerEvents="none" />
       </View>
@@ -154,14 +238,14 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
       {state === "success" || state === "fail" ? (
         <GameFooter delay={100}>
           <LightCheckButton
-            label="Continue"
+            label={t("common.continue")}
             onPress={() => onAnswer(state === "success")}
           />
         </GameFooter>
       ) : (
         <GameFooter delay={120}>
           <AppText style={styles.skipLink} onPress={() => onAnswer("skip")}>
-            Skip for now
+            {t("lessons.skipForNow")}
           </AppText>
         </GameFooter>
       )}
@@ -184,17 +268,17 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   scrollContent: {
-    paddingVertical: 40,
+    paddingVertical: 64,
   },
   paragraphText: {
-    fontSize: 28,
-    lineHeight: 40,
+    fontSize: 22,
+    lineHeight: 30,
     color: "#334155",
     fontFamily: "DINNextRoundedBold",
   },
   wordText: {
-    fontSize: 28,
-    lineHeight: 40,
+    fontSize: 22,
+    lineHeight: 30,
     fontFamily: "DINNextRoundedBold",
   },
   micStage: {

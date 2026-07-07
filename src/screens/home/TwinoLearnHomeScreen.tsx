@@ -17,37 +17,44 @@ import { getLessonBank } from "../../data/content-access";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Fire02Icon, Clock01Icon, Coffee01Icon, Airplane01Icon, LockIcon, Mic01Icon, Settings01Icon, PlayIcon, ArrowRight01Icon, BookOpen02Icon, WavingHand01Icon } from "@hugeicons/core-free-icons";
+import { Fire02Icon, Clock01Icon, Coffee01Icon, Airplane01Icon, LockIcon, Mic01Icon, Settings01Icon, PlayIcon, ArrowRight01Icon, BookOpen02Icon, WavingHand01Icon, CrownIcon } from "@hugeicons/core-free-icons";
 import React, { useCallback, useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { PressableScale } from "../../components/animations";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { tabBarScrollPadding } from "../../constants/layout";
 
 const BRAND_ICON = require("../../../assets/images/logo-compressed.png");
 
-// Safely map Tailwind colors from HTML
-const Colors = {
-  background: "#FFFFFF",
-  foreground: "#0F172A",
-  primary: "#0F172A",
-  secondary: "#0F172A",
-  muted: "#F8FAFC",
-  mutedForeground: "#64748B",
-  border: "#E2E8F0",
-  destructive: "#0F172A",
-  card: "#FFFFFF",
-  cardSurface: "#FFFFFF",
-  borderStrong: "rgba(0,0,0,0.06)",
-  warmBg: "#FFFFFF",
-  darkBg: "#0F172A",
-};
+function getHomeColors(colors: any, isDark: boolean) {
+  return {
+    background: isDark ? '#0F172A' : '#FFFFFF',
+    foreground: isDark ? '#FFFFFF' : '#0F172A',
+    primary: isDark ? '#FFFFFF' : '#0F172A',
+    secondary: isDark ? '#FFFFFF' : '#0F172A',
+    muted: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F8FAFC',
+    mutedForeground: isDark ? '#94A3B8' : '#64748B',
+    border: isDark ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+    destructive: isDark ? '#EF4444' : '#0F172A',
+    card: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+    cardSurface: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+    borderStrong: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.06)',
+    warmBg: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+    darkBg: '#0F172A',
+  };
+}
 
 
 export function TwinoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+
+  const Colors = useMemo(() => getHomeColors(colors, isDark), [colors, isDark]);
+  const { width: screenWidth } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(Colors, isDark, screenWidth), [Colors, isDark, screenWidth]);
 
   const streakDays = useProgressStore((s) => s.streakDays);
   const streetNext = useCurrentProgress().nextLessonPathIndex;
@@ -170,16 +177,31 @@ export function TwinoLearnHomeScreen() {
             Twino
           </AppText>
         </View>
-        <PressableScale
-          style={styles.notificationBtn}
-          onPress={() => {
-            hapticSelection();
-            router.push("/settings");
-          }}
-          scaleDown={0.9}
-        >
-          <HugeiconsIcon icon={Settings01Icon} size={20} color={Colors.foreground} strokeWidth={2.5} />
-        </PressableScale>
+        <View style={styles.headerRight}>
+          <PressableScale
+            style={styles.upgradeBtn}
+            onPress={() => {
+              hapticSelection();
+              router.push("/subscription");
+            }}
+            scaleDown={0.9}
+          >
+            <HugeiconsIcon icon={CrownIcon} size={18} color="#92700A" strokeWidth={2.5} />
+            <AppText style={styles.upgradeBtnText} forceLatinFont latinRole="bold">
+              {isKu ? "نوێکردنەوە" : "Upgrade"}
+            </AppText>
+          </PressableScale>
+          <PressableScale
+            style={styles.notificationBtn}
+            onPress={() => {
+              hapticSelection();
+              router.push("/settings");
+            }}
+            scaleDown={0.9}
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={20} color={Colors.foreground} strokeWidth={2.5} />
+          </PressableScale>
+        </View>
       </View>
       </GsapEnterBlock>
 
@@ -199,7 +221,7 @@ export function TwinoLearnHomeScreen() {
               <AppText style={styles.greetingTitle} forceLatinFont latinRole="bold">
                 {userName ? userName : "Friend"}
               </AppText>
-              <HugeiconsIcon icon={WavingHand01Icon} size={28} color="#0F172A" strokeWidth={2.5} />
+              <HugeiconsIcon icon={WavingHand01Icon} size={28} color={Colors.foreground} strokeWidth={2.5} />
             </View>
           </View>
           </GsapEnterBlock>
@@ -207,7 +229,7 @@ export function TwinoLearnHomeScreen() {
           {/* AI LIVE TUTOR */}
           <GsapEnterBlock index={2}>
           <View style={styles.aiCard}>
-            <View style={[styles.aiCardContent, isKu && { paddingRight: 0, paddingLeft: 100 }]}>
+            <View style={[styles.aiCardContent, isKu ? { paddingRight: 0, paddingLeft: 75 } : { paddingRight: 75, paddingLeft: 0 }]}>
               <View style={[styles.aiBadge, isKu && { alignSelf: "flex-end", flexDirection: "row-reverse" }]}>
                 <View style={styles.aiPulseWrap}>
                   <View style={styles.aiPulsePing} />
@@ -228,7 +250,7 @@ export function TwinoLearnHomeScreen() {
                 onPress={onOpenVoiceTutor}
                 scaleDown={0.96}
               >
-                <HugeiconsIcon icon={Mic01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
+                <HugeiconsIcon icon={Mic01Icon} size={18} color={isDark ? "#0F172A" : "#FFFFFF"} strokeWidth={2.5} />
                 <AppText style={styles.aiCardBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.startConversation")}</AppText>
               </PressableScale>
 
@@ -237,14 +259,14 @@ export function TwinoLearnHomeScreen() {
                 onPress={onOpenPath}
                 scaleDown={0.96}
               >
-                <HugeiconsIcon icon={BookOpen02Icon} size={20} color="#0F172A" strokeWidth={2.5} />
+                <HugeiconsIcon icon={BookOpen02Icon} size={18} color={Colors.foreground} strokeWidth={2.5} />
                 <AppText style={styles.learnBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.learn")}</AppText>
               </PressableScale>
             </View>
             
             <Image 
               source={BRAND_ICON} 
-              style={[styles.aiCardLogo, isKu ? { right: undefined, left: -25 } : { right: -25 }]} 
+              style={[styles.aiCardLogo, isKu ? { right: 'auto', left: -20 } : { right: -20, left: 'auto' }]} 
               contentFit="contain" 
             />
           </View>
@@ -319,7 +341,7 @@ export function TwinoLearnHomeScreen() {
                 </View>
               </View>
               <View style={styles.playBtn}>
-                <HugeiconsIcon icon={PlayIcon} size={14} color="#FFFFFF" strokeWidth={2.5} style={{ marginLeft: 1 }} />
+                <HugeiconsIcon icon={PlayIcon} size={14} color={isDark ? "#0F172A" : "#FFFFFF"} strokeWidth={2.5} style={{ marginLeft: 1 }} />
               </View>
             </PressableScale>
 
@@ -360,7 +382,9 @@ export function TwinoLearnHomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
+  const isSmall = screenWidth < 380;
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -379,13 +403,33 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: isSmall ? 48 : 44,
+    height: isSmall ? 48 : 44,
+    borderRadius: 14,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: isSmall ? 24 : 22,
     color: Colors.foreground,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: isDark ? "rgba(218, 165, 32, 0.15)" : "#FFF8E1",
+    borderWidth: 1.5,
+    borderColor: isDark ? "rgba(218, 165, 32, 0.4)" : "#F5D060",
+  },
+  upgradeBtnText: {
+    fontSize: 13,
+    color: isDark ? "#F5D060" : "#92700A",
   },
   notificationBtn: {
     width: 40,
@@ -422,8 +466,8 @@ const styles = StyleSheet.create({
   aiCard: {
     backgroundColor: Colors.warmBg,
     borderRadius: 28,
-    padding: 24,
-    marginBottom: 32,
+    padding: 18,
+    marginBottom: 24,
     position: "relative",
     overflow: "hidden", // To crop logo if it overflows
     borderWidth: 1.5,
@@ -436,14 +480,12 @@ const styles = StyleSheet.create({
   },
   aiCardContent: {
     zIndex: 2,
-    paddingRight: 100,
   },
   aiCardLogo: {
     position: "absolute",
-    right: -25,
-    top: 0,
-    width: 200,
-    height: 200,
+    top: isSmall ? 8 : 14,
+    width: isSmall ? 160 : 150,
+    height: isSmall ? 160 : 150,
     opacity: 0.9,
     zIndex: 1,
   },
@@ -453,12 +495,12 @@ const styles = StyleSheet.create({
     gap: 8,
     alignSelf: "flex-start",
     backgroundColor: Colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 99,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
-    marginBottom: 20,
+    marginBottom: 14,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -492,59 +534,59 @@ const styles = StyleSheet.create({
     color: Colors.foreground,
   },
   aiCardTitle: {
-    fontSize: 26,
+    fontSize: 21,
     color: Colors.foreground,
-    marginBottom: 12,
-    lineHeight: 32,
+    marginBottom: 8,
+    lineHeight: 28,
   },
   aiCardSub: {
-    fontSize: 15,
+    fontSize: 13.5,
     color: Colors.mutedForeground,
-    lineHeight: 22,
-    marginBottom: 28,
+    lineHeight: 18,
+    marginBottom: 16,
     maxWidth: "100%",
   },
   aiCardBtn: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    width: "100%",
+    flex: 1.6,
   },
   aiCardBtnText: {
-    color: Colors.background,
-    fontSize: 14,
+    color: isDark ? "#0F172A" : "#FFFFFF",
+    fontSize: 13,
   },
   aiCardBtnRow: {
-    flexDirection: "column",
-    gap: 12,
+    flexDirection: "row",
+    gap: 10,
     zIndex: 2,
     width: "100%",
     marginTop: 8,
   },
   learnBtn: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    width: "100%",
+    flex: 1,
   },
   learnBtnText: {
-    color: "#0F172A",
-    fontSize: 14,
+    color: Colors.foreground,
+    fontSize: 13,
   },
   btn3DPrimary: {
-    backgroundColor: "#0F172A",
+    backgroundColor: isDark ? "#FFFFFF" : "#0F172A",
     borderWidth: 1.5,
-    borderColor: "#1E293B",
+    borderColor: isDark ? "#E2E8F0" : "#1E293B",
     borderBottomWidth: 5,
-    borderBottomColor: "#020617",
+    borderBottomColor: isDark ? "#CBD5E1" : "#020617",
   },
   btn3DSecondary: {
     backgroundColor: "#FFFFFF",
@@ -561,9 +603,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#B33E00",
   },
   btnFlat: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#F1F5F9",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
   },
   statsRow: {
     flexDirection: "row",
@@ -723,4 +765,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-});
+  });
+}

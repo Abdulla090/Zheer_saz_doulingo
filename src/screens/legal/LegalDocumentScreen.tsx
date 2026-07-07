@@ -29,9 +29,11 @@ export function LegalDocumentScreen({ docId }: Props) {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { flexDirection: isKu ? "row-reverse" : "row" }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
+          <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
+          </View>
         </Pressable>
         <AppText style={styles.title} forceKurdishFont={isKu} numberOfLines={2}>
           {doc.title}

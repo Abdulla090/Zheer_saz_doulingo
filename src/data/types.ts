@@ -9,6 +9,8 @@ export type VoiceQuestion = {
   prompt: string;
   targetWord: string;
   targetKurdish: string;
+  promptAr?: string;
+  targetArabic?: string;
   imageRequire?: any;
   xp: number;
 };

@@ -4,7 +4,7 @@ import type { RealAnalysis } from "../data/voice-tutor-types";
 
 const STORAGE_KEY = "twino.app.settings";
 
-export type PathMode = "street" | "normal" | "kids" | "custom";
+export type PathMode = "street" | "normal" | "kids";
 export type AppTheme = "light" | "dark" | "system";
 
 interface SettingsState {

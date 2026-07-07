@@ -1,4 +1,5 @@
 import { AppText } from "../../components/ui/AppText";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import { useI18n } from "../../hooks/useI18n";
@@ -56,6 +57,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const avatarUrl = useSettingsStore((s) => s.avatarUrl);
   const setAvatarUrl = useSettingsStore((s) => s.setAvatarUrl);
@@ -291,7 +294,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
       
       {/* HEADER */}
       <GsapEnterBlock index={0}>
@@ -320,6 +323,39 @@ export default function ProfileScreen() {
         }}
         style={{ flex: 1 }}
       >
+        {/* GUEST BANNER */}
+        {!user && (
+          <GsapEnterBlock index={1}>
+            <GlassCard style={styles.guestBannerCard} intensity={40} borderRadius={24}>
+              <View style={styles.guestBannerContent}>
+                <View style={styles.guestBannerHeader}>
+                  <HugeiconsIcon icon={SparklesIcon} size={24} color="#FF9209" strokeWidth={2.5} />
+                  <AppText style={styles.guestBannerTitle} forceLatinFont={!isKu} latinRole="bold">
+                    {isKu ? "پاشەکەوتکردنی پێشکەوتنەکانت!" : "Save Your Progress!"}
+                  </AppText>
+                </View>
+                <AppText style={styles.guestBannerDesc}>
+                  {isKu
+                    ? "ئەکاونتەکەت بە Supabaseـەوە ببەستەرەوە بۆ پاراستنی خاڵەکان، دەستکەوتەکان، و ڕۆژەکانی بەردەوامیت."
+                    : "Connect your account to Supabase to preserve your XP, achievements, and day streaks in the cloud."}
+                </AppText>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={styles.guestLoginBtn}
+                  onPress={() => {
+                    hapticSelection();
+                    router.push("/auth");
+                  }}
+                >
+                  <AppText style={styles.guestLoginBtnText} forceLatinFont={!isKu} latinRole="bold">
+                    {isKu ? "چوونەژوورەوە یان تۆماربوون" : "Sign In / Sign Up"}
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            </GlassCard>
+          </GsapEnterBlock>
+        )}
+
         {/* AVATAR & INFO CARD */}
         <GsapEnterBlock index={1}>
           <GlassCard style={styles.profileCard} intensity={35} borderRadius={24}>
@@ -371,6 +407,11 @@ export default function ProfileScreen() {
                       <HugeiconsIcon icon={Edit01Icon} size={16} color="#64748B" strokeWidth={2.5} />
                     </TouchableOpacity>
                   </View>
+                )}
+                {user?.email && (
+                  <AppText style={styles.userEmailText} forceLatinFont>
+                    {user.email}
+                  </AppText>
                 )}
                 {userAge ? (
                   <AppText style={styles.userSubText}>
@@ -736,10 +777,11 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -754,7 +796,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.foreground,
     letterSpacing: -0.5,
     fontFamily: "DINNextRoundedBold",
   },
@@ -762,18 +804,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.85)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   },
   profileCard: {
     padding: 20,
     marginTop: 10,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderColor: colors.border,
   },
   profileCardTop: {
     flexDirection: "row",
@@ -796,7 +838,7 @@ const styles = StyleSheet.create({
     right: -3,
     borderRadius: 41,
     borderWidth: 3,
-    borderColor: "rgba(255, 255, 255, 0.8)",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.8)",
   },
   avatarTouchable: {
     position: "relative",
@@ -814,7 +856,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "#FFFFFF",
+    borderColor: isDark ? "#1E293B" : "#FFFFFF",
     elevation: 2,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
@@ -830,11 +872,11 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderColor: colors.border,
   },
   customAvatarsTitle: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.mutedForeground,
     marginBottom: 12,
     fontFamily: "DINNextRoundedBold",
   },
@@ -850,10 +892,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "transparent",
-    backgroundColor: "rgba(255, 255, 255, 0.6)",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.6)",
   },
   customAvatarCircleSelected: {
-    borderColor: "#0F172A",
+    borderColor: colors.foreground,
     transform: [{ scale: 1.05 }],
   },
   avatarText: {
@@ -878,15 +920,15 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 6,
     fontSize: 16,
-    color: "#0F172A",
+    color: colors.foreground,
     fontWeight: "bold",
     borderWidth: 1.5,
-    borderColor: "#4F46E5",
+    borderColor: isDark ? "#818CF8" : "#4F46E5",
   },
   editActionBtns: {
     flexDirection: "row",
@@ -896,11 +938,11 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   },
   editIconBtn: {
     padding: 4,
@@ -908,27 +950,72 @@ const styles = StyleSheet.create({
   userNameText: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   userSubText: {
     fontSize: 14,
-    color: "#64748B",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
+  },
+  userEmailText: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    fontFamily: "DINNextRoundedMedium",
+    marginTop: 1,
+  },
+  guestBannerCard: {
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 146, 9, 0.25)",
+    backgroundColor: "rgba(255, 146, 9, 0.05)",
+  },
+  guestBannerContent: {
+    gap: 10,
+  },
+  guestBannerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  guestBannerTitle: {
+    fontSize: 18,
+    color: "#D97706",
+    fontFamily: "DINNextRoundedBold",
+  },
+  guestBannerDesc: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    lineHeight: 18,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  guestLoginBtn: {
+    backgroundColor: "#D97706",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  guestLoginBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontFamily: "DINNextRoundedBold",
   },
   pathBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     marginTop: 4,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   },
   pathBadgeText: {
     fontSize: 12,
-    color: "#475569",
+    color: colors.mutedForeground,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -938,8 +1025,8 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.4)",
   },
   mascotLeftCol: {
     flex: 1,
@@ -947,18 +1034,18 @@ const styles = StyleSheet.create({
   },
   mascotCardTitle: {
     fontSize: 16,
-    color: "#0F172A",
+    color: colors.foreground,
   },
   mascotCardSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
     lineHeight: 16,
   },
   poseIndicator: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(79, 70, 229, 0.15)" : "#EEF2FF",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -967,7 +1054,7 @@ const styles = StyleSheet.create({
   },
   poseIndicatorText: {
     fontSize: 10,
-    color: "#4F46E5",
+    color: isDark ? "#818CF8" : "#4F46E5",
   },
   mascotRightCol: {
     width: 110,
@@ -978,7 +1065,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
   },
   levelProgressContainer: {
     flexDirection: "row",
@@ -996,12 +1083,12 @@ const styles = StyleSheet.create({
   },
   levelNumberText: {
     fontSize: 28,
-    color: "#0F172A",
+    color: colors.foreground,
     lineHeight: 32,
   },
   levelLabelText: {
     fontSize: 10,
-    color: "#64748B",
+    color: colors.mutedForeground,
     letterSpacing: 0.5,
   },
   levelProgressTextCol: {
@@ -1010,17 +1097,17 @@ const styles = StyleSheet.create({
   },
   levelProgressHeading: {
     fontSize: 16,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   levelProgressSub: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
     lineHeight: 16,
   },
   xpBadgeRow: {
     alignSelf: "flex-start",
-    backgroundColor: "#E6F4FF",
+    backgroundColor: isDark ? "rgba(9, 88, 217, 0.15)" : "#E6F4FF",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -1028,7 +1115,7 @@ const styles = StyleSheet.create({
   },
   xpTextCount: {
     fontSize: 12,
-    color: "#0958D9",
+    color: isDark ? "#60A5FA" : "#0958D9",
   },
   statsGrid: {
     flexDirection: "row",
@@ -1068,13 +1155,13 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 22,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     zIndex: 1,
   },
   statLabel: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
     zIndex: 1,
   },
@@ -1082,7 +1169,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
   },
   weeklyChartRow: {
     flexDirection: "row",
@@ -1098,7 +1185,7 @@ const styles = StyleSheet.create({
   chartBarTrack: {
     width: 14,
     height: 60,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
     borderRadius: 99,
     overflow: "hidden",
     justifyContent: "flex-end",
@@ -1120,14 +1207,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   pathsCard: {
     padding: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
   },
   pathRow: {
     flexDirection: "row",
@@ -1139,10 +1226,10 @@ const styles = StyleSheet.create({
   },
   pathRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.05)",
+    borderBottomColor: colors.border,
   },
   activePathRow: {
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.4)",
   },
   pathIconWrapper: {
     width: 40,
@@ -1153,11 +1240,11 @@ const styles = StyleSheet.create({
   },
   pathRowTitle: {
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.foreground,
   },
   pathRowLessonsCount: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
   },
   activePathBadge: {
     paddingHorizontal: 8,
@@ -1179,13 +1266,13 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
   },
   lockedAchievement: {
     opacity: 0.75,
   },
   selectedAchievementBorder: {
-    borderColor: "#4F46E5",
+    borderColor: isDark ? "#818CF8" : "#4F46E5",
   },
   achievementIconBox: {
     width: 52,
@@ -1200,12 +1287,12 @@ const styles = StyleSheet.create({
   },
   achievementTitle: {
     fontSize: 15,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   achievementDesc: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
   },
   unlockedDot: {
@@ -1218,7 +1305,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#E2E8F0",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1226,8 +1313,8 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: "rgba(79, 70, 229, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderColor: isDark ? "rgba(129, 140, 248, 0.4)" : "rgba(79, 70, 229, 0.3)",
+    backgroundColor: isDark ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.9)",
   },
   detailHeader: {
     flexDirection: "row",
@@ -1244,7 +1331,7 @@ const styles = StyleSheet.create({
   },
   detailTitle: {
     fontSize: 16,
-    color: "#0F172A",
+    color: colors.foreground,
     flex: 1,
   },
   closeDetailBtn: {
@@ -1252,7 +1339,7 @@ const styles = StyleSheet.create({
   },
   detailDesc: {
     fontSize: 13,
-    color: "#475569",
+    color: colors.mutedForeground,
     lineHeight: 18,
     marginBottom: 12,
   },
@@ -1263,7 +1350,7 @@ const styles = StyleSheet.create({
   },
   detailStatusText: {
     fontSize: 13,
-    color: "#4F46E5",
+    color: isDark ? "#818CF8" : "#4F46E5",
   },
   rewardBadge: {
     paddingHorizontal: 10,
@@ -1280,24 +1367,25 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
   },
   activityIconBox: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
     alignItems: "center",
     justifyContent: "center",
   },
   activityTitle: {
     fontSize: 14,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   activityDesc: {
     fontSize: 12,
-    color: "#64748B",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
   },
-});
+  });
+}

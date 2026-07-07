@@ -13,7 +13,7 @@ import Animated, {
 
 const C = HomePalette;
 
-const PATH_ACCENTS: Record<PathMode, string> = {
+const PATH_ACCENTS: Record<string, string> = {
   street: C.blue,
   normal: "#475569",
   kids: C.grayLight,

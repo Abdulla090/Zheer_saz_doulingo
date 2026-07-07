@@ -8,7 +8,7 @@ export const CONVERSATION_TIER_ORDER: AnswerTier[] = [
 ];
 
 export function tierPasses(tier: AnswerTier): boolean {
-  return tier === "great" || tier === "good";
+  return tier === "great";
 }
 
 export function buildConversationOptionTiers(entry: {
@@ -19,8 +19,8 @@ export function buildConversationOptionTiers(entry: {
 }): Record<string, AnswerTier> {
   return {
     [entry.correct]: "great",
-    [entry.wrong1]: "good",
-    [entry.wrong2]: "bad",
+    [entry.wrong1]: "terrible",
+    [entry.wrong2]: "terrible",
     [entry.wrong3]: "terrible",
   };
 }
@@ -33,10 +33,10 @@ export function tierFeedbackKey(tier: AnswerTier): `lessons.tierFeedback${Capita
   return `lessons.tierFeedback${tier.charAt(0).toUpperCase()}${tier.slice(1)}` as `lessons.tierFeedback${Capitalize<AnswerTier>}`;
 }
 
-/** Best → worst: strong green, light green, amber, red. */
+/** Best → worst: green for correct, red for all incorrect. */
 export const TIER_COLORS = {
   great: { accent: "#58CC02", deep: "#46A302", bg: "#E7F9E0" },
-  good: { accent: "#8FD14F", deep: "#6BA832", bg: "#F0FAE8" },
-  bad: { accent: "#F5A623", deep: "#C47D00", bg: "#FFF4E0" },
+  good: { accent: "#FF4B4B", deep: "#E53838", bg: "#FFE8E8" },
+  bad: { accent: "#FF4B4B", deep: "#E53838", bg: "#FFE8E8" },
   terrible: { accent: "#FF4B4B", deep: "#E53838", bg: "#FFE8E8" },
 } as const;

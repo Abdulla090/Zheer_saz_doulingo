@@ -31,18 +31,18 @@ import type { UnitBank } from "../types";
 export const NORMAL_UNITS: UnitBank[] = [
   unit0BasicGreetingsAndIntroductions, // Unit 1 (A1)
   unit0bElementarySituations,         // Unit 2 (A1-A2)
-  unit1EverydayEssentials,            // Unit 3 (A2)
-  unit11MoneyShopping,                // Unit 4 (A2)
-  unit6TravelAndExploring,            // Unit 5 (A2-B1)
-  unit14FoodDiningStorytelling,       // Unit 6 (A2-B1 - New)
-  unit2SocialAndDailyLife,            // Unit 7 (B1)
-  unit9Relationships,                 // Unit 8 (B1-B2)
-  unit8DigitalLife,                   // Unit 9 (B1-B2)
-  unit15LogicPlansHypotheticals,      // Unit 10 (B2 - New)
-  unit3WorkAndBusiness,               // Unit 11 (B2)
-  unit10HealthEmergencies,            // Unit 12 (B2)
+  unit11MoneyShopping,                // Unit 3 (A2)
+  unit14FoodDiningStorytelling,       // Unit 4 (A2)
+  unit1EverydayEssentials,            // Unit 5 (A2-B1)
+  unit2SocialAndDailyLife,            // Unit 6 (B1)
+  unit8DigitalLife,                   // Unit 7 (B1)
+  unit9Relationships,                 // Unit 8 (B1)
+  unit6TravelAndExploring,            // Unit 9 (B1-B2)
+  unit10HealthEmergencies,            // Unit 10 (B1-B2)
+  unit15LogicPlansHypotheticals,      // Unit 11 (B2)
+  unit3WorkAndBusiness,               // Unit 12 (B2)
   unit13OpinionsAndConfidence,        // Unit 13 (B2-C1)
-  unit16ScienceMediaModernIssues,     // Unit 14 (B2-C1 - New)
+  unit16ScienceMediaModernIssues,     // Unit 14 (B2-C1)
   unit7IdiomsAndSlang,                // Unit 15 (C1)
   unit4DeepConversations,             // Unit 16 (C1)
   unit12RealWorldMastery,             // Unit 17 (C1-C2)
@@ -88,7 +88,11 @@ const BASE_PATTERN: LessonType[] = [
 
 /** Build normal-English path sections from persisted progress (0 = first lesson current). */
 export function getSkippedUnitsCount(level: number): number {
-  return 0; // Disabled skipping for developer testing
+  if (level <= 2) return 0;
+  if (level <= 4) return 2;
+  if (level <= 6) return 5;
+  if (level <= 8) return 10;
+  return 14;
 }
 
 export function buildNormalSectionData(

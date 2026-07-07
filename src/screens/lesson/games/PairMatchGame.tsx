@@ -219,8 +219,8 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
         <LightGameHeading title={t("lessons.pairWords")} />
       </GameHeader>
 
-      <View style={[s.progressRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-        <View style={[s.progressTrack, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={s.progressRow}>
+        <View style={s.progressTrack}>
           {Array.from({ length: total }).map((_, i) => (
             <View
               key={i}
@@ -237,7 +237,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
       </View>
 
       <View style={s.boardArea}>
-        <View style={[s.colLabels, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={s.colLabels}>
           <AppText style={[LightType.label, s.colLabel]} forceKurdishFont>
             کوردی
           </AppText>
@@ -246,7 +246,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
           </AppText>
         </View>
 
-        <View style={[s.board, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={s.board}>
           <View style={s.column}>
             {left.map((lw, i) => (
               <MatchChip

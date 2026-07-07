@@ -172,7 +172,8 @@ function FloatingBubble({
   );
 }
 export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
-  const { t, isKu: isSystemKu } = useI18n();
+  const { t, isKu: isSystemKu, isAr } = useI18n();
+  const rtl = isSystemKu || isAr;
   const { speak } = useTTS();
   const firedRef = useRef(false);
   const heading = variantHeading(question.variant, t);
@@ -383,7 +384,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const renderChoicesGrid = (floating?: boolean) => (
-    <View style={[kb.grid, floating && kb.bubbleRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
+    <View style={[kb.grid, floating && kb.bubbleRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
       {question.choices.map((c, i) =>
         floating ? (
           <FloatingBubble
@@ -468,7 +469,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
 
       {question.variant === "shadow" ? (
         <View style={kb.shadowArea}>
-          <View style={[kb.chipRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
+          <View style={[kb.chipRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
             {question.choices.map((c) => {
               const used = Object.values(shadowPicks).includes(c.id);
               return (
@@ -484,7 +485,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               );
             })}
           </View>
-          <View style={[kb.slotRow, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
+          <View style={[kb.slotRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
             {slots.map((slotId) => {
               const chip = question.choices.find((c) => c.id === slotId);
               const placed = shadowPicks[slotId];
@@ -539,7 +540,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               </AppText>
             </View>
           </HomeLiquidCard>
-          <View style={[kb.trickBtns, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}>
+          <View style={[kb.trickBtns, { flexDirection: rtl ? "row-reverse" : "row" }]}>
             <Animated.View style={[yesStyle, { flex: 1 }]}>
               <Pressable
                 onPressIn={() => { yesScale.value = withSpring(0.92, { damping: 10 }); }}
@@ -605,7 +606,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                 <Pressable
                   key={c.id}
                   onPress={() => pickChoice(c.id)}
-                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: isSystemKu ? "row-reverse" : "row" }]}
+                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: rtl ? "row-reverse" : "row" }]}
                 >
                   <AppText style={kb.audioLabel} forceLatinFont>
                     {c.label}

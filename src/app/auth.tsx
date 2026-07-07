@@ -1,7 +1,7 @@
 import { AppText } from "../components/ui/AppText";
 import { useI18n } from "../hooks/useI18n";
 import { supabase } from "../lib/supabase";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   Mail01Icon,
@@ -29,6 +29,7 @@ import { useFontStore } from "../stores/useFontStore";
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { redirect, showSkip } = useLocalSearchParams<{ redirect?: string; showSkip?: string }>();
   const { isKu } = useI18n();
   const { selectedFont } = useFontStore();
 
@@ -105,7 +106,7 @@ export default function AuthScreen() {
             isKu ? "ئەکاونتەکەت دروستکرا و بە سەرکەوتوویی چوویە ژوورەوە." : "Your account was successfully created and you are now signed in.",
             "success"
           );
-          setTimeout(() => router.replace("/more"), 1500);
+          setTimeout(() => router.replace((redirect as any) || "/more"), 1500);
         } else {
           showModal(
             isKu ? "تۆماربوون سەرکەوتوو بوو!" : "Account Created!",
@@ -129,7 +130,7 @@ export default function AuthScreen() {
           isKu ? "بە سەرکەوتوویی چوویە ژوورەوە." : "You have logged in successfully.",
           "success"
         );
-        setTimeout(() => router.replace("/more"), 1000);
+        setTimeout(() => router.replace((redirect as any) || "/more"), 1000);
       }
     } catch (err: any) {
       console.error("Auth error:", err);
@@ -311,6 +312,19 @@ export default function AuthScreen() {
                 </AppText>
               )}
             </TouchableOpacity>
+
+            {/* Skip / Guest Play Button */}
+            {showSkip === "true" && (
+              <TouchableOpacity
+                style={styles.guestButton}
+                onPress={() => router.replace((redirect as any) || "/(tabs)")}
+                activeOpacity={0.7}
+              >
+                <AppText style={styles.guestButtonText} forceKurdishFont={isKu}>
+                  {isKu ? "وەک میوان بەردەوام بە" : "Continue as Guest"}
+                </AppText>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -561,5 +575,20 @@ const styles = StyleSheet.create({
   modalCloseBtnText: {
     color: "#FAFAFA",
     fontSize: 13.5,
+  },
+  guestButton: {
+    height: 42,
+    borderWidth: 1,
+    borderColor: "#E4E4E7",
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
+    marginTop: 10,
+  },
+  guestButtonText: {
+    color: "#71717A",
+    fontSize: 14,
+    fontFamily: "DINNextRoundedBold",
   },
 });

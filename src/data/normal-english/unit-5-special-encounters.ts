@@ -9,10 +9,10 @@ const normalUnit04: UnitBank = [
   {
     topic: "At the Bank", topicKu: "لە بانک", topicAr: "في البنك",
     words: [
-      { english: "Open an account",      kurdish: "کردنەوەی هەژمار (حساب)", arabic: "فتح حساب" },
+      { english: "Open an account",      kurdish: "کردنەوەی هەژمار (حیساب)", arabic: "فتح حساب" },
       { english: "Transfer money",       kurdish: "حەواڵەکردنی پارە", arabic: "تحويل الأموال" },
       { english: "Interest rate",        kurdish: "ڕێژەی سوود", arabic: "سعر الفائدة" },
-      { english: "Make a deposit",       kurdish: "دانانی پارە لە هەژماردا", arabic: "إيداع الأموال" },
+      { english: "Make a deposit",       kurdish: "خستنە سەر هەژمار (ئیداع)", arabic: "إيداع الأموال" },
       { english: "Withdraw cash",        kurdish: "ڕاکێشانی پارە (بە کاش)", arabic: "سحب النقود" },
     ],
     voices: [
@@ -24,8 +24,8 @@ const normalUnit04: UnitBank = [
       { english: ["What", "is", "the", "interest", "rate", "for", "a", "loan"], kurdish: "ڕێژەی سوود بۆ قەرزێک چەندە؟", arabic: "ما هو سعر الفائدة للقرض؟" },
     ],
     fillBlanks: [
-      { parts: ["I need to", "some cash from the ATM."], hint: "پێویستە کەمێک پارە (بە کاش) لە ئامێری ئەی تی ئێم ڕابکێشم.", answer: "withdraw", wrongs: ["take", "get", "pull"] },
-      { parts: ["I want to", "a new checking account."], hint: "دەمەوێت هەژمارێکی نوێی جاری بکەمەوە.", answer: "open", wrongs: ["make", "start", "create"] },
+      { parts: ["I need to", "some cash from the ATM."], hint: "پێویستە کەمێک پارە (بە کاش) لە ئامێری ئەی تی ئێم ڕابکێشم.", answer: "withdraw", wrongs: ["take", "get", "pull"], arabicHint: "أحتاج إلى سحب بعض النقود من ماكينة الصراف الآلي.", arabicParts: ["أحتاج إلى","بعض النقود من ماكينة الصراف الآلي."], arabicAnswer: "سحب", arabicWrongs: ["أخذ","حصول","جر"] },
+      { parts: ["I want to", "a new checking account."], hint: "دەمەوێت هەژمارێکی نوێی جاری بکەمەوە.", answer: "open", wrongs: ["make", "start", "create"], arabicHint: "أريد فتح حساب جاري جديد.", arabicParts: ["أريد","حساب جاري جديد."], arabicAnswer: "فتح", arabicWrongs: ["صنع","بدء","إنشاء"] },
     ],
     conversations: [
       { situation: "چوونە بانک بۆ ڕاکێشانی پارە", theyAsk: "How can I help you today, sir?", correct: "I would like to withdraw five hundred dollars from my savings account, please.", wrong1: "Give me 500 dollars from my money.", wrong2: "I want to take cash from my save.", wrong3: "I need to pull 500 dollars out.", explanation: "'Withdraw' وشەی فەرمی و دروستە بۆ ڕاکێشانی پارە لە بانک", situationAr: "الذهاب إلى البنك لسحب الأموال", explanationAr: "'Withdraw' هي الكلمة الرسمية والصحيحة لسحب الأموال من البنك." },
@@ -39,7 +39,7 @@ const normalUnit04: UnitBank = [
       { english: "Sign the lease",       kurdish: "واژۆکردنی گرێبەستی کرێ", arabic: "توقيع عقد الإيجار" },
       { english: "Security deposit",     kurdish: "پارەی بارمتە (تەئمینات)", arabic: "تأمين الإيجار" },
       { english: "Are utilities included", kurdish: "ئایا خزمەتگوزارییەکان (ئاو/کارەبا) لەگەڵدایە؟", arabic: "هل الخدمات مشمولة؟" },
-      { english: "Fully furnished",      kurdish: "بەتەواوی کەلوپەلی تێدایە (موبەلیغە)", arabic: "مفروشة بالكامل" },
+      { english: "Fully furnished",      kurdish: "ئەساسی تێدایە (موئەسەس)", arabic: "مفروشة بالكامل" },
       { english: "Give notice",          kurdish: "ئاگادارکردنەوەی پێشوەختە (بۆ چۆڵکردن)", arabic: "إعطاء إشعار مسبق" },
     ],
     voices: [
@@ -51,8 +51,8 @@ const normalUnit04: UnitBank = [
       { english: ["You", "must", "give", "thirty", "days", "notice", "before", "leaving"], kurdish: "دەبێت سی ڕۆژ پێشوەختە ئاگاداری بدەیت پێش چۆڵکردن", arabic: "يجب عليك إعطاء إشعار قبل ثلاثين يومًا من المغادرة" },
     ],
     fillBlanks: [
-      { parts: ["Is the apartment fully", "or empty?"], hint: "ئایا شوقەکە بەتەواوی کەلوپەلی تێدایە یان بەتاڵە؟", answer: "furnished", wrongs: ["filled", "ready", "done"] },
-      { parts: ["I need to pay the first month's rent and the security", "."], hint: "پێویستە کرێی مانگی یەکەم و پارەی بارمتەکە بدەم.", answer: "deposit", wrongs: ["money", "payment", "cash"] },
+      { parts: ["Is the apartment fully", "or empty?"], hint: "ئایا شوقەکە بەتەواوی کەلوپەلی تێدایە یان بەتاڵە؟", answer: "furnished", wrongs: ["filled", "ready", "done"], arabicHint: "هل الشقة مفروشة بالكامل أم فارغة؟", arabicParts: ["هل الشقة","بالكامل أم فارغة؟"], arabicAnswer: "مفروشة", arabicWrongs: ["ممتلئة","جاهزة","منتهية"] },
+      { parts: ["I need to pay the first month's rent and the security", "."], hint: "پێویستە کرێی مانگی یەکەم و پارەی بارمتەکە بدەم.", answer: "deposit", wrongs: ["money", "payment", "cash"], arabicHint: "أحتاج إلى دفع إيجار الشهر الأول ومبلغ التأمين.", arabicParts: ["أحتاج إلى دفع إيجار الشهر الأول ومبلغ","."], arabicAnswer: "التأمين", arabicWrongs: ["المال","الدفع","النقد"] },
     ],
     conversations: [
       { situation: "سەیرکردنی شوقەیەک بۆ کرێکردن", theyAsk: "So, what do you think of the apartment?", correct: "It looks great, but I have a question. Are utilities included, or do I pay for electricity separately?", wrong1: "Does it have water and power free?", wrong2: "I want to know if I pay for lights.", wrong3: "Is electricity in the money?", explanation: "'Are utilities included?' پرسیارێکی زۆر ستانداردە کاتێک شوقەیەک بەکرێ دەگریت بۆ زانینی تێچووەکانی ئاو و کارەبا و هتد", situationAr: "مشاهدة شقة للإيجار", explanationAr: "'Are utilities included?' هو سؤال قياسي جدًا عند استئجار شقة لمعرفة تكاليف الماء والكهرباء وما إلى ذلك." },
@@ -65,7 +65,7 @@ const normalUnit04: UnitBank = [
     words: [
       { english: "My car broke down",    kurdish: "ئۆتۆمبێلەکەم پەکی کەوت", arabic: "تعطلت سيارتي" },
       { english: "Flat tire",            kurdish: "تایەی تەقیو / پەنجەر", arabic: "إطار مثقوب / بنشر" },
-      { english: "Making a weird noise", kurdish: "دەنگێکی ��ەیر دەردەکات", arabic: "يصدر صوتًا غريبًا" },
+      { english: "Making a weird noise", kurdish: "دەنگێکی سەیر دەدات", arabic: "يصدر صوتًا غريبًا" },
       { english: "Needs an oil change",  kurdish: "پێویستی بە گۆڕینی ڕۆنە", arabic: "يحتاج إلى تغيير زيت" },
       { english: "Tow truck",            kurdish: "ئۆتۆمبێلی ڕاکێشان (کڕێن)", arabic: "شاحنة سحب (ونش)" },
     ],
@@ -78,8 +78,8 @@ const normalUnit04: UnitBank = [
       { english: ["I", "think", "it", "needs", "an", "oil", "change", "soon"], kurdish: "پێم وایە بە زوویی پێویستی بە گۆڕینی ڕۆن هەیە", arabic: "أعتقد أنها تحتاج إلى تغيير زيت قريبًا" },
     ],
     fillBlanks: [
-      { parts: ["My car", "down in the middle of nowhere."], hint: "ئۆتۆمبێلەکەم لە شوێنێکی چۆڵدا پەکی کەوت.", answer: "broke", wrongs: ["stopped", "died", "failed"] },
-      { parts: ["The brakes are making a", "noise."], hint: "برێکەکان دەنگێکی سەیر دەردەکەن.", answer: "weird", wrongs: ["bad", "loud", "wrong"] },
+      { parts: ["My car", "down in the middle of nowhere."], hint: "ئۆتۆمبێلەکەم لە شوێنێکی چۆڵدا پەکی کەوت.", answer: "broke", wrongs: ["stopped", "died", "failed"], arabicHint: "تعطلت سيارتي في مكان ناءٍ.", arabicParts: ["سيارتي","في مكان ناءٍ."], arabicAnswer: "تعطلت", arabicWrongs: ["توقفت","ماتت","فشلت"] },
+      { parts: ["The brakes are making a", "noise."], hint: "برێکەکان دەنگێکی سەیر دەردەکەن.", answer: "weird", wrongs: ["bad", "loud", "wrong"], arabicHint: "الفرامل تصدر صوتاً غريباً.", arabicParts: ["الفرامل تصدر صوتاً","."], arabicAnswer: "غريباً", arabicWrongs: ["سيئاً","عالياً","خاطئاً"] },
     ],
     conversations: [
       { situation: "لە شوێنی چاککردنەوەی ئۆتۆمبێل (گەراج)", theyAsk: "What seems to be the problem with the vehicle?", correct: "It's making a weird noise when I brake, and I think it also needs an oil change.", wrong1: "Car goes squeak when stop.", wrong2: "Make sound bad and I want oil.", wrong3: "Fix the noise and change the oil.", explanation: "'Making a weird noise' باشترین ڕێگەیە بۆ وەسفکردنی کێشەیەک کە ناتوانیت دەستن��شانی بکەیت", situationAr: "في ورشة تصليح السيارات (الكراج)", explanationAr: "'Making a weird noise' هي أفضل طريقة لوصف مشكلة لا يمكنك تحديدها." },
@@ -90,7 +90,7 @@ const normalUnit04: UnitBank = [
   {
     topic: "Personal Finances", topicKu: "دارایی کەسی", topicAr: "المالية الشخصية",
     words: [
-      { english: "Living paycheck to paycheck", kurdish: "ژیان بەسەربردن لە مووچە بۆ مووچە (بەبێ پاشەکەوت)", arabic: "العيش من راتب إلى راتب" },
+      { english: "Living paycheck to paycheck", kurdish: "ژیان بەسەربردن لە مووچە بۆ مووچە (هیچ نامێنێتەوە)", arabic: "العيش من راتب إلى راتب" },
       { english: "Stick to a budget",    kurdish: "پابەندبوون بە بودجەوە (خەرجنەکردنی زیاتر لە سنوور)", arabic: "الالتزام بالميزانية" },
       { english: "Pay off debt",         kurdish: "دانەوەی قەرز", arabic: "سداد الديون" },
       { english: "Cut back on expenses", kurdish: "کەمکردنەوەی خەرجییەکان", arabic: "تقليل النفقات" },
@@ -105,8 +105,8 @@ const normalUnit04: UnitBank = [
       { english: ["I", "am", "trying", "to", "stick", "to", "a", "strict", "budget"], kurdish: "هەوڵدەدەم پابەند بم بە بودجەیەکی توندەوە", arabic: "أحاول الالتزام بميزانية صارمة" },
     ],
     fillBlanks: [
-      { parts: ["Everyone should have an", "fund for unexpected costs."], hint: "هەموو کەسێک پێویستە سندووقی ��اری لەناکاوی هەبێت بۆ تێچووە چاوەڕواننەکراوەکان.", answer: "emergency", wrongs: ["extra", "save", "backup"] },
-      { parts: ["I need to cut", "on eating out so much."], hint: "پێویستە نانخواردنی دەرەوە کەم بکەمەوە.", answer: "back", wrongs: ["down", "off", "out"] },
+      { parts: ["Everyone should have an", "fund for unexpected costs."], hint: "هەموو کەسێک پێویستە سندووقی ��اری لەناکاوی هەبێت بۆ تێچووە چاوەڕواننەکراوەکان.", answer: "emergency", wrongs: ["extra", "save", "backup"], arabicHint: "يجب أن يكون لدى الجميع صندوق طوارئ للتكاليف غير المتوقعة.", arabicParts: ["يجب أن يكون لدى الجميع صندوق","للتكاليف غير المتوقعة."], arabicAnswer: "طوارئ", arabicWrongs: ["إضافي","توفير","احتياطي"] },
+      { parts: ["I need to cut", "on eating out so much."], hint: "پێویستە نانخواردنی دەرەوە کەم بکەمەوە.", answer: "back", wrongs: ["down", "off", "out"], arabicHint: "أحتاج إلى التقليل من تناول الطعام في الخارج كثيراً.", arabicParts: ["أحتاج إلى","من تناول الطعام في الخارج كثيراً."], arabicAnswer: "التقليل", arabicWrongs: ["الخفض","الإيقاف","القطع"] },
     ],
     conversations: [
       { situation: "قسەکردن لەگەڵ هاوڕێیەک دەربارەی پاشەکەوتکردن", theyAsk: "Do you want to go to that expensive concert next week?", correct: "I'd love to, but I'm trying to stick to a budget and pay off my debt. I really need to cut back on expenses.", wrong1: "I have no money, I am poor.", wrong2: "Concert is too much money for me.", wrong3: "I don't want to spend cash.", explanation: "'Stick to a budget' و 'cut back on expenses' ڕێگەیەکی زۆر مۆدێرن و باون بۆ باسکردنی ڕێکخستنی دارایی", situationAr: "التحدث مع صديق حول الادخار", explanationAr: "'Stick to a budget' و 'cut back on expenses' هما طريقتان حديثتان وشائعتان جدًا للحديث عن تنظيم الشؤون المالية." },
@@ -132,8 +132,8 @@ const normalUnit04: UnitBank = [
       { english: ["Can", "you", "provide", "a", "description", "of", "the", "man"], kurdish: "دەتوانیت وەسفی پیاوەکە بکەیت؟", arabic: "هل يمكنك تقديم وصف للرجل؟" },
     ],
     fillBlanks: [
-      { parts: ["My phone was", "on the train this morning."], hint: "مۆبایلەکەم دزرا لەسەر شەمەندەفەرەکە ئەم بەیانییە.", answer: "stolen", wrongs: ["robbed", "taken", "lost"] },
-      { parts: ["Please fill", "this incident form."], hint: "تکایە ئەم فۆڕمی ڕووداوە پڕ بکەرەوە.", answer: "out", wrongs: ["in", "up", "down"] },
+      { parts: ["My phone was", "on the train this morning."], hint: "مۆبایلەکەم دزرا لەسەر شەمەندەفەرەکە ئەم بەیانییە.", answer: "stolen", wrongs: ["robbed", "taken", "lost"], arabicHint: "سُرق هاتفي في القطار هذا الصباح.", arabicParts: ["هاتفي","في القطار هذا الصباح."], arabicAnswer: "سُرق", arabicWrongs: ["نُهب","أُخذ","فُقد"] },
+      { parts: ["Please fill", "this incident form."], hint: "تکایە ئەم فۆڕمی ڕووداوە پڕ بکەرەوە.", answer: "out", wrongs: ["in", "up", "down"], arabicHint: "يرجى ملء نموذج الحادث هذا.", arabicParts: ["يرجى","نموذج الحادث هذا."], arabicAnswer: "ملء", arabicWrongs: ["إدخال","رفع","إنزال"] },
     ],
     conversations: [
       { situation: "لە بنکەی پۆلیس", theyAsk: "How can we assist you today?", correct: "I'd like to report a theft. My wallet was stolen while I was at the cafe.", wrong1: "Someone take my money.", wrong2: "I lost wallet. Find it.", wrong3: "Thief stole my bag.", explanation: "'I'd like to report a theft/crime' شێوازی دروستی قسەکردنە لەگەڵ پۆلیس", situationAr: "في مركز الشرطة", explanationAr: "'I'd like to report a theft/crime' هي الطريقة الصحيحة للتحدث مع الشرطة." },
@@ -146,7 +146,7 @@ const normalUnit04: UnitBank = [
     words: [
       { english: "Falling behind",       kurdish: "دواکەوتن لە خوێندن (لاوازبوون)", arabic: "التأخر في الدراسة" },
       { english: "Paying attention",     kurdish: "سەرنجدان / ئاگاداربوون لە پۆل", arabic: "الانتباه في الصف" },
-      { english: "Room for improvement", kurdish: "بواری بەرەوپێشچوون ماوە", arabic: "مجال للتحسين" },
+      { english: "Room for improvement", kurdish: "هێشتا بواری بەرەوپێشچوونی هەیە", arabic: "مجال للتحسين" },
       { english: "Gets along well with", kurdish: "پەیوەندی باشە لەگەڵ (هاوڕێیەتیان دەکات)", arabic: "يتعايش جيدًا مع" },
       { english: "Reaching their potential", kurdish: "گەیشتن بەو ئاستەی کە توانای هەیە", arabic: "الوصول إلى إمكاناتهم" },
     ],
@@ -159,8 +159,8 @@ const normalUnit04: UnitBank = [
       { english: ["There", "is", "definitely", "room", "for", "improvement"], kurdish: "بێگومان هێشتا بواری بەرەوپێشچوون ماوە", arabic: "بالتأكيد هناك مجال للتحسين" },
     ],
     fillBlanks: [
-      { parts: ["Your daughter gets", "very well with her classmates."], hint: "کچەکەت زۆر بەباشی هەڵدەکات لەگەڵ هاوپۆلەکانی.", answer: "along", wrongs: ["on", "with", "around"] },
-      { parts: ["He is bright, but he is falling", "in reading."], hint: "ئەو زیرەکە، بەڵام لە خوێندنەوەدا دواکەوتووە.", answer: "behind", wrongs: ["back", "down", "off"] },
+      { parts: ["Your daughter gets", "very well with her classmates."], hint: "کچەکەت زۆر بەباشی هەڵدەکات لەگەڵ هاوپۆلەکانی.", answer: "along", wrongs: ["on", "with", "around"], arabicHint: "ابنتك تنسجم جيداً مع زملائها في الصف.", arabicParts: ["ابنتك","جيداً مع زملائها في الصف."], arabicAnswer: "تنسجم", arabicWrongs: ["تستمر","مع","حول"] },
+      { parts: ["He is bright, but he is falling", "in reading."], hint: "ئەو زیرەکە، بەڵام لە خوێندنەوەدا دواکەوتووە.", answer: "behind", wrongs: ["back", "down", "off"], arabicHint: "إنه ذكي، لكنه يتأخر في القراءة.", arabicParts: ["إنه ذكي، لكنه","في القراءة."], arabicAnswer: "يتأخر", arabicWrongs: ["يرجع","ينزل","يسقط"] },
     ],
     conversations: [
       { situation: "قسەکردن لەگەڵ مامۆستای منداڵەکەت", theyAsk: "Do you have any specific concerns about Leo's progress?", correct: "Yes, I'm worried he might be falling behind in Science. Is he paying attention in class?", wrong1: "Is he bad at science?", wrong2: "Why he don't study science?", wrong3: "Does he sleep in class?", explanation: "'Falling behind' و 'paying attention' زاراوەی پەروەردەیی زۆر باون لەم کۆبوونەوانەدا", situationAr: "التحدث مع معلم طفلك", explanationAr: "'Falling behind' و 'paying attention' مصطلحات تعليمية شائعة جدًا في هذه الاجتماعات." },
@@ -186,8 +186,8 @@ const normalUnit04: UnitBank = [
       { english: ["Could", "you", "add", "some", "layers", "in", "the", "back"], kurdish: "دەتوانیت لە دواوە بە شێوەی چین چین بیبڕیت؟", arabic: "هل يمكنك إضافة بعض الطبقات في الخلف؟" },
     ],
     fillBlanks: [
-      { parts: ["I just want a", ", nothing too crazy."], hint: "تەنها ڕێکخستنێک (کەمێک کورتکردنەوەم) دەوێت، شتێکی زۆر سەیر نا.", answer: "trim", wrongs: ["cut", "chop", "style"] },
-      { parts: ["Keep the length, but add some", "for volume."], hint: "درێژییەکەی بهێڵەرەوە، بەڵام کەمێک چین چینی (مدرج) تێ بکە بۆ ئەوەی پڕتر دەربکەوێت.", answer: "layers", wrongs: ["steps", "parts", "lines"] },
+      { parts: ["I just want a", ", nothing too crazy."], hint: "تەنها ڕێکخستنێک (کەمێک کورتکردنەوەم) دەوێت، شتێکی زۆر سەیر نا.", answer: "trim", wrongs: ["cut", "chop", "style"], arabicHint: "أريد فقط قصاً خفيفاً، لا شيء جنوني.", arabicParts: ["أريد فقط","، لا شيء جنوني."], arabicAnswer: "قصاً خفيفاً", arabicWrongs: ["قصاً","تقطيعاً","تسريحة"] },
+      { parts: ["Keep the length, but add some", "for volume."], hint: "درێژییەکەی بهێڵەرەوە، بەڵام کەمێک چین چینی (مدرج) تێ بکە بۆ ئەوەی پڕتر دەربکەوێت.", answer: "layers", wrongs: ["steps", "parts", "lines"], arabicHint: "احتفظ بالطول، لكن أضف بعض الطبقات لزيادة الكثافة.", arabicParts: ["احتفظ بالطول، لكن أضف بعض","لزيادة الكثافة."], arabicAnswer: "الطبقات", arabicWrongs: ["الخطوات","الأجزاء","الخطوط"] },
     ],
     conversations: [
       { situation: "لەلای سەرتاشەکەت دانیشتوویت", theyAsk: "So, what are we doing today? A completely new style?", correct: "No, keep the length. Just a trim, and maybe take a little off the top. I like the current style.", wrong1: "Don't cut too much.", wrong2: "Make it small cut.", wrong3: "I want small hair.", explanation: "'Just a trim' و 'take a little off the top' باوترین دەستەواژەی سەرتاشخانەکانن", situationAr: "جالس عند الحلاق", explanationAr: "'Just a trim' و 'take a little off the top' هما أكثر العبارات شيوعًا في صالونات الحلاقة." },
@@ -213,8 +213,8 @@ const normalUnit04: UnitBank = [
       { english: ["I", "think", "there", "was", "a", "short", "circuit", "in", "the", "wall"], kurdish: "پێم وایە شۆرتی کارەبا هەب��و لە دیوارەکەدا", arabic: "أعتقد أنه كان هناك تماس كهربائي في الجدار" },
     ],
     fillBlanks: [
-      { parts: ["Can you give me a rough", "of the cost?"], hint: "دەتوانیت خەمڵاندنێکی زبری (گشتی) تێچووەکەم پێ بدەیت؟", answer: "estimate", wrongs: ["price", "guess", "number"] },
-      { parts: ["The sink is", ", the water won't drain."], hint: "مەغسەلەکە گیراوە، ئاوەکە بەتاڵ نابێتەوە.", answer: "clogged", wrongs: ["stuck", "blocked", "closed"] },
+      { parts: ["Can you give me a rough", "of the cost?"], hint: "دەتوانیت خەمڵاندنێکی زبری (گشتی) تێچووەکەم پێ بدەیت؟", answer: "estimate", wrongs: ["price", "guess", "number"], arabicHint: "هل يمكنك إعطائي تقديراً تقريبياً للتكلفة؟", arabicParts: ["هل يمكنك إعطائي","تقريبياً للتكلفة؟"], arabicAnswer: "تقديراً", arabicWrongs: ["سعراً","تخميناً","رقماً"] },
+      { parts: ["The sink is", ", the water won't drain."], hint: "مەغسەلەکە گیراوە، ئاوەکە بەتاڵ نابێتەوە.", answer: "clogged", wrongs: ["stuck", "blocked", "closed"], arabicHint: "المغسلة مسدودة، والماء لا يصرف.", arabicParts: ["المغسلة","، والماء لا يصرف."], arabicAnswer: "مسدودة", arabicWrongs: ["عالقة","مغلقة","مقفلة"] },
     ],
     conversations: [
       { situation: "تەلەفۆن بۆ کارەباچییەک دەکەیت", theyAsk: "What seems to be the issue with the electricity?", correct: "Half the house has a power outage. I think there was a short circuit. Can you give me an estimate before coming?", wrong1: "No electricity in house.", wrong2: "Lights went boom. Tell me price.", wrong3: "Fix my wires. How much?", explanation: "'Power outage'، 'short circuit'، و 'estimate' وشەی زۆر پێویستن بۆ مامەڵەکردن لەگەڵ وەستاکان", situationAr: "الاتصال بفني كهرباء", explanationAr: "'Power outage'، 'short circuit'، و 'estimate' هي كلمات ضرورية جدًا للتعامل مع الفنيين." },
@@ -240,8 +240,8 @@ const normalUnit04: UnitBank = [
       { english: ["The", "laptop", "is", "still", "under", "warranty", "right"], kurdish: "لاپتۆپەکە هێشتا لەژێر زەمانەتدایە، ڕاستە؟", arabic: "الكمبيوتر المحمول لا يزال تحت الضمان، أليس كذلك؟" },
     ],
     fillBlanks: [
-      { parts: ["This screen is broken. It's completely", "."], hint: "ئەم شاشەیە شکاوە. بەتەواوی کەموکوڕی تێدایە (خراپە).", answer: "defective", wrongs: ["bad", "wrong", "fault"] },
-      { parts: ["I'd like a full", "to my credit card."], hint: "دەمەوێت بەتەواوی پارەکەم بۆ بگەڕێندرێتەوە سەر کارتی بانکییەکەم.", answer: "refund", wrongs: ["return", "money", "back"] },
+      { parts: ["This screen is broken. It's completely", "."], hint: "ئەم شاشەیە شکاوە. بەتەواوی کەموکوڕی تێدایە (خراپە).", answer: "defective", wrongs: ["bad", "wrong", "fault"], arabicHint: "هذه الشاشة مكسورة. إنها معيبة تماماً.", arabicParts: ["هذه الشاشة مكسورة. إنها","تماماً."], arabicAnswer: "معيبة", arabicWrongs: ["سيئة","خاطئة","خطأ"] },
+      { parts: ["I'd like a full", "to my credit card."], hint: "دەمەوێت بەتەواوی پارەکەم بۆ بگەڕێندرێتەوە سەر کارتی بانکییەکەم.", answer: "refund", wrongs: ["return", "money", "back"], arabicHint: "أود استرداداً كاملاً للمبلغ على بطاقتي الائتمانية.", arabicParts: ["أود","كاملاً للمبلغ على بطاقتي الائتمانية."], arabicAnswer: "استرداداً", arabicWrongs: ["إرجاعاً","مالاً","عودة"] },
     ],
     conversations: [
       { situation: "گەڕاندنەوەی تەلەڤیزیۆنێک بۆ فرۆشگاکە", theyAsk: "Is there something wrong with the item?", correct: "Yes, it's defective. The screen doesn't turn on. I have the receipt and it's under warranty. I'd like a refund.", wrong1: "TV is broken. Give my money.", wrong2: "It not work. Take it back.", wrong3: "I want refund because bad TV.", explanation: "'Defective', 'receipt', 'warranty', و 'refund' چوار وشەی ئاڵتوونین بۆ گەڕاندنەوەی کاڵا لە دەرەوەی وڵات", situationAr: "إرجاع تلفزيون إلى المتجر", explanationAr: "'Defective', 'receipt', 'warranty', و 'refund' هي أربع كلمات ذهبية لإرجاع السلع خارج البلاد." },
@@ -267,8 +267,8 @@ const normalUnit04: UnitBank = [
       { english: ["We", "have", "excellent", "health", "benefits", "at", "this", "company"], kurdish: "لەم کۆمپانیایەدا ئیمتیازاتی تەندروستی نایابمان هەیە", arabic: "لدينا مزايا صحية ممتازة في هذه الشركة" },
     ],
     fillBlanks: [
-      { parts: ["I have the flu, so I have to", "in sick today."], hint: "ئەنفلۆنزام هەیە، بۆیە دەبێت ئەمڕۆ پەیوەندی بکەم بۆ مۆڵەتی نەخۆشی.", answer: "call", wrongs: ["tell", "say", "take"] },
-      { parts: ["We will discuss your salary during your performance", "."], hint: "گفتوگۆ لەسەر مووچەکەت دەکەین لە کاتی هەڵسەنگاندنی ئاستی کارکردنەکەتدا.", answer: "review", wrongs: ["check", "talk", "meeting"] },
+      { parts: ["I have the flu, so I have to", "in sick today."], hint: "ئەنفلۆنزام هەیە، بۆیە دەبێت ئەمڕۆ پەیوەندی بکەم بۆ مۆڵەتی نەخۆشی.", answer: "call", wrongs: ["tell", "say", "take"], arabicHint: "أنا مصاب بالإنفلونزا، لذا يجب أن أتصل للإبلاغ عن مرضي اليوم.", arabicParts: ["أنا مصاب بالإنفلونزا، لذا يجب أن","للإبلاغ عن مرضي اليوم."], arabicAnswer: "أتصل", arabicWrongs: ["أخبر","أقول","آخذ"] },
+      { parts: ["We will discuss your salary during your performance", "."], hint: "گفتوگۆ لەسەر مووچەکەت دەکەین لە کاتی هەڵسەنگاندنی ئاستی کارکردنەکەتدا.", answer: "review", wrongs: ["check", "talk", "meeting"], arabicHint: "سنناقش راتبك أثناء تقييم أدائك.", arabicParts: ["سنناقش راتبك أثناء","أدائك."], arabicAnswer: "تقييم", arabicWrongs: ["فحص","محادثة","اجتماع"] },
     ],
     conversations: [
       { situation: "چاوپێکەوتن لەگەڵ بەشی HR بۆ زانینی ئیمتیازاتەکان", theyAsk: "Do you have any questions about the benefits package?", correct: "Yes. Could you explain the health benefits and how much paid time off is offered?", wrong1: "How many days I sleep at home with money?", wrong2: "Do you pay when I am sick?", wrong3: "I want to know about doctor money.", explanation: "'Paid time off' (PTO) و 'Health benefits' زاراوەی فەرمی و زۆر گرنگن لە هەر گرێبەستێکی کارکردندا", situationAr: "مقابلة مع قسم الموارد البشرية لمعرفة المزايا", explanationAr: "'Paid time off' (PTO) و 'Health benefits' هما مصطلحان رسميان ومهمان جدًا في أي عقد عمل." },

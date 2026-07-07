@@ -2,51 +2,56 @@
  * LeaderboardScreen — Premium Duolingo-style leaderboard with playful 3D podium and professional UI.
  */
 
-import { AppText } from "../../components/ui/AppText";
-import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import {
-  LEAGUE_ENTRIES,
-  LeagueEntry,
-} from "../../data/league-items";
-import { Image } from "expo-image";
-import { useI18n } from "../../hooks/useI18n";
-import { PressableScale } from "../../components/animations";
-import { hapticImpact } from "../../utils/haptics";
-import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { getLocalPremadeAvatar } from "../../constants/avatars";
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { tabBarScrollPadding } from "../../constants/layout";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Trophy, ArrowUp01Icon, Clock01Icon, ZapIcon, StarIcon } from "@hugeicons/core-free-icons";
+
+import { useThemeColors } from "../../hooks/useThemeColors";
+import { AppText } from "../../components/ui/AppText";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { PressableScale } from "../../components/animations";
+import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
+import { useI18n } from "../../hooks/useI18n";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { LEAGUE_ENTRIES, LeagueEntry } from "../../data/league-items";
+import { getLocalPremadeAvatar } from "../../constants/avatars";
+import { hapticImpact } from "../../utils/haptics";
+import { tabBarScrollPadding } from "../../constants/layout";
+
+function getLeaderboardColors(colors: any, isDark: boolean) {
+  return {
+    background: isDark ? "#0F172A" : "#FFFFFF",
+    surface: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+    foreground: isDark ? "#FFFFFF" : "#0F172A",
+    mutedForeground: isDark ? "#94A3B8" : "#64748B",
+    border: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
+    promotion: "#22C55E",
+    promotionBg: "rgba(34, 197, 94, 0.08)",
+    currentUser: isDark ? "#FFFFFF" : "#0F172A",
+    currentUserBg: isDark ? "rgba(249, 115, 22, 0.15)" : "#FFF7ED",
+    currentUserBorder: isDark ? "#F97316" : "#FF963C",
+    purpleText: isDark ? "#A78BFA" : "#6B5AED",
+    purpleBg: isDark ? "rgba(107, 90, 237, 0.15)" : "#F5F3FF",
+  };
+}
 
 const getAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/adventurer/png?seed=${encodeURIComponent(seed)}`;
 
-const Colors = {
-  background: "#FFFFFF",
-  surface: "#F8FAFC",
-  foreground: "#0F172A",
-  mutedForeground: "#64748B",
-  border: "#E2E8F0",
-  promotion: "#22C55E",
-  promotionBg: "rgba(34, 197, 94, 0.08)",
-  currentUser: "#0F172A",
-  currentUserBg: "#FFF7ED", // soft orange bg
-  currentUserBorder: "#FF963C", // soft orange border
-  purpleText: "#6B5AED", // sophisticated slate-purple (not AI slop purple)
-  purpleBg: "#F5F3FF", // soft lavender bg
-};
-
 export const LeaderboardScreen = () => {
+  const { colors, isDark } = useThemeColors();
+  const Colors = useMemo(() => getLeaderboardColors(colors, isDark), [colors, isDark]);
+  const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
   const isRtl = isKu || locale === 'ar';
 
   const avatarUrl = useSettingsStore((s) => s.avatarUrl);
   const userName = useSettingsStore((s) => s.userName);
+
 
   const renderAvatar = (item: LeagueEntry, size: number, style: any) => {
     if (item.isCurrentUser && avatarUrl) {
@@ -302,7 +307,8 @@ export const LeaderboardScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(Colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -312,7 +318,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
   },
   headerTop: {
     flexDirection: "row",
@@ -389,7 +395,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   podiumAvatar: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
   },
   podiumRankBadge: {
     position: "absolute",
@@ -455,14 +461,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: Colors.background,
     borderWidth: 1.5,
-    borderColor: "#F1F5F9",
+    borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
     borderBottomWidth: 4,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: Colors.border,
   },
   listRowMe: {
     backgroundColor: Colors.currentUserBg,
-    borderColor: "#FFE4D6",
-    borderBottomColor: "#FFC29E",
+    borderColor: isDark ? "rgba(249, 115, 22, 0.3)" : "#FFE4D6",
+    borderBottomColor: isDark ? "rgba(249, 115, 22, 0.5)" : "#FFC29E",
   },
   listRankWrap: {
     width: 24,
@@ -480,7 +486,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
     marginStart: 8,
   },
   listNameCol: {
@@ -504,7 +510,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   levelChip: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -538,4 +544,5 @@ const styles = StyleSheet.create({
   listXpMe: {
     color: "#FFFFFF",
   },
-});
+  });
+}

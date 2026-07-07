@@ -27,6 +27,7 @@ export function useI18n() {
     locale,
     ready,
     isKu: locale === "ku",
+    isAr: locale === "ar",
     setLocale,
     setEnglish: () => setLocale("en"),
     setKurdish: () => setLocale("ku"),

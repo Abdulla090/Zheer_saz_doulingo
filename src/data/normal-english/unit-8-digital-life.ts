@@ -129,9 +129,9 @@ const unit08: UnitBank = [
     "Professional Email",
     "ئیمەیڵی پیشەیی",
     [
-      { en: "I hope this email finds you well.", ku: "هیوادارم ئەم ئیمەیڵە لە کاتێکی باشدا بگات بەت.", ar: "آمل أن تصلك هذه الرسالة وأنت بخير." },
+      { en: "I hope this email finds you well.", ku: "هیوادارم باش بیت.", ar: "آمل أن تصلك هذه الرسالة وأنت بخير." },
       { en: "I'm writing to follow up on our conversation.", ku: "دەنووسم بۆ بەدواداچوون لە گفتوگۆکەمان.", ar: "أكتب إليك للمتابعة بشأن محادثتنا." },
-      { en: "Please find the attached document for your review.", ku: "تکایە بەڵگەنامەی پێوەلکاوە بۆ پێداچوونەوە.", ar: "يرجى الاطلاع على المستند المرفق لمراجعته." },
+      { en: "Please find the attached document for your review.", ku: "تکایە سەیری بەڵگەنامە هاوپێچکراوەکە بکە بۆ پێداچوونەوە.", ar: "يرجى الاطلاع على المستند المرفق لمراجعته." },
       { en: "I'd appreciate your feedback by Friday if possible.", ku: "سوپاسگوزار دەبم بۆ فیدباکەکەت تا ئەگەر بتوانن هەینی.", ar: "سأكون ممتنًا لملاحظاتك بحلول يوم الجمعة إن أمكن." },
       { en: "Thank you for your time and consideration.", ku: "سوپاس بۆ کات و سەرنجت.", ar: "شكرًا لوقتك واهتمامك." },
       { en: "Please let me know if you have any questions.", ku: "تکایە پێم بڵێ ئەگەر هیچ پرسیارێکت هەیە.", ar: "يرجى إعلامي إذا كان لديك أي أسئلة." },
@@ -170,11 +170,11 @@ const unit08: UnitBank = [
     "کۆبوونەوەی ئۆنلاین",
     [
       { en: "Can everyone hear me okay?", ku: "دەتوانیت هەمووتان بە باشی بیستم؟", ar: "هل يسمعني الجميع بوضوح؟" },
-      { en: "You're on mute — we can't hear you.", ku: "دەنگت کوژاوەتەوە — ناتوانین بیستین.", ar: "صوتك مكتوم — لا نستطيع سماعك." },
+      { en: "You're on mute — we can't hear you.", ku: "مایکرۆفۆنەکەت داخراوە — دەنگت نابیستین.", ar: "صوتك مكتوم — لا نستطيع سماعك." },
       { en: "Let me share my screen real quick.", ku: "با خێرا شاشەکەم هاوبەش بکەم.", ar: "دعني أشارك شاشتي بسرعة." },
       { en: "Sorry, my connection dropped for a second.", ku: "ببوورە، پەیوەندییەکەم بۆ چرکەیەک پچڕا.", ar: "آسف، انقطع اتصالي للحظة." },
       { en: "I'll drop off early but I'll read the notes.", ku: "زوو دەچمە دەرەوە بەڵام تێبینییەکان دەخوێنمەوە.", ar: "سأغادر مبكرًا لكنني سأقرأ الملاحظات." },
-      { en: "Let's take this offline and discuss separately.", ku: "با ئەمە لە دەرەوەی کۆبوونەوە بگفتین.", ar: "لنناقش هذا خارج الاجتماع بشكل منفصل." },
+      { en: "Let's take this offline and discuss separately.", ku: "با ئەمە لە دەرەوەی ئێرە باسبکەین بە جیا.", ar: "لنناقش هذا خارج الاجتماع بشكل منفصل." },
     ],
     {
       convos: [
@@ -186,7 +186,7 @@ const unit08: UnitBank = [
           wrong1: "Stop talking please.",
           wrong2: "Budget is not important.",
           wrong3: "I leave meeting now.",
-          explanation: "'You're on mute' گرنگترین جملەیە لە کۆبوونەوەی ئۆنلایندا",
+          explanation: "'You're on mute' گرنگترین ڕستەیە لە کۆبوونەوەی ئۆنلایندا",
           explanationAr: "'You're on mute' أهم جملة في الاجتماعات الإلكترونية",
         },
         {
@@ -370,7 +370,7 @@ const unit08: UnitBank = [
     "ئەدەبی دیجیتاڵ",
     [
       { en: "Thanks for adding me to the group!", ku: "سوپاس بۆ زیادکردنم بۆ گروپ!", ar: "شكرًا لإضافتي إلى المجموعة!" },
-      { en: "Just a heads-up — I'll be offline tomorrow.", ku: "تەنها ئاگاداری — سبەی لەسەر هێڵ نابم.", ar: "مجرد تنبيه — سأكون غير متصل غدًا." },
+      { en: "Just a heads-up — I'll be offline tomorrow.", ku: "تەنها بۆ ئاگادارکردنەوە — سبەی ئۆفلاین دەبم.", ar: "مجرد تنبيه — سأكون غير متصل غدًا." },
       { en: "Please use BCC when emailing the whole list.", ku: "تکایە BCC بەکاربهێنە کاتێک بۆ هەموو لیستەکە ئیمەیڵ دەنێریت.", ar: "يرجى استخدام النسخة المخفية عند إرسال بريد للقائمة بأكملها." },
       { en: "Double-check before you hit send.", ku: "دووبارە بپشکنە پێش ئەوەی بنێریت.", ar: "تحقق مرتين قبل أن تضغط إرسال." },
       { en: "I prefer email over DMs for work stuff.", ku: "بۆ کارەکان ئیمەیڵم پێ باشترە لە نامەی تایبەت.", ar: "أفضل البريد الإلكتروني على الرسائل الخاصة لأمور العمل." },

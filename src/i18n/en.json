@@ -283,7 +283,11 @@
     "voiceListeningSpeak": "Listening… (Speak now)",
     "voiceTryAgainStatus": "Try again",
     "voiceTapMicSpeak": "Tap the mic and speak",
-    "voiceTapForHint": "Tap for hint"
+    "voiceTapForHint": "Tap for hint",
+    "readingQuiz": "Reading Quiz",
+    "readingPractice": "Reading Practice",
+    "scoreLabel": "Score: {score}%",
+    "skipForNow": "Skip for now"
   },
   "onboarding": {
     "skip": "Skip",

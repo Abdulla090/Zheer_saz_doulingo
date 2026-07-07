@@ -59,20 +59,22 @@ export function LightGameHeading({
   subtitle?: string;
   badge?: string;
 }) {
+  const { isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
   return (
-    <View style={lh.headingWrap}>
+    <View style={[lh.headingWrap, { alignItems: rtl ? "flex-end" : "flex-start" }]}>
       {badge ? (
-        <View style={lh.kidsGameHeadingBadge}>
+        <View style={[lh.kidsGameHeadingBadge, { alignSelf: rtl ? "flex-end" : "flex-start" }]}>
           <AppText style={lh.kidsGameHeadingBadgeText} forceLatinFont latinRole="bold">
             {badge.toUpperCase()}
           </AppText>
         </View>
       ) : null}
-      <AppText style={LightType.title} forceLatinFont>
+      <AppText style={[LightType.title, { textAlign: rtl ? "right" : "left", width: "100%" }]}>
         {title}
       </AppText>
       {subtitle ? (
-        <AppText style={LightType.subtitle} forceLatinFont latinRole="regular">
+        <AppText style={[LightType.subtitle, { textAlign: rtl ? "right" : "left", width: "100%" }]} latinRole="regular">
           {subtitle}
         </AppText>
       ) : null}
@@ -188,8 +190,10 @@ export function LightDialogueCard({
   children: string;
   forceLatinFont?: boolean;
 }) {
+  const { isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
   return (
-    <View style={lh.dialogueWrap}>
+    <View style={[lh.dialogueWrap, rtl ? { marginLeft: 0, marginRight: 4 } : undefined]}>
       <View style={lh.dialogueBubble}>
         <LinearGradient
           colors={["#F0F9FF", "#E0F2FE", "#BAE6FD"]}
@@ -199,7 +203,7 @@ export function LightDialogueCard({
           style={lh.dialogueGradient}
         >
           <View style={lh.dialogueContent}>
-            <View style={lh.dialogueBadge}>
+            <View style={[lh.dialogueBadge, { alignSelf: rtl ? "flex-end" : "flex-start" }]}>
               <AppText style={LightType.dialogueBadge} forceKurdishFont>
                 {label}
               </AppText>
@@ -207,7 +211,7 @@ export function LightDialogueCard({
             <View style={lh.dialogueRow}>
               <DialogueQuoteIcon />
               <AppText
-                style={LightType.dialogueText}
+                style={[LightType.dialogueText, { textAlign: rtl ? "right" : "left" }]}
                 forceLatinFont={forceLatinFont}
                 latinRole="medium"
               >
@@ -216,7 +220,10 @@ export function LightDialogueCard({
             </View>
           </View>
         </LinearGradient>
-        <View style={lh.dialogueTail} pointerEvents="none" />
+        <View style={[
+          lh.dialogueTail,
+          rtl ? { left: undefined, right: 22, transform: [{ rotate: "-45deg" }] } : undefined,
+        ]} pointerEvents="none" />
       </View>
     </View>
   );
@@ -252,6 +259,8 @@ export function LightQuestionPrompt({
   const isKids = variant === "kids" || rawMode === "kids";
 
   const { speak } = useTTS();
+  const { isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
 
   const floatY = useSharedValue(0);
   const breathe = useSharedValue(1);
@@ -327,7 +336,7 @@ export function LightQuestionPrompt({
         {/* Mascot with gentle floating animation */}
         <View style={lh.kidsMascotArea}>
           <Animated.View style={[lh.kidsMascotWrap, mascotStyle]}>
-            <RiveMascot size={130} pose="wave" />
+            <RiveMascot size={160} pose="wave" />
           </Animated.View>
           <Animated.View style={[lh.kidsMascotShadow, shadowStyle]} />
         </View>
@@ -335,9 +344,12 @@ export function LightQuestionPrompt({
         {/* Speech Bubble */}
         <View style={{ flex: 1, position: "relative" }}>
           <View style={lh.kidsBubble}>
-            <View style={lh.kidsBubbleTail} />
+            <View style={[
+              lh.kidsBubbleTail,
+              rtl ? { left: undefined, right: -9, transform: [{ rotate: "225deg" }] } : {}
+            ]} />
             <View style={{ flex: 1 }}>
-              <AppText style={lh.kidsBubbleTextEn} forceLatinFont latinRole="bold">
+              <AppText style={[lh.kidsBubbleTextEn, rtl ? { textAlign: "right" } : { textAlign: "left" }]} forceLatinFont latinRole="bold">
                 {children}
               </AppText>
             </View>
@@ -363,7 +375,7 @@ export function LightQuestionPrompt({
       {/* Twino Mascot with gentle floating animation */}
       <View style={lh.normalMascotArea}>
         <Animated.View style={[lh.normalMascotWrap, mascotStyle]}>
-          <TwinoMascot size={90} pose={pose} />
+          <TwinoMascot size={120} pose={pose} />
         </Animated.View>
         <Animated.View style={[lh.normalMascotShadow, shadowStyle]} />
       </View>
@@ -372,13 +384,16 @@ export function LightQuestionPrompt({
       <View style={{ flex: 1, position: "relative" }}>
         <View style={lh.normalBubble}>
           {/* Bubble tail pointing left to the mascot */}
-          <View style={lh.normalBubbleTail} />
+          <View style={[
+            lh.normalBubbleTail,
+            rtl ? { left: undefined, right: -7, transform: [{ rotate: "225deg" }] } : {}
+          ]} />
           
           <View style={{ flex: 1, gap: 2 }}>
             <AppText style={lh.normalBubbleLabel} forceLatinFont>
               {label}
             </AppText>
-            <AppText style={lh.normalBubbleText} forceKurdishFont={forceKurdishFont}>
+            <AppText style={[lh.normalBubbleText, rtl ? { textAlign: "right" } : { textAlign: "left" }]} forceKurdishFont={forceKurdishFont}>
               {children}
             </AppText>
           </View>
@@ -726,7 +741,7 @@ export function LightWordTile({
       ) : tierLabel ? (
         <View style={lh.tileRow}>
           <AppText
-            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }, isKidsRoute && { fontFamily: "DINNextRoundedBold" }]}
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }, rtl ? { textAlign: "right" } : undefined, isKidsRoute && { fontFamily: "DINNextRoundedBold" }]}
             forceKurdishFont={rtl && !forceLatinFont}
             forceLatinFont={forceLatinFont || !rtl}
           >
@@ -1022,12 +1037,13 @@ export function LessonLightHeader({
   lessonNumber: number;
   variant?: "default" | "kids";
 }) {
-  const { isKu } = useI18n();
+  const { isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
   const isKids = variant === "kids";
 
   if (isKids) {
     return (
-      <View style={[lh.kidsHeader, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={lh.kidsHeader}>
         <Pressable
           onPress={onBack}
           style={({ pressed }) => [
@@ -1063,9 +1079,9 @@ export function LessonLightHeader({
   }
 
   return (
-    <View style={[lh.lessonHeader, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+    <View style={lh.lessonHeader}>
       <HomeLiquidPill onPress={onBack} size={44}>
-        <View style={{ transform: [{ scaleX: isKu ? -1 : 1 }] }}>
+        <View style={{ transform: [{ scaleX: rtl ? -1 : 1 }] }}>
           <BackChevron />
         </View>
       </HomeLiquidPill>
@@ -1074,13 +1090,13 @@ export function LessonLightHeader({
         lessonNumber={lessonNumber}
       />
       <HomeLiquidCard style={lh.progressGlass} contentStyle={lh.progressGlassInner} radius={14}>
-        <View style={[lh.progressTrack, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-          <Animated.View style={[lh.progressFill, progressFillStyle, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={lh.progressTrack}>
+          <Animated.View style={[lh.progressFill, progressFillStyle]}>
             <View style={lh.progressKnob} />
           </Animated.View>
         </View>
       </HomeLiquidCard>
-      <HomeLiquidCard contentStyle={[lh.heartsPill, { flexDirection: isKu ? "row-reverse" : "row" }]} radius={22}>
+      <HomeLiquidCard contentStyle={lh.heartsPill} radius={22}>
         <HeartIcon />
         <AppText style={lh.heartsText} forceLatinFont latinRole="bold">{hearts}</AppText>
       </HomeLiquidCard>
@@ -1106,7 +1122,8 @@ export function LessonLiquidFeedback({
   onContinue: () => void;
   variant?: "default" | "kids";
 }) {
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
   const isKids = variant === "kids";
   const isPassing = correct || tier === "great" || tier === "good";
 
@@ -1130,16 +1147,16 @@ export function LessonLiquidFeedback({
         ]}
       >
         <View style={[lh.trayHandle, { backgroundColor: isPassing ? "rgba(70,163,2,0.18)" : "rgba(220,38,38,0.18)" }]} />
-        <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+        <View style={lh.feedbackRow}>
           <View style={lh.feedbackMascotCol}>
-            <TwinoMascot size={90} pose={kidsPose} />
+            <TwinoMascot size={110} pose={kidsPose} />
           </View>
           
           <View style={lh.feedbackTextCol}>
-            <AppText style={[lh.feedbackTitle, { color: kidsDeepText, textAlign: isKu ? "right" : "left", fontFamily: "DINNextRoundedBold" }]}>
+            <AppText style={[lh.feedbackTitle, { color: kidsDeepText, textAlign: rtl ? "right" : "left", fontFamily: "DINNextRoundedBold" }]}>
               {title}
             </AppText>
-            <AppText style={[lh.feedbackSub, { color: kidsDeepText, opacity: 0.85, textAlign: isKu ? "right" : "left", fontFamily: "DINNextRoundedMedium" }]}>
+            <AppText style={[lh.feedbackSub, { color: kidsDeepText, opacity: 0.85, textAlign: rtl ? "right" : "left", fontFamily: "DINNextRoundedMedium" }]}>
               {subtitle}
             </AppText>
           </View>
@@ -1181,16 +1198,16 @@ export function LessonLiquidFeedback({
       <View style={[lh.trayHandle, { backgroundColor: isPassing ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)" }]} />
       <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
       
-      <View style={[lh.feedbackRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <View style={lh.feedbackRow}>
         <View style={lh.feedbackMascotCol}>
-          <TwinoMascot size={90} pose={pose} />
+          <TwinoMascot size={110} pose={pose} />
         </View>
         
         <View style={lh.feedbackTextCol}>
-          <AppText style={[lh.feedbackTitle, { color: titleColor, textAlign: isKu ? "right" : "left" }]}>
+          <AppText style={[lh.feedbackTitle, { color: titleColor, textAlign: rtl ? "right" : "left" }]}>
             {title}
           </AppText>
-          <AppText style={[lh.feedbackSub, { textAlign: isKu ? "right" : "left" }]}>
+          <AppText style={[lh.feedbackSub, { textAlign: rtl ? "right" : "left" }]}>
             {subtitle}
           </AppText>
         </View>
@@ -1691,8 +1708,8 @@ const lh = StyleSheet.create({
     marginBottom: 8,
   },
   feedbackMascotCol: {
-    width: 74,
-    height: 74,
+    width: 96,
+    height: 96,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1815,21 +1832,21 @@ const lh = StyleSheet.create({
   kidsMascotStage: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 160,
+    minHeight: 190,
     marginTop: 8,
     marginBottom: 8,
     paddingHorizontal: 12,
   },
   kidsMascotArea: {
-    width: 130,
-    height: 160,
+    width: 160,
+    height: 190,
     alignItems: "center",
     justifyContent: "flex-end",
     position: "relative",
   },
   kidsMascotWrap: {
-    width: 130,
-    height: 150,
+    width: 160,
+    height: 180,
     zIndex: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -1841,7 +1858,7 @@ const lh = StyleSheet.create({
   kidsMascotShadow: {
     position: "absolute",
     bottom: -4,
-    width: 70,
+    width: 86,
     height: 8,
     borderRadius: 4,
     backgroundColor: "rgba(0,0,0,0.06)",
@@ -1893,12 +1910,14 @@ const lh = StyleSheet.create({
     fontSize: 14,
     color: "#1A2B48",
     textAlign: "left",
+    flexShrink: 1,
   },
   kidsBubbleTextEn: {
     fontSize: 17,
     color: "#1A2B48",
     textAlign: "left",
     fontFamily: "DINNextRoundedBold",
+    flexShrink: 1,
   },
   kidsBubbleTail: {
     position: "absolute",
@@ -1952,21 +1971,21 @@ const lh = StyleSheet.create({
   normalMascotStage: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 120,
+    minHeight: 150,
     marginTop: 8,
     marginBottom: 8,
     paddingHorizontal: 12,
   },
   normalMascotArea: {
-    width: 90,
-    height: 120,
+    width: 120,
+    height: 150,
     alignItems: "center",
     justifyContent: "flex-end",
     position: "relative",
   },
   normalMascotWrap: {
-    width: 90,
-    height: 100,
+    width: 120,
+    height: 130,
     zIndex: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -1974,7 +1993,7 @@ const lh = StyleSheet.create({
   normalMascotShadow: {
     position: "absolute",
     bottom: 2,
-    width: 50,
+    width: 66,
     height: 6,
     borderRadius: 3,
     backgroundColor: "rgba(0,0,0,0.06)",
@@ -2024,6 +2043,7 @@ const lh = StyleSheet.create({
     fontWeight: "700",
     color: "#1E293B",
     lineHeight: 22,
+    flexShrink: 1,
   },
   normalBubbleSpeaker: {
     width: 32,

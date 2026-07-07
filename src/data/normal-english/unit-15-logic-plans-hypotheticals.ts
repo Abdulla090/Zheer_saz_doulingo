@@ -8,10 +8,10 @@ const normalUnit10: UnitBank = [
   {
     topic: "Making Plans", topicKu: "پلاندانان", topicAr: "صنع الخطط",
     words: [
-      { english: "Confirm the schedule", kurdish: "دڵنیابوونەوە لە خشتەی کارەکە", arabic: "تأكيد الجدول الزمني" },
+      { english: "Confirm the schedule", kurdish: "پشتڕاستکردنەوەی خشتەکە", arabic: "تأكيد الجدول الزمني" },
       { english: "Arrange a meeting", kurdish: "ڕێکخستنی کۆبوونەوەیەک", arabic: "ترتيب اجتماع" },
       { english: "Postpone the event", kurdish: "دواخستنی چالاکییەکە", arabic: "تأجيل الفعالية" },
-      { english: "Tentative agenda", kurdish: "کارنامەی کاتی (ئەجێندای ناھەمیشەیی)", arabic: "جدول أعمال مؤقت" },
+      { english: "Tentative agenda", kurdish: "ئەجێندای کاتی", arabic: "جدول أعمال مؤقت" },
       { english: "Set a deadline", kurdish: "دیاریکردنی مۆڵەت (دوا وادە)", arabic: "تحديد موعد نهائي" },
       { english: "Coordinate the details", kurdish: "هەماهەنگی کردنی وردەکارییەکان", arabic: "تنسيق التفاصيل" },
       { english: "Back-up plan", kurdish: "پلانی جێگرەوە (یەدەگ)", arabic: "خطة بديلة" },

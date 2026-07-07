@@ -276,7 +276,11 @@
     "voiceListeningSpeak": "استماع… (تحدث الآن)",
     "voiceTryAgainStatus": "حاول مرة أخرى",
     "voiceTapMicSpeak": "انقر على الميكروفون وتحدث",
-    "voiceTapForHint": "انقر للحصول على تلميح"
+    "voiceTapForHint": "انقر للحصول على تلميح",
+    "readingQuiz": "اختبار القراءة",
+    "readingPractice": "تدريب القراءة",
+    "scoreLabel": "النتيجة: {score}%",
+    "skipForNow": "تخطي الآن"
   },
   "onboarding": {
     "skip": "تخطي",

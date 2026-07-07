@@ -28,10 +28,10 @@ function splitSentence(en: string): string[] {
 
 function defaultSpeaks(phrases: Phrase[]): Speak[] {
   return phrases.slice(0, 3).map((p) => ({
-    prompt: "ئەم جملەیە بە ئینگلیزی بڵێ",
+    prompt: `ئەم ڕستەیە بە ئینگلیزی بڵێ:`,
     target: p.en,
     targetKurdish: p.ku,
-    ...(p.ar ? { promptAr: "قل هذه الجملة بالإنجليزية", targetArabic: p.ar } : {}),
+    ...(p.ar ? { promptAr: `قل هذه الجملة بالإنجليزية:`, targetArabic: p.ar } : {}),
   }));
 }
 

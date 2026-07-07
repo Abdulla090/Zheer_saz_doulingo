@@ -1,13 +1,14 @@
- 
+
 import {
   GamesTabIcon,
   HomeTabIconFlat,
   LeaderboardTabIcon,
   ProfileTabIconFlat,
-  ShopTabIcon,
 } from "./icons/HomeDashboardIcons";
 import { TabBarGlassSurface } from "./TabBarGlassSurface";
 import { PremiumPressable } from "./PremiumPressable";
+import { PanResponder } from "react-native";
+import { hapticSelection } from "../utils/haptics";
 import {
   TAB_BAR_ACTIVE_CHIP,
   TAB_BAR_CORNER_RADIUS,
@@ -19,7 +20,6 @@ import {
   TAB_BAR_TOP_PADDING,
   tabBarBottomInset,
 } from "../constants/layout";
-import { ENABLE_SHOP } from "../constants/feature-flags";
 import {
   pathnameHidesTabBar,
   TAB_BAR_HIDDEN_ROUTES,
@@ -32,16 +32,33 @@ import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View, I18nManager } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring, Easing, FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const smoothTransition = (to: number) => {
+  "worklet";
+  if (Platform.OS === "web") {
+    return withTiming(to, {
+      duration: 350,
+      easing: Easing.bezier(0.25, 1, 0.5, 1),
+    });
+  }
+  return withSpring(to, {
+    damping: 30,
+    stiffness: 300,
+    mass: 0.8,
+    overshootClamping: true,
+  });
+};
 import { TAB_BAR_GLASS } from "../constants/tab-bar-glass";
 import { springMotion } from "../utils/motion-spring";
 import { crossShadow } from "../utils/shadows";
+import { AppText } from "./ui/AppText";
 
 const ACTIVE = TAB_BAR_GLASS.iconActive;
 const INACTIVE = TAB_BAR_GLASS.iconInactive;
 
-type PillRoute = "index" | "play" | "dashboard" | "subscription";
+type PillRoute = "index" | "play" | "dashboard";
 
 const PILL_TABS: {
   route: PillRoute;
@@ -53,13 +70,6 @@ const PILL_TABS: {
     labelKey: "tabs.home",
     renderIcon: (active, size) => (
       <HomeTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
-    ),
-  },
-  {
-    route: "subscription",
-    labelKey: "tabs.shop",
-    renderIcon: (active, size) => (
-      <ShopTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
     ),
   },
   {
@@ -78,6 +88,29 @@ const PILL_TABS: {
   },
 ];
 
+// Animated label that fades in/out next to the active icon
+function ActiveTabLabel({ label }: { label: string }) {
+  return (
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
+    >
+      <AppText
+        style={{
+          fontSize: 12,
+          fontWeight: "700",
+          color: ACTIVE,
+          marginLeft: 4,
+        }}
+        forceLatinFont
+        latinRole="bold"
+      >
+        {label}
+      </AppText>
+    </Animated.View>
+  );
+}
+
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
@@ -88,9 +121,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const pillTabs = useMemo(
     () =>
-      PILL_TABS.filter((tab) => ENABLE_SHOP || tab.route !== "subscription").map(
-        (tab) => ({ ...tab, label: t(tab.labelKey) }),
-      ),
+      PILL_TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) })),
     [t],
   );
 
@@ -111,33 +142,36 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const fabFocused = activeRouteName === TAB_FAB_ROUTE;
 
+  // Active chip is wider when showing label
+  const ACTIVE_CHIP_WITH_LABEL = slotWidth * 0.95;
+
   const indicatorTargetX = useCallback(
     (index: number) => {
       if (index < 0 || slotWidth <= 0) return 0;
       
       const isRTL = false;
+      const targetWidth = index >= 0 && index < tabCount ? ACTIVE_CHIP_WITH_LABEL : TAB_BAR_ACTIVE_CHIP;
 
       if (isRTL) {
-        // Physical RTL layout: [ FAB ] gap [ Pill (reversed) ]
-        // Since Layer 2 has direction: "ltr", positions and translations are LTR-based.
-        // We calculate the direct offset from the left edge of the bar:
         if (index < tabCount) {
           const physicalSlotIndex = tabCount - 1 - index;
-          return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + physicalSlotIndex * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+          return TAB_BAR_FAB_SIZE + TAB_BAR_ROW_GAP + physicalSlotIndex * slotWidth + (slotWidth - targetWidth) / 2;
         }
         return (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       } else {
-        // Physical LTR layout: [ Pill ] gap [ FAB ]
         if (index < tabCount) {
-          return index * slotWidth + (slotWidth - TAB_BAR_ACTIVE_CHIP) / 2;
+          return index * slotWidth + (slotWidth - targetWidth) / 2;
         }
         return pillWidth + TAB_BAR_ROW_GAP + (TAB_BAR_FAB_SIZE - TAB_BAR_ACTIVE_CHIP) / 2;
       }
     },
-    [slotWidth, tabCount, pillWidth]
+    [slotWidth, tabCount, pillWidth, ACTIVE_CHIP_WITH_LABEL]
   );
 
   const indicatorX = useSharedValue(indicatorTargetX(focusedIndex));
+  const indicatorWidth = useSharedValue(
+    focusedIndex >= 0 && focusedIndex < tabCount ? ACTIVE_CHIP_WITH_LABEL : TAB_BAR_ACTIVE_CHIP
+  );
   const indicatorOpacity = useSharedValue(focusedIndex >= 0 ? 1 : 0);
   const prevFocusedIndex = useRef(focusedIndex);
   const optimisticPress = useRef(false);
@@ -146,13 +180,97 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     (index: number, animated: boolean) => {
       if (index < 0 || slotWidth <= 0) return;
       const x = indicatorTargetX(index);
-      indicatorX.value = animated ? springMotion(x) : x;
+      const w = index >= 0 && index < tabCount ? ACTIVE_CHIP_WITH_LABEL : TAB_BAR_ACTIVE_CHIP;
+      indicatorX.value = animated ? smoothTransition(x) : x;
+      indicatorWidth.value = animated ? smoothTransition(w) : w;
     },
-    [indicatorTargetX, indicatorX, slotWidth],
+    [indicatorTargetX, indicatorX, indicatorWidth, slotWidth, tabCount, ACTIVE_CHIP_WITH_LABEL],
   );
 
+  const focusedIndexRef = useRef(focusedIndex);
+  const tabCountRef = useRef(tabCount);
+  const ACTIVE_CHIP_WITH_LABEL_Ref = useRef(ACTIVE_CHIP_WITH_LABEL);
+  const pillWidthRef = useRef(pillWidth);
+  const slotWidthRef = useRef(slotWidth);
+  const stateIndexRef = useRef(state.index);
+  const navigateRef = useRef<any>(null);
+  const moveIndicatorRef = useRef<any>(null);
+  const pillTabsRef = useRef(pillTabs);
+
   useEffect(() => {
-    indicatorOpacity.value = springMotion(focusedIndex >= 0 ? 1 : 0);
+    focusedIndexRef.current = focusedIndex;
+    tabCountRef.current = tabCount;
+    ACTIVE_CHIP_WITH_LABEL_Ref.current = ACTIVE_CHIP_WITH_LABEL;
+    pillWidthRef.current = pillWidth;
+    slotWidthRef.current = slotWidth;
+    stateIndexRef.current = state.index;
+    navigateRef.current = navigate;
+    moveIndicatorRef.current = moveIndicator;
+    pillTabsRef.current = pillTabs;
+  });
+
+  const isDragging = useRef(false);
+  const startDragX = useRef(0);
+  const currentDragIndex = useRef(focusedIndex);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 8;
+      },
+      onPanResponderGrant: (evt, gestureState) => {
+        isDragging.current = true;
+        startDragX.current = indicatorX.value;
+        currentDragIndex.current = focusedIndexRef.current;
+        if (Platform.OS !== "web") {
+          hapticSelection();
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (!isDragging.current) return;
+
+        const targetWidth = focusedIndexRef.current >= 0 && focusedIndexRef.current < tabCountRef.current ? ACTIVE_CHIP_WITH_LABEL_Ref.current : TAB_BAR_ACTIVE_CHIP;
+        let newX = startDragX.current + gestureState.dx;
+        const maxLimit = pillWidthRef.current - targetWidth;
+        newX = Math.max(0, Math.min(newX, maxLimit));
+
+        const stretch = Math.min(Math.abs(gestureState.dx) * 0.35, 40);
+
+        indicatorX.value = newX - stretch / 2;
+        indicatorWidth.value = targetWidth + stretch;
+
+        const dragCenter = newX + targetWidth / 2;
+        const nearestIndex = Math.max(0, Math.min(Math.floor(dragCenter / slotWidthRef.current), tabCountRef.current - 1));
+        if (nearestIndex !== currentDragIndex.current) {
+          currentDragIndex.current = nearestIndex;
+          if (Platform.OS !== "web") {
+            hapticSelection();
+          }
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        isDragging.current = false;
+        const finalIndex = currentDragIndex.current;
+        const targetRoute = pillTabsRef.current[finalIndex]?.route;
+        
+        if (targetRoute && finalIndex !== focusedIndexRef.current) {
+          const isFocused = stateIndexRef.current === finalIndex;
+          navigateRef.current(targetRoute, isFocused);
+        } else {
+          moveIndicatorRef.current(focusedIndexRef.current, true);
+        }
+      },
+      onPanResponderTerminate: (evt, gestureState) => {
+        isDragging.current = false;
+        moveIndicatorRef.current(focusedIndexRef.current, true);
+      }
+    })
+  ).current;
+
+  useEffect(() => {
+    indicatorOpacity.value = smoothTransition(focusedIndex >= 0 ? 1 : 0);
 
     if (optimisticPress.current) {
       optimisticPress.current = false;
@@ -170,7 +288,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const pillIndicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
-    width: TAB_BAR_ACTIVE_CHIP,
+    width: indicatorWidth.value,
     height: TAB_BAR_ACTIVE_CHIP,
     opacity: indicatorOpacity.value,
   }));
@@ -252,8 +370,11 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           />
         </View>
 
-        {/* Layer 3: Interactive Icons */}
-        <View style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT, direction: "ltr" as any }]}>
+        {/* Layer 3: Interactive Icons + Active Label */}
+        <View 
+          style={[styles.pillWrap, { width: pillWidth, height: TAB_BAR_INNER_HEIGHT, direction: "ltr" as any }]}
+          {...panResponder.panHandlers}
+        >
           <View style={[styles.pillInner, { height: TAB_BAR_INNER_HEIGHT, flexDirection: "row", direction: "ltr" as any }]}>
             {pillTabs.map(({ route, label, renderIcon }) => {
               const routeIndex = state.routes.findIndex((r) => r.name === route);
@@ -274,7 +395,10 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                   accessibilityLabel={label}
                   hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
                 >
-                  {renderIcon(isFocused, iconSize)}
+                  <View style={styles.slotInner}>
+                    {renderIcon(isFocused, iconSize)}
+                    {isFocused && <ActiveTabLabel label={label} />}
+                  </View>
                 </PremiumPressable>
               );
             })}
@@ -334,6 +458,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1,
     height: "100%",
+  },
+  slotInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   activeCircle: {
     position: "absolute",

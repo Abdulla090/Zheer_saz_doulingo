@@ -9,11 +9,11 @@ const unit12: UnitBank = [
     "Job Interview Advanced",
     "چاوپێکەوتنی کاری پێشکەوتوو",
     [
-      { en: "My greatest strength is adapting quickly under pressure.", ku: "گەورەترین خاڵی بەهێزم خۆگونجاندنە بە خێرایی لەژێر فشاردا.", ar: "أعظم نقاط قوتي هي التكيّف بسرعة تحت الضغط." },
+      { en: "My greatest strength is adapting quickly under pressure.", ku: "خاڵی بەهێزم ئەوەیە کە زوو خۆم لەگەڵ فشاردا دەگونجێنم.", ar: "أهم نقاط قوتي هي القدرة على التكيف السريع تحت الضغط." },
       { en: "I see this role as a chance to grow my leadership skills.", ku: "ئەم پۆستە وەک هەلێک دەبینم بۆ گەشەپێدانی لێهاتوویی سەرکردایەتیم.", ar: "أرى هذا المنصب فرصةً لتطوير مهاراتي القيادية." },
       { en: "In my last role, I led a team of eight people.", ku: "لە کارەکەی پێشوومدا، سەرپەرشتی تیمێکی هەشت کەسیم دەکرد.", ar: "في منصبي السابق، قُدتُ فريقاً مؤلفاً من ثمانية أشخاص." },
       { en: "I'm looking for a company that values innovation.", ku: "بەدوای کۆمپانیایەکدا دەگەڕێم کە بەهای داهێنان دەزانێت.", ar: "أبحث عن شركة تُقدّر الابتكار." },
-      { en: "Do you have any concerns about my background?", ku: "ئایا هیچ نیگەرانییەکتان هەیە سەبارەت بە پێشینەی کارکردنم؟", ar: "هل لديكم أي مخاوف بشأن خلفيتي المهنية؟" },
+      { en: "Do you have any concerns about my background?", ku: "هیچ تێبینییەکتان هەیە لەسەر پێشینەی کارکردنم؟", ar: "هل لديكم أي تحفظات بشأن خبراتي السابقة؟" },
       { en: "I'd welcome the opportunity to prove myself here.", ku: "خۆشحاڵ دەبم بەم دەرفەتە بۆ سەلماندنی خۆم لێرە.", ar: "أرحّب بالفرصة لإثبات نفسي هنا." },
     ],
     {

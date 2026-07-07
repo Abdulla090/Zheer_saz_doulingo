@@ -386,7 +386,8 @@ export async function evaluateParagraphSpeechWithGemini(
 
 export async function generateReadingPracticeParagraphs(
   difficulty: "Beginner" | "Intermediate" | "Advanced",
-  paragraphCount: number
+  paragraphCount: number,
+  wordCountPerParagraph: number = 80
 ): Promise<string[]> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
@@ -396,6 +397,7 @@ export async function generateReadingPracticeParagraphs(
   const prompt = `You are an expert English teacher. Create a reading practice exercise for a language learner.
 The difficulty is ${difficulty}.
 You must generate exactly ${paragraphCount} paragraph(s).
+Each paragraph MUST contain approximately ${wordCountPerParagraph} words (do not make it shorter than this, write a full, rich and engaging paragraph).
 The topic should be engaging, like self-improvement, technology, nature, or a short story.
 Respond with ONLY a JSON array of strings, where each string is a paragraph. Do not include markdown formatting or backticks.
 Example: ["Paragraph 1 text.", "Paragraph 2 text."]`;
@@ -434,10 +436,15 @@ Example: ["Paragraph 1 text.", "Paragraph 2 text."]`;
 
   } catch (err) {
     console.error("[generateReadingPracticeParagraphs] Failed:", err);
-    // Hardcoded fallback so the user is never stuck
+    // Hardcoded fallback with richer paragraphs
     if (difficulty === "Beginner") {
-      return ["Hello! I am learning English today. It is a beautiful day.", "I like to read books and drink coffee."].slice(0, paragraphCount);
+      return [
+        "The weather is beautiful and warm today. The yellow sun is shining and the small birds are singing in the garden. I like to walk in the quiet park with my friends. We see many colorful flowers and tall green trees. It is a wonderful day to be outside, play games, and enjoy nature together."
+      ].slice(0, paragraphCount);
     }
-    return ["Learning a new language opens up incredible opportunities for personal growth and cultural understanding.", "Consistency is the key to mastery, so practicing a little bit every day leads to significant progress over time.", "Embrace the challenges, learn from your mistakes, and celebrate the small victories along your educational journey."].slice(0, paragraphCount);
+    return [
+      "Learning a new language opens up incredible opportunities for personal growth and cultural understanding. While it takes time and dedicated practice to master new vocabulary and speak fluently, the process is deeply rewarding. Conversing with native speakers is one of the most effective ways to build your everyday confidence.",
+      "Consistency is the ultimate key to language mastery, so practicing for just fifteen minutes every day leads to significant progress over time. Try to surround yourself with English media, write down new expressions, and do not be afraid of making mistakes, as they are a natural part of the learning journey."
+    ].slice(0, paragraphCount);
   }
 }

@@ -11,7 +11,7 @@ const unit07: UnitBank = [
     [
       { en: "No worries, it happens to everyone.", ku: "نیگەران مەبە، بۆ هەمووان ڕوودەدات.", ar: "لا تقلق، يحدث هذا للجميع." },
       { en: "No worries at all — I completely forgot too.", ku: "هیچ نیگەرانییەک نییە — منیش تەواو لەبیرم چوو.", ar: "لا تقلق أبداً — أنا أيضاً نسيت تماماً." },
-      { en: "Don't stress about it, no worries.", ku: "لەسەر ئەمە مەخنکە، نیگەران مەبە.", ar: "لا تجهد نفسك بهذا الأمر، لا تقلق." },
+      { en: "Don't stress about it, no worries.", ku: "خەمی مەخۆ، نیگەران مەبە.", ar: "لا تجهد نفسك بهذا الأمر، لا تقلق." },
       { en: "Thanks for understanding, no worries.", ku: "سوپاس بۆ تێگەیشتنت، نیگەران مەبە.", ar: "شكراً لتفهّمك، لا تقلق." },
       { en: "No worries, we can figure it out later.", ku: "نیگەران مەبە، دواتر دەتوانین چارەسەری بکەین.", ar: "لا تقلق، يمكننا حلّ الأمر لاحقاً." },
       { en: "It's totally fine — no worries on my end.", ku: "تەواو باشە — لە لای من هیچ کێشەیەک نییە.", ar: "الأمر عادي تماماً — لا مشكلة من طرفي." },
@@ -50,7 +50,7 @@ const unit07: UnitBank = [
     "هەڵەی من بوو",
     [
       { en: "My bad, I sent the wrong file.", ku: "هەڵەی من بوو، فایلی هەڵەم نارد.", ar: "خطئي، أرسلت الملف الخطأ." },
-      { en: "My bad — I totally misread the schedule.", ku: "هەڵەی من بوو — تەواو خشتەکەم هەڵە خوێندەوە.", ar: "خطئي — قرأت الجدول بشكل خاطئ تماماً." },
+      { en: "My bad — I totally misread the schedule.", ku: "هەڵەی من بوو — بەتەواوی خشتەکەم بە هەڵە تێگەیشتم.", ar: "خطئي — قرأت الجدول بشكل خاطئ تماماً." },
       { en: "Sorry, my bad for not calling you back.", ku: "ببوورە، هەڵەی من بوو کە پەیوەندیم پێوە نەکردەوە.", ar: "آسف، خطئي لأنني لم أعاود الاتصال بك." },
       { en: "My bad, I thought the meeting was tomorrow.", ku: "هەڵەی من بوو، پێم وابوو کۆبوونەوەکە سبەیە.", ar: "خطئي، ظننت أن الاجتماع غداً." },
       { en: "That was my bad, I should have double-checked.", ku: "ئەوە هەڵەی من بوو، دەبوایە دووبارە بپشکنم.", ar: "كان ذلك خطئي، كان يجب أن أتحقق مرة أخرى." },
@@ -89,11 +89,11 @@ const unit07: UnitBank = [
     "Hang On",
     "چاوەڕێ بکە / وەستە",
     [
-      { en: "Hang on, let me grab my notebook.", ku: "چاوەڕێ بکە، با تێبینییەکەم بهێنم.", ar: "انتظر لحظة، دعني أحضر دفتري." },
+      { en: "Hang on, let me grab my notebook.", ku: "چاوەڕێ بکە، با دەفتەری تێبینییەکانم بهێنم.", ar: "انتظر لحظة، دعني أحضر دفتري." },
       { en: "Hang on a second — I'm almost ready.", ku: "چرکەیەک چاوەڕێ بکە — نزیکم لە ئامادەبوون.", ar: "انتظر ثانية — أنا شبه جاهز." },
       { en: "Can you hang on while I check that?", ku: "دەتوانیت چاوەڕێ بکەیت تا ئەوە بپشکنم؟", ar: "هل يمكنك الانتظار بينما أتحقق من ذلك؟" },
       { en: "Hang on, I think I left my keys inside.", ku: "وەستە، پێم وایە کلیلەکانم لەناو ماوە.", ar: "انتظر لحظة، أظن أنني نسيت مفاتيحي في الداخل." },
-      { en: "Hang on — that doesn't sound right to me.", ku: "چاوەڕێ بکە — ئەوە بە دروستی وادیار ناکات.", ar: "انتظر لحظة — هذا لا يبدو صحيحاً بالنسبة لي." },
+      { en: "Hang on — that doesn't sound right to me.", ku: "وەستە — ئەوە بەلامەوە ڕاست نییە.", ar: "انتظر لحظة — هذا لا يبدو صحيحاً بالنسبة لي." },
       { en: "Just hang on, the page is still loading.", ku: "تەنها چاوەڕێ بکە، لاپەڕەکە هێشتا بار دەبێت.", ar: "انتظر فقط، الصفحة لا تزال تُحمَّل." },
     ],
     {
@@ -129,12 +129,12 @@ const unit07: UnitBank = [
     "That Makes Sense",
     "ئەوە مەعنا هەیە / تێگەیشتم",
     [
-      { en: "Oh, that makes sense now.", ku: "ئا، ئێستا مەعنا هەیە.", ar: "آه، هذا منطقي الآن." },
-      { en: "That makes sense — thanks for explaining.", ku: "مەعنا هەیە — سوپاس بۆ ڕوونکردنەوە.", ar: "هذا منطقي — شكراً للتوضيح." },
-      { en: "Yeah, that makes total sense to me.", ku: "بەڵێ، بۆ من تەواو مەعنا هەیە.", ar: "نعم، هذا منطقي تماماً بالنسبة لي." },
-      { en: "It makes sense why you were frustrated.", ku: "مەعنا هەیە بۆچی تووڕە بوویت.", ar: "من المنطقي لماذا كنت محبطاً." },
-      { en: "That makes sense given the deadline.", ku: "بەبەر ئەو مۆڵەتە مەعنا هەیە.", ar: "هذا منطقي بالنظر إلى الموعد النهائي." },
-      { en: "Now it all makes sense — I get it.", ku: "ئێستا هەموو شتێک مەعنا هەیە — تێگەیشتم.", ar: "الآن كل شيء منطقي — فهمت." },
+      { en: "Oh, that makes sense now.", ku: "ئاهـ، ئێستا تێگەیشتم.", ar: "آه، هذا منطقي الآن." },
+      { en: "That makes sense — thanks for explaining.", ku: "لۆژیکییە — سوپاس بۆ ڕوونکردنەوەکە.", ar: "هذا منطقي — شكراً للتوضيح." },
+      { en: "Yeah, that makes total sense to me.", ku: "بەڵێ، بەلای منەوە تەواو ڕوونە.", ar: "نعم، هذا منطقي تماماً بالنسبة لي." },
+      { en: "It makes sense why you were frustrated.", ku: "ئێستا تێدەگەم بۆچی بێزار بوویت.", ar: "من المنطقي لماذا كنت محبطاً." },
+      { en: "That makes sense given the deadline.", ku: "بە لەبەرچاوگرتنی مۆڵەتەکە، ئەمە لۆژیکییە.", ar: "هذا منطقي بالنظر إلى الموعد النهائي." },
+      { en: "Now it all makes sense — I get it.", ku: "ئێستا هەمووی ڕوون بووەوە — تێگەیشتم.", ar: "الآن كل شيء منطقي — فهمت." },
     ],
     {
       convos: [
@@ -209,12 +209,12 @@ const unit07: UnitBank = [
     "Fair Enough",
     "دادپەروەرانە / قبوڵە",
     [
-      { en: "Fair enough — I see your point.", ku: "دادپەروەرانە — تێگەیشتم لە قسەکەت.", ar: "هذا عادل — أفهم وجهة نظرك." },
-      { en: "Fair enough, we can try it your way.", ku: "قبوڵە، دەتوانین بە ڕێگەکەت تاقی بکەینەوە.", ar: "هذا عادل، يمكننا تجربة طريقتك." },
-      { en: "Yeah, fair enough — I hadn't thought of that.", ku: "بەڵێ، ڕاستە — من بیرم لێ نەکردبوو.", ar: "نعم، هذا عادل — لم أفكر في ذلك." },
-      { en: "Fair enough, you win this argument.", ku: "قبوڵە، ئەم جارە تۆ سەرکەوتیت.", ar: "هذا عادل، فزت بهذا النقاش." },
-      { en: "That's fair enough given the circumstances.", ku: "بەبەر ئەو بارودۆخە دادپەروەرانەیە.", ar: "هذا عادل بالنظر إلى الظروف." },
-      { en: "Fair enough — let's compromise on this.", ku: "قبوڵە — با لەسەر ئەمە ڕێک بکەین.", ar: "هذا عادل — لنتوصل إلى حل وسط." },
+      { en: "Fair enough — I see your point.", ku: "قبوڵە — لە مەبەستەکەت تێگەیشتم.", ar: "هذا عادل — أفهم وجهة نظرك." },
+      { en: "Fair enough, we can try it your way.", ku: "ڕاست دەکەیت، دەتوانین بە ڕێگەکەت تاقیی بکەینەوە.", ar: "هذا عادل، يمكننا تجربة طريقتك." },
+      { en: "Yeah, fair enough — I hadn't thought of that.", ku: "بەڵێ، قبوڵە — من بیرم لێ نەکردبووەوە.", ar: "نعم، هذا عادل — لم أفكر في ذلك." },
+      { en: "Fair enough, you win this argument.", ku: "قبوڵە، ئەم جارە تۆ بردتەوە.", ar: "هذا عادل، فزت بهذا النقاش." },
+      { en: "That's fair enough given the circumstances.", ku: "بە لەبەرچاوگرتنی بارودۆخەکە ئەوە قبوڵکراوە.", ar: "هذا عادل بالنظر إلى الظروف." },
+      { en: "Fair enough — let's compromise on this.", ku: "قبوڵە — با لەسەر ئەمە ڕێک بکەوین.", ar: "هذا عادل — لنتوصل إلى حل وسط." },
     ],
     {
       convos: [
@@ -289,7 +289,7 @@ const unit07: UnitBank = [
     "Take Your Time",
     "کاتت هەبێت / پەلە مەکە",
     [
-      { en: "Take your time — there's no rush.", ku: "کاتت هەبێت — پەلە نییە.", ar: "خذ وقتك — لا داعي للاستعجال." },
+      { en: "Take your time — there's no rush.", ku: "کاتی خۆت وەربگرە — پەلە نییە.", ar: "خذ وقتك — لا داعي للاستعجال." },
       { en: "No rush, take your time deciding.", ku: "پەلە نییە، کاتت هەبێت بۆ بڕیاردان.", ar: "لا استعجال، خذ وقتك في اتخاذ القرار." },
       { en: "Take your time and let me know later.", ku: "کاتت هەبێت و دواتر پێم بڵێ.", ar: "خذ وقتك وأخبرني لاحقاً." },
       { en: "Sure, take your time — I'll wait here.", ku: "باشە، کاتت هەبێت — لێرە چاوەڕێ دەکەم.", ar: "بالتأكيد، خذ وقتك — سأنتظر هنا." },
@@ -329,12 +329,12 @@ const unit07: UnitBank = [
     "It Is What It Is",
     "ئەوە ئەوە — چارەسەر نییە",
     [
-      { en: "It is what it is — we can't change the past.", ku: "ئەوە ئەوە — ناتوانین ڕابردوو بگۆڕین.", ar: "هو ما هو عليه — لا يمكننا تغيير الماضي." },
-      { en: "Well, it is what it is at this point.", ku: "باش، لەم قۆناغەدا ئەوە ئەوەیە.", ar: "حسناً، هو ما هو عليه في هذه المرحلة." },
-      { en: "It is what it is — let's focus on what's next.", ku: "ئەوە ئەوە — با سەرنج بدەینە ئەوەی داهاتوو.", ar: "هو ما هو عليه — لنركّز على ما هو قادم." },
-      { en: "I wish it were different, but it is what it is.", ku: "خۆشم دەوێت جیاواز بوایە، بەڵام ئەوە ئەوەیە.", ar: "أتمنى لو كان مختلفاً، لكنه هو ما هو عليه." },
-      { en: "It is what it is — no point stressing about it.", ku: "ئەوە ئەوە — فائیدەی نییە لەسەر ئەمە بخنکیت.", ar: "هو ما هو عليه — لا فائدة من القلق بشأنه." },
-      { en: "Yeah, it is what it is — we'll adapt.", ku: "بەڵێ، ئەوە ئەوە — خۆمان دەگونجێنین.", ar: "نعم، هو ما هو عليه — سنتأقلم." },
+      { en: "It is what it is — we can't change the past.", ku: "ئیتر ئەوەیە کە هەیە — ناتوانین ڕابردوو بگۆڕین.", ar: "هو ما هو عليه — لا يمكننا تغيير الماضي." },
+      { en: "Well, it is what it is at this point.", ku: "باشە، لەم قۆناغەدا ئیتر ئەوەیە کە هەیە.", ar: "حسناً، هو ما هو عليه في هذه المرحلة." },
+      { en: "It is what it is — let's focus on what's next.", ku: "ئیتر ئەوەیە کە هەیە — با سەرنج بدەینە داهاتوو.", ar: "هو ما هو عليه — لنركّز على ما هو قادم." },
+      { en: "I wish it were different, but it is what it is.", ku: "خۆزگە جیاواز بووایە، بەڵام ئیتر ئەوەیە کە هەیە.", ar: "أتمنى لو كان مختلفاً، لكنه هو ما هو عليه." },
+      { en: "It is what it is — no point stressing about it.", ku: "ئیتر ئەوەیە کە هەیە — بێسوودە خۆتی بۆ تووڕە بکەیت.", ar: "هو ما هو عليه — لا فائدة من القلق بشأنه." },
+      { en: "Yeah, it is what it is — we'll adapt.", ku: "بەڵێ، ئیتر ئەوەیە کە هەیە — خۆمان دەگونجێنین.", ar: "نعم، هو ما هو عليه — سنتأقلم." },
     ],
     {
       convos: [
@@ -372,9 +372,9 @@ const unit07: UnitBank = [
       { en: "I'm all ears — tell me what happened.", ku: "گوێم لێیە — پێم بڵێ چی ڕوویدا.", ar: "أنا كلّي آذان صاغية — أخبرني ماذا حدث." },
       { en: "That's on me — I'll pay for dinner.", ku: "ئەوە لە ئەستۆی منە — شەوخواردنەکە من دەدەم.", ar: "هذا عليّ — سأدفع ثمن العشاء." },
       { en: "You're pulling my leg — seriously?", ku: "گاڵتە دەکەیت — بەڕاستی؟", ar: "أنت تمزح معي — جدياً؟" },
-      { en: "Let's call it a day and head home.", ku: "با ئەمڕۆ تەواو بکەین و بگەڕێینەوە ماڵ.", ar: "لننهِ يومنا ونعود إلى المنزل." },
+      { en: "Let's call it a day and head home.", ku: "با بۆ ئەمڕۆ کۆتایی پێ بهێنین و بگەڕێینەوە ماڵەوە.", ar: "لننهِ يومنا ونعود إلى المنزل." },
       { en: "I'm beat — I need to crash early tonight.", ku: "مردوم لە ماندوێتی — پێویستە ئەمشەو زوو بخەوێم.", ar: "أنا منهك — أحتاج أن أنام مبكراً الليلة." },
-      { en: "Keep me posted on how it goes.", ku: "ئاگادارم بکەرەوە چۆن دەڕوات.", ar: "أبقني على اطلاع بما يحدث." },
+      { en: "Keep me posted on how it goes.", ku: "ئاگادارم بکەرەوە بزانم چۆن دەڕوات.", ar: "أبقني على اطلاع بما يحدث." },
     ],
     {
       convos: [

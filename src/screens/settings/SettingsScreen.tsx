@@ -33,6 +33,7 @@ import { confirmAction } from "../../utils/confirm-action";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
 import * as Font from "expo-font";
 import { fontMap } from "../../fontMap";
 import {
@@ -40,11 +41,19 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
+import { Pressable } from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
  
@@ -93,10 +102,94 @@ const FontPreviewText = React.memo(
   },
 );
 
+function IosSwitch({
+  value,
+  onValueChange,
+  activeColor = "#34C759",
+}: {
+  value: boolean;
+  onValueChange: (val: boolean) => void;
+  activeColor?: string;
+}) {
+  const t = useSharedValue(value ? 1 : 0);
+
+  React.useEffect(() => {
+    t.value = withTiming(value ? 1 : 0, { duration: 200 });
+  }, [value]);
+
+  const animatedTrackStyle = useAnimatedStyle(() => {
+    const backgroundColor = interpolateColor(
+      t.value,
+      [0, 1],
+      ["#E5E5EA", activeColor]
+    );
+    return {
+      backgroundColor,
+    };
+  });
+
+  const animatedThumbStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: t.value * 20,
+        },
+      ],
+    };
+  });
+
+  return (
+    <Pressable
+      onPress={() => onValueChange(!value)}
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+    >
+      <Animated.View
+        style={[
+          {
+            width: 51,
+            height: 31,
+            borderRadius: 16,
+            padding: 2,
+            justifyContent: "center",
+          },
+          animatedTrackStyle,
+        ]}
+      >
+        <Animated.View
+          style={[
+            {
+              width: 27,
+              height: 27,
+              borderRadius: 13.5,
+              backgroundColor: "#FFFFFF",
+              ...Platform.select({
+                ios: {
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 3,
+                },
+                android: {
+                  elevation: 2,
+                },
+                web: {
+                  boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.15)",
+                },
+              }),
+            },
+            animatedThumbStyle,
+          ]}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale, setLocale, isKu } = useI18n();
+  const { user, signOut } = useAuth();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -219,6 +312,27 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
             { flexDirection: isKu ? "row-reverse" : "row" },
           ]}
         >
+          <PressableScale
+            onPress={() => {
+              if (haptics) {
+                try {
+                  const { hapticSelection } = require("../../utils/haptics");
+                  hapticSelection();
+                } catch {}
+              }
+              router.back();
+            }}
+            scaleDown={0.9}
+            style={styles.backButton}
+          >
+            <HugeiconsIcon
+              icon={isKu ? ArrowRight01Icon : ArrowLeft01Icon}
+              size={22}
+              color={colors.foreground}
+              strokeWidth={2.5}
+            />
+          </PressableScale>
+
           <Icon3DSettings size={28} />
           <View
             style={{ flex: 1, alignItems: isKu ? "flex-end" : "flex-start" }}
@@ -364,10 +478,10 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.haptics")}
                 </AppText>
-                <Switch
+                <IosSwitch
                   value={haptics}
                   onValueChange={setHaptics}
-                  trackColor={{ true: colors.primary }}
+                  activeColor={colors.primary}
                 />
               </View>
               <View
@@ -380,10 +494,10 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.sounds")}
                 </AppText>
-                <Switch
+                <IosSwitch
                   value={sounds}
                   onValueChange={setSounds}
-                  trackColor={{ true: colors.primary }}
+                  activeColor={colors.primary}
                 />
               </View>
             </View>
@@ -408,12 +522,12 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
                   {t("settings.kidsArabic")}
                 </AppText>
-                <Switch
+                <IosSwitch
                   value={targetLang === "ar"}
                   onValueChange={(val: boolean) => {
                     setLanguagePair(nativeLang, val ? "ar" : prevNonArTargetRef.current);
                   }}
-                  trackColor={{ true: colors.primary }}
+                  activeColor={colors.primary}
                 />
               </View>
             </View>
@@ -680,6 +794,50 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
 
             {!isKidsMode && (
               <>
+                <AppText
+                  style={[styles.sectionLabel, styles.sectionSpaced]}
+                  forceKurdishFont={isKu}
+                >
+                  {isKu ? "ئەکاونتەکەت" : "Your Account"}
+                </AppText>
+                {user ? (
+                  <PressableScale
+                    onPress={() => {
+                      confirmAction(
+                        isKu ? "چوونەدەرەوە" : "Sign Out",
+                        isKu ? "دڵنیای لە چوونەدەرەوە لە ئەکاونتەکەت؟" : "Are you sure you want to sign out?",
+                        async () => {
+                          await signOut();
+                          router.replace("/more");
+                        },
+                        {
+                          confirmLabel: isKu ? "بچۆ دەرەوە" : "Sign Out",
+                          cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+                          destructive: true,
+                        },
+                      );
+                    }}
+                    scaleDown={0.98}
+                    style={[styles.signOutBtn, styles.card]}
+                  >
+                    <AppText style={styles.signOutLabel} forceKurdishFont={isKu}>
+                      {isKu ? "چوونەدەرەوە لە ئەکاونت" : "Sign Out"}
+                    </AppText>
+                  </PressableScale>
+                ) : (
+                  <PressableScale
+                    onPress={() => {
+                      router.push("/auth");
+                    }}
+                    scaleDown={0.98}
+                    style={[styles.signInBtn, styles.card]}
+                  >
+                    <AppText style={styles.signInLabel} forceKurdishFont={isKu}>
+                      {isKu ? "چوونەژوورەوە یان تۆماربوون" : "Sign In / Sign Up"}
+                    </AppText>
+                  </PressableScale>
+                )}
+
                 <PressableScale
                   onPress={confirmReplayOnboarding}
                   scaleDown={0.98}
@@ -720,12 +878,36 @@ const createStyles = (colors: any) =>
     header: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: 16,
       paddingHorizontal: 20,
       paddingTop: 14,
       paddingBottom: 10,
       backgroundColor: "transparent",
       marginBottom: 8,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.card,
+      borderWidth: 1.5,
+      borderColor: colors.cardBorder || "rgba(0, 0, 0, 0.05)",
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+        web: {
+          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.04)",
+        },
+      }),
     },
     title: {
       fontSize: 30,
@@ -888,6 +1070,32 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: "700",
       color: colors.error,
+      fontFamily: "DINNextRoundedBold",
+    },
+    signOutBtn: {
+      marginTop: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      backgroundColor: colors.card,
+    },
+    signOutLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.error,
+      fontFamily: "DINNextRoundedBold",
+    },
+    signInBtn: {
+      marginTop: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      backgroundColor: colors.secondary,
+    },
+    signInLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: "#FFFFFF",
       fontFamily: "DINNextRoundedBold",
     },
     inputField: {

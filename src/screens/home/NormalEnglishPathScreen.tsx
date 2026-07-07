@@ -40,6 +40,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
@@ -67,6 +68,7 @@ const NormalSectionHeader = React.memo(
 
 export function NormalEnglishPathScreen() {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useThemeColors();
   const { locale, isKu } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
@@ -151,7 +153,7 @@ export function NormalEnglishPathScreen() {
   const hasMore = visibleUnitsCount < localizedSections.length;
 
   const renderFooter = useCallback(() => {
-    if (!hasMore) return null;
+    if (!hasMore) return <ListFooter />;
     return (
       <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
         <PressableScale
@@ -187,10 +189,22 @@ export function NormalEnglishPathScreen() {
     return splitPathUnitTitle(fullTitle);
   }, [activeSectionIndex, locale]);
 
-  const buttonColors =
-    BUTTON_FACE_RIM_COLORS[
-      activeSectionTheme as keyof typeof BUTTON_FACE_RIM_COLORS
-    ] ?? BUTTON_FACE_RIM_COLORS.blue;
+  const buttonColors = useMemo(() => {
+    if (isDark) {
+      return { rim: "#0F172A", face: "#1E293B" };
+    }
+    const lightColorSets: Record<string, { face: string; rim: string }> = {
+      green: { rim: "#0B8A6C", face: "#08c296" },
+      purple: { rim: "#5E35B1", face: "#7E57C2" },
+      blue: { rim: "#0277BD", face: "#039BE5" },
+      mint: { rim: "#00695C", face: "#00897B" },
+      gray: { rim: "#90A4AE", face: "#B0BEC5" },
+      yellow: { rim: "#F57F17", face: "#FBC02D" },
+      orange: { rim: "#E65100", face: "#FF9800" },
+      red: { rim: "#B71C1C", face: "#F44336" },
+    };
+    return lightColorSets[activeSectionTheme] ?? { rim: "#0277BD", face: "#039BE5" };
+  }, [isDark, activeSectionTheme]);
 
   const recalcMaxScroll = useCallback(() => {
     maxScrollYRef.current = Math.max(
@@ -252,8 +266,8 @@ export function NormalEnglishPathScreen() {
   }).current;
 
   return (
-    <View style={{ flex: 1 }}>
-      <HomeMeshBackground />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {!isDark && <HomeMeshBackground />}
       <View
         style={[
           darkStyles.root,

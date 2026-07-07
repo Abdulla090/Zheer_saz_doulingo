@@ -1,3 +1,4 @@
+import { useThemeColors } from "../../hooks/useThemeColors";
 import SafeContainer from "../../components/shared/safe-container";
 import { Medal1, Medal2, Medal3 } from "../../constants/icons";
 import {
@@ -17,7 +18,7 @@ import { PressableScale } from "../../components/animations";
 import { hapticImpact } from "../../utils/haptics";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { getLocalPremadeAvatar } from "../../constants/avatars";
-import React from "react";
+import React, { useMemo } from "react";
 
 const getAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/adventurer/png?seed=${encodeURIComponent(seed)}`;
@@ -25,6 +26,8 @@ const getAvatarUrl = (seed: string) =>
 const keyExtractor = (item: LeagueEntry) => item.id;
 
 export const LeagueScreen = () => {
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const { t, isKu } = useI18n();
 
   const avatarUrl = useSettingsStore((s) => s.avatarUrl);
@@ -155,18 +158,19 @@ export const LeagueScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8FAF8",
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
     borderBottomWidth: 1.5,
-    borderBottomColor: "#EEF0F2",
+    borderBottomColor: colors.border,
   },
   headerContent: {
     gap: 4,
@@ -174,7 +178,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   timeRow: {
@@ -184,7 +188,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    color: "#777777",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
   },
   listContent: {
@@ -203,12 +207,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   normalRow: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#EEF0F2",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
+    borderColor: colors.border,
   },
   currentUserRow: {
-    backgroundColor: "#E8F9E9",
-    borderColor: "#A3E4A8",
+    backgroundColor: isDark ? "rgba(34, 197, 94, 0.12)" : "#E8F9E9",
+    borderColor: isDark ? "rgba(34, 197, 94, 0.3)" : "#A3E4A8",
   },
   rowLeft: {
     flexDirection: "row",
@@ -223,14 +227,14 @@ const styles = StyleSheet.create({
   },
   rankNumber: {
     fontSize: 16,
-    color: "#6B7280",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedBold",
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#EEF0F2",
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#EEF0F2",
   },
   nameCol: {
     flex: 1,
@@ -246,19 +250,20 @@ const styles = StyleSheet.create({
     fontFamily: "DINNextRoundedMedium",
   },
   normalText: {
-    color: "#1A2B48",
+    color: colors.foreground,
   },
   currentUserText: {
-    color: "#2E7D32",
+    color: isDark ? "#4ADE80" : "#2E7D32",
   },
   subText: {
-    color: "#777777",
+    color: colors.mutedForeground,
   },
   xpText: {
     fontSize: 15,
     fontFamily: "DINNextRoundedBold",
   },
   xpTextNormal: {
-    color: "#4B4B4B",
+    color: colors.mutedForeground,
   },
-});
+  });
+}

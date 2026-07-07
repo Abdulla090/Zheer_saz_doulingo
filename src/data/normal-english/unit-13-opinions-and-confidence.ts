@@ -9,7 +9,7 @@ const unit13: UnitBank = [
     "Sharing Opinions",
     "دەربڕینی بۆچوون",
     [
-      { en: "In my opinion, we should start with the basics.", ku: "بەپێی بۆچوونم، دەبێت لە بنەڕەتەکانەوە دەست پێ بکەین.", ar: "في رأيي، يجب أن نبدأ بالأساسيات." },
+      { en: "In my opinion, we should start with the basics.", ku: "بەڕای من، باشترە لە بنەڕەتەکانەوە دەست پێبکەین.", ar: "برأيي، يجب أن نبدأ بالأساسيات." },
       { en: "I honestly think this is the better option.", ku: "بەڕاستی پێم وایە ئەمە هەڵبژاردەی باشترە.", ar: "بصراحة، أعتقد أن هذا هو الخيار الأفضل." },
       { en: "From where I stand, the timing could be better.", ku: "لە ڕوانگەی منەوە، کاتەکە دەیتوانی باشتر بێت.", ar: "من وجهة نظري، كان يمكن أن يكون التوقيت أفضل." },
       { en: "I see your point, but I respectfully disagree.", ku: "تێدەگەم مەبەستت چییە، بەڵام لەگەڵ ڕێزدا هاوڕا نیم.", ar: "أفهم وجهة نظرك، لكنني أختلف معك باحترام." },
@@ -49,7 +49,7 @@ const unit13: UnitBank = [
     "Agreeing & Pushing Back",
     "ڕازیبوون و ناڕازیبوون (بە ئەدەبەوە)",
     [
-      { en: "I couldn't agree with you more.", ku: "لەوە زیاتر ناتوانم لەگەڵت هاوڕا بم (تەواو هاوڕام).", ar: "لا أستطيع أن أتفق معك أكثر من ذلك." },
+      { en: "I couldn't agree with you more.", ku: "سەد لە سەد لەگەڵت هاوڕام.", ar: "أتفق معك تماماً." },
       { en: "That's a fair point — I hadn't thought of that.", ku: "ئەوە خاڵێکی بەجێیە — من بیرم لەوە نەکردبووەوە.", ar: "هذه نقطة وجيهة — لم أفكر في ذلك." },
       { en: "You're absolutely right about the deadline.", ku: "تۆ بە تەواوی ڕاست دەکەیت دەربارەی وادەی کۆتایی.", ar: "أنت محق تماماً بشأن الموعد النهائي." },
       { en: "I see what you mean, but I'm not sure yet.", ku: "تێدەگەم مەبەستت چییە، بەڵام هێشتا دڵنیا نیم.", ar: "أفهم ما تعنيه، لكنني لست متأكداً بعد." },
@@ -89,7 +89,7 @@ const unit13: UnitBank = [
     "Light Humor",
     "گاڵتەی سووک (ڕۆژانە)",
     [
-      { en: "I'm just messing with you — don't worry.", ku: "تەنها گاڵتەت لەگەڵ دەکەم — نیگەران مەبە.", ar: "أنا فقط أمزح معك — لا تقلق." },
+      { en: "I'm just messing with you — don't worry.", ku: "تەنیا گاڵتەت لەگەڵ دەکەم — خەمت نەبێت.", ar: "أنا أمزح معك فقط — لا تقلق." },
       { en: "That went better than I expected, honestly.", ku: "ڕاستگۆ بم، لەوە باشتر ڕۆیشت کە چاوەڕێم دەکرد.", ar: "بصراحة، سار الأمر أفضل مما توقعت." },
       { en: "Well, that was awkward — let's move on.", ku: "باشە، ئەوە کەمێک شەرمەزارکەر (نەگونجاو) بوو — با تێپەڕین.", ar: "حسناً، كان ذلك محرجاً — لننتقل إلى شيء آخر." },
       { en: "I have to admit, that was pretty funny.", ku: "دەبێت دان بەوەدا بنێم، ئەوە زۆر پێکەنیناوی بوو.", ar: "يجب أن أعترف، كان ذلك مضحكاً جداً." },

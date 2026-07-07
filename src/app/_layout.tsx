@@ -150,6 +150,14 @@ function InnerLayout() {
   }, [onLayoutReady]);
 
   useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const isRTL = locale === "ku" || locale === "ar";
+      document.documentElement.dir = isRTL ? "rtl" : "ltr";
+      document.documentElement.style.direction = isRTL ? "rtl" : "ltr";
+    }
+  }, [locale]);
+
+  useEffect(() => {
     if (ready) {
       void syncHomeWidget();
       void fetchRemoteCurriculum("street");
@@ -169,6 +177,8 @@ function InnerLayout() {
     "--font-rd-regular": selectedFont,
   };
 
+  const isRTL = locale === "ku" || locale === "ar";
+
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
@@ -182,14 +192,14 @@ function InnerLayout() {
             BottomSheetModalProvider above). The imperative API in
             useAndroidImmersiveChrome already handles hiding the nav bar. */}
         <OfflineBanner />
-        <GestureHandlerRootView style={[{ flex: 1, direction: locale === "ku" ? "rtl" : "ltr" }, rnWebVars as any]}>
+        <GestureHandlerRootView style={[{ flex: 1, direction: isRTL ? "rtl" : "ltr" }, rnWebVars as any]}>
           <SkiaWebGate>
           <AppErrorBoundary>
             <BottomSheetModalProvider>
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  animation: "fade",
+                  animation: "slide_from_right",
                 }}
               >
                   <Stack.Screen name="(tabs)" />

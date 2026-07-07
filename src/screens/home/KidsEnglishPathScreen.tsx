@@ -22,6 +22,7 @@ import { useI18n } from "../../hooks/useI18n";
 import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { useCurrentProgress } from "../../stores/useProgressStore";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AppText } from "../../components/ui/AppText";
 import { PressableScale } from "../../components/animations/PressableScale";
@@ -41,10 +42,13 @@ import { HomeMainButton } from "./components/home-main-button";
 import { KidsPathListRow } from "./components/kids-path-list-row";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 
+import { ListFooter } from "./components/list-footer";
+
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
 export function KidsEnglishPathScreen() {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useThemeColors();
   const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
@@ -94,7 +98,7 @@ export function KidsEnglishPathScreen() {
   const hasMore = visibleUnitsCount < localizedSections.length;
 
   const renderFooter = useCallback(() => {
-    if (!hasMore) return null;
+    if (!hasMore) return <ListFooter />;
     return (
       <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
         <PressableScale
@@ -130,10 +134,22 @@ export function KidsEnglishPathScreen() {
     return splitPathUnitTitle(fullTitle);
   }, [activeSectionIndex, locale]);
 
-  const buttonColors =
-    KIDS_BUTTON_FACE_RIM_COLORS[
-      activeSectionTheme as keyof typeof KIDS_BUTTON_FACE_RIM_COLORS
-    ] ?? KIDS_BUTTON_FACE_RIM_COLORS.green;
+  const buttonColors = useMemo(() => {
+    if (isDark) {
+      return { rim: "#0F172A", face: "#1E293B" };
+    }
+    const lightColorSets: Record<string, { face: string; rim: string }> = {
+      green:  { rim: "#58A700", face: "#58CC02" }, 
+      purple: { rim: "#7C3AED", face: "#A78BFA" }, 
+      blue:   { rim: "#1490CC", face: "#1CB0F6" }, 
+      mint:   { rim: "#0D9488", face: "#2DD4BF" }, 
+      gray:   { rim: "#94A3B8", face: "#CBD5E1" }, 
+      yellow: { rim: "#E6A700", face: "#FFC800" }, 
+      orange: { rim: "#EA580C", face: "#FB923C" }, 
+      red:    { rim: "#EA2B2B", face: "#FF4B4B" },
+    };
+    return lightColorSets[activeSectionTheme] ?? { rim: "#58A700", face: "#58CC02" };
+  }, [isDark, activeSectionTheme]);
 
   const recalcMaxScroll = useCallback(() => {
     maxScrollYRef.current = Math.max(
@@ -194,8 +210,8 @@ export function KidsEnglishPathScreen() {
   }).current;
 
   return (
-    <View style={{ flex: 1 }}>
-      <KidsMeshBackground />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {!isDark && <KidsMeshBackground />}
       <View
         style={{
           flex: 1,

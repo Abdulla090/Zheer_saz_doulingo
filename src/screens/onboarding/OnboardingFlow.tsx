@@ -15,6 +15,9 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
+  withTiming,
+  runOnJS,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
@@ -23,6 +26,7 @@ import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { AppText } from "../../components/ui/AppText";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useRouter } from "expo-router";
 
 /* Blue → Indigo order */
 const STEP_IDS = ["learn_conversation", "grow_every_day", "achieve_fluency"] as const;
@@ -30,6 +34,7 @@ const STEP_IDS = ["learn_conversation", "grow_every_day", "achieve_fluency"] as 
 export function OnboardingFlow() {
   const { width: screenWidth } = useWindowDimensions();
   const scrollRef = useRef<Animated.ScrollView>(null);
+  const router = useRouter();
 
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
   const pathMode = useSettingsStore((s) => s.pathMode);
@@ -47,6 +52,11 @@ export function OnboardingFlow() {
 
   /* Continuous scroll position for smooth gradient morph */
   const scrollX = useSharedValue(0);
+  const rootOpacity = useSharedValue(1);
+
+  const animatedRootStyle = useAnimatedStyle(() => ({
+    opacity: rootOpacity.value,
+  }));
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -95,7 +105,14 @@ export function OnboardingFlow() {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     completeOnboarding();
-  }, [completeOnboarding, selectedPath, setPathMode]);
+    
+    // Smooth transition: fade out root view, then replace route to show login screen
+    rootOpacity.value = withTiming(0, { duration: 400 }, (finished) => {
+      if (finished) {
+        runOnJS(router.replace)("/auth?redirect=/(tabs)&showSkip=true");
+      }
+    });
+  }, [completeOnboarding, selectedPath, setPathMode, router]);
 
   const goNext = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -147,7 +164,7 @@ export function OnboardingFlow() {
   }
 
   return (
-    <View style={styles.root}>
+    <Animated.View style={[styles.root, animatedRootStyle]}>
       <OnboardingSkiaBg scrollX={scrollX} />
       <Animated.ScrollView
         ref={scrollRef}
@@ -212,7 +229,7 @@ export function OnboardingFlow() {
           </View>
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

@@ -11,9 +11,10 @@ import {
   useContentPackStore,
 } from "../../stores/useContentPackStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 import type { PathMode } from "../../stores/useSettingsStore";
 
@@ -31,8 +32,9 @@ export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }
   const activeMode = overrideMode ?? parseMode(params.mode) ?? savedMode;
   const insets = useSafeAreaInsets();
   const router = useRouter();
-
-  // Removed kids router redirect so it renders in the dashboard
+  
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const streetStatus = useContentPackStore((s) => s.streetStatus);
   const kidsStatus = useContentPackStore((s) => s.kidsStatus);
@@ -62,7 +64,7 @@ export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }
         const timer = setTimeout(() => {
           setShowPath(true);
         }, 1000);
-        return () => clearTimeout(timer);
+         return () => clearTimeout(timer);
       } else {
         setShowPath(true);
       }
@@ -112,15 +114,17 @@ export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }
   );
 }
 
-const styles = StyleSheet.create({
-  lockRoot: {
-    flex: 1,
-    backgroundColor: "#F5F9FF",
-  },
-  lockScroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-});
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
+    lockRoot: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    lockScroll: {
+      flexGrow: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 16,
+    },
+  });
+}

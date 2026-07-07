@@ -62,6 +62,7 @@ interface ProgressState extends ProgressSnapshot {
   recordGamePlayed: (label: string, gameId?: string) => void;
   awardXp: (xpEarned: number, label: string) => void;
   resetProgress: () => void;
+  initializeNormalProgress: (langPair: string, initialIndex: number) => void;
 }
 
 function todayIso(): string {
@@ -240,6 +241,23 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   resetProgress: () => {
     set({ ...DEFAULT_PROGRESS, pathScrollAfterLesson: null });
     persistProgress(DEFAULT_PROGRESS);
+  },
+
+  initializeNormalProgress: (langPair, initialIndex) => {
+    const cur = get();
+    const currentNormalIndex = cur.normalPathIndexes[langPair] || 0;
+    if (currentNormalIndex < initialIndex) {
+      const next: ProgressSnapshot = {
+        ...cur,
+        normalPathIndexes: {
+          ...cur.normalPathIndexes,
+          [langPair]: initialIndex,
+        },
+      };
+      set(next);
+      persistProgress(next);
+      void import("../services/home-widget-sync").then((m) => m.syncHomeWidget());
+    }
   },
 }));
 

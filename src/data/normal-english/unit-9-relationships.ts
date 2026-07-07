@@ -169,7 +169,7 @@ const unit09: UnitBank = [
     "Family Talk",
     "قسەکردن لەسەر خێزان",
     [
-      { en: "My parents are visiting next month.", ku: "دایک و باوكم مانگی داهاتوو سەردانم دەکەن.", ar: "والداي سيزورانني الشهر القادم." },
+      { en: "My parents are visiting next week.", ku: "دایک و باوکم هەفتەی داهاتوو سەردانم دەکەن.", ar: "والداي سيزورانني الأسبوع القادم." },
       { en: "I need to call my sister back tonight.", ku: "پێویستە ئەمشەو تەلەفۆن بۆ خوشکەکەم بکەمەوە.", ar: "أحتاج أن أعيد الاتصال بأختي الليلة." },
       { en: "Family dinners can get pretty loud at our house.", ku: "ئێوارەخوانەکانی خێزان لە ماڵماندا زۆر ژاوەژاوی تێدایە.", ar: "عشاء العائلة يكون صاخباً جداً في بيتنا." },
       { en: "I'm the oldest, so I help with the kids a lot.", ku: "من گەورەترینم، بۆیە زۆر یارمەتی منداڵەکان دەدەم.", ar: "أنا الأكبر سنّاً، لذلك أساعد كثيراً مع الأطفال." },
@@ -182,7 +182,7 @@ const unit09: UnitBank = [
           situation: "هاوکارێکت دەپرسێت بۆچی ئەم کۆتایی هەفتەیە سەرقاڵیت",
           situationAr: "زميلك يسألك لماذا أنتَ مشغول نهاية هذا الأسبوع",
           theyAsk: "Are you free to cover my shift this weekend?",
-          correct: "Sorry, my parents are visiting next month and I need to get the house ready — this weekend is packed.",
+          correct: "Sorry, my parents are visiting next week and I need to get the house ready — this weekend is packed.",
           wrong1: "Family is not important.",
           wrong2: "I don't have parents.",
           wrong3: "Weekend I sleep only.",
@@ -214,7 +214,7 @@ const unit09: UnitBank = [
       { en: "Can we talk about this calmly?", ku: "دەتوانین بە ئارامی لەسەر ئەمە قسە بکەین؟", ar: "هل يمكننا أن نتحدّث عن هذا بهدوء؟" },
       { en: "I think we're both a little frustrated.", ku: "پێم وایە هەردووکمان کەمێک بێزار بووین.", ar: "أعتقد أنّنا كلانا محبطان قليلاً." },
       { en: "I want to understand your side better.", ku: "دەمەوێت باشتر لە لایەنەکەی تۆ تێبگەم.", ar: "أريد أن أفهم وجهة نظرك بشكل أفضل." },
-      { en: "Let's not go to bed angry.", ku: "با بە تووڕەییەوە نەخەوین.", ar: "دعنا لا ننام ونحن غاضبون." },
+      { en: "Let's not go to bed angry.", ku: "با بە دڵگرانییەوە نەخەوین.", ar: "دعنا لا ننام ونحن غاضبون." },
     ],
     {
       convos: [
@@ -249,7 +249,7 @@ const unit09: UnitBank = [
     "Emotional Intelligence",
     "زیرەکی سۆزداری",
     [
-      { en: "I appreciate you opening up to me.", ku: "سوپاسگوزارم کە قسەی دڵت بۆ کردم (کراوە بوویت لەگەڵم).", ar: "أقدّر انفتاحك معي." },
+      { en: "I appreciate you opening up to me.", ku: "سوپاس کە دڵی خۆتت بۆ کردمەوە.", ar: "أقدّر انفتاحك معي." },
       { en: "It's okay to not be okay sometimes.", ku: "ئاساییە کە هەندێک جار باش نەبیت.", ar: "لا بأس أن لا تكون بخير أحياناً." },
       { en: "Your feelings are completely valid.", ku: "هەستەکانت بەتەواوی ڕەوا و دروستن.", ar: "مشاعرك مشروعة تماماً." },
       { en: "I'm not trying to fix you — just listen.", ku: "هەوڵ نادەم کێشەکەت چارەسەر بکەم — تەنها گوێت لێ دەگرم.", ar: "لا أحاول إصلاحك — فقط أستمع إليك." },

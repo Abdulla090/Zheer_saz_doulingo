@@ -39,6 +39,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { generateCustomCurriculum } from "../../services/curriculum-generator";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { getSkippedUnitsCount } from "../../data/normal-english";
 
 type Step = "profile" | "language" | "level" | "goal" | "generating";
 
@@ -150,25 +152,26 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
     hapticSelection();
     setStep("generating");
     
-    // Convert level (1-10) to "beginner" or "advanced" for generator
-    const levelStr = selectedLevel <= 5 ? "beginner" : "advanced";
-
     try {
-      await generateCustomCurriculum({
-        name,
-        age,
-        language: selectedLang,
-        level: levelStr,
-        goal: selectedGoal
-      });
-      // Activate normal path mode (which now uses the custom curriculum)
+      // Simulate AI path organization delay (1.5 seconds)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      const skipCount = getSkippedUnitsCount(selectedLevel);
+      const initialIndex = skipCount * 10;
+      const nativeLang = selectedLang === "ku" ? "en" : "ku";
+      const langPair = `${nativeLang}-${selectedLang}`;
+      
+      // Initialize normal progress in the store
+      useProgressStore.getState().initializeNormalProgress(langPair, initialIndex);
+      
+      setEnglishLevel(selectedLevel);
       setPathMode("normal");
     } catch (err) {
-      console.warn("Failed to generate curriculum:", err);
+      console.warn("Failed to initialize path:", err);
     }
     
     onFinish();
-  }, [name, age, selectedLang, selectedLevel, selectedGoal, setPathMode, onFinish]);
+  }, [selectedLang, selectedLevel, setPathMode, setEnglishLevel, onFinish]);
 
   const onBack = useCallback(() => {
     hapticSelection();

@@ -688,13 +688,30 @@ function buildLessonQuestionsFromBank(
     // Only add fallback reading practice for unit index >= 2 (Unit 3+)
     // to avoid confusing absolute beginners in Unit 1 (index 0) and Unit 2 (index 1)
     if (unitIndex >= 2) {
+      let paragraphsToUse: string[] = [];
+      if (sentences.length > 0) {
+        // Use sentences from the lesson
+        paragraphsToUse = sentences.slice(0, 2).map((s) => s.english.join(" "));
+      } else if (voices.length > 0) {
+        // Use target words/phrases from the lesson's voices
+        paragraphsToUse = [voices.slice(0, 3).map((v) => v.target).join(". ") + "."];
+      } else if (words.length > 0) {
+        // Use single words from the lesson
+        paragraphsToUse = [
+          "Let's practice these words: " + words.slice(0, 4).map((w) => w.english).join(", ") + ".",
+          "Read them carefully to improve your pronunciation."
+        ];
+      } else {
+        paragraphsToUse = [
+          "Let's practice reading some English phrases.",
+          "Learning a language is fun when you practice every single day."
+        ];
+      }
+
       questions.push({
         type: "paragraph_speech",
         mode: "practice",
-        paragraphs: [
-          "Welcome to your first reading practice. Learning English is fun and easy when you practice every day.",
-          "Take a deep breath, read slowly, and try to pronounce each word clearly. You are doing a great job!"
-        ],
+        paragraphs: paragraphsToUse,
         xp: 30,
       });
     }

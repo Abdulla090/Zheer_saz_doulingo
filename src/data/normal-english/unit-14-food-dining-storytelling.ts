@@ -8,7 +8,7 @@ const normalUnit06: UnitBank = [
   {
     topic: "Table Talk", topicKu: "گفتوگۆی سەر مێز", topicAr: "حديث المائدة",
     words: [
-      { english: "Could you pass the salt", kurdish: "دەتوانیت خوێەکەم پێ بدەیت", arabic: "هل يمكنك تمرير الملح" },
+      { english: "Could you pass the salt", kurdish: "دەتوانیت خوێەکەم پێ بدەیت", arabic: "هل يمكنك مناولتي الملح" },
       { english: "Fork and knife", kurdish: "چەتاڵ و چەقۆ", arabic: "شوكة وسكين" },
       { english: "Here is your napkin", kurdish: "ئەمەش دەسڕەکەتە", arabic: "تفضل منديلك" },
       { english: "Pour the water", kurdish: "ئاوتێکردن (ڕشتنی ئاو)", arabic: "صب الماء" },
@@ -203,8 +203,8 @@ const normalUnit06: UnitBank = [
   {
     topic: "Cooking at Home", topicKu: "لێنان لە ماڵەوە", topicAr: "الطبخ في المنزل",
     words: [
-      { english: "Follow the recipe", kurdish: "پەیڕەوکردنی ڕێچکەی لێنانەکە (ڕەسپی)", arabic: "اتباع الوصفة" },
-      { english: "Boil the water", kurdish: "کوتاندنی (کوڵاندنی) ئاوەکە", arabic: "غلي الماء" },
+      { english: "Follow the recipe", kurdish: "جێبەجێکردنی ڕەچەتەکە", arabic: "اتباع الوصفة" },
+      { english: "Boil the water", kurdish: "کوڵاندنی ئاوەکە", arabic: "غلي الماء" },
       { english: "Fry the onions", kurdish: "سوورکردنەوەی پیازەکان", arabic: "قلي البصل" },
       { english: "Bake a cake", kurdish: "برژاندنی کێک لە فڕن", arabic: "خبز كعكة" },
       { english: "Chop the vegetables", kurdish: "وردکردنی سەوزەواتەکان", arabic: "تقطيع الخضار" },

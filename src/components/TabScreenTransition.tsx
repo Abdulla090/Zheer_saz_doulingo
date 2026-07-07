@@ -7,6 +7,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
+  Easing,
 } from "react-native-reanimated";
 
 type Props = {
@@ -31,23 +33,43 @@ export function TabScreenTransition({ children }: Props) {
         return;
       }
 
-      if (Platform.OS === "web") {
-        translateX.value = 0;
-        opacity.value = 1;
-        return;
-      }
-
-      const offset = Math.min(width * 0.15, 60) * direction;
+      const offset = width * 0.45 * direction;
       translateX.value = offset;
-      opacity.value = 0.8;
+      opacity.value = 0.5;
 
-      // Postpone animation slightly to let Hermes finish mounting the screen
-      const timer = setTimeout(() => {
-        translateX.value = withSpring(0, { damping: 26, stiffness: 170, mass: 0.8, overshootClamping: true });
-        opacity.value = withSpring(1, { damping: 26, stiffness: 170, mass: 0.8, overshootClamping: true });
-      }, 35);
+      const runAnimation = () => {
+        if (Platform.OS === "web") {
+          translateX.value = withTiming(0, {
+            duration: 380,
+            easing: Easing.bezier(0.25, 1, 0.5, 1),
+          });
+          opacity.value = withTiming(1, {
+            duration: 380,
+            easing: Easing.bezier(0.25, 1, 0.5, 1),
+          });
+        } else {
+          translateX.value = withSpring(0, {
+            damping: 28,
+            stiffness: 220,
+            mass: 0.8,
+            overshootClamping: true,
+          });
+          opacity.value = withSpring(1, {
+            damping: 28,
+            stiffness: 220,
+            mass: 0.8,
+            overshootClamping: true,
+          });
+        }
+      };
 
-      return () => clearTimeout(timer);
+      if (Platform.OS === "web") {
+        const raf = requestAnimationFrame(runAnimation);
+        return () => cancelAnimationFrame(raf);
+      } else {
+        const timer = setTimeout(runAnimation, 35);
+        return () => clearTimeout(timer);
+      }
     }, [consumeDirection, opacity, translateX, width]),
   );
 

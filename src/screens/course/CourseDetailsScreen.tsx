@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowLeft01Icon,
+  ArrowRight01Icon,
   CheckmarkCircle02Icon,
   PlayIcon,
   LockIcon,
@@ -19,6 +20,8 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useLocaleStore } from "../../stores/useLocaleStore";
 
 const Colors = {
   background: "#FFFFFF",
@@ -36,6 +39,8 @@ const Colors = {
 export function CourseDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const locale = useLocaleStore((s) => s.locale);
+  const isRTL = locale === "ku" || locale === "ar";
 
   const handleBack = () => {
     router.back();
@@ -65,11 +70,11 @@ export function CourseDetailsScreen() {
           <View style={styles.bannerOverlay} />
           
           <TouchableOpacity 
-            style={[styles.backBtn, { top: insets.top + 16 }]} 
+            style={[styles.backBtn, { top: insets.top + 16 }, isRTL ? { right: 24, left: "auto" } : { left: 24, right: "auto" }]} 
             onPress={handleBack}
             activeOpacity={0.8}
           >
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color="#FFFFFF" />
+            <HugeiconsIcon icon={isRTL ? ArrowRight01Icon : ArrowLeft01Icon} size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           <View style={styles.bannerTextWrap}>

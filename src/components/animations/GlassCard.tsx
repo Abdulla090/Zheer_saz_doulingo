@@ -8,6 +8,8 @@ import React from "react";
 import { StyleSheet, View, Platform, StyleProp, ViewStyle } from "react-native";
 import { BlurView } from "expo-blur";
 
+import { useThemeColors } from "../../hooks/useThemeColors";
+
 type GlassCardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -29,9 +31,12 @@ export function GlassCard({
   borderRadius = 24,
   showBorder = true,
 }: GlassCardProps) {
+  const { isDark } = useThemeColors();
+  const activeTint = tint === "light" ? (isDark ? "dark" : "light") : tint;
+
   const borderStyle = showBorder ? {
     borderWidth: 1,
-    borderColor: tint === "dark"
+    borderColor: activeTint === "dark"
       ? "rgba(255,255,255,0.08)"
       : "rgba(255,255,255,0.35)",
   } : {};
@@ -44,7 +49,7 @@ export function GlassCard({
           styles.container,
           {
             borderRadius,
-            backgroundColor: tint === "dark"
+            backgroundColor: activeTint === "dark"
               ? "rgba(14, 17, 23, 0.7)"
               : "rgba(255, 255, 255, 0.55)",
             // @ts-ignore — web-only CSS property
@@ -65,7 +70,7 @@ export function GlassCard({
     <View style={[styles.container, { borderRadius, overflow: "hidden" }, borderStyle, style]}>
       <BlurView
         intensity={intensity}
-        tint={tint}
+        tint={activeTint}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.content}>

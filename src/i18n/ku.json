@@ -283,7 +283,11 @@
     "voiceListeningSpeak": "گوێگرتن… (ئێستا قسە بکە)",
     "voiceTryAgainStatus": "دووبارە هەوڵبدەوە",
     "voiceTapMicSpeak": "مایک دابگرە و قسەبکە",
-    "voiceTapForHint": "دابگرە بۆ یارمەتی"
+    "voiceTapForHint": "دابگرە بۆ یارمەتی",
+    "readingQuiz": "کویزی خوێندنەوە",
+    "readingPractice": "ڕاهێنانی خوێندنەوە",
+    "scoreLabel": "نمرە: {score}%",
+    "skipForNow": "بۆ ئێستا تێپەڕاندن"
   },
   "onboarding": {
     "skip": "تێپەڕاندن",

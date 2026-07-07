@@ -1,6 +1,6 @@
 import { PremiumPressable } from '../../components/PremiumPressable';
 import { crossShadow } from '../../utils/shadows';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,9 +11,11 @@ import AiTeacher from '../../../assets/images/svg/aiteacher.svg';
 import ReadingPractice from '../../../assets/images/svg/readingpractice.svg';
 import { BottomScrollFade } from '../../components/ui/BottomScrollFade';
 import { useRouter } from 'expo-router';
+import { HomeMeshBackground } from '../../components/ui/ios-liquid-home';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { useI18n } from '../../hooks/useI18n';
 import { AppText } from '../../components/ui/AppText';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import { 
   HeadphonesIcon, 
   Mic01Icon, 
@@ -33,42 +35,45 @@ import {
 
 const { width } = Dimensions.get('window');
 
-/* ──────────────────────────────────────────────
-   Design tokens – matches the reference image
-   ────────────────────────────────────────────── */
-const C = {
-  // Base
-  bg: '#F8F7FC',           // soft lavender-tinted background
-  card: '#FFFFFF',
-  text: '#111827',
-  sub: '#6B7280',
-  // Brand indigo
-  indigo: '#4338CA',
-  indigoDark: '#1E1B4B',
-  indigoMid: '#312E81',
-  indigoLight: '#EEF2FF',
-  // Accent
-  amber: '#F59E0B',
-  orange: '#F97316',
-  blue: '#3B82F6',
-  violet: '#8B5CF6',
-  violetLight: '#F3E8FF',
-  // Role play card gradient
-  rpStart: '#2D2A6E',
-  rpEnd: '#1A1744',
-  // Badge
-  badgeBg: '#EDE9FE',
-  badgeText: '#7C3AED',
-  hotBg: '#EF4444',
-  hotText: '#FFFFFF',
-};
+function getDesignTokens(isDark: boolean) {
+  return {
+    // Base
+    bg: isDark ? '#0F172A' : '#F8F7FC',           // soft lavender-tinted background
+    card: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
+    text: isDark ? '#FFFFFF' : '#111827',
+    sub: isDark ? '#94A3B8' : '#6B7280',
+    // Brand indigo
+    indigo: isDark ? '#818CF8' : '#4338CA',
+    indigoDark: isDark ? '#312E81' : '#1E1B4B',
+    indigoMid: isDark ? '#4F46E5' : '#312E81',
+    indigoLight: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
+    // Accent
+    amber: '#F59E0B',
+    orange: '#F97316',
+    blue: isDark ? '#60A5FA' : '#3B82F6',
+    violet: isDark ? '#A78BFA' : '#8B5CF6',
+    violetLight: isDark ? 'rgba(167, 139, 250, 0.15)' : '#F3E8FF',
+    // Role play card gradient
+    rpStart: isDark ? '#1E1B4B' : '#2D2A6E',
+    rpEnd: isDark ? '#0F172A' : '#1A1744',
+    // Badge
+    badgeBg: isDark ? 'rgba(167, 139, 250, 0.15)' : '#EDE9FE',
+    badgeText: isDark ? '#A78BFA' : '#7C3AED',
+    hotBg: '#EF4444',
+    hotText: '#FFFFFF',
+  };
+}
 
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { dailyXp, dailyGoalXp, streakDays, totalXp } = useProgressStore();
   const { t, locale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
   const isRtl = isKu || locale === 'ar';
+
+  const C = useMemo(() => getDesignTokens(isDark), [isDark]);
+  const styles = useMemo(() => createStyles(C, isDark), [C, isDark]);
 
   const xp = dailyXp || 0;
   const goal = dailyGoalXp || 15;
@@ -76,35 +81,28 @@ export function GamesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
+      {!isDark && <HomeMeshBackground />}
       <ScrollView
         style={styles.container}
-      contentContainerStyle={{
-        paddingBottom: 120,
-        maxWidth: 600,
-        width: '100%',
-        alignSelf: 'center',
-      }}
-      showsVerticalScrollIndicator={false}
-    >
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.contentWrapper}>
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.headerTop}>
           <View style={styles.brandRow}>
-            <Text style={styles.brandText}>TWINO LABS</Text>
+            <AppText style={styles.brandText} forceLatinFont latinRole="bold">TWINO LABS</AppText>
           </View>
           <View style={styles.proPill}>
             <HugeiconsIcon icon={CrownIcon} size={14} color={C.amber} />
-            <Text style={styles.proText}>Pro</Text>
+            <AppText style={styles.proText} forceLatinFont latinRole="bold">Pro</AppText>
           </View>
         </View>
 
         {/* Hero */}
         <View style={styles.hero}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.heroTitle, isRtl && { textAlign: 'right' }]}>{t("games.title")}</Text>
-            <Text style={[styles.heroSub, isRtl && { textAlign: 'right' }]}>
-              {t("games.subtitle")}
-            </Text>
+            <AppText style={styles.heroTitle} forceKurdishFont={isKu}>{t("games.title")}</AppText>
           </View>
         </View>
       </View>
@@ -112,28 +110,28 @@ export function GamesScreen() {
       {/* ── Quick Actions Row ── */}
       <View style={styles.quickActionsOuter}>
         <View style={styles.quickActionsCard}>
-          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
             <View style={[styles.quickIcon, { backgroundColor: '#F4F0FF', borderWidth: 1, borderColor: '#EDE9FE' }]}>  
               <HugeiconsIcon icon={HeadphonesIcon} size={26} color={C.violet} strokeWidth={2} />
             </View>
-            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.listenTitle")}</Text>
-            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.listenSub")}</Text>
+            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.listenTitle")}</AppText>
+            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.listenSub")}</AppText>
           </PremiumPressable>
 
-          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
             <View style={[styles.quickIcon, { backgroundColor: '#EEF5FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>  
               <HugeiconsIcon icon={Mic01Icon} size={26} color={C.blue} strokeWidth={2} />
             </View>
-            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.speakTitle")}</Text>
-            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.speakSub")}</Text>
+            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.speakTitle")}</AppText>
+            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.speakSub")}</AppText>
           </PremiumPressable>
 
-          <PremiumPressable style={styles.quickItem} pressScale={0.94}>
+          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
             <View style={[styles.quickIcon, { backgroundColor: '#FFF5F0', borderWidth: 1, borderColor: '#FFE4E6' }]}>  
               <HugeiconsIcon icon={Chatting01Icon} size={26} color={C.orange} strokeWidth={2} />
             </View>
-            <Text style={[styles.quickLabel, isRtl && { textAlign: 'center' }]}>{t("games.conversationTitle")}</Text>
-            <Text style={[styles.quickSub, isRtl && { textAlign: 'center' }]}>{t("games.conversationSub")}</Text>
+            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.conversationTitle")}</AppText>
+            <AppText style={styles.quickSub} forceKurdishFont={isKu}>{t("games.conversationSub")}</AppText>
           </PremiumPressable>
         </View>
       </View>
@@ -163,7 +161,7 @@ export function GamesScreen() {
           
           <Image
             source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
-            style={[styles.mascotImg, isRtl ? { left: -16, right: undefined, transform: [{ scaleX: -1 }] } : {}]}
+            style={[styles.mascotImg, isRtl ? { left: -16, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -5, left: 'auto' }]}
             resizeMode="contain"
           />
         </LinearGradient>
@@ -178,143 +176,124 @@ export function GamesScreen() {
               <HugeiconsIcon icon={Robot02Icon} size={20} color={C.indigo} strokeWidth={2} />
             </View>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
+              <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
             </View>
           </View>
-          <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>{t("games.voiceTutorTitle")}</Text>
-          <Text style={[styles.cardSub, isRtl && { textAlign: 'right' }]}>{t("games.voiceTutorSub")}</Text>
+          <AppText style={styles.cardTitle} forceKurdishFont={isKu}>{t("games.voiceTutorTitle")}</AppText>
+          <AppText style={styles.cardSub} forceKurdishFont={isKu}>{t("games.voiceTutorSub")}</AppText>
         </PremiumPressable>
 
-        {/* Slideable Bento Carousel */}
+        {/* Bento Row (No sliding, fits all screens) */}
+        <View style={[styles.bentoRow, isRtl && { flexDirection: 'row-reverse' }]}>
+          <PremiumPressable key="podcast" containerStyle={{ flex: 1 }} style={styles.podcastCard} pressScale={0.97} onPress={() => router.push("/podcast")}>
+            <LinearGradient
+              colors={['#FFA04A', '#FF7300']}
+              style={[styles.rolePlayGradient, { padding: 10, minHeight: 110 }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { marginBottom: 6 }]}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.15)', width: 32, height: 32, borderRadius: 10 }]}>
+                  <HugeiconsIcon icon={HeadphonesIcon} size={16} color="#FFF" strokeWidth={2.5} />
+                </View>
+                <View style={[styles.badge, { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }]}>
+                  <AppText style={[styles.badgeText, { fontSize: 9 }]} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
+                </View>
+              </View>
+              <AppText style={[styles.rpTitle, { fontSize: 13, marginBottom: 4 }]} forceKurdishFont={isKu}>{t("games.podcastTitle")}</AppText>
+              <AppText style={[styles.rpSub, { fontSize: 9.5, lineHeight: 13 }]} forceKurdishFont={isKu} numberOfLines={2}>{t("games.podcastSub")}</AppText>
+            </LinearGradient>
+          </PremiumPressable>
+
+          <PremiumPressable key="roleplay" containerStyle={{ flex: 1 }} style={styles.cardDark} pressScale={0.97} onPress={() => router.push("/roleplay")}>
+            <LinearGradient
+              colors={[C.rpStart, C.rpEnd]}
+              style={[styles.rolePlayGradient, { padding: 10, minHeight: 110 }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { marginBottom: 6 }]}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)', width: 32, height: 32, borderRadius: 10 }]}>
+                  <HugeiconsIcon icon={MaskTheater02Icon} size={16} color="#FFF" strokeWidth={2} />
+                </View>
+                <View style={[styles.hotBadge, { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }]}>
+                  <AppText style={[styles.hotBadgeText, { fontSize: 9 }]} forceKurdishFont={isKu}>{t("games.badgeHot")}</AppText>
+                </View>
+              </View>
+              <AppText style={[styles.rpTitle, { fontSize: 13, marginBottom: 4 }]} forceKurdishFont={isKu}>{t("games.rolePlayTitle")}</AppText>
+              <AppText style={[styles.rpSub, { fontSize: 9.5, lineHeight: 13 }]} forceKurdishFont={isKu} numberOfLines={2}>{t("games.rolePlaySub")}</AppText>
+            </LinearGradient>
+          </PremiumPressable>
+        </View>
+      </View>
+
+      {/* ── Grid: Reading Practice + AI Teacher + Slang Dictionary (Horizontal slider with same size cards) ── */}
+      <View style={styles.bottomGridSection}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -24 }}
-          contentOffset={!isRtl ? { x: 1000, y: 0 } : { x: 0, y: 0 }}
-          contentContainerStyle={{ paddingHorizontal: 44, gap: 14 }}
+          contentContainerStyle={[styles.bottomScrollContent, isRtl && { flexDirection: 'row-reverse' }]}
         >
-          {(() => {
-            const bentoCards = [
-              <PremiumPressable key="podcast" style={[styles.podcastCard, { width: 175 }]} pressScale={0.97} onPress={() => router.push("/podcast")}>
-                <LinearGradient
-                  colors={['#FFA04A', '#FF7300']}
-                  style={styles.rolePlayGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                >
-                  <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
-                      <HugeiconsIcon icon={HeadphonesIcon} size={20} color="#FFF" strokeWidth={2.5} />
-                    </View>
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.rpTitle, isRtl && { textAlign: 'right' }]}>{t("games.podcastTitle")}</Text>
-                  <Text style={[styles.rpSub, isRtl && { textAlign: 'right' }]}>{t("games.podcastSub")}</Text>
-                </LinearGradient>
-              </PremiumPressable>,
+          <PremiumPressable key="reading" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
+            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
+              <ReadingPractice width={70} height={70} fill={C.blue} opacity={0.25} />
+            </View>
 
-              <PremiumPressable key="roleplay" style={[styles.cardDark, { width: 175 }]} pressScale={0.97} onPress={() => router.push("/roleplay")}>
-                <LinearGradient
-                  colors={[C.rpStart, C.rpEnd]}
-                  style={styles.rolePlayGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                >
-                  <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]}>
-                      <HugeiconsIcon icon={MaskTheater02Icon} size={20} color="#FFF" strokeWidth={2} />
-                    </View>
-                    <View style={styles.hotBadge}>
-                      <Text style={styles.hotBadgeText}>{t("games.badgeHot")}</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.rpTitle, isRtl && { textAlign: 'right' }]}>{t("games.rolePlayTitle")}</Text>
-                  <Text style={[styles.rpSub, isRtl && { textAlign: 'right' }]}>{t("games.rolePlaySub")}</Text>
-                </LinearGradient>
-              </PremiumPressable>
-            ];
-            return isRtl ? bentoCards.reverse() : bentoCards;
-          })()}
+            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
+              <View style={styles.badge}>
+                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
+              </View>
+            </View>
+            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
+              {t("games.paragraphSpeechTitle")}
+            </AppText>
+            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 50 } : { marginRight: 50 }]} forceKurdishFont={isKu} numberOfLines={2}>
+              {t("games.paragraphSpeechSub")}
+            </AppText>
+          </PremiumPressable>
+
+          <PremiumPressable key="teacher" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
+            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
+              <AiTeacher width={70} height={70} fill={C.violet} opacity={0.45} />
+            </View>
+
+            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
+              <View style={styles.badge}>
+                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
+              </View>
+            </View>
+            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
+              {t("games.teacherTitle")}
+            </AppText>
+            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 50 } : { marginRight: 50 }]} forceKurdishFont={isKu} numberOfLines={2}>
+              {t("games.teacherSub")}
+            </AppText>
+          </PremiumPressable>
+
+          <PremiumPressable key="slang" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/slang")}>
+            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
+              <Dictionary width={80} height={80} fill={C.indigo} opacity={0.5} />
+            </View>
+
+            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
+              <View style={styles.badge}>
+                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
+              </View>
+            </View>
+            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
+              {t("games.slangTitle")}
+            </AppText>
+            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 70 } : { marginRight: 70 }]} forceKurdishFont={isKu} numberOfLines={2}>
+              {t("games.slangSub")}
+            </AppText>
+          </PremiumPressable>
         </ScrollView>
       </View>
-
-      {/* ── Bottom Carousel: Reading Practice + AI Teacher + Slang Dictionary ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -24 }}
-        contentOffset={!isRtl ? { x: 1000, y: 0 } : { x: 0, y: 0 }}
-        contentContainerStyle={styles.bottomScrollContainer}
-      >
-        {(() => {
-          const cards = [
-            <PremiumPressable key="reading" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
-              {/* Large background icon watermark in corner */}
-              <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-                <ReadingPractice width={80} height={80} fill={C.blue} opacity={0.3} />
-              </View>
-
-              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>
-                {t("games.paragraphSpeechTitle")}
-              </Text>
-              <Text style={[styles.cardSub, isRtl ? { textAlign: 'right', marginLeft: 60 } : { marginRight: 60 }]} numberOfLines={2}>
-                {t("games.paragraphSpeechSub")}
-              </Text>
-            </PremiumPressable>,
-
-            <PremiumPressable key="teacher" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
-              {/* Large background icon watermark in corner */}
-              <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-                <AiTeacher width={80} height={80} fill={C.violet} opacity={0.6} />
-              </View>
-
-              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>
-                {t("games.teacherTitle")}
-              </Text>
-              <Text style={[styles.cardSub, isRtl ? { textAlign: 'right', marginLeft: 60 } : { marginRight: 60 }]} numberOfLines={2}>
-                {t("games.teacherSub")}
-              </Text>
-            </PremiumPressable>,
-
-            <PremiumPressable key="slang" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/slang")}>
-              {/* Large background icon watermark in corner */}
-              <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-                <Dictionary width={80} height={80} fill={C.indigo} opacity={0.6} />
-              </View>
-
-              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{t("games.badgeNew")}</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, isRtl && { textAlign: 'right' }]}>
-                {t("games.slangTitle")}
-              </Text>
-              <Text style={[styles.cardSub, isRtl ? { textAlign: 'right', marginLeft: 60 } : { marginRight: 60 }]} numberOfLines={2}>
-                {t("games.slangSub")}
-              </Text>
-            </PremiumPressable>
-          ];
-          return isRtl ? cards.reverse() : cards;
-        })()}
-      </ScrollView>
 
       {/* ── Your Progress ── */}
       <View style={styles.progressCardOuter}>
         <LinearGradient
-          colors={['#A78BFA', '#7C3AED']}
+          colors={['#8B5CF6', '#5B21B6']}
           style={styles.progressCard}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -323,7 +302,7 @@ export function GamesScreen() {
           <View style={[styles.widgetRow, isRtl && { flexDirection: 'row-reverse' }]}>
             
             {/* Left/Stats Section */}
-            <View style={[styles.widgetLeftSection, isRtl ? { marginLeft: 85, marginRight: 0 } : { marginRight: 85 }]}>
+            <View style={[styles.widgetLeftSection, isRtl ? { marginLeft: 65, marginRight: 0 } : { marginRight: 65 }]}>
               {/* 2x2 Grid */}
               <View style={styles.gridContainer}>
                 <View style={styles.gridDividerH} />
@@ -335,8 +314,8 @@ export function GamesScreen() {
                   <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
                     <HugeiconsIcon icon={FireIcon} size={20} color="#FFA04A" strokeWidth={2.5} />
                     <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>{streakDays || 0}</Text>
-                      <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]} numberOfLines={2}>{t("games.dayStreak")}</Text>
+                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">{streakDays || 0}</AppText>
+                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.dayStreak")}</AppText>
                     </View>
                   </View>
 
@@ -344,10 +323,10 @@ export function GamesScreen() {
                   <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
                     <HugeiconsIcon icon={StarIcon} size={20} color="#FBBF24" strokeWidth={2.5} />
                     <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>
+                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">
                         {totalXp ? totalXp.toLocaleString() : '0'}
-                      </Text>
-                      <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]} numberOfLines={2}>{t("games.xpEarned")}</Text>
+                      </AppText>
+                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.xpEarned")}</AppText>
                     </View>
                   </View>
                 </View>
@@ -358,8 +337,8 @@ export function GamesScreen() {
                   <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
                     <HugeiconsIcon icon={Mic01Icon} size={20} color="#60A5FA" strokeWidth={2.5} />
                     <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>36</Text>
-                      <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]} numberOfLines={2}>{t("games.conversations")}</Text>
+                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">36</AppText>
+                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.conversations")}</AppText>
                     </View>
                   </View>
 
@@ -367,8 +346,8 @@ export function GamesScreen() {
                   <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
                     <HugeiconsIcon icon={Diamond01Icon} size={20} color="#C084FC" strokeWidth={2.5} />
                     <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <Text style={[styles.statValue, isRtl && { textAlign: 'right' }]}>8</Text>
-                      <Text style={[styles.statLabel, isRtl && { textAlign: 'right' }]} numberOfLines={2}>{t("games.badges")}</Text>
+                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">8</AppText>
+                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.badges")}</AppText>
                     </View>
                   </View>
                 </View>
@@ -380,10 +359,11 @@ export function GamesScreen() {
           {/* Mascot */}
           <Image
             source={require('../../../assets/images/svg/gamescreenmascotpurple.png')}
-            style={[styles.purpleMascotImg, isRtl ? { left: -8, transform: [{ scaleX: -1 }] } : { right: -8 }]}
+            style={[styles.purpleMascotImg, isRtl ? { left: -8, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -8, left: 'auto' }]}
             resizeMode="contain"
           />
         </LinearGradient>
+      </View>
       </View>
       </ScrollView>
       <BottomScrollFade />
@@ -394,7 +374,8 @@ export function GamesScreen() {
 /* ──────────────────────────────────────────────
    Styles
    ────────────────────────────────────────────── */
-const styles = StyleSheet.create({
+function createStyles(C: any, isDark: boolean) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: C.bg,
@@ -435,12 +416,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFF',
+    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FFF',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#FEF3C7',
+    borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FEF3C7',
     ...crossShadow({ color: '#F59E0B', offsetY: 2, blur: 8, opacity: 0.08 }),
   },
   proText: {
@@ -460,10 +441,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   heroTitle: {
-    fontSize: 42,
+    fontSize: 32,
     fontWeight: '900',
     color: C.text,
-    letterSpacing: -1.5,
+    letterSpacing: -1.0,
     marginBottom: 8,
   },
   heroSub: {
@@ -526,7 +507,7 @@ const styles = StyleSheet.create({
   },
   goalLeft: {
     flex: 1,
-    paddingRight: 110,
+    paddingRight: 80,
   },
   goalHeaderRow: {
     flexDirection: 'row',
@@ -583,11 +564,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   mascotImg: {
-    width: 190,
-    height: 160,
+    width: 130,
+    height: 115,
     position: 'absolute',
-    bottom: -10,
-    right: -16,
+    bottom: -5,
+    right: -5,
   },
 
   /* ── Quick Actions ── */
@@ -601,7 +582,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 20,
     paddingHorizontal: 8,
-    ...crossShadow({ color: '#000', offsetY: 6, blur: 24, opacity: 0.04 }),
+    ...crossShadow({ color: '#000', offsetY: 6, blur: 24, opacity: 0.08 }),
   },
   quickItem: {
     flex: 1,
@@ -660,16 +641,16 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
     borderBottomWidth: 4.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
-    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.04 }),
+    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.08 }),
   },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 14,
+    marginBottom: 8,
   },
   iconBox: {
     width: 40,
@@ -701,7 +682,7 @@ const styles = StyleSheet.create({
     color: C.sub,
     fontWeight: '500',
     lineHeight: 18,
-    marginBottom: 14,
+    marginBottom: 0,
   },
   arrowRow: {
     alignItems: 'flex-end',
@@ -716,6 +697,7 @@ const styles = StyleSheet.create({
   },
 
   podcastCard: {
+    flex: 1,
     borderRadius: 22,
     overflow: 'hidden',
     borderWidth: 1.5,
@@ -727,6 +709,7 @@ const styles = StyleSheet.create({
 
   /* ── AI Role Play Card ── */
   cardDark: {
+    flex: 1,
     borderRadius: 22,
     overflow: 'hidden',
     backgroundColor: C.rpEnd,
@@ -738,8 +721,8 @@ const styles = StyleSheet.create({
   },
   rolePlayGradient: {
     borderRadius: 22,
-    padding: 16,
-    minHeight: 135,
+    padding: 12,
+    minHeight: 115,
   },
   hotBadge: {
     backgroundColor: C.hotBg,
@@ -764,7 +747,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.75)',
     fontWeight: '500',
     lineHeight: 18,
-    marginBottom: 14,
+    marginBottom: 0,
   },
 
 
@@ -776,9 +759,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 24,
   },
+  bottomScrollContent: {
+    paddingHorizontal: 24,
+    gap: 14,
+    paddingBottom: 8,
+  },
   bottomCard: {
     width: 260,
-    minHeight: 150,
+    minHeight: 130,
   },
   aaIcon: {
     fontSize: 16,
@@ -789,7 +777,7 @@ const styles = StyleSheet.create({
 
   /* ── Your Progress Card ── */
   progressCardOuter: {
-    marginHorizontal: 20,
+    paddingHorizontal: 24,
     marginBottom: 40,
     overflow: 'visible',
   },
@@ -903,8 +891,8 @@ const styles = StyleSheet.create({
     lineHeight: 13,
   },
   purpleMascotImg: {
-    width: 105,
-    height: 125,
+    width: 90,
+    height: 110,
     position: 'absolute',
     bottom: -5,
     zIndex: 3,
@@ -922,8 +910,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomScrollContainer: {
-    paddingHorizontal: 44,
+    paddingHorizontal: 24,
     gap: 14,
     marginBottom: 24,
   },
-});
+  contentWrapper: {
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
+    paddingBottom: 120,
+  },
+  bottomGridSection: {
+    marginBottom: 24,
+  },
+  bottomHalfCard: {
+    flex: 1,
+    minHeight: 130,
+  },
+  });
+}

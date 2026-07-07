@@ -69,7 +69,8 @@ type Props = {
 
 export default function ConversationPickGame({ question, onAnswer, pathMode }: Props) {
 
-  const { t } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const rtl = isKu || isAr;
 
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -99,7 +100,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
     setRevealed(true);
 
-    const tier = question.optionTiers[selected] ?? "bad";
+    const tier = question.optionTiers[selected] ?? "terrible";
 
     if (!firedRef.current) {
 
@@ -115,12 +116,15 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
   const getState = (opt: string) => {
     if (!revealed) return opt === selected ? "selected" : "idle";
-    return question.optionTiers[opt] ?? "bad";
+    const tier = question.optionTiers[opt] ?? "terrible";
+    // Only "great" is correct; everything else is wrong
+    if (tier === "great") return "great";
+    return "terrible";
   };
 
   const getTierLabel = (opt: string) => {
     if (!revealed) return undefined;
-    const tier = question.optionTiers[opt] ?? "bad";
+    const tier = question.optionTiers[opt] ?? "terrible";
     return t(tierLabelKey(tier));
   };
 
@@ -184,6 +188,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
                 state={mapOptionState(getState(opt))}
                 onPress={() => pick(opt)}
                 disabled={revealed}
+                rtl={rtl}
                 forceLatinFont
                 isKids={pathMode === "kids"}
               />
@@ -264,5 +269,3 @@ const s = StyleSheet.create({
   },
 
 });
-
-

@@ -89,7 +89,7 @@ const unit10: UnitBank = [
     "At the Pharmacy",
     "لە دەرمانخانە",
     [
-      { en: "I'd like to pick up my prescription, please.", ku: "حەز دەکەم ڕەچەتەکەم (دەرمانەکانم) وەربگرم، تکایە.", ar: "أودّ استلام وصفتي الطبية، من فضلك." },
+      { en: "I'd like to pick up my prescription, please.", ku: "دەمەوێت دەرمانەکانم وەربگرم، تکایە.", ar: "أودّ استلام وصفتي الطبية، من فضلك." },
       { en: "Do I take this with food or on an empty stomach?", ku: "ئەمە لەگەڵ خواردن بخۆم یان لەسەر گەدەی بەتاڵ؟", ar: "هل أتناول هذا مع الطعام أم على معدة فارغة؟" },
       { en: "Are there any side effects I should know about?", ku: "ئایا هیچ کاریگەرییەکی لاوەکی هەیە کە پێویستە بیزانم؟", ar: "هل هناك أيّ آثار جانبية يجب أن أعرفها؟" },
       { en: "Can I get something over the counter for this?", ku: "دەتوانم شتێک بەبێ ڕەچەتەی پزیشک بۆ ئەمە وەربگرم؟", ar: "هل يمكنني الحصول على دواء بدون وصفة طبية لهذا؟" },
