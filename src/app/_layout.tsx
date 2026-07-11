@@ -191,7 +191,13 @@ function InnerLayout() {
             BottomSheetModalProvider above). The imperative API in
             useAndroidImmersiveChrome already handles hiding the nav bar. */}
         <OfflineBanner />
-        <GestureHandlerRootView style={[{ flex: 1, direction: isRTL ? "rtl" : "ltr" }, rnWebVars as any]}>
+        <GestureHandlerRootView
+          style={[
+            { flex: 1 },
+            Platform.OS !== "web" && { direction: isRTL ? "rtl" : "ltr" },
+            rnWebVars as any,
+          ]}
+        >
           <SkiaWebGate>
           <AppErrorBoundary>
             <BottomSheetModalProvider>

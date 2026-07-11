@@ -3,8 +3,12 @@
  */
 
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
+import {
+  LegendList,
+  type LegendListRenderItemProps,
+} from "@legendapp/list/react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Trophy, ArrowUp01Icon, Clock01Icon, ZapIcon, StarIcon } from "@hugeicons/core-free-icons";
@@ -40,6 +44,8 @@ function getLeaderboardColors(colors: any, isDark: boolean) {
 
 const getAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/9.x/adventurer/png?seed=${encodeURIComponent(seed)}`;
+
+const keyExtractor = (item: LeagueEntry) => item.id;
 
 export const LeaderboardScreen = () => {
   const { colors, isDark } = useThemeColors();
@@ -190,7 +196,7 @@ export const LeaderboardScreen = () => {
     );
   };
 
-  const renderListItem = (item: LeagueEntry) => {
+  const renderListItem = ({ item }: LegendListRenderItemProps<LeagueEntry>) => {
     const isMe = item.isCurrentUser;
 
     return (
@@ -281,26 +287,23 @@ export const LeaderboardScreen = () => {
         </View>
       </GsapEnterBlock>
 
-      <ScrollView
+      <LegendList
+        data={rest}
+        keyExtractor={keyExtractor}
+        renderItem={renderListItem}
+        recycleItems
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
         }}
-      >
-        {/* Podium Layout */}
-        <GsapEnterBlock index={1}>
-          <View style={styles.podiumSection}>
-            {podiumOrder.map((item) => renderPodiumItem(item))}
-          </View>
-        </GsapEnterBlock>
-
-        {/* List Section */}
-        <GsapEnterBlock index={2}>
-          <View style={styles.listSection}>
-            {rest.map((item) => renderListItem(item))}
-          </View>
-        </GsapEnterBlock>
-      </ScrollView>
+        ListHeaderComponent={(
+          <GsapEnterBlock index={1}>
+            <View style={styles.podiumSection}>
+              {podiumOrder.map((item) => renderPodiumItem(item))}
+            </View>
+          </GsapEnterBlock>
+        )}
+      />
 
       <BottomScrollFade />
     </View>
@@ -464,6 +467,8 @@ function createStyles(Colors: any, isDark: boolean) {
     borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
     borderBottomWidth: 4,
     borderBottomColor: Colors.border,
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   listRowMe: {
     backgroundColor: Colors.currentUserBg,

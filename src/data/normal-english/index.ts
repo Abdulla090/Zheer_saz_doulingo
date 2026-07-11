@@ -100,29 +100,32 @@ export function buildNormalSectionData(
 ): SectionDataItem[] {
   const level = useSettingsStore.getState().englishLevel || 5;
   const skipCount = getSkippedUnitsCount(level);
-  const activeConfigs = normalSectionConfigs.slice(skipCount);
+  const activeUnits = NORMAL_UNITS.slice(skipCount);
 
-  let normalPathIndex = 0;
+  let normalPathIndex = skipCount * 10;
 
-  return activeConfigs.map(
-    ({ theme, displayTheme }, sectionIndex): SectionDataItem => {
-      const pattern =
-        sectionIndex === 0
-          ? (["practice" as LessonType, ...BASE_PATTERN])
-          : BASE_PATTERN;
+  return activeUnits.map(
+    (unit, sectionIndex): SectionDataItem => {
+      const sourceUnitIndex = sectionIndex + skipCount;
+      const config =
+        normalSectionConfigs[sourceUnitIndex] ??
+        normalSectionConfigs[sectionIndex] ??
+        { theme: "blue" as SectionTheme, displayTheme: "blue" as SectionTheme };
+      const { theme, displayTheme } = config;
 
-      const startGlobalIndex =
-        sectionIndex === 0 ? 0 : 25 + (sectionIndex - 1) * 24;
-
-      const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
-        const currentGlobalIndex = startGlobalIndex + itemIndex;
+      const data: LessonListItem[] = unit.map((_, itemIndex) => {
         const pathIndex = normalPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex, itemIndex === 0);
+        const lessonType = BASE_PATTERN[itemIndex % BASE_PATTERN.length];
+        const itemStatus = resolveLessonStatus(
+          pathIndex,
+          nextLessonPathIndex,
+          itemIndex === 0,
+        );
 
         return {
-          id: `ne-level-${currentGlobalIndex}`,
+          id: `ne-level-${pathIndex}`,
           pathIndex,
-          globalIndex: currentGlobalIndex,
+          globalIndex: pathIndex,
           sectionItemIndex: itemIndex,
           type: lessonType,
           sectionTheme: theme,
@@ -131,10 +134,17 @@ export function buildNormalSectionData(
           isCurrent: itemStatus === "current",
           progressSegments: itemStatus === "current" ? 2 : 0,
           lessonId: sectionIndex,
+          displayUnitNumber: sourceUnitIndex + 1,
         };
       });
 
-      return { unitIndex: sectionIndex, title: "", theme, displayTheme, data };
+      return {
+        unitIndex: sourceUnitIndex,
+        title: "",
+        theme,
+        displayTheme,
+        data,
+      };
     },
   );
 }

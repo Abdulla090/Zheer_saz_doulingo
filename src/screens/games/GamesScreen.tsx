@@ -1,908 +1,819 @@
-import { PremiumPressable } from '../../components/PremiumPressable';
-import { crossShadow } from '../../utils/shadows';
-import React, { useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { PremiumPressable } from "../../components/PremiumPressable";
+import { crossShadow } from "../../utils/shadows";
+import React, { useMemo } from "react";
+import { Platform, StyleSheet, View, ScrollView, useWindowDimensions } from "react-native";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import Dictionary from '../../../assets/images/svg/dictionary.svg';
-import AiTeacher from '../../../assets/images/svg/aiteacher.svg';
-import ReadingPractice from '../../../assets/images/svg/readingpractice.svg';
-import { BottomScrollFade } from '../../components/ui/BottomScrollFade';
-import { useRouter } from 'expo-router';
-import { HomeMeshBackground } from '../../components/ui/ios-liquid-home';
-import { useProgressStore } from '../../stores/useProgressStore';
-import { useI18n } from '../../hooks/useI18n';
-import { AppText } from '../../components/ui/AppText';
-import { useThemeColors } from '../../hooks/useThemeColors';
-import { 
-  HeadphonesIcon, 
-  Mic01Icon, 
-  Robot02Icon, 
-  CrownIcon,
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Calendar03Icon,
   FireIcon,
-  StarIcon,
-  Diamond01Icon,
-  Chatting01Icon,
-  MaskTheater02Icon,
 } from "@hugeicons/core-free-icons";
+import Svg, { Circle } from "react-native-svg";
+import { useRouter } from "expo-router";
 
-function getDesignTokens(isDark: boolean) {
-  return {
-    // Base
-    bg: isDark ? '#0F172A' : '#F8F7FC',           // soft lavender-tinted background
-    card: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-    text: isDark ? '#FFFFFF' : '#111827',
-    sub: isDark ? '#94A3B8' : '#6B7280',
-    // Brand indigo
-    indigo: isDark ? '#818CF8' : '#4338CA',
-    indigoDark: isDark ? '#312E81' : '#1E1B4B',
-    indigoMid: isDark ? '#4F46E5' : '#312E81',
-    indigoLight: isDark ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
-    // Accent
-    amber: '#F59E0B',
-    orange: '#F97316',
-    blue: isDark ? '#60A5FA' : '#3B82F6',
-    violet: isDark ? '#A78BFA' : '#8B5CF6',
-    violetLight: isDark ? 'rgba(167, 139, 250, 0.15)' : '#F3E8FF',
-    // Role play card gradient
-    rpStart: isDark ? '#1E1B4B' : '#2D2A6E',
-    rpEnd: isDark ? '#0F172A' : '#1A1744',
-    // Badge
-    badgeBg: isDark ? 'rgba(167, 139, 250, 0.15)' : '#EDE9FE',
-    badgeText: isDark ? '#A78BFA' : '#7C3AED',
-    hotBg: '#EF4444',
-    hotText: '#FFFFFF',
-  };
+import { AppText } from "../../components/ui/AppText";
+import { Colors } from "../../constants/theme";
+import { useI18n } from "../../hooks/useI18n";
+import { useProgressStore } from "../../stores/useProgressStore";
+
+const GAMES = [
+  {
+    key: "voice-tutor",
+    titleKey: "games.voiceTutorTitle",
+    subKey: "games.voiceTutorSub",
+    imageBackground: "#EDF4FF",
+    tileBackground: "rgba(59, 130, 246, 0.075)",
+    accentColor: "#3B82F6",
+    image: require("../../../assets/images/games/ui/voice-tutor.png"),
+    href: "/voice-tutor" as const,
+  },
+  {
+    key: "reading-practice",
+    titleKey: "games.paragraphSpeechTitle",
+    subKey: "games.paragraphSpeechSub",
+    imageBackground: "#FFF6E5",
+    tileBackground: "rgba(245, 158, 11, 0.075)",
+    accentColor: "#FF9D32",
+    image: require("../../../assets/images/games/ui/reading-practice.png"),
+    href: "/reading-practice" as const,
+  },
+  {
+    key: "podcast",
+    titleKey: "games.podcastTitle",
+    subKey: "games.podcastSub",
+    imageBackground: "#EAFBF5",
+    tileBackground: "rgba(16, 185, 129, 0.07)",
+    accentColor: "#22BFAE",
+    image: require("../../../assets/images/games/ui/podcast.png"),
+    href: "/podcast" as const,
+  },
+  {
+    key: "slang",
+    titleKey: "games.slangTitle",
+    subKey: "games.slangSub",
+    imageBackground: "#FFF0EA",
+    tileBackground: "rgba(255, 107, 74, 0.07)",
+    accentColor: "#F06A92",
+    image: require("../../../assets/images/games/ui/slang-dictionary.png"),
+    href: "/slang" as const,
+  },
+  {
+    key: "roleplay",
+    titleKey: "games.rolePlayTitle",
+    subKey: "games.rolePlaySub",
+    imageBackground: "#F3EEFF",
+    tileBackground: "rgba(123, 66, 230, 0.065)",
+    accentColor: "#8061F2",
+    image: require("../../../assets/images/games/ui/roleplay.png"),
+    href: "/roleplay" as const,
+  },
+  {
+    key: "ai-teacher",
+    titleKey: "games.teacherTitle",
+    subKey: "games.teacherSub",
+    imageBackground: "#EDF7FF",
+    tileBackground: "rgba(14, 165, 233, 0.07)",
+    accentColor: "#3487EE",
+    image: require("../../../assets/images/games/ui/ai-teacher.png"),
+    href: "/ai-teacher" as const,
+  },
+] as const;
+
+function ProgressRing({
+  progress,
+  level,
+  label,
+  compact,
+}: {
+  progress: number;
+  level: number;
+  label: string;
+  compact: boolean;
+}) {
+  const size = compact ? 76 : 96;
+  const center = size / 2;
+  const radius = compact ? 30 : 38;
+  const strokeWidth = compact ? 7 : 8;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(1, Math.max(0, progress));
+
+  return (
+    <View style={[styles.ringWrap, { width: size, height: size }]}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} rotation={-90}>
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.28)"
+          strokeWidth={strokeWidth}
+        />
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={circumference * (1 - clamped)}
+        />
+      </Svg>
+      <View style={styles.ringCopy}>
+        <AppText style={[styles.ringLabel, compact && styles.ringLabelCompact]} forceLatinFont latinRole="bold">{label}</AppText>
+        <AppText style={[styles.ringValue, compact && styles.ringValueCompact]} forceLatinFont latinRole="bold">{level}</AppText>
+      </View>
+    </View>
+  );
 }
 
 export function GamesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { dailyXp, dailyGoalXp, streakDays, totalXp } = useProgressStore();
+  const { width } = useWindowDimensions();
   const { t, locale, isKu } = useI18n();
-  const { isDark } = useThemeColors();
-  const isRtl = isKu || locale === 'ar';
+  const { dailyXp, dailyGoalXp, streakDays, totalXp } = useProgressStore();
+  const isRtl = isKu || locale === "ar";
+  const compact = width < 430;
 
-  const C = useMemo(() => getDesignTokens(isDark), [isDark]);
-  const styles = useMemo(() => createStyles(C, isDark), [C, isDark]);
+  const dailyGoal = Math.max(1, dailyGoalXp || 15);
+  const dailyProgress = Math.min(1, Math.max(0, (dailyXp || 0) / dailyGoal));
+  const level = Math.max(1, Math.floor((totalXp || 0) / 300) + 1);
+  const levelXp = Math.max(0, (totalXp || 0) % 300);
+  const levelProgress = levelXp / 300;
+  const completedDaily = Math.min(3, Math.round(dailyProgress * 3));
 
-  const xp = dailyXp || 0;
-  const goal = dailyGoalXp || 15;
-  const percent = Math.min(100, Math.max(0, (xp / goal) * 100));
+  const stylesForScreen = useMemo(() => createStyles(compact), [compact]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {!isDark && <HomeMeshBackground />}
+    <View
+      {...(Platform.OS === "web" ? ({ dir: "ltr" } as any) : {})}
+      style={[
+        stylesForScreen.root,
+        Platform.OS !== "web" && ({ direction: "ltr" } as const),
+      ]}
+    >
       <ScrollView
-        style={styles.container}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          stylesForScreen.scrollContent,
+          { paddingTop: insets.top + (compact ? 6 : 12), paddingBottom: insets.bottom + 112 },
+        ]}
       >
-        <View style={styles.contentWrapper}>
-      {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.headerTop}>
-          <View style={styles.brandRow}>
-            <AppText style={styles.brandText} forceLatinFont latinRole="bold">TWINO LABS</AppText>
+        <View style={stylesForScreen.content}>
+           <View style={[stylesForScreen.hero, isRtl && stylesForScreen.heroRtl]}>
+             <View style={[stylesForScreen.heroCopy, isRtl && stylesForScreen.heroCopyRtl]}>
+              <AppText style={stylesForScreen.heroTitle} forceKurdishFont={isRtl}>
+                {t("games.screenTitle")}
+              </AppText>
+            </View>
+            <Image
+              source={require("../../../assets/images/mascots/mascot-02.webp")}
+              style={[stylesForScreen.heroMascot, isRtl && stylesForScreen.heroMascotRtl]}
+              contentFit="contain"
+            />
           </View>
-          <View style={styles.proPill}>
-            <HugeiconsIcon icon={CrownIcon} size={14} color={C.amber} />
-            <AppText style={styles.proText} forceLatinFont latinRole="bold">Pro</AppText>
+
+          <LinearGradient
+            colors={["#7545E8", "#9A69F4"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[stylesForScreen.progressBanner, isRtl && stylesForScreen.rowReverse]}
+          >
+            <ProgressRing progress={levelProgress} level={level} label={t("games.level")} compact={compact} />
+             <View style={[stylesForScreen.progressCopy, isRtl && stylesForScreen.progressCopyRtl]}>
+              <AppText style={stylesForScreen.progressEyebrow} forceKurdishFont={isRtl}>
+                {t("games.xpProgress")}
+              </AppText>
+              <AppText style={stylesForScreen.progressValue} forceLatinFont latinRole="bold">
+                {levelXp} / 300 <AppText style={stylesForScreen.progressUnit} forceLatinFont latinRole="bold">XP</AppText>
+              </AppText>
+              <View style={[stylesForScreen.progressTrack, isRtl && stylesForScreen.progressTrackRtl]}>
+                <View style={[stylesForScreen.progressFill, { width: `${levelProgress * 100}%` }]} />
+              </View>
+            </View>
+            <Image
+              source={require("../../../assets/images/games/ui/chest.png")}
+               style={[stylesForScreen.chestImage, isRtl && stylesForScreen.chestImageRtl]}
+              contentFit="contain"
+            />
+          </LinearGradient>
+
+          <View style={[stylesForScreen.dailyCard, isRtl && stylesForScreen.rowReverse]}>
+            <View style={stylesForScreen.dailyIcon}>
+              <HugeiconsIcon icon={Calendar03Icon} size={compact ? 23 : 28} color="#7B42E6" strokeWidth={2.2} />
+            </View>
+             <View style={[stylesForScreen.dailyCopy, isRtl && stylesForScreen.dailyCopyRtl]}>
+              <AppText style={stylesForScreen.dailyTitle} forceKurdishFont={isRtl}>
+                {t("games.dailyChallenge")}
+              </AppText>
+              <AppText style={stylesForScreen.dailySubtitle} forceKurdishFont={isRtl} numberOfLines={compact ? 2 : undefined}>
+                {t("games.dailyChallengeSub")}
+              </AppText>
+            </View>
+            <Image
+              source={require("../../../assets/images/games/ui/gift.png")}
+              style={[stylesForScreen.giftImage, isRtl && stylesForScreen.giftImageRtl]}
+              contentFit="contain"
+            />
+            <View style={[stylesForScreen.dailyBottom, isRtl && stylesForScreen.rowReverse]}>
+              <View style={[stylesForScreen.stepRow, isRtl && stylesForScreen.rowReverse]}>
+                {[0, 1, 2].map((step) => (
+                  <React.Fragment key={step}>
+                    <View style={[stylesForScreen.stepDot, step < completedDaily && stylesForScreen.stepDotDone]}>
+                      {step < completedDaily ? <AppText style={stylesForScreen.stepCheck} forceLatinFont>✓</AppText> : null}
+                    </View>
+                    {step < 2 ? <View style={stylesForScreen.stepLine} /> : null}
+                  </React.Fragment>
+                ))}
+              </View>
+              <PremiumPressable
+                onPress={() => router.push("/voice-tutor")}
+                style={stylesForScreen.goButton}
+                pressScale={0.95}
+              >
+                <AppText style={stylesForScreen.goText} forceKurdishFont={isRtl}>{t("games.go")}</AppText>
+              </PremiumPressable>
+            </View>
+          </View>
+
+          <View style={[stylesForScreen.sectionHeader, isRtl && stylesForScreen.rowReverse]}>
+            <AppText style={stylesForScreen.sectionTitle} forceKurdishFont={isRtl}>{t("games.sectionExperiences")}</AppText>
+            <AppText style={stylesForScreen.seeAll} forceKurdishFont={isRtl} onPress={() => router.push("/path")}>
+              {t("games.seeAll")} <AppText style={stylesForScreen.seeAllArrow} forceLatinFont>›</AppText>
+            </AppText>
+          </View>
+
+          <View style={[stylesForScreen.gameGrid, isRtl && stylesForScreen.gameGridRtl]}>
+            {GAMES.map((game) => (
+              <PremiumPressable
+                key={game.key}
+                onPress={() => router.push(game.href as any)}
+                containerStyle={stylesForScreen.gameTileContainer}
+                style={[
+                  stylesForScreen.gameTile,
+                  { backgroundColor: game.tileBackground },
+                  isRtl && stylesForScreen.gameTileRtl,
+                ]}
+                pressScale={0.96}
+              >
+                <View style={[
+                  stylesForScreen.tileWash,
+                  { backgroundColor: game.imageBackground },
+                  isRtl && stylesForScreen.tileWashRtl,
+                ]} />
+                <View style={[stylesForScreen.tileImageWell, { backgroundColor: game.imageBackground }]}>
+                  <Image
+                    source={game.image}
+                    style={stylesForScreen.tileImage}
+                    contentFit="contain"
+                  />
+                </View>
+                <View style={[
+                  stylesForScreen.tileCopy,
+                  isRtl && stylesForScreen.tileCopyRtl,
+                ]}>
+                  <AppText
+                    style={[stylesForScreen.tileTitle, isRtl && stylesForScreen.tileTitleRtl]}
+                    forceKurdishFont={isRtl}
+                  >
+                    {t(game.titleKey)}
+                  </AppText>
+                  <AppText
+                    style={[stylesForScreen.tileSubtitle, isRtl && stylesForScreen.tileSubtitleRtl]}
+                    forceKurdishFont={isRtl}
+                    numberOfLines={2}
+                  >
+                    {t(game.subKey)}
+                  </AppText>
+                </View>
+                <View style={[
+                  stylesForScreen.tileArrow,
+                  { backgroundColor: game.accentColor },
+                  isRtl && stylesForScreen.tileArrowRtl,
+                ]}>
+                  <HugeiconsIcon
+                    icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+                    size={compact ? 16 : 19}
+                    color="#FFFFFF"
+                    strokeWidth={2.4}
+                  />
+                </View>
+              </PremiumPressable>
+            ))}
+          </View>
+
+          <View style={[stylesForScreen.streakCard, isRtl && stylesForScreen.rowReverse]}>
+            <HugeiconsIcon icon={FireIcon} size={32} color="#FF7A2F" strokeWidth={2.3} />
+             <View style={[stylesForScreen.streakCopy, isRtl && stylesForScreen.streakCopyRtl]}>
+              <View style={[stylesForScreen.streakHeading, isRtl && stylesForScreen.rowReverse]}>
+                <AppText style={stylesForScreen.streakDays} forceLatinFont latinRole="bold">{streakDays || 0}</AppText>
+                <AppText style={stylesForScreen.streakLabel} forceKurdishFont={isRtl}>{t("games.dayStreak")}</AppText>
+              </View>
+              <AppText style={stylesForScreen.streakSub} forceKurdishFont={isRtl}>{t("games.keepStreak")}</AppText>
+            </View>
+             <View style={[stylesForScreen.streakBars, isRtl && stylesForScreen.streakBarsRtl]}>
+              {[0, 1, 2, 3, 4].map((bar) => (
+                <View key={bar} style={[stylesForScreen.streakBar, bar < Math.min(5, streakDays || 0) && stylesForScreen.streakBarDone]} />
+              ))}
+            </View>
+            <Image
+              source={require("../../../assets/images/games/ui/chest.png")}
+               style={[stylesForScreen.streakChest, isRtl && stylesForScreen.streakChestRtl]}
+              contentFit="contain"
+            />
           </View>
         </View>
-
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={{ flex: 1 }}>
-            <AppText style={styles.heroTitle} forceKurdishFont={isKu}>{t("games.title")}</AppText>
-          </View>
-        </View>
-      </View>
-
-      {/* ── Quick Actions Row ── */}
-      <View style={styles.quickActionsOuter}>
-        <View style={styles.quickActionsCard}>
-          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
-            <View style={[styles.quickIcon, { backgroundColor: '#F4F0FF', borderWidth: 1, borderColor: '#EDE9FE' }]}>  
-              <HugeiconsIcon icon={HeadphonesIcon} size={26} color={C.violet} strokeWidth={2} />
-            </View>
-            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.listenTitle")}</AppText>
-          </PremiumPressable>
-
-          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
-            <View style={[styles.quickIcon, { backgroundColor: '#EEF5FF', borderWidth: 1, borderColor: '#E0E7FF' }]}>  
-              <HugeiconsIcon icon={Mic01Icon} size={26} color={C.blue} strokeWidth={2} />
-            </View>
-            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.speakTitle")}</AppText>
-          </PremiumPressable>
-
-          <PremiumPressable containerStyle={{ flex: 1 }} style={styles.quickItem} pressScale={0.94}>
-            <View style={[styles.quickIcon, { backgroundColor: '#FFF5F0', borderWidth: 1, borderColor: '#FFE4E6' }]}>  
-              <HugeiconsIcon icon={Chatting01Icon} size={26} color={C.orange} strokeWidth={2} />
-            </View>
-            <AppText style={styles.quickLabel} forceKurdishFont={isKu}>{t("games.conversationTitle")}</AppText>
-          </PremiumPressable>
-        </View>
-      </View>
-
-      {/* ── Daily Goal Card ── */}
-      <View style={styles.dailyGoalContainer}>
-        <LinearGradient
-          colors={['#FFA04A', '#FF7300']}
-          style={[styles.dailyGoalCard, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={[styles.goalLeft, isRtl ? { paddingLeft: 128, paddingRight: 0 } : {}]}>
-            <View style={[styles.goalHeaderRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <View style={styles.goalTextCol}>
-                <AppText style={[styles.goalTitle, { textAlign: isRtl ? 'right' : 'left' }]} forceKurdishFont={isKu}>{t("games.timeToLearn")}</AppText>
-                <AppText style={[styles.goalSub, { textAlign: isRtl ? 'right' : 'left' }]} forceKurdishFont={isKu}>{t("games.reachGoal")}</AppText>
-              </View>
-            </View>
-
-            {/* Progress bar */}
-            <View style={[styles.goalProgressBg, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <View style={[styles.goalProgressFill, { width: `${percent}%` }]} />
-            </View>
-            <AppText style={[styles.goalXPText, { textAlign: isRtl ? 'right' : 'left' }]} forceLatinFont latinRole="bold">{xp} / {goal} XP</AppText>
-          </View>
-          
-          <Image
-            source={require('../../../assets/images/svg/gamescreenmascotorange.png')}
-            style={[styles.mascotImg, isRtl ? { left: 0, right: 'auto', transform: [{ scaleX: -1 }] } : { right: 0, left: 'auto' }]}
-            resizeMode="contain"
-          />
-        </LinearGradient>
-      </View>
-
-      {/* ── Bento Grid ── */}
-      <View style={styles.bentoContainer}>
-        {/* Live Voice Tutor (Full Width) */}
-        <PremiumPressable style={styles.cardWhite} pressScale={0.97} onPress={() => router.push("/voice-tutor")}>
-          <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }]}>
-            <View style={[styles.iconBox, { backgroundColor: C.indigoLight }]}>
-              <HugeiconsIcon icon={Robot02Icon} size={20} color={C.indigo} strokeWidth={2} />
-            </View>
-            <View style={styles.badge}>
-              <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
-            </View>
-          </View>
-          <AppText style={styles.cardTitle} forceKurdishFont={isKu}>{t("games.voiceTutorTitle")}</AppText>
-          <AppText style={styles.cardSub} forceKurdishFont={isKu}>{t("games.voiceTutorSub")}</AppText>
-        </PremiumPressable>
-
-        {/* Bento Row (No sliding, fits all screens) */}
-        <View style={[styles.bentoRow, isRtl && { flexDirection: 'row-reverse' }]}>
-          <PremiumPressable key="podcast" containerStyle={{ flex: 1 }} style={styles.podcastCard} pressScale={0.97} onPress={() => router.push("/podcast")}>
-            <LinearGradient
-              colors={['#FFA04A', '#FF7300']}
-              style={[styles.rolePlayGradient, { padding: 10, minHeight: 110 }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            >
-              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { marginBottom: 6 }]}>
-                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.15)', width: 32, height: 32, borderRadius: 10 }]}>
-                  <HugeiconsIcon icon={HeadphonesIcon} size={16} color="#FFF" strokeWidth={2.5} />
-                </View>
-                <View style={[styles.badge, { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }]}>
-                  <AppText style={[styles.badgeText, { fontSize: 9 }]} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
-                </View>
-              </View>
-              <AppText style={[styles.rpTitle, { fontSize: 13, marginBottom: 4 }]} forceKurdishFont={isKu}>{t("games.podcastTitle")}</AppText>
-              <AppText style={[styles.rpSub, { fontSize: 9.5, lineHeight: 13 }]} forceKurdishFont={isKu} numberOfLines={2}>{t("games.podcastSub")}</AppText>
-            </LinearGradient>
-          </PremiumPressable>
-
-          <PremiumPressable key="roleplay" containerStyle={{ flex: 1 }} style={styles.cardDark} pressScale={0.97} onPress={() => router.push("/roleplay")}>
-            <LinearGradient
-              colors={[C.rpStart, C.rpEnd]}
-              style={[styles.rolePlayGradient, { padding: 10, minHeight: 110 }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            >
-              <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { marginBottom: 6 }]}>
-                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 255, 255, 0.12)', width: 32, height: 32, borderRadius: 10 }]}>
-                  <HugeiconsIcon icon={MaskTheater02Icon} size={16} color="#FFF" strokeWidth={2} />
-                </View>
-                <View style={[styles.hotBadge, { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }]}>
-                  <AppText style={[styles.hotBadgeText, { fontSize: 9 }]} forceKurdishFont={isKu}>{t("games.badgeHot")}</AppText>
-                </View>
-              </View>
-              <AppText style={[styles.rpTitle, { fontSize: 13, marginBottom: 4 }]} forceKurdishFont={isKu}>{t("games.rolePlayTitle")}</AppText>
-              <AppText style={[styles.rpSub, { fontSize: 9.5, lineHeight: 13 }]} forceKurdishFont={isKu} numberOfLines={2}>{t("games.rolePlaySub")}</AppText>
-            </LinearGradient>
-          </PremiumPressable>
-        </View>
-      </View>
-
-      {/* ── Grid: Reading Practice + AI Teacher + Slang Dictionary (Horizontal slider with same size cards) ── */}
-      <View style={styles.bottomGridSection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.bottomScrollContent, isRtl && { flexDirection: 'row-reverse' }]}
-        >
-          <PremiumPressable key="reading" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/reading-practice")}>
-            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-              <ReadingPractice width={70} height={70} fill={C.blue} opacity={0.25} />
-            </View>
-
-            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-              <View style={styles.badge}>
-                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
-              </View>
-            </View>
-            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
-              {t("games.paragraphSpeechTitle")}
-            </AppText>
-            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 50 } : { marginRight: 50 }]} forceKurdishFont={isKu} numberOfLines={2}>
-              {t("games.paragraphSpeechSub")}
-            </AppText>
-          </PremiumPressable>
-
-          <PremiumPressable key="teacher" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/ai-teacher")}>
-            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-              <AiTeacher width={70} height={70} fill={C.violet} opacity={0.45} />
-            </View>
-
-            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-              <View style={styles.badge}>
-                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
-              </View>
-            </View>
-            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
-              {t("games.teacherTitle")}
-            </AppText>
-            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 50 } : { marginRight: 50 }]} forceKurdishFont={isKu} numberOfLines={2}>
-              {t("games.teacherSub")}
-            </AppText>
-          </PremiumPressable>
-
-          <PremiumPressable key="slang" style={[styles.cardWhite, styles.bottomCard, { overflow: 'hidden', position: 'relative' }]} pressScale={0.97} onPress={() => router.push("/slang")}>
-            <View style={[styles.dictBgIcon, isRtl ? { left: -10 } : { right: -10 }, { bottom: -10 }]}>
-              <Dictionary width={80} height={80} fill={C.indigo} opacity={0.5} />
-            </View>
-
-            <View style={[styles.cardTop, isRtl && { flexDirection: 'row-reverse' }, { justifyContent: 'flex-end' }]}>
-              <View style={styles.badge}>
-                <AppText style={styles.badgeText} forceKurdishFont={isKu}>{t("games.badgeNew")}</AppText>
-              </View>
-            </View>
-            <AppText style={styles.cardTitle} forceKurdishFont={isKu}>
-              {t("games.slangTitle")}
-            </AppText>
-            <AppText style={[styles.cardSub, isRtl ? { marginLeft: 70 } : { marginRight: 70 }]} forceKurdishFont={isKu} numberOfLines={2}>
-              {t("games.slangSub")}
-            </AppText>
-          </PremiumPressable>
-        </ScrollView>
-      </View>
-
-      {/* ── Your Progress ── */}
-      <View style={styles.progressCardOuter}>
-        <LinearGradient
-          colors={['#8B5CF6', '#5B21B6']}
-          style={styles.progressCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          {/* Card Content Row */}
-          <View style={[styles.widgetRow, isRtl && { flexDirection: 'row-reverse' }]}>
-            
-            {/* Left/Stats Section */}
-            <View style={[styles.widgetLeftSection, isRtl ? { marginLeft: 76, marginRight: 0 } : { marginRight: 76 }]}>
-              {/* 2x2 Grid */}
-              <View style={styles.gridContainer}>
-                <View style={styles.gridDividerH} />
-                <View style={styles.gridDividerV} />
-
-                {/* Row 1 */}
-                <View style={[styles.gridRow, isRtl && { flexDirection: 'row-reverse' }]}>
-                  {/* Day Streak */}
-                  <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <HugeiconsIcon icon={FireIcon} size={20} color="#FFA04A" strokeWidth={2.5} />
-                    <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">{streakDays || 0}</AppText>
-                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.dayStreak")}</AppText>
-                    </View>
-                  </View>
-
-                  {/* XP Earned */}
-                  <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <HugeiconsIcon icon={StarIcon} size={20} color="#FBBF24" strokeWidth={2.5} />
-                    <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">
-                        {totalXp ? totalXp.toLocaleString() : '0'}
-                      </AppText>
-                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.xpEarned")}</AppText>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Row 2 */}
-                <View style={[styles.gridRow, isRtl && { flexDirection: 'row-reverse' }]}>
-                  {/* Conversations */}
-                  <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <HugeiconsIcon icon={Mic01Icon} size={20} color="#60A5FA" strokeWidth={2.5} />
-                    <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">36</AppText>
-                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.conversations")}</AppText>
-                    </View>
-                  </View>
-
-                  {/* Badges */}
-                  <View style={[styles.statCell, isRtl && { flexDirection: 'row-reverse' }]}>
-                    <HugeiconsIcon icon={Diamond01Icon} size={20} color="#C084FC" strokeWidth={2.5} />
-                    <View style={[styles.statText, isRtl ? { marginRight: 0, marginLeft: 8 } : { marginLeft: 8, marginRight: 0 }]}>
-                      <AppText style={styles.statValue} forceLatinFont latinRole="bold">8</AppText>
-                      <AppText style={styles.statLabel} forceKurdishFont={isKu} numberOfLines={2}>{t("games.badges")}</AppText>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-          </View>
-
-          {/* Mascot */}
-          <Image
-            source={require('../../../assets/images/svg/gamescreenmascotpurple.png')}
-            style={[styles.purpleMascotImg, isRtl ? { left: -6, right: 'auto', transform: [{ scaleX: -1 }] } : { right: -6, left: 'auto' }]}
-            resizeMode="contain"
-          />
-        </LinearGradient>
-      </View>
-      </View>
       </ScrollView>
-      <BottomScrollFade />
     </View>
   );
 }
 
-/* ──────────────────────────────────────────────
-   Styles
-   ────────────────────────────────────────────── */
-function createStyles(C: any, isDark: boolean) {
-  return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.bg,
+const styles = StyleSheet.create({
+  ringWrap: {
+    width: 96,
+    height: 96,
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  /* ── Header ── */
-  header: {
-    paddingHorizontal: 24,
-    marginBottom: 4,
+  ringCopy: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  brandDots: {
-    flexDirection: 'row',
-    gap: 3,
-  },
-  dot: {
-    width: 6,
-    height: 14,
-    borderRadius: 3,
-  },
-  brandText: {
+  ringLabel: {
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '800',
-    color: C.indigo,
-    letterSpacing: 1.5,
+    lineHeight: 16,
   },
-  proPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FFF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FEF3C7',
-    ...crossShadow({ color: '#F59E0B', offsetY: 2, blur: 8, opacity: 0.08 }),
+  ringValue: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    lineHeight: 31,
   },
-  proText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: C.amber,
-  },
-
-  /* ── Hero ── */
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  heroLeft: {
-    flex: 1,
-  },
-  heroTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: C.text,
-    letterSpacing: -1.0,
-    marginBottom: 8,
-  },
-  heroSub: {
-    fontSize: 15,
-    color: C.sub,
-    fontWeight: '500',
-    lineHeight: 22,
-  },
-  heroMascot: {
-    width: 120,
-    height: 110,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mascotBlobOrange: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FB923C',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...crossShadow({ color: '#FB923C', offsetY: 6, blur: 16, opacity: 0.3 }),
-  },
-  mascotBlobBlue: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#6366F1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    ...crossShadow({ color: '#6366F1', offsetY: 4, blur: 12, opacity: 0.3 }),
-  },
-  sparkle: {
-    position: 'absolute',
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: C.amber,
-  },
-
-  /* ── Daily Goal Card ── */
-  dailyGoalContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-    overflow: 'visible',
-  },
-  dailyGoalCard: {
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    minHeight: 145,
-    flexDirection: 'row',
-    position: 'relative',
-    overflow: 'visible',
-    ...crossShadow({ color: '#FF7300', offsetY: 8, blur: 24, opacity: 0.16 }),
-  },
-  goalLeft: {
-    flex: 1,
-    paddingRight: 128,
-    zIndex: 2,
-  },
-  goalHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  goalFireCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    ...crossShadow({ color: '#FF7300', offsetY: 2, blur: 6, opacity: 0.1 }),
-  },
-  goalTextCol: {
-    flex: 1,
-  },
-  goalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
-  },
-  goalSub: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.95)',
-    marginTop: 2,
-  },
-  goalProgressBg: {
-    height: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    borderRadius: 7,
-    overflow: 'hidden',
-    width: '100%',
-    marginBottom: 8,
-    flexDirection: 'row',
-  },
-  goalProgressFill: {
-    height: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 7,
-  },
-  goalXPText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  mascotImg: {
-    width: 148,
-    height: 166,
-    position: 'absolute',
-    bottom: -24,
-    right: 0,
-    zIndex: 1,
-  },
-
-  /* ── Quick Actions ── */
-  quickActionsOuter: {
-    paddingHorizontal: 24,
-    marginBottom: 20,
-  },
-  quickActionsCard: {
-    flexDirection: 'row',
-    backgroundColor: C.card,
-    borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 8,
-    ...crossShadow({ color: '#000', offsetY: 6, blur: 24, opacity: 0.08 }),
-  },
-  quickItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 5,
-  },
-  quickIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: C.text,
-    textAlign: 'center',
-    flexShrink: 1,
-    lineHeight: 18,
-  },
-  /* ── Bento Grid ── */
-  bentoGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    alignItems: 'flex-start',
-  },
-  bentoLeft: {
-    width: '48%',
-    gap: 14,
-  },
-  bentoRight: {
-    width: '48%',
-  },
-
-  dictBgIcon: {
-    position: 'absolute',
-    bottom: -12,
-  },
-
-  /* ── White Card (shared) ── */
-  cardWhite: {
-    backgroundColor: C.card,
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-    borderBottomWidth: 4.5,
-    borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-    ...crossShadow({ color: '#0F172A', offsetY: 4, blur: 12, opacity: 0.08 }),
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    backgroundColor: C.badgeBg,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  badgeText: {
+  ringLabelCompact: {
     fontSize: 10,
-    fontWeight: '800',
-    color: C.badgeText,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: C.text,
-    marginBottom: 6,
-    letterSpacing: -0.2,
-  },
-  cardSub: {
-    fontSize: 12,
-    color: C.sub,
-    fontWeight: '500',
-    lineHeight: 18,
-    marginBottom: 0,
-  },
-  arrowRow: {
-    alignItems: 'flex-end',
-  },
-  arrowCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#F4F4F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  podcastCard: {
-    flex: 1,
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 115, 0, 0.15)',
-    borderBottomWidth: 4.5,
-    borderBottomColor: 'rgba(255, 75, 0, 0.25)',
-    ...crossShadow({ color: '#FF7300', offsetY: 8, blur: 20, opacity: 0.16 }),
-  },
-
-  /* ── AI Role Play Card ── */
-  cardDark: {
-    flex: 1,
-    borderRadius: 22,
-    overflow: 'hidden',
-    backgroundColor: C.rpEnd,
-    borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderBottomWidth: 4.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.25)',
-    ...crossShadow({ color: C.indigoDark, offsetY: 8, blur: 20, opacity: 0.15 }),
-  },
-  rolePlayGradient: {
-    borderRadius: 22,
-    padding: 12,
-    minHeight: 115,
-  },
-  hotBadge: {
-    backgroundColor: C.hotBg,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  hotBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: C.hotText,
-  },
-  rpTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 6,
-    letterSpacing: -0.2,
-  },
-  rpSub: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.75)',
-    fontWeight: '500',
-    lineHeight: 18,
-    marginBottom: 0,
-  },
-
-
-
-  /* ── Bottom Grid ── */
-  bottomGrid: {
-    flexDirection: 'row',
-    gap: 14,
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  bottomScrollContent: {
-    paddingHorizontal: 24,
-    gap: 14,
-    paddingBottom: 8,
-  },
-  bottomCard: {
-    width: 260,
-    minHeight: 130,
-  },
-  aaIcon: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#4338CA',
-    letterSpacing: -0.5,
-  },
-
-  /* ── Your Progress Card ── */
-  progressCardOuter: {
-    paddingHorizontal: 24,
-    marginBottom: 40,
-    overflow: 'visible',
-  },
-  progressCard: {
-    minHeight: 165,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    borderBottomWidth: 4.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.15)',
-    position: 'relative',
-    overflow: 'visible',
-    ...crossShadow({ color: '#7C3AED', offsetY: 8, blur: 24, opacity: 0.2 }),
-  },
-  mascotBgGlow: {
-    position: 'absolute',
-    bottom: -25,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    zIndex: 1,
-  },
-  widgetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  widgetLeftSection: {
-    flex: 1,
-  },
-  widgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  widgetTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...crossShadow({ color: '#7C3AED', offsetY: 1, blur: 4, opacity: 0.05 }),
-  },
-  widgetTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  widgetViewAll: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  gridContainer: {
-    position: 'relative',
-    zIndex: 2,
-  },
-  gridDividerH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '50%',
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  gridDividerV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '50%',
-    width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  gridRow: {
-    flexDirection: 'row',
-  },
-  statCell: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  statText: {
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.4,
-    lineHeight: 20,
-  },
-  statLabel: {
-    fontSize: 10.5,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '600',
-    marginTop: 1,
     lineHeight: 13,
   },
-  purpleMascotImg: {
-    width: 92,
-    height: 124,
-    position: 'absolute',
-    bottom: -12,
-    zIndex: 4,
+  ringValueCompact: {
+    fontSize: 22,
+    lineHeight: 25,
   },
-  bentoContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 14,
-    gap: 14,
-  },
-  bentoRow: {
-    flexDirection: 'row',
-    gap: 14,
-  },
-  bentoHalfCard: {
-    flex: 1,
-  },
-  bottomScrollContainer: {
-    paddingHorizontal: 24,
-    gap: 14,
-    marginBottom: 24,
-  },
-  contentWrapper: {
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-    paddingBottom: 120,
-  },
-  bottomGridSection: {
-    marginBottom: 24,
-  },
-  bottomHalfCard: {
-    flex: 1,
-    minHeight: 130,
-  },
+});
+
+function createStyles(compact: boolean) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: "#F8F7FD",
+    },
+    scrollContent: {
+      alignItems: "center",
+    },
+    content: {
+      width: "100%",
+      maxWidth: 720,
+      paddingHorizontal: compact ? 16 : 24,
+    },
+    rowReverse: {
+      flexDirection: "row-reverse",
+    },
+    hero: {
+      minHeight: compact ? 188 : 262,
+      position: "relative",
+      justifyContent: "flex-start",
+      paddingTop: compact ? 10 : 18,
+    },
+    heroRtl: {
+      alignItems: "flex-end",
+    },
+    heroCopy: {
+      width: compact ? "56%" : "58%",
+      zIndex: 2,
+    },
+    heroCopyRtl: {
+      alignItems: "flex-end",
+    },
+    heroTitle: {
+      color: "#101A3A",
+      fontSize: compact ? 40 : 56,
+      lineHeight: compact ? 47 : 64,
+      fontWeight: "900",
+      fontFamily: "DINNextRoundedBold",
+    },
+    heroMascot: {
+      position: "absolute",
+      right: compact ? -10 : -8,
+      bottom: compact ? -2 : -4,
+      width: compact ? 132 : 282,
+      height: compact ? 132 : 282,
+      zIndex: 1,
+    },
+    heroMascotRtl: {
+      right: "auto",
+      left: compact ? -10 : -8,
+      transform: [{ scaleX: -1 }],
+    },
+    progressBanner: {
+      minHeight: compact ? 116 : 168,
+      borderRadius: compact ? 24 : 28,
+      paddingHorizontal: compact ? 14 : 22,
+      paddingVertical: compact ? 12 : 18,
+      flexDirection: "row",
+      alignItems: "center",
+      overflow: "hidden",
+      ...crossShadow({ color: "#7041DC", offsetY: 10, blur: 22, opacity: 0.2 }),
+    },
+    progressCopy: {
+      flex: 1,
+      minWidth: 0,
+      marginLeft: compact ? 8 : 20,
+      zIndex: 2,
+    },
+    progressCopyRtl: {
+      marginLeft: 0,
+      marginRight: compact ? 8 : 20,
+      alignItems: "flex-end",
+    },
+    progressEyebrow: {
+      color: "rgba(255,255,255,0.9)",
+      fontSize: compact ? 12 : 14,
+      lineHeight: compact ? 15 : 18,
+      fontWeight: "700",
+    },
+    progressValue: {
+      color: "#FFFFFF",
+      fontSize: compact ? 21 : 31,
+      lineHeight: compact ? 27 : 39,
+      marginTop: compact ? 2 : 4,
+    },
+    progressUnit: {
+      fontSize: compact ? 15 : 23,
+    },
+    progressTrack: {
+      height: compact ? 8 : 11,
+      borderRadius: 6,
+      backgroundColor: "rgba(55,32,151,0.5)",
+      overflow: "hidden",
+      marginTop: compact ? 8 : 12,
+      width: compact ? "46%" : "78%",
+    },
+    progressTrackRtl: {
+      alignSelf: "flex-end",
+    },
+    progressFill: {
+      height: "100%",
+      borderRadius: 6,
+      backgroundColor: "#FFD46A",
+    },
+    chestImage: {
+      position: "absolute",
+      right: compact ? 4 : 8,
+      bottom: compact ? 2 : -4,
+      width: compact ? 82 : 142,
+      height: compact ? 82 : 142,
+      zIndex: 1,
+    },
+    chestImageRtl: {
+      right: "auto",
+      left: compact ? 4 : 8,
+    },
+    dailyCard: {
+      minHeight: compact ? 238 : 268,
+      backgroundColor: "#FFFEFF",
+      borderRadius: compact ? 30 : 34,
+      marginTop: compact ? 18 : 28,
+      paddingHorizontal: compact ? 18 : 26,
+      paddingTop: compact ? 22 : 30,
+      paddingBottom: compact ? 20 : 22,
+      position: "relative",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "#EEE8FA",
+      ...crossShadow({ color: "#6674A9", offsetY: 10, blur: 26, opacity: 0.11 }),
+    },
+    dailyIcon: {
+      width: compact ? 56 : 66,
+      height: compact ? 56 : 66,
+      borderRadius: compact ? 18 : 20,
+      backgroundColor: "#F4EEFF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dailyCopy: {
+      position: "absolute",
+      left: compact ? 78 : 106,
+      right: compact ? 80 : 152,
+      top: compact ? 25 : 36,
+      minHeight: compact ? 78 : 92,
+    },
+    dailyCopyRtl: {
+      left: compact ? 80 : 152,
+      right: compact ? 78 : 106,
+      alignItems: "flex-end",
+    },
+    dailyTitle: {
+      color: "#7A42E6",
+      fontSize: compact ? 16 : 21,
+      lineHeight: compact ? 20 : 28,
+      fontWeight: "900",
+      fontFamily: "DINNextRoundedBold",
+    },
+    dailySubtitle: {
+      color: "#141E3D",
+      fontSize: compact ? 13 : 18,
+      lineHeight: compact ? 18 : 26,
+      marginTop: compact ? 4 : 8,
+      maxWidth: 280,
+    },
+    giftImage: {
+      position: "absolute",
+      width: compact ? 88 : 118,
+      height: compact ? 88 : 118,
+      right: compact ? 8 : 20,
+      bottom: compact ? 82 : 76,
+    },
+    giftImageRtl: {
+      right: "auto",
+      left: compact ? 8 : 20,
+    },
+    dailyBottom: {
+      position: "absolute",
+      left: compact ? 14 : 24,
+      right: compact ? 14 : 24,
+      bottom: compact ? 18 : 22,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: compact ? 10 : 0,
+    },
+    stepRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexShrink: 1,
+      flex: compact ? 1 : undefined,
+    },
+    stepDot: {
+      width: compact ? 24 : 28,
+      height: compact ? 24 : 28,
+      borderRadius: compact ? 12 : 14,
+      borderWidth: 2,
+      borderColor: "#E1D6FA",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFFFFF",
+    },
+    stepDotDone: {
+      backgroundColor: "#7B42E6",
+      borderColor: "#7B42E6",
+    },
+    stepCheck: {
+      color: "#FFFFFF",
+      fontSize: 17,
+      lineHeight: 19,
+    },
+    stepLine: {
+      width: compact ? undefined : 54,
+      flex: compact ? 1 : undefined,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: "#D9C9FA",
+      marginHorizontal: compact ? 4 : 6,
+    },
+    goButton: {
+      minWidth: compact ? 66 : 86,
+      height: compact ? 40 : 52,
+      paddingHorizontal: compact ? 12 : 18,
+      borderRadius: compact ? 20 : 26,
+      backgroundColor: "#FCFBFF",
+      alignItems: "center",
+      justifyContent: "center",
+      ...crossShadow({ color: "#8A77C8", offsetY: 4, blur: 12, opacity: 0.12 }),
+    },
+    goText: {
+      color: "#7B42E6",
+      fontSize: compact ? 16 : 20,
+      lineHeight: compact ? 20 : 24,
+      fontWeight: "900",
+      fontFamily: "DINNextRoundedBold",
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: compact ? 30 : 36,
+      marginBottom: compact ? 14 : 18,
+      paddingHorizontal: 2,
+    },
+    sectionTitle: {
+      color: "#111B3D",
+      fontSize: compact ? 22 : 26,
+      lineHeight: compact ? 27 : 32,
+      fontWeight: "900",
+      fontFamily: "DINNextRoundedBold",
+    },
+    seeAll: {
+      color: Colors.light.primary,
+      fontSize: compact ? 14 : 16,
+      lineHeight: compact ? 20 : 22,
+      fontWeight: "800",
+    },
+    seeAllArrow: {
+      color: Colors.light.primary,
+      fontSize: compact ? 22 : 25,
+      lineHeight: 20,
+    },
+    gameGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "flex-start",
+    },
+    gameGridRtl: {
+      flexDirection: "row-reverse",
+    },
+    gameTileContainer: {
+      width: "50%",
+      padding: compact ? 5 : 7,
+    },
+    gameTile: {
+      width: "100%",
+      height: compact ? 190 : 238,
+      alignItems: "flex-start",
+      justifyContent: "flex-start",
+      paddingHorizontal: compact ? 12 : 18,
+      paddingVertical: compact ? 12 : 18,
+      borderRadius: compact ? 22 : 28,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: "rgba(148, 163, 184, 0.10)",
+      overflow: "hidden",
+      ...crossShadow({ color: "#64748B", offsetY: 5, blur: 14, opacity: 0.06 }),
+    },
+    gameTileRtl: {
+      alignItems: "flex-end",
+    },
+    tileWash: {
+      position: "absolute",
+      width: compact ? 150 : 210,
+      height: compact ? 104 : 140,
+      borderRadius: 999,
+      right: compact ? -54 : -70,
+      bottom: compact ? -48 : -58,
+      opacity: 0.58,
+    },
+    tileWashRtl: {
+      right: "auto",
+      left: compact ? -54 : -70,
+    },
+    tileImageWell: {
+      width: compact ? 72 : 100,
+      height: compact ? 72 : 100,
+      borderRadius: compact ? 20 : 26,
+      alignItems: "center",
+      justifyContent: "center",
+      borderCurve: "continuous",
+      zIndex: 1,
+    },
+    tileImage: {
+      width: compact ? 66 : 92,
+      height: compact ? 66 : 92,
+    },
+    tileCopy: {
+      width: "100%",
+      alignItems: "flex-start",
+      marginTop: compact ? 9 : 12,
+      zIndex: 1,
+    },
+    tileCopyRtl: {
+      alignItems: "flex-end",
+    },
+    tileTitle: {
+      color: Colors.light.foreground,
+      fontSize: compact ? 14 : 17,
+      lineHeight: compact ? 18 : 22,
+      fontWeight: "900",
+      fontFamily: "DINNextRoundedBold",
+      textAlign: "left",
+    },
+    tileTitleRtl: {
+      width: "100%",
+      textAlign: "right",
+      writingDirection: "rtl",
+    },
+    tileSubtitle: {
+      color: Colors.light.mutedForeground,
+      fontSize: compact ? 10 : 12,
+      lineHeight: compact ? 14 : 17,
+      marginTop: compact ? 4 : 6,
+      paddingRight: compact ? 22 : 32,
+      textAlign: "left",
+    },
+    tileSubtitleRtl: {
+      width: "100%",
+      paddingRight: 0,
+      paddingLeft: compact ? 22 : 32,
+      textAlign: "right",
+      writingDirection: "rtl",
+    },
+    tileArrow: {
+      position: "absolute",
+      right: compact ? 11 : 16,
+      bottom: compact ? 11 : 16,
+      width: compact ? 30 : 38,
+      height: compact ? 30 : 38,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2,
+    },
+    tileArrowRtl: {
+      right: "auto",
+      left: compact ? 11 : 16,
+    },
+    streakCard: {
+      minHeight: compact ? 142 : 158,
+      marginTop: compact ? 34 : 40,
+      paddingHorizontal: compact ? 18 : 24,
+      paddingVertical: compact ? 22 : 26,
+      borderRadius: compact ? 30 : 34,
+      backgroundColor: "#FFFFFF",
+      flexDirection: "row",
+      alignItems: "flex-start",
+      position: "relative",
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "#EEE8FA",
+      ...crossShadow({ color: "#6674A9", offsetY: 10, blur: 24, opacity: 0.1 }),
+    },
+    streakCopy: {
+      marginLeft: 12,
+      flex: 1,
+      minWidth: 0,
+    },
+    streakCopyRtl: {
+      marginLeft: 0,
+      marginRight: 12,
+      alignItems: "flex-end",
+    },
+    streakHeading: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: 9,
+    },
+    streakDays: {
+      color: "#FF7A2F",
+      fontSize: 28,
+      lineHeight: 32,
+    },
+    streakLabel: {
+      color: "#111B3D",
+      fontSize: 16,
+      lineHeight: 21,
+      fontWeight: "800",
+    },
+    streakSub: {
+      color: "#8790A2",
+      fontSize: 13,
+      lineHeight: 18,
+      marginTop: 4,
+    },
+    streakBars: {
+      position: "absolute",
+      right: compact ? 88 : 112,
+      bottom: compact ? 24 : 28,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    streakBarsRtl: {
+      flexDirection: "row-reverse",
+      right: "auto",
+      left: compact ? 88 : 112,
+    },
+    streakBar: {
+      width: compact ? 20 : 26,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: "#EEF0F8",
+    },
+    streakBarDone: {
+      backgroundColor: "#FFB42C",
+    },
+    streakChest: {
+      position: "absolute",
+      right: compact ? 4 : 10,
+      bottom: compact ? 5 : 8,
+      width: compact ? 82 : 94,
+      height: compact ? 82 : 94,
+    },
+    streakChestRtl: {
+      right: "auto",
+      left: compact ? 4 : 10,
+    },
   });
 }

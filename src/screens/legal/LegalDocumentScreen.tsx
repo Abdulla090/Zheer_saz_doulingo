@@ -30,7 +30,7 @@ export function LegalDocumentScreen({ docId }: Props) {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={[styles.topBar, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+      <View style={[styles.topBar, { flexDirection: "row" }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />

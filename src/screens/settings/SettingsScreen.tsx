@@ -36,9 +36,9 @@ import * as Font from "expo-font";
 import { fontMap } from "../../fontMap";
 import {
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -106,14 +106,23 @@ function SettingsSwitch({
   activeColor: string;
 }) {
   return (
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: "#E5E5EA", true: activeColor }}
-      thumbColor="#FFFFFF"
-      ios_backgroundColor="#E5E5EA"
-      style={stylesStatic.nativeSwitch}
-    />
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      onPress={() => onValueChange(!value)}
+      style={({ pressed }) => [
+        stylesStatic.switchTrack,
+        value ? { backgroundColor: activeColor } : stylesStatic.switchTrackOff,
+        pressed && stylesStatic.switchPressed,
+      ]}
+    >
+      <View
+        style={[
+          stylesStatic.switchThumb,
+          value ? stylesStatic.switchThumbOn : stylesStatic.switchThumbOff,
+        ]}
+      />
+    </Pressable>
   );
 }
 
@@ -141,8 +150,51 @@ function RowChevron({ isRtl, color }: { isRtl: boolean; color: string }) {
 }
 
 const stylesStatic = StyleSheet.create({
-  nativeSwitch: {
-    transform: [{ scaleX: 0.94 }, { scaleY: 0.94 }],
+  switchTrack: {
+    width: 44,
+    height: 26,
+    borderRadius: 999,
+    padding: 2,
+    justifyContent: "center",
+    flexShrink: 0,
+    ...Platform.select({
+      web: {
+        userSelect: "none",
+        cursor: "pointer",
+      },
+    }),
+  },
+  switchTrackOff: {
+    backgroundColor: "#E5E5EA",
+  },
+  switchPressed: {
+    opacity: 0.84,
+  },
+  switchThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.16,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: "0px 1px 4px rgba(15, 23, 42, 0.2)",
+      },
+    }),
+  },
+  switchThumbOff: {
+    alignSelf: "flex-start",
+  },
+  switchThumbOn: {
+    alignSelf: "flex-end",
   },
 });
 
@@ -211,7 +263,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
         <View
           style={[
             styles.header,
-            { flexDirection: isRtl ? "row-reverse" : "row" },
+            { flexDirection: "row" },
           ]}
         >
           <PressableScale

@@ -24,6 +24,7 @@ import {
   View,
   ViewStyle,
   TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { VolumeHighIcon } from "@hugeicons/core-free-icons";
@@ -248,19 +249,29 @@ export function LightQuestionPrompt({
   label,
   forceKurdishFont,
   variant = "default",
+  layout = "row",
+  expanded = false,
 }: {
   children: string;
   label: string;
   forceKurdishFont?: boolean;
   variant?: "default" | "kids";
+  layout?: "row" | "stacked";
+  expanded?: boolean;
 }) {
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKids = variant === "kids" || rawMode === "kids";
+  const { width, height } = useWindowDimensions();
 
   const { speak } = useTTS();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
+  const compactLayout = width < 480 || height < 720;
+  const stacked = layout === "stacked" || compactLayout;
+  const compact = width < 380 || height < 720;
+  const normalMascotSize = stacked ? (compact ? 90 : 104) : 120;
+  const kidsMascotSize = stacked ? (compact ? 110 : 124) : 160;
 
   const floatY = useSharedValue(0);
   const breathe = useSharedValue(1);
@@ -332,24 +343,44 @@ export function LightQuestionPrompt({
 
   if (isKids) {
     return (
-      <View style={lh.kidsMascotStage}>
+      <View style={[lh.kidsMascotStage, stacked && lh.kidsMascotStageStacked]}>
         {/* Mascot with gentle floating animation */}
-        <View style={lh.kidsMascotArea}>
-          <Animated.View style={[lh.kidsMascotWrap, mascotStyle]}>
-            <RiveMascot size={160} pose="wave" />
+        <View
+          style={[
+            lh.kidsMascotArea,
+            stacked && lh.kidsMascotAreaStacked,
+            stacked && { width: kidsMascotSize, height: kidsMascotSize + 10 },
+          ]}
+        >
+          <Animated.View
+            style={[
+              lh.kidsMascotWrap,
+              stacked && { width: kidsMascotSize, height: kidsMascotSize + 8 },
+              mascotStyle,
+            ]}
+          >
+            <RiveMascot size={kidsMascotSize} pose="wave" />
           </Animated.View>
           <Animated.View style={[lh.kidsMascotShadow, shadowStyle]} />
         </View>
 
         {/* Speech Bubble */}
-        <View style={{ flex: 1, position: "relative" }}>
-          <View style={lh.kidsBubble}>
+        <View style={[lh.mascotBubbleWrap, stacked && lh.mascotBubbleWrapStacked]}>
+          <View style={[lh.kidsBubble, stacked && lh.kidsBubbleStacked]}>
             <View style={[
-              lh.kidsBubbleTail,
-              rtl ? { left: undefined, right: -9, transform: [{ rotate: "225deg" }] } : {}
+              stacked ? lh.kidsBubbleTailTop : lh.kidsBubbleTail,
+              !stacked && rtl ? { left: undefined, right: -9, transform: [{ rotate: "225deg" }] } : {}
             ]} />
-            <View style={{ flex: 1 }}>
-              <AppText style={[lh.kidsBubbleTextEn, rtl ? { textAlign: "right" } : { textAlign: "left" }]} forceLatinFont latinRole="bold">
+            <View style={lh.bubbleTextCol}>
+              <AppText
+                style={[
+                  lh.kidsBubbleTextEn,
+                  compact && lh.kidsBubbleTextCompact,
+                  rtl ? { textAlign: "right" } : { textAlign: stacked ? "center" : "left" },
+                ]}
+                forceLatinFont
+                latinRole="bold"
+              >
                 {children}
               </AppText>
             </View>
@@ -371,29 +402,49 @@ export function LightQuestionPrompt({
   }
 
   return (
-    <View style={lh.normalMascotStage}>
+    <View style={[lh.normalMascotStage, stacked && lh.normalMascotStageStacked]}>
       {/* Twino Mascot with gentle floating animation */}
-      <View style={lh.normalMascotArea}>
-        <Animated.View style={[lh.normalMascotWrap, mascotStyle]}>
-          <TwinoMascot size={120} pose={pose} />
+      <View
+        style={[
+          lh.normalMascotArea,
+          stacked && lh.normalMascotAreaStacked,
+          stacked && { width: normalMascotSize, height: normalMascotSize + 8 },
+        ]}
+      >
+        <Animated.View
+          style={[
+            lh.normalMascotWrap,
+            stacked && { width: normalMascotSize, height: normalMascotSize + 6 },
+            mascotStyle,
+          ]}
+        >
+          <TwinoMascot size={normalMascotSize} pose={pose} />
         </Animated.View>
         <Animated.View style={[lh.normalMascotShadow, shadowStyle]} />
       </View>
 
       {/* Speech Bubble */}
-      <View style={{ flex: 1, position: "relative" }}>
-        <View style={lh.normalBubble}>
+      <View style={[lh.mascotBubbleWrap, stacked && lh.mascotBubbleWrapStacked]}>
+        <View style={[lh.normalBubble, stacked && lh.normalBubbleStacked, expanded && lh.normalBubbleExpanded]}>
           {/* Bubble tail pointing left to the mascot */}
           <View style={[
-            lh.normalBubbleTail,
-            rtl ? { left: undefined, right: -7, transform: [{ rotate: "225deg" }] } : {}
+            stacked ? lh.normalBubbleTailTop : lh.normalBubbleTail,
+            !stacked && rtl ? { left: undefined, right: -7, transform: [{ rotate: "225deg" }] } : {}
           ]} />
           
-          <View style={{ flex: 1, gap: 2 }}>
+          <View style={lh.bubbleTextCol}>
             <AppText style={lh.normalBubbleLabel} forceLatinFont>
               {label}
             </AppText>
-            <AppText style={[lh.normalBubbleText, rtl ? { textAlign: "right" } : { textAlign: "left" }]} forceKurdishFont={forceKurdishFont}>
+            <AppText
+              style={[
+                lh.normalBubbleText,
+                compact && lh.normalBubbleTextCompact,
+                expanded && lh.normalBubbleTextExpanded,
+                rtl ? { textAlign: "right" } : { textAlign: stacked ? "center" : "left" },
+              ]}
+              forceKurdishFont={forceKurdishFont}
+            >
               {children}
             </AppText>
           </View>
@@ -1837,12 +1888,25 @@ const lh = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 12,
   },
+  kidsMascotStageStacked: {
+    flexDirection: "column",
+    alignItems: "center",
+    minHeight: 0,
+    marginTop: 2,
+    marginBottom: 6,
+    paddingHorizontal: 0,
+    gap: 6,
+  },
   kidsMascotArea: {
     width: 160,
     height: 190,
     alignItems: "center",
     justifyContent: "flex-end",
     position: "relative",
+  },
+  kidsMascotAreaStacked: {
+    justifyContent: "center",
+    alignSelf: "center",
   },
   kidsMascotWrap: {
     width: 160,
@@ -1896,6 +1960,24 @@ const lh = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  mascotBubbleWrap: {
+    flex: 1,
+    position: "relative",
+    minWidth: 0,
+  },
+  mascotBubbleWrapStacked: {
+    flex: 0,
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  kidsBubbleStacked: {
+    width: "100%",
+    flex: 0,
+    marginLeft: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
   kidsBubbleSpeaker: {
     width: 32,
     height: 32,
@@ -1931,6 +2013,29 @@ const lh = StyleSheet.create({
     borderColor: "#E9D5FF",
     transform: [{ rotate: "45deg" }],
     zIndex: 2,
+  },
+  kidsBubbleTailTop: {
+    position: "absolute",
+    top: -9,
+    left: "50%",
+    marginLeft: -7,
+    width: 14,
+    height: 14,
+    backgroundColor: "#FFFFFF",
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#E9D5FF",
+    transform: [{ rotate: "135deg" }],
+    zIndex: 2,
+  },
+  bubbleTextCol: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  kidsBubbleTextCompact: {
+    fontSize: 15,
+    lineHeight: 21,
   },
   kidsCheckBtnDisabled: {
     height: 56,
@@ -1976,12 +2081,25 @@ const lh = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 12,
   },
+  normalMascotStageStacked: {
+    flexDirection: "column",
+    alignItems: "center",
+    minHeight: 0,
+    marginTop: 2,
+    marginBottom: 6,
+    paddingHorizontal: 0,
+    gap: 6,
+  },
   normalMascotArea: {
     width: 120,
     height: 150,
     alignItems: "center",
     justifyContent: "flex-end",
     position: "relative",
+  },
+  normalMascotAreaStacked: {
+    justifyContent: "center",
+    alignSelf: "center",
   },
   normalMascotWrap: {
     width: 120,
@@ -2017,6 +2135,19 @@ const lh = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
+  normalBubbleStacked: {
+    width: "100%",
+    flex: 0,
+    marginLeft: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  normalBubbleExpanded: {
+    minHeight: 116,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+  },
   normalBubbleTail: {
     position: "absolute",
     left: -7,
@@ -2029,6 +2160,20 @@ const lh = StyleSheet.create({
     borderBottomWidth: 1.5,
     borderColor: "#E2E8F0",
     transform: [{ rotate: "45deg" }],
+    zIndex: 2,
+  },
+  normalBubbleTailTop: {
+    position: "absolute",
+    top: -7,
+    left: "50%",
+    marginLeft: -7,
+    width: 14,
+    height: 14,
+    backgroundColor: "#FFFFFF",
+    borderLeftWidth: 1.5,
+    borderBottomWidth: 1.5,
+    borderColor: "#E2E8F0",
+    transform: [{ rotate: "135deg" }],
     zIndex: 2,
   },
   normalBubbleLabel: {
@@ -2044,6 +2189,14 @@ const lh = StyleSheet.create({
     color: "#1E293B",
     lineHeight: 22,
     flexShrink: 1,
+  },
+  normalBubbleTextCompact: {
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  normalBubbleTextExpanded: {
+    fontSize: 14,
+    lineHeight: 21,
   },
   normalBubbleSpeaker: {
     width: 32,

@@ -5,24 +5,28 @@
 import type { AppLocale } from "../i18n";
 import { getUnitsForPath } from "./content-access";
 import type { LessonPathMode, UnitBank } from "./types";
-import { normalSectionConfigs } from "./normal-english";
+import { getSkippedUnitsCount, normalSectionConfigs } from "./normal-english";
 import { kidsSectionConfigs } from "./kids-english";
 import { getPathUnitTitle } from "./path-unit-titles";
 import { sectionConfigs } from "./list-items";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export type GuidebookWord = {
   english: string;
   kurdish: string;
+  arabic?: string;
 };
 
 export type GuidebookPhrase = {
   english: string;
   kurdish: string;
+  arabic?: string;
 };
 
 export type GuidebookLesson = {
   topic: string;
   topicKu: string;
+  topicAr?: string;
   words: GuidebookWord[];
   phrases: GuidebookPhrase[];
 };
@@ -36,6 +40,32 @@ export type GuidebookUnit = {
 
 type SectionConfig = { displayTheme: string };
 
+function cleanText(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function addPhrase(
+  phrases: GuidebookPhrase[],
+  seen: Set<string>,
+  english: string | undefined,
+  kurdish: string | undefined,
+  arabic?: string,
+) {
+  const englishText = cleanText(english);
+  if (!englishText) return;
+
+  const key = englishText.toLocaleLowerCase();
+  if (seen.has(key)) return;
+  seen.add(key);
+
+  phrases.push({
+    english: englishText,
+    kurdish: cleanText(kurdish) ?? "",
+    ...(cleanText(arabic) ? { arabic: cleanText(arabic) } : {}),
+  });
+}
+
 function buildGuidebookFromUnit(
   unitIndex: number,
   unitBank: UnitBank | undefined,
@@ -46,27 +76,37 @@ function buildGuidebookFromUnit(
 
   const lessons: GuidebookLesson[] = unitBank.map((lesson) => {
     const phrases: GuidebookPhrase[] = [];
+    const seenPhrases = new Set<string>();
+
+    for (const v of lesson.voices ?? []) {
+      addPhrase(phrases, seenPhrases, v.target, v.targetKurdish, v.targetArabic);
+    }
 
     for (const s of lesson.sentences ?? []) {
       if (!s?.english?.length) continue;
-      phrases.push({
-        english: s.english.join(" "),
-        kurdish: s.kurdish ?? "",
-      });
+      addPhrase(phrases, seenPhrases, s.english.join(" "), s.kurdish, s.arabic);
     }
 
     for (const c of lesson.conversations ?? []) {
       if (!c?.correct) continue;
-      phrases.push({
-        english: c.correct,
-        kurdish: c.explanation ?? "",
-      });
+      addPhrase(
+        phrases,
+        seenPhrases,
+        c.correct,
+        c.explanation,
+        c.correctAr ?? c.explanationAr,
+      );
     }
 
     return {
       topic: lesson.topic ?? "",
       topicKu: lesson.topicKu ?? "",
-      words: [...(lesson.words ?? [])],
+      ...(cleanText(lesson.topicAr) ? { topicAr: cleanText(lesson.topicAr) } : {}),
+      words: (lesson.words ?? []).map((word) => ({
+        english: word.english,
+        kurdish: word.kurdish,
+        ...(cleanText(word.arabic) ? { arabic: cleanText(word.arabic) } : {}),
+      })),
       phrases,
     };
   });
@@ -97,11 +137,18 @@ export function getGuidebookForNormalUnit(
   unitIndex: number,
   locale: AppLocale = "en",
 ): GuidebookUnit | null {
+  const skippedUnits = getSkippedUnitsCount(
+    useSettingsStore.getState().englishLevel || 5,
+  );
+  const activeUnitIndex =
+    unitIndex >= skippedUnits ? unitIndex - skippedUnits : unitIndex;
+  const sourceUnitIndex = activeUnitIndex + skippedUnits;
+
   return buildGuidebookFromUnit(
-    unitIndex,
-    getUnitsForPath("normal")[unitIndex],
-    normalSectionConfigs[unitIndex],
-    getPathUnitTitle("normal", unitIndex, locale),
+    activeUnitIndex,
+    getUnitsForPath("normal")[activeUnitIndex],
+    normalSectionConfigs[sourceUnitIndex] ?? normalSectionConfigs[activeUnitIndex],
+    getPathUnitTitle("normal", sourceUnitIndex, locale),
   );
 }
 

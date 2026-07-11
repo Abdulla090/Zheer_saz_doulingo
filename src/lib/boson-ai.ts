@@ -1,10 +1,24 @@
 import { createAudioPlayer } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
+import { Platform } from "react-native";
 
 const BOSON_API_URL = "https://api.boson.ai/v1/audio/speech";
 
 function getBosonApiKey(): string | undefined {
   const key = process.env.EXPO_PUBLIC_BOSON_API_KEY?.trim();
   return key || undefined;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  if (typeof globalThis.btoa !== "function") {
+    throw new Error("Base64 encode unavailable.");
+  }
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]!);
+  }
+  return globalThis.btoa(binary);
 }
 
 export function isBosonConfigured(): boolean {
@@ -37,9 +51,25 @@ export async function generateSpeech(text: string, voice = "default") {
       throw new Error(`Boson API error: ${response.statusText}`);
     }
 
-    const blob = await response.blob();
-    const uri = URL.createObjectURL(blob);
-    return uri;
+    if (Platform.OS === "web") {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+    const base64 = arrayBufferToBase64(audioBuffer);
+    const cacheDir = FileSystem.cacheDirectory;
+    if (!cacheDir) {
+      throw new Error("Audio cache directory unavailable.");
+    }
+
+    const fileUri = `${cacheDir}boson-tts-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.mp3`;
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    return fileUri;
   } catch (error) {
     console.error("Failed to generate speech with Boson:", error);
     throw error;

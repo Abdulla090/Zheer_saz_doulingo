@@ -13,6 +13,7 @@ export type LessonRouteParams = {
     pi: string;
     mode: LessonPathMode;
     q: string;
+    du?: string;
     fromPath?: string;
   };
 };
@@ -94,6 +95,7 @@ export function buildLessonRouteForMode(
       pi: String(meta.item.pathIndex),
       mode,
       q: "0",
+      du: String(meta.item.displayUnitNumber ?? meta.item.lessonId + 1),
       fromPath: fromPath ? "true" : undefined,
     },
   };
@@ -118,6 +120,7 @@ export function buildLessonRouteFromMeta(
       pi: String(meta.item.pathIndex),
       mode: meta.mode,
       q: "0",
+      du: String(meta.item.displayUnitNumber ?? meta.item.lessonId + 1),
       fromPath: fromPath ? "true" : undefined,
     },
   };

@@ -7,7 +7,7 @@
 
 import { AppText } from "../../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View, TextInput } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View, TextInput, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { crossShadow } from "../../../utils/shadows";
 import Animated, {
@@ -60,6 +60,9 @@ const BENIGN_SPEECH_ERRORS = new Set([
 export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
+  const { width, height } = useWindowDimensions();
+  const compactLayout = width < 480 || height < 720;
+  const micOrbSize = compactLayout ? 82 : 92;
   const { speak } = useTTS();
   const speech = useSpeechCapture("en-US");
 
@@ -349,26 +352,26 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           ? t("lessons.voiceTryAgainStatus")
           : t("lessons.voiceTapMicSpeak");
 
-  const instruction = isAr && question.promptAr ? question.promptAr : (question.prompt || t("lessons.sayOutLoudSub"));
-  const targetText = isAr && question.targetArabic ? question.targetArabic : question.targetKurdish;
-
   const showTranscript =
     transcript.length > 0 &&
     (state === "listening" || state === "processing" || state === "success" || state === "fail");
 
   return (
-    <GameRoot style={s.root}>
+    <GameRoot style={[s.root, compactLayout && s.rootCompact]}>
       <GameHeader>
         <LightGameHeading
-          title={instruction}
+          title={t("lessons.sayOutLoud")}
         />
       </GameHeader>
 
       <LightQuestionPrompt
         label={t("lessons.questionLabel")}
         variant={pathMode === "kids" ? "kids" : "default"}
+        layout={compactLayout ? "stacked" : "row"}
+        forceKurdishFont={rtl}
+        expanded
       >
-        {targetText || ""}
+        {question.targetWord}
       </LightQuestionPrompt>
 
       {question.imageRequire && (
@@ -388,6 +391,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             onPress={handleRevealHint}
             style={[
               s.hintButton,
+              compactLayout && s.hintButtonCompact,
               pathMode === "kids" && {
                 backgroundColor: "#FFF4ED",
                 borderColor: "rgba(255, 120, 30, 0.25)",
@@ -416,7 +420,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </Animated.View>
       )}
 
-      <View style={s.micStage}>
+      <View style={[s.micStage, compactLayout && s.micStageCompact]}>
         <Animated.View style={shakeStyle}>
           <MicCaptureOrb
             listening={
@@ -426,7 +430,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             }
             disabled={state === "success"}
             color={micColor}
-            size={108}
+            size={micOrbSize}
             hint={statusText}
             onPress={handleMicPress}
           />
@@ -438,8 +442,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           </AppText>
         ) : null}
       </View>
-
-      <View style={{ flex: 1 }} />
 
       {state !== "success" ? (
         <GameFooter delay={120}>
@@ -459,6 +461,11 @@ const s = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     gap: 14,
+  },
+  rootCompact: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    gap: 10,
   },
   targetLabel: {
     fontSize: 13,
@@ -513,11 +520,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
   },
   micStage: {
-    flex: 1,
+    flex: 0,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 16,
-    minHeight: 180,
+    justifyContent: "flex-end",
+    gap: 12,
+    minHeight: 150,
+    marginTop: "auto",
+  },
+  micStageCompact: {
+    minHeight: 124,
+    gap: 10,
   },
   manualWrap: {
     alignItems: "center",
@@ -574,6 +586,12 @@ const s = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 2,
+  },
+  hintButtonCompact: {
+    marginTop: 2,
+    marginBottom: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
   },
   hintButtonPressed: {
     opacity: 0.8,

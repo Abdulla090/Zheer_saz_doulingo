@@ -21,7 +21,7 @@ import {
   Layers01Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -29,6 +29,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  I18nManager,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -52,7 +53,8 @@ const CameraIconSvg = ({ size = 14, color = "#FFFFFF" }) => (
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const isRtl = isKu || isAr;
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
@@ -60,6 +62,27 @@ export default function ProfileScreen() {
   const setAvatarUrl = useSettingsStore((s) => s.setAvatarUrl);
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [showBelowFold, setShowBelowFold] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const reveal = () => {
+        if (!cancelled) setShowBelowFold(true);
+      };
+
+      if (typeof globalThis.requestIdleCallback === "function") {
+        globalThis.requestIdleCallback(reveal, { timeout: 500 });
+      } else {
+        reveal();
+      }
+    }, 120);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleDeviceUpload = async () => {
     try {
@@ -294,7 +317,7 @@ export default function ProfileScreen() {
       
       {/* HEADER */}
       <GsapEnterBlock index={0}>
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
+        <View style={[styles.header, isRtl && styles.headerRtl, { paddingTop: Math.max(insets.top, 20) }]}>
           <AppText style={styles.headerTitle} forceLatinFont latinRole="bold">
             {isKu ? "پڕۆفایل" : "Profile"}
           </AppText>
@@ -462,6 +485,7 @@ export default function ProfileScreen() {
 
 
 
+        {showBelowFold ? <>
         {/* CIRCULAR LEVEL PROGRESS */}
         <GsapEnterBlock index={3}>
           <GlassCard style={styles.levelCard} intensity={25} borderRadius={24}>
@@ -767,6 +791,7 @@ export default function ProfileScreen() {
             </GlassCard>
           </GsapEnterBlock>
         ) : null}
+        </> : null}
       </ScrollView>
       <BottomScrollFade />
     </View>
@@ -788,6 +813,9 @@ function createStyles(colors: any, isDark: boolean) {
     paddingBottom: 16,
     backgroundColor: "transparent",
     zIndex: 10,
+  },
+  headerRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   headerTitle: {
     fontSize: 26,

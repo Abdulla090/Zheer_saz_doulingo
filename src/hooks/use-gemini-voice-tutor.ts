@@ -2,6 +2,13 @@ import { isGeminiConfigured } from "../constants/gemini";
 import { useGeminiVoiceCapture } from "./use-gemini-voice-capture";
 import { useSpeechCapture } from "./use-speech-capture";
 import { useTTS } from "./use-tts";
+import { WORD_BANKS } from "../data/voice-tutor-word-banks";
+import {
+  RealConversationTurn,
+  SessionWordState,
+  createEmptySessionWordState,
+} from "../data/voice-tutor-types";
+import { computeSessionAnalysis } from "../services/voice-tutor-analysis-engine";
 import {
   sendTutorTurn,
   type TutorMessage,
@@ -9,6 +16,7 @@ import {
   type TutorTurnResponse,
 } from "../services/gemini-voice-tutor-service";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 export type TutorStatus =
   | "idle"
@@ -33,6 +41,10 @@ export function useGeminiVoiceTutor() {
   const [teachNote, setTeachNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sessionActive, setSessionActive] = useState(false);
+  const [turns, setTurns] = useState<RealConversationTurn[]>([]);
+  const [sessionWords, setSessionWords] = useState<SessionWordState>(createEmptySessionWordState());
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [transcript, setTranscript] = useState("");
 
   const phaseRef = useRef(phase);
   const statusRef = useRef(status);
@@ -40,6 +52,8 @@ export function useGeminiVoiceTutor() {
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAutoListenRef = useRef(false);
   const usingGeminiMicRef = useRef(false);
+  const sessionStartTimeRef = useRef<number>(0);
+  const activeWordRef = useRef<string | null>(null);
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -69,6 +83,7 @@ export function useGeminiVoiceTutor() {
     stopListening();
     void stopTts();
     pendingAutoListenRef.current = false;
+    setTranscript("");
   }, [stopListening, stopTts]);
 
   useEffect(() => () => stopAll(), [stopAll]);
@@ -76,6 +91,40 @@ export function useGeminiVoiceTutor() {
   const applyTurn = useCallback((turn: TutorTurnResponse, userText?: string) => {
     const userLine = userText?.trim() || turn.userTranscript?.trim();
     if (userLine) {
+      if (activeWordRef.current) {
+        const target = activeWordRef.current;
+        const userSpokeWord = new RegExp(`\\b${target}\\b`, "i").test(userLine);
+        setSessionWords((prev) => {
+          if (userSpokeWord) {
+            const isAlreadyCorrect = prev.correct.includes(target);
+            return {
+              ...prev,
+              correct: isAlreadyCorrect ? prev.correct : [...prev.correct, target],
+              needsReview: prev.needsReview.filter((w) => w !== target),
+            };
+          }
+          const isAlreadyWrong = prev.needsReview.includes(target);
+          return {
+            ...prev,
+            needsReview: isAlreadyWrong ? prev.needsReview : [...prev.needsReview, target],
+          };
+        });
+      }
+
+      setTurns((prev) => [
+        ...prev,
+        {
+          id: `user-${Date.now()}`,
+          sender: "user",
+          text: userLine,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          targetWord: activeWordRef.current || undefined,
+          wordCorrect: activeWordRef.current
+            ? new RegExp(`\\b${activeWordRef.current}\\b`, "i").test(userLine)
+            : undefined,
+        },
+      ]);
+
       setMessages((prev) => [
         ...prev,
         {
@@ -90,6 +139,42 @@ export function useGeminiVoiceTutor() {
     setPhase(nextPhase);
     setWordHighlight(turn.wordHighlight ?? null);
     setTeachNote(turn.teachNote ?? null);
+
+    const currentLevel = useSettingsStore.getState().englishLevel || 5;
+    const levelWordBank = WORD_BANKS[currentLevel] || [];
+    const aiText = turn.reply.trim();
+    let detectedWord: string | null = null;
+    for (const entry of levelWordBank) {
+      if (new RegExp(`\\b${entry.word}\\b`, "i").test(aiText)) {
+        detectedWord = entry.word;
+        break;
+      }
+    }
+    if (detectedWord) {
+      activeWordRef.current = detectedWord;
+      setSessionWords((prev) => {
+        if (prev.introduced.includes(detectedWord!)) return prev;
+        return {
+          ...prev,
+          introduced: [...prev.introduced, detectedWord!],
+          wordsSinceLastConversation: prev.wordsSinceLastConversation + 1,
+        };
+      });
+    }
+
+    if (aiText.length > 0) {
+      setTranscript(aiText);
+      setTurns((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          sender: "ai",
+          text: aiText,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          targetWord: detectedWord || undefined,
+        },
+      ]);
+    }
 
     setMessages((prev) => [
       ...prev,
@@ -258,10 +343,15 @@ export function useGeminiVoiceTutor() {
     setSessionActive(true);
     setPhase("intro_ku");
     setMessages([]);
+    setTranscript("");
     setWordHighlight(null);
     setTeachNote(null);
     setError(null);
     setStatus("starting");
+    setTurns([]);
+    setSessionWords(createEmptySessionWordState());
+    sessionStartTimeRef.current = Date.now();
+    activeWordRef.current = null;
 
     await processTurn({
       phase: "intro_ku",
@@ -328,6 +418,7 @@ export function useGeminiVoiceTutor() {
       stopListening();
       if (!sessionActive) {
         setSessionActive(true);
+        sessionStartTimeRef.current = Date.now();
       }
       await processTurn({
         phase: phaseRef.current,
@@ -338,11 +429,25 @@ export function useGeminiVoiceTutor() {
     [processTurn, sessionActive, stopListening],
   );
 
+  const runAnalysis = useCallback(async () => {
+    if (turns.length === 0) return;
+    setAnalysisLoading(true);
+    try {
+      const result = await computeSessionAnalysis(turns, sessionWords, sessionStartTimeRef.current);
+      useSettingsStore.getState().setLastAnalysis(result);
+    } catch (err) {
+      console.warn("Analysis run error:", err);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  }, [turns, sessionWords]);
+
   return {
     configured,
     phase,
     status,
     messages,
+    transcript,
     wordHighlight,
     teachNote,
     error,
@@ -351,9 +456,14 @@ export function useGeminiVoiceTutor() {
     listening:
       status === "listening" || speechEn.listening || geminiCapture.listening,
     thinking: status === "thinking" || geminiCapture.processing,
+    turns,
+    sessionWords,
+    analysisLoading,
     startSession,
     signalReady,
     handleMicPress,
+    interruptAi: stopAll,
+    runAnalysis,
     sendText,
     stopAll,
   };

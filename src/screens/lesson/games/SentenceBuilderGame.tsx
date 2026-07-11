@@ -5,7 +5,8 @@
  */
  
 
-import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
+import { tileFlyTiming } from "../../../components/animations/motion";
+import { AppText } from "../../../components/ui/AppText";
 import { useI18n } from "../../../hooks/useI18n";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
@@ -13,9 +14,9 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
   type View as RNView,
-  I18nManager,
 } from "react-native";
 import Animated, {
   Easing,
@@ -30,11 +31,9 @@ import Animated, {
 import { SentenceBuilderQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { L } from "./lesson-light-design";
-import { isRtlText } from "./game-text";
 import {
   LightCheckButton,
   LightGameHeading,
-  LightHintButton,
   LightQuestionPrompt,
   LightWordTile,
   type LightTileState,
@@ -126,7 +125,9 @@ function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFini
 }
 
 export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Props) {
-  const { t, isKu } = useI18n();
+  const { t } = useI18n();
+  const { width } = useWindowDimensions();
+  const compact = width < 390;
   
   const shuffledWordBank = React.useMemo(() => {
     const bank = [...question.wordBank];
@@ -336,7 +337,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             />
           </GameHeader>
 
-          <View style={{ flex: 1, justifyContent: "center" }}>
+          <View style={s.exerciseArea}>
             <LightQuestionPrompt
               label={t("lessons.questionLabel")}
               forceKurdishFont
@@ -346,7 +347,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             </LightQuestionPrompt>
 
             <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <Animated.View style={[s.slotsRow, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+              <Animated.View style={s.slotsRow}>
                 {Array.from({ length: slotCount }).map((_, i) => {
                   const placed = sentence[i];
                   const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
@@ -374,10 +375,17 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                             state={slotTileState(i)}
                             onPress={() => removeFromSlot(i)}
                             isKids={pathMode === "kids"}
+                            wrapLabel={placed.word.length > 10}
+                            fontSize={placed.word.length > 12 ? 14 : undefined}
+                            style={[s.wordTile, compact && s.wordTileCompact]}
                           />
                         </Animated.View>
                       ) : (
-                        <View style={s.emptySlot} />
+                        <View style={s.emptySlot}>
+                          <AppText style={s.slotNumber} forceLatinFont latinRole="bold">
+                            {i + 1}
+                          </AppText>
+                        </View>
                       )}
                     </View>
                   );
@@ -385,7 +393,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               </Animated.View>
             </Animated.View>
 
-            <Animated.View style={[s.bank, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+            <View style={s.wordBankSpacer} />
+
+            <Animated.View style={s.bank}>
               {shuffledWordBank.map((w, i) => {
                 const taken = usedBank[i];
                 return (
@@ -408,6 +418,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                         onPress={() => addWord(i)}
                         disabled={taken || fb !== "idle"}
                         isKids={pathMode === "kids"}
+                        wrapLabel={w.length > 10}
+                        fontSize={w.length > 12 ? 14 : undefined}
+                        style={[s.wordTile, compact && s.wordTileCompact]}
                       />
                     </View>
                   </View>
@@ -434,8 +447,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
       <GameFooter delay={200}>
         <View style={[s.footerWrap, pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 }]}>
-          <LightHintButton onPress={() => onAnswer("skip")} />
-          <View style={{ height: 12 }} />
           <LightCheckButton
             label={t("lessons.check")}
             onPress={check}
@@ -453,10 +464,14 @@ const s = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 24,
     gap: 18,
+  },
+  exerciseArea: {
+    flex: 1,
   },
   footerWrap: {
     paddingHorizontal: 20,
@@ -468,9 +483,14 @@ const s = StyleSheet.create({
   },
   bank: {
     flexWrap: "wrap",
-    gap: 12,
+    gap: 14,
     justifyContent: "center",
-    paddingTop: 4,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  wordBankSpacer: {
+    flex: 1,
+    minHeight: 56,
   },
   bankCell: {
     position: "relative",
@@ -491,16 +511,25 @@ const s = StyleSheet.create({
     opacity: 0,
   },
   slotsWrap: {
-    paddingVertical: 6,
+    minHeight: 138,
+    paddingTop: 22,
+    paddingBottom: 6,
   },
   slotsRow: {
     flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "center",
+    columnGap: 14,
+    rowGap: 16,
+    justifyContent: "flex-start",
   },
   slotCell: {
     minWidth: 72,
     minHeight: 48,
+  },
+  wordTile: {
+    maxWidth: 176,
+  },
+  wordTileCompact: {
+    maxWidth: 140,
   },
   emptySlot: {
     minWidth: 72,
@@ -510,6 +539,13 @@ const s = StyleSheet.create({
     borderStyle: "dashed",
     borderColor: L.slotDash,
     backgroundColor: L.bgSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slotNumber: {
+    color: L.grayLight,
+    fontSize: 13,
+    lineHeight: 16,
   },
   emptySlotTarget: {
     borderColor: L.blue,

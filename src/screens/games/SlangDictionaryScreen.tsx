@@ -423,7 +423,7 @@ export function SlangDictionaryScreen() {
       <HomeMeshBackground />
 
       {/* Screen Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.darkNavy} strokeWidth={2.0} />

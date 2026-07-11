@@ -41,7 +41,11 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
-export const StreetEnglishPathScreen = () => {
+export const StreetEnglishPathScreen = ({
+  topChromeHeight = PATH_TOP_CHROME_HEIGHT,
+}: {
+  topChromeHeight?: number;
+} = {}) => {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useThemeColors();
   const { locale } = useI18n();
@@ -76,13 +80,18 @@ export const StreetEnglishPathScreen = () => {
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    localizedSections.length
+    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
   );
 
   // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
   useEffect(() => {
-    setVisibleUnitsCount((prev) => Math.max(prev, localizedSections.length));
-  }, [localizedSections.length]);
+    setVisibleUnitsCount((prev) =>
+      Math.max(
+        prev,
+        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
+      )
+    );
+  }, [localizedSections.length, currentUnitIndex]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),
@@ -216,7 +225,7 @@ export const StreetEnglishPathScreen = () => {
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT,
+          paddingTop: insets.top + topChromeHeight,
         }}
       >
         <HomeMainButton

@@ -295,7 +295,7 @@ export function AiTeacherScreen() {
         <View
           style={[
             styles.topBar,
-            { flexDirection: isRtl ? "row-reverse" : "row" },
+            { flexDirection: "row" },
           ]}
         >
           <PressableScale

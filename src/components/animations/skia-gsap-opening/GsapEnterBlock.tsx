@@ -22,8 +22,13 @@ type Props = ViewProps & {
  * Web: GSAP stagger via data attribute.
  * iOS / Android: Reanimated stagger with the same timing curve, replayed each tab focus.
  */
-export function GsapEnterBlock({ children, index = 0, style, ...rest }: Props) {
-  const playKey = useScreenOpeningPlayKey();
+function AnimatedEnterBlock({
+  children,
+  index = 0,
+  playKey,
+  style,
+  ...rest
+}: Props & { playKey: number }) {
   const delay = index * STAGGER_MS;
 
   const opacity = useSharedValue(0);
@@ -71,4 +76,21 @@ export function GsapEnterBlock({ children, index = 0, style, ...rest }: Props) {
       {children}
     </Animated.View>
   );
+}
+
+export function GsapEnterBlock(props: Props) {
+  const playKey = useScreenOpeningPlayKey();
+
+  // Tab screens intentionally omit ScreenOpeningShell. Render them immediately
+  // instead of allocating three shared values per section or hiding web content.
+  if (playKey === null) {
+    const { children, index: _index, style, ...rest } = props;
+    return (
+      <View {...rest} style={style}>
+        {children}
+      </View>
+    );
+  }
+
+  return <AnimatedEnterBlock {...props} playKey={playKey} />;
 }

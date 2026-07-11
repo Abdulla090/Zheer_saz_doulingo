@@ -5,7 +5,7 @@
 
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { MultipleChoiceQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -83,39 +83,43 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
 
   return (
     <GameRoot style={s.root}>
-      <GameHeader>
-        <LightGameHeading
-          title={t("lessons.chooseAnswer")}
-          badge={kidsBadgeText}
-        />
-      </GameHeader>
-
-      <LightQuestionPrompt
-        label={t("lessons.questionLabel")}
-        forceKurdishFont={isKuPrompt}
-        variant={pathMode === "kids" ? "kids" : "default"}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {question.prompt}
-      </LightQuestionPrompt>
+        <GameHeader>
+          <LightGameHeading
+            title={t("lessons.chooseAnswer")}
+            badge={kidsBadgeText}
+          />
+        </GameHeader>
 
-      <View style={s.options}>
-        {shuffledOptions.map((opt, i) => (
-          <GameOption key={opt} index={i}>
-            <LightOptionRow
-              label={opt}
-              state={mapOptionState(getState(opt))}
-              onPress={() => pick(opt)}
-              disabled={revealed}
-              rtl={rtl}
-              isKids={pathMode === "kids"}
-            />
-          </GameOption>
-        ))}
-      </View>
+        <LightQuestionPrompt
+          label={t("lessons.questionLabel")}
+          forceKurdishFont={isKuPrompt}
+          variant={pathMode === "kids" ? "kids" : "default"}
+        >
+          {question.prompt}
+        </LightQuestionPrompt>
 
-      <View style={{ flex: 1 }} />
+        <View style={s.options}>
+          {shuffledOptions.map((opt, i) => (
+            <GameOption key={opt} index={i}>
+              <LightOptionRow
+                label={opt}
+                state={mapOptionState(getState(opt))}
+                onPress={() => pick(opt)}
+                disabled={revealed}
+                rtl={rtl}
+                isKids={pathMode === "kids"}
+              />
+            </GameOption>
+          ))}
+        </View>
+      </ScrollView>
 
-      <GameFooter>
+      <GameFooter style={s.footer}>
         <LightCheckButton
           label={t("lessons.check")}
           onPress={check}
@@ -129,10 +133,19 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
 
 const s = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 24,
     gap: 16,
   },
   options: { gap: 14 },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 8,
+  },
 });

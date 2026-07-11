@@ -66,7 +66,11 @@ const NormalSectionHeader = React.memo(
   },
 );
 
-export function NormalEnglishPathScreen() {
+export function NormalEnglishPathScreen({
+  topChromeHeight = PATH_TOP_CHROME_HEIGHT,
+}: {
+  topChromeHeight?: number;
+} = {}) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useThemeColors();
   const { locale, isKu } = useI18n();
@@ -137,13 +141,18 @@ export function NormalEnglishPathScreen() {
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    localizedSections.length
+    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
   );
 
   // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
   useEffect(() => {
-    setVisibleUnitsCount((prev) => Math.max(prev, localizedSections.length));
-  }, [localizedSections.length]);
+    setVisibleUnitsCount((prev) =>
+      Math.max(
+        prev,
+        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
+      )
+    );
+  }, [localizedSections.length, currentUnitIndex]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),
@@ -272,7 +281,7 @@ export function NormalEnglishPathScreen() {
         style={[
           darkStyles.root,
           {
-            paddingTop: insets.top + PATH_TOP_CHROME_HEIGHT,
+            paddingTop: insets.top + topChromeHeight,
           },
         ]}
       >

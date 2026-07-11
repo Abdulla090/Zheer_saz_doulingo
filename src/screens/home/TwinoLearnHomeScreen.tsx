@@ -17,15 +17,113 @@ import { getLessonBank } from "../../data/content-access";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Fire02Icon, Clock01Icon, Coffee01Icon, Airplane01Icon, LockIcon, Mic01Icon, Settings01Icon, PlayIcon, ArrowRight01Icon, BookOpen02Icon, WavingHand01Icon, CrownIcon } from "@hugeicons/core-free-icons";
+import {
+  Airplane01Icon,
+  BankIcon,
+  BookOpen02Icon,
+  Briefcase01Icon,
+  Bus01Icon,
+  Chat01Icon,
+  Clock01Icon,
+  Coffee01Icon,
+  CrownIcon,
+  Fire02Icon,
+  HealthIcon,
+  Home01Icon,
+  LockIcon,
+  MapingIcon,
+  Mic01Icon,
+  PlayIcon,
+  RestaurantIcon,
+  SchoolIcon,
+  Settings01Icon,
+  ShoppingBasket01Icon,
+  Store01Icon,
+  UserGroupIcon,
+  WavingHand01Icon,
+  ArrowRight01Icon,
+} from "@hugeicons/core-free-icons";
 import React, { useCallback, useMemo } from "react";
-import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { I18nManager, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { PressableScale } from "../../components/animations";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { tabBarScrollPadding } from "../../constants/layout";
 
 const BRAND_ICON = require("../../../assets/images/logo-compressed.png");
+
+type LessonTopicSource = {
+  topic?: string;
+  topicKu?: string;
+  topicAr?: string;
+  words?: { english?: string; kurdish?: string; arabic?: string }[];
+  voices?: { prompt?: string; target?: string; targetKurdish?: string }[];
+  conversations?: { situation?: string; theyAsk?: string }[];
+};
+
+function includesAny(text: string, keywords: string[]) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function getLessonTopicText(bank?: LessonTopicSource) {
+  if (!bank) return "";
+
+  const parts = [bank.topic, bank.topicKu, bank.topicAr];
+  bank.words?.forEach((word) => {
+    parts.push(word.english, word.kurdish, word.arabic);
+  });
+  bank.voices?.forEach((voice) => {
+    parts.push(voice.prompt, voice.target, voice.targetKurdish);
+  });
+  bank.conversations?.forEach((conversation) => {
+    parts.push(conversation.situation, conversation.theyAsk);
+  });
+
+  return parts.filter(Boolean).join(" ").toLowerCase();
+}
+
+const RTL_NAME_WORDS: Record<string, string> = {
+  abdulla: "عەبدوڵا",
+  abdullah: "عەبدوڵا",
+  abdalla: "عەبدوڵا",
+  aziz: "عەزیز",
+  ahmad: "ئەحمەد",
+  ahmed: "ئەحمەد",
+  ali: "عەلی",
+  amir: "ئەمیر",
+  ara: "ئارا",
+  aram: "ئارام",
+  ava: "ئاڤا",
+  ayan: "ئایان",
+  baran: "باران",
+  dana: "دانا",
+  darya: "دەریا",
+  hawar: "هاوار",
+  karwan: "کاروان",
+  muhammad: "محەمەد",
+  mohammed: "محەمەد",
+  mohammad: "محەمەد",
+  omar: "عومەر",
+  rawand: "ڕەوەند",
+  rebin: "ڕێبین",
+  roj: "ڕۆژ",
+  sara: "سارا",
+  shvan: "شڤان",
+  sirwan: "سیروان",
+  total: "تۆتاڵ",
+};
+
+function localizeNameForRtl(name: string) {
+  const words = name.trim().split(/\s+/);
+  if (!words.length) return name;
+
+  const localized = words.map((word) => {
+    const stripped = word.toLowerCase().replace(/[^a-z]/g, "");
+    return RTL_NAME_WORDS[stripped];
+  });
+
+  return localized.every(Boolean) ? localized.join(" ") : name;
+}
 
 function getHomeColors(colors: any, isDark: boolean) {
   return {
@@ -50,6 +148,7 @@ export function TwinoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale, isKu } = useI18n();
+  const isRtl = isKu || locale === "ar";
   const { colors, isDark } = useThemeColors();
 
   const Colors = useMemo(() => getHomeColors(colors, isDark), [colors, isDark]);
@@ -98,10 +197,8 @@ export function TwinoLearnHomeScreen() {
   const ready = useProgressStore((s) => s.ready);
   const dailyXp = useProgressStore((s) => s.dailyXp);
   
-  // Calculate practice minutes: estimate 3 minutes per 10 XP
   const practiceMinutes = ready ? Math.round(dailyXp * 0.3) : null;
 
-  // Flatten lessons to resolve the active and subsequent locked lesson dynamically
   const sections = React.useMemo(() => {
     if (pathMode === "normal") return buildNormalSectionData(normalNext);
     if (pathMode === "kids") return buildKidsSectionData(kidsNext);
@@ -133,10 +230,45 @@ export function TwinoLearnHomeScreen() {
     return getLessonBank(pathMode, lockedItem.lessonId, lockedItem.sectionItemIndex);
   }, [pathMode, lockedItem]);
 
-  const getLessonIcon = (type: string) => {
+  const displayName = (userName?.trim() || (isRtl ? "هاوڕێ" : "Friend")).trim();
+  const localizedDisplayName = isRtl ? localizeNameForRtl(displayName) : displayName;
+
+  const getLessonIcon = (type: string, bank?: LessonTopicSource) => {
+    const text = getLessonTopicText(bank);
+
+    if (includesAny(text, ["shop", "store", "market", "shopping", "buy", "order", "فرۆشگا", "بازاڕ", "کڕین", "داواکاری"])) {
+      return includesAny(text, ["basket", "cart", "shopping", "کڕین"]) ? ShoppingBasket01Icon : Store01Icon;
+    }
+    if (includesAny(text, ["restaurant", "food", "eat", "coffee", "hungry", "meal", "خواردن", "چێشت", "نان", "قاوە", "برسی"])) {
+      return RestaurantIcon;
+    }
+    if (includesAny(text, ["travel", "airport", "abroad", "flight", "hotel", "گەشت", "فڕۆکە", "دەرەوە"])) {
+      return Airplane01Icon;
+    }
+    if (includesAny(text, ["bus", "taxi", "car", "train", "transport", "street", "کوچە", "شەقام", "پاس", "تاکسی", "ئۆتۆمبێل"])) {
+      return Bus01Icon;
+    }
+    if (includesAny(text, ["lost", "direction", "location", "map", "address", "وەرگبوون", "ناونیشان", "شوێن", "ڕێگا"])) {
+      return MapingIcon;
+    }
+    if (includesAny(text, ["work", "job", "business", "office", "meeting", "career", "کار", "ئۆفیس", "کۆبوونەوە", "پرۆژە"])) {
+      return Briefcase01Icon;
+    }
+    if (includesAny(text, ["bank", "money", "pay", "price", "card", "refund", "پارە", "بانک", "نرخ", "کارت"])) {
+      return BankIcon;
+    }
+    if (includesAny(text, ["health", "medical", "doctor", "hospital", "emergency", "injured", "تەندروستی", "دکتۆر", "نەخۆشخانە", "بریکاری", "بریندار"])) {
+      return HealthIcon;
+    }
+    if (includesAny(text, ["school", "teacher", "student", "class", "قوتاب", "مامۆستا", "پۆل", "خوێندن"])) {
+      return SchoolIcon;
+    }
+    if (includesAny(text, ["family", "home", "house", "friend", "خێزان", "ماڵ", "خانوو", "هاوڕێ"])) {
+      return includesAny(text, ["family", "خێزان"]) ? UserGroupIcon : Home01Icon;
+    }
     if (type === "speaking") return Mic01Icon;
-    if (type === "conversation") return Coffee01Icon;
-    return Coffee01Icon;
+    if (type === "conversation") return Chat01Icon;
+    return BookOpen02Icon;
   };
 
   const getLessonCategoryKey = (type: string) => {
@@ -156,14 +288,14 @@ export function TwinoLearnHomeScreen() {
     <View style={styles.root}>
       {/* HEADER */}
       <GsapEnterBlock index={0}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={[styles.header, isRtl && styles.headerRtl, { paddingTop: Math.max(insets.top, 20) }]}>
         <View style={styles.headerLeft}>
           <Image source={BRAND_ICON} style={styles.headerLogo} contentFit="contain" />
           <AppText style={styles.headerTitle} forceLatinFont latinRole="bold">
             Twino
           </AppText>
         </View>
-        <View style={styles.headerRight}>
+        <View style={[styles.headerRight, isRtl && styles.headerRightRtl]}>
           <PressableScale
             style={styles.upgradeBtn}
             onPress={() => {
@@ -201,11 +333,22 @@ export function TwinoLearnHomeScreen() {
         >
           {/* GREETING */}
           <GsapEnterBlock index={1}>
-          <View style={styles.greetingSection}>
-            <AppText style={styles.greetingSub}>{t("twinoHome.welcomeBack")}</AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
-              <AppText style={styles.greetingTitle} forceLatinFont latinRole="bold">
-                {userName ? userName : "Friend"}
+          <View style={[styles.greetingSection, isRtl && styles.greetingSectionRtl]}>
+            <AppText
+              style={[styles.greetingSub, isRtl && styles.greetingSubRtl]}
+              forceKurdishFont={isRtl}
+              forceLatinFont={!isRtl}
+            >
+              {t("twinoHome.welcomeBack")}
+            </AppText>
+            <View style={[styles.greetingNameRow, isRtl && styles.greetingNameRowRtl]}>
+              <AppText
+                style={[styles.greetingTitle, isRtl && styles.greetingTitleRtl]}
+                forceKurdishFont={isRtl}
+                forceLatinFont={!isRtl}
+                latinRole="bold"
+              >
+                {localizedDisplayName}
               </AppText>
               <HugeiconsIcon icon={WavingHand01Icon} size={28} color={Colors.foreground} strokeWidth={2.5} />
             </View>
@@ -215,8 +358,23 @@ export function TwinoLearnHomeScreen() {
           {/* AI LIVE TUTOR */}
           <GsapEnterBlock index={2}>
           <View style={styles.aiCard}>
-            <View style={[styles.aiCardContent, isKu ? { paddingRight: 0, paddingLeft: 75 } : { paddingRight: 75, paddingLeft: 0 }]}>
-              <View style={[styles.aiBadge, isKu && { alignSelf: "flex-end", flexDirection: "row-reverse" }]}>
+            <View 
+              style={[
+                styles.aiCardContent, 
+                isKu 
+                  ? (I18nManager.isRTL ? { paddingRight: 75, paddingLeft: 0 } : { paddingRight: 0, paddingLeft: 75 }) 
+                  : { paddingRight: 75, paddingLeft: 0 }
+              ]}
+            >
+              <View 
+                style={[
+                  styles.aiBadge, 
+                  isKu && { 
+                    alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", 
+                    flexDirection: I18nManager.isRTL ? "row" : "row-reverse" 
+                  }
+                ]}
+              >
                 <View style={styles.aiPulseWrap}>
                   <View style={styles.aiPulsePing} />
                   <View style={styles.aiPulseDot} />
@@ -232,7 +390,11 @@ export function TwinoLearnHomeScreen() {
               
             <View style={styles.aiCardBtnRow}>
               <PressableScale 
-                style={[styles.aiCardBtn, styles.btn3DPrimary, isKu && { flexDirection: "row-reverse" }]}
+                style={[
+                  styles.aiCardBtn, 
+                  styles.btn3DPrimary, 
+                  isKu && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
+                ]}
                 onPress={onOpenVoiceTutor}
                 scaleDown={0.96}
               >
@@ -241,7 +403,11 @@ export function TwinoLearnHomeScreen() {
               </PressableScale>
 
               <PressableScale 
-                style={[styles.learnBtn, styles.btnFlat, isKu && { flexDirection: "row-reverse" }]}
+                style={[
+                  styles.learnBtn, 
+                  styles.btnFlat, 
+                  isKu && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
+                ]}
                 onPress={onOpenPath}
                 scaleDown={0.96}
               >
@@ -252,7 +418,12 @@ export function TwinoLearnHomeScreen() {
             
             <Image 
               source={BRAND_ICON} 
-              style={[styles.aiCardLogo, isKu ? { right: 'auto', left: -20 } : { right: -20, left: 'auto' }]} 
+              style={[
+                styles.aiCardLogo, 
+                isKu 
+                  ? (I18nManager.isRTL ? { right: -20, left: 'auto' } : { right: 'auto', left: -20 }) 
+                  : { right: -20, left: 'auto' }
+              ]} 
               contentFit="contain" 
             />
           </View>
@@ -260,9 +431,9 @@ export function TwinoLearnHomeScreen() {
 
           {/* STATS ROW */}
           <GsapEnterBlock index={3}>
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, isRtl && styles.statsRowRtl]}>
             <PressableScale style={styles.statBox} scaleDown={0.96} onPress={() => {}}>
-              <View style={styles.statHeader}>
+              <View style={[styles.statHeader, isRtl && styles.statHeaderRtl]}>
                 <View style={styles.statIconWrap}>
                   <HugeiconsIcon icon={Fire02Icon} size={32} color={Colors.primary} strokeWidth={2.5} />
                 </View>
@@ -270,25 +441,46 @@ export function TwinoLearnHomeScreen() {
               </View>
               <View>
                 <AppText style={styles.statNumber} forceLatinFont latinRole="bold">{streakDays}</AppText>
-                <AppText style={styles.statLabel} forceLatinFont latinRole="bold">{t("twinoHome.dayStreak")}</AppText>
+                <AppText
+                  style={[styles.statLabel, isRtl && styles.rtlText]}
+                  forceKurdishFont={isRtl}
+                  forceLatinFont={!isRtl}
+                  latinRole="bold"
+                >
+                  {t("twinoHome.dayStreak")}
+                </AppText>
               </View>
             </PressableScale>
 
             <PressableScale style={styles.statBox} scaleDown={0.96} onPress={() => {}}>
-              <View style={styles.statHeader}>
+              <View style={[styles.statHeader, isRtl && styles.statHeaderRtl]}>
                 <View style={styles.statIconWrap}>
                   <HugeiconsIcon icon={Clock01Icon} size={32} color={Colors.secondary} strokeWidth={2.5} />
                 </View>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={16} color={Colors.mutedForeground} strokeWidth={2.5} />
               </View>
               <View>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <View style={[styles.statValueRow, isRtl && styles.statValueRowRtl]}>
                   <AppText style={styles.statNumber} forceLatinFont latinRole="bold">
                     {practiceMinutes !== null ? practiceMinutes : "--"}
                   </AppText>
-                  <AppText style={styles.statUnit} forceLatinFont latinRole="bold">{t("twinoHome.min")}</AppText>
+                  <AppText
+                    style={[styles.statUnit, isRtl && styles.rtlText]}
+                    forceKurdishFont={isRtl}
+                    forceLatinFont={!isRtl}
+                    latinRole="bold"
+                  >
+                    {t("twinoHome.min")}
+                  </AppText>
                 </View>
-                <AppText style={styles.statLabel} forceLatinFont latinRole="bold">{t("twinoHome.practiceToday")}</AppText>
+                <AppText
+                  style={[styles.statLabel, isRtl && styles.rtlText]}
+                  forceKurdishFont={isRtl}
+                  forceLatinFont={!isRtl}
+                  latinRole="bold"
+                >
+                  {t("twinoHome.practiceToday")}
+                </AppText>
               </View>
             </PressableScale>
           </View>
@@ -296,32 +488,59 @@ export function TwinoLearnHomeScreen() {
 
           {/* UP NEXT */}
           <GsapEnterBlock index={4}>
-          <View style={styles.upNextHeader}>
-            <AppText style={styles.upNextTitle} forceLatinFont latinRole="bold">{t("twinoHome.upNext")}</AppText>
-            <AppText style={styles.viewAllText} forceLatinFont latinRole="bold">{t("twinoHome.viewAll")}</AppText>
+          <View style={[styles.upNextHeader, isRtl && styles.upNextHeaderRtl]}>
+            <AppText
+              style={[styles.upNextTitle, isRtl && styles.rtlText]}
+              forceKurdishFont={isRtl}
+              forceLatinFont={!isRtl}
+              latinRole="bold"
+            >
+              {t("twinoHome.upNext")}
+            </AppText>
+            <AppText
+              style={[styles.viewAllText, isRtl && styles.rtlText]}
+              forceKurdishFont={isRtl}
+              forceLatinFont={!isRtl}
+              latinRole="bold"
+            >
+              {t("twinoHome.viewAll")}
+            </AppText>
           </View>
 
           <View style={styles.lessonsList}>
             {/* Active Lesson */}
-            {/* Active Lesson */}
             <PressableScale 
-              style={[styles.lessonItem, styles.lessonItemActive]} 
+              style={[styles.lessonItem, styles.lessonItemActive, isRtl && styles.lessonItemRtl]} 
               onPress={onStartLesson}
               scaleDown={0.97}
             >
               <View style={styles.lessonEmojiBox}>
-                <HugeiconsIcon icon={activeItem ? getLessonIcon(activeItem.type) : Coffee01Icon} size={32} color={Colors.primary} strokeWidth={2.5} />
+                <HugeiconsIcon icon={activeItem ? getLessonIcon(activeItem.type, activeBank) : Coffee01Icon} size={32} color={Colors.primary} strokeWidth={2.5} />
               </View>
-              <View style={styles.lessonDetails}>
-                <AppText style={styles.lessonTitle} forceLatinFont latinRole="bold">
+              <View style={[styles.lessonDetails, isRtl && styles.lessonDetailsRtl]}>
+                <AppText
+                  style={[styles.lessonTitle, isRtl && styles.rtlText]}
+                  forceKurdishFont={isRtl}
+                  forceLatinFont={!isRtl}
+                  latinRole="bold"
+                >
                   {activeBank ? (isKu ? activeBank.topicKu : activeBank.topic) : t("twinoHome.fallbackActive")}
                 </AppText>
-                <View style={styles.lessonMeta}>
-                  <AppText style={styles.lessonCategory}>
+                <View style={[styles.lessonMeta, isRtl && styles.lessonMetaRtl]}>
+                  <AppText
+                    style={[styles.lessonCategory, isRtl && styles.rtlText]}
+                    forceKurdishFont={isRtl}
+                    forceLatinFont={!isRtl}
+                  >
                     {activeItem ? t(getLessonCategoryKey(activeItem.type)) : t("twinoHome.categoryPractice")}
                   </AppText>
                   <View style={styles.lessonDot} />
-                  <AppText style={styles.lessonDurationActive} forceLatinFont latinRole="bold">
+                  <AppText
+                    style={[styles.lessonDurationActive, isRtl && styles.rtlText]}
+                    forceKurdishFont={isRtl}
+                    forceLatinFont={!isRtl}
+                    latinRole="bold"
+                  >
                     {activeItem?.type === "conversation" ? `10 ${t("twinoHome.mins")}` : `5 ${t("twinoHome.mins")}`}
                   </AppText>
                 </View>
@@ -333,20 +552,33 @@ export function TwinoLearnHomeScreen() {
 
             {/* Locked Lesson */}
             {lockedItem && (
-              <View style={[styles.lessonItem, styles.lessonItemLocked]}>
+              <View style={[styles.lessonItem, styles.lessonItemLocked, isRtl && styles.lessonItemRtl]}>
                 <View style={styles.lessonEmojiBox}>
-                  <HugeiconsIcon icon={lockedItem ? getLessonIcon(lockedItem.type) : Airplane01Icon} size={32} color="#94A3B8" strokeWidth={2.5} />
+                  <HugeiconsIcon icon={lockedItem ? getLessonIcon(lockedItem.type, lockedBank) : Airplane01Icon} size={32} color="#94A3B8" strokeWidth={2.5} />
                 </View>
-                <View style={styles.lessonDetails}>
-                  <AppText style={styles.lessonTitle} forceLatinFont latinRole="bold">
+                <View style={[styles.lessonDetails, isRtl && styles.lessonDetailsRtl]}>
+                  <AppText
+                    style={[styles.lessonTitle, isRtl && styles.rtlText]}
+                    forceKurdishFont={isRtl}
+                    forceLatinFont={!isRtl}
+                    latinRole="bold"
+                  >
                     {lockedBank ? (isKu ? lockedBank.topicKu : lockedBank.topic) : t("twinoHome.fallbackLocked")}
                   </AppText>
-                  <View style={styles.lessonMeta}>
-                    <AppText style={styles.lessonCategory}>
+                  <View style={[styles.lessonMeta, isRtl && styles.lessonMetaRtl]}>
+                    <AppText
+                      style={[styles.lessonCategory, isRtl && styles.rtlText]}
+                      forceKurdishFont={isRtl}
+                      forceLatinFont={!isRtl}
+                    >
                       {lockedItem ? t(getLessonCategoryKey(lockedItem.type)) : t("twinoHome.categoryPractice")}
                     </AppText>
                     <View style={styles.lessonDot} />
-                    <AppText style={styles.lessonDuration}>
+                    <AppText
+                      style={[styles.lessonDuration, isRtl && styles.rtlText]}
+                      forceKurdishFont={isRtl}
+                      forceLatinFont={!isRtl}
+                    >
                       {lockedItem?.type === "conversation" ? `10 ${t("twinoHome.mins")}` : `5 ${t("twinoHome.mins")}`}
                     </AppText>
                   </View>
@@ -383,6 +615,9 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     paddingVertical: 16,
     backgroundColor: Colors.background,
   },
+  headerRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+  },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
@@ -401,6 +636,9 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  headerRightRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   upgradeBtn: {
     flexDirection: "row",
@@ -437,17 +675,41 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     borderColor: Colors.background,
   },
   greetingSection: {
+    width: "100%",
     marginTop: 8,
     marginBottom: 32,
   },
+  greetingSectionRtl: {
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
+    width: "100%",
+  },
   greetingSub: {
+    width: "100%",
     fontSize: 16,
     color: Colors.mutedForeground,
     marginBottom: 4,
   },
+  greetingNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+  },
+  greetingNameRowRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
+  },
   greetingTitle: {
     fontSize: 32,
     color: Colors.foreground,
+  },
+  greetingSubRtl: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  greetingTitleRtl: {
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   aiCard: {
     backgroundColor: Colors.warmBg,
@@ -533,29 +795,32 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     maxWidth: "100%",
   },
   aiCardBtn: {
+    width: "100%",
+    minHeight: 50,
     paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    flex: 1.6,
   },
   aiCardBtnText: {
     color: isDark ? "#0F172A" : "#FFFFFF",
-    fontSize: 13,
+    fontSize: 12,
   },
   aiCardBtnRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 10,
     zIndex: 2,
     width: "100%",
     marginTop: 8,
   },
   learnBtn: {
+    width: "100%",
+    minHeight: 50,
     paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -596,16 +861,19 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
   statsRow: {
     flexDirection: "row",
     width: "100%",
-    gap: 16,
-    marginBottom: 36,
+    gap: isSmall ? 10 : 16,
+    marginBottom: isSmall ? 28 : 36,
+  },
+  statsRowRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
   },
   statBox: {
     flex: 1,
     backgroundColor: Colors.cardSurface,
     borderWidth: 1.5,
     borderColor: Colors.borderStrong,
-    padding: 20,
-    borderRadius: 24,
+    padding: isSmall ? 14 : 20,
+    borderRadius: isSmall ? 20 : 24,
     justifyContent: "space-between",
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 3 },
@@ -617,17 +885,17 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 20,
+    marginBottom: isSmall ? 12 : 20,
   },
   statIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: isSmall ? 42 : 48,
+    height: isSmall ? 42 : 48,
+    borderRadius: isSmall ? 21 : 24,
     alignItems: "center",
     justifyContent: "center",
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: isSmall ? 26 : 28,
     color: Colors.foreground,
   },
   statUnit: {
@@ -636,15 +904,30 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     marginLeft: 4,
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: isSmall ? 11 : 13,
     color: Colors.mutedForeground,
     marginTop: 4,
+    lineHeight: isSmall ? 15 : 18,
+  },
+  statValueRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  statValueRowRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
   upNextHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: isSmall ? 12 : 20,
+  },
+  statHeaderRtl: {
+    flexDirection: "row-reverse",
+  },
+  upNextHeaderRtl: {
+    flexDirection: "row-reverse",
   },
   upNextTitle: {
     fontSize: 22,
@@ -663,14 +946,17 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     backgroundColor: Colors.cardSurface,
     borderWidth: 1.5,
     borderColor: Colors.borderStrong,
-    padding: 20,
-    borderRadius: 24,
-    gap: 16,
+    padding: isSmall ? 14 : 20,
+    borderRadius: isSmall ? 20 : 24,
+    gap: isSmall ? 12 : 16,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 2,
+  },
+  lessonItemRtl: {
+    flexDirection: "row",
   },
   lessonItemActive: {
     borderColor: "rgba(0, 0, 0, 0.15)",
@@ -685,9 +971,9 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     opacity: 0.6,
   },
   lessonEmojiBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 20,
+    width: isSmall ? 52 : 60,
+    height: isSmall ? 52 : 60,
+    borderRadius: isSmall ? 18 : 20,
     backgroundColor: Colors.background,
     borderWidth: 1.5,
     borderColor: Colors.borderStrong,
@@ -701,9 +987,13 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
   },
   lessonDetails: {
     flex: 1,
+    minWidth: 0,
+  },
+  lessonDetailsRtl: {
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
   lessonTitle: {
-    fontSize: 16,
+    fontSize: isSmall ? 15 : 16,
     color: Colors.foreground,
     marginBottom: 6,
   },
@@ -712,8 +1002,12 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
     alignItems: "center",
     gap: 8,
   },
+  lessonMetaRtl: {
+    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end",
+  },
   lessonCategory: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.mutedForeground,
   },
   lessonDot: {
@@ -729,6 +1023,10 @@ function createStyles(Colors: any, isDark: boolean, screenWidth: number = 400) {
   lessonDurationActive: {
     fontSize: 13,
     color: Colors.primary,
+  },
+  rtlText: {
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   playBtn: {
     width: 44,

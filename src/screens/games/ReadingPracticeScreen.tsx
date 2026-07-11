@@ -100,14 +100,14 @@ const TEMPLATES: Record<Difficulty, TemplateSet[]> = {
       title: "Morning Market",
       description: "Clear daily vocabulary with short sentences.",
       paragraphs: [
-        "This morning, I went to the market with my brother. We bought fresh bread, red apples, and cold water. The shopkeeper was kind and smiled at us. After that, we walked home slowly and talked about our plans for the day.",
+        "This morning, I went to the market with my brother. We bought fresh bread, red apples, and cold water.\nThe shopkeeper was kind and smiled at us. He asked if we needed anything else.\nAfter that, we walked home slowly and talked about our plans for the day.",
       ],
     },
     {
       title: "A Good Friend",
       description: "Warm beginner story for confidence.",
       paragraphs: [
-        "My best friend is very helpful. She listens when I have a problem and gives me good advice. We study English together after school. Sometimes we make mistakes, but we laugh and try again. Learning is easier with a good friend.",
+        "My best friend is very helpful. She listens when I have a problem and gives me good advice.\nWe study English together after school. Sometimes we make mistakes, but we laugh and try again.\nLearning is easier with a good friend. I am lucky to have her in my life.",
       ],
     },
   ],
@@ -116,14 +116,14 @@ const TEMPLATES: Record<Difficulty, TemplateSet[]> = {
       title: "Learning Languages",
       description: "Balanced vocabulary and connected ideas.",
       paragraphs: [
-        "Learning a new language opens many opportunities in life. It helps you connect with people from different countries and understand their culture more deeply. The process takes time, but daily speaking practice builds confidence and makes new vocabulary easier to remember.",
+        "Learning a new language opens many opportunities in life. It helps you connect with people from different countries and understand their culture more deeply.\nThe process takes time, but daily speaking practice builds confidence. Listening to native speakers also helps improve your accent and rhythm.\nWith patience and consistency, new vocabulary becomes easier to remember and use in real conversations.",
       ],
     },
     {
       title: "Smart Devices",
       description: "Modern topic with natural pronunciation challenges.",
       paragraphs: [
-        "Technology is changing the way we learn, communicate, and work. With smartphones, tablets, and artificial intelligence, students can practice English almost anywhere. These tools provide quick feedback, but real progress still depends on focus, repetition, and curiosity.",
+        "Technology is changing the way we learn, communicate, and work. With smartphones, tablets, and artificial intelligence, students can practice English almost anywhere.\nThese tools provide quick feedback and personalized exercises. Many apps use speech recognition to help learners improve pronunciation.\nHowever, real progress still depends on focus, repetition, and genuine curiosity about the language.",
       ],
     },
   ],
@@ -132,14 +132,14 @@ const TEMPLATES: Record<Difficulty, TemplateSet[]> = {
       title: "The Art of Focus",
       description: "Longer rhythm with academic phrasing.",
       paragraphs: [
-        "Consistency is the foundation of mastering any complex intellectual skill. By dedicating focused time to active reading and pronunciation practice, learners create measurable progress. Eliminating distractions allows the brain to build stronger patterns and respond more naturally under pressure.",
+        "Consistency is the foundation of mastering any complex intellectual skill. Without a structured approach, even talented individuals struggle to reach their full potential.\nBy dedicating focused time to active reading and pronunciation practice, learners create measurable progress. Eliminating distractions allows the brain to build stronger neural patterns.\nOver time, these habits compound into fluency, enabling speakers to respond more naturally and confidently under pressure.",
       ],
     },
     {
       title: "Sustainable Cities",
       description: "Advanced vocabulary with longer clauses.",
       paragraphs: [
-        "Urban sustainability requires more than modern buildings and efficient transportation. Cities must protect public spaces, reduce waste, and design neighborhoods where people can live safely without depending on long daily commutes. These choices shape health, opportunity, and the environment.",
+        "Urban sustainability requires more than modern buildings and efficient transportation. It demands a holistic rethinking of how communities interact with their environment.\nCities must protect public spaces, reduce waste, and design neighborhoods where people can live safely without depending on long daily commutes.\nThese choices shape health, opportunity, and the environment for generations to come, making urban planning one of the most consequential fields of the twenty-first century.",
       ],
     },
   ],
@@ -278,7 +278,6 @@ function OptionChip({
           styles.optionChipText,
           active && styles.optionChipTextActive,
         ]}
-        numberOfLines={1}
       >
         {label}
       </AppText>
@@ -309,7 +308,7 @@ function MetricCard({
 export default function ReadingPracticeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
   const speech = useSpeechCapture("en-US");
@@ -318,22 +317,25 @@ export default function ReadingPracticeScreen() {
   const [sourceMode, setSourceMode] = useState<SourceMode>("ai");
   const [difficulty, setDifficulty] = useState<Difficulty>("Intermediate");
   const [paragraphCount, setParagraphCount] = useState(1);
-  const [wordCount, setWordCount] = useState(90);
+  const [wordCount, setWordCount] = useState(130);
   const [speed, setSpeed] = useState<Speed>("Normal");
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState(0);
   const [paragraphs, setParagraphs] = useState<string[]>([]);
   const [evaluation, setEvaluation] = useState<ReadingEvaluation | null>(null);
-  const [containerHeight, setContainerHeight] = useState(420);
   const [textHeight, setTextHeight] = useState(160);
 
   const transcriptRef = useRef("");
   const startedAtRef = useRef(0);
   const scrollY = useSharedValue(0);
 
-  const compact = width < 380;
-  const fullText = paragraphs.join("\n\n");
+  const compact = width < 430;
+  const readingViewportHeight = Math.max(
+    compact ? 420 : 460,
+    Math.min(640, height - insets.top - insets.bottom - (compact ? 205 : 240)),
+  );
   const targetWords = useMemo(() => getTargetWords(paragraphs), [paragraphs]);
-  const estimatedMinutes = Math.max(1, Math.round(targetWords.length / TARGET_WPM[difficulty]));
+  const requestedWords = sourceMode === "ai" ? paragraphCount * wordCount : targetWords.length;
+  const estimatedMinutes = Math.max(1, Math.ceil(Math.max(targetWords.length, requestedWords) / TARGET_WPM[difficulty]));
   const activeTemplate = TEMPLATES[difficulty][selectedTemplateIndex] ?? TEMPLATES[difficulty][0];
 
   useEffect(() => {
@@ -347,9 +349,9 @@ export default function ReadingPracticeScreen() {
   }, [difficulty]);
 
   const resetScrollPosition = useCallback(() => {
-    const start = Math.max(80, containerHeight - 180);
+    const start = Math.max(80, readingViewportHeight - 180);
     scrollY.value = start;
-  }, [containerHeight, scrollY]);
+  }, [readingViewportHeight, scrollY]);
 
   useEffect(() => {
     if (state === "preview" || state === "results") {
@@ -421,7 +423,7 @@ export default function ReadingPracticeScreen() {
     setState("reading");
     resetScrollPosition();
 
-    const start = Math.max(80, containerHeight - 180);
+    const start = Math.max(80, readingViewportHeight - 180);
     const distance = start + textHeight + 120;
     const duration = Math.max(12_000, distance * SPEED_MULTIPLIER[speed]);
 
@@ -467,10 +469,30 @@ export default function ReadingPracticeScreen() {
 
   const renderPassage = () => {
     if (!evaluation) {
+      const subParagraphs = paragraphs.flatMap((p, pIdx) => {
+        const subs = p.split(/\n+/).filter(Boolean);
+        return subs.map((sub, sIdx) => ({
+          key: `${pIdx}-${sIdx}`,
+          text: sub.trim(),
+          isLastInParagraph: sIdx === subs.length - 1 && pIdx < paragraphs.length - 1,
+        }));
+      });
+
       return (
-        <AppText style={teleprompterTextStyle} forceLatinFont>
-          {fullText}
-        </AppText>
+        <View>
+          {subParagraphs.map((item) => (
+            <AppText
+              key={item.key}
+              style={[
+                teleprompterTextStyle,
+                { marginBottom: item.isLastInParagraph ? 22 : 14 },
+              ]}
+              forceLatinFont
+            >
+              {item.text}
+            </AppText>
+          ))}
+        </View>
       );
     }
 
@@ -494,7 +516,7 @@ export default function ReadingPracticeScreen() {
   };
 
   const header = (
-    <View style={[styles.header, { paddingTop: insets.top + 12, flexDirection: isRtl ? "row-reverse" : "row" }]}>
+    <View style={[styles.header, { paddingTop: insets.top + 12, flexDirection: "row" }]}>
       <Pressable style={styles.backButton} onPress={handleBack}>
         <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={22} color={C.navy} strokeWidth={2.4} />
       </Pressable>
@@ -570,7 +592,7 @@ export default function ReadingPracticeScreen() {
                     <View style={styles.settingsGroupHalf}>
                       <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}>Words</AppText>
                       <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                        {[60, 90, 130].map((item) => (
+                        {[90, 130, 180].map((item) => (
                           <OptionChip key={item} label={`${item}`} active={wordCount === item} onPress={() => setWordCount(item)} />
                         ))}
                       </View>
@@ -622,7 +644,7 @@ export default function ReadingPracticeScreen() {
               </View>
               <View style={styles.summaryItem}>
                 <HugeiconsIcon icon={Target02Icon} size={16} color={C.gray} strokeWidth={2.2} />
-                <AppText style={styles.summaryText}>{sourceMode === "template" ? activeTemplate.title : `${wordCount} words`}</AppText>
+                <AppText style={styles.summaryText}>{sourceMode === "template" ? activeTemplate.title : `${paragraphCount * wordCount} words`}</AppText>
               </View>
             </View>
 
@@ -654,109 +676,124 @@ export default function ReadingPracticeScreen() {
       <HomeMeshBackground />
       {header}
 
-      <View style={styles.stageHeader}>
-        <View style={[styles.stageStats, isRtl && styles.rowReverse]}>
-          <View style={styles.stageStat}>
-            <HugeiconsIcon icon={BookOpen02Icon} size={16} color={C.blue} strokeWidth={2.2} />
-            <AppText style={styles.stageStatText}>{targetWords.length} words</AppText>
-          </View>
-          <View style={styles.stageStat}>
-            <HugeiconsIcon icon={VolumeHighIcon} size={16} color={C.blue} strokeWidth={2.2} />
-            <AppText style={styles.stageStatText}>{speed}</AppText>
-          </View>
-        </View>
-        <AppText style={[styles.stageHint, { textAlign: isRtl ? "right" : "left" }]}>
-          {state === "reading"
-            ? "Read with the moving text. Tap the mic when you finish."
-            : state === "results"
-              ? "Review your marked words, then retry the same passage or generate a new one."
-              : "Preview the passage, then tap the mic to start."}
-        </AppText>
-      </View>
-
-      <View
-        style={styles.teleprompter}
-        onLayout={(event) => setContainerHeight(event.nativeEvent.layout.height)}
+      <ScrollView
+        style={styles.practiceScroll}
+        contentContainerStyle={[
+          styles.practiceScrollContent,
+          { paddingBottom: insets.bottom + (compact ? 158 : 184) },
+        ]}
+        showsVerticalScrollIndicator={false}
       >
-        {state === "reading" ? (
-          <View style={styles.teleprompterMask}>
-            <Animated.View
-              style={[styles.passageWrap, scrollStyle]}
+        <View style={styles.stageHeader}>
+          <View style={[styles.stageStats, isRtl && styles.rowReverse]}>
+            <View style={styles.stageStat}>
+              <HugeiconsIcon icon={BookOpen02Icon} size={16} color={C.blue} strokeWidth={2.2} />
+              <AppText style={styles.stageStatText}>{targetWords.length} words</AppText>
+            </View>
+            <View style={styles.stageStat}>
+              <HugeiconsIcon icon={VolumeHighIcon} size={16} color={C.blue} strokeWidth={2.2} />
+              <AppText style={styles.stageStatText}>{speed}</AppText>
+            </View>
+          </View>
+          <AppText style={[styles.stageHint, { textAlign: isRtl ? "right" : "left" }]}>
+            {state === "reading"
+              ? "Read with the moving text. Tap the mic when you finish."
+              : state === "results"
+                ? "Review your marked words, then retry the same passage or generate a new one."
+                : "Preview the full passage, then tap the mic to start."}
+          </AppText>
+        </View>
+
+        <View
+          style={[
+            styles.teleprompter,
+            compact && styles.teleprompterCompact,
+            state === "reading" && { height: readingViewportHeight },
+            state !== "reading" && styles.teleprompterPreview,
+          ]}
+        >
+          {state === "reading" ? (
+            <View style={styles.teleprompterMask}>
+              <Animated.View
+                style={[styles.passageWrap, scrollStyle]}
+                onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}
+              >
+                {renderPassage()}
+              </Animated.View>
+            </View>
+          ) : (
+            <View
+              style={styles.previewScrollContent}
               onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}
             >
               {renderPassage()}
-            </Animated.View>
-          </View>
-        ) : (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.previewScrollContent}
-          >
-            <View onLayout={(event) => setTextHeight(event.nativeEvent.layout.height)}>
-              {renderPassage()}
             </View>
-          </ScrollView>
-        )}
+          )}
 
-        <LinearGradient
-          colors={["#F8FAFC", "rgba(248,250,252,0)"]}
-          style={styles.gradientTop}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={["rgba(248,250,252,0)", "#F8FAFC"]}
-          style={styles.gradientBottom}
-          pointerEvents="none"
-        />
-      </View>
+          {state === "reading" ? (
+            <>
+              <LinearGradient
+                colors={["#F8FAFC", "rgba(248,250,252,0)"]}
+                style={styles.gradientTop}
+                pointerEvents="none"
+              />
+              <LinearGradient
+                colors={["rgba(248,250,252,0)", "#F8FAFC"]}
+                style={styles.gradientBottom}
+                pointerEvents="none"
+              />
+            </>
+          ) : null}
+        </View>
 
-      {evaluation ? (
-        <Animated.View entering={FadeInDown.duration(280)} style={styles.resultsPanel}>
-          <View style={[styles.scoreHeader, isRtl && styles.rowReverse]}>
-            <View style={styles.scoreCoin}>
-              <AppText style={styles.scoreValue} forceLatinFont>
-                {evaluation.accuracyScore}
-              </AppText>
-            </View>
-            <View style={[styles.scoreCopy, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-              <AppText style={[styles.scoreTitle, { textAlign: isRtl ? "right" : "left" }]}>
-                {evaluation.accuracyScore >= 80 ? "Strong reading" : evaluation.accuracyScore >= 60 ? "Good base" : "Needs another pass"}
-              </AppText>
-              <AppText style={[styles.scoreSubtitle, { textAlign: isRtl ? "right" : "left" }]}>
-                Transcript: {evaluation.transcript || "No clear speech captured."}
-              </AppText>
-            </View>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <MetricCard label="Coverage" value={`${evaluation.coverageScore}%`} tone="green" />
-            <MetricCard label="Order" value={`${evaluation.orderScore}%`} />
-            <MetricCard label="WPM" value={`${evaluation.wpm}`} tone={evaluation.fluencyScore >= 70 ? "green" : "red"} />
-          </View>
-
-          <View style={styles.feedbackGrid}>
-            <View style={styles.feedbackBlock}>
-              <View style={styles.feedbackTitleRow}>
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} color="#10B981" strokeWidth={2.4} />
-                <AppText style={styles.feedbackTitle}>What worked</AppText>
+        {evaluation ? (
+          <Animated.View entering={FadeInDown.duration(280)} style={styles.resultsPanel}>
+            <View style={[styles.scoreHeader, isRtl && styles.rowReverse]}>
+              <View style={styles.scoreCoin}>
+                <AppText style={styles.scoreValue} forceLatinFont>
+                  {evaluation.accuracyScore}
+                </AppText>
               </View>
-              {(evaluation.strengths.length ? evaluation.strengths : ["You completed a full reading attempt."]).map((item) => (
-                <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
-              ))}
+              <View style={[styles.scoreCopy, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+                <AppText style={[styles.scoreTitle, { textAlign: isRtl ? "right" : "left" }]}>
+                  {evaluation.accuracyScore >= 80 ? "Strong reading" : evaluation.accuracyScore >= 60 ? "Good base" : "Needs another pass"}
+                </AppText>
+                <AppText style={[styles.scoreSubtitle, { textAlign: isRtl ? "right" : "left" }]}>
+                  Transcript: {evaluation.transcript || "No clear speech captured."}
+                </AppText>
+              </View>
             </View>
 
-            <View style={styles.feedbackBlock}>
-              <View style={styles.feedbackTitleRow}>
-                <HugeiconsIcon icon={RefreshIcon} size={16} color={C.red} strokeWidth={2.4} />
-                <AppText style={styles.feedbackTitle}>Next pass</AppText>
-              </View>
-              {(evaluation.nextSteps.length ? evaluation.nextSteps : ["Try the same passage again."]).map((item) => (
-                <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
-              ))}
+            <View style={styles.metricsRow}>
+              <MetricCard label="Coverage" value={`${evaluation.coverageScore}%`} tone="green" />
+              <MetricCard label="Order" value={`${evaluation.orderScore}%`} />
+              <MetricCard label="WPM" value={`${evaluation.wpm}`} tone={evaluation.fluencyScore >= 70 ? "green" : "red"} />
             </View>
-          </View>
-        </Animated.View>
-      ) : null}
+
+            <View style={styles.feedbackGrid}>
+              <View style={styles.feedbackBlock}>
+                <View style={styles.feedbackTitleRow}>
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} color="#10B981" strokeWidth={2.4} />
+                  <AppText style={styles.feedbackTitle}>What worked</AppText>
+                </View>
+                {(evaluation.strengths.length ? evaluation.strengths : ["You completed a full reading attempt."]).map((item) => (
+                  <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
+                ))}
+              </View>
+
+              <View style={styles.feedbackBlock}>
+                <View style={styles.feedbackTitleRow}>
+                  <HugeiconsIcon icon={RefreshIcon} size={16} color={C.red} strokeWidth={2.4} />
+                  <AppText style={styles.feedbackTitle}>Next pass</AppText>
+                </View>
+                {(evaluation.nextSteps.length ? evaluation.nextSteps : ["Try the same passage again."]).map((item) => (
+                  <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
+                ))}
+              </View>
+            </View>
+          </Animated.View>
+        ) : null}
+      </ScrollView>
 
       <View style={[styles.controlDock, { paddingBottom: insets.bottom + 14 }]}>
         {state === "processing" ? (
@@ -770,7 +807,7 @@ export default function ReadingPracticeScreen() {
               <MicCaptureOrb
                 listening={state === "reading"}
                 onPress={handleMicPress}
-                size={compact ? 78 : 90}
+                size={compact ? 66 : 78}
               />
               <View style={[styles.micCaption, state === "reading" && styles.micCaptionLive]}>
                 <HugeiconsIcon icon={Mic01Icon} size={14} color={state === "reading" ? "#FFFFFF" : C.blue} strokeWidth={2.3} />
@@ -877,18 +914,20 @@ const styles = StyleSheet.create({
     color: "rgba(26,43,72,0.66)",
   },
   setupCard: {
-    padding: 18,
+    padding: 16,
     gap: 18,
   },
   settingsGroup: {
     gap: 10,
   },
   settingsGroupHalf: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 148,
     gap: 10,
   },
   splitSettings: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 14,
   },
   label: {
@@ -900,6 +939,7 @@ const styles = StyleSheet.create({
   },
   optionRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   rowReverse: {
@@ -907,7 +947,9 @@ const styles = StyleSheet.create({
   },
   optionChip: {
     minHeight: 48,
+    minWidth: 74,
     paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -916,7 +958,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(15,23,42,0.08)",
   },
   optionChipFlex: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 96,
   },
   optionChipActive: {
     backgroundColor: C.navy,
@@ -924,9 +967,11 @@ const styles = StyleSheet.create({
   },
   optionChipText: {
     fontSize: 13,
+    lineHeight: 17,
     fontWeight: "900",
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
+    textAlign: "center",
   },
   optionChipTextActive: {
     color: "#FFFFFF",
@@ -941,7 +986,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   templateCard: {
-    width: "48%",
+    flexGrow: 1,
+    flexBasis: 150,
     minHeight: 98,
     padding: 14,
     borderRadius: 18,
@@ -970,11 +1016,13 @@ const styles = StyleSheet.create({
   },
   practiceSummary: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   summaryItem: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 1,
     gap: 7,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -985,6 +1033,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     color: C.gray,
+    flexShrink: 1,
   },
   generatingOverlay: {
     position: "absolute",
@@ -1002,13 +1051,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: C.navy,
   },
+  practiceScroll: {
+    flex: 1,
+  },
+  practiceScrollContent: {
+    gap: 12,
+  },
   stageHeader: {
     paddingHorizontal: 20,
     gap: 10,
-    marginBottom: 10,
   },
   stageStats: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   stageStat: {
@@ -1033,13 +1088,20 @@ const styles = StyleSheet.create({
     color: C.gray,
   },
   teleprompter: {
-    flex: 1,
     marginHorizontal: 20,
+    minHeight: 430,
     borderRadius: 30,
     overflow: "hidden",
     backgroundColor: "rgba(255,255,255,0.72)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.06)",
+  },
+  teleprompterPreview: {
+    minHeight: 0,
+    overflow: "visible",
+  },
+  teleprompterCompact: {
+    minHeight: 470,
   },
   teleprompterMask: {
     flex: 1,
@@ -1050,26 +1112,27 @@ const styles = StyleSheet.create({
     paddingVertical: 150,
   },
   previewScrollContent: {
-    paddingHorizontal: 22,
-    paddingVertical: 42,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
   },
   passageText: {
-    fontSize: 23,
-    lineHeight: 35,
+    fontSize: 22,
+    lineHeight: 34,
     color: C.navy,
     fontFamily: "DINNextRoundedBold",
   },
   passageTextCompact: {
     fontSize: 20,
-    lineHeight: 31,
+    lineHeight: 29,
   },
   wordWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
+    paddingHorizontal: 2,
   },
   wordText: {
-    fontSize: 22,
-    lineHeight: 34,
+    fontSize: 20,
+    lineHeight: 32,
     fontFamily: "DINNextRoundedBold",
   },
   wordCorrect: {
@@ -1098,7 +1161,6 @@ const styles = StyleSheet.create({
   },
   resultsPanel: {
     marginHorizontal: 20,
-    marginTop: 12,
     padding: 16,
     borderRadius: 26,
     backgroundColor: "rgba(255,255,255,0.9)",
@@ -1142,10 +1204,12 @@ const styles = StyleSheet.create({
   },
   metricsRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   metricCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 96,
     minHeight: 72,
     borderRadius: 18,
     backgroundColor: "#F8FAFC",
@@ -1167,10 +1231,12 @@ const styles = StyleSheet.create({
   },
   feedbackGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   feedbackBlock: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 150,
     gap: 8,
   },
   feedbackTitleRow: {
@@ -1189,22 +1255,29 @@ const styles = StyleSheet.create({
     color: C.gray,
   },
   controlDock: {
-    minHeight: 132,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    minHeight: 118,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingTop: 12,
+    gap: 8,
+    paddingTop: 8,
+    backgroundColor: "rgba(248,250,252,0.94)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(15,23,42,0.06)",
   },
   micWrap: {
     alignItems: "center",
-    gap: 8,
+    gap: 5,
   },
   micCaption: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     borderRadius: 999,
     backgroundColor: "rgba(59,130,246,0.09)",
   },
@@ -1212,27 +1285,29 @@ const styles = StyleSheet.create({
     backgroundColor: C.red,
   },
   micCaptionText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "900",
     color: C.blue,
   },
   secondaryActions: {
     flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 20,
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
   },
   secondaryButton: {
-    minWidth: 120,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    minWidth: 106,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 14,
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.78)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.08)",
   },
   secondaryButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
     color: C.navy,
   },

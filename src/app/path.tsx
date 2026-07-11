@@ -10,6 +10,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
+const SHOW_PATH_SWITCHER = false;
+const BACK_ONLY_CHROME_HEIGHT = 58;
+
 export default function PathRoute() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -41,7 +44,10 @@ export default function PathRoute() {
   return (
     <View style={styles.root}>
       {/* Full-screen path content */}
-      <LearningPathScreen overrideMode={activeMode} />
+      <LearningPathScreen
+        overrideMode={activeMode}
+        topChromeHeight={BACK_ONLY_CHROME_HEIGHT}
+      />
 
       {/* Floating header overlay */}
       <View
@@ -66,9 +72,11 @@ export default function PathRoute() {
         </TouchableOpacity>
 
         {/* Tabs - centered with bottom spacing for unit bar gap */}
-        <View style={{ marginBottom: 14 }}>
-          <PathSwitcher activeMode={activeMode} onSwitch={handleSwitch} />
-        </View>
+        {SHOW_PATH_SWITCHER ? (
+          <View style={{ marginBottom: 14 }}>
+            <PathSwitcher activeMode={activeMode} onSwitch={handleSwitch} />
+          </View>
+        ) : null}
       </View>
     </View>
   );

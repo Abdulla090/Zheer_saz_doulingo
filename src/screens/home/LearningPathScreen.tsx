@@ -26,7 +26,13 @@ function parseMode(raw: string | string[] | undefined): PathMode | null {
   return "street";
 }
 
-export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }) {
+export function LearningPathScreen({
+  overrideMode,
+  topChromeHeight,
+}: {
+  overrideMode?: PathMode;
+  topChromeHeight?: number;
+}) {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const savedMode = useSettingsStore((s) => s.pathMode);
   const activeMode = overrideMode ?? parseMode(params.mode) ?? savedMode;
@@ -97,12 +103,12 @@ export function LearningPathScreen({ overrideMode }: { overrideMode?: PathMode }
   const renderActiveContent = () => {
     switch (activeMode) {
       case "normal":
-        return <NormalEnglishPathScreen />;
+        return <NormalEnglishPathScreen topChromeHeight={topChromeHeight} />;
       case "kids":
-        return <KidsEnglishPathScreen />;
+        return <KidsEnglishPathScreen topChromeHeight={topChromeHeight} />;
       case "street":
       default:
-        return <StreetEnglishPathScreen />;
+        return <StreetEnglishPathScreen topChromeHeight={topChromeHeight} />;
     }
   };
 

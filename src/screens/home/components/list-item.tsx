@@ -1,46 +1,75 @@
-import { Chest, NavBarChest } from "../../../constants/icons";
 import {
-  LessonPathIcon,
-  type LessonPathIconType,
-} from "../../../components/icons/LessonPathIcons";
+  Chest,
+  LessonBook,
+  LessonDumbbell,
+  LessonGame,
+  LessonHeadphone,
+  LessonMicrophone,
+  LessonStar,
+  LessonVideo,
+  NavBarChest,
+} from "../../../constants/icons";
 import { LessonListItem, SectionTheme } from "../../../data/list-items";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React from "react";
 import { Pressable, View } from "react-native";
 import { useI18n } from "../../../hooks/useI18n";
-import { CompletedCheckIcon } from "./completed-check-icon";
-import { CurrentLessonIcon } from "./current-lesson-icon";
 import { FirstItemSparkles } from "./first-item-sparkles";
-import { LessonProgressRing } from "./lesson-progress-ring";
 import { getPathCurveOffset } from "./path-curve";
 import { LessonPathBadge } from "./lesson-path-badge";
 import { SVG_BUTTON_COLOR_SETS, SvgButton, SvgButtonVariant } from "./list-button";
 
 const STREET_LESSON_BUTTON_SIZE = 64;
+const NORMAL_LESSON_BUTTON_SIZE = 80;
 const KIDS_LESSON_BUTTON_SIZE = 72;
 const CHEST_VISUAL_SIZE = 52;
+const NORMAL_CHEST_VISUAL_SIZE = 65;
 const KIDS_CHEST_VISUAL_SIZE = 58;
-const STREET_PROGRESS_RING_SIZE = 76;
-const KIDS_PROGRESS_RING_SIZE = 86;
+const ITEM_SLOT_HEIGHT = 82;
+const NORMAL_ITEM_SLOT_HEIGHT = 96;
+const KIDS_ITEM_SLOT_HEIGHT = 90;
+function getNormalPathOffset(globalIndex: number, screenWidth: number) {
+  const amplitude = screenWidth * 0.18;
+  const baseSine = Math.sin(globalIndex * (Math.PI / 4));
+  const adjustedSine =
+    Math.sign(baseSine) * Math.pow(Math.abs(baseSine), 1.25);
+  return adjustedSine * amplitude * -1;
+}
 
-const ITEM_SLOT_HEIGHT = 66;
-const KIDS_ITEM_SLOT_HEIGHT = 74;
-const PATH_ICON_SIZE = 24;
+const LESSON_ICON_MAP = {
+  practice: LessonStar,
+  video: LessonVideo,
+  reading: LessonBook,
+  listening: LessonHeadphone,
+  game: LessonGame,
+  speaking: LessonMicrophone,
+  conversation: LessonDumbbell,
+  cup: LessonStar,
+} as const;
 
 function pathMetrics(pathMode: LessonPathMode) {
   const isKids = pathMode === "kids";
-  const lessonButtonSize = isKids ? KIDS_LESSON_BUTTON_SIZE : STREET_LESSON_BUTTON_SIZE;
-  const progressRingSize = isKids ? KIDS_PROGRESS_RING_SIZE : STREET_PROGRESS_RING_SIZE;
-  const chestSize = isKids ? KIDS_CHEST_VISUAL_SIZE : CHEST_VISUAL_SIZE;
-  const slotHeight = isKids ? KIDS_ITEM_SLOT_HEIGHT : ITEM_SLOT_HEIGHT;
+  const isNormal = pathMode === "normal";
+  const lessonButtonSize = isKids
+    ? KIDS_LESSON_BUTTON_SIZE
+    : isNormal
+      ? NORMAL_LESSON_BUTTON_SIZE
+      : STREET_LESSON_BUTTON_SIZE;
+  const chestSize = isKids
+    ? KIDS_CHEST_VISUAL_SIZE
+    : isNormal
+      ? NORMAL_CHEST_VISUAL_SIZE
+      : CHEST_VISUAL_SIZE;
+  const slotHeight = isKids
+    ? KIDS_ITEM_SLOT_HEIGHT
+    : isNormal
+      ? NORMAL_ITEM_SLOT_HEIGHT
+      : ITEM_SLOT_HEIGHT;
   return {
     lessonButtonSize,
-    progressRingSize,
     chestSize,
     slotHeight,
-    progressRingOffsetX: (lessonButtonSize - progressRingSize) / 2,
-    progressRingOffsetY: (lessonButtonSize - progressRingSize) / 2 - 4,
   };
 }
 
@@ -52,7 +81,6 @@ function lessonColorTheme(item: LessonListItem): SectionTheme {
 }
 
 function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
-  if (item.status === "completed") return "gold";
   if (item.status === "locked") return "gray";
   if (item.type === "cup") return "yellow";
   if (item.isCurrent && item.sectionTheme === "gray") return "mint";
@@ -62,21 +90,6 @@ function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
     return theme as SvgButtonVariant;
   }
   return "blue";
-}
-
-function resolveIconColor(
-  item: LessonListItem,
-  isCompleted: boolean,
-  isLocked: boolean,
-  isGrayInProgress: boolean,
-  globalIndex: number,
-): string {
-  if (isCompleted) return "#FFFFFF";
-  if (isLocked) return "#6B7280";
-  // First item icon color used to be #B26A00, changed to white for better contrast
-  if (globalIndex === 0) return "#FFFFFF";
-  if (isGrayInProgress) return "#FFFFFF";
-  return "#FFFFFF";
 }
 
 type ListItemProps = {
@@ -90,48 +103,20 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
   const metrics = pathMetrics(pathMode);
   const { isKu } = useI18n();
 
-  const { globalIndex, type, isCurrent, progressSegments, status } = item;
+  const { globalIndex, type, isCurrent, status } = item;
 
-  const rawOffset = getPathCurveOffset(globalIndex, screenWidth);
+  const isNormalPath = pathMode === "normal";
+  const rawOffset = isNormalPath
+    ? getNormalPathOffset(globalIndex, screenWidth)
+    : getPathCurveOffset(globalIndex, screenWidth);
   const xOffset = isKu ? -rawOffset : rawOffset;
-  const isCompleted = status === "completed";
   const isLocked = status === "locked";
   const isGrayInProgress = isCurrent && item.sectionTheme === "gray";
   const buttonColor = resolveButtonVariant(item);
-  const iconColor = resolveIconColor(
-    item,
-    isCompleted,
-    isLocked,
-    isGrayInProgress,
-    globalIndex,
-  );
-
-  const iconType = (type === "gift" ? "practice" : type) as LessonPathIconType;
-  const unitNumber = item.lessonId + 1;
+  const iconColorOverride =
+    globalIndex === 0 ? "#B26A00" : isGrayInProgress ? "white" : undefined;
+  const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;
-  const pathIcon = useMemo(() => {
-    if (isCompleted) {
-      return (
-        <CompletedCheckIcon
-          width={PATH_ICON_SIZE}
-          height={PATH_ICON_SIZE}
-          color={iconColor}
-        />
-      );
-    }
-    const glyph = (
-      <LessonPathIcon
-        type={iconType}
-        color={iconColor}
-        size={PATH_ICON_SIZE}
-        active={isCurrent}
-      />
-    );
-    if (isCurrent) {
-      return <CurrentLessonIcon>{glyph}</CurrentLessonIcon>;
-    }
-    return glyph;
-  }, [iconColor, iconType, isCompleted, isCurrent]);
 
   const handleNavigate = () => {
     router.push({
@@ -142,6 +127,7 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
         li: String(item.sectionItemIndex),
         pi: String(item.pathIndex),
         mode: pathMode,
+        du: String(unitNumber),
         fromPath: "true",
       },
     });
@@ -150,28 +136,11 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
   return (
     <View
       className="justify-center items-center"
-      style={{ height: metrics.slotHeight }}
+      style={{ height: metrics.slotHeight, width: "100%" }}
     >
       <View style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}>
         {globalIndex === 0 ? (
           <FirstItemSparkles size={metrics.lessonButtonSize} />
-        ) : null}
-
-        {isCurrent ? (
-          <View
-            style={{
-              pointerEvents: "none",
-              position: "absolute",
-              left: metrics.progressRingOffsetX,
-              top: metrics.progressRingOffsetY,
-              zIndex: 0,
-            }}
-          >
-            <LessonProgressRing
-              size={metrics.progressRingSize}
-              progressSegments={progressSegments}
-            />
-          </View>
         ) : null}
 
         <View
@@ -211,7 +180,8 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
               size={metrics.lessonButtonSize}
               onPress={isLocked ? undefined : handleNavigate}
               variant={buttonColor}
-              icon={pathIcon}
+              IconComponent={LESSON_ICON_MAP[type]}
+              iconColor={iconColorOverride}
               accessibilityLabel={
                 isLocked
                   ? `Unit ${unitNumber} lesson ${lessonNumber}, locked`
@@ -219,12 +189,14 @@ export const ListItem = React.memo(({ item, screenWidth, pathMode = "street" }: 
               }
             />
           )}
-          <LessonPathBadge
-            unitNumber={unitNumber}
-            lessonNumber={lessonNumber}
-            nodeSize={metrics.lessonButtonSize}
-            muted={isLocked}
-          />
+          {!isNormalPath ? (
+            <LessonPathBadge
+              unitNumber={unitNumber}
+              lessonNumber={lessonNumber}
+              nodeSize={metrics.lessonButtonSize}
+              muted={isLocked}
+            />
+          ) : null}
         </View>
       </View>
     </View>

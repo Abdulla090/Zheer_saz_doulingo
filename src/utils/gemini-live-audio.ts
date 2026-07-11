@@ -3,7 +3,8 @@
  * Native: play Gemini Live PCM chunks via WAV data URIs.
  */
 
-import { createAudioPlayer, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
+import { createAudioPlaylist, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 import { PermissionsAndroid, Platform } from "react-native";
 import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
 
@@ -68,32 +69,68 @@ function pcmBytesToWavBase64(pcmBytes: Uint8Array, sampleRate: number): string {
 export class LivePcmPlayer {
   private pendingBytes = new Uint8Array(0);
   private flushTimeout: ReturnType<typeof setTimeout> | null = null;
-  private wavQueue: string[] = []; // data URIs
+  private playlist: ReturnType<typeof createAudioPlaylist> | null = null;
+  private statusListener: { remove: () => void } | null = null;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private generatedFiles: string[] = [];
   private playing = false;
   private destroyed = false;
   private audioModeSet = false;
 
-  // Double-buffered player pool: while playerA plays, playerB preloads
-  private playerA: ReturnType<typeof createAudioPlayer> | null = null;
-  private playerB: ReturnType<typeof createAudioPlayer> | null = null;
-  private activeSlot: "A" | "B" = "A";
-  private listenerSub: { remove: () => void } | null = null;
-  private playerALoadedUri: string | null = null;
-  private playerBLoadedUri: string | null = null;
-
   constructor(private onPlayingStateChange?: (isPlaying: boolean) => void) {}
 
   /**
-   * Buffer threshold: ~0.17s of 24kHz 16-bit mono PCM.
-   * Keeps native playback responsive without creating excessive player swaps.
+   * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM.
+   * Larger buffers reduce the stop-start feel from very small audio fragments.
    */
-  private static BUFFER_THRESHOLD = 8_192;
+  private static BUFFER_THRESHOLD = 16_384;
 
   /**
    * Flush delay: how long to wait for more data before flushing a partial buffer.
    * Shorter = lower latency for the first audible tutor response.
    */
-  private static FLUSH_DELAY_MS = 40;
+  private static FLUSH_DELAY_MS = 28;
+
+  private ensurePlaylist() {
+    if (this.playlist) return this.playlist;
+
+    this.playlist = createAudioPlaylist({
+      sources: [],
+      updateInterval: 100,
+      loop: "none",
+    });
+
+    this.statusListener = this.playlist.addListener("playlistStatusUpdate", (status: any) => {
+      if (this.destroyed) return;
+
+      if (status.playing) {
+        if (!this.playing) {
+          this.playing = true;
+          this.onPlayingStateChange?.(true);
+        }
+        if (this.idleTimer) {
+          clearTimeout(this.idleTimer);
+          this.idleTimer = null;
+        }
+        return;
+      }
+
+      if (this.idleTimer) {
+        clearTimeout(this.idleTimer);
+      }
+      this.idleTimer = setTimeout(() => {
+        if (this.destroyed) return;
+        if (!this.playlist?.playing && this.pendingBytes.length === 0 && !this.flushTimeout) {
+          if (this.playing) {
+            this.playing = false;
+            this.onPlayingStateChange?.(false);
+          }
+        }
+      }, 120);
+    });
+
+    return this.playlist;
+  }
 
   enqueueBase64Pcm(base64: string) {
     if (this.destroyed) return;
@@ -117,15 +154,15 @@ export class LivePcmPlayer {
     }
 
     if (this.pendingBytes.length >= LivePcmPlayer.BUFFER_THRESHOLD) {
-      this.flushBuffer();
+      void this.flushBuffer();
     } else {
       this.flushTimeout = setTimeout(() => {
-        this.flushBuffer();
+        void this.flushBuffer();
       }, LivePcmPlayer.FLUSH_DELAY_MS);
     }
   }
 
-  private flushBuffer() {
+  private async flushBuffer() {
     this.flushTimeout = null;
     if (this.destroyed || this.pendingBytes.length === 0) return;
 
@@ -133,11 +170,35 @@ export class LivePcmPlayer {
       const pcmBytes = this.pendingBytes;
       this.pendingBytes = new Uint8Array(0);
 
-      const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
-      const uri = `data:audio/wav;base64,${wavB64}`;
+      await this.ensureAudioMode();
 
-      this.wavQueue.push(uri);
-      void this.drain();
+      const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
+      const cacheDir = FileSystem.cacheDirectory;
+      if (!cacheDir) {
+        throw new Error("Audio cache directory unavailable.");
+      }
+      const uri = `${cacheDir}gemini-live-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.wav`;
+      await FileSystem.writeAsStringAsync(uri, wavB64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      this.generatedFiles.push(uri);
+      const playlist = this.ensurePlaylist();
+      playlist.add(uri);
+
+      if (!this.playing) {
+        this.playing = true;
+        this.onPlayingStateChange?.(true);
+      }
+
+      if (!playlist.playing) {
+        try {
+          playlist.play();
+        } catch (e) {
+          console.warn("LivePcmPlayer: playlist play failed", e);
+        }
+      }
     } catch (e) {
       console.warn("LivePcmPlayer: flush failed", e);
     }
@@ -153,194 +214,36 @@ export class LivePcmPlayer {
     }
   }
 
-  private getActivePlayer(): ReturnType<typeof createAudioPlayer> {
-    if (this.activeSlot === "A") {
-      if (!this.playerA) this.playerA = createAudioPlayer("");
-      return this.playerA;
-    } else {
-      if (!this.playerB) this.playerB = createAudioPlayer("");
-      return this.playerB;
-    }
-  }
-
-  private swapSlot() {
-    this.activeSlot = this.activeSlot === "A" ? "B" : "A";
-  }
-
-  private async drain() {
-    if (this.playing || this.destroyed || this.wavQueue.length === 0) return;
-    this.playing = true;
-    this.onPlayingStateChange?.(true);
-
-    await this.ensureAudioMode();
-
-    while (this.wavQueue.length > 0 && !this.destroyed) {
-      const uri = this.wavQueue.shift()!;
-      try {
-        await this.playOneChunk(uri);
-      } catch (err) {
-        console.warn("LivePcmPlayer: play chunk failed", err);
-      }
-    }
-
-    this.playing = false;
-
-    // Check if more data arrived while we were playing
-    if (this.wavQueue.length > 0 && !this.destroyed) {
-      void this.drain();
-    } else {
-      this.onPlayingStateChange?.(false);
-    }
-  }
-
-  private playOneChunk(uri: string): Promise<void> {
-    return new Promise<void>((resolve) => {
-      if (this.destroyed) {
-        resolve();
-        return;
-      }
-
-      const player = this.getActivePlayer();
-      const loadedUri = this.activeSlot === "A" ? this.playerALoadedUri : this.playerBLoadedUri;
-
-      // Clean up previous listener
-      if (this.listenerSub) {
-        this.listenerSub.remove();
-        this.listenerSub = null;
-      }
-
-      let resolved = false;
-      const finish = () => {
-        if (resolved) return;
-        resolved = true;
-        if (this.listenerSub) {
-          this.listenerSub.remove();
-          this.listenerSub = null;
-        }
-        this.swapSlot();
-        resolve();
-      };
-
-      // Listen for playback completion via expo-audio event
-      this.listenerSub = player.addListener("playbackStatusUpdate", (status: any) => {
-        if (status.didJustFinish || (status.currentTime > 0 && !status.playing && !status.isBuffering)) {
-          finish();
-        }
-      });
-
-      try {
-        if (loadedUri !== uri) {
-          player.replace(uri);
-          if (this.activeSlot === "A") {
-            this.playerALoadedUri = uri;
-          } else {
-            this.playerBLoadedUri = uri;
-          }
-        }
-        player.play();
-      } catch (err) {
-        console.warn("LivePcmPlayer: replace/play failed, recreating player", err);
-        // If replace fails, recreate the player
-        try {
-          if (this.activeSlot === "A") {
-            this.playerA?.remove();
-            this.playerA = createAudioPlayer(uri);
-            this.playerALoadedUri = uri;
-            this.playerA.play();
-
-            if (this.listenerSub) this.listenerSub.remove();
-            this.listenerSub = this.playerA.addListener("playbackStatusUpdate", (status: any) => {
-              if (status.didJustFinish || (status.currentTime > 0 && !status.playing && !status.isBuffering)) {
-                finish();
-              }
-            });
-          } else {
-            this.playerB?.remove();
-            this.playerB = createAudioPlayer(uri);
-            this.playerBLoadedUri = uri;
-            this.playerB.play();
-
-            if (this.listenerSub) this.listenerSub.remove();
-            this.listenerSub = this.playerB.addListener("playbackStatusUpdate", (status: any) => {
-              if (status.didJustFinish || (status.currentTime > 0 && !status.playing && !status.isBuffering)) {
-                finish();
-              }
-            });
-          }
-        } catch (innerErr) {
-          console.warn("LivePcmPlayer: recreate failed", innerErr);
-          finish();
-        }
-      }
-
-      // Preload next chunk on the other player
-      const nextUri = this.wavQueue[0];
-      if (nextUri) {
-        const otherSlot = this.activeSlot === "A" ? "B" : "A";
-        let otherPlayer = otherSlot === "A" ? this.playerA : this.playerB;
-        if (!otherPlayer) {
-          try {
-            if (otherSlot === "A") {
-              this.playerA = createAudioPlayer("");
-              otherPlayer = this.playerA;
-            } else {
-              this.playerB = createAudioPlayer("");
-              otherPlayer = this.playerB;
-            }
-          } catch (e) {
-            console.warn("LivePcmPlayer: background player init failed", e);
-          }
-        }
-        const otherLoadedUri = otherSlot === "A" ? this.playerALoadedUri : this.playerBLoadedUri;
-
-        if (otherPlayer && otherLoadedUri !== nextUri) {
-          try {
-            otherPlayer.replace(nextUri);
-            if (otherSlot === "A") {
-              this.playerALoadedUri = nextUri;
-            } else {
-              this.playerBLoadedUri = nextUri;
-            }
-          } catch (preloadErr) {
-            console.warn("LivePcmPlayer: background preload failed", preloadErr);
-          }
-        }
-      }
-
-      // Safety timeout: if playback event never fires, resolve after generous duration
-      // This prevents the queue from permanently stalling
-      setTimeout(() => {
-        if (!resolved) {
-          console.warn("LivePcmPlayer: safety timeout triggered for chunk");
-          finish();
-        }
-      }, 8000);
-    });
-  }
-
-  stop() {
+  async stop() {
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
       this.flushTimeout = null;
     }
     this.pendingBytes = new Uint8Array(0);
-    this.wavQueue = [];
-    if (this.listenerSub) {
-      this.listenerSub.remove();
-      this.listenerSub = null;
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
     }
     try {
-      this.playerA?.pause();
+      this.playlist?.pause();
     } catch {
       /* noop */
     }
     try {
-      this.playerB?.pause();
+      this.playlist?.clear();
     } catch {
       /* noop */
     }
-    this.playerALoadedUri = null;
-    this.playerBLoadedUri = null;
+    for (const uri of this.generatedFiles) {
+      try {
+        if (uri.startsWith("file://")) {
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+        }
+      } catch {
+        /* noop */
+      }
+    }
+    this.generatedFiles = [];
     const wasPlaying = this.playing;
     this.playing = false;
     if (wasPlaying) {
@@ -350,25 +253,24 @@ export class LivePcmPlayer {
 
   destroy() {
     this.destroyed = true;
-    this.stop();
+    void this.stop();
     try {
-      this.playerA?.remove();
+      this.statusListener?.remove();
     } catch {
       /* noop */
     }
+    this.statusListener = null;
     try {
-      this.playerB?.remove();
+      this.playlist?.destroy();
     } catch {
       /* noop */
     }
-    this.playerA = null;
-    this.playerB = null;
-    this.playerALoadedUri = null;
-    this.playerBLoadedUri = null;
+    this.playlist = null;
+    this.generatedFiles = [];
   }
 
   get isPlaying() {
-    return this.playing || this.wavQueue.length > 0 || this.pendingBytes.length > 0 || this.flushTimeout !== null;
+    return this.playing || this.pendingBytes.length > 0 || this.flushTimeout !== null || Boolean(this.playlist?.playing);
   }
 }
 

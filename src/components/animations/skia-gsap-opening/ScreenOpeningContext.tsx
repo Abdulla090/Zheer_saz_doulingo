@@ -6,10 +6,7 @@ type ScreenOpeningContextValue = {
   variant: ScreenOpeningVariant;
 };
 
-const ScreenOpeningContext = createContext<ScreenOpeningContextValue>({
-  playKey: 0,
-  variant: "home",
-});
+const ScreenOpeningContext = createContext<ScreenOpeningContextValue | null>(null);
 
 export function ScreenOpeningProvider({
   playKey,
@@ -28,9 +25,9 @@ export function ScreenOpeningProvider({
 }
 
 export function useScreenOpeningPlayKey() {
-  return useContext(ScreenOpeningContext).playKey;
+  return useContext(ScreenOpeningContext)?.playKey ?? null;
 }
 
 export function useScreenOpeningVariant() {
-  return useContext(ScreenOpeningContext).variant;
+  return useContext(ScreenOpeningContext)?.variant ?? null;
 }

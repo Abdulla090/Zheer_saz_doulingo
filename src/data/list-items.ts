@@ -23,6 +23,7 @@ export type LessonListItem = {
   isCurrent: boolean;
   progressSegments: number;
   lessonId: number;
+  displayUnitNumber?: number;
 };
 
 export type LessonStatus = "completed" | "current" | "locked";

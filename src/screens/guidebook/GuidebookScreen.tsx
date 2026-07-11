@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { AppText } from "../../components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
-import { getGuidebook, GuidebookLesson } from "../../data/guidebook-data";
+import { getGuidebook } from "../../data/guidebook-data";
 import type { LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
 import { useTTS } from "../../hooks/use-tts";
@@ -51,6 +51,54 @@ function parsePathMode(raw: string | string[] | undefined): LessonPathMode {
   if (mode === "normal") return "normal";
   if (mode === "kids") return "kids";
   return "street";
+}
+
+const GUIDEBOOK_COPY = {
+  en: {
+    subtitle: "Review before the lesson",
+    lessons: "Lessons",
+    words: "Words",
+    phrases: "Phrases",
+    vocabulary: "Vocabulary",
+    keyPhrases: "Key Phrases",
+    notAvailable: "Not available",
+    languageStackFull: "English / Sorani / Arabic",
+    languageStackPartial: "English / Sorani",
+    soraniLabel: "Sorani",
+    arabicLabel: "Arabic",
+  },
+  ku: {
+    subtitle: "پێش وانەکە پێداچوونەوە بکە",
+    lessons: "وانە",
+    words: "وشە",
+    phrases: "دەستەواژە",
+    vocabulary: "وشەکان",
+    keyPhrases: "دەستەواژە گرنگەکان",
+    notAvailable: "بەردەست نییە",
+    languageStackFull: "ئینگلیزی / سۆرانی / عەرەبی",
+    languageStackPartial: "ئینگلیزی / سۆرانی",
+    soraniLabel: "سۆرانی",
+    arabicLabel: "عەرەبی",
+  },
+  ar: {
+    subtitle: "راجع قبل الدرس",
+    lessons: "دروس",
+    words: "كلمات",
+    phrases: "عبارات",
+    vocabulary: "المفردات",
+    keyPhrases: "عبارات مهمة",
+    notAvailable: "غير متاح",
+    languageStackFull: "الإنجليزية / السورانية / العربية",
+    languageStackPartial: "الإنجليزية / السورانية",
+    soraniLabel: "سوراني",
+    arabicLabel: "عربي",
+  },
+} as const;
+
+function getGuidebookCopy(locale: string) {
+  if (locale === "ku") return GUIDEBOOK_COPY.ku;
+  if (locale === "ar") return GUIDEBOOK_COPY.ar;
+  return GUIDEBOOK_COPY.en;
 }
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -231,8 +279,6 @@ function HeroSection({
                   color: "#FFF",
                   fontSize: 15,
                   fontWeight: "900",
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
                 }}
               >
                 {item.unitLabel}
@@ -248,6 +294,7 @@ function HeroSection({
             alignItems: "center",
             gap: 16,
             marginBottom: 28,
+            minWidth: 0,
           }}
         >
           <View
@@ -260,31 +307,60 @@ function HeroSection({
               justifyContent: "center",
               borderWidth: 2,
               borderColor: "rgba(255,255,255,0.4)",
+              flexShrink: 0,
             }}
           >
             <HugeiconsIcon icon={GraduationCapIcon} size={52} color="#FFFFFF" />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText
               style={{
                 color: "#FFF",
                 fontSize: 26,
                 fontWeight: "900",
                 lineHeight: 34,
+                flexShrink: 1,
               }}
+              numberOfLines={3}
             >
               {item.title}
-            </Text>
-            <Text
+            </AppText>
+            <AppText
               style={{
                 color: "rgba(255,255,255,0.9)",
                 fontSize: 16,
                 fontWeight: "700",
                 marginTop: 6,
+                flexShrink: 1,
               }}
+              numberOfLines={2}
             >
               {item.subtitle}
-            </Text>
+            </AppText>
+            {item.languageStack ? (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: "rgba(255,255,255,0.18)",
+                  borderRadius: 999,
+                  marginTop: 10,
+                  maxWidth: "100%",
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 12,
+                    fontWeight: "900",
+                    flexShrink: 1,
+                  }}
+                >
+                  {item.languageStack}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -299,7 +375,7 @@ function HeroSection({
             justifyContent: "space-between",
           }}
         >
-          <StatItem value={item.lessonsCount} label="Lessons" />
+          <StatItem value={item.lessonsCount} label={item.lessonsLabel} />
           <View
             style={{
               width: 2,
@@ -307,7 +383,7 @@ function HeroSection({
               backgroundColor: "rgba(255,255,255,0.2)",
             }}
           />
-          <StatItem value={item.wordsCount} label="Words" />
+          <StatItem value={item.wordsCount} label={item.wordsLabel} />
           <View
             style={{
               width: 2,
@@ -315,7 +391,7 @@ function HeroSection({
               backgroundColor: "rgba(255,255,255,0.2)",
             }}
           />
-          <StatItem value={item.phrasesCount} label="Phrases" />
+          <StatItem value={item.phrasesCount} label={item.phrasesLabel} />
         </View>
       </View>
     </View>
@@ -333,7 +409,6 @@ function StatItem({ value, label }: { value: number | string; label: string }) {
           color: "rgba(255,255,255,0.8)",
           fontSize: 13,
           fontWeight: "800",
-          textTransform: "uppercase",
           marginTop: 2,
         }}
       >
@@ -424,16 +499,34 @@ function LessonHeader({
               >
                 {item.topicEn}
               </Text>
-              <Text
+              <AppText
                 style={{
                   fontSize: 15,
                   fontWeight: "700",
                   color: "#AFAFAF",
                   marginTop: 2,
+                  textAlign: "right",
+                  writingDirection: "rtl",
                 }}
+                forceKurdishFont
               >
                 {item.topicKu}
-              </Text>
+              </AppText>
+              {item.topicAr ? (
+                <AppText
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#8A8A8A",
+                    marginTop: 2,
+                    textAlign: "right",
+                    writingDirection: "rtl",
+                  }}
+                  forceKurdishFont
+                >
+                  {item.topicAr}
+                </AppText>
+              ) : null}
             </View>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
@@ -500,12 +593,34 @@ function SectionHeader({ item, faceColor }: { item: any; faceColor: string }) {
           fontSize: 18,
           fontWeight: "900",
           color: faceColor,
-          textTransform: "uppercase",
-          letterSpacing: 1.5,
         }}
       >
         {item.label}
       </Text>
+    </View>
+  );
+}
+
+function TranslationLine({
+  label,
+  text,
+  color = "#777777",
+}: {
+  label: string;
+  text?: string;
+  color?: string;
+}) {
+  if (!text) return null;
+
+  return (
+    <View style={styles.translationLine}>
+      <Text style={[styles.translationLabel, { color }]}>{label}</Text>
+      <AppText
+        style={[styles.translationText, { color }]}
+        forceKurdishFont
+      >
+        {text}
+      </AppText>
     </View>
   );
 }
@@ -516,12 +631,14 @@ function WordCard({
   rimColor,
   isActive,
   onSpeak,
+  copy,
 }: {
   item: any;
   faceColor: string;
   rimColor: string;
   isActive: boolean;
   onSpeak: () => void;
+  copy: ReturnType<typeof getGuidebookCopy>;
 }) {
   const ty = useSharedValue(0);
   const cardStyle = useAnimatedStyle(() => ({
@@ -564,7 +681,7 @@ function WordCard({
               cardStyle,
             ]}
           >
-            <View style={{ flex: 1, paddingRight: 16 }}>
+            <View style={{ flex: 1, paddingEnd: 16 }}>
               <Text
                 style={{
                   fontSize: 19,
@@ -575,12 +692,12 @@ function WordCard({
               >
                 {item.english}
               </Text>
-              <AppText
-                style={{ fontSize: 17, fontWeight: "700", color: "#777777" }}
-                forceKurdishFont
-              >
-                {item.kurdish}
-              </AppText>
+              <TranslationLine label={copy.soraniLabel} text={item.kurdish} />
+              <TranslationLine
+                label={copy.arabicLabel}
+                text={item.arabic}
+                color="#5F6368"
+              />
             </View>
             <TTSPill
               onPress={onSpeak}
@@ -601,12 +718,14 @@ function PhraseCard({
   rimColor,
   isActive,
   onSpeak,
+  copy,
 }: {
   item: any;
   faceColor: string;
   rimColor: string;
   isActive: boolean;
   onSpeak: () => void;
+  copy: ReturnType<typeof getGuidebookCopy>;
 }) {
   const ty = useSharedValue(0);
   const cardStyle = useAnimatedStyle(() => ({
@@ -662,7 +781,7 @@ function PhraseCard({
                   color: "#4B4B4B",
                   flex: 1,
                   lineHeight: 26,
-                  paddingRight: 12,
+                  paddingEnd: 12,
                 }}
               >
                 {item.english}
@@ -682,17 +801,16 @@ function PhraseCard({
                 borderRadius: 1,
               }}
             />
-            <AppText
-              style={{
-                fontSize: 17,
-                color: "#9F9F9F",
-                fontWeight: "700",
-                writingDirection: "rtl",
-              }}
-              forceKurdishFont
-            >
-              {item.kurdish}
-            </AppText>
+            <TranslationLine
+              label={copy.soraniLabel}
+              text={item.kurdish}
+              color="#777777"
+            />
+            <TranslationLine
+              label={copy.arabicLabel}
+              text={item.arabic}
+              color="#5F6368"
+            />
           </Animated.View>
         </View>
       </Pressable>
@@ -708,15 +826,20 @@ type GuidebookItem =
       unitLabel?: string;
       title: string;
       subtitle: string;
+      languageStack: string;
       lessonsCount: number;
       wordsCount: number;
       phrasesCount: number;
+      lessonsLabel: string;
+      wordsLabel: string;
+      phrasesLabel: string;
     }
   | {
       type: "lesson_header";
       index: number;
       topicEn: string;
       topicKu: string;
+      topicAr?: string;
       wordsCount: number;
       isOpen: boolean;
     }
@@ -726,8 +849,8 @@ type GuidebookItem =
       iconType: "vocab" | "phrase";
       count: number;
     }
-  | { type: "word"; id: string; english: string; kurdish: string }
-  | { type: "phrase"; id: string; english: string; kurdish: string }
+  | { type: "word"; id: string; english: string; kurdish: string; arabic?: string }
+  | { type: "phrase"; id: string; english: string; kurdish: string; arabic?: string }
   | { type: "spacer"; height: number };
 
 export default function GuidebookScreen() {
@@ -741,6 +864,7 @@ export default function GuidebookScreen() {
   const insets = useSafeAreaInsets();
   const { locale } = useI18n();
   const { speak, stop, activeId } = useTTS();
+  const copy = useMemo(() => getGuidebookCopy(locale), [locale]);
 
   const guidebook = useMemo(
     () => getGuidebook(pathMode, unitIndex, locale),
@@ -757,6 +881,16 @@ export default function GuidebookScreen() {
   );
   const totalPhrases = useMemo(
     () => guidebook?.lessons.reduce((s, l) => s + l.phrases.length, 0) ?? 0,
+    [guidebook],
+  );
+  const hasArabicContent = useMemo(
+    () =>
+      guidebook?.lessons.some(
+        (lesson) =>
+          Boolean(lesson.topicAr) ||
+          lesson.words.some((word) => Boolean(word.arabic)) ||
+          lesson.phrases.some((phrase) => Boolean(phrase.arabic)),
+      ) ?? false,
     [guidebook],
   );
 
@@ -791,10 +925,16 @@ export default function GuidebookScreen() {
       type: "hero",
       unitLabel: rawUnitLabel?.trim(),
       title: rest.join(":").trim(),
-      subtitle: "Guidebook — tap any word to hear it",
+      subtitle: copy.subtitle,
+      languageStack: hasArabicContent
+        ? copy.languageStackFull
+        : copy.languageStackPartial,
       lessonsCount: guidebook.lessons.length,
       wordsCount: totalWords,
       phrasesCount: totalPhrases,
+      lessonsLabel: copy.lessons,
+      wordsLabel: copy.words,
+      phrasesLabel: copy.phrases,
     });
 
     // 2. Lessons
@@ -805,6 +945,7 @@ export default function GuidebookScreen() {
         index: i,
         topicEn: lesson.topic,
         topicKu: lesson.topicKu,
+        topicAr: lesson.topicAr,
         wordsCount: lesson.words.length,
         isOpen,
       });
@@ -813,7 +954,7 @@ export default function GuidebookScreen() {
         if (lesson.words.length > 0) {
           items.push({
             type: "section_header",
-            label: "Vocabulary",
+            label: copy.vocabulary,
             iconType: "vocab",
             count: lesson.words.length,
           });
@@ -823,13 +964,14 @@ export default function GuidebookScreen() {
               id: `w-${i}-${wIndex}`,
               english: w.english,
               kurdish: w.kurdish,
+              arabic: w.arabic,
             });
           });
         }
         if (lesson.phrases.length > 0) {
           items.push({
             type: "section_header",
-            label: "Key Phrases",
+            label: copy.keyPhrases,
             iconType: "phrase",
             count: lesson.phrases.length,
           });
@@ -839,6 +981,7 @@ export default function GuidebookScreen() {
               id: `p-${i}-${pIndex}`,
               english: p.english,
               kurdish: p.kurdish,
+              arabic: p.arabic,
             });
           });
         }
@@ -847,7 +990,7 @@ export default function GuidebookScreen() {
     });
 
     return items;
-  }, [guidebook, expandedLessons, totalWords, totalPhrases]);
+  }, [copy, expandedLessons, guidebook, hasArabicContent, totalWords, totalPhrases]);
 
   if (!guidebook) {
     return (
@@ -855,7 +998,7 @@ export default function GuidebookScreen() {
         style={{ flex: 1, paddingTop: insets.top, backgroundColor: "#F4F6F9" }}
       >
         <Text style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>
-          Not available
+          {copy.notAvailable}
         </Text>
       </View>
     );
@@ -902,6 +1045,7 @@ export default function GuidebookScreen() {
                   rimColor={colors.rim}
                   isActive={activeId === item.id}
                   onSpeak={() => handleSpeak(item.english, item.id)}
+                  copy={copy}
                 />
               );
             case "phrase":
@@ -912,6 +1056,7 @@ export default function GuidebookScreen() {
                   rimColor={colors.rim}
                   isActive={activeId === item.id}
                   onSpeak={() => handleSpeak(item.english, item.id)}
+                  copy={copy}
                 />
               );
             case "spacer":
@@ -927,4 +1072,24 @@ export default function GuidebookScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F4F6F9" },
+  translationLine: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 5,
+  },
+  translationLabel: {
+    minWidth: 54,
+    fontSize: 11,
+    fontWeight: "900",
+    lineHeight: 18,
+  },
+  translationText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 23,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
 });

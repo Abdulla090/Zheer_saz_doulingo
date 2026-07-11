@@ -1,19 +1,8 @@
  
-/**
- * ImageMultipleChoiceGame — Which word matches the image?
- * Displays a premium 3D smooth transparent cartoon image,
- * a grid of choice tiles, and a "Listen" button.
- *
- * Fixed bugs:
- * - Options use seeded shuffle (not Math.random) so they don't re-shuffle on re-render
- * - After checking, shows correct/wrong feedback for 1.2s before calling onAnswer
- * - Proper state reset between questions
- */
-
 import { KidsGameImage } from "../../../components/kids/KidsGameImage";
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState, useMemo, useCallback } from "react";
-import { StyleSheet, View, Platform } from "react-native";
+import { ScrollView, StyleSheet, View, Platform } from "react-native";
 import Animated, {
   FadeInUp,
 } from "react-native-reanimated";
@@ -129,63 +118,67 @@ export default function ImageMultipleChoiceGame({
 
   return (
     <GameRoot style={s.root}>
-      <GameHeader>
-        <LightGameHeading
-          title={t("lessons.imageChoiceTitle")}
-          subtitle={t("lessons.imageChoiceSub")}
-          badge={kidsBadgeText}
-        />
-      </GameHeader>
-
-      <Animated.View
-        entering={FadeInUp.duration(400).springify()}
-        style={[s.imageCard, crossShadow({
-          color: "#1A2B48",
-          offsetY: 10,
-          blur: 24,
-          opacity: 0.1,
-          elevation: 5,
-        })]}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <KidsGameImage
-          source={question.image}
-          style={s.heroImage}
-          recyclingKey={question.correctAnswer}
-        />
-      </Animated.View>
+        <GameHeader>
+          <LightGameHeading
+            title={t("lessons.imageChoiceTitle")}
+            subtitle={t("lessons.imageChoiceSub")}
+            badge={kidsBadgeText}
+          />
+        </GameHeader>
 
-      <View style={s.optionsGrid}>
-        {shuffledOptions.map((opt) => {
-          const tileState = getState(opt);
-          return (
-            <View key={opt} style={s.optionCell}>
-              <LightWordTile
-                label={opt}
-                state={tileState}
-                onPress={() => pick(opt)}
-                disabled={revealed}
-                isKids
-                fontSize={18}
-                centerLabel
-                forceLatinFont
-                style={s.choiceTile}
-              />
-            </View>
-          );
-        })}
-      </View>
+        <Animated.View
+          entering={FadeInUp.duration(400).springify()}
+          style={[s.imageCard, crossShadow({
+            color: "#1A2B48",
+            offsetY: 10,
+            blur: 24,
+            opacity: 0.1,
+            elevation: 5,
+          })]}
+        >
+          <KidsGameImage
+            source={question.image}
+            style={s.heroImage}
+            recyclingKey={question.correctAnswer}
+          />
+        </Animated.View>
 
-      <View style={{ flex: 1 }} />
+        <View style={s.optionsGrid}>
+          {shuffledOptions.map((opt) => {
+            const tileState = getState(opt);
+            return (
+              <View key={opt} style={s.optionCell}>
+                <LightWordTile
+                  label={opt}
+                  state={tileState}
+                  onPress={() => pick(opt)}
+                  disabled={revealed}
+                  isKids
+                  fontSize={18}
+                  centerLabel
+                  forceLatinFont
+                  style={s.choiceTile}
+                />
+              </View>
+            );
+          })}
+        </View>
 
-      <View style={s.listenBtnContainer}>
-        <HomeLiquidButton
-          label={t("lessons.listenLabel")}
-          color="#8B5CF6"
-          onPress={handleListen}
-        />
-      </View>
+        <View style={s.listenBtnContainer}>
+          <HomeLiquidButton
+            label={t("lessons.listenLabel")}
+            color="#8B5CF6"
+            onPress={handleListen}
+          />
+        </View>
+      </ScrollView>
 
-      <GameFooter>
+      <GameFooter style={s.footer}>
         <LightCheckButton
           label={t("lessons.check")}
           onPress={check}
@@ -199,11 +192,14 @@ export default function ImageMultipleChoiceGame({
 
 const s = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 24,
     gap: 16,
-    flex: 1,
   },
   imageCard: {
     alignSelf: "center",
@@ -239,6 +235,12 @@ const s = StyleSheet.create({
   listenBtnContainer: {
     width: "100%",
     alignItems: "center",
+    marginTop: 16,
     marginBottom: 8,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 8,
   },
 });

@@ -67,6 +67,7 @@ export function useGeminiLiveTutor() {
   const sessionTokenRef = useRef(0);
   const aiTurnTextRef = useRef("");
   const userTurnTextRef = useRef("");
+  const transcriptFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [phase, setPhase] = useState<LiveSessionPhase>("intro_ku");
   const [status, setStatus] = useState<LiveTutorStatus>("idle");
@@ -125,6 +126,14 @@ export function useGeminiLiveTutor() {
     setSpeaking(false);
   }, []);
 
+  const flushTranscript = useCallback(() => {
+    if (transcriptFlushRef.current) {
+      clearTimeout(transcriptFlushRef.current);
+      transcriptFlushRef.current = null;
+    }
+    setTranscript(aiTurnTextRef.current);
+  }, []);
+
   const appendAiText = useCallback((text: string) => {
     const next = text.trimStart();
     if (!next) return;
@@ -137,7 +146,13 @@ export function useGeminiLiveTutor() {
     aiTurnTextRef.current = next.startsWith(current)
       ? next
       : current + next;
-    setTranscript(aiTurnTextRef.current);
+    if (transcriptFlushRef.current) {
+      clearTimeout(transcriptFlushRef.current);
+    }
+    transcriptFlushRef.current = setTimeout(() => {
+      transcriptFlushRef.current = null;
+      setTranscript(aiTurnTextRef.current);
+    }, 80);
   }, []);
 
   const recordUserTurn = useCallback((text: string) => {
@@ -183,6 +198,10 @@ export function useGeminiLiveTutor() {
 
   const stopAll = useCallback(() => {
     sessionTokenRef.current += 1;
+    if (transcriptFlushRef.current) {
+      clearTimeout(transcriptFlushRef.current);
+      transcriptFlushRef.current = null;
+    }
     void stopMic();
     stopPlayer();
     sessionRef.current?.disconnect();
@@ -257,9 +276,8 @@ export function useGeminiLiveTutor() {
             void stopMic();
           }
         },
-        onText: (text) => {
-          if (!isCurrentSession()) return;
-          appendAiText(text);
+        onText: () => {
+          // Audio-only responses are already captured by output transcription.
         },
         onInputTranscription: (text) => {
           if (!isCurrentSession()) return;
@@ -274,6 +292,7 @@ export function useGeminiLiveTutor() {
         },
         onTurnComplete: () => {
           if (!isCurrentSession()) return;
+          flushTranscript();
           const userResponseText = userTurnTextRef.current.trim();
           if (userResponseText) {
             recordUserTurn(userResponseText);
@@ -282,7 +301,6 @@ export function useGeminiLiveTutor() {
 
           const aiResponseText = aiTurnTextRef.current.trim();
           aiTurnTextRef.current = "";
-          setTranscript(aiResponseText);
 
           // 1. Process AI response text for word introductions
           const currentLevel = useSettingsStore.getState().englishLevel || 5;
@@ -334,6 +352,10 @@ export function useGeminiLiveTutor() {
         },
         onInterrupted: () => {
           if (!isCurrentSession()) return;
+          if (transcriptFlushRef.current) {
+            clearTimeout(transcriptFlushRef.current);
+            transcriptFlushRef.current = null;
+          }
           aiTurnTextRef.current = "";
           userTurnTextRef.current = "";
           setTranscript("");
@@ -358,7 +380,7 @@ export function useGeminiLiveTutor() {
       setError(msg);
       setStatus("error");
     }
-  }, [appendAiText, configured, recordUserTurn, startMic, stopMic, stopPlayer]);
+  }, [appendAiText, configured, flushTranscript, recordUserTurn, startMic, stopMic, stopPlayer]);
 
   // Intercept client inputs to track speech and parse onboarding
   const sendClientTextWithTracking = useCallback((text: string) => {

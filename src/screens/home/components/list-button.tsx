@@ -1,34 +1,34 @@
-import { cssPressStyle, cssReleaseStyle } from "../../../components/animations/motion";
 import { Star } from "../../../constants/icons";
-import { crossShadow } from "../../../utils/shadows";
-import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Pressable, View } from "react-native";
-import Animated from "react-native-reanimated";
-import { CurrentLessonIcon } from "./current-lesson-icon";
-import { PathCircleShine } from "./path-circle-shine";
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
-/** Face + rim pairs for path lesson nodes (soft 2.5D, matches header Guidebook). */
 export const SVG_BUTTON_COLOR_SETS = {
-  green: { rim: "#0B8A6C", face: "#08c296" },
-  purple: { rim: "#5E35B1", face: "#7E57C2" },
-  blue: { rim: "#0277BD", face: "#039BE5" },
-  mint: { rim: "#00695C", face: "#00897B" },
-  gray: { rim: "#90A4AE", face: "#B0BEC5" },
-  yellow: { rim: "#F57F17", face: "#FBC02D" },
-  gold: { rim: "#E5A000", face: "#FFC800" },
-  orange: { rim: "#E65100", face: "#FF9800" },
-  red: { rim: "#B71C1C", face: "#F44336" },
+  green: { rim: "#58a700", face: "#58cc02" },
+  purple: { rim: "#a568cc", face: "#ce82ff" },
+  blue: { rim: "#2b70c9", face: "#1cb0f6" },
+  mint: { rim: "#0B8A6C", face: "#08c296" },
+  gray: { rim: "#b7b7b7", face: "#E5E5E5" },
+  yellow: { rim: "#ff9600", face: "#ffc800" },
+  gold: { rim: "#ff9600", face: "#ffc800" },
+  orange: { rim: "#d86f00", face: "#ff9600" },
+  red: { rim: "#d33131", face: "#ff4b4b" },
 } as const;
 
-type PathButtonProps = {
+type SvgButtonProps = {
   size?: number;
   onPress?: () => void;
   translateX?: number;
   variant?: SvgButtonVariant;
-  icon?: React.ReactNode;
   IconComponent?: React.ComponentType<any>;
   iconColor?: string;
   isCurrentLesson?: boolean;
@@ -36,159 +36,167 @@ type PathButtonProps = {
   accessibilityLabel?: string;
 };
 
-const ICON_RATIO = 0.4;
-const DEPTH_RATIO = 0.055;
+function CurrentLessonIcon({
+  IconComponent,
+  color,
+  size,
+}: {
+  IconComponent: React.ComponentType<any>;
+  color: string;
+  size: number;
+}) {
+  const translateY = useSharedValue(0);
+  const rotate = useSharedValue(0);
+
+  useEffect(() => {
+    translateY.value = withRepeat(
+      withSequence(
+        withTiming(5, { duration: 200 }),
+        withTiming(-8, { duration: 500 }),
+        withTiming(0, { duration: 550 }),
+      ),
+      -1,
+      false,
+    );
+    rotate.value = withRepeat(
+      withSequence(
+        withTiming(0, { duration: 200 }),
+        withTiming(72, { duration: 500 }),
+        withTiming(72, { duration: 550 }),
+        withTiming(0, { duration: 0 }),
+      ),
+      -1,
+      false,
+    );
+
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(rotate);
+    };
+  }, [rotate, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: translateY.value },
+      { rotate: `${rotate.value}deg` },
+    ],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <IconComponent
+        fill={color}
+        stroke={color}
+        strokeWidth={1}
+        width={size}
+        height={size}
+      />
+    </Animated.View>
+  );
+}
 
 export const SvgButton = React.memo(
   ({
-    size = 64,
+    size = 70,
     onPress,
     translateX,
     variant = "green",
-    icon,
     IconComponent = Star,
     iconColor,
     isCurrentLesson = false,
     isLocked = false,
-  }: PathButtonProps) => {
+    accessibilityLabel,
+  }: SvgButtonProps) => {
     const colors = SVG_BUTTON_COLOR_SETS[variant];
-    const [pressed, setPressed] = useState(false);
-    const depth = Math.max(3, Math.round(size * DEPTH_RATIO));
-    const iconSize = Math.round(size * ICON_RATIO);
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#78909C" : "#FFFFFF");
-
-    const glossStrong = !isLocked && variant !== "gray";
-    const showActiveShine = isCurrentLesson && !isLocked;
-    const topHighlight = isLocked
-      ? "rgba(255,255,255,0.35)"
-      : "rgba(255,255,255,0.72)";
-    const faceBorder = isLocked
-      ? "rgba(255,255,255,0.18)"
-      : "rgba(255,255,255,0.22)";
-
-    const glyph = (
-      <IconComponent
-        color={resolvedIconColor}
-        fill={resolvedIconColor}
-        stroke={resolvedIconColor}
-        strokeWidth={1}
-        width={iconSize}
-        height={iconSize}
-      />
-    );
-
-    const fallbackIcon = isCurrentLesson ? (
-      <CurrentLessonIcon>{glyph}</CurrentLessonIcon>
-    ) : (
-      glyph
-    );
+      iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
+    const depth = Math.max(5, Math.round(size * 0.09));
+    const faceHeight = Math.round(size * 0.72);
+    const faceTop = Math.round(size * 0.08);
+    const rimTop = faceTop + depth;
+    const iconSize = Math.round(size * 0.44);
 
     return (
       <Pressable
-        onPress={onPress}
         disabled={isLocked}
-        onPressIn={isLocked ? undefined : () => setPressed(true)}
-        onPressOut={isLocked ? undefined : () => setPressed(false)}
-        style={{
+        onPress={isLocked ? undefined : onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: isLocked, selected: isCurrentLesson }}
+        style={({ pressed }) => ({
           width: size,
-          height: size + depth,
-          transform: [{ translateX: translateX || 0 }],
-        }}
+          height: size,
+          transform: [
+            { translateX: translateX || 0 },
+            { translateY: pressed && !isLocked ? depth - 1 : 0 },
+            { scale: pressed && !isLocked ? 0.97 : 1 },
+          ],
+        })}
       >
-        <View
-          style={{
-            width: size,
-            height: size + depth,
-            borderRadius: size / 2,
-            backgroundColor: colors.rim,
-            overflow: "hidden",
-            ...crossShadow({
-              color: colors.rim,
-              offsetY: depth + 2,
-              opacity: isLocked ? 0.14 : showActiveShine ? 0.38 : 0.28,
-              blur: showActiveShine ? 18 : 14,
-              elevation: showActiveShine ? 7 : 5,
-            }),
-          }}
-        >
-          <Animated.View
+        <View style={{ width: size, height: size, alignItems: "center" }}>
+          <View
             style={{
+              position: "absolute",
+              top: rimTop,
               width: size,
-              height: size,
-              borderRadius: size / 2,
+              height: faceHeight,
+              borderRadius: faceHeight / 2,
+              backgroundColor: colors.rim,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              top: faceTop,
+              width: size,
+              height: faceHeight,
+              borderRadius: faceHeight / 2,
               backgroundColor: colors.face,
-              marginBottom: depth,
-              overflow: "hidden",
               alignItems: "center",
               justifyContent: "center",
-              borderWidth: 1.5,
-              borderColor: faceBorder,
-              borderTopColor: topHighlight,
-              borderLeftColor: "rgba(255,255,255,0.28)",
-              borderRightColor: "rgba(255,255,255,0.2)",
-              transform: [{ translateY: pressed ? depth : 0 }],
-              ...(pressed ? cssPressStyle : cssReleaseStyle),
+              overflow: "hidden",
             }}
           >
-            {showActiveShine ? <PathCircleShine size={size} /> : null}
-
-            <LinearGradient
-              colors={
-                showActiveShine
-                  ? [
-                      "rgba(255,255,255,0.22)",
-                      "rgba(255,255,255,0.04)",
-                      "rgba(0,0,0,0.03)",
-                    ]
-                  : glossStrong
-                  ? [
-                      "rgba(255,255,255,0.45)",
-                      "rgba(255,255,255,0.1)",
-                      "rgba(0,0,0,0.05)",
-                    ]
-                  : [
-                      "rgba(255,255,255,0.24)",
-                      "rgba(255,255,255,0.05)",
-                      "rgba(0,0,0,0.04)",
-                    ]
-              }
-              locations={[0, 0.42, 1]}
+            <View
+              pointerEvents="none"
               style={{
                 position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: size / 2,
+                top: -Math.round(size * 0.1),
+                left: -Math.round(size * 0.18),
+                width: Math.round(size * 1.35),
+                height: Math.round(size * 0.22),
+                backgroundColor: "rgba(255,255,255,0.28)",
+                transform: [{ rotate: "-24deg" }],
               }}
-              pointerEvents="none"
             />
-
-            {glossStrong && !showActiveShine ? (
-              <LinearGradient
-                colors={[
-                  "rgba(255,255,255,0.38)",
-                  "rgba(255,255,255,0)",
-                  "rgba(255,255,255,0)",
-                ]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 0.55 }}
-                style={{
-                  position: "absolute",
-                  top: size * 0.07,
-                  left: size * 0.14,
-                  width: size * 0.48,
-                  height: size * 0.26,
-                  borderRadius: size * 0.18,
-                  opacity: 0.9,
-                }}
-                pointerEvents="none"
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                bottom: -Math.round(size * 0.02),
+                left: -Math.round(size * 0.12),
+                width: Math.round(size * 1.25),
+                height: Math.round(size * 0.14),
+                backgroundColor: "rgba(255,255,255,0.18)",
+                transform: [{ rotate: "-24deg" }],
+              }}
+            />
+            {isCurrentLesson && !isLocked ? (
+              <CurrentLessonIcon
+                IconComponent={IconComponent}
+                color={resolvedIconColor}
+                size={iconSize}
               />
-            ) : null}
-
-            <View style={{ zIndex: 1 }}>{icon ?? fallbackIcon}</View>
-          </Animated.View>
+            ) : (
+              <IconComponent
+                fill={resolvedIconColor}
+                stroke={resolvedIconColor}
+                strokeWidth={1}
+                width={iconSize}
+                height={iconSize}
+              />
+            )}
+          </View>
         </View>
       </Pressable>
     );

@@ -7,6 +7,7 @@ type Props = {
   lessonNumber: number;
   nodeSize: number;
   muted?: boolean;
+  plain?: boolean;
 };
 
 /** Compact unit + lesson numbers on path nodes (1-based). */
@@ -15,6 +16,7 @@ export function LessonPathBadge({
   lessonNumber,
   nodeSize,
   muted = false,
+  plain = false,
 }: Props) {
   const compact = nodeSize < 70;
   const fontSize = compact ? 8 : 9;
@@ -32,7 +34,12 @@ export function LessonPathBadge({
       pointerEvents="none"
       accessibilityLabel={`Unit ${unitNumber}, lesson ${lessonNumber}`}
     >
-      <View style={[styles.pill, { paddingHorizontal: padH }]}>
+      <View
+        style={[
+          styles.pill,
+          plain ? styles.pillPlain : { paddingHorizontal: padH },
+        ]}
+      >
         <AppText
           style={[styles.unit, { fontSize }]}
           forceLatinFont
@@ -70,6 +77,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.94)",
     borderWidth: 1,
     borderColor: "rgba(26,43,72,0.12)",
+  },
+  pillPlain: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingVertical: 0,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderRadius: 0,
   },
   unit: {
     color: "#0F172A",

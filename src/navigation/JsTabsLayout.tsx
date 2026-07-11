@@ -5,11 +5,40 @@ import {
 } from "../context/tab-bar-visibility";
 import { TabTransitionProvider } from "../context/TabTransitionContext";
 import { pathnameHidesTabBar } from "../constants/tab-navigation";
-import { Tabs, usePathname } from "expo-router";
-import React from "react";
+import { router, Tabs, usePathname } from "expo-router";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 
+const WARM_TAB_ROUTES = ["/play", "/dashboard", "/more"] as const;
+
+function useWarmTabRoutes() {
+  useEffect(() => {
+    let cancelled = false;
+    const timers = WARM_TAB_ROUTES.map((href, index) =>
+      setTimeout(() => {
+        if (cancelled) return;
+
+        const prefetch = () => {
+          if (!cancelled) router.prefetch(href);
+        };
+
+        if (typeof globalThis.requestIdleCallback === "function") {
+          globalThis.requestIdleCallback(prefetch, { timeout: 800 });
+        } else {
+          prefetch();
+        }
+      }, 500 + index * 550),
+    );
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+}
+
 function JsTabsLayoutInner() {
+  useWarmTabRoutes();
   const pathname = usePathname();
   const { hidden: contextHidden } = useTabBarVisibility();
   const hideTabBar = contextHidden || pathnameHidesTabBar(pathname);
@@ -23,7 +52,11 @@ function JsTabsLayoutInner() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: "#000000",
         tabBarInactiveTintColor: "#8E95A3",
-        animation: "none",
+        animation: "fade",
+        transitionSpec: {
+          animation: "timing",
+          config: { duration: 160 },
+        },
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: "transparent" }} />
         ),

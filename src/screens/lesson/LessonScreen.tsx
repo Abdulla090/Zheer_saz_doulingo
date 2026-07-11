@@ -100,6 +100,9 @@ export default function LessonScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
+  const displayUnitNumber =
+    parseInt((Array.isArray(params.du) ? params.du[0] : params.du) as string) ||
+    lessonId + 1;
   const lessonIndex = parseInt(params.li as string) || 0;
   const startQuestion = parseInt(
     (Array.isArray(params.q) ? params.q[0] : params.q) as string,
@@ -541,7 +544,7 @@ export default function LessonScreen() {
           progressFillStyle={progressStyle}
           hearts={hearts}
           onBack={exitToPath}
-          unitNumber={lessonId + 1}
+          unitNumber={displayUnitNumber}
           lessonNumber={lessonIndex + 1}
           variant={isKidsMode ? "kids" : "default"}
         />

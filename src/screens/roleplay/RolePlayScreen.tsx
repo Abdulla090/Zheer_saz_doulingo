@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useTTS } from "../../hooks/use-tts";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { useRouter } from "expo-router";
@@ -25,12 +26,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
@@ -44,7 +40,6 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import * as Speech from "expo-speech";
 import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
 
 const C = HomePalette;
@@ -254,12 +249,12 @@ export function RolePlayScreen() {
   const isRtl = isKu || locale === "ar";
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
+  const { speak: speakTts, stop: stopTts } = useTTS();
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
   const [status, setStatus] = useState<Status>("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
 
-  const synthRef = useRef<SpeechSynthesis | null>(null);
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
   const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -276,20 +271,6 @@ export function RolePlayScreen() {
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
 
-  useEffect(() => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis;
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      clearListenTimeout();
-      stopSpeaking();
-      speech.abort();
-    };
-  }, [speech]);
-
   function clearListenTimeout() {
     if (listenTimeoutRef.current) {
       clearTimeout(listenTimeoutRef.current);
@@ -297,17 +278,17 @@ export function RolePlayScreen() {
     }
   }
 
-  function stopSpeaking() {
-    try {
-      if (Platform.OS === "web") {
-        synthRef.current?.cancel();
-      } else {
-        Speech.stop();
-      }
-    } catch {
-      /* noop */
-    }
-  }
+  const stopSpeaking = useCallback(() => {
+    void stopTts();
+  }, [stopTts]);
+
+  useEffect(() => {
+    return () => {
+      clearListenTimeout();
+      stopSpeaking();
+      speech.abort();
+    };
+  }, [speech, stopSpeaking]);
 
   function stopListening() {
     clearListenTimeout();
@@ -322,51 +303,14 @@ export function RolePlayScreen() {
 
   function speak(text: string) {
     const sc = scenarioRef.current;
-    if (Platform.OS === "web") {
-      if (synthRef.current) {
-        synthRef.current.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.pitch = sc.voicePitch;
-        utterance.rate = sc.voiceRate;
-        utterance.lang = "en-US";
-        const voices = synthRef.current.getVoices();
-        const pref = voices.find(
-          (v) =>
-            v.lang.startsWith("en") &&
-            (v.name.includes("Google") ||
-              v.name.includes("Natural") ||
-              v.name.includes("Samantha")),
-        );
-        if (pref) utterance.voice = pref;
-        utterance.onstart = () => setStatusNow("speaking");
-        utterance.onend = () => {
-          if (statusRef.current === "speaking") void startListening();
-        };
-        utterance.onerror = () => {
-          if (statusRef.current === "speaking") setStatusNow("idle");
-        };
-        synthRef.current.speak(utterance);
-        setStatusNow("speaking");
-      }
-    } else {
-      setStatusNow("speaking");
-      Speech.stop();
-      Speech.speak(text, {
-        language: "en-US",
-        pitch: sc.voicePitch,
-        rate: sc.voiceRate,
-        onStart: () => setStatusNow("speaking"),
-        onDone: () => {
-          if (statusRef.current === "speaking") void startListening();
-        },
-        onStopped: () => {
-          if (statusRef.current === "speaking") setStatusNow("idle");
-        },
-        onError: () => {
-          if (statusRef.current === "speaking") setStatusNow("idle");
-        },
-      });
-    }
+    setStatusNow("speaking");
+    void speakTts(text, "en", "roleplay", {
+      rate: sc.voiceRate,
+      pitch: sc.voicePitch,
+      onDone: () => {
+        if (statusRef.current === "speaking") void startListening();
+      },
+    });
   }
 
   const handleUserResponse = useCallback(async (userText: string) => {
@@ -438,7 +382,7 @@ export function RolePlayScreen() {
       setHistory((p) => [...p, { sender: "ai", text: r }]);
       speak(r);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    }, 1100);
+    }, 700);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startListening = useCallback(async () => {
@@ -477,7 +421,7 @@ export function RolePlayScreen() {
         setStatusNow("idle");
       }
     }, 12000);
-  }, [handleUserResponse, setStatusNow, speech]);
+  }, [handleUserResponse, setStatusNow, speech, stopSpeaking]);
 
   function startSession() {
     stopAll();
@@ -537,7 +481,7 @@ export function RolePlayScreen() {
         <HomeMeshBackground />
 
         {/* Header */}
-        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
+        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
           </HomeLiquidPill>
@@ -657,7 +601,7 @@ export function RolePlayScreen() {
       <HomeMeshBackground />
 
       {/* Session Header */}
-      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: isRtl ? "row-reverse" : "row" }]}>
+      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
         <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
         </HomeLiquidPill>
