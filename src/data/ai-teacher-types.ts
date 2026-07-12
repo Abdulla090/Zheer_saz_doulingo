@@ -16,7 +16,9 @@ export type AiTeacherCriterion = {
 export type AiTeacherPrompt = {
   id: string;
   title: string;
+  titleKu?: string;
   scenario: string;
+  scenarioKu?: string;
   mode: AiTeacherMode;
 };
 

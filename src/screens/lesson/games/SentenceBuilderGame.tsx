@@ -7,6 +7,7 @@
 
 import { tileFlyTiming } from "../../../components/animations/motion";
 import { AppText } from "../../../components/ui/AppText";
+import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
@@ -94,17 +95,17 @@ const getWebCoords = (el: any) => {
   return null;
 };
 
-function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean }) {
+function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; languageCode?: string }) {
   const flyProgress = useSharedValue(0);
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
     return {
-      position: "absolute",
-      left: interpolate(p, [0, 1], [session.fromX, session.toX]),
-      top: interpolate(p, [0, 1], [session.fromY, session.toY]),
       width: interpolate(p, [0, 1], [session.fromW, session.toW]),
       height: interpolate(p, [0, 1], [session.fromH, session.toH]),
-      transform: [{ scale: interpolate(p, [0, 0.55, 1], [1, 1.05, 1]) }],
+      transform: [
+        { translateX: interpolate(p, [0, 1], [session.fromX, session.toX]) },
+        { translateY: interpolate(p, [0, 1], [session.fromY, session.toY]) },
+      ],
       opacity: 1,
     };
   });
@@ -116,11 +117,25 @@ function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFini
   }, [session, onFinish, flyProgress]);
 
   return (
-    <Animated.View style={flyStyle}>
-      <View style={s.flyTileFill}>
-        <LightWordTile label={session.word} state="pending" isKids={isKids} />
-      </View>
-    </Animated.View>
+    <View
+      {...(Platform.OS === "web" ? ({ dir: getLanguageDirection(languageCode) } as any) : {})}
+      style={[s.flySessionLayer, Platform.OS !== "web" ? { direction: getLanguageDirection(languageCode) } : undefined]}
+    >
+      <Animated.View style={flyStyle}>
+        <View style={s.flyTileFill}>
+          <LightWordTile
+            label={session.word}
+            state="pending"
+            isKids={isKids}
+            languageCode={languageCode}
+            fitLabel
+            fitLabelLines={2}
+            fontSize={session.word.length > 12 ? 10 : session.word.length > 9 ? 11 : 14}
+            style={s.flyWordTile}
+          />
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -128,6 +143,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const { t } = useI18n();
   const { width } = useWindowDimensions();
   const compact = width < 390;
+  const targetDirection = getLanguageDirection(question.targetLanguage);
   
   const shuffledWordBank = React.useMemo(() => {
     const bank = [...question.wordBank];
@@ -249,8 +265,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           fromH: bank.h,
           toX: slot.x - root.x,
           toY: slot.y - root.y,
-          toW: Math.max(bank.w, slot.w),
-          toH: Math.max(bank.h, slot.h),
+          toW: slot.w,
+          toH: slot.h,
         },
       ]);
     },
@@ -279,7 +295,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   };
 
   const check = () => {
-    if (!sentence.length || fb !== "idle") return;
+    if (!sentence.length || flySessions.length > 0 || fb !== "idle") return;
     const placed = sentence.map((p) => p.word);
     const ok =
       placed.join(" ").toLowerCase() ===
@@ -311,7 +327,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     return "pending";
   };
 
-  const canCheck = sentence.length > 0 && fb !== "correct";
+  const canCheck = sentence.length + flySessions.length > 0 && fb !== "correct";
 
   return (
     <GameRoot style={{ flex: 1 }}>
@@ -341,91 +357,115 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             <LightQuestionPrompt
               label={t("lessons.questionLabel")}
               forceKurdishFont
+              contentLanguageCode={question.sourceLanguage}
               variant={pathMode === "kids" ? "kids" : "default"}
             >
               {question.kurdishSentence}
             </LightQuestionPrompt>
 
             <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <Animated.View style={s.slotsRow}>
-                {Array.from({ length: slotCount }).map((_, i) => {
-                  const placed = sentence[i];
-                  const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
+              <Animated.View
+                {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+                style={[
+                  s.slotsRow,
+                  { flexDirection: "row" },
+                  Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+                ]}
+              >
+                {(() => {
+                  const slotsArray = Array.from({ length: slotCount }).map((_, i) => i);
+                  return slotsArray.map((i) => {
+                    const placed = sentence[i];
+                    const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
 
-                  return (
-                    <View
-                      key={`slot-${i}`}
-                      ref={(r) => {
-                        slotRefs.current[i] = r;
-                      }}
-                      onLayout={() => {
-                        slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                          slotCoords.current[i] = { x, y, w, h };
-                        });
-                      }}
-                      collapsable={false}
-                      style={s.slotCell}
-                    >
-                      {placed && !hideWhileFlying ? (
-                        <Animated.View
-                          collapsable={false}
-                        >
-                          <LightWordTile
-                            label={placed.word}
-                            state={slotTileState(i)}
-                            onPress={() => removeFromSlot(i)}
-                            isKids={pathMode === "kids"}
-                            wrapLabel={placed.word.length > 10}
-                            fontSize={placed.word.length > 12 ? 14 : undefined}
-                            style={[s.wordTile, compact && s.wordTileCompact]}
-                          />
-                        </Animated.View>
-                      ) : (
-                        <View style={s.emptySlot}>
-                          <AppText style={s.slotNumber} forceLatinFont latinRole="bold">
-                            {i + 1}
-                          </AppText>
-                        </View>
-                      )}
-                    </View>
-                  );
-                })}
+                    return (
+                      <View
+                        key={`slot-${i}`}
+                        ref={(r) => {
+                          slotRefs.current[i] = r;
+                        }}
+                        onLayout={() => {
+                          slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                            slotCoords.current[i] = { x, y, w, h };
+                          });
+                        }}
+                        collapsable={false}
+                        style={s.slotCell}
+                      >
+                        {placed && !hideWhileFlying ? (
+                          <Animated.View
+                            collapsable={false}
+                          >
+                            <LightWordTile
+                              label={placed.word}
+                              state={slotTileState(i)}
+                              onPress={() => removeFromSlot(i)}
+                              isKids={pathMode === "kids"}
+                              languageCode={question.targetLanguage}
+                              fitLabel
+                              fitLabelLines={2}
+                              fontSize={placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14}
+                              style={s.slotWordTile}
+                            />
+                          </Animated.View>
+                        ) : (
+                          <View style={s.emptySlot}>
+                            <AppText style={s.slotNumber} forceLatinFont latinRole="bold">
+                              {i + 1}
+                            </AppText>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  });
+                })()}
               </Animated.View>
             </Animated.View>
 
             <View style={s.wordBankSpacer} />
 
-            <Animated.View style={s.bank}>
-              {shuffledWordBank.map((w, i) => {
-                const taken = usedBank[i];
-                return (
-                  <View
-                    key={`bank-${i}`}
-                    ref={(el) => { bankRefs.current[i] = el; }}
-                    onLayout={() => {
-                      bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                        bankCoords.current[i] = { x, y, w, h };
-                      });
-                    }}
-                    collapsable={false}
-                    style={s.bankCell}
-                  >
-                    <View style={s.bankPlaceholder} />
-                    <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
-                      <LightWordTile
-                        label={w}
-                        state="idle"
-                        onPress={() => addWord(i)}
-                        disabled={taken || fb !== "idle"}
-                        isKids={pathMode === "kids"}
-                        wrapLabel={w.length > 10}
-                        fontSize={w.length > 12 ? 14 : undefined}
-                        style={[s.wordTile, compact && s.wordTileCompact]}
-                      />
+            <Animated.View
+              {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+              style={[
+                s.bank,
+                { flexDirection: "row" },
+                Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+              ]}
+            >
+              {(() => {
+                const bankItemsArray = shuffledWordBank.map((w, i) => ({ w, i }));
+                return bankItemsArray.map(({ w, i }) => {
+                  const taken = usedBank[i];
+                  return (
+                    <View
+                      key={`bank-${i}`}
+                      ref={(el) => { bankRefs.current[i] = el; }}
+                      onLayout={() => {
+                        bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                          bankCoords.current[i] = { x, y, w, h };
+                        });
+                      }}
+                      collapsable={false}
+                      style={s.bankCell}
+                    >
+                      <View style={s.bankPlaceholder} />
+                      <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
+                        <LightWordTile
+                          label={w}
+                          state="idle"
+                          onPress={() => addWord(i)}
+                          disabled={taken || fb !== "idle"}
+                          isKids={pathMode === "kids"}
+                          languageCode={question.targetLanguage}
+                          fitLabel
+                          fontSize={w.length > 10 ? 13 : 15}
+                          style={[s.wordTile, compact && s.wordTileCompact]}
+                        />
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
+                  );
+                });
+              })()}
             </Animated.View>
           </View>
         </ScrollView>
@@ -439,7 +479,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             collapsable={false}
           >
             {flySessions.map(session => (
-              <FlyingTile key={session.id} session={session} onFinish={finishFly} isKids={pathMode === "kids"} />
+              <FlyingTile key={session.id} session={session} onFinish={finishFly} isKids={pathMode === "kids"} languageCode={question.targetLanguage} />
             ))}
           </Animated.View>
         ) : null}
@@ -450,7 +490,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           <LightCheckButton
             label={t("lessons.check")}
             onPress={check}
-            disabled={!canCheck || flySessions.length > 0}
+            disabled={!canCheck}
             variant={pathMode === "kids" ? "kids" : "default"}
           />
         </View>
@@ -483,9 +523,8 @@ const s = StyleSheet.create({
   },
   bank: {
     flexWrap: "wrap",
-    gap: 14,
     justifyContent: "center",
-    paddingTop: 8,
+    paddingTop: 6,
     paddingBottom: 4,
   },
   wordBankSpacer: {
@@ -494,6 +533,8 @@ const s = StyleSheet.create({
   },
   bankCell: {
     position: "relative",
+    marginHorizontal: 4,
+    marginVertical: 5,
   },
   bankPlaceholder: {
     position: "absolute",
@@ -511,30 +552,42 @@ const s = StyleSheet.create({
     opacity: 0,
   },
   slotsWrap: {
-    minHeight: 138,
-    paddingTop: 22,
+    minHeight: 118,
+    paddingTop: 16,
     paddingBottom: 6,
   },
   slotsRow: {
     flexWrap: "wrap",
-    columnGap: 14,
-    rowGap: 16,
     justifyContent: "flex-start",
   },
   slotCell: {
-    minWidth: 72,
-    minHeight: 48,
+    width: 74,
+    height: 48,
+    marginHorizontal: 2,
+    marginVertical: 5,
   },
   wordTile: {
-    maxWidth: 176,
+    minHeight: 42,
+    maxWidth: 156,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 14,
   },
   wordTileCompact: {
-    maxWidth: 140,
+    maxWidth: 128,
+  },
+  slotWordTile: {
+    width: 74,
+    height: 48,
+    minHeight: 48,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   emptySlot: {
-    minWidth: 72,
+    width: 74,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: L.slotDash,
@@ -559,8 +612,24 @@ const s = StyleSheet.create({
     bottom: 0,
     zIndex: 40,
   },
+  flySessionLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "flex-start",
+  },
   flyTileFill: {
     flex: 1,
     justifyContent: "center",
+  },
+  flyWordTile: {
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
 });

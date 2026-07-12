@@ -55,8 +55,8 @@ export function VoiceTutorScreen() {
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
   const tutor = useGeminiVoiceTutor();
-  const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const level = useSettingsStore((s) => s.englishLevel) || 5;
   const onboardingComplete = useSettingsStore((s) => s.tutorOnboardingComplete);
@@ -300,7 +300,7 @@ export function VoiceTutorScreen() {
 
   return (
     <View style={styles.root} {...panHandlers}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
 
       {/* ── TOP LIQUID SHEET (Pulls down from top) ── */}
       <Animated.View
@@ -311,7 +311,7 @@ export function VoiceTutorScreen() {
             left: 0,
             width: screenWidth,
             height: screenHeight,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: colors.background,
             zIndex: 15,
           },
           topSheetAnim,
@@ -322,7 +322,7 @@ export function VoiceTutorScreen() {
             <Defs>
               <SvgLinearGradient id="topWaveGrad" x1="0" y1="1" x2="0" y2="0">
                 <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
-                <Stop offset="1" stopColor="#FFFFFF" stopOpacity="1" />
+                <Stop offset="1" stopColor={colors.background} stopOpacity="1" />
               </SvgLinearGradient>
             </Defs>
             <AnimatedPath animatedProps={topWaveProps} fill="url(#topWaveGrad)" />
@@ -420,7 +420,7 @@ export function VoiceTutorScreen() {
 
       {/* CONVERSATION ANALYSIS SHEET */}
       <Animated.View
-        style={[styles.analysisOverlay, analysisAnim, { backgroundColor: "#FFFFFF" }]}
+        style={[styles.analysisOverlay, analysisAnim, { backgroundColor: colors.background }]}
         pointerEvents={analysisOpen ? "auto" : "none"}
       >
         {/* Wave at top edge of bottom sheet */}
@@ -429,7 +429,7 @@ export function VoiceTutorScreen() {
             <Defs>
               <SvgLinearGradient id="bottomWaveGrad" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
-                <Stop offset="1" stopColor="#FFFFFF" stopOpacity="1" />
+                <Stop offset="1" stopColor={colors.background} stopOpacity="1" />
               </SvgLinearGradient>
             </Defs>
             <AnimatedPath animatedProps={bottomWaveProps} fill="url(#bottomWaveGrad)" />
@@ -459,7 +459,7 @@ export function VoiceTutorScreen() {
               <HugeiconsIcon
                 icon={Cancel01Icon}
                 size={20}
-                color={C.gray}
+                color={colors.mutedForeground}
                 strokeWidth={2.5}
               />
             </PressableScale>
@@ -523,7 +523,7 @@ export function VoiceTutorScreen() {
                   <AppText style={[styles.metricVal, { fontSize: 13, textAlign: "center", marginTop: 4 }]} forceLatinFont>
                     Lv. {level}
                   </AppText>
-                  <AppText style={{ fontSize: 9, color: C.gray, fontWeight: "600", textTransform: "uppercase" }}>
+                  <AppText style={{ fontSize: 9, color: colors.mutedForeground, fontWeight: "600", textTransform: "uppercase" }}>
                     {LEVEL_CONFIGS[level]?.cefr || "A1"}
                   </AppText>
                 </View>
@@ -567,7 +567,7 @@ export function VoiceTutorScreen() {
                       );
                     })
                   ) : (
-                    <AppText style={[{ fontSize: 13, color: C.gray }, isRtl && styles.rtlText]}>
+                    <AppText style={[{ fontSize: 13, color: colors.mutedForeground }, isRtl && styles.rtlText]}>
                       {isKu ? "هیچ وشەیەکی نوێ فێرنەکراوە." : "No new words introduced yet."}
                     </AppText>
                   )}
@@ -657,7 +657,7 @@ export function VoiceTutorScreen() {
 
                       {error.explanation ? (
                         <View style={{ marginTop: 4 }}>
-                          <AppText style={[{ fontSize: 12, color: C.gray, lineHeight: 18 }, isRtl && styles.rtlText]} forceLatinFont>
+                          <AppText style={[{ fontSize: 12, color: colors.mutedForeground, lineHeight: 18 }, isRtl && styles.rtlText]} forceLatinFont>
                             {error.explanation}
                           </AppText>
                         </View>
@@ -674,11 +674,11 @@ export function VoiceTutorScreen() {
   );
 }
 
-const createStyles = (colors: any) =>
+const createStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: C.meshBottom,
+      backgroundColor: colors.background,
     },
     rtlRow: {
       flexDirection: "row-reverse",
@@ -731,7 +731,7 @@ const createStyles = (colors: any) =>
     topicPillText: {
       fontSize: 13,
       fontWeight: "700",
-      color: C.navy,
+      color: colors.foreground,
     },
     langBadge: {
       width: 40,
@@ -774,7 +774,7 @@ const createStyles = (colors: any) =>
     },
     statusLabel: {
       fontSize: 12,
-      color: C.gray,
+      color: colors.mutedForeground,
       fontWeight: "800",
       letterSpacing: 1.2,
       textTransform: "uppercase",
@@ -783,7 +783,7 @@ const createStyles = (colors: any) =>
     transcriptText: {
       fontSize: 22,
       fontWeight: "400",
-      color: C.navy,
+      color: colors.foreground,
       textAlign: "center",
       lineHeight: 32,
       fontFamily: "DINNextRoundedRegular",
@@ -831,7 +831,7 @@ const createStyles = (colors: any) =>
     sheetTitle: {
       fontSize: 24,
       fontWeight: "800",
-      color: C.navy,
+      color: colors.foreground,
       marginLeft: 12,
       flex: 1,
     },
@@ -864,7 +864,7 @@ const createStyles = (colors: any) =>
     topicTitle: {
       fontSize: 14,
       fontWeight: "700",
-      color: C.navy,
+      color: colors.foreground,
       textAlign: "center",
     },
     analysisOverlay: {
@@ -904,7 +904,7 @@ const createStyles = (colors: any) =>
     analysisHeaderTitle: {
       fontSize: 22,
       fontWeight: "800",
-      color: C.navy,
+      color: colors.foreground,
       fontFamily: "DINNextRoundedBold",
     },
     analysisCloseBtn: {
@@ -923,7 +923,7 @@ const createStyles = (colors: any) =>
     },
     emptyText: {
       fontSize: 15,
-      color: C.gray,
+      color: colors.mutedForeground,
       textAlign: "center",
       lineHeight: 24,
     },
@@ -936,12 +936,12 @@ const createStyles = (colors: any) =>
     },
     metricCard: {
       flex: 1,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderRadius: 20,
       paddingVertical: 18,
       alignItems: "center",
       borderWidth: 1,
-      borderColor: "rgba(26, 43, 72, 0.06)",
+      borderColor: colors.border,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.02,
@@ -951,7 +951,7 @@ const createStyles = (colors: any) =>
     metricLabel: {
       fontSize: 10,
       fontWeight: "800",
-      color: C.gray,
+      color: colors.mutedForeground,
       letterSpacing: 1.1,
     },
     metricVal: {
@@ -968,7 +968,7 @@ const createStyles = (colors: any) =>
     sectionHeading: {
       fontSize: 15,
       fontWeight: "800",
-      color: C.navy,
+      color: colors.foreground,
       marginBottom: 16,
       letterSpacing: 0.2,
       fontFamily: "DINNextRoundedBold",
@@ -1038,7 +1038,7 @@ const createStyles = (colors: any) =>
     aiBubbleSender: {
       fontSize: 8,
       fontWeight: "800",
-      color: C.gray,
+      color: colors.mutedForeground,
       marginBottom: 4,
       letterSpacing: 0.8,
     },
@@ -1050,13 +1050,13 @@ const createStyles = (colors: any) =>
     },
     aiBubbleText: {
       fontSize: 15,
-      color: C.navy,
+      color: colors.foreground,
       lineHeight: 22,
       fontFamily: "DINNextRoundedMedium",
     },
     bubbleTime: {
       fontSize: 8,
-      color: "rgba(0,0,0,0.25)",
+      color: isDark ? colors.mutedForeground : "rgba(0,0,0,0.25)",
       alignSelf: "flex-end",
       marginTop: 4,
     },
@@ -1065,11 +1065,11 @@ const createStyles = (colors: any) =>
     },
     recommendationCard: {
       width: "100%",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderRadius: 24,
       padding: 20,
       borderWidth: 1,
-      borderColor: "rgba(26, 43, 72, 0.06)",
+      borderColor: colors.border,
       gap: 16,
       marginBottom: 12,
     },
@@ -1097,7 +1097,7 @@ const createStyles = (colors: any) =>
     },
     recOriginalText: {
       fontSize: 14,
-      color: C.navy,
+      color: colors.foreground,
       fontWeight: "500",
       lineHeight: 20,
     },

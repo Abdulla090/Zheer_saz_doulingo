@@ -1,7 +1,11 @@
 import { FontLatin } from "../../constants/typography";
 import { useLanguageFont } from "../../hooks/useLanguageFont";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { dirForText } from "../../screens/lesson/games/game-text";
+import {
+  getLanguageDirection,
+  resolveTextAlign,
+  type LogicalAlignment,
+} from "../../i18n/direction";
 import { latinRoleFromWeight } from "../../utils/pickFontFamily";
 import React, { useMemo } from "react";
 import {
@@ -9,23 +13,9 @@ import {
   StyleSheet,
   Text,
   type TextProps,
+  type TextStyle,
 } from "react-native";
 import { useLocaleStore } from "../../stores/useLocaleStore";
-import { LANGUAGES } from "../../config/languages";
-
-function getFirstChar(children: React.ReactNode): string {
-  if (typeof children === "string" || typeof children === "number") {
-    const s = String(children).trim();
-    return s ? s.charAt(0) : "";
-  }
-  if (Array.isArray(children)) {
-    for (const child of children) {
-      const char = getFirstChar(child);
-      if (char) return char;
-    }
-  }
-  return "";
-}
 
 export type AppTextProps = TextProps & {
   /** Alias for forceSourceFont */
@@ -33,10 +23,16 @@ export type AppTextProps = TextProps & {
   /** Always use DIN (English UI). */
   forceLatinFont?: boolean;
   latinRole?: keyof typeof FontLatin;
+  /** Language of the rendered content, independent from the surrounding UI. */
+  languageCode?: string;
+  /** Logical alignment resolved against languageCode. */
+  align?: LogicalAlignment;
+  /** Stretch the text block so native alignment is deterministic. */
+  fullWidth?: boolean;
 };
 
 /**
- * Text with automatic Source vs Latin font and RTL direction.
+ * Theme-aware localized text. Mixed-language content must pass languageCode.
  */
 export function AppText({
   style,
@@ -44,11 +40,14 @@ export function AppText({
   forceKurdishFont,
   forceLatinFont,
   latinRole,
+  languageCode,
+  align,
+  fullWidth,
   ...props
 }: AppTextProps) {
   const languageFont = useLanguageFont();
-  const sourceLang = useLocaleStore((s) => s.selectedSourceLanguage);
-  const isSourceRtl = LANGUAGES[sourceLang]?.rtl || false;
+  const uiLanguage = useLocaleStore((s) => s.selectedUiLanguage);
+  const sourceLanguage = useLocaleStore((s) => s.selectedSourceLanguage);
   const { colors } = useThemeColors();
 
   const flat = useMemo(() => {
@@ -56,45 +55,54 @@ export function AppText({
     return StyleSheet.flatten(style);
   }, [style]);
 
-  const firstChar = useMemo(() => {
-    if (forceKurdishFont || forceLatinFont) return "";
-    return getFirstChar(children);
-  }, [forceKurdishFont, forceLatinFont, children]);
-
   const role = useMemo(() => {
     return latinRole ?? latinRoleFromWeight(flat?.fontWeight);
   }, [latinRole, flat?.fontWeight]);
 
+  const effectiveLanguageCode = forceLatinFont
+    ? "en"
+    : languageCode ?? (forceKurdishFont ? sourceLanguage : uiLanguage);
+  const direction = getLanguageDirection(effectiveLanguageCode);
+
   const fontFamily = useMemo(() => {
-    return forceLatinFont ? FontLatin[role] : (languageFont || FontLatin[role]);
-  }, [forceLatinFont, role, languageFont]);
+    return forceLatinFont || direction === "ltr"
+      ? FontLatin[role]
+      : (languageFont || FontLatin[role]);
+  }, [direction, forceLatinFont, role, languageFont]);
 
-  const direction = useMemo(() => {
-    if (forceKurdishFont) return { writingDirection: isSourceRtl ? "rtl" : "ltr", textAlign: isSourceRtl ? "right" : "left" } as any;
-    if (forceLatinFont) return { writingDirection: "ltr", textAlign: "left" } as any;
-    return dirForText(firstChar);
-  }, [forceKurdishFont, forceLatinFont, firstChar, isSourceRtl]);
+  const requestedPhysicalAlignment =
+    flat?.textAlign === "left" || flat?.textAlign === "right" || flat?.textAlign === "center"
+      ? flat.textAlign
+      : undefined;
+  const textAlign = align
+    ? resolveTextAlign(direction, align)
+    : requestedPhysicalAlignment ?? resolveTextAlign(direction, "start");
+  const directionStyle = {
+    direction,
+    textAlign,
+    ...(Platform.OS === "ios" ? { writingDirection: direction } : null),
+  } as const;
 
-  const combinedStyle = useMemo(() => {
-    const flattened = StyleSheet.flatten([
-      direction,
-      { color: colors.foreground },
-      style,
-      { backgroundColor: "transparent" },
-    ]);
-    if (flattened.textAlign === "center" || Platform.OS === "android") {
-      flattened.writingDirection = undefined;
-    }
-    const { fontFamily: _ignoredFont, ...rest } = flattened;
-    return {
-      ...rest,
-      fontFamily,
-    };
-  }, [colors.foreground, style, direction, fontFamily]);
+  const flattened = StyleSheet.flatten([
+    { color: colors.foreground },
+    style,
+    fullWidth && ({ width: "100%", alignSelf: "stretch" } as TextStyle),
+    { backgroundColor: "transparent" },
+    // Keep this last: localized direction must not be overridden by a parent style array.
+    directionStyle,
+  ]) as TextStyle;
+  const { fontFamily: _ignoredFont, ...rest } = flattened;
+  const combinedStyle: TextStyle = { ...rest, fontFamily };
+
+  const webProps = Platform.OS === "web"
+    ? ({ dir: direction, lang: effectiveLanguageCode } as Record<string, string>)
+    : undefined;
 
   return (
     <Text
+      {...webProps}
       style={combinedStyle}
+      accessibilityLanguage={effectiveLanguageCode}
       {...props}
     >
       {children}

@@ -4,7 +4,12 @@
 
 import type { AnswerTier } from "../utils/answer-tier";
 
-export type VoiceQuestion = {
+export type LessonLanguageContext = {
+  sourceLanguage?: string;
+  targetLanguage?: string;
+};
+
+export type VoiceQuestion = LessonLanguageContext & {
   type: "voice";
   prompt: string;
   targetWord: string;
@@ -15,7 +20,7 @@ export type VoiceQuestion = {
   xp: number;
 };
 
-export type SentenceBuilderQuestion = {
+export type SentenceBuilderQuestion = LessonLanguageContext & {
   type: "sentence_builder";
   kurdishSentence: string;
   wordBank: string[];
@@ -23,7 +28,7 @@ export type SentenceBuilderQuestion = {
   xp: number;
 };
 
-export type MultipleChoiceQuestion = {
+export type MultipleChoiceQuestion = LessonLanguageContext & {
   type: "multiple_choice";
   prompt: string;
   promptLang: string;
@@ -32,13 +37,13 @@ export type MultipleChoiceQuestion = {
   xp: number;
 };
 
-export type PairMatchQuestion = {
+export type PairMatchQuestion = LessonLanguageContext & {
   type: "pair_match";
   pairs: { english: string; kurdish: string }[];
   xp: number;
 };
 
-export type FillBlankQuestion = {
+export type FillBlankQuestion = LessonLanguageContext & {
   type: "fill_blank";
   sentenceParts: [string, string];
   kurdishHint: string;
@@ -47,7 +52,7 @@ export type FillBlankQuestion = {
   xp: number;
 };
 
-export type ConversationPickQuestion = {
+export type ConversationPickQuestion = LessonLanguageContext & {
   type: "conversation_pick";
   situation: string;
   theyAsk: string;
@@ -58,13 +63,13 @@ export type ConversationPickQuestion = {
   xp: number;
 };
 
-export type ImagePairMatchQuestion = {
+export type ImagePairMatchQuestion = LessonLanguageContext & {
   type: "image_pair_match";
   pairs: { english: string; kurdish: string; image: any }[];
   xp: number;
 };
 
-export type ImageMultipleChoiceQuestion = {
+export type ImageMultipleChoiceQuestion = LessonLanguageContext & {
   type: "image_multiple_choice";
   prompt: string;
   correctAnswer: string;
@@ -73,7 +78,7 @@ export type ImageMultipleChoiceQuestion = {
   xp: number;
 };
 
-export type MemoryFlipQuestion = {
+export type MemoryFlipQuestion = LessonLanguageContext & {
   type: "memory_flip";
   pairs: { english: string; kurdish: string; image: any }[];
   xp: number;
@@ -87,7 +92,7 @@ export type KidsChoice = {
   arabicLabel?: string;
 };
 
-export type KidsPlayQuestion = {
+export type KidsPlayQuestion = LessonLanguageContext & {
   type: "kids_play";
   xp: number;
   variant: "scene" | "bubble" | "feed" | "shadow" | "pick" | "yes_no" | "treasure";
@@ -106,7 +111,7 @@ export type KidsPlayQuestion = {
   treasureRevealLabel?: string;
 };
 
-export type ParagraphSpeechQuestion = {
+export type ParagraphSpeechQuestion = LessonLanguageContext & {
   type: "paragraph_speech";
   mode: "practice" | "quiz";
   paragraphs: string[];

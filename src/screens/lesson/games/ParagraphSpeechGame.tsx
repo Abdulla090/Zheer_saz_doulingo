@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, I18nManager, ScrollView } from "react-native";
+import { StyleSheet, View, ScrollView } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming, cancelAnimation } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
+import { DirectionalView } from "../../../components/ui/Directional";
 import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
 import { ParagraphSpeechQuestion } from "../../../data/types";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
@@ -9,6 +10,7 @@ import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { LightGameHeading, LightCheckButton } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
 import { useI18n } from "../../../hooks/useI18n";
+import { ltrText } from "./game-text";
 
 type Props = {
   question: ParagraphSpeechQuestion;
@@ -147,14 +149,14 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const renderText = () => {
     if (!evaluation) {
       return (
-        <AppText style={styles.paragraphText}>
+        <AppText languageCode={question.targetLanguage} align="start" fullWidth style={styles.paragraphText}>
           {fullText}
         </AppText>
       );
     }
 
     return (
-      <View style={{ flexDirection: I18nManager.isRTL ? "row-reverse" : "row", flexWrap: "wrap", justifyContent: "flex-start" }}>
+      <DirectionalView languageCode={question.targetLanguage ?? "en"} style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" }}>
         {evaluation.wordAnalysis.map((item, idx) => (
           <AppText
             key={idx}
@@ -162,11 +164,13 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
               styles.wordText,
               { color: item.correct ? "#10B981" : "#EF4444" },
             ]}
+            languageCode={question.targetLanguage}
+            align="start"
           >
             {item.word}{" "}
           </AppText>
         ))}
-      </View>
+      </DirectionalView>
     );
   };
 
@@ -272,11 +276,13 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     color: "#334155",
     fontFamily: "DINNextRoundedBold",
+    ...ltrText,
   },
   wordText: {
     fontSize: 22,
     lineHeight: 30,
     fontFamily: "DINNextRoundedBold",
+    ...ltrText,
   },
   micStage: {
     alignItems: "center",

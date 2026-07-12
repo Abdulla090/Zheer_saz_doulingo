@@ -1,94 +1,366 @@
-import { AppText } from "../../components/ui/AppText";
-import { useThemeColors } from "../../hooks/useThemeColors";
-import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
-import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import { useI18n } from "../../hooks/useI18n";
-import { useProgressStore } from "../../stores/useProgressStore";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { useLocaleStore } from "../../stores/useLocaleStore";
-import { hapticSelection } from "../../utils/haptics";
-import { useRouter } from "expo-router";
-import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  Fire02Icon,
-  Shield01Icon,
   Award01Icon,
   BookOpen02Icon,
-  Settings01Icon,
-  Edit01Icon,
-  CheckmarkCircle02Icon,
   Cancel01Icon,
+  CheckmarkCircle02Icon,
+  Edit01Icon,
+  Fire02Icon,
   Layers01Icon,
-  SparklesIcon,
+  Settings01Icon,
+  Shield01Icon,
 } from "@hugeicons/core-free-icons";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  I18nManager,
-} from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useAuth } from "../../context/AuthContext";
-import { supabase } from "../../lib/supabase";
-import { PREMADE_AVATARS, getLocalPremadeAvatar } from "../../constants/avatars";
-import { PressableScale, GlassCard } from "../../components/animations";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  I18nManager,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { tabBarScrollPadding } from "../../constants/layout";
-import { HomeMeshBackground, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
 
-const CameraIconSvg = ({ size = 14, color = "#FFFFFF" }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+import { PressableScale } from "../../components/animations";
+import { AppText } from "../../components/ui/AppText";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { PREMADE_AVATARS, getLocalPremadeAvatar } from "../../constants/avatars";
+import { tabBarScrollPadding } from "../../constants/layout";
+import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
+import { supabase } from "../../lib/supabase";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { hapticSelection } from "../../utils/haptics";
+import { crossShadow } from "../../utils/shadows";
+
+const CameraIcon = ({ size = 14, color = "#FFFFFF" }) => (
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth={2.3}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
     <Circle cx="12" cy="13" r="4" />
   </Svg>
 );
 
+type LocaleCode = "en" | "ku" | "ar";
+
+type ScreenCopy = {
+  title: string;
+  settings: string;
+  guestTitle: string;
+  guestBody: string;
+  signIn: string;
+  student: string;
+  editName: string;
+  saveName: string;
+  cancelEdit: string;
+  namePlaceholder: string;
+  chooseAvatar: string;
+  uploadPhoto: string;
+  progress: string;
+  level: string;
+  levelMessage: (remaining: number, next: number) => string;
+  streak: string;
+  totalXp: string;
+  todayXp: string;
+  paths: string;
+  lessonsCompleted: (count: number) => string;
+  active: string;
+  achievements: string;
+  unlocked: string;
+  inProgress: string;
+  recentActivity: string;
+  lessonCompleted: string;
+  gameCompleted: string;
+  galleryPermission: string;
+  uploadFailed: string;
+};
+
+const COPY: Record<LocaleCode, ScreenCopy> = {
+  en: {
+    title: "Profile",
+    settings: "Open settings",
+    guestTitle: "Keep your progress",
+    guestBody: "Sign in to sync your XP, streak, and achievements across devices.",
+    signIn: "Sign in",
+    student: "Student",
+    editName: "Edit name",
+    saveName: "Save name",
+    cancelEdit: "Cancel editing",
+    namePlaceholder: "Enter your name",
+    chooseAvatar: "Choose an avatar",
+    uploadPhoto: "Upload a photo",
+    progress: "Learning progress",
+    level: "Level",
+    levelMessage: (remaining, next) => `${remaining} XP to reach level ${next}`,
+    streak: "Day streak",
+    totalXp: "Total XP",
+    todayXp: "Today",
+    paths: "Learning paths",
+    lessonsCompleted: (count) => `${count} lessons completed`,
+    active: "Active",
+    achievements: "Achievements",
+    unlocked: "Unlocked",
+    inProgress: "In progress",
+    recentActivity: "Recent activity",
+    lessonCompleted: "Lesson completed",
+    gameCompleted: "Game completed",
+    galleryPermission: "Gallery access permission is required.",
+    uploadFailed: "Failed to upload image",
+  },
+  ku: {
+    title: "پڕۆفایل",
+    settings: "کردنەوەی ڕێکخستنەکان",
+    guestTitle: "پێشکەوتنەکەت بپارێزە",
+    guestBody: "بچۆ ژوورەوە بۆ هاوکاتکردنی خاڵ، بەردەوامی و دەستکەوتەکانت لە نێوان ئامێرەکاندا.",
+    signIn: "چوونەژوورەوە",
+    student: "فێرخواز",
+    editName: "دەستکاریکردنی ناو",
+    saveName: "پاشەکەوتکردنی ناو",
+    cancelEdit: "هەڵوەشاندنەوەی دەستکاری",
+    namePlaceholder: "ناوەکەت بنووسە",
+    chooseAvatar: "هەڵبژاردنی وێنۆچکە",
+    uploadPhoto: "بارکردنی وێنە",
+    progress: "پێشکەوتنی فێربوون",
+    level: "ئاست",
+    levelMessage: (remaining, next) => `${remaining} خاڵ بۆ گەیشتن بە ئاستی ${next}`,
+    streak: "بەردەوامی ڕۆژانە",
+    totalXp: "کۆی خاڵ",
+    todayXp: "ئەمڕۆ",
+    paths: "ڕێڕەوەکانی فێربوون",
+    lessonsCompleted: (count) => `${count} وانە تەواوکراوە`,
+    active: "چالاک",
+    achievements: "دەستکەوتەکان",
+    unlocked: "کراوەتەوە",
+    inProgress: "لە پێشکەوتندایە",
+    recentActivity: "دوایین چالاکی",
+    lessonCompleted: "وانە تەواوکراوە",
+    gameCompleted: "یاری تەواوکراوە",
+    galleryPermission: "مۆڵەتی دەستگەیشتن بە گالێری پێویستە.",
+    uploadFailed: "بارکردنی وێنەکە سەرکەوتوو نەبوو",
+  },
+  ar: {
+    title: "الملف الشخصي",
+    settings: "فتح الإعدادات",
+    guestTitle: "احتفظ بتقدمك",
+    guestBody: "سجل الدخول لمزامنة نقاطك وسلسلة أيامك وإنجازاتك بين أجهزتك.",
+    signIn: "تسجيل الدخول",
+    student: "متعلم",
+    editName: "تعديل الاسم",
+    saveName: "حفظ الاسم",
+    cancelEdit: "إلغاء التعديل",
+    namePlaceholder: "اكتب اسمك",
+    chooseAvatar: "اختر صورة رمزية",
+    uploadPhoto: "رفع صورة",
+    progress: "تقدم التعلم",
+    level: "المستوى",
+    levelMessage: (remaining, next) => `${remaining} نقطة للوصول إلى المستوى ${next}`,
+    streak: "سلسلة الأيام",
+    totalXp: "مجموع النقاط",
+    todayXp: "اليوم",
+    paths: "مسارات التعلم",
+    lessonsCompleted: (count) => `${count} دروس مكتملة`,
+    active: "نشط",
+    achievements: "الإنجازات",
+    unlocked: "مفتوح",
+    inProgress: "قيد التقدم",
+    recentActivity: "النشاط الأخير",
+    lessonCompleted: "اكتمل الدرس",
+    gameCompleted: "اكتملت اللعبة",
+    galleryPermission: "يلزم السماح بالوصول إلى معرض الصور.",
+    uploadFailed: "تعذر رفع الصورة",
+  },
+};
+
+function resolveLocale(locale: string): LocaleCode {
+  if (locale === "ku" || locale === "ar") return locale;
+  return "en";
+}
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, isKu, isAr } = useI18n();
-  const isRtl = isKu || isAr;
+  const { t, locale } = useI18n();
+  const localeCode = resolveLocale(locale);
+  const copy = COPY[localeCode];
+  const isRtl = localeCode !== "en";
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-
-  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
-  const setAvatarUrl = useSettingsStore((s) => s.setAvatarUrl);
   const { user } = useAuth();
+
+  const avatarUrl = useSettingsStore((state) => state.avatarUrl);
+  const setAvatarUrl = useSettingsStore((state) => state.setAvatarUrl);
+  const userName = useSettingsStore((state) => state.userName);
+  const setUserName = useSettingsStore((state) => state.setUserName);
+  const userAge = useSettingsStore((state) => state.userAge);
+  const pathMode = useSettingsStore((state) => state.pathMode);
+
+  const streakDays = useProgressStore((state) => state.streakDays);
+  const totalXp = useProgressStore((state) => state.totalXp);
+  const dailyXp = useProgressStore((state) => state.dailyXp);
+  const lastActivity = useProgressStore((state) => state.lastActivity);
+  const pathIndexes = useProgressStore((state) => state.pathIndexes);
+  const normalPathIndexes = useProgressStore((state) => state.normalPathIndexes);
+  const kidsPathIndexes = useProgressStore((state) => state.kidsPathIndexes);
+
+  const sourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
+  const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
+  const languagePair = `${sourceLanguage}-${targetLanguage}`;
+
   const [uploading, setUploading] = useState(false);
-  const [showBelowFold, setShowBelowFold] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(userName);
+  const [selectedAchievementId, setSelectedAchievementId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      const reveal = () => {
-        if (!cancelled) setShowBelowFold(true);
-      };
+  const computedLevel = Math.max(1, Math.floor(totalXp / 120) + 1);
+  const previousLevelXp = (computedLevel - 1) * 120;
+  const nextLevelXp = computedLevel * 120;
+  const levelProgress = Math.min(1, Math.max(0, (totalXp - previousLevelXp) / 120));
+  const remainingXp = Math.max(0, nextLevelXp - totalXp);
 
-      if (typeof globalThis.requestIdleCallback === "function") {
-        globalThis.requestIdleCallback(reveal, { timeout: 500 });
-      } else {
-        reveal();
-      }
-    }, 120);
+  const pathLabel = useMemo(() => {
+    if (pathMode === "normal") return t("home.normalPath") || "Normal English";
+    if (pathMode === "kids") return t("home.kidsPath") || "Kids English";
+    return t("home.streetPath") || "Street English";
+  }, [pathMode, t]);
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  const paths = useMemo(
+    () => [
+      {
+        id: "street",
+        title:
+          localeCode === "ku"
+            ? "ڕێڕەوی ئینگلیزیی شەقام"
+            : localeCode === "ar"
+              ? "مسار الإنجليزية اليومية"
+              : "Street English",
+        lessons: pathIndexes[languagePair] || 0,
+        icon: Fire02Icon,
+      },
+      {
+        id: "normal",
+        title:
+          localeCode === "ku"
+            ? "ئینگلیزیی ئاسایی"
+            : localeCode === "ar"
+              ? "الإنجليزية الأساسية"
+              : "Classic English",
+        lessons: normalPathIndexes[languagePair] || 0,
+        icon: Layers01Icon,
+      },
+      {
+        id: "kids",
+        title:
+          localeCode === "ku"
+            ? "ئینگلیزیی منداڵان"
+            : localeCode === "ar"
+              ? "الإنجليزية للأطفال"
+              : "Kids English",
+        lessons: kidsPathIndexes[languagePair] || 0,
+        icon: Award01Icon,
+      },
+    ],
+    [kidsPathIndexes, languagePair, localeCode, normalPathIndexes, pathIndexes],
+  );
+
+  const achievements = useMemo(
+    () => [
+      {
+        id: "streak_master",
+        title: localeCode === "ku" ? "بەردەوام" : localeCode === "ar" ? "مواظب" : "Consistent",
+        description:
+          localeCode === "ku"
+            ? "٣ ڕۆژ بەردەوام فێربە"
+            : localeCode === "ar"
+              ? "تعلم لثلاثة أيام متتالية"
+              : "Learn for 3 days in a row",
+        hint:
+          localeCode === "ku"
+            ? "سێ ڕۆژ بەردەوام وانە تەواو بکە."
+            : localeCode === "ar"
+              ? "أكمل درساً يومياً لمدة ثلاثة أيام متتالية."
+              : "Complete a lesson on three consecutive days.",
+        unlocked: streakDays >= 3,
+        icon: Fire02Icon,
+      },
+      {
+        id: "xp_champion",
+        title: localeCode === "ku" ? "خاڵکۆکەرەوە" : localeCode === "ar" ? "جامع النقاط" : "XP Collector",
+        description:
+          localeCode === "ku"
+            ? "١٥٠ خاڵ کۆبکەرەوە"
+            : localeCode === "ar"
+              ? "اجمع 150 نقطة"
+              : "Earn 150 total XP",
+        hint:
+          localeCode === "ku"
+            ? "لە وانە، گفتوگۆ و یارییەکاندا ١٥٠ خاڵ کۆبکەرەوە."
+            : localeCode === "ar"
+              ? "اجمع 150 نقطة من الدروس والمحادثات والألعاب."
+              : "Collect 150 XP from lessons, conversations, and games.",
+        unlocked: totalXp >= 150,
+        icon: Shield01Icon,
+      },
+      {
+        id: "level_up",
+        title: localeCode === "ku" ? "ئاست بەرزکراوە" : localeCode === "ar" ? "تقدم المستوى" : "Level Up",
+        description:
+          localeCode === "ku"
+            ? "بگە بە ئاستی ٢"
+            : localeCode === "ar"
+              ? "صل إلى المستوى الثاني"
+              : "Reach learning level 2",
+        hint:
+          localeCode === "ku"
+            ? "خاڵ کۆبکەرەوە و بگە بە ئاستی دوو."
+            : localeCode === "ar"
+              ? "اجمع النقاط حتى تصل إلى المستوى الثاني."
+              : "Earn enough XP to advance to level 2.",
+        unlocked: computedLevel >= 2,
+        icon: Award01Icon,
+      },
+      {
+        id: "first_activity",
+        title: localeCode === "ku" ? "دەستپێک" : localeCode === "ar" ? "البداية" : "First Step",
+        description:
+          localeCode === "ku"
+            ? "یەکەم چالاکی تەواو بکە"
+            : localeCode === "ar"
+              ? "أكمل أول نشاط تعليمي"
+              : "Complete your first activity",
+        hint:
+          localeCode === "ku"
+            ? "یەکەم وانە یان یاریی خۆت تەواو بکە."
+            : localeCode === "ar"
+              ? "أكمل أول درس أو لعبة تعليمية."
+              : "Finish your first lesson or learning game.",
+        unlocked: totalXp > 0,
+        icon: BookOpen02Icon,
+      },
+    ],
+    [computedLevel, localeCode, streakDays, totalXp],
+  );
 
   const handleDeviceUpload = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        alert(isKu ? "مۆڵەتی دەستگەیشتن بە گالێری پێویستە" : "Gallery access permission is required");
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        alert(copy.galleryPermission);
         return;
       }
 
@@ -99,699 +371,431 @@ export default function ProfileScreen() {
         quality: 0.7,
       });
 
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-
+      if (result.canceled || !result.assets[0]) return;
       const selectedUri = result.assets[0].uri;
       setUploading(true);
 
-      if (user) {
-        const fileExt = selectedUri.split(".").pop() || "jpg";
-        const fileName = `avatar_${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-
-        const response = await fetch(selectedUri);
-        const blob = await response.blob();
-
-        const { error: uploadError } = await supabase.storage
-          .from("avatars")
-          .upload(filePath, blob, {
-            contentType: `image/${fileExt === "png" ? "png" : "jpeg"}`,
-            upsert: true,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("avatars")
-          .getPublicUrl(filePath);
-
-        setAvatarUrl(publicUrl);
-        hapticSelection();
-      } else {
+      if (!user) {
         setAvatarUrl(selectedUri);
         hapticSelection();
+        return;
       }
-    } catch (err: any) {
-      console.error("Upload error:", err);
-      alert(isKu ? "شکست لە بارکردنی وێنەکە" : "Failed to upload image: " + err.message);
+
+      const fileExtension = selectedUri.split(".").pop() || "jpg";
+      const filePath = `${user.id}/avatar_${Date.now()}.${fileExtension}`;
+      const response = await fetch(selectedUri);
+      const blob = await response.blob();
+      const { error } = await supabase.storage.from("avatars").upload(filePath, blob, {
+        contentType: `image/${fileExtension === "png" ? "png" : "jpeg"}`,
+        upsert: true,
+      });
+
+      if (error) throw error;
+      const publicUrl = supabase.storage.from("avatars").getPublicUrl(filePath).data.publicUrl;
+      setAvatarUrl(publicUrl);
+      hapticSelection();
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      alert(copy.uploadFailed);
     } finally {
       setUploading(false);
     }
   };
 
-  const renderAvatarContent = (size = 80) => {
+  const renderAvatar = (size = 84) => {
     if (uploading) {
       return (
-        <View style={[styles.avatarPlaceholder, { width: size, height: size, borderRadius: size / 2 }]}>
+        <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
           <ActivityIndicator size="small" color="#FFFFFF" />
         </View>
       );
     }
 
-    const SVGComponent = getLocalPremadeAvatar(avatarUrl);
-    if (SVGComponent) {
-      return <SVGComponent width={size} height={size} style={{ borderRadius: size / 2 }} />;
+    const PremadeAvatar = getLocalPremadeAvatar(avatarUrl);
+    if (PremadeAvatar) {
+      return <PremadeAvatar width={size} height={size} style={{ borderRadius: size / 2 }} />;
     }
 
-    if (avatarUrl && (avatarUrl.startsWith("http") || avatarUrl.startsWith("file") || avatarUrl.startsWith("content") || avatarUrl.startsWith("data"))) {
+    if (
+      avatarUrl &&
+      (avatarUrl.startsWith("http") ||
+        avatarUrl.startsWith("file") ||
+        avatarUrl.startsWith("content") ||
+        avatarUrl.startsWith("data"))
+    ) {
       return (
         <ExpoImage
           source={{ uri: avatarUrl }}
           style={{ width: size, height: size, borderRadius: size / 2 }}
           contentFit="cover"
+          transition={180}
         />
       );
     }
 
-    // Default fallback to initials
     return (
-      <LinearGradient
-        colors={["#4F46E5", "#3B82F6"]}
-        style={[styles.avatarGradient, { width: size, height: size, borderRadius: size / 2 }]}
-      >
-        <AppText style={styles.avatarText} forceLatinFont latinRole="bold">
-          {userName ? userName.charAt(0).toUpperCase() : "U"}
+      <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
+        <AppText style={styles.avatarInitial} languageCode={locale} align="center" latinRole="bold">
+          {(userName || copy.student).charAt(0).toUpperCase()}
         </AppText>
-        <View style={styles.avatarRing} />
-      </LinearGradient>
+      </View>
     );
   };
 
-  const streakDays = useProgressStore((s) => s.streakDays);
-  const totalXp = useProgressStore((s) => s.totalXp);
-  const dailyXp = useProgressStore((s) => s.dailyXp);
-  const lastActivity = useProgressStore((s) => s.lastActivity);
-  const pathMode = useSettingsStore((s) => s.pathMode);
-  
-  const userName = useSettingsStore((s) => s.userName);
-  const setUserName = useSettingsStore((s) => s.setUserName);
-  
-  const userAge = useSettingsStore((s) => s.userAge);
-
-  // Path index progress
-  const pathIndexes = useProgressStore((s) => s.pathIndexes);
-  const normalPathIndexes = useProgressStore((s) => s.normalPathIndexes);
-  const kidsPathIndexes = useProgressStore((s) => s.kidsPathIndexes);
-  
-  const sourceLang = useLocaleStore((s) => s.selectedSourceLanguage);
-  const targetLang = useLocaleStore((s) => s.selectedTargetLanguage);
-  const langPair = `${sourceLang}-${targetLang}`;
-
-  const streetCompleted = pathIndexes[langPair] || 0;
-  const normalCompleted = normalPathIndexes[langPair] || 0;
-  const kidsCompleted = kidsPathIndexes[langPair] || 0;
-
-  // Editing username state
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState(userName);
-
-  // Selected Achievement Detail state
-  const [selectedAchievementId, setSelectedAchievementId] = useState<string | null>(null);
-
-
-
-  // Calculate learning level based on total XP
-  const computedLevel = useMemo(() => {
-    return Math.max(1, Math.floor(totalXp / 120) + 1);
-  }, [totalXp]);
-
-  const pathLabel = useMemo(() => {
-    if (pathMode === "normal") return t("home.normalPath") || "Normal English";
-    if (pathMode === "kids") return t("home.kidsPath") || "Kids English";
-    return t("home.streetPath") || "Street English";
-  }, [pathMode, t]);
-
-  const nextLevelXp = computedLevel * 120;
-  const prevLevelXp = (computedLevel - 1) * 120;
-  const levelProgress = useMemo(() => {
-    const earned = totalXp - prevLevelXp;
-    const required = nextLevelXp - prevLevelXp;
-    return Math.min(1, Math.max(0, earned / required));
-  }, [totalXp, prevLevelXp, nextLevelXp]);
-
-  // SVG Circular progress dimensions
-  const size = 110;
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - levelProgress * circumference;
-
-  // Weekly Activity Chart Data (Mocking Duolingo weekly bar chart)
-  const weekDays = useMemo(() => {
-    const today = new Date().getDay(); // 0 is Sun, 1 is Mon, etc.
-    const days = [
-      { name: isKu ? "ش" : "M", active: today === 1, xp: today === 1 ? dailyXp : 0 },
-      { name: isKu ? "ی" : "T", active: today === 2, xp: today === 2 ? dailyXp : 0 },
-      { name: isKu ? "د" : "W", active: today === 3, xp: today === 3 ? dailyXp : 0 },
-      { name: isKu ? "س" : "T", active: today === 4, xp: today === 4 ? dailyXp : 0 },
-      { name: isKu ? "چ" : "F", active: today === 5, xp: today === 5 ? dailyXp : 0 },
-      { name: isKu ? "پ" : "S", active: today === 6, xp: today === 6 ? dailyXp : 0 },
-      { name: isKu ? "ج" : "S", active: today === 0, xp: today === 0 ? dailyXp : 0 },
-    ];
-    return days;
-  }, [dailyXp, isKu]);
-
-  // Duolingo-style achievements
-  const achievements = useMemo(() => [
-    {
-      id: "streak_master",
-      title: isKu ? "پادشای بەردەوامی" : "Streak Master",
-      desc: isKu ? "بەردەوام بە بۆ ماوەی ٣ ڕۆژ" : "Reach a 3-day learning streak",
-      hint: isKu ? "٣ ڕۆژ بەردەوام بە لەسەر فێربوون بۆ بەدەستهێنانی تاجی بەردەوامی." : "Keep learning for 3 days in a row to unlock this fiery badge.",
-      unlocked: streakDays >= 3,
-      icon: Fire02Icon,
-      color: "#FF9209",
-    },
-    {
-      id: "xp_champion",
-      title: isKu ? "پاڵەوانی خاڵ" : "XP Champion",
-      desc: isKu ? "کۆکردنەوەی ١٥٠ خاڵی ئەزموون" : "Earn 150 total XP points",
-      hint: isKu ? "کۆکردنەوەی ١٥٠ خاڵ لە هەر چالاکی یان وانەیەکی بەردەست لە ئەپەکەدا." : "Accumulate 150 XP from lessons, conversations, or games.",
-      unlocked: totalXp >= 150,
-      icon: Shield01Icon,
-      color: "#1890FF",
-    },
-    {
-      id: "quick_learner",
-      title: isKu ? "فێربووی خێرا" : "Level Up",
-      desc: isKu ? "گەیشتن بە ئاستی ٢ لە فێربوون" : "Reach Level 2 in learning",
-      hint: isKu ? "خاڵ کۆبکەرەوە بۆ گەیشتن بە ئاستی فێربوونی بەرزتر لە پرۆفایلەکەتدا." : "Earn XP to advance to Level 2 and upgrade your ranking.",
-      unlocked: computedLevel >= 2,
-      icon: Award01Icon,
-      color: "#52C41A",
-    },
-    {
-      id: "fluent_voice",
-      title: isKu ? "دەنگی ڕەوان" : "Active Learner",
-      desc: isKu ? "تەواوکردنی یەکەم چالاکی فێربوون" : "Complete your first learning activity",
-      hint: isKu ? "یەکەمین وانەی خۆت دەستپێبکە و بە سەرکەوتوویی تەواوی بکە." : "Take and complete your very first lesson to open this trophy.",
-      unlocked: totalXp > 0,
-      icon: Award01Icon,
-      color: "#EB2F96",
-    },
-  ], [streakDays, totalXp, computedLevel, isKu]);
-
-  const selectedAchievement = useMemo(() => {
-    return achievements.find(a => a.id === selectedAchievementId);
-  }, [achievements, selectedAchievementId]);
-
-  const handleSaveName = () => {
-    const trimmed = nameInput.trim();
-    if (trimmed) {
-      setUserName(trimmed);
-      setIsEditingName(false);
-      hapticSelection();
-    }
+  const saveName = () => {
+    const nextName = nameInput.trim();
+    if (!nextName) return;
+    setUserName(nextName);
+    setIsEditingName(false);
+    hapticSelection();
   };
 
-  const handleCancelEdit = () => {
+  const cancelNameEdit = () => {
     setNameInput(userName);
     setIsEditingName(false);
   };
 
   return (
     <View style={styles.root}>
-      {!isDark && <HomeMeshBackground />}
-      
-      {/* HEADER */}
-      <GsapEnterBlock index={0}>
-        <View style={[styles.header, isRtl && styles.headerRtl, { paddingTop: Math.max(insets.top, 20) }]}>
-          <AppText style={styles.headerTitle} forceLatinFont latinRole="bold">
-            {isKu ? "پڕۆفایل" : "Profile"}
-          </AppText>
-          <PressableScale
-            style={styles.settingsBtn}
-            onPress={() => {
-              hapticSelection();
-              router.push("/settings");
-            }}
-            scaleDown={0.9}
-          >
-            <HugeiconsIcon icon={Settings01Icon} size={22} color="#0F172A" strokeWidth={2.5} />
-          </PressableScale>
-        </View>
-      </GsapEnterBlock>
+      <View
+        style={[
+          styles.header,
+          isRtl && styles.headerRtl,
+          { paddingTop: Math.max(insets.top, 20) },
+        ]}
+      >
+        <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
+          {copy.title}
+        </AppText>
+        <PressableScale
+          style={styles.settingsButton}
+          onPress={() => router.push("/settings")}
+          accessibilityRole="button"
+          accessibilityLabel={copy.settings}
+          scaleDown={0.94}
+        >
+          <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
+        </PressableScale>
+      </View>
 
       <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: tabBarScrollPadding(insets.bottom) + 28 },
+        ]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
-          paddingHorizontal: 20,
-        }}
-        style={{ flex: 1 }}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* GUEST BANNER */}
-        {!user && (
-          <GsapEnterBlock index={1}>
-            <GlassCard style={styles.guestBannerCard} intensity={40} borderRadius={24}>
-              <View style={styles.guestBannerContent}>
-                <View style={styles.guestBannerHeader}>
-                  <HugeiconsIcon icon={SparklesIcon} size={24} color="#FF9209" strokeWidth={2.5} />
-                  <AppText style={styles.guestBannerTitle} forceLatinFont={!isKu} latinRole="bold">
-                    {isKu ? "پاشەکەوتکردنی پێشکەوتنەکانت!" : "Save Your Progress!"}
-                  </AppText>
-                </View>
-                <AppText style={styles.guestBannerDesc}>
-                  {isKu
-                    ? "ئەکاونتەکەت ببەستەرەوە بۆ پاراستنی خاڵەکان، دەستکەوتەکان، و ڕۆژەکانی بەردەوامیت لە هەوردا."
-                    : "Connect your account to preserve your XP, achievements, and day streaks in the cloud."}
-                </AppText>
+        {!user ? (
+          <View style={[styles.guestStrip, isRtl && styles.rowRtl]}>
+            <View style={styles.guestCopy}>
+              <AppText style={styles.guestTitle} languageCode={locale} align="start" latinRole="bold">
+                {copy.guestTitle}
+              </AppText>
+              <AppText style={styles.guestBody} languageCode={locale} align="start">
+                {copy.guestBody}
+              </AppText>
+            </View>
+            <PressableScale
+              style={styles.signInButton}
+              onPress={() => router.push("/auth")}
+              accessibilityRole="button"
+              accessibilityLabel={copy.signIn}
+              scaleDown={0.96}
+            >
+              <AppText style={styles.signInText} languageCode={locale} align="center" latinRole="bold">
+                {copy.signIn}
+              </AppText>
+            </PressableScale>
+          </View>
+        ) : null}
+
+        <View style={[styles.identitySection, isRtl && styles.rowRtl]}>
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={handleDeviceUpload}
+            style={styles.avatarButton}
+            accessibilityRole="button"
+            accessibilityLabel={copy.uploadPhoto}
+          >
+            {renderAvatar()}
+            <View style={styles.cameraBadge}>
+              <CameraIcon size={12} />
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.identityCopy}>
+            {isEditingName ? (
+              <View style={[styles.nameEditRow, isRtl && styles.rowRtl]}>
+                <TextInput
+                  value={nameInput}
+                  onChangeText={setNameInput}
+                  placeholder={copy.namePlaceholder}
+                  placeholderTextColor={colors.mutedForeground}
+                  maxLength={28}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={saveName}
+                  style={[styles.nameInput, isRtl && styles.textInputRtl]}
+                />
                 <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.guestLoginBtn}
-                  onPress={() => {
-                    hapticSelection();
-                    router.push("/auth");
-                  }}
+                  onPress={saveName}
+                  style={styles.compactAction}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.saveName}
                 >
-                  <AppText style={styles.guestLoginBtnText} forceLatinFont={!isKu} latinRole="bold">
-                    {isKu ? "چوونەژوورەوە یان تۆماربوون" : "Sign In / Sign Up"}
-                  </AppText>
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={19} color={colors.success} strokeWidth={2.4} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={cancelNameEdit}
+                  style={styles.compactAction}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.cancelEdit}
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} size={19} color={colors.mutedForeground} strokeWidth={2.4} />
                 </TouchableOpacity>
               </View>
-            </GlassCard>
-          </GsapEnterBlock>
-        )}
-
-        {/* AVATAR & INFO CARD */}
-        <GsapEnterBlock index={1}>
-          <GlassCard style={styles.profileCard} intensity={35} borderRadius={24}>
-            <View style={styles.profileCardTop}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleDeviceUpload}
-                style={styles.avatarTouchable}
-              >
-                {renderAvatarContent(80)}
-                <View style={styles.cameraOverlay}>
-                  <CameraIconSvg size={11} color="#FFFFFF" />
-                </View>
-              </TouchableOpacity>
-
-              <View style={styles.profileInfo}>
-                {isEditingName ? (
-                  <View style={styles.nameEditRow}>
-                    <TextInput
-                      style={styles.nameInput}
-                      value={nameInput}
-                      onChangeText={setNameInput}
-                      placeholder={isKu ? "ناو بنووسە..." : "Enter name..."}
-                      maxLength={18}
-                      autoFocus
-                    />
-                    <View style={styles.editActionBtns}>
-                      <TouchableOpacity onPress={handleSaveName} style={styles.actionBtn}>
-                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} color="#10B981" strokeWidth={3} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={handleCancelEdit} style={styles.actionBtn}>
-                        <HugeiconsIcon icon={Cancel01Icon} size={18} color="#EF4444" strokeWidth={3} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.nameViewRow}>
-                    <AppText style={styles.userNameText} forceLatinFont latinRole="bold">
-                      {userName ? userName : "Student"}
-                    </AppText>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setIsEditingName(true);
-                        setNameInput(userName);
-                        hapticSelection();
-                      }}
-                      style={styles.editIconBtn}
-                    >
-                      <HugeiconsIcon icon={Edit01Icon} size={16} color="#64748B" strokeWidth={2.5} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-                {user?.email && (
-                  <AppText style={styles.userEmailText} forceLatinFont>
-                    {user.email}
-                  </AppText>
-                )}
-                {userAge ? (
-                  <AppText style={styles.userSubText}>
-                    {isKu ? `${userAge} ساڵ` : `${userAge} years old`}
-                  </AppText>
-                ) : null}
-                <View style={styles.pathBadge}>
-                  <AppText style={styles.pathBadgeText} forceLatinFont latinRole="bold">
-                    {pathLabel}
-                  </AppText>
-                </View>
+            ) : (
+              <View style={[styles.nameRow, isRtl && styles.rowRtl]}>
+                <AppText style={styles.name} languageCode={locale} align="start" latinRole="bold">
+                  {userName || copy.student}
+                </AppText>
+                <TouchableOpacity
+                  onPress={() => {
+                    setNameInput(userName);
+                    setIsEditingName(true);
+                  }}
+                  style={styles.editNameButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.editName}
+                >
+                  <HugeiconsIcon icon={Edit01Icon} size={16} color={colors.mutedForeground} strokeWidth={2.2} />
+                </TouchableOpacity>
               </View>
-            </View>
-          </GlassCard>
-        </GsapEnterBlock>
+            )}
 
-        {/* CUSTOM SVG AVATARS SELECTOR */}
-        <GsapEnterBlock index={2}>
-          <GlassCard style={styles.customAvatarsSection} intensity={25} borderRadius={24}>
-            <AppText style={styles.customAvatarsTitle} forceLatinFont latinRole="bold">
-              {isKu ? "هەڵبژاردنی کاراکتەری ٢دی" : "Choose 2D Avatar"}
-            </AppText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.customAvatarsList}
+            {user?.email ? (
+              <AppText style={styles.email} languageCode="en" align={isRtl ? "end" : "start"} selectable>
+                {user.email}
+              </AppText>
+            ) : null}
+            <View style={[styles.metadataRow, isRtl && styles.rowRtl]}>
+              <AppText style={styles.pathLabel} languageCode={locale} align="start" latinRole="bold">
+                {pathLabel}
+              </AppText>
+              {userAge ? <View style={styles.metadataDot} /> : null}
+              {userAge ? (
+                <AppText style={styles.ageLabel} languageCode={locale} align="start">
+                  {localeCode === "ku"
+                    ? `${userAge} ساڵ`
+                    : localeCode === "ar"
+                      ? `${userAge} سنة`
+                      : `${userAge} years old`}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.avatarPickerSection}>
+          <AppText style={styles.eyebrow} languageCode={locale} align="start" latinRole="bold">
+            {copy.chooseAvatar}
+          </AppText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.avatarList, isRtl && styles.avatarListRtl]}
+          >
+            {PREMADE_AVATARS.map((avatar) => {
+              const publicUrl = supabase.storage.from("avatars").getPublicUrl(avatar.dbPath).data.publicUrl;
+              const selected = avatarUrl === publicUrl || Boolean(avatarUrl?.includes(avatar.dbPath));
+              const Avatar = avatar.Component;
+              return (
+                <PressableScale
+                  key={avatar.id}
+                  style={[styles.avatarOption, selected && styles.avatarOptionSelected]}
+                  onPress={() => setAvatarUrl(publicUrl)}
+                  accessibilityRole="button"
+                  accessibilityLabel={avatar.name}
+                  scaleDown={0.92}
+                >
+                  <Avatar width={50} height={50} style={{ borderRadius: 25 }} />
+                </PressableScale>
+              );
+            })}
+            <PressableScale
+              style={styles.uploadOption}
+              onPress={handleDeviceUpload}
+              accessibilityRole="button"
+              accessibilityLabel={copy.uploadPhoto}
+              scaleDown={0.92}
             >
-              {PREMADE_AVATARS.map((av) => {
-                const publicUrl = supabase.storage.from("avatars").getPublicUrl(av.dbPath).data.publicUrl;
-                const isSelected = avatarUrl === publicUrl || (avatarUrl && avatarUrl.includes(av.dbPath));
-                const AvatarComponent = av.Component;
-                return (
-                  <TouchableOpacity
-                    key={av.id}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      hapticSelection();
-                      setAvatarUrl(publicUrl);
-                    }}
-                    style={[
-                      styles.customAvatarCircle,
-                      isSelected && styles.customAvatarCircleSelected,
-                    ]}
-                  >
-                    <AvatarComponent width={44} height={44} style={{ borderRadius: 22 }} />
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </GlassCard>
-        </GsapEnterBlock>
+              <CameraIcon size={18} color={colors.foreground} />
+            </PressableScale>
+          </ScrollView>
+        </View>
 
-
-
-        {showBelowFold ? <>
-        {/* CIRCULAR LEVEL PROGRESS */}
-        <GsapEnterBlock index={3}>
-          <GlassCard style={styles.levelCard} intensity={25} borderRadius={24}>
-            <View style={styles.levelProgressContainer}>
-              <View style={{ position: "relative", width: size, height: size }}>
-                <Svg width={size} height={size}>
-                  <Defs>
-                    <SvgGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <Stop offset="0%" stopColor="#10B981" />
-                      <Stop offset="100%" stopColor="#059669" />
-                    </SvgGradient>
-                  </Defs>
-                  <Circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="#E2E8F0"
-                    strokeWidth={strokeWidth}
-                    fill="transparent"
-                  />
-                  <Circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    stroke="url(#progressGrad)"
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    transform={`rotate(-90 ${size / 2} ${size / 2})`}
-                  />
-                </Svg>
-                <View style={styles.levelCircleInner}>
-                  <AppText style={styles.levelNumberText} forceLatinFont latinRole="bold">
-                    {computedLevel}
-                  </AppText>
-                  <AppText style={styles.levelLabelText} forceLatinFont latinRole="bold">
-                    LVL
-                  </AppText>
-                </View>
-              </View>
-              
-              <View style={styles.levelProgressTextCol}>
-                <AppText style={styles.levelProgressHeading} forceLatinFont latinRole="bold">
-                  {isKu ? "ئاستی پێشکەوتن" : "Level Progress"}
-                </AppText>
-                <AppText style={styles.levelProgressSub}>
-                  {isKu ? `کۆبکەرەوە ${nextLevelXp - totalXp} خاڵی تر بۆ ئاستی نوێ` : `Earn ${nextLevelXp - totalXp} more XP to reach level ${computedLevel + 1}`}
-                </AppText>
-                <View style={styles.xpBadgeRow}>
-                  <AppText style={styles.xpTextCount} forceLatinFont latinRole="bold">
-                    {totalXp} / {nextLevelXp} XP
-                  </AppText>
-                </View>
-              </View>
+        <View style={styles.progressPanel}>
+          <View style={[styles.progressHeader, isRtl && styles.rowRtl]}>
+            <View style={styles.progressHeadingWrap}>
+              <AppText style={styles.progressEyebrow} languageCode={locale} align="start" latinRole="bold">
+                {copy.progress}
+              </AppText>
+              <AppText style={styles.progressMessage} languageCode={locale} align="start">
+                {copy.levelMessage(remainingXp, computedLevel + 1)}
+              </AppText>
             </View>
-          </GlassCard>
-        </GsapEnterBlock>
-
-        {/* CORE STATS GRID */}
-        <GsapEnterBlock index={4}>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <HomeLiquidCard contentStyle={styles.statItemInner} radius={20}>
-                {streakDays > 0 && <View style={styles.flameGlow} />}
-                <View style={[styles.statIconBox, { backgroundColor: "#FFEFE6" }]}>
-                  <HugeiconsIcon icon={Fire02Icon} size={24} color="#FF7A00" strokeWidth={2.5} />
-                </View>
-                <AppText style={styles.statValue} forceLatinFont latinRole="bold">
-                  {streakDays}
-                </AppText>
-                <AppText style={styles.statLabel} forceLatinFont latinRole="bold">
-                  {isKu ? "ڕۆژی بەردەوامی" : "Day Streak"}
-                </AppText>
-              </HomeLiquidCard>
-            </View>
-
-            <View style={styles.statItem}>
-              <HomeLiquidCard contentStyle={styles.statItemInner} radius={20}>
-                <View style={[styles.statIconBox, { backgroundColor: "#E6F4FF" }]}>
-                  <HugeiconsIcon icon={Shield01Icon} size={24} color="#0050B3" strokeWidth={2.5} />
-                </View>
-                <AppText style={styles.statValue} forceLatinFont latinRole="bold">
-                  {totalXp}
-                </AppText>
-                <AppText style={styles.statLabel} forceLatinFont latinRole="bold">
-                  {isKu ? "کۆی خاڵەکان" : "Total XP"}
-                </AppText>
-              </HomeLiquidCard>
+            <View style={styles.levelBadge}>
+              <AppText style={styles.levelNumber} languageCode="en" align="center" latinRole="bold">
+                {computedLevel}
+              </AppText>
+              <AppText style={styles.levelCaption} languageCode={locale} align="center" latinRole="bold">
+                {copy.level}
+              </AppText>
             </View>
           </View>
-        </GsapEnterBlock>
 
-        {/* WEEKLY XP CHART */}
-        <GsapEnterBlock index={5}>
-          <View style={styles.sectionHeader}>
-            <AppText style={styles.sectionTitle} forceLatinFont latinRole="bold">
-              {isKu ? "چالاکی هەفتانە" : "Weekly Activity"}
-            </AppText>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${Math.max(4, levelProgress * 100)}%` }]} />
           </View>
-          <GlassCard style={styles.weeklyChartCard} intensity={25} borderRadius={24}>
-            <View style={styles.weeklyChartRow}>
-              {weekDays.map((day, idx) => {
-                const heightPercent = day.xp > 0 ? Math.min(100, (day.xp / 15) * 100) : 10;
-                return (
-                  <View key={idx} style={styles.chartCol}>
-                    <View style={styles.chartBarTrack}>
-                      <LinearGradient
-                        colors={day.active ? ["#38BDF8", "#0284C7"] : ["#E2E8F0", "#CBD5E1"]}
-                        style={[styles.chartBarFill, { height: `${heightPercent}%` }]}
-                      />
-                    </View>
-                    <AppText style={[styles.chartDayText, day.active && styles.chartDayTextActive]} forceLatinFont latinRole="bold">
-                      {day.name}
-                    </AppText>
-                  </View>
-                );
-              })}
-            </View>
-          </GlassCard>
-        </GsapEnterBlock>
+          <AppText style={styles.progressNumbers} languageCode="en" align="start" latinRole="bold">
+            {totalXp} / {nextLevelXp} XP
+          </AppText>
 
-        {/* DETAILED PATH PROGRESS */}
-        <GsapEnterBlock index={6}>
-          <View style={styles.sectionHeader}>
-            <AppText style={styles.sectionTitle} forceLatinFont latinRole="bold">
-              {isKu ? "پێشکەوتنی ڕێڕەوەکان" : "Path Progress"}
-            </AppText>
-          </View>
-          <GlassCard style={styles.pathsCard} intensity={20} borderRadius={24}>
+          <View style={[styles.statsRow, isRtl && styles.rowRtl]}>
             {[
-              {
-                id: "street",
-                title: isKu ? "ڕێڕەوی کوردی (Street)" : "Kurdish Path (Street)",
-                lessons: streetCompleted,
-                color: "#1CB0F6",
-                icon: Fire02Icon,
-              },
-              {
-                id: "normal",
-                title: isKu ? "ئینگلیزی ئاسایی (Normal)" : "Classic Path (Normal)",
-                lessons: normalCompleted,
-                color: "#7C3AED",
-                icon: Layers01Icon,
-              },
-              {
-                id: "kids",
-                title: isKu ? "ئینگلیزی منداڵان (Kids)" : "Kids Path (Kids)",
-                lessons: kidsCompleted,
-                color: "#FF9600",
-                icon: Award01Icon,
-              },
-            ].map((p, idx) => (
+              { value: streakDays, label: copy.streak },
+              { value: totalXp, label: copy.totalXp },
+              { value: dailyXp, label: copy.todayXp },
+            ].map((stat, index) => (
+              <View key={stat.label} style={[styles.stat, index > 0 && styles.statDivider]}>
+                <AppText style={styles.statValue} languageCode="en" align="center" latinRole="bold">
+                  {stat.value}
+                </AppText>
+                <AppText style={styles.statLabel} languageCode={locale} align="center">
+                  {stat.label}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+            {copy.paths}
+          </AppText>
+          <View style={styles.groupedList}>
+            {paths.map((path, index) => (
               <View
-                key={p.id}
+                key={path.id}
                 style={[
-                  styles.pathRow,
-                  idx < 2 && styles.pathRowBorder,
-                  pathMode === p.id && styles.activePathRow,
+                  styles.listRow,
+                  isRtl && styles.rowRtl,
+                  index < paths.length - 1 && styles.rowDivider,
                 ]}
               >
-                <View style={[styles.pathIconWrapper, { backgroundColor: `${p.color}15` }]}>
-                  <HugeiconsIcon icon={p.icon} size={20} color={p.color} strokeWidth={2.5} />
+                <View style={[styles.rowIcon, pathMode === path.id && styles.rowIconActive]}>
+                  <HugeiconsIcon
+                    icon={path.icon}
+                    size={20}
+                    color={pathMode === path.id ? colors.primary : colors.mutedForeground}
+                    strokeWidth={2.2}
+                  />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <AppText style={styles.pathRowTitle} forceLatinFont latinRole="bold">
-                    {p.title}
+                <View style={styles.rowCopy}>
+                  <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                    {path.title}
                   </AppText>
-                  <AppText style={styles.pathRowLessonsCount} forceLatinFont>
-                    {isKu ? `${p.lessons} وانەی تەواوکراو` : `${p.lessons} lessons completed`}
+                  <AppText style={styles.rowDescription} languageCode={locale} align="start">
+                    {copy.lessonsCompleted(path.lessons)}
                   </AppText>
                 </View>
-                {pathMode === p.id && (
-                  <View style={[styles.activePathBadge, { backgroundColor: p.color }]}>
-                    <AppText style={styles.activePathBadgeText} forceLatinFont latinRole="bold">
-                      {isKu ? "چالاک" : "Active"}
-                    </AppText>
-                  </View>
-                )}
+                {pathMode === path.id ? (
+                  <AppText style={styles.activeLabel} languageCode={locale} align="center" latinRole="bold">
+                    {copy.active}
+                  </AppText>
+                ) : null}
               </View>
             ))}
-          </GlassCard>
-        </GsapEnterBlock>
-
-        {/* ACHIEVEMENTS */}
-        <GsapEnterBlock index={7}>
-          <View style={styles.sectionHeader}>
-            <AppText style={styles.sectionTitle} forceLatinFont latinRole="bold">
-              {isKu ? "دەستکەوتەکان" : "Achievements"}
-            </AppText>
           </View>
-          
-          <View style={styles.achievementsList}>
-            {achievements.map((item) => (
-              <PressableScale
-                key={item.id}
-                onPress={() => {
-                  setSelectedAchievementId(selectedAchievementId === item.id ? null : item.id);
-                  hapticSelection();
-                }}
-                scaleDown={0.97}
-              >
-                <GlassCard
-                  style={[
-                    styles.achievementCard,
-                    !item.unlocked && styles.lockedAchievement,
-                    selectedAchievementId === item.id && styles.selectedAchievementBorder,
-                  ]}
-                  intensity={item.unlocked ? 30 : 15}
-                  borderRadius={20}
-                >
-                  <View style={[
-                    styles.achievementIconBox,
-                    { backgroundColor: item.unlocked ? `${item.color}15` : "#F1F5F9" }
-                  ]}>
-                    <HugeiconsIcon
-                      icon={item.icon}
-                      size={28}
-                      color={item.unlocked ? item.color : "#94A3B8"}
-                      strokeWidth={2.5}
-                    />
-                  </View>
-                  <View style={styles.achievementInfo}>
-                    <AppText
-                      style={[styles.achievementTitle, !item.unlocked && { color: "#64748B" }]}
-                      forceLatinFont
-                      latinRole="bold"
-                    >
-                      {item.title}
-                    </AppText>
-                    <AppText style={styles.achievementDesc}>
-                      {item.desc}
-                    </AppText>
-                  </View>
-                  
-                  {item.unlocked ? (
-                    <View style={styles.unlockedDot} />
-                  ) : (
-                    <View style={styles.lockBadge}>
-                      <HugeiconsIcon icon={Shield01Icon} size={12} color="#64748B" strokeWidth={2.5} />
+        </View>
+
+        <View style={styles.section}>
+          <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+            {copy.achievements}
+          </AppText>
+          <View style={styles.groupedList}>
+            {achievements.map((achievement, index) => {
+              const selected = selectedAchievementId === achievement.id;
+              return (
+                <View key={achievement.id} style={index < achievements.length - 1 && styles.rowDivider}>
+                  <PressableScale
+                    style={[styles.listRow, isRtl && styles.rowRtl]}
+                    onPress={() => setSelectedAchievementId(selected ? null : achievement.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={achievement.title}
+                    scaleDown={0.985}
+                  >
+                    <View style={[styles.rowIcon, achievement.unlocked && styles.achievementUnlocked]}>
+                      <HugeiconsIcon
+                        icon={achievement.icon}
+                        size={20}
+                        color={achievement.unlocked ? colors.primary : colors.mutedForeground}
+                        strokeWidth={2.2}
+                      />
                     </View>
-                  )}
-                </GlassCard>
-              </PressableScale>
-            ))}
+                    <View style={styles.rowCopy}>
+                      <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                        {achievement.title}
+                      </AppText>
+                      <AppText style={styles.rowDescription} languageCode={locale} align="start">
+                        {achievement.description}
+                      </AppText>
+                    </View>
+                    <View style={[styles.statusDot, achievement.unlocked && styles.statusDotUnlocked]} />
+                  </PressableScale>
+                  {selected ? (
+                    <View style={styles.achievementDetail}>
+                      <AppText style={styles.detailText} languageCode={locale} align="start">
+                        {achievement.hint}
+                      </AppText>
+                      <AppText
+                        style={[styles.detailStatus, achievement.unlocked && styles.detailStatusUnlocked]}
+                        languageCode={locale}
+                        align="start"
+                        latinRole="bold"
+                      >
+                        {achievement.unlocked ? copy.unlocked : copy.inProgress}
+                      </AppText>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
+        </View>
 
-          {/* Achievement detail modal overlay/card */}
-          {selectedAchievement && (
-            <GlassCard style={styles.detailOverlayCard} intensity={40} borderRadius={24}>
-              <View style={styles.detailHeader}>
-                <View style={[styles.detailIconBox, { backgroundColor: `${selectedAchievement.color}15` }]}>
-                  <HugeiconsIcon icon={selectedAchievement.icon} size={24} color={selectedAchievement.color} strokeWidth={2.5} />
-                </View>
-                <AppText style={styles.detailTitle} forceLatinFont latinRole="bold">
-                  {selectedAchievement.title}
-                </AppText>
-                <TouchableOpacity
-                  onPress={() => setSelectedAchievementId(null)}
-                  style={styles.closeDetailBtn}
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} color="#64748B" strokeWidth={3} />
-                </TouchableOpacity>
-              </View>
-              <AppText style={styles.detailDesc}>
-                {selectedAchievement.hint}
-              </AppText>
-              <View style={styles.detailRewardRow}>
-                <AppText style={styles.detailStatusText} forceLatinFont latinRole="bold">
-                  {selectedAchievement.unlocked ? (isKu ? "تەواوبووە ✓" : "Unlocked ✓") : (isKu ? "داخراوە" : "In Progress")}
-                </AppText>
-                <View style={[styles.rewardBadge, { backgroundColor: selectedAchievement.unlocked ? "#10B981" : "#64748B" }]}>
-                  <AppText style={styles.rewardText} forceLatinFont latinRole="bold">
-                    +50 XP
-                  </AppText>
-                </View>
-              </View>
-            </GlassCard>
-          )}
-        </GsapEnterBlock>
-
-        {/* RECENT ACTIVITY */}
         {lastActivity ? (
-          <GsapEnterBlock index={8}>
-            <View style={styles.sectionHeader}>
-              <AppText style={styles.sectionTitle} forceLatinFont latinRole="bold">
-                {isKu ? "دوایین چالاکی" : "Recent Activity"}
-              </AppText>
-            </View>
-            <GlassCard style={styles.activityCard} intensity={25} borderRadius={20}>
-              <View style={styles.activityIconBox}>
-                <HugeiconsIcon icon={BookOpen02Icon} size={22} color="#0F172A" strokeWidth={2.5} />
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+              {copy.recentActivity}
+            </AppText>
+            <View style={[styles.activityRow, isRtl && styles.rowRtl]}>
+              <View style={styles.activityIcon}>
+                <HugeiconsIcon icon={BookOpen02Icon} size={20} color={colors.foreground} strokeWidth={2.2} />
               </View>
-              <View style={{ flex: 1 }}>
-                <AppText style={styles.activityTitle} forceLatinFont latinRole="bold">
-                  {lastActivity.kind === "lesson" ? (isKu ? "وانە تەواوکراوە" : "Lesson Completed") : (isKu ? "یاری تەواوکراوە" : "Game Completed")}
+              <View style={styles.rowCopy}>
+                <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                  {lastActivity.kind === "lesson" ? copy.lessonCompleted : copy.gameCompleted}
                 </AppText>
-                <AppText style={styles.activityDesc} forceLatinFont>
+                <AppText style={styles.rowDescription} languageCode={locale} align="start">
                   {lastActivity.label}
                 </AppText>
               </View>
-            </GlassCard>
-          </GsapEnterBlock>
+            </View>
+          </View>
         ) : null}
-        </> : null}
       </ScrollView>
       <BottomScrollFade />
     </View>
@@ -799,617 +803,444 @@ export default function ProfileScreen() {
 }
 
 function createStyles(colors: any, isDark: boolean) {
+  const surface = isDark ? "rgba(255,255,255,0.045)" : "#FFFFFF";
+  const softSurface = isDark ? "rgba(255,255,255,0.06)" : "#F4F6F8";
+  const panel = isDark ? "#18243A" : "#172033";
+  const panelMuted = isDark ? "#A9B5C9" : "#B8C2D3";
+
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: "transparent",
-    zIndex: 10,
-  },
-  headerRtl: {
-    flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: colors.foreground,
-    letterSpacing: -0.5,
-    fontFamily: "DINNextRoundedBold",
-  },
-  settingsBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.85)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  profileCard: {
-    padding: 20,
-    marginTop: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  profileCardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  avatarGradient: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  avatarRing: {
-    position: "absolute",
-    top: -3,
-    bottom: -3,
-    left: -3,
-    right: -3,
-    borderRadius: 41,
-    borderWidth: 3,
-    borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.8)",
-  },
-  avatarTouchable: {
-    position: "relative",
-    width: 80,
-    height: 80,
-  },
-  cameraOverlay: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    backgroundColor: "#18181B",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: isDark ? "#1E293B" : "#FFFFFF",
-    elevation: 2,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.5,
-  },
-  avatarPlaceholder: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#27272A",
-  },
-  customAvatarsSection: {
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  customAvatarsTitle: {
-    fontSize: 14,
-    color: colors.mutedForeground,
-    marginBottom: 12,
-    fontFamily: "DINNextRoundedBold",
-  },
-  customAvatarsList: {
-    gap: 12,
-    paddingVertical: 4,
-  },
-  customAvatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "transparent",
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.6)",
-  },
-  customAvatarCircleSelected: {
-    borderColor: colors.foreground,
-    transform: [{ scale: 1.05 }],
-  },
-  avatarText: {
-    fontSize: 32,
-    color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  nameViewRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  nameEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    width: "100%",
-  },
-  nameInput: {
-    flex: 1,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    fontSize: 16,
-    color: colors.foreground,
-    fontWeight: "bold",
-    borderWidth: 1.5,
-    borderColor: isDark ? "#818CF8" : "#4F46E5",
-  },
-  editActionBtns: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  actionBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  editIconBtn: {
-    padding: 4,
-  },
-  userNameText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  userSubText: {
-    fontSize: 14,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  userEmailText: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-    marginTop: 1,
-  },
-  guestBannerCard: {
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 146, 9, 0.25)",
-    backgroundColor: "rgba(255, 146, 9, 0.05)",
-  },
-  guestBannerContent: {
-    gap: 10,
-  },
-  guestBannerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  guestBannerTitle: {
-    fontSize: 18,
-    color: "#D97706",
-    fontFamily: "DINNextRoundedBold",
-  },
-  guestBannerDesc: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  guestLoginBtn: {
-    backgroundColor: "#D97706",
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 4,
-  },
-  guestLoginBtnText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "DINNextRoundedBold",
-  },
-  pathBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pathBadgeText: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  mascotBuddyCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.4)",
-  },
-  mascotLeftCol: {
-    flex: 1,
-    gap: 4,
-  },
-  mascotCardTitle: {
-    fontSize: 16,
-    color: colors.foreground,
-  },
-  mascotCardSub: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    lineHeight: 16,
-  },
-  poseIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: isDark ? "rgba(79, 70, 229, 0.15)" : "#EEF2FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-    marginTop: 4,
-  },
-  poseIndicatorText: {
-    fontSize: 10,
-    color: isDark ? "#818CF8" : "#4F46E5",
-  },
-  mascotRightCol: {
-    width: 110,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  levelCard: {
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  levelProgressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  levelCircleInner: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  levelNumberText: {
-    fontSize: 28,
-    color: colors.foreground,
-    lineHeight: 32,
-  },
-  levelLabelText: {
-    fontSize: 10,
-    color: colors.mutedForeground,
-    letterSpacing: 0.5,
-  },
-  levelProgressTextCol: {
-    flex: 1,
-    gap: 4,
-  },
-  levelProgressHeading: {
-    fontSize: 16,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  levelProgressSub: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    lineHeight: 16,
-  },
-  xpBadgeRow: {
-    alignSelf: "flex-start",
-    backgroundColor: isDark ? "rgba(9, 88, 217, 0.15)" : "#E6F4FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginTop: 2,
-  },
-  xpTextCount: {
-    fontSize: 12,
-    color: isDark ? "#60A5FA" : "#0958D9",
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 16,
-  },
-  statItem: {
-    flex: 1,
-    position: "relative",
-  },
-  statItemInner: {
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-    position: "relative",
-    overflow: "hidden",
-  },
-  flameGlow: {
-    position: "absolute",
-    top: -20,
-    bottom: -20,
-    left: -20,
-    right: -20,
-    borderRadius: 999,
-    backgroundColor: "#FF7A00",
-    opacity: 0.08,
-    zIndex: 0,
-  },
-  statIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-    zIndex: 1,
-  },
-  statValue: {
-    fontSize: 22,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-    zIndex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-    zIndex: 1,
-  },
-  weeklyChartCard: {
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  weeklyChartRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    height: 90,
-  },
-  chartCol: {
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-  },
-  chartBarTrack: {
-    width: 14,
-    height: 60,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
-    borderRadius: 99,
-    overflow: "hidden",
-    justifyContent: "flex-end",
-  },
-  chartBarFill: {
-    width: "100%",
-    borderRadius: 99,
-  },
-  chartDayText: {
-    fontSize: 11,
-    color: "#94A3B8",
-  },
-  chartDayTextActive: {
-    color: "#0284C7",
-  },
-  sectionHeader: {
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  pathsCard: {
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pathRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    gap: 12,
-    borderRadius: 16,
-  },
-  pathRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  activePathRow: {
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.4)",
-  },
-  pathIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pathRowTitle: {
-    fontSize: 14,
-    color: colors.foreground,
-  },
-  pathRowLessonsCount: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-  },
-  activePathBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  activePathBadgeText: {
-    fontSize: 10,
-    color: "#FFFFFF",
-    textTransform: "uppercase",
-  },
-  achievementsList: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  achievementCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    gap: 12,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  lockedAchievement: {
-    opacity: 0.75,
-  },
-  selectedAchievementBorder: {
-    borderColor: isDark ? "#818CF8" : "#4F46E5",
-  },
-  achievementIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  achievementInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  achievementTitle: {
-    fontSize: 15,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  achievementDesc: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  unlockedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#10B981",
-  },
-  lockBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailOverlayCard: {
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: isDark ? "rgba(129, 140, 248, 0.4)" : "rgba(79, 70, 229, 0.3)",
-    backgroundColor: isDark ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.9)",
-  },
-  detailHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-  detailIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailTitle: {
-    fontSize: 16,
-    color: colors.foreground,
-    flex: 1,
-  },
-  closeDetailBtn: {
-    padding: 4,
-  },
-  detailDesc: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  detailRewardRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  detailStatusText: {
-    fontSize: 13,
-    color: isDark ? "#818CF8" : "#4F46E5",
-  },
-  rewardBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  rewardText: {
-    fontSize: 12,
-    color: "#FFFFFF",
-  },
-  activityCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  activityIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityTitle: {
-    fontSize: 14,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  activityDesc: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-  },
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      backgroundColor: colors.background,
+    },
+    headerRtl: {
+      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    },
+    headerTitle: {
+      fontSize: 28,
+      lineHeight: 34,
+      color: colors.foreground,
+      letterSpacing: -0.5,
+    },
+    settingsButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: softSurface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    content: {
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      gap: 28,
+    },
+    rowRtl: {
+      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
+    },
+    guestStrip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+      padding: 16,
+      borderRadius: 18,
+      borderCurve: "continuous",
+      backgroundColor: isDark ? "rgba(255,107,74,0.12)" : "#FFF1EC",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,107,74,0.24)" : "#FFD8CE",
+    },
+    guestCopy: {
+      flex: 1,
+      gap: 3,
+    },
+    guestTitle: {
+      fontSize: 15,
+      color: colors.foreground,
+    },
+    guestBody: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.mutedForeground,
+    },
+    signInButton: {
+      minWidth: 84,
+      minHeight: 44,
+      paddingHorizontal: 15,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+    },
+    signInText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+    },
+    identitySection: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 18,
+      paddingVertical: 6,
+    },
+    avatarButton: {
+      width: 88,
+      height: 88,
+      position: "relative",
+    },
+    avatarFallback: {
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: panel,
+    },
+    avatarInitial: {
+      color: "#FFFFFF",
+      fontSize: 32,
+    },
+    cameraBadge: {
+      position: "absolute",
+      right: -1,
+      bottom: -1,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderWidth: 3,
+      borderColor: colors.background,
+    },
+    identityCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 5,
+    },
+    nameRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    name: {
+      flexShrink: 1,
+      fontSize: 24,
+      lineHeight: 29,
+      color: colors.foreground,
+      letterSpacing: -0.4,
+    },
+    editNameButton: {
+      width: 36,
+      height: 36,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    email: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+    },
+    metadataRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 7,
+    },
+    pathLabel: {
+      fontSize: 12,
+      color: colors.primary,
+    },
+    metadataDot: {
+      width: 3,
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: colors.mutedForeground,
+    },
+    ageLabel: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+    },
+    nameEditRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    nameInput: {
+      flex: 1,
+      minWidth: 0,
+      height: 44,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      borderCurve: "continuous",
+      backgroundColor: softSurface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      color: colors.foreground,
+      fontSize: 15,
+      fontFamily: "DINNextRoundedMedium",
+    },
+    textInputRtl: {
+      textAlign: "right",
+      writingDirection: "rtl",
+    },
+    compactAction: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: softSurface,
+    },
+    avatarPickerSection: {
+      gap: 12,
+    },
+    eyebrow: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+    },
+    avatarList: {
+      gap: 12,
+      paddingVertical: 2,
+      paddingHorizontal: 2,
+    },
+    avatarListRtl: {
+      flexDirection: "row-reverse",
+    },
+    avatarOption: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: "transparent",
+      backgroundColor: softSurface,
+    },
+    avatarOptionSelected: {
+      borderColor: colors.primary,
+    },
+    uploadOption: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: surface,
+    },
+    progressPanel: {
+      padding: 20,
+      borderRadius: 24,
+      borderCurve: "continuous",
+      backgroundColor: panel,
+      ...crossShadow({ color: "#111827", offsetY: 8, blur: 22, opacity: isDark ? 0.18 : 0.13, elevation: 4 }),
+    },
+    progressHeader: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 16,
+    },
+    progressHeadingWrap: {
+      flex: 1,
+      gap: 4,
+    },
+    progressEyebrow: {
+      fontSize: 17,
+      color: "#FFFFFF",
+    },
+    progressMessage: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: panelMuted,
+    },
+    levelBadge: {
+      minWidth: 58,
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      backgroundColor: "rgba(255,255,255,0.09)",
+    },
+    levelNumber: {
+      fontSize: 22,
+      lineHeight: 25,
+      color: "#FFFFFF",
+      fontVariant: ["tabular-nums"],
+    },
+    levelCaption: {
+      fontSize: 9,
+      color: panelMuted,
+    },
+    progressTrack: {
+      height: 7,
+      marginTop: 18,
+      overflow: "hidden",
+      borderRadius: 4,
+      backgroundColor: "rgba(255,255,255,0.11)",
+    },
+    progressFill: {
+      height: "100%",
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    progressNumbers: {
+      marginTop: 7,
+      fontSize: 11,
+      color: panelMuted,
+      fontVariant: ["tabular-nums"],
+    },
+    statsRow: {
+      flexDirection: "row",
+      marginTop: 18,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: "rgba(255,255,255,0.1)",
+    },
+    stat: {
+      flex: 1,
+      minHeight: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 8,
+      gap: 2,
+    },
+    statDivider: {
+      borderLeftWidth: 1,
+      borderLeftColor: "rgba(255,255,255,0.1)",
+    },
+    statValue: {
+      fontSize: 19,
+      color: "#FFFFFF",
+      fontVariant: ["tabular-nums"],
+    },
+    statLabel: {
+      fontSize: 10,
+      color: panelMuted,
+    },
+    section: {
+      gap: 11,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      color: colors.foreground,
+      letterSpacing: -0.2,
+    },
+    groupedList: {
+      overflow: "hidden",
+      borderRadius: 20,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: surface,
+    },
+    listRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: 74,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      gap: 12,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    rowIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: softSurface,
+    },
+    rowIconActive: {
+      backgroundColor: isDark ? "rgba(255,107,74,0.13)" : "#FFF1EC",
+    },
+    achievementUnlocked: {
+      backgroundColor: isDark ? "rgba(255,107,74,0.13)" : "#FFF1EC",
+    },
+    rowCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    rowTitle: {
+      fontSize: 14,
+      color: colors.foreground,
+    },
+    rowDescription: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.mutedForeground,
+    },
+    activeLabel: {
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 9,
+      overflow: "hidden",
+      backgroundColor: isDark ? "rgba(255,107,74,0.13)" : "#FFF1EC",
+      color: colors.primary,
+      fontSize: 10,
+    },
+    statusDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.border,
+    },
+    statusDotUnlocked: {
+      backgroundColor: colors.success,
+    },
+    achievementDetail: {
+      gap: 8,
+      paddingHorizontal: 68,
+      paddingTop: 2,
+      paddingBottom: 14,
+    },
+    detailText: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.mutedForeground,
+    },
+    detailStatus: {
+      fontSize: 11,
+      color: colors.mutedForeground,
+    },
+    detailStatusUnlocked: {
+      color: colors.success,
+    },
+    activityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 14,
+      borderRadius: 18,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: surface,
+    },
+    activityIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: softSurface,
+    },
   });
 }

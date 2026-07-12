@@ -67,10 +67,12 @@ const MemoryCard = memo(function MemoryCard({
   card,
   onPress,
   isWrong,
+  languageCode,
 }: {
   card: CardItem;
   onPress: () => void;
   isWrong: boolean;
+  languageCode?: string;
 }) {
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -180,7 +182,7 @@ const MemoryCard = memo(function MemoryCard({
             recyclingKey={card.id}
           />
         ) : (
-          <AppText style={s.cardText} forceLatinFont latinRole="bold" numberOfLines={2}>
+          <AppText languageCode={languageCode} align="center" fullWidth style={s.cardText} latinRole="bold" numberOfLines={2}>
             {card.value}
           </AppText>
         )}
@@ -375,6 +377,7 @@ export default function MemoryFlipGame({ question, onAnswer, pathMode }: Props) 
               card={card}
               onPress={() => handleCardPress(idx)}
               isWrong={false}
+              languageCode={question.targetLanguage}
             />
           ))}
         </View>

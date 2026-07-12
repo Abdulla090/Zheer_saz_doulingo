@@ -5,176 +5,66 @@ import {
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { PressableScale } from "../../components/animations";
-import { useTTS } from "../../hooks/use-tts";
 import { useI18n } from "../../hooks/useI18n";
 import { crossShadow } from "../../utils/shadows";
-import {
-  generateAiPodcastEpisode,
-  isGeminiConfigured,
-  type AiPodcastEpisode,
-  type AiPodcastTemplateId,
-} from "../../services/gemini-speech-service";
+import { canStartPodcastPlayback } from "../../utils/podcast-playback";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, Mic01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
-import React, { useEffect, useRef, useState } from "react";
+import { ArrowLeft01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon, VolumeMuteIcon, Mic01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemeColors } from "../../hooks/useThemeColors";
+import {
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  type AudioSource,
+} from "expo-audio";
 
-type PodcastTemplate = {
-  id: AiPodcastTemplateId;
+type PodcastLevel = "basic" | "intermediate" | "advanced";
+
+type PodcastEpisode = {
+  id: string;
   title: string;
   titleKu: string;
   subtitle: string;
+  subtitleKu: string;
+  audioSource: AudioSource;
 };
 
-type TopicStarter = {
-  label: string;
-  labelKu: string;
-  topic: string;
+const PODCASTS_BY_LEVEL: Record<PodcastLevel, Omit<PodcastEpisode, "id">> = {
+  basic: {
+    title: "Basic Podcast",
+    titleKu: "پۆدکاستی سەرەتایی",
+    subtitle: "Jack & Cloie • AI Conversation",
+    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    audioSource: require("../../../assets/aipodcast/basic/ai_radio_basic.mp3"),
+  },
+  intermediate: {
+    title: "Intermediate Podcast",
+    titleKu: "پۆدکاستی ناوەند",
+    subtitle: "Jack & Cloie • AI Conversation",
+    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    audioSource: require("../../../assets/aipodcast/intermidate/erbil.mp3"),
+  },
+  advanced: {
+    title: "Advanced Podcast",
+    titleKu: "پۆدکاستی پێشکەوتوو",
+    subtitle: "Jack & Cloie • AI Conversation",
+    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    audioSource: require("../../../assets/aipodcast/advance/sulaimany.mp3"),
+  },
 };
-
-const PODCAST_TEMPLATES: PodcastTemplate[] = [
-  {
-    id: "daily_lesson",
-    title: "Daily lesson",
-    titleKu: "وانەی ڕۆژانە",
-    subtitle: "Words, examples, recap",
-  },
-  {
-    id: "story_mode",
-    title: "Mini story",
-    titleKu: "چیرۆکی کورت",
-    subtitle: "Learn through a scene",
-  },
-  {
-    id: "conversation",
-    title: "Two hosts",
-    titleKu: "دوو پێشکەشکار",
-    subtitle: "Podcast-style dialogue",
-  },
-  {
-    id: "exam_coach",
-    title: "Exam coach",
-    titleKu: "ڕاهێنەری تاقیکردنەوە",
-    subtitle: "IELTS/TOEFL phrases",
-  },
-  {
-    id: "quick_explainer",
-    title: "Quick explainer",
-    titleKu: "ڕوونکردنەوەی خێرا",
-    subtitle: "Simple idea, examples, challenge",
-  },
-  {
-    id: "pronunciation_drill",
-    title: "Pronunciation",
-    titleKu: "دەربڕین",
-    subtitle: "Repeatable phrases and rhythm",
-  },
-];
-
-const INITIAL_TOPIC = "Ordering coffee at a cafe";
-
-const TOPIC_STARTERS: TopicStarter[] = [
-  {
-    label: "Job interview",
-    labelKu: "چاوپێکەوتنی کار",
-    topic: "Answering job interview questions with confident English",
-  },
-  {
-    label: "Travel",
-    labelKu: "گەشت",
-    topic: "Asking for directions and help while traveling",
-  },
-  {
-    label: "Daily life",
-    labelKu: "ژیانی ڕۆژانە",
-    topic: "Talking about daily routines in natural English",
-  },
-  {
-    label: "Exam answer",
-    labelKu: "وەڵامی تاقیکردنەوە",
-    topic: "Building a strong IELTS speaking answer",
-  },
-];
-
-const PREBUILT_PODCASTS: AiPodcastEpisode[] = [
-  {
-    title: "Cafe Coffee Talk (Qawa)",
-    subtitle: "Darya & Zanyar • Ordering coffee with Kurdish style",
-    segments: [
-      { text: "Slaw guys! Welcome to our quick cafe conversation podcast.", lang: "en" },
-      { text: "Slaw Darya! Today we order coffee. Zor basha, let's learn some useful phrases.", lang: "en" },
-      { text: "First, when you walk in, you say: Can I get a black coffee, please?", lang: "en" },
-      { text: "Yes, please is very important. Spas is always polite!", lang: "en" },
-      { text: "And if you want milk, you say: With a splash of milk, please.", lang: "en" },
-      { text: "Splash means a small amount. A bit of milk. Chunkek.", lang: "en" },
-      { text: "Exactly! And the barista might ask: For here or to go?", lang: "en" },
-      { text: "To go means you drink it outside. Bo darawa.", lang: "en" },
-      { text: "Yes. So you reply: To go, please. Spas!", lang: "en" },
-      { text: "Basha, let's repeat together: Can I get a black coffee to go?", lang: "en" },
-      { text: "Perfect. Now you try saying it out loud in your room.", lang: "en" },
-      { text: "Zor supas for listening to our coffee explainer today.", lang: "en" },
-      { text: "Keep practicing, and see you in the next episode. Bye bye!", lang: "en" },
-    ],
-  },
-  {
-    title: "Job Interview Prep (Kar)",
-    subtitle: "Hero & Karwan • Answering with confidence",
-    segments: [
-      { text: "Slaw, learning friends! Welcome back to our weekly English coach.", lang: "en" },
-      { text: "Slaw Hero! Today we discuss job interviews. Shwene kar.", lang: "en" },
-      { text: "Yes, interviews can make you feel a bit stressed, or dalkhar.", lang: "en" },
-      { text: "But don't worry, we have some great English tips for you.", lang: "en" },
-      { text: "First, when they ask: Tell me about yourself, keep it simple.", lang: "en" },
-      { text: "Start with your experience. For example: I have worked in tech for two years.", lang: "en" },
-      { text: "Good. And then state your main strength, or tawanayi sereketa.", lang: "en" },
-      { text: "You can say: I am highly organized and love solving difficult problems.", lang: "en" },
-      { text: "Nice phrase! Highly organized means you plan everything basha.", lang: "en" },
-      { text: "Exactly, no mess! Then they might ask about your future plans.", lang: "en" },
-      { text: "You should say: I want to grow my skills and help the team succeed.", lang: "en" },
-      { text: "Succeed is serkawtin. We all want to succeed, spas!", lang: "en" },
-      { text: "Let's review: I want to grow my skills in this company.", lang: "en" },
-      { text: "Say it slowly with confidence. You can do it!", lang: "en" },
-      { text: "Yes, practice makes perfect. Zor basha!", lang: "en" },
-      { text: "Thank you for joining our interview preparation session today.", lang: "en" },
-      { text: "Goodbye for now, and see you soon!", lang: "en" },
-    ],
-  },
-  {
-    title: "Bazaar & Bargaining (Arzan)",
-    subtitle: "Lana & Aram • Asking for discounts in English",
-    segments: [
-      { text: "Slaw Aram! Welcome to our bazaar and shopping special episode.", lang: "en" },
-      { text: "Slaw Lana! I love the bazaar, but we need good English to bargain, right?", lang: "en" },
-      { text: "Exactly! Bargaining is asking for a lower price. Arzan kirdin.", lang: "en" },
-      { text: "So, if the shopkeeper says: This rug is fifty dollars.", lang: "en" },
-      { text: "You don't just pay! You say: Can you give me a discount?", lang: "en" },
-      { text: "Discount means dakhandin. A lower price.", lang: "en" },
-      { text: "Yes. Or you can say: Is that your best price?", lang: "en" },
-      { text: "That is a very polite way to bargain. Zor jwana.", lang: "en" },
-      { text: "If they say: Forty-five is my best price, you can try one more time.", lang: "en" },
-      { text: "Say: How about forty dollars? And I will buy it now.", lang: "en" },
-      { text: "Yes, How about... is a great bargaining pattern.", lang: "en" },
-      { text: "Basha, let's practice: Can you give me a discount on this?", lang: "en" },
-      { text: "Perfect! Now repeat it in a strong, friendly voice.", lang: "en" },
-      { text: "And remember, always smile. Teakaya, be friendly!", lang: "en" },
-      { text: "Yes, a smile gets you a better discount, spas!", lang: "en" },
-      { text: "Thank you for listening to our bazaar guide today.", lang: "en" },
-      { text: "Keep practicing, and happy shopping in English!", lang: "en" },
-    ],
-  },
-];
 
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -186,63 +76,43 @@ export function AiPodcastScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { locale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const isRtl = isKu || locale === "ar";
-  const { speak, stop } = useTTS();
 
-  const [topic, setTopic] = useState(INITIAL_TOPIC);
-  const [templateId, setTemplateId] = useState<AiPodcastTemplateId>("daily_lesson");
-  const [episode, setEpisode] = useState<AiPodcastEpisode | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<PodcastLevel>("basic");
   const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentIdx, setCurrentIdx] = useState(0);
 
-  const currentIdxRef = useRef(0);
-  const isPlayingRef = useRef(false);
-  const episodeRef = useRef<AiPodcastEpisode | null>(null);
-  const generationIdRef = useRef(0);
+  // Fake Generation States
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState("");
 
-  const segments = episode?.segments ?? [];
-  const hasEpisode = segments.length > 0;
+  const [activeEpisode, setActiveEpisode] = useState<PodcastEpisode | null>(null);
+  const [autoPlayEpisodeId, setAutoPlayEpisodeId] = useState<string | null>(null);
+  const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    currentIdxRef.current = currentIdx;
-    isPlayingRef.current = isPlaying;
-    episodeRef.current = episode;
-  }, [currentIdx, episode, isPlaying]);
+  // Volume & Speed States
+  const [volume, setVolume] = useState(0.7);
+  const [isMuted, setIsMuted] = useState(false);
+  const [preMuteVolume, setPreMuteVolume] = useState(0.7);
+  const [volumeWidth, setVolumeWidth] = useState(150);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
-  useEffect(() => {
-    if (!isPlaying || !episodeRef.current) {
-      void stop();
-      return;
-    }
-
-    const activeEpisode = episodeRef.current;
-    const segment = activeEpisode.segments[currentIdx];
-    if (!segment) {
-      setIsPlaying(false);
-      setCurrentIdx(0);
-      return;
-    }
-
-    void speak(segment.text, segment.lang, `podcast-${currentIdx}`, {
-      rate: 0.92,
-      onDone: () => {
-        if (!isPlayingRef.current) return;
-        const nextIdx = currentIdxRef.current + 1;
-        if (nextIdx < activeEpisode.segments.length) {
-          setCurrentIdx(nextIdx);
-        } else {
-          setIsPlaying(false);
-          setCurrentIdx(0);
-        }
-      },
-    });
-
-    return () => {
-      void stop();
-    };
-  }, [currentIdx, isPlaying, speak, stop]);
+  const audioPlayer = useAudioPlayer(activeEpisode?.audioSource ?? null, {
+    updateInterval: 200,
+    downloadFirst: Platform.OS !== "web",
+    keepAudioSessionActive: true,
+    preferredForwardBufferDuration: 10,
+  });
+  const audioStatus = useAudioPlayerStatus(audioPlayer);
+  const isPlaying = audioStatus.playing;
+  const audioCurrentTime = Number.isFinite(audioStatus.currentTime)
+    ? Math.max(audioStatus.currentTime, 0)
+    : 0;
+  const audioDuration = Number.isFinite(audioStatus.duration)
+    ? Math.max(audioStatus.duration, 0)
+    : 0;
 
   const pulse = () => {
     if (Platform.OS !== "web") {
@@ -250,90 +120,280 @@ export function AiPodcastScreen() {
     }
   };
 
-  const handleGenerate = async () => {
-    const cleanTopic = topic.trim();
-    pulse();
-    if (!cleanTopic) {
-      setError(isKu ? "بابەتێک بنووسە." : "Write a topic first.");
-      return;
-    }
-    if (!isGeminiConfigured()) {
-      setError(isKu ? "کلیلی Gemini دانەنراوە." : "Gemini is not configured.");
-      return;
-    }
-
-    const generationId = generationIdRef.current + 1;
-    generationIdRef.current = generationId;
-    setIsGenerating(true);
-    setError(null);
-    setIsPlaying(false);
-    setCurrentIdx(0);
-    void stop();
-
+  // The hook owns and releases the native player. Wait for the packaged asset to
+  // finish resolving before changing playback state on Android or iOS.
+  useEffect(() => {
+    if (!audioStatus.isLoaded) return;
     try {
-      const nextEpisode = await generateAiPodcastEpisode({
-        topic: cleanTopic,
-        templateId,
-      });
-      if (generationIdRef.current !== generationId) return;
-      setEpisode(nextEpisode);
+      audioPlayer.volume = isMuted ? 0 : volume;
+      audioPlayer.setPlaybackRate(playbackRate, "medium");
     } catch (err) {
-      if (generationIdRef.current !== generationId) return;
-      const message = err instanceof Error ? err.message : "Could not generate podcast.";
-      setError(message);
-    } finally {
-      if (generationIdRef.current === generationId) {
-        setIsGenerating(false);
-      }
+      console.warn("Failed to configure podcast player:", err);
+      setError(
+        isKu
+          ? "دەنگی پۆدکاستەکە ئامادە نەبوو. تکایە دووبارە هەوڵ بدەوە."
+          : "The podcast player was not ready. Please try again.",
+      );
     }
+  }, [audioPlayer, audioStatus.isLoaded, isKu, isMuted, playbackRate, volume]);
+
+  useEffect(() => {
+    if (!canStartPodcastPlayback({
+      activeEpisodeId: activeEpisode?.id ?? null,
+      autoPlayEpisodeId,
+      isLoaded: audioStatus.isLoaded,
+      playbackError: audioStatus.error,
+    })) {
+      return;
+    }
+
+    let cancelled = false;
+    const startPlayback = async () => {
+      try {
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+          interruptionMode: "doNotMix",
+          shouldPlayInBackground: false,
+          shouldRouteThroughEarpiece: false,
+        });
+        if (cancelled) return;
+        audioPlayer.play();
+        setAutoPlayEpisodeId(null);
+      } catch (err) {
+        if (cancelled) return;
+        console.warn("Podcast playback failed to start:", err);
+        setAutoPlayEpisodeId(null);
+        setError(
+          isKu
+            ? "دەنگی پۆدکاستەکە نەکراوە. تکایە دووبارە هەوڵ بدەوە."
+            : "The podcast audio could not start. Please try again.",
+        );
+      }
+    };
+
+    void startPlayback();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeEpisode,
+    audioPlayer,
+    audioStatus.error,
+    audioStatus.isLoaded,
+    autoPlayEpisodeId,
+    isKu,
+  ]);
+
+  useEffect(() => {
+    if (!audioStatus.error) return;
+    console.warn("Podcast audio playback error:", audioStatus.error);
+    setAutoPlayEpisodeId(null);
+    setError(
+      isKu
+        ? "دەنگی پۆدکاستەکە بارنەبوو. تکایە دووبارە هەوڵ بدەوە."
+        : "The podcast audio could not load. Please try again.",
+    );
+  }, [audioStatus.error, isKu]);
+
+  useEffect(() => {
+    if (!audioStatus.didJustFinish) return;
+    void audioPlayer.seekTo(0).catch((err) => {
+      console.warn("Failed to reset finished podcast:", err);
+    });
+  }, [audioPlayer, audioStatus.didJustFinish]);
+
+  useEffect(
+    () => () => {
+      if (generationTimerRef.current) {
+        clearInterval(generationTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleGenerate = () => {
+    pulse();
+    if (generationTimerRef.current) {
+      clearInterval(generationTimerRef.current);
+      generationTimerRef.current = null;
+    }
+    try {
+      audioPlayer.pause();
+      audioPlayer.replace(null);
+    } catch {
+      // The player can still be resolving a previous source.
+    }
+    setError(null);
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setActiveEpisode(null);
+    setAutoPlayEpisodeId(null);
+
+    // Random generation time between 8 and 13 seconds
+    const totalTimeMs = Math.floor(Math.random() * 5000) + 8000;
+    const intervalTime = 100;
+    const steps = totalTimeMs / intervalTime;
+    let currentStep = 0;
+
+    generationTimerRef.current = setInterval(() => {
+      currentStep++;
+      const progress = Math.min((currentStep / steps) * 100, 100);
+      setGenerationProgress(Math.floor(progress));
+
+      if (progress < 25) {
+        setGenerationStatus(isKu ? "شیکردنەوەی بابەتەکە..." : "Analyzing topic...");
+      } else if (progress < 55) {
+        setGenerationStatus(isKu ? "نووسینی دەق لە نێوان جاک و کلۆیی..." : "Writing script between Jack & Cloie...");
+      } else if (progress < 85) {
+        setGenerationStatus(isKu ? "دروستکردنی دەنگی جاک و کلۆیی..." : "Synthesizing AI host voices...");
+      } else {
+        setGenerationStatus(isKu ? "ڕێکخستنی کۆتایی دەنگەکە..." : "Optimizing audio track...");
+      }
+
+      if (currentStep >= steps) {
+        if (generationTimerRef.current) {
+          clearInterval(generationTimerRef.current);
+          generationTimerRef.current = null;
+        }
+
+        const nextEpisode: PodcastEpisode = {
+          ...PODCASTS_BY_LEVEL[selectedLevel],
+          id: `${selectedLevel}-${Date.now()}`,
+        };
+
+        setActiveEpisode(nextEpisode);
+        setIsGenerating(false);
+        setAutoPlayEpisodeId(nextEpisode.id);
+      }
+    }, intervalTime);
   };
 
   const togglePlay = () => {
     pulse();
-    if (!hasEpisode || isGenerating) return;
-    setIsPlaying((value) => !value);
+    if (!activeEpisode) return;
+    if (!audioStatus.isLoaded) {
+      setError(isKu ? "دەنگەکە هێشتا بار دەبێت..." : "The audio is still loading...");
+      return;
+    }
+    try {
+      setError(null);
+      if (isPlaying) {
+        audioPlayer.pause();
+      } else {
+        audioPlayer.play();
+      }
+    } catch (err) {
+      console.warn("Failed to toggle podcast playback:", err);
+      setError(
+        isKu
+          ? "دەنگی پۆدکاستەکە نەکراوە. تکایە دووبارە هەوڵ بدەوە."
+          : "The podcast audio could not start. Please try again.",
+      );
+    }
   };
 
   const handleRewind = () => {
     pulse();
-    void stop();
-    setCurrentIdx(0);
-    if (hasEpisode) setIsPlaying(false);
+    if (!activeEpisode || !audioStatus.isLoaded) return;
+    const nextTime = Math.max(audioCurrentTime - 10, 0);
+    void audioPlayer.seekTo(nextTime).catch((err) => {
+      console.warn("Failed to rewind podcast:", err);
+    });
   };
 
   const handleFastForward = () => {
     pulse();
-    void stop();
-    if (segments.length > 0) {
-      setCurrentIdx(segments.length - 1);
-      setIsPlaying(false);
+    if (!activeEpisode || !audioStatus.isLoaded) return;
+    const nextTime = Math.min(audioCurrentTime + 10, audioDuration);
+    void audioPlayer.seekTo(nextTime).catch((err) => {
+      console.warn("Failed to fast-forward podcast:", err);
+    });
+  };
+
+  // Adjust volume via touch
+  const changeVolume = (val: number) => {
+    if (typeof val !== "number" || isNaN(val) || !isFinite(val)) return;
+    const rounded = Math.round(val * 10) / 10;
+    setVolume(rounded);
+    if (rounded > 0) {
+      setIsMuted(false);
+    }
+    if (audioStatus.isLoaded) {
+      try {
+        audioPlayer.volume = rounded;
+      } catch (err) {
+        console.warn("Failed to set audio volume:", err);
+      }
     }
   };
 
-  const progressPercent =
-    segments.length > 0 ? ((currentIdx + (isPlaying ? 1 : 0)) / segments.length) * 100 : 0;
-  const sentenceDisplay = segments[currentIdx]?.text || "";
-  const selectedTemplate = PODCAST_TEMPLATES.find((item) => item.id === templateId);
+  const handleVolumePress = (event: any) => {
+    const x = event.nativeEvent.locationX;
+    if (typeof x !== "number" || isNaN(x)) return;
+    if (typeof volumeWidth !== "number" || isNaN(volumeWidth) || volumeWidth <= 0) return;
+
+    const newVolume = Math.min(Math.max(x / volumeWidth, 0), 1);
+    if (isFinite(newVolume)) {
+      changeVolume(newVolume);
+    }
+  };
+
+  const toggleMute = () => {
+    pulse();
+    if (isMuted) {
+      setIsMuted(false);
+      changeVolume(preMuteVolume);
+    } else {
+      setPreMuteVolume(volume);
+      setIsMuted(true);
+      if (audioStatus.isLoaded) {
+        try {
+          audioPlayer.volume = 0;
+        } catch (err) {
+          console.warn("Failed to mute audio player:", err);
+        }
+      }
+    }
+  };
+
+  // Adjust playback speed
+  const changeSpeed = (rate: number) => {
+    pulse();
+    setPlaybackRate(rate);
+    if (audioStatus.isLoaded) {
+      try {
+        audioPlayer.setPlaybackRate(rate, "medium");
+      } catch (err) {
+        console.warn("Failed to set audio playback rate:", err);
+      }
+    }
+  };
+
+  const progressPercent = audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0;
 
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
 
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: "row" }]}>
-        <PressableScale onPress={() => { void stop(); router.back(); }} style={styles.backBtn}>
+        <PressableScale onPress={() => router.back()} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
           </View>
         </PressableScale>
-        <AppText style={styles.headerTitle}>{isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast"}</AppText>
+        <AppText style={styles.headerTitle}>
+          {isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast"}
+        </AppText>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) + 28 }]}
-        keyboardShouldPersistTaps="handled"
       >
+        {/* Settings/Generator Card */}
         <HomeLiquidCard style={styles.generatorCard} contentStyle={styles.generatorInner}>
           <View style={[styles.generatorHeader, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <View style={styles.generatorIcon}>
@@ -341,236 +401,183 @@ export function AiPodcastScreen() {
             </View>
             <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
               <AppText style={styles.generatorEyebrow}>
-                {isKu ? "پۆدکاستی دروستکراو" : "Write your own topic"}
-              </AppText>
-              <AppText style={styles.generatorTitle}>{isKu ? "AI با باسی چی بکات؟" : "What should the AI talk about?"}</AppText>
-              <AppText style={styles.generatorSub}>{isKu ? "بابەت بنووسە، یان نموونەیەک هەڵبژێرە" : "Type anything, or tap a starter below"}</AppText>
-            </View>
-          </View>
-
-          <TextInput
-            value={topic}
-            onChangeText={setTopic}
-            placeholder={isKu ? "نموونە: گەشتکردن، قاوە، کار..." : "Example: travel, coffee, job interview..."}
-            placeholderTextColor="#94A3B8"
-            style={[styles.topicInput, isRtl && styles.topicInputRtl]}
-            multiline
-            textAlignVertical="top"
-          />
-
-          <View style={[styles.starterRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-            {TOPIC_STARTERS.map((starter) => (
-              <PressableScale
-                key={starter.label}
-                onPress={() => {
-                  pulse();
-                  setTopic(starter.topic);
-                  setError(null);
-                }}
-                style={styles.starterChip}
-                scaleDown={0.98}
-              >
-                <AppText style={styles.starterText}>
-                  {isKu ? starter.labelKu : starter.label}
-                </AppText>
-              </PressableScale>
-            ))}
-          </View>
-
-          <AppText style={[styles.sectionLabel, isRtl && styles.rtlText]}>
-            {isKu ? "شێوازی قسەکردنی AI" : "Podcast template"}
-          </AppText>
-
-          <View style={styles.templateGrid}>
-            {PODCAST_TEMPLATES.map((template) => {
-              const selected = template.id === templateId;
-              return (
-                <PressableScale
-                  key={template.id}
-                  onPress={() => {
-                    pulse();
-                    setTemplateId(template.id);
-                  }}
-                  style={[
-                    styles.templateChip,
-                    selected && styles.templateChipActive,
-                  ]}
-                  scaleDown={0.98}
-                >
-                  <AppText style={[styles.templateTitle, selected && styles.templateTitleActive]}>
-                    {isKu ? template.titleKu : template.title}
-                  </AppText>
-                  <AppText style={styles.templateSub}>{template.subtitle}</AppText>
-                </PressableScale>
-              );
-            })}
-          </View>
-
-          <PressableScale
-            onPress={handleGenerate}
-            disabled={isGenerating}
-            style={[
-              styles.generateBtn,
-              isGenerating && { opacity: 0.72 },
-              crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.22 }),
-            ]}
-          >
-            {isGenerating ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <AppText style={styles.generateText}>
-                {isKu ? "پۆدکاست دروست بکە" : "Generate podcast"}
-              </AppText>
-            )}
-          </PressableScale>
-          {error ? (
-            <AppText style={[styles.errorText, isRtl && styles.rtlText]}>{error}</AppText>
-          ) : isGenerating ? (
-            <AppText style={[styles.statusText, isRtl && styles.rtlText]}>
-              {isKu ? "AI پۆدکاستەکە لەسەر بابەتەکەت دەنووسێت..." : "AI is writing the podcast from your topic..."}
-            </AppText>
-          ) : null}
-        </HomeLiquidCard>
-
-        <HomeLiquidCard style={styles.generatorCard} contentStyle={styles.generatorInner}>
-          <View style={[styles.generatorHeader, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-            <View style={styles.generatorIcon}>
-              <HugeiconsIcon icon={VolumeHighIcon} size={20} color={C.blue} strokeWidth={2.2} />
-            </View>
-            <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
-              <AppText style={styles.generatorEyebrow}>
-                {isKu ? "پۆدکاستی ئامادەکراو" : "Instant templates"}
+                {isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast Settings"}
               </AppText>
               <AppText style={styles.generatorTitle}>
-                {isKu ? "لێدانی یەکسەری پۆدکاست" : "Ready-to-Play Podcasts"}
-              </AppText>
-              <AppText style={styles.generatorSub}>
-                {isKu ? "لێدانی یەکسەر بەبێ چاوەڕوانی دروستکردن" : "Play immediately without waiting"}
+                {isKu ? "ئاستێک هەڵبژێرە بۆ دروستکردن" : "Choose level to generate"}
               </AppText>
             </View>
           </View>
 
-          <View style={{ gap: 10 }}>
-            {PREBUILT_PODCASTS.map((pb) => {
-              const isActive = episode?.title === pb.title;
+          {/* Level Selector */}
+          <AppText style={[styles.sectionLabel, isRtl && styles.rtlText]}>
+            {isKu ? "ئاستی پۆدکاستەکە" : "Select Level"}
+          </AppText>
+          <View style={[styles.levelSelector, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+            {(["basic", "intermediate", "advanced"] as const).map((lvl) => {
+              const active = selectedLevel === lvl;
+              let label = lvl.charAt(0).toUpperCase() + lvl.slice(1);
+              if (isKu) {
+                if (lvl === "basic") label = "سەرەتایی";
+                else if (lvl === "intermediate") label = "ناوەند";
+                else label = "پێشکەوتوو";
+              }
               return (
                 <PressableScale
-                  key={pb.title}
+                  key={lvl}
                   onPress={() => {
+                    if (isGenerating) return;
                     pulse();
-                    setEpisode(pb);
-                    setCurrentIdx(0);
-                    setIsPlaying(false);
-                    void stop();
+                    setSelectedLevel(lvl);
                   }}
-                  style={[
-                    styles.starterChip,
-                    isActive && {
-                      borderColor: "rgba(59, 130, 246, 0.42)",
-                      backgroundColor: "rgba(59, 130, 246, 0.1)",
-                    },
-                    {
-                      width: "100%",
-                      paddingVertical: 12,
-                      paddingHorizontal: 16,
-                      borderRadius: 18,
-                      alignItems: "stretch",
-                    }
-                  ]}
-                  scaleDown={0.98}
+                  style={[styles.levelBtn, active && styles.levelBtnActive]}
                 >
-                  <View style={{ flexDirection: isRtl ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
-                      <AppText style={[styles.starterText, { fontSize: 14, color: isActive ? C.blue : "#0F1A30" }]}>
-                        {pb.title}
-                      </AppText>
-                      <AppText style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>
-                        {pb.subtitle}
-                      </AppText>
-                    </View>
-                    <HugeiconsIcon icon={PlayIcon} size={18} color={isActive ? C.blue : "#64748B"} />
-                  </View>
+                  <AppText style={[styles.levelBtnText, active && styles.levelBtnTextActive]}>
+                    {label}
+                  </AppText>
                 </PressableScale>
               );
             })}
           </View>
+
+          {/* Generate Button / Progress Bar */}
+          {isGenerating ? (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressHeader}>
+                <AppText style={styles.progressText}>{generationStatus}</AppText>
+                <AppText style={styles.progressPercent}>{generationProgress}%</AppText>
+              </View>
+              <View style={styles.progressBarBg}>
+                <View style={[styles.progressBarFill, { width: `${generationProgress}%` }]} />
+              </View>
+            </View>
+          ) : (
+            <PressableScale
+              onPress={handleGenerate}
+              style={[
+                styles.generateBtn,
+                crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.22 }),
+              ]}
+            >
+              <AppText style={styles.generateText}>
+                {isKu ? "پۆدکاست دروست بکە" : "Generate Podcast"}
+              </AppText>
+            </PressableScale>
+          )}
+
+          {error && (
+            <AppText style={[styles.errorText, isRtl && styles.rtlText]}>{error}</AppText>
+          )}
         </HomeLiquidCard>
 
-        <HomeLiquidCard style={styles.artCard} contentStyle={styles.artCardInner}>
-          <View style={styles.iconCircle}>
-            <HugeiconsIcon icon={Mic01Icon} size={58} color={C.blue} strokeWidth={1.5} />
-          </View>
-          <View style={styles.textBubble}>
-            <AppText style={styles.bubbleText} forceLatinFont numberOfLines={4}>
-              {sentenceDisplay || (isKu ? "سەرەتا پۆدکاستێک دروست بکە." : "Generate a podcast first.")}
-            </AppText>
-          </View>
-        </HomeLiquidCard>
-
-        <View style={styles.infoArea}>
-          <AppText style={styles.podcastTitle}>
-            {episode?.title || (isKu ? "پۆدکاستی تایبەت بە تۆ" : "Your custom podcast")}
-          </AppText>
-          <AppText style={styles.podcastSub}>
-            {episode?.subtitle || selectedTemplate?.subtitle || "AI generated language lessons"}
-          </AppText>
-        </View>
-
-        <View style={styles.progressArea}>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${Math.min(progressPercent, 100)}%` }]} />
-          </View>
-          <View style={[styles.timeRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-            <AppText style={styles.timeText}>{formatTime(currentIdx * 4)}</AppText>
-            <AppText style={styles.timeText}>{formatTime(Math.max(segments.length, 1) * 4)}</AppText>
-          </View>
-        </View>
-
-        <View style={[styles.controlsRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-          <PressableScale onPress={handleRewind} style={styles.controlBtn}>
-            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-              <HugeiconsIcon icon={BackwardIcon} size={30} color="#0F1A30" />
+        {/* Audio Player Card */}
+        {activeEpisode && (
+          <HomeLiquidCard style={styles.generatorCard} contentStyle={styles.generatorInner}>
+            <View style={styles.infoArea}>
+              <AppText style={styles.podcastTitle}>
+                {isKu ? activeEpisode.titleKu : activeEpisode.title}
+              </AppText>
+              <AppText style={styles.podcastSub}>
+                {isKu ? activeEpisode.subtitleKu : activeEpisode.subtitle}
+              </AppText>
             </View>
-          </PressableScale>
 
-          <PressableScale
-            onPress={togglePlay}
-            disabled={!hasEpisode || isGenerating}
-            style={[
-              styles.playBtn,
-              (!hasEpisode || isGenerating) && styles.playBtnDisabled,
-              crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.3 }),
-            ]}
-          >
-            {isPlaying ? (
-              <HugeiconsIcon icon={PauseIcon} size={38} color="#FFFFFF" />
-            ) : (
-              <HugeiconsIcon icon={PlayIcon} size={38} color="#FFFFFF" style={{ marginLeft: 4 }} />
-            )}
-          </PressableScale>
-
-          <PressableScale onPress={handleFastForward} style={styles.controlBtn}>
-            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-              <HugeiconsIcon icon={ForwardIcon} size={30} color="#0F1A30" />
+            {/* Progress Bar */}
+            <View style={styles.progressArea}>
+              <View style={styles.progressBarBg}>
+                <View style={[styles.progressBarFill, { width: `${Math.min(progressPercent, 100)}%` }]} />
+              </View>
+              <View style={[styles.timeRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+                <AppText style={styles.timeText}>{formatTime(audioCurrentTime)}</AppText>
+                <AppText style={styles.timeText}>{formatTime(audioDuration)}</AppText>
+              </View>
             </View>
-          </PressableScale>
-        </View>
 
-        <View style={[styles.volumeArea, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-          <HugeiconsIcon icon={VolumeHighIcon} size={20} color="#9CA3AF" />
-          <View style={styles.volumeBarBg}>
-            <View style={[styles.volumeBarFill, { width: hasEpisode ? "70%" : "0%" }]} />
-          </View>
-        </View>
+            {/* Playback Speed Controller */}
+            <View style={styles.speedControlArea}>
+              <AppText style={styles.speedLabel}>
+                {isKu ? "خێرایی لێدان:" : "Playback Speed:"}
+              </AppText>
+              <View style={styles.speedPillsRow}>
+                {([0.8, 1.0, 1.2, 1.5] as const).map((rate) => {
+                  const active = playbackRate === rate;
+                  return (
+                    <PressableScale
+                      key={rate}
+                      onPress={() => changeSpeed(rate)}
+                      style={[styles.speedPill, active && styles.speedPillActive]}
+                    >
+                      <AppText style={[styles.speedPillText, active && styles.speedPillTextActive]}>
+                        {rate}x
+                      </AppText>
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Controls */}
+            <View style={[styles.controlsRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+              <PressableScale onPress={handleRewind} style={styles.controlBtn}>
+                <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
+                  <HugeiconsIcon icon={BackwardIcon} size={30} color="#0F1A30" />
+                </View>
+              </PressableScale>
+
+              <PressableScale
+                onPress={togglePlay}
+                style={styles.playBtn}
+              >
+                {isPlaying ? (
+                  <HugeiconsIcon icon={PauseIcon} size={38} color="#FFFFFF" />
+                ) : (
+                  <HugeiconsIcon icon={PlayIcon} size={38} color="#FFFFFF" style={{ marginLeft: 4 }} />
+                )}
+              </PressableScale>
+
+              <PressableScale onPress={handleFastForward} style={styles.controlBtn}>
+                <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
+                  <HugeiconsIcon icon={ForwardIcon} size={30} color="#0F1A30" />
+                </View>
+              </PressableScale>
+            </View>
+
+            {/* Interactive Volume Control */}
+            <View style={[styles.volumeArea, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+              <Pressable onPress={toggleMute} style={styles.muteBtn}>
+                <HugeiconsIcon
+                  icon={isMuted || volume === 0 ? VolumeMuteIcon : VolumeHighIcon}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </Pressable>
+              <Pressable
+                onPress={handleVolumePress}
+                onLayout={(e) => setVolumeWidth(e.nativeEvent.layout.width)}
+                style={styles.volumeBarTouchArea}
+              >
+                <View style={styles.volumeBarBg}>
+                  <View
+                    style={[
+                      styles.volumeBarFill,
+                      { width: `${(isMuted ? 0 : volume) * 100}%` },
+                    ]}
+                  />
+                </View>
+              </Pressable>
+            </View>
+          </HomeLiquidCard>
+        )}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.meshBottom,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -583,19 +590,20 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.7)",
     alignItems: "center",
     justifyContent: "center",
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F1A30",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   content: {
     paddingHorizontal: 20,
     alignItems: "center",
+    width: "100%",
   },
   generatorCard: {
     width: "100%",
@@ -603,7 +611,7 @@ const styles = StyleSheet.create({
   },
   generatorInner: {
     padding: 18,
-    gap: 14,
+    gap: 16,
   },
   generatorHeader: {
     alignItems: "center",
@@ -620,7 +628,7 @@ const styles = StyleSheet.create({
   generatorTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#0F1A30",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   generatorEyebrow: {
@@ -631,21 +639,51 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     fontFamily: "DINNextRoundedBold",
   },
-  generatorSub: {
+  sectionLabel: {
     fontSize: 12,
-    color: "#64748B",
+    fontWeight: "800",
+    color: colors.foreground,
+    fontFamily: "DINNextRoundedBold",
     marginTop: 2,
+  },
+  levelSelector: {
+    flexDirection: "row",
+    backgroundColor: colors.muted,
+    padding: 4,
+    borderRadius: 16,
+    gap: 4,
+    marginBottom: 8,
+  },
+  levelBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelBtnActive: {
+    backgroundColor: colors.surfaceRaised,
+    ...crossShadow({ color: "rgba(0,0,0,0.06)", offsetY: 3, blur: 8, opacity: 1 }),
+  },
+  levelBtnText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.mutedForeground,
+    fontFamily: "DINNextRoundedBold",
+  },
+  levelBtnTextActive: {
+    color: C.blue,
   },
   topicInput: {
     minHeight: 82,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.1)",
-    backgroundColor: "rgba(255,255,255,0.86)",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 13,
     fontSize: 15,
-    color: "#0F1A30",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedRegular",
     lineHeight: 21,
   },
@@ -655,14 +693,15 @@ const styles = StyleSheet.create({
   },
   starterRow: {
     flexWrap: "wrap",
+    flexDirection: "row",
     gap: 8,
   },
   starterChip: {
     minHeight: 36,
     borderRadius: 999,
-    backgroundColor: "rgba(15, 23, 42, 0.06)",
+    backgroundColor: colors.muted,
     borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 8,
     justifyContent: "center",
@@ -670,50 +709,8 @@ const styles = StyleSheet.create({
   starterText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#334155",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#334155",
-    fontFamily: "DINNextRoundedBold",
-    marginTop: 2,
-  },
-  templateGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  templateChip: {
-    flexGrow: 1,
-    flexBasis: "46%",
-    minHeight: 74,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
-    backgroundColor: "rgba(255,255,255,0.7)",
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  },
-  templateChipActive: {
-    borderColor: "rgba(59, 130, 246, 0.42)",
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-  },
-  templateTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#0F1A30",
-    fontFamily: "DINNextRoundedBold",
-    marginBottom: 4,
-  },
-  templateTitleActive: {
-    color: C.blue,
-  },
-  templateSub: {
-    fontSize: 11,
-    color: "#64748B",
-    lineHeight: 15,
   },
   generateBtn: {
     height: 52,
@@ -728,88 +725,60 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontFamily: "DINNextRoundedBold",
   },
+  progressContainer: {
+    gap: 10,
+    paddingVertical: 4,
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  progressText: {
+    fontSize: 13,
+    color: colors.mutedForeground,
+    fontWeight: "700",
+  },
+  progressPercent: {
+    fontSize: 14,
+    color: C.blue,
+    fontWeight: "800",
+  },
   errorText: {
     color: "#EF4444",
     fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
   },
-  statusText: {
-    color: "#475569",
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: "center",
-  },
-  rtlText: {
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  artCard: {
-    width: "100%",
-    minHeight: 250,
-    borderRadius: 32,
-    marginBottom: 24,
-  },
-  artCardInner: {
-    minHeight: 250,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderRadius: 32,
-    padding: 20,
-  },
-  iconCircle: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: "rgba(15, 23, 42, 0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  textBubble: {
-    backgroundColor: "rgba(255,255,255,0.85)",
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.12)",
-    maxWidth: "94%",
-  },
-  bubbleText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0F1A30",
-    textAlign: "center",
-    lineHeight: 20,
-  },
   infoArea: {
     alignItems: "center",
-    marginBottom: 24,
+    marginVertical: 12,
   },
   podcastTitle: {
-    fontSize: 25,
+    fontSize: 22,
     fontWeight: "800",
-    color: "#0F1A30",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     marginBottom: 6,
     textAlign: "center",
   },
   podcastSub: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
+    fontSize: 13,
+    color: colors.mutedForeground,
+    fontWeight: "600",
     textAlign: "center",
+    fontFamily: "DINNextRoundedRegular",
   },
   progressArea: {
     width: "100%",
-    marginBottom: 28,
+    marginTop: 10,
+    marginBottom: 16,
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
     borderRadius: 3,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   progressBarFill: {
     height: "100%",
@@ -822,40 +791,85 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: colors.mutedForeground,
     fontWeight: "600",
+  },
+  speedControlArea: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+    marginBottom: 16,
+  },
+  speedLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.mutedForeground,
+    fontFamily: "DINNextRoundedBold",
+  },
+  speedPillsRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  speedPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: colors.muted,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  speedPillActive: {
+    backgroundColor: C.blue,
+    borderColor: C.blue,
+  },
+  speedPillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.mutedForeground,
+    fontFamily: "DINNextRoundedBold",
+  },
+  speedPillTextActive: {
+    color: "#FFFFFF",
   },
   controlsRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 38,
-    marginBottom: 28,
+    gap: 34,
+    marginBottom: 16,
   },
   controlBtn: {
     padding: 10,
   },
   playBtn: {
-    width: 78,
-    height: 78,
-    borderRadius: 39,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: C.blue,
     alignItems: "center",
     justifyContent: "center",
-  },
-  playBtnDisabled: {
-    opacity: 0.45,
+    ...crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.3 }),
   },
   volumeArea: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
     width: "80%",
-    gap: 12,
+    gap: 10,
+    marginTop: 8,
+  },
+  muteBtn: {
+    padding: 6,
+  },
+  volumeBarTouchArea: {
+    flex: 1,
+    paddingVertical: 10,
   },
   volumeBarBg: {
-    flex: 1,
     height: 4,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)",
     borderRadius: 2,
   },
   volumeBarFill: {
@@ -863,4 +877,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#9CA3AF",
     borderRadius: 2,
   },
-});
+  rtlText: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  });
+}

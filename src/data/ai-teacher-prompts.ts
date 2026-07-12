@@ -4,29 +4,65 @@ export const AI_TEACHER_PROMPTS: AiTeacherPrompt[] = [
   {
     id: "hometown",
     title: "Describe your hometown",
-    scenario:
-      "Speak for about one minute. Mention location, what you like, and one change you would make.",
+    titleKu: "باسکردنی شارەکەت",
+    scenario: "Speak for about one minute. Mention location, what you like, and one change you would make.",
+    scenarioKu: "بۆ ماوەی یەک خولەک قسە بکە. ناوی شوێنەکە بڵێ، چیت تێدا بەدڵە، و یەک گۆڕانکاری کە دەتەوێت بیکەیت.",
     mode: "speaking",
   },
   {
     id: "opinion",
     title: "Online learning opinion",
-    scenario:
-      "Do you think online learning is as effective as classroom learning? Explain your view with examples.",
+    titleKu: "ڕا لەسەر خوێندنی ئۆنلاین",
+    scenario: "Do you think online learning is as effective as classroom learning? Explain your view with examples.",
+    scenarioKu: "ئایا پێت وایە خوێندنی ئۆنلاین هێندەی ناو پۆل کاریگەرە؟ ڕای خۆت بە نموونەوە ڕوون بکەرەوە.",
     mode: "writing",
   },
   {
     id: "work",
     title: "Your ideal job",
-    scenario:
-      "Describe a job you would like to have in the future. Say why it interests you and what skills you need.",
+    titleKu: "کاری دڵخوازت",
+    scenario: "Describe a job you would like to have in the future. Say why it interests you and what skills you need.",
+    scenarioKu: "باس لە کارێک بکە کە حەز دەکەیت لە داهاتوودا هەت بێت. بڵێ بۆچی سەرنجت ڕادەکێشێت و چ لێهاتووییەکت پێویستە.",
     mode: "speaking",
   },
   {
     id: "letter",
     title: "Formal email",
-    scenario:
-      "Write a short email to a teacher requesting an extension for an assignment. Use polite, formal English.",
+    titleKu: "ئیمەیڵی فەرمی",
+    scenario: "Write a short email to a teacher requesting an extension for an assignment. Use polite, formal English.",
+    scenarioKu: "ئیمەیڵێکی کورت بنووسە بۆ مامۆستایەک و داوای درێژکردنەوەی کاتی ئەرکێک بکە. ئینگلیزییەکی فەرمی و بەڕێزانە بەکاربهێنە.",
     mode: "writing",
+  },
+  {
+    id: "hobby",
+    title: "Describe your favorite hobby",
+    titleKu: "باسکردنی خولیای بەدڵت",
+    scenario: "Talk about a hobby you enjoy. When did you start it, why do you like it, and how often do you do it?",
+    scenarioKu: "باس لە خولیایەک بکە کە چێژی لێ وەردەگریت. کەی دەستت پێکردووە، بۆچی بەدڵتە، و چەند جار ئەنجامی دەدەیت؟",
+    mode: "speaking",
+  },
+  {
+    id: "travel",
+    title: "A memorable journey",
+    titleKu: "گەشتێکی لەبیرنەکراو",
+    scenario: "Describe a memorable trip you took. Where did you go, who went with you, and what made it special?",
+    scenarioKu: "باس لە گەشتێکی لەبیرنەکراو بکە کە کردووتە. بۆ کوێ ڕۆشتیت، کێ لەگەڵت بوو، و چی وایکرد تایبەت بێت؟",
+    mode: "speaking",
+  },
+  {
+    id: "friend",
+    title: "Describe a close friend",
+    titleKu: "باسکردنی هاوڕێیەکی نزیک",
+    scenario: "Talk about a close friend. How did you meet, what do you like about them, and why is your friendship strong?",
+    scenarioKu: "باس لە هاوڕێیەکی نزیک بکە. چۆن یەکتریتان ناسی، چ شتێکی ئەوانت بەدڵە، و بۆچی هاوڕێیایەتیتان بەهێزە؟",
+    mode: "speaking",
+  },
+  {
+    id: "future",
+    title: "Your plans for the future",
+    titleKu: "پلانەکانت بۆ داهاتوو",
+    scenario: "Talk about your goals for the next five years. What do you want to study or work on, and how will you achieve it?",
+    scenarioKu: "باس لە ئامانجەکانت بکە بۆ پێنج ساڵی داهاتوو. دەتەوێت بخوێنیت یان کار لەسەر چی بکەیت، چۆن بەدەستی دەهێنیت؟",
+    mode: "speaking",
   },
 ];

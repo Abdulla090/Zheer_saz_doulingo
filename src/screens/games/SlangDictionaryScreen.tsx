@@ -5,9 +5,15 @@ import {
   HomeMeshBackground,
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
-import { SLANG_CATEGORIES, SLANG_DATA, type SlangItem } from "../../data/slang-dictionary";
+import {
+  SLANG_CATEGORIES,
+  SLANG_DATA,
+  type SlangContextFilter,
+  type SlangItem,
+} from "../../data/slang-dictionary";
 import { useTTS } from "../../hooks/use-tts";
 import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
@@ -54,23 +60,25 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   categoriesList,
   selectedCategory,
   onSelectCategory,
-  isKurdish,
+  locale,
 }: {
-  categoriesList: string[];
-  selectedCategory: string;
-  onSelectCategory: (category: string) => void;
-  isKurdish: boolean;
+  categoriesList: SlangContextFilter[];
+  selectedCategory: SlangContextFilter;
+  onSelectCategory: (category: SlangContextFilter) => void;
+  locale: string;
 }) {
+  const styles = useSlangStyles();
+  const isRtl = locale === "ku" || locale === "ar";
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.chipsContainer, { paddingRight: isKurdish ? 0 : 16, paddingLeft: isKurdish ? 16 : 0, flexDirection: isKurdish ? "row-reverse" : "row" }]}
+      contentContainerStyle={[styles.chipsContainer, { paddingRight: isRtl ? 0 : 16, paddingLeft: isRtl ? 16 : 0, flexDirection: isRtl ? "row-reverse" : "row" }]}
       style={styles.chipsList}
     >
-      {(isKurdish ? [...categoriesList].reverse() : categoriesList).map((item) => {
-        const cat = SLANG_CATEGORIES[item as keyof typeof SLANG_CATEGORIES];
-        const labelText = isKurdish ? cat.ku : cat.en;
+      {(isRtl ? [...categoriesList].reverse() : categoriesList).map((item) => {
+        const cat = SLANG_CATEGORIES[item];
+        const labelText = locale === "ku" ? cat.ku : locale === "ar" ? cat.ar : cat.en;
         const isSelected = selectedCategory === item;
 
         return (
@@ -103,6 +111,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
   t,
   speaking,
   activeId,
+  locale,
 }: {
   item: SlangItem;
   isExpanded: boolean;
@@ -113,7 +122,12 @@ const SlangItemRow = React.memo(function SlangItemRow({
   t: any;
   speaking: boolean;
   activeId: string | null;
+  locale: string;
 }) {
+  const { colors } = useThemeColors();
+  const styles = useSlangStyles();
+  const context = SLANG_CATEGORIES[item.context];
+  const contextLabel = locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
   return (
     <Animated.View layout={LinearTransition.duration(220)}>
       <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
@@ -124,6 +138,11 @@ const SlangItemRow = React.memo(function SlangItemRow({
                 <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
                   <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
                     {item.type}
+                  </AppText>
+                </View>
+                <View style={styles.contextBadge}>
+                  <AppText style={styles.contextBadgeText} numberOfLines={1}>
+                    {contextLabel}
                   </AppText>
                 </View>
               </View>
@@ -143,14 +162,14 @@ const SlangItemRow = React.memo(function SlangItemRow({
                 <HugeiconsIcon
                   icon={VolumeHighIcon}
                   size={20}
-                  color={isItemSpeaking ? "#FFFFFF" : ThemeColors.accentBlue}
+                  color={isItemSpeaking ? "#FFFFFF" : colors.foreground}
                   strokeWidth={2.0}
                 />
               </PressableScale>
               {isExpanded ? (
-                <HugeiconsIcon icon={ChevronUpIcon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
+                <HugeiconsIcon icon={ChevronUpIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
               ) : (
-                <HugeiconsIcon icon={ChevronDownIcon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
+                <HugeiconsIcon icon={ChevronDownIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
               )}
             </View>
           </View>
@@ -259,6 +278,8 @@ const SlangItemRow = React.memo(function SlangItemRow({
 });
 
 export function SlangDictionaryScreen() {
+  const { colors } = useThemeColors();
+  const styles = useSlangStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, locale } = useI18n();
@@ -270,7 +291,7 @@ export function SlangDictionaryScreen() {
 
   // States
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("Normal");
+  const [selectedCategory, setSelectedCategory] = useState<SlangContextFilter>("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Quiz Modal States
@@ -297,14 +318,17 @@ export function SlangDictionaryScreen() {
   const filteredSlang = useMemo(() => {
     return SLANG_DATA.filter((item) => {
       const matchesCategory =
-        selectedCategory === "All" || item.category === selectedCategory;
+        selectedCategory === "All" || item.context === selectedCategory;
 
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
         item.phrase.toLowerCase().includes(q) ||
         item.pronunciation.toLowerCase().includes(q) ||
-        item.kuMeaning.toLowerCase().includes(q);
+        item.kuMeaning.toLowerCase().includes(q) ||
+        SLANG_CATEGORIES[item.context].en.toLowerCase().includes(q) ||
+        SLANG_CATEGORIES[item.context].ku.toLowerCase().includes(q) ||
+        SLANG_CATEGORIES[item.context].ar.toLowerCase().includes(q);
 
       return matchesCategory && matchesSearch;
     });
@@ -321,7 +345,7 @@ export function SlangDictionaryScreen() {
       if (speaking && activeId === id) {
         void stop();
       } else {
-        void speak(text, "en", id);
+        void speak(text, "en", id, { provider: "device" });
       }
     },
     [speaking, activeId, speak, stop]
@@ -416,7 +440,10 @@ export function SlangDictionaryScreen() {
     setQuizVisible(false);
   }, [awardXp]);
 
-  const categoriesList = useMemo(() => Object.keys(SLANG_CATEGORIES), []);
+  const categoriesList = useMemo(
+    () => Object.keys(SLANG_CATEGORIES) as SlangContextFilter[],
+    [],
+  );
 
   return (
     <View style={styles.root}>
@@ -449,6 +476,7 @@ export function SlangDictionaryScreen() {
             t={t}
             speaking={speaking}
             activeId={activeId}
+            locale={locale}
           />
         )}
         extraData={{ expandedId, activeId, speaking }}
@@ -530,7 +558,7 @@ export function SlangDictionaryScreen() {
               categoriesList={categoriesList}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
-              isKurdish={isKurdish}
+              locale={locale}
             />
           </>
         }
@@ -734,10 +762,13 @@ export function SlangDictionaryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function useSlangStyles() {
+  const { colors, isDark } = useThemeColors();
+
+  return useMemo(() => StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.meshBottom,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
@@ -746,7 +777,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   },
   backBtn: {
     width: 40,
@@ -754,7 +785,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
+    backgroundColor: colors.muted,
   },
   headerTitle: {
     fontSize: 20,
@@ -780,7 +811,7 @@ const styles = StyleSheet.create({
   spotlightBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -868,7 +899,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
     borderColor: C.divider,
   },
@@ -888,7 +919,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardShell: {
-    backgroundColor: ThemeColors.cardBg,
+    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: C.divider,
@@ -920,7 +951,9 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
+    gap: 6,
     marginBottom: 4,
   },
   typeBadge: {
@@ -936,6 +969,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
+  contextBadge: {
+    maxWidth: 170,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: "rgba(15, 23, 42, 0.035)",
+    borderWidth: 1,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+  },
+  contextBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: ThemeColors.slate,
+  },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -945,7 +992,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(15, 23, 42, 0.06)",
+    backgroundColor: colors.muted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -958,7 +1005,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(0,0,0,0.06)",
+    backgroundColor: colors.border,
   },
   detailRow: {
     gap: 4,
@@ -979,10 +1026,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   dialogueBox: {
-    backgroundColor: "rgba(0, 0, 0, 0.02)",
+    backgroundColor: colors.muted,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.04)",
+    borderColor: colors.border,
     padding: 12,
     gap: 12,
     marginTop: 4,
@@ -1058,9 +1105,9 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
     paddingTop: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: isDark ? "rgba(15, 23, 42, 0.96)" : "rgba(255, 255, 255, 0.94)",
     borderTopWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: colors.border,
   },
   gameLaunchBtn: {
     backgroundColor: ThemeColors.accentBlue,
@@ -1310,4 +1357,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
-});
+  }), [colors, isDark]);
+}

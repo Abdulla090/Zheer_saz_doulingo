@@ -32,8 +32,7 @@ type Props = {
 };
 
 export default function MultipleChoiceGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
-  const { t, isKu, isAr } = useI18n();
-  const rtl = isKu || isAr;
+  const { t } = useI18n();
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -98,6 +97,7 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
         <LightQuestionPrompt
           label={t("lessons.questionLabel")}
           forceKurdishFont={isKuPrompt}
+          contentLanguageCode={question.promptLang || question.sourceLanguage}
           variant={pathMode === "kids" ? "kids" : "default"}
         >
           {question.prompt}
@@ -111,8 +111,8 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
                 state={mapOptionState(getState(opt))}
                 onPress={() => pick(opt)}
                 disabled={revealed}
-                rtl={rtl}
                 isKids={pathMode === "kids"}
+                languageCode={question.targetLanguage}
               />
             </GameOption>
           ))}

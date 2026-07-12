@@ -66,5 +66,6 @@ export const SOURCE_LANGUAGES = Object.values(LANGUAGES).filter(l => l.supported
 export const TARGET_LANGUAGES = Object.values(LANGUAGES).filter(l => l.supportedAsTarget);
 
 export function getLanguage(code: string): LanguageDefinition | undefined {
-  return LANGUAGES[code];
+  const normalized = code.trim().replace(/_/g, "-");
+  return LANGUAGES[normalized] ?? LANGUAGES[normalized.split("-")[0].toLowerCase()];
 }

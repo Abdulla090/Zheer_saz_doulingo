@@ -8,6 +8,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 let GlassViewComponent: React.ComponentType<{
   style?: StyleProp<ViewStyle>;
@@ -30,10 +31,12 @@ function FrostWash({
   borderRadius,
   minimal,
   intensity = 0.5,
+  isDark,
 }: {
   borderRadius: number;
   minimal?: boolean;
   intensity?: number;
+  isDark: boolean;
 }) {
   // Scale overlay opacities dynamically based on iOS 27 intensity
   const opacityMultiplier = intensity * 1.2;
@@ -46,7 +49,7 @@ function FrostWash({
             StyleSheet.absoluteFill,
             {
               borderRadius,
-              backgroundColor: LIQUID_GLASS.frostUnderlay,
+              backgroundColor: isDark ? "rgba(15,23,42,0.78)" : LIQUID_GLASS.frostUnderlay,
               opacity: Math.min(1, opacityMultiplier),
               pointerEvents: "none",
             },
@@ -57,7 +60,7 @@ function FrostWash({
             StyleSheet.absoluteFill,
             {
               borderRadius,
-              backgroundColor: LIQUID_GLASS.tintWash,
+              backgroundColor: isDark ? "rgba(255,255,255,0.035)" : LIQUID_GLASS.tintWash,
               opacity: Math.min(1, opacityMultiplier * 0.8),
               pointerEvents: "none",
             },
@@ -67,7 +70,7 @@ function FrostWash({
     );
   }
 
-  const frost = liquidFrostBase();
+  const frost = isDark ? "rgba(30,41,59,0.74)" : liquidFrostBase();
   return (
     <>
       <View
@@ -75,7 +78,7 @@ function FrostWash({
           StyleSheet.absoluteFill,
           {
             borderRadius,
-            backgroundColor: LIQUID_GLASS.frostUnderlay,
+            backgroundColor: isDark ? "rgba(15,23,42,0.78)" : LIQUID_GLASS.frostUnderlay,
             opacity: Math.min(1, opacityMultiplier * 0.8),
             pointerEvents: "none",
           },
@@ -97,7 +100,7 @@ function FrostWash({
           StyleSheet.absoluteFill,
           {
             borderRadius,
-            backgroundColor: LIQUID_GLASS.tintWash,
+            backgroundColor: isDark ? "rgba(255,255,255,0.035)" : LIQUID_GLASS.tintWash,
             opacity: Math.min(1, opacityMultiplier * 0.9),
             pointerEvents: "none",
           },
@@ -110,9 +113,11 @@ function FrostWash({
 function WebLiquidBackdrop({
   borderRadius,
   intensity = 0.5,
+  isDark,
 }: {
   borderRadius: number;
   intensity?: number;
+  isDark: boolean;
 }) {
   const blurVal = Math.round(12 + intensity * 24); // 12px to 36px blur
   const satVal = Math.round(120 + intensity * 90); // 120% to 210% saturation
@@ -126,7 +131,9 @@ function WebLiquidBackdrop({
         {
           borderRadius,
           overflow: "hidden",
-          backgroundColor: `rgba(226, 232, 240, ${opacityVal})`,
+          backgroundColor: isDark
+            ? `rgba(15, 23, 42, ${Math.max(0.72, Number(opacityVal))})`
+            : `rgba(226, 232, 240, ${opacityVal})`,
           backdropFilter: `blur(${blurVal}px) saturate(${satVal}%) contrast(${contrastVal})`,
           WebkitBackdropFilter: `blur(${blurVal}px) saturate(${satVal}%) contrast(${contrastVal})`,
           pointerEvents: "none",
@@ -265,6 +272,7 @@ export function LiquidGlassSurface({
   edgeShading,
   intensity = 0.5,
 }: Props) {
+  const { isDark } = useThemeColors();
   const nativeGlass =
     Platform.OS === "ios" && isGlassEffectAPIAvailable() && GlassViewComponent != null;
   const GlassView = GlassViewComponent;
@@ -283,21 +291,26 @@ export function LiquidGlassSurface({
         style,
       ]}
     >
-      <FrostWash borderRadius={borderRadius} minimal={isWeb || nativeGlass} intensity={intensity} />
+      <FrostWash
+        borderRadius={borderRadius}
+        minimal={isWeb || nativeGlass}
+        intensity={intensity}
+        isDark={isDark}
+      />
 
       {isWeb ? (
-        <WebLiquidBackdrop borderRadius={borderRadius} intensity={intensity} />
+        <WebLiquidBackdrop borderRadius={borderRadius} intensity={intensity} isDark={isDark} />
       ) : nativeGlass && GlassView ? (
         <GlassView
           style={[StyleSheet.absoluteFill, { borderRadius }]}
           glassEffectStyle="regular"
-          colorScheme="light"
+          colorScheme={isDark ? "dark" : "light"}
           isInteractive
         />
       ) : showBlurFallback ? (
         <BlurView
           intensity={Math.round(40 + intensity * 50)} // 40 to 90 blur intensity
-          tint={LIQUID_GLASS.blurTint}
+          tint={isDark ? "dark" : LIQUID_GLASS.blurTint}
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: "hidden" }]}
         />
       ) : null}
@@ -306,7 +319,11 @@ export function LiquidGlassSurface({
 
       {!nativeGlass ? (
         <LinearGradient
-          colors={[...LIQUID_GLASS.sheen]}
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.09)", "rgba(255,255,255,0.025)", "rgba(255,255,255,0)"]
+              : [...LIQUID_GLASS.sheen]
+          }
           locations={[0, 0.45, 1]}
           style={[
             styles.topSheen,

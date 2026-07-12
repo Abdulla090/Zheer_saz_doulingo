@@ -94,8 +94,8 @@ export default function ImageMultipleChoiceGame({
   }, [revealed, selected, question.correctAnswer]);
 
   const handleListen = useCallback(() => {
-    void speak(question.correctAnswer, "en", question.correctAnswer);
-  }, [speak, question.correctAnswer]);
+    void speak(question.correctAnswer, question.targetLanguage ?? "en", question.correctAnswer);
+  }, [speak, question.correctAnswer, question.targetLanguage]);
 
   // Seeded shuffle — stable across re-renders
   const shuffledOptions = useMemo(() => {
@@ -161,7 +161,7 @@ export default function ImageMultipleChoiceGame({
                   isKids
                   fontSize={18}
                   centerLabel
-                  forceLatinFont
+                  languageCode={question.targetLanguage}
                   style={s.choiceTile}
                 />
               </View>

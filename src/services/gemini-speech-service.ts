@@ -328,6 +328,7 @@ export type AiPodcastEpisode = {
   title: string;
   subtitle: string;
   segments: AiPodcastSegment[];
+  audioSource?: any;
 };
 
 const AI_PODCAST_TEMPLATE_PROMPTS: Record<AiPodcastTemplateId, string> = {

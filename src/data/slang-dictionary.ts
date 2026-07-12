@@ -1,4 +1,16 @@
 export type SlangType = "Gen Z Slang" | "Idiom" | "Everyday Phrase" | "Street Slang" | "Business/Formal";
+export type SlangContext =
+  | "Daily Life"
+  | "Restaurants & Cafes"
+  | "Shopping & Money"
+  | "Travel & Transport"
+  | "Work & Business"
+  | "Friends & Social"
+  | "School & Study"
+  | "Online & Gen Z"
+  | "Home & Services"
+  | "Health & Emergencies";
+export type SlangContextFilter = "All" | SlangContext;
 
 export interface SlangItem {
   id: string;
@@ -6,6 +18,7 @@ export interface SlangItem {
   pronunciation: string;
   kuMeaning: string;
   category: "Normal" | "Slang" | "Idioms" | "Business";
+  context: SlangContext;
   type: SlangType;
   example: {
     speakerA: string;
@@ -15,14 +28,26 @@ export interface SlangItem {
   };
 }
 
-export const SLANG_CATEGORIES = {
-  Normal: { en: "Everyday Slang", ku: "سلاکی ڕۆژانە" },
-  Slang: { en: "Gen Z & Street", ku: "سلاکی نوێ" },
-  Idioms: { en: "Idioms", ku: "ئیدیۆمەکان" },
-  Business: { en: "Business/Formal", ku: "فەرمی و کار" },
+type SlangSeed = Omit<SlangItem, "context"> & { context?: SlangContext };
+
+export const SLANG_CATEGORIES: Record<
+  SlangContextFilter,
+  { en: string; ku: string; ar: string }
+> = {
+  All: { en: "All", ku: "هەمووی", ar: "الكل" },
+  "Daily Life": { en: "Daily Life", ku: "ژیانی ڕۆژانە", ar: "الحياة اليومية" },
+  "Restaurants & Cafes": { en: "Restaurants & Cafes", ku: "چێشتخانە و کافێ", ar: "المطاعم والمقاهي" },
+  "Shopping & Money": { en: "Shopping & Money", ku: "بازاڕ و پارە", ar: "التسوق والمال" },
+  "Travel & Transport": { en: "Travel & Transport", ku: "گەشت و هاتوچۆ", ar: "السفر والمواصلات" },
+  "Work & Business": { en: "Work & Business", ku: "کار و بازرگانی", ar: "العمل والأعمال" },
+  "Friends & Social": { en: "Friends & Social", ku: "هاوڕێ و کۆمەڵایەتی", ar: "الأصدقاء والحياة الاجتماعية" },
+  "School & Study": { en: "School & Study", ku: "قوتابخانە و خوێندن", ar: "المدرسة والدراسة" },
+  "Online & Gen Z": { en: "Online & Gen Z", ku: "ئۆنلاین و نەوەی Z", ar: "الإنترنت والجيل زد" },
+  "Home & Services": { en: "Home & Services", ku: "ماڵ و خزمەتگوزاری", ar: "المنزل والخدمات" },
+  "Health & Emergencies": { en: "Health & Emergencies", ku: "تەندروستی و فریاکەوتن", ar: "الصحة والطوارئ" },
 };
 
-const BASE_SLANG_DATA: SlangItem[] = [
+const BASE_SLANG_DATA: SlangSeed[] = [
   // =====================
   // EVERYDAY SLANG (Normal)
   // =====================
@@ -516,19 +541,20 @@ const BASE_SLANG_DATA: SlangItem[] = [
   }
 ];
 
-type ExpandedSlangSeed = Omit<SlangItem, "example"> & {
+type ExpandedSlangSeed = Omit<SlangSeed, "example"> & {
   speakerA: string;
   speakerB: string;
   kuA: string;
   kuB: string;
 };
 
-const makeExpandedSlangItem = (item: ExpandedSlangSeed): SlangItem => ({
+const makeExpandedSlangItem = (item: ExpandedSlangSeed): SlangSeed => ({
   id: item.id,
   phrase: item.phrase,
   pronunciation: item.pronunciation,
   kuMeaning: item.kuMeaning,
   category: item.category,
+  context: item.context,
   type: item.type,
   example: {
     speakerA: item.speakerA,
@@ -538,7 +564,7 @@ const makeExpandedSlangItem = (item: ExpandedSlangSeed): SlangItem => ({
   },
 });
 
-const EXPANDED_SLANG_DATA: SlangItem[] = [
+const EXPANDED_SLANG_DATA: SlangSeed[] = [
   // =====================
   // EXPANSION: EVERYDAY SLANG (Normal)
   // =====================
@@ -1130,9 +1156,804 @@ const EXPANDED_SLANG_DATA: SlangItem[] = [
     kuA: "کێشەکە پەیوەندی بە بەکئەندیشەوە هەیە.",
     kuB: "داناش هاوبەش بکە تا پێداچوونەوەی بکات.",
   }),
+  makeExpandedSlangItem({
+    id: "deadass",
+    phrase: "Deadass",
+    pronunciation: "دێداس",
+    kuMeaning: "بە ڕاستی / بە جددی / بێ گاڵتە",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I deadass studied for ten hours yesterday and still feel like I know nothing.",
+    speakerB: "Don't worry, you always do better than you think.",
+    kuA: "بە ڕاستی دوێنێ دە کاتژمێر خوێندم و هێشتا وای هەست دەکەم هیچ نازانم.",
+    kuB: "خۆت نیگەران مەکە، تۆ هەمیشە باشتر لەوەی بیرت لێ دەکەیتەوە ئەنجامی دەدەیت.",
+  }),
+  makeExpandedSlangItem({
+    id: "finna",
+    phrase: "Finna",
+    pronunciation: "فینا",
+    kuMeaning: "خەریکە / دەمەوێت کارێک بکەم (کورتکراوەی فەرمی بۆ going to)",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I'm finna go to the shop, do you need anything?",
+    speakerB: "Just grab some water and snacks, please.",
+    kuA: "خەریکم دەچم بۆ دوکان، هیچ شتێکت دەوێت؟",
+    kuB: "تەنها کەمێک ئاو و سووکەخۆراک بێنە، تکایە.",
+  }),
+  makeExpandedSlangItem({
+    id: "pull_up",
+    phrase: "Pull up",
+    pronunciation: "پوڵ ئەپ",
+    kuMeaning: "هاتن / گەیشتن / سەردانکردنی شوێنێک",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "We are chilling at the park right now, pull up when you are free.",
+    speakerB: "Bet! I'll be there in fifteen minutes.",
+    kuA: "ئێستا لە پارکەکە پشوو دەدەین، کاتێک کاتت هەبوو وەرە.",
+    kuB: "باشە! پاش پانزە خولەک لەوێ دەبم.",
+  }),
+  makeExpandedSlangItem({
+    id: "keep_it_100",
+    phrase: "Keep it 100",
+    pronunciation: "کیپ ئت وەن هەندرەد",
+    kuMeaning: "ڕاستگۆیی تەواو / بە تەواوی ڕاستگۆ بە لەگەڵم",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "You need to keep it 100 with me, is my new song actually good?",
+    speakerB: "To be honest, the lyrics are great but the beat is too slow.",
+    kuA: "پێویستە بە تەواوی لەگەڵم ڕاستگۆ بیت، ئایا گۆرانییە نوێیەکەم بەڕاستی باشە؟",
+    kuB: "بۆ ڕاستی، تێکستەکە نایابە بەڵام ڕیتمەکە زۆر خاوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "out_of_pocket",
+    phrase: "Out of pocket",
+    pronunciation: "ئاوت ئۆف پۆکێت",
+    kuMeaning: "کار یا قسەیەکی نەشیاو، بێجێ، یا لە سنوور بەدەر",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "He started shouting at his mom in public.",
+    speakerB: "Wow, that was completely out of pocket.",
+    kuA: "ئەو لەبەردەم خەڵکدا دەستی کرد بە هاوارکردن بەسەر دایکیدا.",
+    kuB: "واو، ئەو کارە بە تەواوی لە سنوور بەدەر و نەشیاو بوو.",
+  }),
+  makeExpandedSlangItem({
+    id: "wildin",
+    phrase: "Wildin'",
+    pronunciation: "وایڵدین",
+    kuMeaning: "ڕەفتارکردنی شێتانە، بێسەروبەر، یان لە کۆنترۆڵ بەدەر",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Did you see how fast he was driving in the rain? He was wildin'.",
+    speakerB: "Yeah, he could have caused a huge accident.",
+    kuA: "بینیت چەندە بە خێرایی لەژێر باراندا لێ دەخوڕی؟ شێتانە ڕەفتاری دەکرد.",
+    kuB: "بەڵێ، دەبووە هۆی ڕووداوێکی زۆر گەورە.",
+  }),
+  makeExpandedSlangItem({
+    id: "whip",
+    phrase: "Whip",
+    pronunciation: "ویپ",
+    kuMeaning: "ئۆتۆمبێل (بەتایبەت ئۆتۆمبێلی جوان یان گرانبەها)",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Is that new blue car outside your whip?",
+    speakerB: "Yes, I just bought it last week!",
+    kuA: "ئایا ئەو ئۆتۆمبێلە شینە نوێیەی دەرەوە ئۆتۆمبێلی تۆیە؟",
+    kuB: "بەڵێ، تەنها هەفتەی ڕابردوو کڕیم!",
+  }),
+  makeExpandedSlangItem({
+    id: "real_talk",
+    phrase: "Real talk",
+    pronunciation: "ڕیاڵ تۆک",
+    kuMeaning: "قسەی ڕاست و جددی / بەبێ درۆ و فشەکردن",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Real talk, we need to start focusing on our exams or we will fail.",
+    speakerB: "You are totally right, no more distractions.",
+    kuA: "قسەی ڕاست و جددی، پێویستە دەست بکەین بە گرنگیدان بە تاقیکردنەوەکانمان ئەگەرنا شکست دەهێنین.",
+    kuB: "تەواو ڕاست دەکەیت، چیتر کات بەفیڕۆدان نییە.",
+  }),
+  makeExpandedSlangItem({
+    id: "grind",
+    phrase: "Grind / Grinding",
+    pronunciation: "گرایند",
+    kuMeaning: "کارکردنی زۆر و بەردەوام بۆ گەیشتن بە سەرکەوتن یان پەیداکردنی پارە",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "He has been working two jobs to pay off his college fees.",
+    speakerB: "Yeah, he is always on the grind.",
+    kuA: "ئەو کار لە دوو شوێندا دەکات بۆ دانی پارەی زانکۆکەی.",
+    kuB: "بەڵێ، ئەو هەمیشە لە هەوڵ و کۆششی بەردەوامدایە.",
+  }),
+  makeExpandedSlangItem({
+    id: "homie",
+    phrase: "Homie",
+    pronunciation: "هۆمی",
+    kuMeaning: "هاوڕێی نزیک یان هاوڕێی گەڕەک",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I've been hanging out with my homie Azad all afternoon.",
+    speakerB: "Azad is a really good guy.",
+    kuA: "هەموو دوای نیوەڕۆکە لەگەڵ ئازادی هاوڕێی نزیکم بەسەر برد.",
+    kuB: "ئازاد بەڕاستی پیاوێکی باشە.",
+  }),
+  makeExpandedSlangItem({
+    id: "drip",
+    phrase: "Drip",
+    pronunciation: "دریپ",
+    kuMeaning: "شێواز، جلوبەرگ، یان دەرکەوتنی زۆر شیک و سەرنجڕاکێش",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Look at his new outfit today, he has some serious drip.",
+    speakerB: "His style is always on point.",
+    kuA: "سەیری جلوبەرگی نوێی ئەمڕۆی بکە، شێوازێکی زۆر شیکی هەیە.",
+    kuB: "شێوازی ئەو هەمیشە سەرنجڕاکێشە.",
+  }),
+  makeExpandedSlangItem({
+    id: "hustle",
+    phrase: "Hustle",
+    pronunciation: "هەسڵ",
+    kuMeaning: "هەوڵدان و ماندووبوونی بەردەوام بۆ پەیداکردنی بژێوی یان پارە",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "You have to hustle hard if you want to make it in this city.",
+    speakerB: "Definitely, nothing is handed to you for free.",
+    kuA: "پێویستە زۆر تێبکۆشیت ئەگەر دەتەوێت لەم شارەدا سەرکەوتوو بیت.",
+    kuB: "بە دڵنیاییەوە، هیچ شتێک بەبێ ماندووبوون بەدەست نایەت.",
+  }),
+  makeExpandedSlangItem({
+    id: "bounce",
+    phrase: "Bounce",
+    pronunciation: "باونس",
+    kuMeaning: "ڕۆیشتن یان جێهێشتنی شوێنێک بە خێرایی",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "It's already midnight, I think I'm finna bounce.",
+    speakerB: "Alright bro, get home safe.",
+    kuA: "ئێستا نیوەشەوە، پێم وایە خەریکم دەڕۆم.",
+    kuB: "باشە برا، بە سەلامەتی بگەیتەوە ماڵەوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "glow_up",
+    phrase: "Glow up",
+    pronunciation: "گلۆو ئەپ",
+    kuMeaning: "گۆڕانکاریی گەورە و ئەرێنی لە دەرکەوتن، متمانە، یان ژیانی کەسێکدا",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Have you seen him lately? He had a major glow up after starting gym.",
+    speakerB: "He looks much healthier and happier now.",
+    kuA: "ئایا ماوەی دوایی ئەوت بینیوە؟ گۆڕانکارییەکی زۆر گەورەی بەسەردا هات دوای دەستپێکردنی وەرزش.",
+    kuB: "ئێستا زۆر تەندروستتر و دڵخۆشتر دیارە.",
+  }),
+  makeExpandedSlangItem({
+    id: "straight_up",
+    phrase: "Straight up",
+    pronunciation: "سترەیت ئەپ",
+    kuMeaning: "بە ڕاستی / بێ دوودڵی / بە تەواوی",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Straight up, that was the hardest test I've ever taken.",
+    speakerB: "I agree, half of the questions were so confusing.",
+    kuA: "بە ڕاستی، ئەوە قورسترین تاقیکردنەوە بوو کە تا ئێستا کردبێتم.",
+    kuB: "هاوڕام، نیوەی پرسیارەکان زۆر ئاڵۆز بوون.",
+  }),
+  makeExpandedSlangItem({
+    id: "crash_out",
+    phrase: "Crash out",
+    pronunciation: "کراش ئاوت",
+    kuMeaning: "تەقینەوەی تووڕەیی و لەدەستدانی تەواوی کۆنترۆڵ لەسەر کێشەیەکی بچووک",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "He crashed out and broke his phone just because the internet disconnected.",
+    speakerB: "Wow, he really needs to learn how to calm down.",
+    kuA: "ئەو تووڕە بوو و مۆبایلەکەی خۆی شکاند تەنها لەبەر ئەوەی هێڵی ئینتەرنێتەکە پچڕا.",
+    kuB: "واو، ئەو بەڕاستی پێویستە فێری هێوربوونەوە بێت.",
+  }),
+  makeExpandedSlangItem({
+    id: "opp",
+    phrase: "Opp",
+    pronunciation: "ئۆپ",
+    kuMeaning: "ڕکابەر، نەیار، یان دوژمن",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I saw one of the opps walking near our street today.",
+    speakerB: "Stay calm and don't start any trouble.",
+    kuA: "ئەمڕۆ یەکێک لە ڕکابەرەکانم بینی لە نزیک شەقامەکەمان پیاسەی دەکرد.",
+    kuB: "ئارام بە و هیچ کێشەیەک دروست مەکە.",
+  }),
+  makeExpandedSlangItem({
+    id: "fam",
+    phrase: "Fam",
+    pronunciation: "فام",
+    kuMeaning: "هاوڕێی زۆر نزیک کە وەک خێزان وایە",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I'm going to grab lunch, do you want anything, fam?",
+    speakerB: "No, I'm good. Thanks for asking.",
+    kuA: "دەچم نانی نیوەڕۆ بخۆم، هیچ شتێکت دەوێت برام؟",
+    kuB: "نەخێر، من باشم. سوپاس بۆ پرسیارکردنت.",
+  }),
+  makeExpandedSlangItem({
+    id: "peng",
+    phrase: "Peng",
+    pronunciation: "پێنگ",
+    kuMeaning: "زۆر سەرنجڕاکێش، جوان، یان تامخۆش (سلاکی بەریتانی)",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "This burger is so peng, you should try it.",
+    speakerB: "Let me taste a bite of it.",
+    kuA: "ئەم هەمبەرگەرە زۆر تامخۆشە، دەبێت تاقیی بکەیتەوە.",
+    kuB: "با منیش تاقیی بکەمەوە بە یەک پارچە.",
+  }),
+  makeExpandedSlangItem({
+    id: "peak",
+    phrase: "Peak",
+    pronunciation: "پیک",
+    kuMeaning: "زۆر ناخۆش و مایەی بەدبەختی (سلاکی بەریتانی) یان لوتکەی سەرکەوتن",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "My flight got canceled at the last minute.",
+    speakerB: "Oh, that is so peak, man.",
+    kuA: "گەشتە ئاسمانییەکەم لە کۆتا خولەکدا هەڵوەشایەوە.",
+    kuB: "ئۆهـ، ئەوە زۆر ناخۆش و بێزارکەرە، پیاو.",
+  }),
+  makeExpandedSlangItem({
+    id: "gassed",
+    phrase: "Gassed",
+    pronunciation: "گاست",
+    kuMeaning: "زۆر دڵخۆش، بەپەرۆش، یان پڕ لە حەماسەت بۆ شتێک",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "I just got tickets to the concert this weekend!",
+    speakerB: "I can see how gassed you are about it.",
+    kuA: "تەنها بلیتی کۆنسێرتەکەی ئەم کۆتایی هەفتەیەم دەستکەوت!",
+    kuB: "دەبینم چەندە دڵخۆش و بەپەرۆشیت بۆی.",
+  }),
+  makeExpandedSlangItem({
+    id: "allow_it",
+    phrase: "Allow it",
+    pronunciation: "ئەلۆو ئت",
+    kuMeaning: "لێگەڕێ، وازی لێ بێنە، یان ڕێگەی پێبدە (سلاکی بەریتانی بۆ وەستاندنی شتێک)",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Should we start arguing with him about the price?",
+    speakerB: "Just allow it, bro, it's not worth it.",
+    kuA: "ئایا دەست بکەین بە مشتومڕ لەگەڵی لەسەر نرخەکە؟",
+    kuB: "تەنها وازی لێ بێنە برا، شایەنی نییە.",
+  }),
+  makeExpandedSlangItem({
+    id: "wagwan",
+    phrase: "Wagwan",
+    pronunciation: "واگوان",
+    kuMeaning: "چ باسە؟ چی هەیە نوێ؟ (سلاکی بەریتانی لە بنەڕەتدا جامایکی)",
+    category: "Slang",
+    type: "Street Slang",
+    speakerA: "Wagwan, fam! Where are you heading?",
+    speakerB: "Nothing much, just going to the shop.",
+    kuA: "چ باسە برام! بۆ کوێ دەچیت؟",
+    kuB: "هیچی وا، تەنها دەچم بۆ دوکانەکە.",
+  }),
+  makeExpandedSlangItem({
+    id: "spill_the_beans",
+    phrase: "Spill the beans",
+    pronunciation: "سپڵ زە بینز",
+    kuMeaning: "نهێنییەک ئاشکرا بکە (پێش کاتی خۆی یان بەبێ مەبەست)",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "We are planning a surprise party, so don't spill the beans.",
+    speakerB: "Don't worry, my lips are sealed.",
+    kuA: "ئێمە پلانی ئاهەنگێکی سوپرایز دادەنێین، بۆیە نهێنییەکە ئاشکرا مەکە.",
+    kuB: "خۆت نیگەران مەکە، دەمم داخراوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "blessing_in_disguise",
+    phrase: "A blessing in disguise",
+    pronunciation: "ئە بلێسینگ ئن دیسگایز",
+    kuMeaning: "شتێکی ناخۆش کە دواتر خێر و ئەنجامی باشی لێ دەکەوێتەوە",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "I missed the bus, but then I found some money on the floor.",
+    speakerB: "It was a blessing in disguise!",
+    kuA: "پاسەکەم لەدەستچوو، بەڵام پاشان کەمێک پارەم لەسەر زەوییەکە دۆزییەوە.",
+    kuB: "ئەوە شتێکی ناخۆش بوو کە خێری تێدا بوو!",
+  }),
+  makeExpandedSlangItem({
+    id: "beat_around_the_bush",
+    phrase: "Beat around the bush",
+    pronunciation: "بیت ئەراوند زە بوش",
+    kuMeaning: "خولانەوە بە دەوری بابەتەکەدا و نەچوونە ناو ناوەڕۆکی سەرەکیی قسەکەوە",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "Stop beating around the bush and tell me what you want.",
+    speakerB: "Okay, I need to borrow some money.",
+    kuA: "واز لە خولانەوە بە دەوری بابەتەکەدا بهێنە و پێم بڵێ چیت دەوێت.",
+    kuB: "باشە، پێویستم بە قەرزکردنی کەمێک پارەیە.",
+  }),
+  makeExpandedSlangItem({
+    id: "hit_the_nail",
+    phrase: "Hit the nail on the head",
+    pronunciation: "هت زە نەیڵ ئۆن زە هێد",
+    kuMeaning: "قسەکردن لەسەر کڕۆکی بابەتەکە بە تەواوی و دروستی",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "You said we lack communication, and that is our main problem.",
+    speakerB: "You hit the nail on the head!",
+    kuA: "تۆ وتت کێشەی نەبوونی پەیوەندیمان هەیە، و ئەوە کێشە سەرەکیمانە.",
+    kuB: "ڕێک پێت لەسەر کێشەکە دانا (ڕاستت فەرموو)!",
+  }),
+  makeExpandedSlangItem({
+    id: "add_insult_to_injury",
+    phrase: "Add insult to injury",
+    pronunciation: "ئاد ئنسەڵت تو ئنجەری",
+    kuMeaning: "خراپترکردنی بارودۆخێکی خراپ بە کردەوەیەکی تری زیانبەخش",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "My car broke down, and to add insult to injury, it started to rain.",
+    speakerB: "Oh, that's a terrible day indeed.",
+    kuA: "ئۆتۆمبێلەکەم تێکچوو، و بۆ خراپترکردنی دۆخەکە، بارانیش دەستی پێکرد.",
+    kuB: "ئۆهـ، بەڕاستی ڕۆژێکی زۆر ناخۆشە.",
+  }),
+  makeExpandedSlangItem({
+    id: "drop_of_a_hat",
+    phrase: "At the drop of a hat",
+    pronunciation: "ئەت زە درۆپ ئۆف ئە هات",
+    kuMeaning: "بە خێرایی و بەبێ هیچ دوودڵی یان پلاندانانێک",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "If she calls me, I will leave at the drop of a hat.",
+    speakerB: "You are really devoted to her.",
+    kuA: "ئەگەر ئەو پەیوەندیم پێوە بکات، بەبێ دوودڵی و یەکسەر دەڕۆم.",
+    kuB: "تۆ بەڕاستی دڵسۆزیت بۆی.",
+  }),
+  makeExpandedSlangItem({
+    id: "burn_midnight_oil",
+    phrase: "Burn the midnight oil",
+    pronunciation: "بێرن زە میدنایت ئۆیڵ",
+    kuMeaning: "کارکردن یان خوێندن تا درەنگانی شەو",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "I have a big exam tomorrow, so I have to burn the midnight oil.",
+    speakerB: "Make sure to get at least some sleep.",
+    kuA: "سبەی تاقیکردنەوەیەکی گەورەم هەیە، بۆیە دەبێت تا درەنگانی شەو بخوێنم.",
+    kuB: "دڵنیابەوە کە لانی کەم کەمێک دەخەویت.",
+  }),
+  makeExpandedSlangItem({
+    id: "cost_arm_and_leg",
+    phrase: "Cost an arm and a leg",
+    pronunciation: "کۆست ئان ئارم ئاند ئە لێگ",
+    kuMeaning: "گرانبەها بوونی زۆر / تێچوونی پارەیەکی زۆر",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "I love the new smartphone, but it costs an arm and a leg.",
+    speakerB: "Maybe you should wait for a discount.",
+    kuA: "مۆبایلە زیرەکە نوێیەکەم زۆر بەدڵە، بەڵام تێچوویەکی زۆر گەورەی هەیە.",
+    kuB: "ڕەنگە پێویست بێت چاوەڕێی داشکاندن بکەیت.",
+  }),
+  makeExpandedSlangItem({
+    id: "cut_corners",
+    phrase: "Cut corners",
+    pronunciation: "کەت کۆرنەرز",
+    kuMeaning: "ئەنجامدانی کارێک بە کەمترین تێچوو و ماندووبوون بەڵام بە زیانی کوالیتی",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "The builder cut corners, and now the roof is leaking.",
+    speakerB: "That is why you should always hire professionals.",
+    kuA: "وەستاکە کاری کەم تێچووی کرد، و ئێستا بنمیچەکە دڵۆپە دەکات.",
+    kuB: "بۆیە پێویستە هەمیشە کەسانی شارەزا دابمەزرێنیت.",
+  }),
+  makeExpandedSlangItem({
+    id: "once_in_blue_moon",
+    phrase: "Once in a blue moon",
+    pronunciation: "وەنس ئن ئە بلو مون",
+    kuMeaning: "زۆر بە دەگمەن / شتێک کە زۆر کەم ڕوو بدات",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "Do you visit your hometown often?",
+    speakerB: "Only once in a blue moon, since I'm very busy.",
+    kuA: "ئایا زوو سەردانی شارۆچکەکەت دەکەیت؟",
+    kuB: "تەنها زۆر بە دەگمەن، چونکە زۆر سەرقاڵم.",
+  }),
+  makeExpandedSlangItem({
+    id: "see_eye_to_eye",
+    phrase: "See eye to eye",
+    pronunciation: "سی ئای تو ئای",
+    kuMeaning: "هاوڕابوون و یەکگرتن لە بیروبۆچووندا لەگەڵ کەسێکی تردا",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "My sister and I don't see eye to eye on politics.",
+    speakerB: "That's normal for family members.",
+    kuA: "من و خوشکەکەم لەسەر سیاسەت هاوڕا نین.",
+    kuB: "ئەوە بۆ ئەندامانی خێزان ئاساییە.",
+  }),
+  makeExpandedSlangItem({
+    id: "grain_of_salt",
+    phrase: "Take it with a grain of salt",
+    pronunciation: "تەیک ئت ویز ئە گرەین ئۆف سۆڵت",
+    kuMeaning: "باوەڕنەکردنی تەواو بە زانیارییەکان / گومان لێکردنی",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "He told me he met a celebrity, but I take it with a grain of salt.",
+    speakerB: "Smart move, he always exaggerates.",
+    kuA: "ئەو پێی وتم کەسێکی بەناوبانگی بینیوە، بەڵام من بە گومانەوە وەرمگرت.",
+    kuB: "کارێکی ژیرانەیە، ئەو هەمیشە زیادەڕۆیی دەکات.",
+  }),
+  makeExpandedSlangItem({
+    id: "best_of_both_worlds",
+    phrase: "Best of both worlds",
+    pronunciation: "بێست ئۆف بۆس وۆرڵدز",
+    kuMeaning: "سوودمەندبوون لە دوو لایەنی جیاوازی باش لە یەک کاتدا",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "She works part-time and studies, getting the best of both worlds.",
+    speakerB: "That sounds like a perfect balance.",
+    kuA: "ئەو بە شێوەی نیوەکات کار دەکات و دەخوێنێت، سوود لە هەردوو لایەنەکە وەردەگرێت.",
+    kuB: "ئەوە وەک هاوسەنگییەکی تەواو دیارە.",
+  }),
+  makeExpandedSlangItem({
+    id: "let_cat_out_of_bag",
+    phrase: "Let the cat out of the bag",
+    pronunciation: "لێت زە کات ئاوت ئۆف زە باگ",
+    kuMeaning: "ئاشکراکردنی نهێنییەک بەبێ ویستی خۆت",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "We wanted to surprise him, but Ali let the cat out of the bag.",
+    speakerB: "Ali can never keep a secret.",
+    kuA: "ویستمان سوپرایزی بکەین، بەڵام عەلی نهێنییەکەی ئاشکرا کرد.",
+    kuB: "عەلی هەرگیز ناتوانێت نهێنی بپارێزێت.",
+  }),
+  makeExpandedSlangItem({
+    id: "cry_over_spilt_milk",
+    phrase: "Cry over spilt milk",
+    pronunciation: "کرای ئۆڤەر سپڵت میڵک",
+    kuMeaning: "خەمخواردن یان پەشیمانی لەسەر شتێک کە ڕابردووە و ناتوانرێت چاک بکرێتەوە",
+    category: "Idioms",
+    type: "Idiom",
+    speakerA: "I lost my old notes, but there is no use crying over spilt milk.",
+    speakerB: "Exactly, you can write new ones.",
+    kuA: "تێبینییە کۆنەکانم ون کرد، بەڵام خەمخواردن بۆ شتی ڕۆیشتوو بێسوودە.",
+    kuB: "دروستە، دەتوانیت تێبینی نوێ بنووسیتەوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "circle_back",
+    phrase: "Circle back",
+    pronunciation: "سێرکڵ باک",
+    kuMeaning: "گەڕانەوە بۆ بابەتێک یان گفتوگۆیەک لە کاتێکی تردا",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "We don't have enough data yet. Let's circle back to this tomorrow.",
+    speakerB: "Agreed. I will gather the figures.",
+    kuA: "هێشتا داتای پێویستمان نییە. با سبەی بگەڕێینەوە سەر ئەم بابەتە.",
+    kuB: "هاوڕام. من ئامارەکان کۆدەکەمەوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "drill_down",
+    phrase: "Drill down",
+    pronunciation: "دڕێڵ داون",
+    kuMeaning: "وردبوونەوە و لێکۆڵینەوەی قووڵ لە داتا یان کێشەیەکی دیاریکراو",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "We need to drill down into the sales drop in June.",
+    speakerB: "I will prepare the detailed report by afternoon.",
+    kuA: "پێویستە بە قووڵی لێکۆڵینەوە لە دابەزینی فرۆشتنی مانگی حوزەیران بکەین.",
+    kuB: "من تا دوای نیوەڕۆ ڕاپۆرتە وردەکە ئامادە دەکەم.",
+  }),
+  makeExpandedSlangItem({
+    id: "hit_ground_running",
+    phrase: "Hit the ground running",
+    pronunciation: "هت زە گراوند ڕەنینگ",
+    kuMeaning: "دەستپێکردنی کارێکی نوێ بە جۆش و خرۆش و چالاکییەکی زۆرەوە بەبێ دواکەوتن",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "We hired a new developer who can hit the ground running.",
+    speakerB: "That is great, we have a tight deadline.",
+    kuA: "گەشەپێدەرێکی نوێمان دامەزراند کە دەتوانێت یەکسەر بە جۆش و خرۆشەوە دەست بە کار بێت.",
+    kuB: "ئەوە زۆر باشە، وادەی کۆتاییمان زۆر کەمە.",
+  }),
+  makeExpandedSlangItem({
+    id: "low_hanging_fruit",
+    phrase: "Low-hanging fruit",
+    pronunciation: "لۆو هێنینگ فروت",
+    kuMeaning: "ئامانج یان کارێک کە زۆر ئاسان بەدەست دێت بەبێ هەوڵێکی زۆر",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "Fixing the button color is a low-hanging fruit.",
+    speakerB: "Yes, we can deploy that fix in ten minutes.",
+    kuA: "چاککردنی ڕەنگی دوگمەکە کارێکی زۆر ئاسانە.",
+    kuB: "بەڵێ، دەتوانین ئەو چاکسازییە لە دە خولەکدا بڵاو بکەینەوە.",
+  }),
+  makeExpandedSlangItem({
+    id: "drawing_board",
+    phrase: "Back to the drawing board",
+    pronunciation: "باک تو زە درۆوینگ بۆرد",
+    kuMeaning: "دەستپێکردنەوەی کار یان پلانێک لە سەرەتاوە بەهۆی شکستی پێشوو",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "The client rejected our UI design.",
+    speakerB: "Well, it's back to the drawing board for us.",
+    kuA: "کڕیارەکە دیزاینی ڕووکاری بەکارهێنەرەکەمانی ڕەتکردەوە.",
+    kuB: "کەواتە، دەبێت بچینەوە سەر هێڵکارییە سەرەتاییەکان (سەرەتا).",
+  }),
+  makeExpandedSlangItem({
+    id: "take_offline",
+    phrase: "Take this offline",
+    pronunciation: "تەیک زس ئۆفلاین",
+    kuMeaning: "گفتوگۆکردن لەسەر بابەتێک بە تایبەتی لە دەرەوەی کۆبوونەوەی گشتی",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "This technical detail is too specific for the meeting.",
+    speakerB: "Let's take this offline and discuss it later.",
+    kuA: "ئەم وردەکارییە تەکنیکییە زۆر تایبەتە بۆ ئەم کۆبوونەوەیە.",
+    kuB: "با لە دەرەوەی کۆبوونەوەکە قسەی لەسەر بکەین و دواتر گفتوگۆی بکەین.",
+  }),
+  makeExpandedSlangItem({
+    id: "deep_dive",
+    phrase: "Deep dive",
+    pronunciation: "دیپ دایڤ",
+    kuMeaning: "لێکۆڵینەوەیەکی زۆر ورد و هەمەلایەنە لەسەر بابەتێک",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "We will do a deep dive into user behavior analysis.",
+    speakerB: "I look forward to seeing the results.",
+    kuA: "ئێمە لێکۆڵینەوەیەکی قووڵ و ورد لەسەر ڕەفتاری بەکارهێنەران دەکەین.",
+    kuB: "پەرۆشم بۆ بینینی ئەنجامەکان.",
+  }),
+  makeExpandedSlangItem({
+    id: "buy_in",
+    phrase: "Buy-in",
+    pronunciation: "بای ئن",
+    kuMeaning: "وەرگرتنی ڕەزامەندی و پشتگیری لە لایەنە سەرەکییەکان یان بەڕێوەبەران",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "We need executive buy-in before launching the new feature.",
+    speakerB: "I will schedule a meeting with the managers.",
+    kuA: "پێش بڵاوکردنەوەی تایبەتمەندییە نوێیەکە، پێویستمان بە پشتگیری و ڕەزامەندی بەڕێوەبەران هەیە.",
+    kuB: "کۆبوونەوەیەک لەگەڵ بەڕێوەبەرەکان ڕێکدەخەم.",
+  }),
+  makeExpandedSlangItem({
+    id: "ballpark_figure",
+    phrase: "Ballpark figure",
+    pronunciation: "بۆڵپارک فیگەر",
+    kuMeaning: "خەمڵاندن یان ژمارەیەکی نزیکەیی و نافەرمی",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "Can you give me a ballpark figure for the development cost?",
+    speakerB: "It should be around ten thousand dollars.",
+    kuA: "دەتوانیت خەمڵاندنێکی نزیکەیی لە تێچووی گەشەپێدانم پێ بدەیت؟",
+    kuB: "پێویستە لە دەوروبەری دە هەزار دۆلاردا بێت.",
+  }),
+  makeExpandedSlangItem({
+    id: "elephant_in_room",
+    phrase: "Elephant in the room",
+    pronunciation: "ئەلەفێنت ئن زە ڕووم",
+    kuMeaning: "کێشەیەکی زۆر گەورە و ئاشکرا کە هەمووان دەیزانن بەڵام کەس نایەوێت باسی بکات",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "Nobody mentioned the budget deficit.",
+    speakerB: "Yes, it is the elephant in the room.",
+    kuA: "کەس باسی کورتهێنانی بودجەی نەکرد.",
+    kuB: "بەڵێ، کێشە گەورە و بێدەنگەکەیە کە کەس باسی ناکات.",
+  }),
+  makeExpandedSlangItem({
+    id: "up_to_speed",
+    phrase: "Up to speed",
+    pronunciation: "ئەپ تو سپید",
+    kuMeaning: "ئاگاداربوون لە دواین زانیاری و بارودۆخی پرۆژەیەک",
+    category: "Business",
+    type: "Business/Formal",
+    speakerA: "I will bring you up to speed on the new updates.",
+    speakerB: "Thank you, that would be very helpful.",
+    kuA: "تۆ لە دواین زانیاری و نوێکارییەکان ئاگادار دەکەمەوە.",
+    kuB: "سوپاس، ئەوە زۆر یارمەتیدەر دەبێت.",
+  })
 ];
 
-export const SLANG_DATA: SlangItem[] = [
+// Practical context phrases share the same learning experience as slang and
+// idioms, so they are included in the categorized dictionary below.
+export const CONTEXTUAL_PHRASE_DATA: SlangSeed[] = [
+  // Everyday conversations
+  makeExpandedSlangItem({ id: "on_my_way", phrase: "I'm on my way", pronunciation: "ئایم ئان مای وەی", kuMeaning: "لە ڕێگام / بەڕێگەم بۆ لای تۆ", category: "Normal", type: "Everyday Phrase", speakerA: "Are you close?", speakerB: "Yeah, I'm on my way now.", kuA: "نزیکیت؟", kuB: "بەڵێ، ئێستا لە ڕێگام." }),
+  makeExpandedSlangItem({ id: "rain_check", phrase: "Rain check", pronunciation: "ڕەین چێک", kuMeaning: "با بۆ کاتێکی تر بیخەین / جارێکی تر", category: "Normal", type: "Everyday Phrase", speakerA: "Want to go out tonight?", speakerB: "Can I take a rain check? I'm exhausted.", kuA: "ئەمشەو دەتەوێت بچینە دەرەوە؟", kuB: "دەکرێت بۆ جارێکی تر بیخەین؟ زۆر ماندووم." }),
+  makeExpandedSlangItem({ id: "im_good", phrase: "I'm good", pronunciation: "ئایم گود", kuMeaning: "سوپاس، پێویستم نییە / باشم", category: "Normal", type: "Everyday Phrase", speakerA: "Do you want another drink?", speakerB: "I'm good, thanks.", kuA: "خواردنەوەیەکی ترت دەوێت؟", kuB: "نەخێر، باشم، سوپاس." }),
+  makeExpandedSlangItem({ id: "thats_on_me", phrase: "That's on me", pronunciation: "زاتس ئان می", kuMeaning: "ئەوە لەسەر منە / من پارەکەی دەدەم", category: "Normal", type: "Everyday Phrase", speakerA: "How much do I owe you?", speakerB: "Nothing, that's on me.", kuA: "چەند پارەم لێدەکەویت؟", kuB: "هیچ، ئەوە لەسەر منە." }),
+  makeExpandedSlangItem({ id: "all_set", phrase: "You're all set", pronunciation: "یور ئۆڵ سێت", kuMeaning: "هەموو شت ئامادەیە / تەواوە", category: "Normal", type: "Everyday Phrase", speakerA: "Is my order ready?", speakerB: "Yes, you're all set.", kuA: "داواکارییەکەم ئامادەیە؟", kuB: "بەڵێ، هەموو شت ئامادەیە." }),
+  makeExpandedSlangItem({ id: "no_rush", phrase: "No rush", pronunciation: "نۆ ڕەش", kuMeaning: "پەلە مەکە / بە هێمنی", category: "Normal", type: "Everyday Phrase", speakerA: "Sorry, I need a minute to decide.", speakerB: "No rush, take your time.", kuA: "ببورە، پێویستم بە خولەکێکە بۆ بڕیاردان.", kuB: "پەلە نییە، بە ئارامی کات وەربگرە." }),
+  makeExpandedSlangItem({ id: "running_late", phrase: "I'm running late", pronunciation: "ئایم ڕەنینگ لەیت", kuMeaning: "دوا دەکەوم / کەمێک دوا دەگەم", category: "Normal", type: "Everyday Phrase", speakerA: "Where are you?", speakerB: "I'm running late, but I'll be there soon.", kuA: "لەکوێیت؟", kuB: "کەمێک دوا دەکەوم، بەڵام زوو دەگەم." }),
+  makeExpandedSlangItem({ id: "keep_me_posted", phrase: "Keep me posted", pronunciation: "کیپ می پۆستید", kuMeaning: "لە نوێکارییەکان ئاگادارم بکەوە", category: "Normal", type: "Everyday Phrase", speakerA: "The doctor will call with the results.", speakerB: "Okay, keep me posted.", kuA: "پزیشکەکە تەلەفۆن دەکات بۆ ئەنجامەکان.", kuB: "باشە، لە نوێکارییەکان ئاگادارم بکەوە." }),
+  makeExpandedSlangItem({ id: "im_beat", phrase: "I'm beat", pronunciation: "ئایم بیت", kuMeaning: "زۆر ماندووم / هێزم نەماوە", category: "Normal", type: "Everyday Phrase", speakerA: "Want to watch a movie?", speakerB: "Maybe tomorrow. I'm beat today.", kuA: "دەتەوێت فیلمێک ببینین؟", kuB: "لەوانەیە سبەی. ئەمڕۆ زۆر ماندووم." }),
+  makeExpandedSlangItem({ id: "my_treat", phrase: "My treat", pronunciation: "مای تریت", kuMeaning: "میوانی من / من پارەکەی دەدەم", category: "Normal", type: "Everyday Phrase", speakerA: "Should we split the cost?", speakerB: "No, my treat this time.", kuA: "با تێچووەکە دابەش بکەین؟", kuB: "نەخێر، ئەمجارە میوانی من." }),
+
+  // Restaurants and cafes
+  makeExpandedSlangItem({ id: "can_i_get", phrase: "Can I get...?", pronunciation: "کەن ئای گێت", kuMeaning: "دەتوانم ... وەربگرم؟ / تکایە ...", category: "Normal", type: "Everyday Phrase", speakerA: "What would you like?", speakerB: "Can I get a chicken sandwich, please?", kuA: "چی دەوێت؟", kuB: "تکایە دەتوانم ساندویچی مریشک وەربگرم؟" }),
+  makeExpandedSlangItem({ id: "for_here_or_to_go", phrase: "For here or to go?", pronunciation: "فۆر هیر ئۆر تو گۆ", kuMeaning: "لێرە دەخۆیت یان دەیبەیت؟", category: "Normal", type: "Everyday Phrase", speakerA: "One latte, please.", speakerB: "For here or to go?", kuA: "تکایە یەک لاتێ.", kuB: "لێرە دەخۆیت یان دەیبەیت؟" }),
+  makeExpandedSlangItem({ id: "on_the_side", phrase: "On the side", pronunciation: "ئان زە ساید", kuMeaning: "بە جیا / لە تەنیشت", category: "Normal", type: "Everyday Phrase", speakerA: "How would you like the sauce?", speakerB: "Could I have it on the side?", kuA: "سۆسەکە چۆن دەوێت؟", kuB: "دەکرێت بە جیا بێت؟" }),
+  makeExpandedSlangItem({ id: "hold_the", phrase: "Hold the...", pronunciation: "هۆڵد زە", kuMeaning: "... مەخە / ... لاببە", category: "Normal", type: "Everyday Phrase", speakerA: "Anything else on the burger?", speakerB: "No, hold the onions, please.", kuA: "شتێکی تر لەسەر بەرگەرەکە؟", kuB: "نەخێر، تکایە پیاز مەخە." }),
+  makeExpandedSlangItem({ id: "the_usual", phrase: "The usual", pronunciation: "زە یوژوەڵ", kuMeaning: "هەمان داواکاریی همیشەیی", category: "Normal", type: "Everyday Phrase", speakerA: "What can I get you today?", speakerB: "I'll have the usual.", kuA: "ئەمڕۆ چی بۆت بهێنم؟", kuB: "هەمان داواکاریی همیشەیی دەوێت." }),
+  makeExpandedSlangItem({ id: "split_the_bill", phrase: "Split the bill", pronunciation: "سپلیت زە بیڵ", kuMeaning: "حسابەکە دابەش بکەین", category: "Normal", type: "Everyday Phrase", speakerA: "Should I bring one check?", speakerB: "Can we split the bill?", kuA: "یەک حساب بهێنم؟", kuB: "دەتوانین حسابەکە دابەش بکەین؟" }),
+  makeExpandedSlangItem({ id: "grab_a_bite", phrase: "Grab a bite", pronunciation: "گراب ئە بایت", kuMeaning: "خواردنێکی خێرا بخۆین", category: "Normal", type: "Everyday Phrase", speakerA: "I'm hungry after work.", speakerB: "Let's grab a bite nearby.", kuA: "دوای کار برسیمە.", kuB: "با لە نزیکەوە خواردنێکی خێرا بخۆین." }),
+  makeExpandedSlangItem({ id: "need_a_refill", phrase: "Need a refill?", pronunciation: "نید ئە ڕیفیل", kuMeaning: "پێویستت بە پڕکردنەوەی دووبارەیە؟", category: "Normal", type: "Everyday Phrase", speakerA: "Your coffee is almost empty.", speakerB: "Need a refill?", kuA: "قاوەکەت نزیکە تەواو ببێت.", kuB: "پێویستت بە پڕکردنەوەی دووبارەیە؟" }),
+  makeExpandedSlangItem({ id: "im_starving", phrase: "I'm starving", pronunciation: "ئایم ستارفینگ", kuMeaning: "زۆر برسیمە", category: "Normal", type: "Everyday Phrase", speakerA: "Do you want to wait for dinner?", speakerB: "No, I'm starving already.", kuA: "دەتەوێت بۆ نانی ئێوارە چاوەڕێ بکەین؟", kuB: "نەخێر، ئێستا زۆر برسیمە." }),
+  makeExpandedSlangItem({ id: "to_go_cup", phrase: "To-go cup", pronunciation: "تو گۆ کەپ", kuMeaning: "کۆپی بۆ بردن", category: "Normal", type: "Everyday Phrase", speakerA: "Are you staying at the cafe?", speakerB: "No, could I get a to-go cup?", kuA: "لە کافێکە دەمێنیتەوە؟", kuB: "نەخێر، دەکرێت کۆپێکم بۆ بردن بدەیت؟" }),
+
+  // Shopping
+  makeExpandedSlangItem({ id: "try_it_on", phrase: "Try it on", pronunciation: "ترای ئت ئان", kuMeaning: "تاقی بکەوە / لەبەری بکە", category: "Normal", type: "Everyday Phrase", speakerA: "I'm not sure about the size.", speakerB: "You can try it on in the fitting room.", kuA: "دڵنیانیم لە قەبارەکە نییە.", kuB: "دەتوانیت لە ژووری تاقیکردنەوە لەبەری بکەیت." }),
+  makeExpandedSlangItem({ id: "do_you_have_this_in", phrase: "Do you have this in...?", pronunciation: "دو یو هاڤ زس ئن", kuMeaning: "ئەمەتان بە ... هەیە؟", category: "Normal", type: "Everyday Phrase", speakerA: "Do you have this in a larger size?", speakerB: "Let me check the stockroom.", kuA: "ئەمەتان بە قەبارەیەکی گەورەتر هەیە؟", kuB: "با کۆگاکە بپشکنم." }),
+  makeExpandedSlangItem({ id: "sold_out", phrase: "Sold out", pronunciation: "سۆڵد ئاوت", kuMeaning: "تەواو فرۆشراوە / نەماوە", category: "Normal", type: "Everyday Phrase", speakerA: "Can I buy those shoes?", speakerB: "Sorry, they're sold out.", kuA: "دەتوانم ئەو پێڵاوانە بکڕم؟", kuB: "ببورە، تەواو فرۆشراون." }),
+  makeExpandedSlangItem({ id: "on_sale", phrase: "On sale", pronunciation: "ئان سەیل", kuMeaning: "لە داشکاندندایە", category: "Normal", type: "Everyday Phrase", speakerA: "Why is this jacket cheaper today?", speakerB: "It's on sale this week.", kuA: "بۆچی ئەم جاکەتە ئەمڕۆ هەرزانترە؟", kuB: "ئەم هەفتەیە لە داشکاندندایە." }),
+  makeExpandedSlangItem({ id: "good_deal", phrase: "Good deal", pronunciation: "گود دیڵ", kuMeaning: "کڕینێکی باش / نرخێکی باش", category: "Normal", type: "Everyday Phrase", speakerA: "I got this bag for half price.", speakerB: "That's a good deal.", kuA: "ئەم جانتایەم بە نیوەی نرخەکە کڕی.", kuB: "ئەوە کڕینێکی باشە." }),
+  makeExpandedSlangItem({ id: "price_match", phrase: "Price match", pronunciation: "پرایس مەچ", kuMeaning: "هاوتاکردنی نرخ لەگەڵ دوکانێکی تر", category: "Normal", type: "Everyday Phrase", speakerA: "This store has it cheaper online.", speakerB: "We can price match it.", kuA: "ئەم دوکانە لەسەر ئینتەرنێت هەرزانترە.", kuB: "دەتوانین نرخەکەی هاوتا بکەین." }),
+  makeExpandedSlangItem({ id: "ill_take_it", phrase: "I'll take it", pronunciation: "ئایڵ تەیک ئت", kuMeaning: "ئەوەم دەوێت / دەیکڕم", category: "Normal", type: "Everyday Phrase", speakerA: "This is the last one in your size.", speakerB: "Great, I'll take it.", kuA: "ئەمە دوا دانەیە بە قەبارەی تۆ.", kuB: "زۆر باشە، دەیکڕم." }),
+  makeExpandedSlangItem({ id: "keep_the_receipt", phrase: "Keep the receipt", pronunciation: "کیپ زە ڕیسیت", kuMeaning: "پسوولەکە هەڵبگرە", category: "Normal", type: "Everyday Phrase", speakerA: "Can I return it if it doesn't fit?", speakerB: "Yes, just keep the receipt.", kuA: "ئەگەر پێم نەگونجا دەتوانم بیگەڕێنمەوە؟", kuB: "بەڵێ، تەنها پسوولەکە هەڵبگرە." }),
+  makeExpandedSlangItem({ id: "return_policy", phrase: "What's the return policy?", pronunciation: "واتس زە ڕیتێرن پۆلیسی", kuMeaning: "یاسای گەڕاندنەوە چۆنە؟", category: "Normal", type: "Everyday Phrase", speakerA: "What if I change my mind?", speakerB: "What's the return policy?", kuA: "ئەگەر بیرم گۆڕا چی؟", kuB: "یاسای گەڕاندنەوە چۆنە؟" }),
+  makeExpandedSlangItem({ id: "window_shopping", phrase: "Window shopping", pronunciation: "ویندو شاپینگ", kuMeaning: "سەیرکردنی دوکانەکان بەبێ کڕین", category: "Normal", type: "Everyday Phrase", speakerA: "Are you buying anything today?", speakerB: "No, I'm just window shopping.", kuA: "ئەمڕۆ شتێک دەکڕیت؟", kuB: "نەخێر، تەنها سەیری دوکانەکان دەکەم." }),
+
+  // Barber and grooming
+  makeExpandedSlangItem({ id: "just_a_trim", phrase: "Just a trim", pronunciation: "جەست ئە ترم", kuMeaning: "تەنها کەمێک قیچی بکە", category: "Normal", type: "Everyday Phrase", speakerA: "What are we doing today?", speakerB: "Just a trim, please.", kuA: "ئەمڕۆ چی بکەین؟", kuB: "تکایە تەنها کەمێک قیچی بکە." }),
+  makeExpandedSlangItem({ id: "off_the_top", phrase: "Take a little off the top", pronunciation: "تەیک ئە لیتڵ ئۆف زە تاپ", kuMeaning: "کەمێک لە سەرەوەی قژەکە کورت بکە", category: "Normal", type: "Everyday Phrase", speakerA: "How short do you want it?", speakerB: "Take a little off the top.", kuA: "چەندە کورت بکرێت؟", kuB: "کەمێک لە سەرەوەی کورت بکە." }),
+  makeExpandedSlangItem({ id: "clean_up_the_sides", phrase: "Clean up the sides", pronunciation: "کلین ئەپ زە سایدز", kuMeaning: "تەنیشتەکان ڕێک و پاک بکە", category: "Normal", type: "Everyday Phrase", speakerA: "Do you want a full haircut?", speakerB: "No, just clean up the sides.", kuA: "قژبڕینی تەواو دەوێت؟", kuB: "نەخێر، تەنها تەنیشتەکان ڕێک بکە." }),
+  makeExpandedSlangItem({ id: "fade_it_out", phrase: "Fade it out", pronunciation: "فەید ئت ئاوت", kuMeaning: "فەیدێکی نرم بکە", category: "Normal", type: "Everyday Phrase", speakerA: "How should I blend the back?", speakerB: "Fade it out gradually.", kuA: "پشتەوە چۆن تێکەڵ بکەم؟", kuB: "بە نەرمی فەیدی بکە." }),
+  makeExpandedSlangItem({ id: "line_me_up", phrase: "Line me up", pronunciation: "لاین می ئەپ", kuMeaning: "هێڵی ڕیش و دەوروبەری سەرم ڕێک بکە", category: "Normal", type: "Everyday Phrase", speakerA: "Anything else today?", speakerB: "Yeah, line me up too.", kuA: "شتێکی تر ئەمڕۆ؟", kuB: "بەڵێ، هێڵەکانیشم ڕێک بکە." }),
+  makeExpandedSlangItem({ id: "keep_the_length", phrase: "Keep the length", pronunciation: "کیپ زە لێنگس", kuMeaning: "درێژییەکەی هەڵبگرە", category: "Normal", type: "Everyday Phrase", speakerA: "Should I make it shorter?", speakerB: "No, keep the length.", kuA: "کورتتری بکەم؟", kuB: "نەخێر، درێژییەکەی هەڵبگرە." }),
+  makeExpandedSlangItem({ id: "not_too_short", phrase: "Not too short", pronunciation: "نات تو شۆرت", kuMeaning: "زۆر کورت نەبێت", category: "Normal", type: "Everyday Phrase", speakerA: "Do you want it short?", speakerB: "A little, but not too short.", kuA: "کورتت دەوێت؟", kuB: "کەمێک، بەڵام زۆر کورت نەبێت." }),
+  makeExpandedSlangItem({ id: "need_a_touch_up", phrase: "I need a touch-up", pronunciation: "ئای نید ئە تەچ ئەپ", kuMeaning: "پێویستم بە ڕێکخستنێکی کەمە", category: "Normal", type: "Everyday Phrase", speakerA: "Are you changing your style?", speakerB: "No, I just need a touch-up.", kuA: "ستایلت دەگۆڕیت؟", kuB: "نەخێر، تەنها پێویستم بە ڕێکخستنێکی کەمە." }),
+  makeExpandedSlangItem({ id: "how_much_off", phrase: "How much off?", pronunciation: "هاو ماچ ئۆف", kuMeaning: "چەندەی لێ کورت بکەم؟", category: "Normal", type: "Everyday Phrase", speakerA: "How much off the sides?", speakerB: "About a centimeter.", kuA: "چەندەی لە تەنیشتەکان کورت بکەم؟", kuB: "نزیکەی یەک سانتیمەتر." }),
+  makeExpandedSlangItem({ id: "walk_ins", phrase: "Do you take walk-ins?", pronunciation: "دو یو تەیک واک ئینز", kuMeaning: "بەبێ وەرگرتنی کاتیش وەردەگرن؟", category: "Normal", type: "Everyday Phrase", speakerA: "I don't have an appointment.", speakerB: "Do you take walk-ins?", kuA: "کاتم وەرنەگرتووە.", kuB: "بەبێ وەرگرتنی کاتیش وەردەگرن؟" }),
+
+  // School and study
+  makeExpandedSlangItem({ id: "im_cramming", phrase: "I'm cramming", pronunciation: "ئایم کرامینگ", kuMeaning: "لە کاتی کەمدا زۆر دەخوێنم بۆ تاقیکردنەوە", category: "Normal", type: "Everyday Phrase", speakerA: "Are you ready for the exam?", speakerB: "Not really, I'm cramming tonight.", kuA: "بۆ تاقیکردنەوەکە ئامادەیت؟", kuB: "زۆر نا، ئەمشەو زۆر دەخوێنم." }),
+  makeExpandedSlangItem({ id: "all_nighter", phrase: "Pull an all-nighter", pronunciation: "پوڵ ئەل نایتەر", kuMeaning: "هەموو شەو بەبێ خەو بەسەر بردن", category: "Normal", type: "Everyday Phrase", speakerA: "When will you finish the project?", speakerB: "I might pull an all-nighter.", kuA: "کەی پڕۆژەکە تەواو دەکەیت؟", kuB: "لەوانەیە هەموو شەوەکە بەبێ خەو بمێنم." }),
+  makeExpandedSlangItem({ id: "what_did_i_miss", phrase: "What did I miss?", pronunciation: "وات دید ئای میس", kuMeaning: "چی لەدەستم چوو؟", category: "Normal", type: "Everyday Phrase", speakerA: "You weren't in class yesterday.", speakerB: "What did I miss?", kuA: "دوێنێ لە وانەدا نەبوویت.", kuB: "چی لەدەستم چوو؟" }),
+  makeExpandedSlangItem({ id: "borrow_your_notes", phrase: "Can I borrow your notes?", pronunciation: "کەن ئای بارۆ یوڕ نۆتس", kuMeaning: "دەتوانم تێبینییەکانت وەربگرم؟", category: "Normal", type: "Everyday Phrase", speakerA: "I missed the lecture.", speakerB: "Can I borrow your notes?", kuA: "وانەکەم لەدەست چوو.", kuB: "دەتوانم تێبینییەکانت وەربگرم؟" }),
+  makeExpandedSlangItem({ id: "stuck_on_this", phrase: "I'm stuck on this", pronunciation: "ئایم ستەک ئان زس", kuMeaning: "لە ئەمە گیرماوم / چارەسەرم نازانم", category: "Normal", type: "Everyday Phrase", speakerA: "How is your homework going?", speakerB: "I'm stuck on this math problem.", kuA: "ئەرکی ماڵەوەت چۆن دەچێت؟", kuB: "لەو پرسیارەی بیرکاریدا گیرماوم." }),
+  makeExpandedSlangItem({ id: "pop_quiz", phrase: "Pop quiz", pronunciation: "پاپ کویز", kuMeaning: "تاقیکردنەوەیەکی ناگەهانی", category: "Normal", type: "Everyday Phrase", speakerA: "Why is everyone nervous?", speakerB: "The teacher said we have a pop quiz.", kuA: "بۆچی هەمووان دڵەڕاوکێیان هەیە؟", kuB: "مامۆستاکە وتی تاقیکردنەوەیەکی ناگەهانیمان هەیە." }),
+  makeExpandedSlangItem({ id: "group_project", phrase: "Group project", pronunciation: "گرووپ پرۆجێکت", kuMeaning: "پڕۆژەی گرووپی", category: "Normal", type: "Everyday Phrase", speakerA: "Who is in your group project?", speakerB: "I'm working with Sara and Ali.", kuA: "کێ لە پڕۆژەی گرووپییەکەتدایە؟", kuB: "لەگەڵ سارا و عەلی کار دەکەم." }),
+  makeExpandedSlangItem({ id: "deadlines_coming_up", phrase: "The deadline's coming up", pronunciation: "زە دیدلاینز کەمینگ ئەپ", kuMeaning: "کاتی دواوەی پڕۆژە نزیک دەبێتەوە", category: "Normal", type: "Everyday Phrase", speakerA: "Why are you working so fast?", speakerB: "The deadline's coming up.", kuA: "بۆچی وا بە خێرایی کار دەکەیت؟", kuB: "کاتی دواوە نزیک دەبێتەوە." }),
+  makeExpandedSlangItem({ id: "skip_class", phrase: "Skip class", pronunciation: "سکیپ کلاس", kuMeaning: "وانە لەدەست بدە / چوونە وانە وازبهێنە", category: "Normal", type: "Everyday Phrase", speakerA: "Are you going to the first lecture?", speakerB: "No, I might skip class today.", kuA: "دەچیت بۆ یەکەم وانە؟", kuB: "نەخێر، لەوانەیە ئەمڕۆ وانە لەدەست بدەم." }),
+  makeExpandedSlangItem({ id: "ace_the_test", phrase: "Ace the test", pronunciation: "ئەیس زە تێست", kuMeaning: "تاقیکردنەوەکە بە نمرەی زۆر باش تێپەڕاندن", category: "Normal", type: "Everyday Phrase", speakerA: "How did your science test go?", speakerB: "I think I aced the test.", kuA: "تاقیکردنەوەی زانستەکەت چۆن چوو؟", kuB: "پێموایە بە نمرەی زۆر باش تێپەڕاندم." }),
+];
+
+const REAL_WORLD_SLANG_DATA: SlangSeed[] = [
+  // Current everyday and Gen Z slang
+  makeExpandedSlangItem({ id: "cooked", phrase: "Cooked", pronunciation: "کوکت", kuMeaning: "تەواو گیرماوە / دۆخەکەی خراپە", category: "Slang", type: "Gen Z Slang", speakerA: "I forgot the assignment was due today.", speakerB: "You're cooked unless the teacher gives you more time.", kuA: "لەبیرم چوو ئەرکەکە ئەمڕۆ کاتی تەواوبوونی بوو.", kuB: "تەواو گیرماویت مەگەر مامۆستاکە کاتی زیاتر بدات." }),
+  makeExpandedSlangItem({ id: "lock_in", phrase: "Lock in", pronunciation: "لاک ئن", kuMeaning: "تەواو سەرنج بدە / بە جدی دەستبکە", category: "Slang", type: "Gen Z Slang", speakerA: "The exam starts in twenty minutes.", speakerB: "Time to lock in and focus.", kuA: "تاقیکردنەوەکە بیست خولەکی تر دەستپێدەکات.", kuB: "کاتی ئەوەیە بە جدی سەرنج بدەین." }),
+  makeExpandedSlangItem({ id: "ate", phrase: "Ate", pronunciation: "ئەیت", kuMeaning: "زۆر بە باشی ئەنجامی دا / شازی کرد", category: "Slang", type: "Gen Z Slang", speakerA: "Did you see her presentation?", speakerB: "She ate. Everyone was impressed.", kuA: "پێشکەشکردنەکەیت بینی؟", kuB: "زۆر شازی کرد. هەمووان سەرسام بوون." }),
+  makeExpandedSlangItem({ id: "aura", phrase: "Aura", pronunciation: "ئۆرا", kuMeaning: "کەش و کاریزمای کەسێک", category: "Slang", type: "Gen Z Slang", speakerA: "He walked in wearing that suit.", speakerB: "His aura is unreal today.", kuA: "بەو جلەوە هاتە ژوورەوە.", kuB: "ئەمڕۆ کاریزمایەکی زۆر بەهێزی هەیە." }),
+  makeExpandedSlangItem({ id: "delulu", phrase: "Delulu", pronunciation: "دێلولو", kuMeaning: "خۆفریودەر / باوەڕی ناڕاستی زۆر هەیە", category: "Slang", type: "Gen Z Slang", speakerA: "She thinks the celebrity will message her.", speakerB: "That's a little delulu.", kuA: "پێیوایە بەناوبانگەکە نامەی بۆ دەنێرێت.", kuB: "ئەوە کەمێک خۆفریودانە." }),
+  makeExpandedSlangItem({ id: "touch_grass", phrase: "Touch grass", pronunciation: "تەچ گراس", kuMeaning: "لە ئینتەرنێت دووربکەوە و بگەڕێوە بۆ ژیانی ڕاستەقینە", category: "Slang", type: "Gen Z Slang", speakerA: "I've argued online for six hours.", speakerB: "Please log off and touch grass.", kuA: "شەش کاتژمێرە لە ئینتەرنێت مشتومڕ دەکەم.", kuB: "تکایە دەرچۆ و بگەڕێوە بۆ ژیانی ڕاستەقینە." }),
+  makeExpandedSlangItem({ id: "rent_free", phrase: "Living rent-free", pronunciation: "لیڤینگ ڕێنت فری", kuMeaning: "بەردەوام لە بیری کەسێکدایە", category: "Slang", type: "Gen Z Slang", speakerA: "Why do you keep talking about that comment?", speakerB: "It's living rent-free in my head.", kuA: "بۆچی هەر باسی ئەو لێدوانە دەکەیت؟", kuB: "بەردەوام لە مێشکمدا ماوەتەوە." }),
+  makeExpandedSlangItem({ id: "big_yikes", phrase: "Big yikes", pronunciation: "بیگ یایکس", kuMeaning: "زۆر شەرمەزارکەر یان خراپە", category: "Slang", type: "Gen Z Slang", speakerA: "He insulted the waiter for no reason.", speakerB: "Big yikes. That's embarrassing.", kuA: "بێ هیچ هۆیەک سوکایەتی بە گارسۆنەکە کرد.", kuB: "زۆر شەرمەزارکەرە." }),
+  makeExpandedSlangItem({ id: "im_dead", phrase: "I'm dead", pronunciation: "ئایم دێد", kuMeaning: "زۆر پێکەنیم / لە پێکەنین مردم", category: "Slang", type: "Gen Z Slang", speakerA: "Look at this ridiculous haircut meme.", speakerB: "I'm dead. That's hilarious.", kuA: "سەیری ئەم میمەی قژبڕینە پێکەنیناوییە بکە.", kuB: "لە پێکەنین مردم، زۆر خۆشە." }),
+  makeExpandedSlangItem({ id: "say_less", phrase: "Say less", pronunciation: "سەی لێس", kuMeaning: "تێگەیشتم / پێویست بە ڕوونکردنەوەی زیاتر نییە", category: "Slang", type: "Gen Z Slang", speakerA: "Free pizza in the student hall.", speakerB: "Say less. I'm coming now.", kuA: "پیتزای خۆڕایی لە هۆڵی خوێندکارانە.", kuB: "تێگەیشتم، ئێستا دێم." }),
+  makeExpandedSlangItem({ id: "whats_the_move", phrase: "What's the move?", pronunciation: "واتس زە موڤ", kuMeaning: "پلان چییە؟ / چی دەکەین؟", category: "Slang", type: "Street Slang", speakerA: "We're all free after class.", speakerB: "So, what's the move?", kuA: "هەموومان دوای وانە بەتاڵین.", kuB: "کەواتە پلان چییە؟" }),
+  makeExpandedSlangItem({ id: "pressed", phrase: "Pressed", pronunciation: "پرێست", kuMeaning: "زۆر تووڕە یان نیگەرانە", category: "Slang", type: "Gen Z Slang", speakerA: "Why is he so upset about losing?", speakerB: "He's really pressed about it.", kuA: "بۆچی لە دۆڕان وا تووڕەیە؟", kuB: "زۆر لەسەری نیگەرانە." }),
+  makeExpandedSlangItem({ id: "extra", phrase: "Extra", pronunciation: "ئێکسترا", kuMeaning: "زیادەڕەوی و شانۆگەری زۆر دەکات", category: "Slang", type: "Gen Z Slang", speakerA: "She brought balloons for a five-minute meeting.", speakerB: "She's always so extra.", kuA: "بۆ کۆبوونەوەیەکی پێنج خولەکی باڵۆنی هێنا.", kuB: "هەمیشە زۆر زیادەڕەوی دەکات." }),
+  makeExpandedSlangItem({ id: "the_ick", phrase: "The ick", pronunciation: "زە ئیک", kuMeaning: "هەستێکی لەناکاوی بێزاری لە کەسێک", category: "Slang", type: "Gen Z Slang", speakerA: "He chewed with his mouth open.", speakerB: "That gave me the ick.", kuA: "بە دەمی کراوەوە خواردی.", kuB: "ئەوە هەستی بێزاری پێدام." }),
+  makeExpandedSlangItem({ id: "not_that_deep", phrase: "It's not that deep", pronunciation: "ئتس نات زات دیپ", kuMeaning: "هێندە گرنگ یان ئاڵۆز نییە", category: "Slang", type: "Gen Z Slang", speakerA: "I'm still angry about that tiny mistake.", speakerB: "Relax, it's not that deep.", kuA: "هێشتا لەو هەڵە بچووکە تووڕەم.", kuB: "ئارام بە، هێندە گرنگ نییە." }),
+
+  // Food, restaurants, and cafes
+  makeExpandedSlangItem({ id: "grub", phrase: "Grub", pronunciation: "گرەب", kuMeaning: "خواردن", category: "Slang", type: "Street Slang", speakerA: "I'm starving after work.", speakerB: "Let's get some grub.", kuA: "دوای کار زۆر برسیمە.", kuB: "با هەندێک خواردن وەربگرین." }),
+  makeExpandedSlangItem({ id: "chow_down", phrase: "Chow down", pronunciation: "چاو داون", kuMeaning: "بە خۆشی یان بە زۆری خواردن", category: "Slang", type: "Everyday Phrase", speakerA: "The burgers are ready.", speakerB: "Great, let's chow down.", kuA: "بەرگەرەکان ئامادەن.", kuB: "زۆر باشە، با دەست بە خواردن بکەین." }),
+  makeExpandedSlangItem({ id: "munchies", phrase: "The munchies", pronunciation: "زە مەنچیز", kuMeaning: "حەزی لەناکاوی خواردنی شتی بچووک", category: "Slang", type: "Street Slang", speakerA: "Why are you ordering fries at midnight?", speakerB: "I've got the munchies.", kuA: "بۆچی نیوەشەو پەتاتە داوا دەکەیت؟", kuB: "حەزم بە خواردنی شتێکی بچووکە." }),
+  makeExpandedSlangItem({ id: "hangry", phrase: "Hangry", pronunciation: "هانگری", kuMeaning: "تووڕەبوون بەهۆی برسیەتی", category: "Slang", type: "Gen Z Slang", speakerA: "Why are you snapping at everyone?", speakerB: "Sorry, I'm hangry. I need lunch.", kuA: "بۆچی لە هەمووان تووڕەیت؟", kuB: "ببورە، لە برسیەتی تووڕەم. نانم دەوێت." }),
+  makeExpandedSlangItem({ id: "food_coma", phrase: "Food coma", pronunciation: "فود کۆما", kuMeaning: "خەواڵووبوون دوای خواردنی زۆر", category: "Slang", type: "Everyday Phrase", speakerA: "Are you coming for a walk?", speakerB: "I can't. I'm in a food coma.", kuA: "دێیت بۆ پیاسە؟", kuB: "ناتوانم، دوای ئەو هەموو خواردنە خەواڵووم." }),
+  makeExpandedSlangItem({ id: "cup_of_joe", phrase: "Cup of joe", pronunciation: "کەپ ئەڤ جۆ", kuMeaning: "کۆپێک قاوە", category: "Idioms", type: "Idiom", speakerA: "How do you start your morning?", speakerB: "With a strong cup of joe.", kuA: "بەیانییەکەت چۆن دەستپێدەکەیت؟", kuB: "بە کۆپێک قاوەی بەهێز." }),
+  makeExpandedSlangItem({ id: "greasy_spoon", phrase: "Greasy spoon", pronunciation: "گریسی سپون", kuMeaning: "چێشتخانەیەکی هەرزان و سادە", category: "Idioms", type: "Idiom", speakerA: "Where can we get a cheap breakfast?", speakerB: "There's a greasy spoon around the corner.", kuA: "لەکوێ نانی بەیانی هەرزان دەدۆزینەوە؟", kuB: "چێشتخانەیەکی سادە لە گۆشەکە هەیە." }),
+  makeExpandedSlangItem({ id: "doggy_bag", phrase: "Doggy bag", pronunciation: "دۆگی باگ", kuMeaning: "پاکەتێک بۆ بردنەوەی خواردنی ماوە", category: "Normal", type: "Everyday Phrase", speakerA: "I couldn't finish my meal.", speakerB: "Ask the waiter for a doggy bag.", kuA: "نەمتوانی خواردنەکەم تەواو بکەم.", kuB: "لە گارسۆنەکە پاکەتێک بۆ بردن داوا بکە." }),
+  makeExpandedSlangItem({ id: "hole_in_the_wall", phrase: "Hole-in-the-wall", pronunciation: "هۆڵ ئن زە وۆڵ", kuMeaning: "شوێنێکی بچووک و سادە بەڵام زۆرجار باش", category: "Idioms", type: "Idiom", speakerA: "This cafe looks tiny.", speakerB: "It's a hole-in-the-wall, but the food is amazing.", kuA: "ئەم کافێیە زۆر بچووک دیارە.", kuB: "شوێنێکی سادەیە، بەڵام خواردنەکەی نایابە." }),
+  makeExpandedSlangItem({ id: "nosh", phrase: "Nosh", pronunciation: "ناش", kuMeaning: "خواردنی کەم یان سناک", category: "Slang", type: "Street Slang", speakerA: "Do you want a full meal?", speakerB: "No, just something to nosh on.", kuA: "خواردنێکی تەواوت دەوێت؟", kuB: "نەخێر، تەنها شتێکی کەم بۆ خواردن." }),
+
+  // Shopping and money slang
+  makeExpandedSlangItem({ id: "broke", phrase: "Broke", pronunciation: "برۆک", kuMeaning: "پارەی نەماوە / بێ پارەیە", category: "Slang", type: "Street Slang", speakerA: "Want to go shopping?", speakerB: "I can't. I'm broke until payday.", kuA: "دەتەوێت بچین بۆ بازاڕکردن؟", kuB: "ناتوانم، تا مووچە پارەم نییە." }),
+  makeExpandedSlangItem({ id: "loaded", phrase: "Loaded", pronunciation: "لۆدەت", kuMeaning: "زۆر دەوڵەمەند و پارەدار", category: "Slang", type: "Street Slang", speakerA: "He bought another sports car.", speakerB: "He can afford it. He's loaded.", kuA: "ئۆتۆمبێلێکی وەرزشی تری کڕی.", kuB: "دەتوانێت، زۆر پارەدارە." }),
+  makeExpandedSlangItem({ id: "splurge", phrase: "Splurge", pronunciation: "سپلێرج", kuMeaning: "پارەیەکی زۆر لە شتێکی گران خەرجکردن", category: "Slang", type: "Everyday Phrase", speakerA: "That jacket is expensive.", speakerB: "I know, but I want to splurge today.", kuA: "ئەو جاکەتە گرانە.", kuB: "دەزانم، بەڵام ئەمڕۆ دەمەوێت پارەی زۆر خەرج بکەم." }),
+  makeExpandedSlangItem({ id: "dirt_cheap", phrase: "Dirt cheap", pronunciation: "دێرت چیپ", kuMeaning: "زۆر زۆر هەرزان", category: "Slang", type: "Everyday Phrase", speakerA: "How much were these shoes?", speakerB: "They were dirt cheap at the outlet.", kuA: "ئەم پێڵاوانە بە چەند بوون؟", kuB: "لە ئۆتلێتەکە زۆر زۆر هەرزان بوون." }),
+  makeExpandedSlangItem({ id: "a_steal", phrase: "A steal", pronunciation: "ئە ستیڵ", kuMeaning: "کڕینێکی زۆر هەرزان و نایاب", category: "Slang", type: "Everyday Phrase", speakerA: "I got this phone for two hundred dollars.", speakerB: "That's a steal.", kuA: "ئەم مۆبایلەم بە دوو سەد دۆلار کڕی.", kuB: "ئەوە کڕینێکی زۆر هەرزانە." }),
+  makeExpandedSlangItem({ id: "shopaholic", phrase: "Shopaholic", pronunciation: "شاپەهۆلیک", kuMeaning: "کەسێک کە زۆر حەزی بە بازاڕکردنە", category: "Slang", type: "Everyday Phrase", speakerA: "She buys clothes every weekend.", speakerB: "She's a total shopaholic.", kuA: "هەموو کۆتایی هەفتەیەک جل دەکڕێت.", kuB: "بە تەواوی عاشقی بازاڕکردنە." }),
+  makeExpandedSlangItem({ id: "retail_therapy", phrase: "Retail therapy", pronunciation: "ڕیتەیڵ سێراپی", kuMeaning: "بازاڕکردن بۆ باشکردنی دەروون", category: "Slang", type: "Everyday Phrase", speakerA: "Why did you buy three bags?", speakerB: "I needed some retail therapy.", kuA: "بۆچی سێ جانتات کڕی؟", kuB: "پێویستم بە بازاڕکردن بوو بۆ باشکردنی دەروونم." }),
+  makeExpandedSlangItem({ id: "on_the_cheap", phrase: "On the cheap", pronunciation: "ئان زە چیپ", kuMeaning: "بە نرخێکی زۆر هەرزان", category: "Slang", type: "Everyday Phrase", speakerA: "How did you furnish the apartment?", speakerB: "I bought everything on the cheap.", kuA: "چۆن شوقەکەت کەل و پەل کرد؟", kuB: "هەموو شتێکم بە هەرزانی کڕی." }),
+  makeExpandedSlangItem({ id: "blow_money", phrase: "Blow money", pronunciation: "بلۆ مانی", kuMeaning: "پارە بە خێرایی و بێ سوود خەرجکردن", category: "Slang", type: "Street Slang", speakerA: "Where did your salary go?", speakerB: "I blew money on games and clothes.", kuA: "مووچەکەت لەکوێ چوو؟", kuB: "پارەم لە یاری و جل بەفیڕۆدا." }),
+  makeExpandedSlangItem({ id: "cop", phrase: "Cop", pronunciation: "کاپ", kuMeaning: "شتێک بکڕە یان بەدەستی بهێنە", category: "Slang", type: "Street Slang", speakerA: "Those sneakers just dropped.", speakerB: "I'm going to cop a pair today.", kuA: "ئەو پێڵاوە وەرزشییانە تازە هاتنە بازاڕ.", kuB: "ئەمڕۆ جووتێکیان دەکڕم." }),
+
+  // Barber and grooming slang
+  makeExpandedSlangItem({ id: "fresh_cut", phrase: "Fresh cut", pronunciation: "فرێش کەت", kuMeaning: "قژبڕینێکی تازە و جوان", category: "Slang", type: "Street Slang", speakerA: "Your hair looks sharp today.", speakerB: "Thanks, I just got a fresh cut.", kuA: "ئەمڕۆ قژت زۆر جوانە.", kuB: "سوپاس، تازە قژم بڕیوە." }),
+  makeExpandedSlangItem({ id: "shape_up", phrase: "Shape-up", pronunciation: "شەیپ ئەپ", kuMeaning: "ڕێککردنی هێڵی قژ و ڕیش", category: "Slang", type: "Street Slang", speakerA: "Do you want the edges cleaned?", speakerB: "Yeah, give me a shape-up.", kuA: "دەتەوێت کەنارەکان ڕێک بکەم؟", kuB: "بەڵێ، هێڵەکانم ڕێک بکە." }),
+  makeExpandedSlangItem({ id: "chop_it_off", phrase: "Chop it off", pronunciation: "چاپ ئت ئۆف", kuMeaning: "زۆری قژەکە کورت بکە", category: "Slang", type: "Everyday Phrase", speakerA: "Your hair is really long now.", speakerB: "I know. I'm ready to chop it off.", kuA: "قژت ئێستا زۆر درێژە.", kuB: "دەزانم، ئامادەم زۆری کورت بکەم." }),
+  makeExpandedSlangItem({ id: "skin_fade", phrase: "Skin fade", pronunciation: "سکن فەید", kuMeaning: "فەیدی قژ تا نزیک پێستی سەر", category: "Slang", type: "Street Slang", speakerA: "What kind of fade do you want?", speakerB: "A low skin fade, please.", kuA: "چ جۆرە فەیدێکت دەوێت؟", kuB: "تکایە فەیدێکی نزمی تا پێست." }),
+  makeExpandedSlangItem({ id: "did_me_dirty", phrase: "Did me dirty", pronunciation: "دید می دێرتی", kuMeaning: "زۆر خراپی لەگەڵ کردم", category: "Slang", type: "Street Slang", speakerA: "Why are you wearing a hat?", speakerB: "The barber did me dirty.", kuA: "بۆچی کڵاو لەسەر دەکەیت؟", kuB: "سەرتاشەکە قژی زۆر خراپ بڕیم." }),
+
+  // School and study slang
+  makeExpandedSlangItem({ id: "brainiac", phrase: "Brainiac", pronunciation: "برەینیاک", kuMeaning: "کەسێکی زۆر زیرەک", category: "Slang", type: "Everyday Phrase", speakerA: "Maya solved every problem first.", speakerB: "She's such a brainiac.", kuA: "مایا هەموو پرسیارەکانی یەکەم چارەسەر کرد.", kuB: "زۆر زیرەکە." }),
+  makeExpandedSlangItem({ id: "teachers_pet", phrase: "Teacher's pet", pronunciation: "تیچەرز پێت", kuMeaning: "خوێندکاری دڵخوازی مامۆستا", category: "Slang", type: "Everyday Phrase", speakerA: "He reminds the teacher about homework.", speakerB: "He's such a teacher's pet.", kuA: "ئەرکی ماڵەوە بە مامۆستاکە بیر دەخاتەوە.", kuB: "زۆر خوێندکاری دڵخوازی مامۆستایە." }),
+  makeExpandedSlangItem({ id: "bookworm", phrase: "Bookworm", pronunciation: "بوک وێرم", kuMeaning: "کەسێک کە زۆر کتێب دەخوێنێتەوە", category: "Slang", type: "Everyday Phrase", speakerA: "You finished another novel?", speakerB: "Yeah, I'm a total bookworm.", kuA: "ڕۆمانێکی ترت تەواو کرد؟", kuB: "بەڵێ، زۆر حەزم بە خوێندنەوەی کتێبە." }),
+  makeExpandedSlangItem({ id: "bomb_a_test", phrase: "Bomb a test", pronunciation: "بام ئە تێست", kuMeaning: "لە تاقیکردنەوە زۆر خراپ ئەنجامدان", category: "Slang", type: "Everyday Phrase", speakerA: "How did the chemistry exam go?", speakerB: "I think I bombed the test.", kuA: "تاقیکردنەوەی کیمیا چۆن بوو؟", kuB: "پێموایە زۆر خراپم ئەنجام دا." }),
+  makeExpandedSlangItem({ id: "cut_class", phrase: "Cut class", pronunciation: "کەت کلاس", kuMeaning: "بە ئەنقەست نەچوونە وانە", category: "Slang", type: "Street Slang", speakerA: "Where was Sam this morning?", speakerB: "He cut class to go to the mall.", kuA: "سام ئەم بەیانییە لەکوێ بوو؟", kuB: "وانەی جێهێشت بۆ ئەوەی بچێتە مۆڵ." }),
+  makeExpandedSlangItem({ id: "ace_it", phrase: "Ace it", pronunciation: "ئەیس ئت", kuMeaning: "زۆر بە باشی ئەنجامی بدە", category: "Slang", type: "Everyday Phrase", speakerA: "I'm nervous about my interview.", speakerB: "You'll ace it. You're prepared.", kuA: "لە چاوپێکەوتنەکەم دڵەڕاوکێم هەیە.", kuB: "زۆر بە باشی ئەنجامی دەدەیت، ئامادەیت." }),
+  makeExpandedSlangItem({ id: "nerd_out", phrase: "Nerd out", pronunciation: "نێرد ئاوت", kuMeaning: "بە پەرۆشەوە زۆر لەسەر بابەتێکی تایبەت قسەکردن", category: "Slang", type: "Gen Z Slang", speakerA: "Why are you talking so much about space?", speakerB: "Sorry, I nerd out about astronomy.", kuA: "بۆچی ئەوەندە باسی ئاسمان دەکەیت؟", kuB: "ببورە، زۆر پەرۆشی ئەستێرەناسی دەبم." }),
+  makeExpandedSlangItem({ id: "senioritis", phrase: "Senioritis", pronunciation: "سینیۆرایتس", kuMeaning: "کەمبوونەوەی هاندانی خوێندن لە ساڵی کۆتایی", category: "Slang", type: "Everyday Phrase", speakerA: "Why isn't he doing his homework anymore?", speakerB: "He has a bad case of senioritis.", kuA: "بۆچی چیتر ئەرکی ماڵەوە ناکات؟", kuB: "لە ساڵی کۆتاییدا هاندانی خوێندنی نەماوە." }),
+  makeExpandedSlangItem({ id: "easy_a", phrase: "Easy A", pronunciation: "ئیزی ئەی", kuMeaning: "وانەیەک کە نمرەی بەرز تێیدا ئاسانە", category: "Slang", type: "Everyday Phrase", speakerA: "Is that course difficult?", speakerB: "Not at all. It's an easy A.", kuA: "ئەو کۆرسە قورسە؟", kuB: "هەرگیز، نمرەی بەرز تێیدا زۆر ئاسانە." }),
+  makeExpandedSlangItem({ id: "crash_course", phrase: "Crash course", pronunciation: "کراش کۆرس", kuMeaning: "فێربوونی خێرا و چڕ لە کاتێکی کەمدا", category: "Slang", type: "Everyday Phrase", speakerA: "I need to learn Excel by Monday.", speakerB: "Take a crash course this weekend.", kuA: "دەبێت تا دووشەممە ئێکسڵ فێربم.", kuB: "ئەم کۆتایی هەفتەیە کۆرسێکی خێرا وەربگرە." }),
+];
+
+const PRACTICAL_SLANG_DATA: SlangSeed[] = [
+  // Restaurants and cafes
+  makeExpandedSlangItem({ id: "could_we_get_the_check", phrase: "Could we get the check?", pronunciation: "کود وی گێت زە چێک", kuMeaning: "دەکرێت حسابەکەمان بۆ بهێنیت؟", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "Are you ready to leave?", speakerB: "Yeah. Could we get the check, please?", kuA: "ئامادەیت بڕۆین؟", kuB: "بەڵێ. تکایە دەکرێت حسابەکەمان بۆ بهێنیت؟" }),
+  makeExpandedSlangItem({ id: "separate_checks", phrase: "Separate checks", pronunciation: "سێپەرەت چێکس", kuMeaning: "هەر کەسێک حسابی خۆی بدات", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "One bill for the table?", speakerB: "Could we get separate checks?", kuA: "یەک حساب بۆ مێزەکە؟", kuB: "دەکرێت حسابەکان جیا بن؟" }),
+  makeExpandedSlangItem({ id: "still_working_on_it", phrase: "I'm still working on it", pronunciation: "ئایم ستیل وێرکینگ ئان ئت", kuMeaning: "هێشتا خواردنەکەم تەواو نەکردووە", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "May I clear your plate?", speakerB: "Not yet, I'm still working on it.", kuA: "دەتوانم قاپەکەت لاببەم؟", kuB: "هێشتا نا، هێشتا تەواوم نەکردووە." }),
+  makeExpandedSlangItem({ id: "on_the_house", phrase: "On the house", pronunciation: "ئان زە هاوس", kuMeaning: "لەسەر حسابی چێشتخانە / بەخۆڕایی", category: "Idioms", context: "Restaurants & Cafes", type: "Idiom", speakerA: "We didn't order this dessert.", speakerB: "It's on the house. Enjoy!", kuA: "ئێمە ئەم شیرینییەمان داوا نەکردووە.", kuB: "بەخۆڕاییە، فەرموون!" }),
+  makeExpandedSlangItem({ id: "make_it_decaf", phrase: "Make it decaf", pronunciation: "مەیک ئت دیکاف", kuMeaning: "بێ کافین بێت", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "Would you like another coffee?", speakerB: "Yes, but make it decaf, please.", kuA: "قاوەیەکی ترت دەوێت؟", kuB: "بەڵێ، بەڵام تکایە بێ کافین بێت." }),
+  makeExpandedSlangItem({ id: "room_for_cream", phrase: "Room for cream?", pronunciation: "ڕووم فۆر کریم", kuMeaning: "شوێن بۆ شیر یان کریم بهێڵم؟", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "One large coffee.", speakerB: "Room for cream?", kuA: "یەک قاوەی گەورە.", kuB: "شوێن بۆ شیر بهێڵم؟" }),
+  makeExpandedSlangItem({ id: "warm_this_up", phrase: "Could you warm this up?", pronunciation: "کود یو وۆرم زس ئەپ", kuMeaning: "دەکرێت ئەمە گەرم بکەیتەوە؟", category: "Normal", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "Is everything okay?", speakerB: "The soup is cold. Could you warm this up?", kuA: "هەموو شت باشە؟", kuB: "شۆرباکە ساردە. دەکرێت گەرمی بکەیتەوە؟" }),
+  makeExpandedSlangItem({ id: "im_stuffed", phrase: "I'm stuffed", pronunciation: "ئایم ستەفت", kuMeaning: "زۆر تێرم / چیتر ناتوانم بخۆم", category: "Slang", context: "Restaurants & Cafes", type: "Everyday Phrase", speakerA: "Do you want dessert?", speakerB: "No thanks, I'm stuffed.", kuA: "شیرینی دەوێت؟", kuB: "نەخێر سوپاس، زۆر تێرم." }),
+
+  // Travel and transport
+  makeExpandedSlangItem({ id: "hop_in", phrase: "Hop in", pronunciation: "هاپ ئن", kuMeaning: "سواربە / وەرە ناو ئۆتۆمبێلەکە", category: "Slang", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "Is this your car?", speakerB: "Yep, hop in.", kuA: "ئەمە ئۆتۆمبێلی تۆیە؟", kuB: "بەڵێ، سواربە." }),
+  makeExpandedSlangItem({ id: "drop_me_off", phrase: "Drop me off", pronunciation: "دراپ می ئۆف", kuMeaning: "لەو شوێنە دامبەزێنە", category: "Normal", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "Where should I stop?", speakerB: "Drop me off by the pharmacy.", kuA: "لەکوێ بوەستم؟", kuB: "لای دەرمانخانەکە دامبەزێنە." }),
+  makeExpandedSlangItem({ id: "catch_a_ride", phrase: "Catch a ride", pronunciation: "کاتچ ئە ڕاید", kuMeaning: "لەگەڵ کەسێک سواربیت", category: "Slang", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "How are you getting home?", speakerB: "I'll catch a ride with Sara.", kuA: "چۆن دەگەڕێیتەوە ماڵەوە؟", kuB: "لەگەڵ سارا سوار دەبم." }),
+  makeExpandedSlangItem({ id: "missed_my_stop", phrase: "I missed my stop", pronunciation: "ئای مەست مای ستاپ", kuMeaning: "وێستگەکەی خۆمم تێپەڕاند", category: "Normal", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "Why are you still on the bus?", speakerB: "I wasn't paying attention and missed my stop.", kuA: "بۆچی هێشتا لە پاسەکەیت؟", kuB: "سەرنجم نەبوو و وێستگەکەم تێپەڕاند." }),
+  makeExpandedSlangItem({ id: "traffic_backed_up", phrase: "Traffic is backed up", pronunciation: "ترافیک ئز باکت ئەپ", kuMeaning: "هاتوچۆ زۆر قەرەباڵغە", category: "Normal", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "Why are you running late?", speakerB: "Traffic is backed up for miles.", kuA: "بۆچی دوا کەوتوویت؟", kuB: "هاتوچۆ بۆ چەندین میل زۆر قەرەباڵغە." }),
+  makeExpandedSlangItem({ id: "take_next_exit", phrase: "Take the next exit", pronunciation: "تەیک زە نێکست ئێگزت", kuMeaning: "لە دەرچوونەکەی داهاتوو بڕۆ دەرەوە", category: "Normal", context: "Travel & Transport", type: "Everyday Phrase", speakerA: "Where do I turn?", speakerB: "Take the next exit, then stay right.", kuA: "لەکوێ بپێچمەوە؟", kuB: "لە دەرچوونەکەی داهاتوو بڕۆ دەرەوە، پاشان لای ڕاست بمێنەوە." }),
+
+  // Daily plans and social life
+  makeExpandedSlangItem({ id: "slipped_my_mind", phrase: "It slipped my mind", pronunciation: "ئت سلپت مای مایند", kuMeaning: "بە تەواوی لەبیرم چوو", category: "Idioms", context: "Daily Life", type: "Idiom", speakerA: "Did you call the dentist?", speakerB: "Sorry, it completely slipped my mind.", kuA: "تەلەفۆنت بۆ پزیشکی ددان کرد؟", kuB: "ببورە، بە تەواوی لەبیرم چوو." }),
+  makeExpandedSlangItem({ id: "swing_by", phrase: "Swing by", pronunciation: "سوینگ بای", kuMeaning: "بۆ ماوەیەکی کورت سەردان بکە", category: "Slang", context: "Daily Life", type: "Everyday Phrase", speakerA: "Can you bring the keys?", speakerB: "Sure, I'll swing by after work.", kuA: "دەتوانیت کلیلەکان بهێنیت؟", kuB: "بەڵێ، دوای کار سەردانێکی کورت دەکەم." }),
+  makeExpandedSlangItem({ id: "heading_out", phrase: "I'm heading out", pronunciation: "ئایم هێدینگ ئاوت", kuMeaning: "خەریکە دەڕۆم / بەڕێ دەکەوم", category: "Normal", context: "Daily Life", type: "Everyday Phrase", speakerA: "Are you still at home?", speakerB: "No, I'm heading out now.", kuA: "هێشتا لە ماڵەوەیت؟", kuB: "نەخێر، ئێستا بەڕێ دەکەوم." }),
+  makeExpandedSlangItem({ id: "tied_up", phrase: "I'm tied up", pronunciation: "ئایم تاید ئەپ", kuMeaning: "زۆر سەرقاڵم", category: "Idioms", context: "Daily Life", type: "Idiom", speakerA: "Can you talk right now?", speakerB: "I'm tied up. Can I call you later?", kuA: "ئێستا دەتوانیت قسە بکەیت؟", kuB: "زۆر سەرقاڵم. دەتوانم دواتر تەلەفۆنت بۆ بکەم؟" }),
+  makeExpandedSlangItem({ id: "give_me_a_heads_up", phrase: "Give me a heads-up", pronunciation: "گیڤ می ئە هێدز ئەپ", kuMeaning: "پێشوەخت ئاگادارم بکەوە", category: "Idioms", context: "Daily Life", type: "Idiom", speakerA: "I might visit tomorrow.", speakerB: "Okay, just give me a heads-up first.", kuA: "لەوانەیە سبەی سەردان بکەم.", kuB: "باشە، تەنها پێشوەخت ئاگادارم بکەوە." }),
+  makeExpandedSlangItem({ id: "works_for_me", phrase: "Works for me", pronunciation: "وێرکس فۆر می", kuMeaning: "بۆ من گونجاوە / پێم باشە", category: "Normal", context: "Daily Life", type: "Everyday Phrase", speakerA: "How about meeting at seven?", speakerB: "Works for me.", kuA: "چی دەڵێیت کاتژمێر حەوت پێکبگەین؟", kuB: "بۆ من گونجاوە." }),
+  makeExpandedSlangItem({ id: "count_me_in", phrase: "Count me in", pronunciation: "کاونت می ئن", kuMeaning: "منیش بەژدارم / منیش لەگەڵتانم", category: "Slang", context: "Friends & Social", type: "Everyday Phrase", speakerA: "We're getting coffee after class.", speakerB: "Count me in.", kuA: "دوای وانە دەچین قاوە دەخۆینەوە.", kuB: "منیش لەگەڵتانم." }),
+  makeExpandedSlangItem({ id: "play_it_by_ear", phrase: "Play it by ear", pronunciation: "پلەی ئت بای ئیر", kuMeaning: "بەپێی بارودۆخ بڕیار بدەین", category: "Idioms", context: "Friends & Social", type: "Idiom", speakerA: "What should we do after dinner?", speakerB: "Let's play it by ear.", kuA: "دوای نانی ئێوارە چی بکەین؟", kuB: "با بەپێی بارودۆخ بڕیار بدەین." }),
+  makeExpandedSlangItem({ id: "gonna_pass", phrase: "I'm gonna pass", pronunciation: "ئایم گەنا پاس", kuMeaning: "بەژداری ناکەم / ڕەتیدەکەمەوە", category: "Slang", context: "Friends & Social", type: "Everyday Phrase", speakerA: "Want to go out tonight?", speakerB: "I'm gonna pass. I need some sleep.", kuA: "ئەمشەو دەتەوێت بچینە دەرەوە؟", kuB: "بەژداری ناکەم، پێویستم بە خەوە." }),
+  makeExpandedSlangItem({ id: "crash_at_your_place", phrase: "Crash at your place", pronunciation: "کراش ئەت یۆر پلەیس", kuMeaning: "شەو لە ماڵی تۆ بمێنمەوە", category: "Slang", context: "Friends & Social", type: "Street Slang", speakerA: "The last bus already left.", speakerB: "You can crash at my place tonight.", kuA: "دوا پاس پێشتر ڕۆیشت.", kuB: "دەتوانیت ئەمشەو لە ماڵی من بمێنیتەوە." }),
+
+  // Home, services, and health
+  makeExpandedSlangItem({ id: "power_went_out", phrase: "The power went out", pronunciation: "زە پاوەر وێنت ئاوت", kuMeaning: "کارەبا بڕا", category: "Normal", context: "Home & Services", type: "Everyday Phrase", speakerA: "Why is the apartment dark?", speakerB: "The power went out a few minutes ago.", kuA: "بۆچی شوقەکە تاریکە؟", kuB: "چەند خولەکێک پێش ئێستا کارەبا بڕا." }),
+  makeExpandedSlangItem({ id: "sink_backed_up", phrase: "The sink is backed up", pronunciation: "زە سینک ئز باکت ئەپ", kuMeaning: "ئاوی دەستشۆرەکە ناڕوات", category: "Normal", context: "Home & Services", type: "Everyday Phrase", speakerA: "Why is there water everywhere?", speakerB: "The sink is backed up again.", kuA: "بۆچی هەموو شوێنێک ئاوە؟", kuB: "ئاوی دەستشۆرەکە دووبارە ناڕوات." }),
+  makeExpandedSlangItem({ id: "locked_myself_out", phrase: "I locked myself out", pronunciation: "ئای لاکت مایسێڵف ئاوت", kuMeaning: "کلیلەکەم لە ژوورەوە جێهێشت و ناتوانم بچمە ژوورەوە", category: "Normal", context: "Home & Services", type: "Everyday Phrase", speakerA: "Why are you waiting outside?", speakerB: "I locked myself out.", kuA: "بۆچی لە دەرەوە چاوەڕێ دەکەیت؟", kuB: "کلیلەکەم لە ژوورەوە جێهێشتووە." }),
+  makeExpandedSlangItem({ id: "send_someone_over", phrase: "Send someone over", pronunciation: "سێند سەموان ئۆڤەر", kuMeaning: "کەسێک بنێرە بۆ چاککردن", category: "Normal", context: "Home & Services", type: "Everyday Phrase", speakerA: "The heater isn't working.", speakerB: "We'll send someone over this afternoon.", kuA: "گەرمکەرەوەکە کار ناکات.", kuB: "ئەم دوای نیوەڕۆیە کەسێک دەنێرین." }),
+  makeExpandedSlangItem({ id: "coming_down_with_something", phrase: "I'm coming down with something", pronunciation: "ئایم کەمینگ داون وذ سەمثینگ", kuMeaning: "هەست دەکەم خەریکە نەخۆش دەبم", category: "Idioms", context: "Health & Emergencies", type: "Idiom", speakerA: "You don't look well.", speakerB: "I think I'm coming down with something.", kuA: "باش دیار نیت.", kuB: "پێموایە خەریکە نەخۆش دەبم." }),
+  makeExpandedSlangItem({ id: "stomach_acting_up", phrase: "My stomach is acting up", pronunciation: "مای ستەمەک ئز ئەکتینگ ئەپ", kuMeaning: "گەدە‌م نارەحەتە", category: "Slang", context: "Health & Emergencies", type: "Everyday Phrase", speakerA: "Why aren't you eating?", speakerB: "My stomach is acting up today.", kuA: "بۆچی نان ناخۆیت؟", kuB: "ئەمڕۆ گەدە‌م نارەحەتە." }),
+  makeExpandedSlangItem({ id: "take_a_sick_day", phrase: "Take a sick day", pronunciation: "تەیک ئە سیک دەی", kuMeaning: "بەهۆی نەخۆشی مۆڵەت لە کار وەربگرە", category: "Normal", context: "Health & Emergencies", type: "Everyday Phrase", speakerA: "I have a fever but I have work.", speakerB: "You should take a sick day.", kuA: "تاوم هەیە بەڵام کارم هەیە.", kuB: "پێویستە مۆڵەتی نەخۆشی وەربگریت." }),
+  makeExpandedSlangItem({ id: "call_an_ambulance", phrase: "Call an ambulance", pronunciation: "کۆڵ ئەن ئەمبیولەنس", kuMeaning: "تەلەفۆن بۆ فریاکەوتن بکە", category: "Normal", context: "Health & Emergencies", type: "Everyday Phrase", speakerA: "He can't breathe properly.", speakerB: "Call an ambulance now.", kuA: "ناتوانێت بە باشی هەناسە بدات.", kuB: "ئێستا تەلەفۆن بۆ فریاکەوتن بکە." }),
+
+  // Shopping and money
+  makeExpandedSlangItem({ id: "whats_the_damage", phrase: "What's the damage?", pronunciation: "واتس زە دامەج", kuMeaning: "نرخەکە چەندە؟ / چەندم لێدەکەوێت؟", category: "Idioms", context: "Shopping & Money", type: "Idiom", speakerA: "The mechanic finished the repair.", speakerB: "Okay, what's the damage?", kuA: "میکانیکەکە چاککردنەکەی تەواو کرد.", kuB: "باشە، چەندم لێدەکەوێت؟" }),
+  makeExpandedSlangItem({ id: "just_browsing", phrase: "I'm just browsing", pronunciation: "ئایم جەست براوزینگ", kuMeaning: "تەنها سەیر دەکەم و ئێستا شتێک ناکڕم", category: "Normal", context: "Shopping & Money", type: "Everyday Phrase", speakerA: "Can I help you find something?", speakerB: "No thanks, I'm just browsing.", kuA: "دەتوانم یارمەتیت بدەم شتێک بدۆزیتەوە؟", kuB: "نەخێر سوپاس، تەنها سەیر دەکەم." }),
+  makeExpandedSlangItem({ id: "knock_something_off", phrase: "Can you knock a little off?", pronunciation: "کەن یو ناک ئە لیتڵ ئۆف", kuMeaning: "دەتوانیت کەمێک لە نرخەکە کەم بکەیتەوە؟", category: "Slang", context: "Shopping & Money", type: "Everyday Phrase", speakerA: "The price is eighty dollars.", speakerB: "Can you knock a little off?", kuA: "نرخەکە هەشتا دۆلارە.", kuB: "دەتوانیت کەمێک لە نرخەکە کەم بکەیتەوە؟" }),
+  makeExpandedSlangItem({ id: "get_a_refund", phrase: "Can I get a refund?", pronunciation: "کەن ئای گێت ئە ڕیفەند", kuMeaning: "دەتوانم پارەکەم وەربگرمەوە؟", category: "Normal", context: "Shopping & Money", type: "Everyday Phrase", speakerA: "This charger doesn't work.", speakerB: "Do you have the receipt to get a refund?", kuA: "ئەم شەحنکەرە کار ناکات.", kuB: "پسوولەکەت هەیە بۆ ئەوەی پارەکەت وەربگریتەوە؟" }),
+];
+
+function inferSlangContext(item: SlangSeed): SlangContext {
+  if (item.context) return item.context;
+
+  const text = [
+    item.id,
+    item.phrase,
+    item.kuMeaning,
+    item.example.speakerA,
+    item.example.speakerB,
+  ].join(" ").toLowerCase();
+
+  if (/food|coffee|cafe|restaurant|waiter|order|burger|meal|lunch|dinner|drink|bill|check|sauce|fries|hungry|starving|grub|munch|breakfast|dessert/.test(text)) return "Restaurants & Cafes";
+  if (/shop|buy|price|store|receipt|refund|money|salary|cost|cheap|expensive|deal|card|shoes|jacket|bag|mall|payday/.test(text)) return "Shopping & Money";
+  if (/bus|taxi|ride|traffic|station|airport|flight|road|train|stop|exit|drive|car|travel|trip|on my way/.test(text)) return "Travel & Transport";
+  if (/school|class|test|exam|teacher|study|course|homework|student|assignment|presentation/.test(text)) return "School & Study";
+  if (/doctor|sick|hospital|ambulance|stomach|fever|pain|medicine|health|under the weather/.test(text)) return "Health & Emergencies";
+  if (/apartment|landlord|plumber|sink|heater|power went|locked myself|barber|haircut|skin fade|shape-up/.test(text)) return "Home & Services";
+  if (item.category === "Business" || /meeting|project|manager|deadline|office|client|budget|business|workload|coworker|job/.test(text)) return "Work & Business";
+  if (item.type === "Gen Z Slang" || /online|meme|viral|social media|texting|internet|dm|post/.test(text)) return "Online & Gen Z";
+  if (/friend|party|hang out|go out|date|weekend|together|movie|concert|call me|text me/.test(text)) return "Friends & Social";
+  return "Daily Life";
+}
+
+const uniqueSlangSeeds = new Map<string, SlangSeed>();
+for (const item of [
   ...BASE_SLANG_DATA,
   ...EXPANDED_SLANG_DATA,
-];
+  ...CONTEXTUAL_PHRASE_DATA,
+  ...REAL_WORLD_SLANG_DATA,
+  ...PRACTICAL_SLANG_DATA,
+]) {
+  if (!uniqueSlangSeeds.has(item.id)) uniqueSlangSeeds.set(item.id, item);
+}
+
+export const SLANG_DATA: SlangItem[] = Array.from(uniqueSlangSeeds.values()).map(
+  (item) => ({ ...item, context: inferSlangContext(item) }),
+);

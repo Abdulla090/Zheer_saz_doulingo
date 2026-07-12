@@ -322,7 +322,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const handleHearPhrase = () => {
-    void speak(question.targetWord, "en", question.targetWord);
+    void speak(question.targetWord, question.targetLanguage ?? "en", question.targetWord);
   };
 
   const handleRevealHint = () => {
@@ -368,7 +368,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         label={t("lessons.questionLabel")}
         variant={pathMode === "kids" ? "kids" : "default"}
         layout={compactLayout ? "stacked" : "row"}
-        forceKurdishFont={rtl}
+        contentLanguageCode={question.targetLanguage}
         expanded
       >
         {question.targetWord}
@@ -407,7 +407,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           <AppText style={[s.targetLabel, { textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
 
           <View style={s.targetRow}>
-            <AppText style={[s.targetEn, { textAlign: rtl ? "right" : "center" }]} forceLatinFont latinRole="bold">
+            <AppText languageCode={question.targetLanguage} align="center" fullWidth style={s.targetEn} latinRole="bold">
               {question.targetWord}
             </AppText>
             <SpringPressable

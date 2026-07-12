@@ -20,10 +20,13 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import * as WebBrowser from "expo-web-browser";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 export const SubscriptionScreen = () => {
   const { t, isKu } = useI18n();
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const isPremium = useSettingsStore((s) => s.isPremium);
   const subscriptionTier = useSettingsStore((s) => s.subscriptionTier);
@@ -401,10 +404,11 @@ export const SubscriptionScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   safeHeader: {
     paddingHorizontal: 20,
@@ -438,10 +442,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     padding: 20,
     marginBottom: 20,
     position: "relative",
@@ -456,7 +460,7 @@ const styles = StyleSheet.create({
   },
   cardRecommended: {
     marginTop: 16,
-    borderColor: "#0F172A",
+    borderColor: colors.primary,
   },
   recommendedBadgeContainer: {
     position: "absolute",
@@ -494,12 +498,12 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   planDesc: {
     fontSize: 14,
-    color: "#777777",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
     marginTop: 4,
   },
@@ -509,7 +513,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#EEF0F2",
+    backgroundColor: colors.border,
     marginVertical: 16,
   },
   featuresList: {
@@ -524,7 +528,7 @@ const styles = StyleSheet.create({
   featureText: {
     flex: 1,
     fontSize: 15,
-    color: "#4B4B4B",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedMedium",
   },
   planBtn: {
@@ -556,7 +560,7 @@ const styles = StyleSheet.create({
   premiumCardTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     marginBottom: 16,
   },
@@ -566,7 +570,7 @@ const styles = StyleSheet.create({
   },
   premiumFeatureText: {
     fontSize: 16,
-    color: "#334155",
+    color: isDark ? colors.mutedForeground : "#334155",
     fontFamily: "DINNextRoundedMedium",
   },
   premiumDetailsContainer: {
@@ -574,4 +578,5 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "center",
   },
-});
+  });
+}

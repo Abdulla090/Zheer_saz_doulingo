@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
+import { getLanguage } from "../../../config/languages";
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -51,6 +52,7 @@ const MatchChip = memo(function MatchChip({
   rtl,
   forceLatinFont,
   isKids,
+  languageCode,
 }: {
   label: string;
   state: TileState;
@@ -59,6 +61,7 @@ const MatchChip = memo(function MatchChip({
   rtl?: boolean;
   forceLatinFont?: boolean;
   isKids?: boolean;
+  languageCode?: string;
 }) {
   const shakeX = useSharedValue(0);
   const wrapStyle = useAnimatedStyle(() => ({
@@ -85,6 +88,7 @@ const MatchChip = memo(function MatchChip({
         disabled={matched}
         rtl={rtl}
         forceLatinFont={forceLatinFont}
+        languageCode={languageCode}
         wrapLabel
         centerLabel
         isKids={isKids}
@@ -238,11 +242,11 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
 
       <View style={s.boardArea}>
         <View style={s.colLabels}>
-          <AppText style={[LightType.label, s.colLabel]} forceKurdishFont>
-            کوردی
+          <AppText languageCode={question.sourceLanguage} align="center" style={[LightType.label, s.colLabel]}>
+            {getLanguage(question.sourceLanguage ?? "ku")?.nativeName ?? question.sourceLanguage}
           </AppText>
-          <AppText style={[LightType.label, s.colLabel]} forceLatinFont>
-            English
+          <AppText languageCode={question.targetLanguage} align="center" style={[LightType.label, s.colLabel]}>
+            {getLanguage(question.targetLanguage ?? "en")?.nativeName ?? question.targetLanguage}
           </AppText>
         </View>
 
@@ -255,7 +259,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
                 state={lState(lw)}
                 onPress={() => handleL(lw)}
                 matched={matched.has(lw)}
-                rtl
+                languageCode={question.sourceLanguage}
                 isKids={isKids}
               />
             ))}
@@ -269,7 +273,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
                 state={rState(rw)}
                 onPress={() => handleR(rw)}
                 matched={matched.has(rw)}
-                forceLatinFont
+                languageCode={question.targetLanguage}
                 isKids={isKids}
               />
             ))}
@@ -354,7 +358,7 @@ const s = StyleSheet.create({
   },
   pairTile: {
     width: 132,
-    minHeight: 72,
+    height: 96,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRadius: 24,

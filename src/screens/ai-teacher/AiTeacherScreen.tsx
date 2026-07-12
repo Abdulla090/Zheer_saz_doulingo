@@ -39,23 +39,33 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
-const Colors = {
-  background: C.meshBottom,
-  foreground: C.navy,
-  primary: C.navy,
-  accent: C.coral,
-  secondary: "rgba(255,255,255,0.78)",
-  mutedForeground: C.gray,
-  border: "rgba(26,43,72,0.08)",
-  borderStrong: "rgba(26,43,72,0.12)",
-  card: "rgba(255,255,255,0.86)",
-  cardSurface: "rgba(255,255,255,0.86)",
-  warmBg: "rgba(255,98,84,0.12)",
-  chart1: C.blue,
-  destructive: "#EF4444",
-  track: "rgba(26,43,72,0.1)",
-};
+function createAiColors(theme: any, isDark: boolean) {
+  return {
+    background: theme.background,
+    foreground: theme.foreground,
+    primary: isDark ? theme.primary : C.navy,
+    accent: theme.primary,
+    secondary: theme.surface,
+    mutedForeground: theme.mutedForeground,
+    border: theme.border,
+    borderStrong: theme.cardBorder,
+    card: theme.surface,
+    cardSurface: theme.surface,
+    warmBg: isDark ? "rgba(255,107,74,0.12)" : "rgba(255,98,84,0.12)",
+    chart1: theme.secondary,
+    destructive: theme.error,
+    track: isDark ? "rgba(255,255,255,0.12)" : "rgba(26,43,72,0.1)",
+  };
+}
+
+function useAiTeacherTheme() {
+  const { colors: theme, isDark } = useThemeColors();
+  const Colors = useMemo(() => createAiColors(theme, isDark), [theme, isDark]);
+  const styles = useMemo(() => createStyles(Colors), [Colors]);
+  return { Colors, styles, isDark };
+}
 
 const HISTORY_KEY = "twino.ai-teacher.last-attempt";
 
@@ -110,6 +120,7 @@ function BrandCard({
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
+  const { styles } = useAiTeacherTheme();
   return (
     <View style={[styles.surfaceCard, style]}>
       <View style={contentStyle}>{children}</View>
@@ -128,6 +139,7 @@ function BrandPrimaryButton({
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }) {
+  const { styles } = useAiTeacherTheme();
   return (
     <PressableScale
       onPress={onPress}
@@ -146,6 +158,7 @@ export function AiTeacherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
+  const { Colors, styles, isDark } = useAiTeacherTheme();
   const isRtl = isKu || locale === "ar";
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
@@ -199,6 +212,65 @@ export function AiTeacherScreen() {
     }
   }, [mode, speech]);
 
+  // Countdown timer states & refs
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+
+  const answerRef = React.useRef(answer);
+  useEffect(() => {
+    answerRef.current = answer;
+  }, [answer]);
+
+  const triggerAutoSubmit = useCallback(async () => {
+    const text = answerRef.current.trim();
+    if (text.length < 12) {
+      setError(t("aiTeacher.minAnswer"));
+      setPhase("input");
+      return;
+    }
+    setError(null);
+    setPhase("loading");
+    hapticImpact(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      const evaluation = await evaluateEnglish({
+        text,
+        mode: "speaking",
+        promptId: prompt.id,
+      });
+      setResult(evaluation);
+      setPhase("results");
+    } catch {
+      setError("Could not check your English right now. Try again.");
+      setPhase("input");
+    }
+  }, [prompt.id, t]);
+
+  useEffect(() => {
+    let timerInterval: NodeJS.Timeout | null = null;
+    if (isTimerActive && timeLeft > 0) {
+      timerInterval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isTimerActive) {
+      setIsTimerActive(false);
+      speech.stop();
+      void triggerAutoSubmit();
+    }
+
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+    };
+  }, [timeLeft, isTimerActive, speech, triggerAutoSubmit]);
+
+  useEffect(() => {
+    if (phase !== "input" || mode !== "speaking") {
+      setIsTimerActive(false);
+    }
+  }, [phase, mode]);
+
   const onSubmit = useCallback(async () => {
     const text = answer.trim();
     if (text.length < 12) {
@@ -245,11 +317,14 @@ export function AiTeacherScreen() {
     setError(null);
     setShowTyping(false);
     speech.abort();
+    setTimeLeft(60);
+    setIsTimerActive(false);
   }, [speech]);
 
   const toggleMic = useCallback(async () => {
     if (speech.listening) {
       speech.stop();
+      setIsTimerActive(false);
       return;
     }
     if (!speech.available) {
@@ -257,6 +332,8 @@ export function AiTeacherScreen() {
       return;
     }
     setError(null);
+    setTimeLeft(60);
+    setIsTimerActive(true);
     await speech.start(
       {
         onResult: (text, isFinal) => {
@@ -278,7 +355,7 @@ export function AiTeacherScreen() {
 
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
       <KeyboardAwareScrollView
         style={styles.flex}
         bottomOffset={insets.bottom + 20}
@@ -408,10 +485,11 @@ export function AiTeacherScreen() {
                         styles.promptTitle,
                         { textAlign: isRtl ? "right" : "left" },
                       ]}
-                      forceLatinFont
+                      forceKurdishFont={isKu}
+                      forceLatinFont={!isKu}
                       latinRole="bold"
                     >
-                      {p.title}
+                      {isKu && p.titleKu ? p.titleKu : p.title}
                     </AppText>
                   </PressableScale>
                 ),
@@ -431,10 +509,11 @@ export function AiTeacherScreen() {
               </AppText>
               <AppText
                 style={[styles.promptScenario, directionStyle]}
-                forceLatinFont
+                forceKurdishFont={isKu}
+                forceLatinFont={!isKu}
                 latinRole="medium"
               >
-                {prompt.scenario}
+                {isKu && prompt.scenarioKu ? prompt.scenarioKu : prompt.scenario}
               </AppText>
             </BrandCard>
 
@@ -445,8 +524,13 @@ export function AiTeacherScreen() {
             >
               {t("aiTeacher.yourAnswer")}
             </AppText>
-            {mode === "speaking" && !showTyping ? (
+            {mode === "speaking" ? (
               <BrandCard contentStyle={styles.speakingMicBlock}>
+                {isTimerActive && (
+                  <AppText style={styles.timerText} forceKurdishFont={isKu}>
+                    {isKu ? `کاتی ماوە: ${timeLeft} چرکە` : `Time remaining: ${timeLeft}s`}
+                  </AppText>
+                )}
                 <MicCaptureOrb
                   listening={speech.listening}
                   disabled={phase === "loading"}
@@ -464,30 +548,13 @@ export function AiTeacherScreen() {
                     {answer}
                   </AppText>
                 ) : null}
-                <PressableScale
-                  onPress={() => setShowTyping(true)}
-                  style={styles.typeInsteadBtn}
-                  scaleDown={0.96}
-                >
-                  <AppText
-                    style={styles.typeInsteadText}
-                    forceLatinFont
-                    latinRole="bold"
-                  >
-                    {t("aiTeacher.typeInstead")}
-                  </AppText>
-                </PressableScale>
               </BrandCard>
             ) : (
               <BrandCard contentStyle={styles.inputShell}>
                 <TextInput
                   value={answer}
                   onChangeText={setAnswer}
-                  placeholder={
-                    mode === "speaking"
-                      ? t("aiTeacher.typeSpeaking")
-                      : t("aiTeacher.typeWriting")
-                  }
+                  placeholder={t("aiTeacher.typeWriting")}
                   placeholderTextColor={Colors.mutedForeground}
                   multiline
                   style={[
@@ -496,24 +563,6 @@ export function AiTeacherScreen() {
                   ]}
                   editable={phase !== "loading"}
                 />
-                {mode === "speaking" ? (
-                  <PressableScale
-                    onPress={() => setShowTyping(false)}
-                    style={[
-                      styles.typeInsteadBtnInline,
-                      { alignSelf: isRtl ? "flex-end" : "flex-start" },
-                    ]}
-                    scaleDown={0.96}
-                  >
-                    <AppText
-                      style={styles.typeInsteadText}
-                      forceLatinFont
-                      latinRole="bold"
-                    >
-                      {t("aiTeacher.useMic")}
-                    </AppText>
-                  </PressableScale>
-                ) : null}
               </BrandCard>
             )}
 
@@ -594,7 +643,8 @@ function ResultsView({
   onSave: () => void;
   isRtl: boolean;
 }) {
-  const { isKu } = useI18n();
+  const { t, isKu } = useI18n();
+  const { Colors, styles } = useAiTeacherTheme();
   const directionStyle = {
     textAlign: isRtl ? "right" : "left",
     writingDirection: isRtl ? "rtl" : "ltr",
@@ -653,10 +703,11 @@ function ResultsView({
                   paddingLeft: isRtl ? 8 : 0,
                 },
               ]}
-              forceLatinFont
+              forceKurdishFont={isKu}
+              forceLatinFont={!isKu}
               latinRole="bold"
             >
-              {c.label}
+              {t(`aiTeacher.criteria.${c.key}`) || c.label}
             </AppText>
             <AppText
               style={styles.criterionBand}
@@ -773,7 +824,8 @@ function ResultsView({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: ReturnType<typeof createAiColors>) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -1006,6 +1058,14 @@ const styles = StyleSheet.create({
     color: Colors.mutedForeground,
     lineHeight: 21,
   },
+  timerText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: Colors.accent,
+    textAlign: "center",
+    marginBottom: 12,
+    fontFamily: "DINNextRoundedBold",
+  },
   overallCard: {
     alignItems: "center",
     paddingVertical: 28,
@@ -1117,4 +1177,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.accent,
   },
-});
+  });
+}

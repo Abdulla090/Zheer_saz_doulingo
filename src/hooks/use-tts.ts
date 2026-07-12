@@ -70,14 +70,26 @@ export function useTTS() {
 
   const speak = useCallback(async (
     text: string,
-    lang: "en" | "ku" = "en",
+    lang: string = "en",
     id?: string,
     options?: {
       rate?: number;
       pitch?: number;
+      voice?: string;
+      provider?: "auto" | "device";
       onDone?: () => void;
     },
   ) => {
+    const useDeviceTts = options?.provider === "device";
+    const primaryLanguage = lang.trim().replace(/_/g, "-").split("-")[0].toLowerCase();
+    const speechLocale =
+      primaryLanguage === "ar" || primaryLanguage === "ku" || primaryLanguage === "ckb"
+        ? "ar-IQ"
+        : primaryLanguage === "es"
+          ? "es-ES"
+          : primaryLanguage === "ru"
+            ? "ru-RU"
+            : "en-US";
     const normalized = text
       .replace(/\s+/g, " ")
       .replace(/\s+([,.!?;:])/g, "$1")
@@ -95,22 +107,24 @@ export function useTTS() {
       options?.onDone?.();
     };
 
-    if (isGeminiConfigured()) {
+    if (!useDeviceTts && isGeminiConfigured()) {
       try {
         setSpeaking(true);
         setActiveId(id ?? null);
 
-        let voice = "Aoede";
-        const hasMaleIndicator = 
-          normalized.startsWith("Host two:") || 
-          normalized.startsWith("Host 2:") || 
-          normalized.startsWith("Zanyar:") || 
-          normalized.startsWith("Karwan:") || 
-          normalized.startsWith("Aram:") ||
-          normalized.includes("Zanyar") ||
-          normalized.includes("Karwan");
-        if (hasMaleIndicator) {
-          voice = "Puck";
+        let voice = options?.voice || "Aoede";
+        if (!options?.voice) {
+          const hasMaleIndicator =
+            normalized.startsWith("Host two:") ||
+            normalized.startsWith("Host 2:") ||
+            normalized.startsWith("Zanyar:") ||
+            normalized.startsWith("Karwan:") ||
+            normalized.startsWith("Aram:") ||
+            normalized.includes("Zanyar") ||
+            normalized.includes("Karwan");
+          if (hasMaleIndicator) {
+            voice = "Puck";
+          }
         }
 
         const rawPcmB64 = await generateGeminiSpeech(normalized, voice);
@@ -194,7 +208,7 @@ export function useTTS() {
       }
     }
 
-    if (Platform.OS !== "web" && isBosonConfigured()) {
+    if (!useDeviceTts && Platform.OS !== "web" && isBosonConfigured()) {
       try {
         setSpeaking(true);
         setActiveId(id ?? null);
@@ -266,7 +280,7 @@ export function useTTS() {
 
       synth.cancel();
       const utterance = new SpeechSynthesisUtterance(normalized);
-      utterance.lang = lang === "ku" ? "ar" : "en-US";
+      utterance.lang = speechLocale;
       utterance.rate = options?.rate ?? 0.95;
       utterance.pitch = options?.pitch ?? 1;
       utterance.onend = finish;
@@ -283,7 +297,7 @@ export function useTTS() {
 
     mod.stop();
     mod.speak(normalized, {
-      language: lang === "ku" ? "ar-IQ" : "en-US",
+      language: speechLocale,
       rate: options?.rate ?? 0.96,
       pitch: options?.pitch ?? 1,
       onDone: finish,

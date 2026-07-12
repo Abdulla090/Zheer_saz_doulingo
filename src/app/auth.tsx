@@ -9,7 +9,7 @@ import {
   Cancel01Icon,
   AlertCircleIcon,
 } from "@hugeicons/core-free-icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontStore } from "../stores/useFontStore";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +31,8 @@ export default function AuthScreen() {
   const { locale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
   const { selectedFont } = useFontStore();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -172,7 +175,7 @@ export default function AuthScreen() {
             <HugeiconsIcon
               icon={ArrowLeft02Icon}
               size={20}
-              color="#09090B"
+              color={colors.foreground}
               strokeWidth={2.5}
               style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
             />
@@ -227,7 +230,7 @@ export default function AuthScreen() {
             {/* Error Alert */}
             {errorMessage && (
               <View style={[styles.shadcnAlertError, isKu && { flexDirection: "row-reverse" }]}>
-                <HugeiconsIcon icon={AlertCircleIcon} size={16} color="#7F1D1D" strokeWidth={2.5} />
+                <HugeiconsIcon icon={AlertCircleIcon} size={16} color={colors.error} strokeWidth={2.5} />
                 <AppText style={styles.shadcnAlertErrorText}>{errorMessage}</AppText>
               </View>
             )}
@@ -243,7 +246,7 @@ export default function AuthScreen() {
                     <TextInput
                       style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
                       placeholder={isKu ? "جەمال عەلی" : "Jamal Ali"}
-                      placeholderTextColor="#A1A1AA"
+                      placeholderTextColor={colors.mutedForeground}
                       value={displayName}
                       onChangeText={setDisplayName}
                       autoCapitalize="words"
@@ -258,7 +261,7 @@ export default function AuthScreen() {
                     <TextInput
                       style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
                       placeholder={isKu ? "jamal_ali" : "jamal_ali"}
-                      placeholderTextColor="#A1A1AA"
+                      placeholderTextColor={colors.mutedForeground}
                       value={username}
                       onChangeText={(val) => setUsername(val.replace(/\s+/g, ""))}
                       autoCapitalize="none"
@@ -276,7 +279,7 @@ export default function AuthScreen() {
                 <TextInput
                   style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
                   placeholder={isKu ? "jamal@example.com" : "name@example.com"}
-                  placeholderTextColor="#A1A1AA"
+                  placeholderTextColor={colors.mutedForeground}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -293,7 +296,7 @@ export default function AuthScreen() {
                 <TextInput
                   style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
                   placeholder="••••••••"
-                  placeholderTextColor="#A1A1AA"
+                  placeholderTextColor={colors.mutedForeground}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -376,27 +379,28 @@ export default function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FAFAFA", // pure light gray
+    backgroundColor: colors.background,
   },
   backBtn: {
     position: "absolute",
     width: 38,
     height: 38,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E4E4E7",
+    borderColor: colors.border,
     zIndex: 10,
   },
   shadcnContainer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E4E4E7",
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 24,
     ...Platform.select({
@@ -416,19 +420,19 @@ const styles = StyleSheet.create({
   },
   shadcnTitle: {
     fontSize: 22,
-    color: "#09090B",
+    color: colors.foreground,
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   shadcnSubTitle: {
     fontSize: 13,
-    color: "#71717A",
+    color: colors.mutedForeground,
     lineHeight: 18,
     fontFamily: "DINNextRoundedMedium",
   },
   shadcnTabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#F4F4F5",
+    backgroundColor: colors.muted,
     borderRadius: 8,
     padding: 2,
     marginBottom: 20,
@@ -440,7 +444,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   shadcnActiveTab: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -455,10 +459,10 @@ const styles = StyleSheet.create({
   },
   shadcnTabText: {
     fontSize: 13.5,
-    color: "#71717A",
+    color: colors.mutedForeground,
   },
   shadcnActiveTabText: {
-    color: "#09090B",
+    color: colors.foreground,
   },
   shadcnForm: {
     gap: 14,
@@ -469,22 +473,22 @@ const styles = StyleSheet.create({
   },
   shadcnLabel: {
     fontSize: 13,
-    color: "#09090B",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   shadcnInput: {
     height: 42,
     borderWidth: 1,
-    borderColor: "#E4E4E7",
+    borderColor: colors.border,
     borderRadius: 6,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: "#09090B",
-    backgroundColor: "#FFFFFF",
+    color: colors.foreground,
+    backgroundColor: colors.surface,
   },
   shadcnButton: {
     height: 42,
-    backgroundColor: "#18181B",
+    backgroundColor: isDark ? colors.primary : "#18181B",
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
@@ -499,9 +503,9 @@ const styles = StyleSheet.create({
   shadcnAlertError: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: isDark ? "rgba(239,68,68,0.12)" : "#FEF2F2",
     borderWidth: 1,
-    borderColor: "#FEE2E2",
+    borderColor: isDark ? "rgba(239,68,68,0.28)" : "#FEE2E2",
     borderRadius: 6,
     padding: 10,
     gap: 8,
@@ -509,7 +513,7 @@ const styles = StyleSheet.create({
   },
   shadcnAlertErrorText: {
     fontSize: 12.5,
-    color: "#991B1B",
+    color: isDark ? "#FCA5A5" : "#991B1B",
     fontFamily: "DINNextRoundedMedium",
     flex: 1,
   },
@@ -536,9 +540,9 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxWidth: 380,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: "#E4E4E7",
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 24,
     ...Platform.select({
@@ -561,20 +565,20 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    color: "#09090B",
+    color: colors.foreground,
     letterSpacing: -0.4,
     flex: 1,
   },
   modalDesc: {
     fontSize: 13.5,
-    color: "#71717A",
+    color: colors.mutedForeground,
     lineHeight: 19,
     marginBottom: 20,
     fontFamily: "DINNextRoundedMedium",
   },
   modalCloseBtn: {
     height: 40,
-    backgroundColor: "#18181B",
+    backgroundColor: isDark ? colors.primary : "#18181B",
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
@@ -586,7 +590,7 @@ const styles = StyleSheet.create({
   guestButton: {
     height: 42,
     borderWidth: 1,
-    borderColor: "#E4E4E7",
+    borderColor: colors.border,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
@@ -594,8 +598,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   guestButtonText: {
-    color: "#71717A",
+    color: colors.mutedForeground,
     fontSize: 14,
     fontFamily: "DINNextRoundedBold",
   },
-});
+  });
+}

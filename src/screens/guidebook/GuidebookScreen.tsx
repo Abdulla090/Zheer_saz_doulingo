@@ -18,6 +18,7 @@ import { getGuidebook } from "../../data/guidebook-data";
 import type { LessonPathMode } from "../../data/lesson-content";
 import { useI18n } from "../../hooks/useI18n";
 import { useTTS } from "../../hooks/use-tts";
+import { useThemeColors } from "../../hooks/useThemeColors";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
@@ -158,6 +159,7 @@ function TTSPill({
   faceColor: string;
   rimColor: string;
 }) {
+  const { colors: themeColors } = useThemeColors();
   const p = useSharedValue(0);
   const ty = useSharedValue(0);
 
@@ -166,10 +168,10 @@ function TTSPill({
   }, [isActive]);
 
   const shadowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#E5E5E5", rimColor]),
+    backgroundColor: interpolateColor(p.value, [0, 1], [themeColors.border, rimColor]),
   }));
   const faceStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(p.value, [0, 1], ["#FFFFFF", faceColor]),
+    backgroundColor: interpolateColor(p.value, [0, 1], [themeColors.surfaceRaised, faceColor]),
     transform: [{ translateY: ty.value }],
   }));
 
@@ -429,6 +431,7 @@ function LessonHeader({
   rimColor: string;
   onToggle: () => void;
 }) {
+  const { colors: themeColors } = useThemeColors();
   const ty = useSharedValue(0);
   const rot = useSharedValue(item.isOpen ? 90 : 0);
 
@@ -459,7 +462,7 @@ function LessonHeader({
       >
         <View
           style={{
-            backgroundColor: "#E5E5E5",
+            backgroundColor: themeColors.border,
             borderRadius: 20,
             paddingBottom: 4,
           }}
@@ -467,10 +470,10 @@ function LessonHeader({
           <Animated.View
             style={[
               {
-                backgroundColor: "#FFF",
+                backgroundColor: themeColors.surface,
                 borderRadius: 20,
                 borderWidth: 2,
-                borderColor: "#E5E5E5",
+                borderColor: themeColors.border,
                 padding: 16,
                 flexDirection: "row",
                 alignItems: "center",
@@ -495,7 +498,7 @@ function LessonHeader({
             </View>
             <View style={{ flex: 1 }}>
               <Text
-                style={{ fontSize: 18, fontWeight: "800", color: "#4B4B4B" }}
+                style={{ fontSize: 18, fontWeight: "800", color: themeColors.foreground }}
               >
                 {item.topicEn}
               </Text>
@@ -503,7 +506,7 @@ function LessonHeader({
                 style={{
                   fontSize: 15,
                   fontWeight: "700",
-                  color: "#AFAFAF",
+                  color: themeColors.mutedForeground,
                   marginTop: 2,
                   textAlign: "right",
                   writingDirection: "rtl",
@@ -517,7 +520,7 @@ function LessonHeader({
                   style={{
                     fontSize: 14,
                     fontWeight: "700",
-                    color: "#8A8A8A",
+                    color: themeColors.mutedForeground,
                     marginTop: 2,
                     textAlign: "right",
                     writingDirection: "rtl",
@@ -610,13 +613,15 @@ function TranslationLine({
   text?: string;
   color?: string;
 }) {
+  const { colors: themeColors, isDark } = useThemeColors();
   if (!text) return null;
+  const resolvedColor = isDark ? themeColors.mutedForeground : color;
 
   return (
     <View style={styles.translationLine}>
-      <Text style={[styles.translationLabel, { color }]}>{label}</Text>
+      <Text style={[styles.translationLabel, { color: resolvedColor }]}>{label}</Text>
       <AppText
-        style={[styles.translationText, { color }]}
+        style={[styles.translationText, { color: resolvedColor }]}
         forceKurdishFont
       >
         {text}
@@ -640,6 +645,7 @@ function WordCard({
   onSpeak: () => void;
   copy: ReturnType<typeof getGuidebookCopy>;
 }) {
+  const { colors: themeColors, isDark } = useThemeColors();
   const ty = useSharedValue(0);
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: ty.value }],
@@ -660,7 +666,7 @@ function WordCard({
           style={{
             backgroundColor: isActive
               ? hexWithAlpha(faceColor, 0.4)
-              : "#E5E5E5",
+              : themeColors.border,
             borderRadius: 16,
             paddingBottom: 4,
           }}
@@ -669,11 +675,11 @@ function WordCard({
             style={[
               {
                 backgroundColor: isActive
-                  ? hexWithAlpha(faceColor, 0.08)
-                  : "#FFFFFF",
+                  ? (isDark ? themeColors.surfaceRaised : hexWithAlpha(faceColor, 0.08))
+                  : themeColors.surface,
                 borderRadius: 16,
                 borderWidth: 2,
-                borderColor: isActive ? faceColor : "#E5E5E5",
+                borderColor: isActive ? faceColor : themeColors.border,
                 padding: 16,
                 flexDirection: "row",
                 alignItems: "center",
@@ -727,6 +733,7 @@ function PhraseCard({
   onSpeak: () => void;
   copy: ReturnType<typeof getGuidebookCopy>;
 }) {
+  const { colors: themeColors, isDark } = useThemeColors();
   const ty = useSharedValue(0);
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: ty.value }],
@@ -747,7 +754,7 @@ function PhraseCard({
           style={{
             backgroundColor: isActive
               ? hexWithAlpha(faceColor, 0.4)
-              : "#E5E5E5",
+              : themeColors.border,
             borderRadius: 16,
             paddingBottom: 4,
           }}
@@ -756,11 +763,11 @@ function PhraseCard({
             style={[
               {
                 backgroundColor: isActive
-                  ? hexWithAlpha(faceColor, 0.08)
-                  : "#FFFFFF",
+                  ? (isDark ? themeColors.surfaceRaised : hexWithAlpha(faceColor, 0.08))
+                  : themeColors.surface,
                 borderRadius: 16,
                 borderWidth: 2,
-                borderColor: isActive ? faceColor : "#E5E5E5",
+                borderColor: isActive ? faceColor : themeColors.border,
                 padding: 16,
               },
               cardStyle,
@@ -778,7 +785,7 @@ function PhraseCard({
                 style={{
                   fontSize: 18,
                   fontWeight: "800",
-                  color: "#4B4B4B",
+                  color: themeColors.foreground,
                   flex: 1,
                   lineHeight: 26,
                   paddingEnd: 12,
@@ -796,7 +803,7 @@ function PhraseCard({
             <View
               style={{
                 height: 2,
-                backgroundColor: "#F0F0F0",
+                backgroundColor: themeColors.border,
                 marginBottom: 14,
                 borderRadius: 1,
               }}
@@ -863,6 +870,7 @@ export default function GuidebookScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { locale } = useI18n();
+  const { colors: themeColors } = useThemeColors();
   const { speak, stop, activeId } = useTTS();
   const copy = useMemo(() => getGuidebookCopy(locale), [locale]);
 
@@ -995,9 +1003,9 @@ export default function GuidebookScreen() {
   if (!guidebook) {
     return (
       <View
-        style={{ flex: 1, paddingTop: insets.top, backgroundColor: "#F4F6F9" }}
+        style={{ flex: 1, paddingTop: insets.top, backgroundColor: themeColors.background }}
       >
-        <Text style={{ color: "#aaa", textAlign: "center", marginTop: 80 }}>
+        <Text style={{ color: themeColors.mutedForeground, textAlign: "center", marginTop: 80 }}>
           {copy.notAvailable}
         </Text>
       </View>
@@ -1005,7 +1013,7 @@ export default function GuidebookScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: themeColors.background }]}>
       <FlashList
         data={listData}
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}

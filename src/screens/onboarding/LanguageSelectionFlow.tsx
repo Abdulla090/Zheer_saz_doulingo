@@ -2,7 +2,7 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -40,6 +40,7 @@ import {
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getSkippedUnitsCount } from "../../data/normal-english";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 type Step = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
 
@@ -270,6 +271,8 @@ const GOAL_LABELS: Record<string, Record<string, string>> = {
 export function LanguageSelectionFlow({ onFinish }: Props) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   // Stores
   const setUserName = useSettingsStore((s) => s.setUserName);
@@ -414,7 +417,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
   return (
     <View style={styles.root}>
-      <OnboardingSkiaBg scrollX={bgScrollX} />
+      {!isDark && <OnboardingSkiaBg scrollX={bgScrollX} />}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoider}
@@ -427,7 +430,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               <HugeiconsIcon
                 icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
                 size={22}
-                color="#0F172A"
+                color={colors.foreground}
                 strokeWidth={2.5}
               />
             </TouchableOpacity>
@@ -604,7 +607,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                   value={name}
                   onChangeText={setName}
                   placeholder={copy.namePlaceholder}
-                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
+                  placeholderTextColor={colors.mutedForeground}
                   selectionColor="#0F172A"
                 />
               </View>
@@ -615,7 +618,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                   value={age}
                   onChangeText={setAge}
                   placeholder={copy.agePlaceholder}
-                  placeholderTextColor="rgba(0, 0, 0, 0.3)"
+                  placeholderTextColor={colors.mutedForeground}
                   keyboardType="numeric"
                   selectionColor="#0F172A"
                 />
@@ -754,7 +757,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             exiting={FadeOutLeft.duration(200)}
             style={[styles.contentWrap, { alignItems: "center", justifyContent: "center", paddingBottom: 100 }]}
           >
-            <HugeiconsIcon icon={SparklesIcon} size={64} color="#0F172A" />
+            <HugeiconsIcon icon={SparklesIcon} size={64} color={colors.foreground} />
             <Text style={[styles.title, { textAlign: "center", marginTop: 24, fontSize: 32 }]}>
               Generating your personalized path...
             </Text>
@@ -769,10 +772,11 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: colors.background,
   },
   keyboardAvoider: {
     flex: 1,
@@ -792,11 +796,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   },
   headerCenter: {
     flex: 1,
@@ -812,10 +816,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    backgroundColor: colors.border,
   },
   stepLineActive: {
-    backgroundColor: "#0F172A",
+    backgroundColor: isDark ? colors.primary : "#0F172A",
   },
   scrollContent: {
     flexGrow: 1,
@@ -847,14 +851,14 @@ const styles = StyleSheet.create({
   stepNumLabel: {
     fontSize: 12,
     fontWeight: "800",
-    color: "rgba(0, 0, 0, 0.6)",
+    color: colors.mutedForeground,
     letterSpacing: 1.2,
     marginBottom: 8,
     textAlign: "left",
   },
   title: {
     fontSize: 24,
-    color: "#0F172A",
+    color: colors.foreground,
     textAlign: "left",
     fontFamily: "DINNextRoundedBold",
     lineHeight: 29,
@@ -863,7 +867,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: "rgba(0, 0, 0, 0.5)",
+    color: colors.mutedForeground,
     textAlign: "left",
     lineHeight: 20,
     marginBottom: 16,
@@ -885,7 +889,7 @@ const styles = StyleSheet.create({
   speechBubble: {
     position: "absolute",
     top: -34,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderWidth: 1.5,
     borderRadius: 10,
     paddingHorizontal: 10,
@@ -916,7 +920,7 @@ const styles = StyleSheet.create({
   textInputClean: {
     width: "100%",
     fontSize: 32,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     textAlign: "left",
   },
@@ -934,8 +938,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
-    backgroundColor: "rgba(255, 255, 255, 0.48)",
+    borderColor: colors.border,
+    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.48)",
     padding: 12,
     justifyContent: "space-between",
     marginBottom: 12,
@@ -943,12 +947,12 @@ const styles = StyleSheet.create({
   flagGridCard: {
     padding: 0,
     overflow: "hidden",
-    backgroundColor: "rgba(15, 23, 42, 0.08)",
+    backgroundColor: colors.muted,
   },
   gridCardSelected: {
     borderColor: "rgba(15, 23, 42, 0.35)",
     borderWidth: 2,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
   },
   flagImage: {
     position: "absolute",
@@ -1020,19 +1024,19 @@ const styles = StyleSheet.create({
   },
   gridCardTitle: {
     fontSize: 15,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     lineHeight: 18,
   },
   gridCardSub: {
     fontSize: 12,
-    color: "rgba(15, 23, 42, 0.55)",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
     marginTop: -6,
   },
   gridCardDesc: {
     fontSize: 11.5,
-    color: "rgba(15, 23, 42, 0.55)",
+    color: colors.mutedForeground,
     lineHeight: 15,
   },
   gridCode: {
@@ -1041,8 +1045,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
-    backgroundColor: "rgba(15, 23, 42, 0.06)",
-    color: "rgba(15, 23, 42, 0.58)",
+    backgroundColor: colors.muted,
+    color: colors.mutedForeground,
     fontSize: 10.5,
     fontFamily: "DINNextRoundedBold",
   },
@@ -1082,19 +1086,19 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
+    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
   },
   optionRowSelected: {
-    borderColor: "rgba(0, 0, 0, 0.2)",
-    backgroundColor: "#FFFFFF",
+    borderColor: isDark ? colors.primary : "rgba(0, 0, 0, 0.2)",
+    backgroundColor: colors.surfaceRaised,
   },
   radioDot: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "rgba(0, 0, 0, 0.2)",
+    borderColor: colors.mutedForeground,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1103,13 +1107,13 @@ const styles = StyleSheet.create({
     marginRight: 0,
   },
   radioDotSelected: {
-    borderColor: "#0F172A",
+    borderColor: isDark ? colors.primary : "#0F172A",
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#0F172A",
+    backgroundColor: isDark ? colors.primary : "#0F172A",
   },
   flagEmoji: {
     fontSize: 25,
@@ -1117,21 +1121,21 @@ const styles = StyleSheet.create({
   optionLabel: {
     flex: 1,
     fontSize: 15,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   optionLabelSelected: {
-    color: "#000000",
+    color: colors.foreground,
   },
   codeTag: {
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    backgroundColor: colors.muted,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   codeTagText: {
     fontSize: 11,
-    color: "rgba(0, 0, 0, 0.6)",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedBold",
   },
 
@@ -1144,12 +1148,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: colors.border,
+    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
   },
   goalRowSelected: {
-    borderColor: "rgba(0, 0, 0, 0.2)",
-    backgroundColor: "#FFFFFF",
+    borderColor: isDark ? colors.primary : "rgba(0, 0, 0, 0.2)",
+    backgroundColor: colors.surfaceRaised,
   },
   goalIconWrap: {
     width: 44,
@@ -1165,19 +1169,19 @@ const styles = StyleSheet.create({
   },
   goalTitle: {
     fontSize: 15,
-    color: "#0F172A",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   goalTitleSelected: {
-    color: "#000000",
+    color: colors.foreground,
   },
   goalDesc: {
     fontSize: 12,
-    color: "rgba(0, 0, 0, 0.5)",
+    color: colors.mutedForeground,
     marginTop: 2,
   },
   goalDescSelected: {
-    color: "rgba(0, 0, 0, 0.8)",
+    color: colors.foreground,
   },
 
   // -- Primary Action Button --
@@ -1218,4 +1222,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "DINNextRoundedBold",
   },
-});
+  });
+}

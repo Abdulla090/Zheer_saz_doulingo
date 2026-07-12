@@ -15,6 +15,7 @@ import { HomeMeshBackground, HomePalette as C } from "../../components/ui/ios-li
 import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hapticImpact } from "../../utils/haptics";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const TRACK_COLOR = "#E2E8F0";
 const HERO_FILL_COLOR = "#0F172A";
@@ -38,10 +39,11 @@ const QuestProgressBar = ({
   valueColor,
   fillColor = GOAL_FILL_COLOR,
   glossColor = GOAL_GLOSS_COLOR,
-}: QuestProgressBarProps) => (
-  <ProgressBar
+}: QuestProgressBarProps) => {
+  const { isDark } = useThemeColors();
+  return <ProgressBar
     progress={progress}
-    trackColor={TRACK_COLOR}
+    trackColor={isDark ? "rgba(255,255,255,0.12)" : TRACK_COLOR}
     fillColor={fillColor}
     glossColor={glossColor}
     width={width}
@@ -49,8 +51,8 @@ const QuestProgressBar = ({
     valueColor={valueColor}
     valueFontFamily="DINNextRoundedMedium"
     valueFontSize={14}
-  />
-);
+  />;
+};
 
 type ParticipantRowProps = {
   name: string;
@@ -64,7 +66,9 @@ const ParticipantRow = ({
   lessonsLabel,
   dotColor,
   isKu,
-}: ParticipantRowProps) => (
+}: ParticipantRowProps) => {
+  const styles = useQuestStyles();
+  return (
   <View style={[styles.participantRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
     <View style={[styles.participantInfo, { flexDirection: isKu ? "row-reverse" : "row" }]}>
       <View
@@ -76,7 +80,8 @@ const ParticipantRow = ({
       {lessonsLabel}
     </AppText>
   </View>
-);
+  );
+};
 
 type QuestActionButtonProps = {
   width: number;
@@ -90,10 +95,12 @@ const QuestActionButton = ({
   label,
   leftNode,
   onPress,
-}: QuestActionButtonProps) => (
-  <SvgAppButton
+}: QuestActionButtonProps) => {
+  const { isDark } = useThemeColors();
+  const styles = useQuestStyles();
+  return <SvgAppButton
     color="#FFFFFF"
-    backgroundColor={TRACK_COLOR}
+    backgroundColor={isDark ? "#334155" : TRACK_COLOR}
     onPress={onPress}
     leftRadius={14}
     pressDepth={3}
@@ -104,8 +111,8 @@ const QuestActionButton = ({
   >
     {leftNode}
     <AppText style={styles.actionBtnLabel}>{label}</AppText>
-  </SvgAppButton>
-);
+  </SvgAppButton>;
+};
 
 type QuestGoalRowProps = {
   title: string;
@@ -123,8 +130,9 @@ const QuestGoalRow = ({
   valueColor,
   barWidth,
   isKu,
-}: QuestGoalRowProps) => (
-  <View style={[styles.goalRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+}: QuestGoalRowProps) => {
+  const styles = useQuestStyles();
+  return <View style={[styles.goalRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
     <View style={[styles.goalLeft, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
       <AppText style={[styles.goalTitle, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont={isKu}>{title}</AppText>
       <QuestProgressBar
@@ -135,10 +143,12 @@ const QuestGoalRow = ({
       />
     </View>
     <ChestUnlockedV2 width={50} height={50} />
-  </View>
-);
+  </View>;
+};
 
 const QuestScreen = () => {
+  const { isDark } = useThemeColors();
+  const styles = useQuestStyles();
   const { t, isKu } = useI18n();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -164,7 +174,7 @@ const QuestScreen = () => {
 
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
 
       <SafeContainer style={[styles.safeHeader, { paddingTop: insets.top + 8 }]}>
         <View style={[styles.headerRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
@@ -318,10 +328,16 @@ const QuestScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+function useQuestStyles() {
+  const { colors, isDark } = useThemeColors();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: C.meshBottom,
+    backgroundColor: colors.background,
   },
   safeHeader: {
     paddingHorizontal: 20,
@@ -357,7 +373,7 @@ const styles = StyleSheet.create({
   },
   timeTextGray: {
     fontSize: 14,
-    color: "#777777",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
   },
   timeTextGold: {
@@ -370,7 +386,7 @@ const styles = StyleSheet.create({
     height: 90,
   },
   topCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: 16,
     marginTop: 14,
@@ -383,7 +399,7 @@ const styles = StyleSheet.create({
   topCardTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     marginBottom: 10,
   },
@@ -402,7 +418,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     flex: 1,
   },
@@ -411,21 +427,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#C6EBFD",
+    backgroundColor: isDark ? "rgba(59,130,246,0.16)" : "#C6EBFD",
     height: 120,
     overflow: "hidden",
     borderWidth: 1.5,
-    borderColor: "#A3D8F5",
+    borderColor: isDark ? "rgba(96,165,250,0.28)" : "#A3D8F5",
   },
   boysImage: {
     width: 150,
     height: 110,
   },
   friendsProgressCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: "#EEF0F2",
+    borderColor: colors.border,
     padding: 18,
     marginTop: 14,
     gap: 12,
@@ -453,12 +469,12 @@ const styles = StyleSheet.create({
   },
   participantName: {
     fontSize: 16,
-    color: "#1A2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   participantLessons: {
     fontSize: 14,
-    color: "#777777",
+    color: colors.mutedForeground,
     fontFamily: "DINNextRoundedMedium",
   },
   actionRow: {
@@ -475,12 +491,12 @@ const styles = StyleSheet.create({
   },
   actionBtnLabel: {
     fontSize: 14,
-    color: "#1A2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   cardDivider: {
     height: 1.5,
-    backgroundColor: "#EEF0F2",
+    backgroundColor: colors.border,
     marginVertical: 14,
   },
   dailyHeaderRow: {
@@ -492,7 +508,7 @@ const styles = StyleSheet.create({
   dailyTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1B2B48",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   dailyGoalsList: {
@@ -511,9 +527,10 @@ const styles = StyleSheet.create({
   goalTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#4B4B4B",
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
-});
+  });
+}
 
 export default QuestScreen;

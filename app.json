@@ -159,18 +159,36 @@
                       "group.com.hewad.mubariz.twino"
                     ]
                   }
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.twino.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.hewad.mubariz.twino"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.hewad.mubariz.twino.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.hewad.mubariz.twino"
+                    ]
+                  }
                 }
               ]
             }
           }
         },
-        "projectId": "9a50c2c3-e5b5-47df-80e9-7bedd8697de7"
+        "projectId": "8e9d6bac-1916-40f0-b5f7-9462cdf19680"
       },
       "expo-navigation-bar": {
         "enforceContrast": false,
         "hidden": true
       }
     },
-    "owner": "abdullla001"
+    "owner": "abdulla090"
   }
 }

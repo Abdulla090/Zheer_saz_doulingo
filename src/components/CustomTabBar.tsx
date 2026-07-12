@@ -32,9 +32,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { crossShadow } from "../utils/shadows";
 import { AppText } from "./ui/AppText";
+import { useThemeColors } from "../hooks/useThemeColors";
 
-const ACTIVE = "#0F172A";
-const INACTIVE = "#64748B";
 const ACTIVE_FILL = "rgba(15, 23, 42, 0.08)";
 const ACTIVE_BORDER = "rgba(15, 23, 42, 0.08)";
 const MAX_BAR_WIDTH = 460;
@@ -45,38 +44,38 @@ const TAB_ITEMS: {
   route: TabRoute;
   href: "/" | "/play" | "/dashboard" | "/more";
   labelKey: I18nKey;
-  renderIcon: (active: boolean, size: number) => React.ReactNode;
+  renderIcon: (active: boolean, size: number, activeColor: string, inactiveColor: string) => React.ReactNode;
 }[] = [
   {
     route: "index",
     href: "/",
     labelKey: "tabs.home",
-    renderIcon: (active, size) => (
-      <HomeTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <HomeTabIconFlat size={size} color={active ? activeColor : inactiveColor} />
     ),
   },
   {
     route: "play",
     href: "/play",
     labelKey: "tabs.games",
-    renderIcon: (active, size) => (
-      <GamesTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <GamesTabIcon size={size} color={active ? activeColor : inactiveColor} />
     ),
   },
   {
     route: "dashboard",
     href: "/dashboard",
     labelKey: "tabs.leaderboard",
-    renderIcon: (active, size) => (
-      <LeaderboardTabIcon size={size} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <LeaderboardTabIcon size={size} color={active ? activeColor : inactiveColor} />
     ),
   },
   {
     route: TAB_FAB_ROUTE,
     href: "/more",
     labelKey: "tabs.profile",
-    renderIcon: (active, size) => (
-      <ProfileTabIconFlat size={size} color={active ? ACTIVE : INACTIVE} />
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <ProfileTabIconFlat size={size} color={active ? activeColor : inactiveColor} />
     ),
   },
 ];
@@ -108,11 +107,13 @@ function TabButton({
   onPressIn: () => void;
   onPress: () => void;
 }) {
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   return (
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      android_ripple={{ color: "rgba(15, 23, 42, 0.08)", borderless: false }}
+      android_ripple={{ color: isDark ? "rgba(255,255,255,0.08)" : "rgba(15, 23, 42, 0.08)", borderless: false }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={label}
@@ -156,6 +157,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { width } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
   const { prepareTransition } = useTabTransition();
+  const { colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const activeRouteName = state.routes[state.index]?.name;
   const isRtl = isKu || isAr;
 
@@ -214,7 +217,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               label={item.label}
               isFocused={isFocused}
               isRtl={isRtl}
-              icon={item.renderIcon(isFocused, iconSize)}
+              icon={item.renderIcon(isFocused, iconSize, colors.foreground, colors.mutedForeground)}
               onPressIn={() => router.prefetch(item.href)}
               onPress={onPress}
             />
@@ -225,7 +228,8 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   host: {
     position: "absolute",
     left: 0,
@@ -242,8 +246,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: 28,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(15, 23, 42, 0.10)",
-    backgroundColor: Platform.OS === "web" ? "#FFFFFF" : "rgba(255,255,255,0.96)",
+    borderColor: colors.border,
+    backgroundColor: Platform.OS === "web"
+      ? colors.surfaceRaised
+      : (isDark ? "rgba(22,32,51,0.97)" : "rgba(255,255,255,0.96)"),
     paddingHorizontal: 6,
     paddingVertical: 6,
     ...crossShadow({
@@ -266,8 +272,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabButtonActive: {
-    backgroundColor: ACTIVE_FILL,
-    borderColor: ACTIVE_BORDER,
+    backgroundColor: isDark ? "rgba(255,255,255,0.09)" : ACTIVE_FILL,
+    borderColor: isDark ? "rgba(255,255,255,0.1)" : ACTIVE_BORDER,
   },
   tabButtonPressed: {
     opacity: 0.72,
@@ -288,12 +294,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   labelActive: {
-    color: ACTIVE,
+    color: colors.foreground,
   },
   labelInactive: {
-    color: INACTIVE,
+    color: colors.mutedForeground,
   },
   labelRtl: {
     writingDirection: "rtl",
   },
-});
+  });
+}

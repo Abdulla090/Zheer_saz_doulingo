@@ -69,8 +69,7 @@ type Props = {
 
 export default function ConversationPickGame({ question, onAnswer, pathMode }: Props) {
 
-  const { t, isKu, isAr } = useI18n();
-  const rtl = isKu || isAr;
+  const { t } = useI18n();
 
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -159,6 +158,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
         <LightQuestionPrompt
           label={t("lessons.situation")}
           forceKurdishFont
+          contentLanguageCode={question.sourceLanguage}
           variant={pathMode === "kids" ? "kids" : "default"}
         >
 
@@ -168,7 +168,10 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
 
 
-        <LightDialogueCard label={t("lessons.theySay")}>
+        <LightDialogueCard
+          label={t("lessons.theySay")}
+          contentLanguageCode={question.targetLanguage}
+        >
 
           {question.theyAsk}
 
@@ -188,8 +191,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
                 state={mapOptionState(getState(opt))}
                 onPress={() => pick(opt)}
                 disabled={revealed}
-                rtl={rtl}
-                forceLatinFont
+                languageCode={question.targetLanguage}
                 isKids={pathMode === "kids"}
               />
 

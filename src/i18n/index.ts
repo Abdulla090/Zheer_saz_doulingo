@@ -19,7 +19,7 @@ export const resources = {
 
 // Initialize i18next
 const initI18n = () => {
-  const savedLocale = useLocaleStore.getState().selectedSourceLanguage || "en";
+  const savedLocale = useLocaleStore.getState().selectedUiLanguage || "en";
   const appLocale = savedLocale;
   
   i18next
@@ -38,8 +38,8 @@ initI18n();
 
 // Subscribe to store changes to update i18n language
 useLocaleStore.subscribe((state, prevState) => {
-  if (state.selectedSourceLanguage !== prevState?.selectedSourceLanguage) {
-    const appLang = state.selectedSourceLanguage;
+  if (state.selectedUiLanguage !== prevState?.selectedUiLanguage) {
+    const appLang = state.selectedUiLanguage;
     i18next.changeLanguage(appLang);
   }
 });

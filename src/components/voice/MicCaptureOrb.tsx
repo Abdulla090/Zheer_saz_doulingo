@@ -2,7 +2,7 @@ import { crossShadow } from "../../utils/shadows";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { Mic01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { Mic01Icon, SquareIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -140,7 +140,7 @@ export function MicCaptureOrb({
             },
           ]}
         >
-          <HugeiconsIcon icon={Mic01Icon} size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
+          <HugeiconsIcon icon={listening ? SquareIcon : Mic01Icon} size={Math.round(size * 0.38)} color="#FFFFFF" strokeWidth={2.5} />
         </Pressable>
       </View>
       {hint ? <AppText style={styles.hint}>{hint}</AppText> : null}

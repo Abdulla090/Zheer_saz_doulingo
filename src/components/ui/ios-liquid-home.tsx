@@ -10,6 +10,7 @@ import { AppText } from "./AppText";
 import { Glass, Motion, Radius } from "../../screens/lesson/games/game-design";
 import { IS_ANDROID } from "../../utils/native-perf";
 import { crossShadow } from "../../utils/shadows";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { BlurView } from "expo-blur";
 import { hapticImpact } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
@@ -136,6 +137,7 @@ export function HomeLiquidCard({
   radius?: number;
   interactive?: boolean;
 }) {
+  const { colors, isDark } = useThemeColors();
   const nativeGlass = useNativeLiquidGlass();
   const GlassView = GlassViewComponent;
 
@@ -158,7 +160,7 @@ export function HomeLiquidCard({
         <GlassView
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
           glassEffectStyle="regular"
-          colorScheme="light"
+          colorScheme={isDark ? "dark" : "light"}
           isInteractive={interactive}
         />
         <View style={[styles.cardContent, contentStyle]}>{children}</View>
@@ -173,10 +175,10 @@ export function HomeLiquidCard({
         {
           borderRadius: radius,
           borderWidth: 1,
-          borderColor: Glass.border,
+          borderColor: isDark ? colors.border : Glass.border,
           backgroundColor: IS_ANDROID
-            ? "rgba(255,255,255,0.94)"
-            : Glass.surface,
+            ? (isDark ? colors.surfaceRaised : "rgba(255,255,255,0.94)")
+            : (isDark ? colors.surface : Glass.surface),
           overflow: "hidden",
         },
         crossShadow({
@@ -192,7 +194,7 @@ export function HomeLiquidCard({
       {Platform.OS !== "web" && !IS_ANDROID && (
         <BlurView
           intensity={Glass.blurMedium}
-          tint="light"
+          tint={isDark ? "dark" : "light"}
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
       )}
@@ -208,7 +210,9 @@ export function HomeLiquidCard({
         />
       )}
       <LinearGradient
-        colors={[...Glass.sheen]}
+        colors={isDark
+          ? ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.02)", "rgba(255,255,255,0)"]
+          : [...Glass.sheen]}
         style={[
           styles.cardSheen,
           { borderTopLeftRadius: radius, borderTopRightRadius: radius },
@@ -226,11 +230,14 @@ export function HomeLiquidButton({
   onPress,
   color = HomePalette.blue,
   style,
+  flush = false,
 }: {
   label: string;
   onPress: () => void;
   color?: string;
   style?: StyleProp<ViewStyle>;
+  /** Remove the default top spacing when the button sits in a fixed footer. */
+  flush?: boolean;
 }) {
   const scale = useSharedValue(1);
   const anim = useAnimatedStyle(() => ({
@@ -252,6 +259,7 @@ export function HomeLiquidButton({
         }}
         style={[
           styles.primaryBtn,
+          flush && styles.primaryBtnFlush,
           {
             backgroundColor: color,
             borderColor: "rgba(255,255,255,0.35)",
@@ -370,6 +378,7 @@ export function HomeLiquidLessonTile({
 
 /** Outline XP chip — soft glass rim */
 export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
+  const { colors, isDark } = useThemeColors();
   const nativeGlass = useNativeLiquidGlass();
   const GlassView = GlassViewComponent;
   const size = 44;
@@ -380,29 +389,30 @@ export function HomeLiquidXpChip({ label = "XP" }: { label?: string }) {
         style={[
           styles.xpOuter,
           { width: size, height: size, borderRadius: size / 2 },
+          isDark && { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
         ]}
       >
         <GlassView
           style={[StyleSheet.absoluteFill, { borderRadius: size / 2 }]}
           glassEffectStyle="clear"
-          colorScheme="light"
+          colorScheme={isDark ? "dark" : "light"}
           tintColor="#BFDBFE"
         />
-        <AppText style={styles.xpText}>{label}</AppText>
+        <AppText style={[styles.xpText, isDark && { color: colors.foreground }]}>{label}</AppText>
       </View>
     );
   }
 
   return (
-    <View style={styles.xpOuter}>
+    <View style={[styles.xpOuter, isDark && { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
       {!IS_ANDROID && (
         <BlurView
           intensity={Glass.blurLight}
-          tint="light"
+          tint={isDark ? "dark" : "light"}
           style={StyleSheet.absoluteFill}
         />
       )}
-      <AppText style={styles.xpText}>{label}</AppText>
+      <AppText style={[styles.xpText, isDark && { color: colors.foreground }]}>{label}</AppText>
     </View>
   );
 }
@@ -485,6 +495,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 1,
+  },
+  primaryBtnFlush: {
+    marginTop: 0,
   },
   primarySheen: {
     position: "absolute",

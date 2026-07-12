@@ -43,6 +43,7 @@ import {
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useI18n } from "../../hooks/useI18n";
 import { generateReadingPracticeParagraphs } from "../../services/gemini-speech-service";
 import { hapticImpact } from "../../utils/haptics";
@@ -263,6 +264,7 @@ function OptionChip({
   onPress: () => void;
   flex?: boolean;
 }) {
+  const styles = useReadingStyles();
   return (
     <PressableScale
       onPress={onPress}
@@ -294,6 +296,7 @@ function MetricCard({
   value: string;
   tone?: "blue" | "green" | "red";
 }) {
+  const styles = useReadingStyles();
   const color = tone === "green" ? "#10B981" : tone === "red" ? "#EF4444" : C.blue;
   return (
     <View style={styles.metricCard}>
@@ -310,6 +313,8 @@ export default function ReadingPracticeScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const styles = useReadingStyles();
   const isRtl = isKu || isAr;
   const speech = useSpeechCapture("en-US");
 
@@ -518,7 +523,7 @@ export default function ReadingPracticeScreen() {
   const header = (
     <View style={[styles.header, { paddingTop: insets.top + 12, flexDirection: "row" }]}>
       <Pressable style={styles.backButton} onPress={handleBack}>
-        <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={22} color={C.navy} strokeWidth={2.4} />
+        <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={22} color={colors.foreground} strokeWidth={2.4} />
       </Pressable>
       <View style={[styles.headerTitleWrap, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
         <AppText style={[styles.headerKicker, { textAlign: isRtl ? "right" : "left" }]}>
@@ -534,7 +539,7 @@ export default function ReadingPracticeScreen() {
   if (state === "setup" || state === "generating") {
     return (
       <View style={styles.root}>
-        <HomeMeshBackground />
+        {!isDark && <HomeMeshBackground />}
         {header}
 
         <ScrollView
@@ -639,11 +644,11 @@ export default function ReadingPracticeScreen() {
           <View style={styles.setupFooter}>
             <View style={[styles.practiceSummary, isRtl && styles.rowReverse]}>
               <View style={styles.summaryItem}>
-                <HugeiconsIcon icon={Clock01Icon} size={16} color={C.gray} strokeWidth={2.2} />
+                <HugeiconsIcon icon={Clock01Icon} size={16} color={colors.mutedForeground} strokeWidth={2.2} />
                 <AppText style={styles.summaryText}>{estimatedMinutes} min</AppText>
               </View>
               <View style={styles.summaryItem}>
-                <HugeiconsIcon icon={Target02Icon} size={16} color={C.gray} strokeWidth={2.2} />
+                <HugeiconsIcon icon={Target02Icon} size={16} color={colors.mutedForeground} strokeWidth={2.2} />
                 <AppText style={styles.summaryText}>{sourceMode === "template" ? activeTemplate.title : `${paragraphCount * wordCount} words`}</AppText>
               </View>
             </View>
@@ -673,7 +678,7 @@ export default function ReadingPracticeScreen() {
 
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
       {header}
 
       <ScrollView
@@ -733,12 +738,12 @@ export default function ReadingPracticeScreen() {
           {state === "reading" ? (
             <>
               <LinearGradient
-                colors={["#F8FAFC", "rgba(248,250,252,0)"]}
+                colors={isDark ? [colors.background, "rgba(15,23,42,0)"] : ["#F8FAFC", "rgba(248,250,252,0)"]}
                 style={styles.gradientTop}
                 pointerEvents="none"
               />
               <LinearGradient
-                colors={["rgba(248,250,252,0)", "#F8FAFC"]}
+                colors={isDark ? ["rgba(15,23,42,0)", colors.background] : ["rgba(248,250,252,0)", "#F8FAFC"]}
                 style={styles.gradientBottom}
                 pointerEvents="none"
               />
@@ -839,10 +844,16 @@ export default function ReadingPracticeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function useReadingStyles() {
+  const { colors, isDark } = useThemeColors();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -856,9 +867,9 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.86)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.86)",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
+    borderColor: colors.border,
   },
   headerTitleWrap: {
     flex: 1,
@@ -866,14 +877,14 @@ const styles = StyleSheet.create({
   headerKicker: {
     fontSize: 11,
     fontWeight: "800",
-    color: C.gray,
+    color: colors.mutedForeground,
     letterSpacing: 1,
     textTransform: "uppercase",
   },
   headerTitle: {
     fontSize: 21,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   setupContent: {
@@ -905,7 +916,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 39,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   subtitle: {
@@ -933,7 +944,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "900",
-    color: C.gray,
+    color: colors.mutedForeground,
     letterSpacing: 1.2,
     textTransform: "uppercase",
   },
@@ -953,7 +964,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.08)",
   },
@@ -962,14 +973,14 @@ const styles = StyleSheet.create({
     flexBasis: 96,
   },
   optionChipActive: {
-    backgroundColor: C.navy,
-    borderColor: C.navy,
+    backgroundColor: isDark ? colors.primary : C.navy,
+    borderColor: isDark ? colors.primary : C.navy,
   },
   optionChipText: {
     fontSize: 13,
     lineHeight: 17,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     textAlign: "center",
   },
@@ -991,7 +1002,7 @@ const styles = StyleSheet.create({
     minHeight: 98,
     padding: 14,
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.08)",
     justifyContent: "space-between",
@@ -1003,13 +1014,13 @@ const styles = StyleSheet.create({
   templateTitle: {
     fontSize: 15,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   templateDescription: {
     fontSize: 12,
     lineHeight: 16,
-    color: C.gray,
+    color: colors.mutedForeground,
   },
   setupFooter: {
     gap: 14,
@@ -1027,12 +1038,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.72)",
   },
   summaryText: {
     fontSize: 12,
     fontWeight: "800",
-    color: C.gray,
+    color: colors.mutedForeground,
     flexShrink: 1,
   },
   generatingOverlay: {
@@ -1049,7 +1060,7 @@ const styles = StyleSheet.create({
   generatingText: {
     fontSize: 16,
     fontWeight: "800",
-    color: C.navy,
+    color: colors.foreground,
   },
   practiceScroll: {
     flex: 1,
@@ -1073,26 +1084,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.06)",
   },
   stageStatText: {
     fontSize: 12,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
   },
   stageHint: {
     fontSize: 13,
     lineHeight: 19,
-    color: C.gray,
+    color: colors.mutedForeground,
   },
   teleprompter: {
     marginHorizontal: 20,
     minHeight: 430,
     borderRadius: 30,
     overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.72)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.06)",
   },
@@ -1118,7 +1129,7 @@ const styles = StyleSheet.create({
   passageText: {
     fontSize: 22,
     lineHeight: 34,
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   passageTextCompact: {
@@ -1163,7 +1174,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     padding: 16,
     borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.9)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.08)",
     gap: 14,
@@ -1179,7 +1190,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: C.navy,
+    backgroundColor: isDark ? colors.primary : C.navy,
   },
   scoreValue: {
     fontSize: 23,
@@ -1194,13 +1205,13 @@ const styles = StyleSheet.create({
   scoreTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   scoreSubtitle: {
     fontSize: 12,
     lineHeight: 17,
-    color: C.gray,
+    color: colors.mutedForeground,
   },
   metricsRow: {
     flexDirection: "row",
@@ -1212,7 +1223,7 @@ const styles = StyleSheet.create({
     flexBasis: 96,
     minHeight: 72,
     borderRadius: 18,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
@@ -1220,7 +1231,7 @@ const styles = StyleSheet.create({
   metricValue: {
     fontSize: 20,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   metricLabel: {
@@ -1247,12 +1258,12 @@ const styles = StyleSheet.create({
   feedbackTitle: {
     fontSize: 12,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
   },
   feedbackText: {
     fontSize: 12,
     lineHeight: 17,
-    color: C.gray,
+    color: colors.mutedForeground,
   },
   controlDock: {
     position: "absolute",
@@ -1302,14 +1313,14 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 14,
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.78)",
+    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
     borderWidth: 1,
     borderColor: "rgba(15,23,42,0.08)",
   },
   secondaryButtonText: {
     fontSize: 12,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
   },
   processingPill: {
     flexDirection: "row",
@@ -1318,11 +1329,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)",
   },
   processingText: {
     fontSize: 14,
     fontWeight: "900",
-    color: C.navy,
+    color: colors.foreground,
   },
-});
+  });
+}

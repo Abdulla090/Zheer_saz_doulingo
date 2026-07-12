@@ -1,8 +1,8 @@
- 
- 
+
+
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
-import { StyleSheet, View, Platform, I18nManager } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
 import Animated, {
@@ -15,10 +15,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
+import { DirectionalView } from "../../../components/ui/Directional";
 
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { ltrText } from "./game-text";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { L } from "./lesson-light-design";
 import {
@@ -69,17 +69,17 @@ const getWebCoords = (el: any) => {
   return null;
 };
 
-function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFinish: (id: string, word: string) => void; isKids?: boolean }) {
+function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlySession; onFinish: (id: string, word: string) => void; isKids?: boolean; languageCode?: string }) {
   const flyProgress = useSharedValue(0);
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
     return {
-      position: "absolute",
-      left: interpolate(p, [0, 1], [session.fromX, session.toX]),
-      top: interpolate(p, [0, 1], [session.fromY, session.toY]),
       width: interpolate(p, [0, 1], [session.fromW, session.toW]),
       height: interpolate(p, [0, 1], [session.fromH, session.toH]),
-      transform: [{ scale: interpolate(p, [0, 0.55, 1], [1, 1.05, 1]) }],
+      transform: [
+        { translateX: interpolate(p, [0, 1], [session.fromX, session.toX]) },
+        { translateY: interpolate(p, [0, 1], [session.fromY, session.toY]) },
+      ],
       opacity: 1,
     };
   });
@@ -91,11 +91,13 @@ function FlyingTile({ session, onFinish, isKids }: { session: FlySession; onFini
   }, [session, onFinish, flyProgress]);
 
   return (
-    <Animated.View style={flyStyle}>
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <LightWordTile label={session.word} state="pending" isKids={isKids} />
-      </View>
-    </Animated.View>
+    <DirectionalView languageCode={languageCode ?? "en"} style={s.flySessionLayer}>
+      <Animated.View style={flyStyle}>
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <LightWordTile label={session.word} state="pending" isKids={isKids} languageCode={languageCode} />
+        </View>
+      </Animated.View>
+    </DirectionalView>
   );
 }
 
@@ -260,6 +262,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
       <LightQuestionPrompt
         label={t("lessons.questionLabel")}
         forceKurdishFont
+        contentLanguageCode={question.sourceLanguage}
         variant={pathMode === "kids" ? "kids" : "default"}
       >
         {question.kurdishHint}
@@ -267,50 +270,57 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
 
       <Animated.View style={shakeStyle}>
         <LightSurfaceCard>
-          <Animated.View layout={layoutSmooth} style={[s.sentenceRow, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
-            {question.sentenceParts[0] ? (
-              <AppText style={s.sentenceText}>{question.sentenceParts[0]} </AppText>
-            ) : null}
-            <Animated.View
-              ref={blankRef}
-              layout={layoutSmooth}
-              collapsable={false}
-              style={s.blankContainer}
-              onLayout={() => {
-                blankRef.current?.measureInWindow((x, y, w, h) => {
-                  blankCoords.current = { x, y, w, h };
-                });
-              }}
-            >
-              {selected && !flySession ? (
-                <Animated.View layout={layoutSmooth}>
-                  <LightWordTile
-                    label={selected}
-                    state={mapOptionState(getState(selected))}
-                    onPress={() => {
-                      if (revealed) return;
-                      if (Platform.OS !== "web") {
-                        void Haptics.selectionAsync();
-                      }
-                      setSelected(null);
-                    }}
-                    isKids={pathMode === "kids"}
-                  />
-                </Animated.View>
-              ) : (
-                <View style={[s.emptySlot, { borderColor: blankBorder }]}>
-                  <AppText style={s.blankPlaceholder}>____</AppText>
-                </View>
-              )}
-            </Animated.View>
-            {question.sentenceParts[1] ? (
-              <AppText style={s.sentenceText}> {question.sentenceParts[1]}</AppText>
-            ) : null}
+          <Animated.View layout={layoutSmooth} style={s.sentenceRow}>
+            <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.sentenceLeadRow}>
+              {question.sentenceParts[0] ? (
+                <AppText languageCode={question.targetLanguage} align="start" style={s.sentenceText}>
+                  {question.sentenceParts[0].trimEnd()}{" "}
+                </AppText>
+              ) : null}
+              <Animated.View
+                ref={blankRef}
+                layout={layoutSmooth}
+                collapsable={false}
+                style={s.blankContainer}
+                onLayout={() => {
+                  blankRef.current?.measureInWindow((x, y, w, h) => {
+                    blankCoords.current = { x, y, w, h };
+                  });
+                }}
+              >
+                {selected && !flySession ? (
+                  <Animated.View layout={layoutSmooth}>
+                    <LightWordTile
+                      label={selected}
+                      state={mapOptionState(getState(selected))}
+                      onPress={() => {
+                        if (revealed) return;
+                        if (Platform.OS !== "web") {
+                          void Haptics.selectionAsync();
+                        }
+                        setSelected(null);
+                      }}
+                      isKids={pathMode === "kids"}
+                      languageCode={question.targetLanguage}
+                    />
+                  </Animated.View>
+                ) : (
+                  <View style={[s.emptySlot, { borderColor: blankBorder }]}>
+                    <AppText languageCode={question.targetLanguage} align="center" style={s.blankPlaceholder}>____</AppText>
+                  </View>
+                )}
+              </Animated.View>
+              {question.sentenceParts[1] ? (
+                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText]}>
+                  {question.sentenceParts[1].trimStart()}
+                </AppText>
+              ) : null}
+            </DirectionalView>
           </Animated.View>
         </LightSurfaceCard>
       </Animated.View>
 
-      <View style={[s.chipsWrap, { flexDirection: I18nManager.isRTL ? "row-reverse" : "row" }]}>
+      <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.chipsWrap}>
         {shuffledOptions.map((w) => {
           const isFlying = flySession?.word === w;
           const isSelected = selected === w;
@@ -339,11 +349,12 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                 onPress={() => pick(w)}
                 disabled={revealed}
                 isKids={pathMode === "kids"}
+                languageCode={question.targetLanguage}
               />
             </View>
           );
         })}
-      </View>
+      </DirectionalView>
 
       <View style={{ flex: 1 }} />
 
@@ -354,7 +365,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
             style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
             collapsable={false}
           >
-            <FlyingTile session={flySession} onFinish={finishFly} isKids={pathMode === "kids"} />
+            <FlyingTile session={flySession} onFinish={finishFly} isKids={pathMode === "kids"} languageCode={question.targetLanguage} />
           </Animated.View>
         ) : null}
       </View>
@@ -381,9 +392,15 @@ const s = StyleSheet.create({
     gap: 24,
   },
   sentenceRow: {
+    alignItems: "stretch",
+    gap: 8,
+  },
+  sentenceLeadRow: {
+    width: "100%",
+    flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: 6,
   },
   sentenceText: {
@@ -393,7 +410,10 @@ const s = StyleSheet.create({
     lineHeight: 28,
     fontFamily: "DINNextRoundedBold",
     backgroundColor: "transparent",
-    ...ltrText,
+  },
+  sentenceTailText: {
+    flexShrink: 1,
+    minWidth: 80,
   },
   blankContainer: {
     minWidth: 88,
@@ -424,5 +444,13 @@ const s = StyleSheet.create({
     gap: 12,
     justifyContent: "center",
     marginTop: 20,
+  },
+  flySessionLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "flex-start",
   },
 });

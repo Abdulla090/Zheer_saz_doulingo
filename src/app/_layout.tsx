@@ -15,7 +15,8 @@ import { useAndroidImmersiveChrome } from "../hooks/use-android-immersive-chrome
 // crashed on APK builds. useAndroidImmersiveChrome handles it imperatively.
 import { syncHomeWidget } from "../services/home-widget-sync";
 import { fetchRemoteCurriculum } from "../services/curriculum-loader";
-import { useLocaleStore } from "../stores/useLocaleStore";
+import { applyUiLanguageDirection, useLocaleStore } from "../stores/useLocaleStore";
+import { getLanguageDirection } from "../i18n/direction";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
 import * as SecureStore from "expo-secure-store";
@@ -24,7 +25,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect } from "react";
-import { Platform, View } from "react-native";
+import { Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -66,9 +67,11 @@ function InnerLayout() {
   const { selectedFont, ready: fontStoreReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
+  const themeSetting = useSettingsStore((s) => s.theme);
+  const systemColorScheme = useColorScheme();
   const contentAdminReady = useContentAdminStore((s) => s.ready);
   const onboardingReady = useOnboardingStore((s) => s.ready);
-  const locale = useLocaleStore((s) => s.locale);
+  const uiLanguage = useLocaleStore((s) => s.selectedUiLanguage);
   const { loading: authLoading } = useAuth();
 
   const [kurdishFontLoaded, setKurdishFontLoaded] = React.useState(false);
@@ -149,12 +152,17 @@ function InnerLayout() {
   }, [onLayoutReady]);
 
   useEffect(() => {
+    applyUiLanguageDirection(uiLanguage);
+  }, [uiLanguage]);
+
+  useEffect(() => {
     if (Platform.OS === "web" && typeof document !== "undefined") {
-      const isRTL = locale === "ku" || locale === "ar";
+      const isRTL = getLanguageDirection(uiLanguage) === "rtl";
       document.documentElement.dir = isRTL ? "rtl" : "ltr";
+      document.documentElement.lang = uiLanguage;
       document.documentElement.style.direction = isRTL ? "rtl" : "ltr";
     }
-  }, [locale]);
+  }, [uiLanguage]);
 
   useEffect(() => {
     if (ready) {
@@ -166,8 +174,10 @@ function InnerLayout() {
   }, [ready]);
 
   if (!coreFontsLoaded || !ready) {
-    // Return a plain white view matching the splash background — never a bare null
-    return <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />;
+    const isLoadingDark =
+      themeSetting === "dark" ||
+      (themeSetting === "system" && systemColorScheme === "dark");
+    return <View style={{ flex: 1, backgroundColor: isLoadingDark ? "#0F172A" : "#FFFFFF" }} />;
   }
 
   const rnWebVars = Platform.OS === "web" ? {} : {
@@ -176,7 +186,7 @@ function InnerLayout() {
     "--font-rd-regular": selectedFont,
   };
 
-  const isRTL = locale === "ku" || locale === "ar";
+  const isRTL = getLanguageDirection(uiLanguage) === "rtl";
 
   return (
     <SafeAreaProvider>

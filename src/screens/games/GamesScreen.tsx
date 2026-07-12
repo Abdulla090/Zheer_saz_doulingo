@@ -9,7 +9,6 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  Calendar03Icon,
   FireIcon,
 } from "@hugeicons/core-free-icons";
 import Svg, { Circle } from "react-native-svg";
@@ -18,6 +17,7 @@ import { useRouter } from "expo-router";
 import { AppText } from "../../components/ui/AppText";
 import { Colors } from "../../constants/theme";
 import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useProgressStore } from "../../stores/useProgressStore";
 
 const GAMES = [
@@ -25,8 +25,7 @@ const GAMES = [
     key: "voice-tutor",
     titleKey: "games.voiceTutorTitle",
     subKey: "games.voiceTutorSub",
-    imageBackground: "#EDF4FF",
-    tileBackground: "rgba(59, 130, 246, 0.075)",
+    tileBackground: "#DDE9F8",
     accentColor: "#3B82F6",
     image: require("../../../assets/images/games/ui/voice-tutor.png"),
     href: "/voice-tutor" as const,
@@ -35,8 +34,7 @@ const GAMES = [
     key: "reading-practice",
     titleKey: "games.paragraphSpeechTitle",
     subKey: "games.paragraphSpeechSub",
-    imageBackground: "#FFF6E5",
-    tileBackground: "rgba(245, 158, 11, 0.075)",
+    tileBackground: "#EEE8DA",
     accentColor: "#FF9D32",
     image: require("../../../assets/images/games/ui/reading-practice.png"),
     href: "/reading-practice" as const,
@@ -45,8 +43,7 @@ const GAMES = [
     key: "podcast",
     titleKey: "games.podcastTitle",
     subKey: "games.podcastSub",
-    imageBackground: "#EAFBF5",
-    tileBackground: "rgba(16, 185, 129, 0.07)",
+    tileBackground: "#DCEFED",
     accentColor: "#22BFAE",
     image: require("../../../assets/images/games/ui/podcast.png"),
     href: "/podcast" as const,
@@ -55,8 +52,7 @@ const GAMES = [
     key: "slang",
     titleKey: "games.slangTitle",
     subKey: "games.slangSub",
-    imageBackground: "#FFF0EA",
-    tileBackground: "rgba(255, 107, 74, 0.07)",
+    tileBackground: "#F1E4EA",
     accentColor: "#F06A92",
     image: require("../../../assets/images/games/ui/slang-dictionary.png"),
     href: "/slang" as const,
@@ -65,8 +61,7 @@ const GAMES = [
     key: "roleplay",
     titleKey: "games.rolePlayTitle",
     subKey: "games.rolePlaySub",
-    imageBackground: "#F3EEFF",
-    tileBackground: "rgba(123, 66, 230, 0.065)",
+    tileBackground: "#E7E0F4",
     accentColor: "#8061F2",
     image: require("../../../assets/images/games/ui/roleplay.png"),
     href: "/roleplay" as const,
@@ -75,8 +70,7 @@ const GAMES = [
     key: "ai-teacher",
     titleKey: "games.teacherTitle",
     subKey: "games.teacherSub",
-    imageBackground: "#EDF7FF",
-    tileBackground: "rgba(14, 165, 233, 0.07)",
+    tileBackground: "#DCECF8",
     accentColor: "#3487EE",
     image: require("../../../assets/images/games/ui/ai-teacher.png"),
     href: "/ai-teacher" as const,
@@ -137,18 +131,19 @@ export function GamesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { t, locale, isKu } = useI18n();
-  const { dailyXp, dailyGoalXp, streakDays, totalXp } = useProgressStore();
+  const { colors, isDark } = useThemeColors();
+  const { streakDays, totalXp } = useProgressStore();
   const isRtl = isKu || locale === "ar";
   const compact = width < 430;
 
-  const dailyGoal = Math.max(1, dailyGoalXp || 15);
-  const dailyProgress = Math.min(1, Math.max(0, (dailyXp || 0) / dailyGoal));
   const level = Math.max(1, Math.floor((totalXp || 0) / 300) + 1);
   const levelXp = Math.max(0, (totalXp || 0) % 300);
   const levelProgress = levelXp / 300;
-  const completedDaily = Math.min(3, Math.round(dailyProgress * 3));
 
-  const stylesForScreen = useMemo(() => createStyles(compact), [compact]);
+  const stylesForScreen = useMemo(
+    () => createStyles(compact, colors, isDark),
+    [colors, compact, isDark],
+  );
 
   return (
     <View
@@ -204,44 +199,6 @@ export function GamesScreen() {
             />
           </LinearGradient>
 
-          <View style={[stylesForScreen.dailyCard, isRtl && stylesForScreen.rowReverse]}>
-            <View style={stylesForScreen.dailyIcon}>
-              <HugeiconsIcon icon={Calendar03Icon} size={compact ? 23 : 28} color="#7B42E6" strokeWidth={2.2} />
-            </View>
-             <View style={[stylesForScreen.dailyCopy, isRtl && stylesForScreen.dailyCopyRtl]}>
-              <AppText style={stylesForScreen.dailyTitle} forceKurdishFont={isRtl}>
-                {t("games.dailyChallenge")}
-              </AppText>
-              <AppText style={stylesForScreen.dailySubtitle} forceKurdishFont={isRtl} numberOfLines={compact ? 2 : undefined}>
-                {t("games.dailyChallengeSub")}
-              </AppText>
-            </View>
-            <Image
-              source={require("../../../assets/images/games/ui/gift.png")}
-              style={[stylesForScreen.giftImage, isRtl && stylesForScreen.giftImageRtl]}
-              contentFit="contain"
-            />
-            <View style={[stylesForScreen.dailyBottom, isRtl && stylesForScreen.rowReverse]}>
-              <View style={[stylesForScreen.stepRow, isRtl && stylesForScreen.rowReverse]}>
-                {[0, 1, 2].map((step) => (
-                  <React.Fragment key={step}>
-                    <View style={[stylesForScreen.stepDot, step < completedDaily && stylesForScreen.stepDotDone]}>
-                      {step < completedDaily ? <AppText style={stylesForScreen.stepCheck} forceLatinFont>✓</AppText> : null}
-                    </View>
-                    {step < 2 ? <View style={stylesForScreen.stepLine} /> : null}
-                  </React.Fragment>
-                ))}
-              </View>
-              <PremiumPressable
-                onPress={() => router.push("/voice-tutor")}
-                style={stylesForScreen.goButton}
-                pressScale={0.95}
-              >
-                <AppText style={stylesForScreen.goText} forceKurdishFont={isRtl}>{t("games.go")}</AppText>
-              </PremiumPressable>
-            </View>
-          </View>
-
           <View style={[stylesForScreen.sectionHeader, isRtl && stylesForScreen.rowReverse]}>
             <AppText style={stylesForScreen.sectionTitle} forceKurdishFont={isRtl}>{t("games.sectionExperiences")}</AppText>
             <AppText style={stylesForScreen.seeAll} forceKurdishFont={isRtl} onPress={() => router.push("/path")}>
@@ -257,23 +214,16 @@ export function GamesScreen() {
                 containerStyle={stylesForScreen.gameTileContainer}
                 style={[
                   stylesForScreen.gameTile,
-                  { backgroundColor: game.tileBackground },
+                  { backgroundColor: isDark ? colors.surfaceRaised : game.tileBackground },
                   isRtl && stylesForScreen.gameTileRtl,
                 ]}
                 pressScale={0.96}
               >
-                <View style={[
-                  stylesForScreen.tileWash,
-                  { backgroundColor: game.imageBackground },
-                  isRtl && stylesForScreen.tileWashRtl,
-                ]} />
-                <View style={[stylesForScreen.tileImageWell, { backgroundColor: game.imageBackground }]}>
-                  <Image
-                    source={game.image}
-                    style={stylesForScreen.tileImage}
-                    contentFit="contain"
-                  />
-                </View>
+                <Image
+                  source={game.image}
+                  style={stylesForScreen.tileImage}
+                  contentFit="contain"
+                />
                 <View style={[
                   stylesForScreen.tileCopy,
                   isRtl && stylesForScreen.tileCopyRtl,
@@ -281,6 +231,7 @@ export function GamesScreen() {
                   <AppText
                     style={[stylesForScreen.tileTitle, isRtl && stylesForScreen.tileTitleRtl]}
                     forceKurdishFont={isRtl}
+                    numberOfLines={2}
                   >
                     {t(game.titleKey)}
                   </AppText>
@@ -366,11 +317,15 @@ const styles = StyleSheet.create({
   },
 });
 
-function createStyles(compact: boolean) {
+function createStyles(
+  compact: boolean,
+  colors: (typeof Colors)["light"] | (typeof Colors)["dark"],
+  isDark: boolean,
+) {
   return StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: "#F8F7FD",
+      backgroundColor: colors.background,
     },
     scrollContent: {
       alignItems: "center",
@@ -400,7 +355,7 @@ function createStyles(compact: boolean) {
       alignItems: "flex-end",
     },
     heroTitle: {
-      color: "#101A3A",
+      color: colors.foreground,
       fontSize: compact ? 40 : 56,
       lineHeight: compact ? 47 : 64,
       fontWeight: "900",
@@ -483,125 +438,6 @@ function createStyles(compact: boolean) {
       right: "auto",
       left: compact ? 4 : 8,
     },
-    dailyCard: {
-      minHeight: compact ? 238 : 268,
-      backgroundColor: "#FFFEFF",
-      borderRadius: compact ? 30 : 34,
-      marginTop: compact ? 18 : 28,
-      paddingHorizontal: compact ? 18 : 26,
-      paddingTop: compact ? 22 : 30,
-      paddingBottom: compact ? 20 : 22,
-      position: "relative",
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: "#EEE8FA",
-      ...crossShadow({ color: "#6674A9", offsetY: 10, blur: 26, opacity: 0.11 }),
-    },
-    dailyIcon: {
-      width: compact ? 56 : 66,
-      height: compact ? 56 : 66,
-      borderRadius: compact ? 18 : 20,
-      backgroundColor: "#F4EEFF",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    dailyCopy: {
-      position: "absolute",
-      left: compact ? 78 : 106,
-      right: compact ? 80 : 152,
-      top: compact ? 25 : 36,
-      minHeight: compact ? 78 : 92,
-    },
-    dailyCopyRtl: {
-      left: compact ? 80 : 152,
-      right: compact ? 78 : 106,
-      alignItems: "flex-end",
-    },
-    dailyTitle: {
-      color: "#7A42E6",
-      fontSize: compact ? 16 : 21,
-      lineHeight: compact ? 20 : 28,
-      fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
-    },
-    dailySubtitle: {
-      color: "#141E3D",
-      fontSize: compact ? 13 : 18,
-      lineHeight: compact ? 18 : 26,
-      marginTop: compact ? 4 : 8,
-      maxWidth: 280,
-    },
-    giftImage: {
-      position: "absolute",
-      width: compact ? 88 : 118,
-      height: compact ? 88 : 118,
-      right: compact ? 8 : 20,
-      bottom: compact ? 82 : 76,
-    },
-    giftImageRtl: {
-      right: "auto",
-      left: compact ? 8 : 20,
-    },
-    dailyBottom: {
-      position: "absolute",
-      left: compact ? 14 : 24,
-      right: compact ? 14 : 24,
-      bottom: compact ? 18 : 22,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: compact ? 10 : 0,
-    },
-    stepRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexShrink: 1,
-      flex: compact ? 1 : undefined,
-    },
-    stepDot: {
-      width: compact ? 24 : 28,
-      height: compact ? 24 : 28,
-      borderRadius: compact ? 12 : 14,
-      borderWidth: 2,
-      borderColor: "#E1D6FA",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#FFFFFF",
-    },
-    stepDotDone: {
-      backgroundColor: "#7B42E6",
-      borderColor: "#7B42E6",
-    },
-    stepCheck: {
-      color: "#FFFFFF",
-      fontSize: 17,
-      lineHeight: 19,
-    },
-    stepLine: {
-      width: compact ? undefined : 54,
-      flex: compact ? 1 : undefined,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: "#D9C9FA",
-      marginHorizontal: compact ? 4 : 6,
-    },
-    goButton: {
-      minWidth: compact ? 66 : 86,
-      height: compact ? 40 : 52,
-      paddingHorizontal: compact ? 12 : 18,
-      borderRadius: compact ? 20 : 26,
-      backgroundColor: "#FCFBFF",
-      alignItems: "center",
-      justifyContent: "center",
-      ...crossShadow({ color: "#8A77C8", offsetY: 4, blur: 12, opacity: 0.12 }),
-    },
-    goText: {
-      color: "#7B42E6",
-      fontSize: compact ? 16 : 20,
-      lineHeight: compact ? 20 : 24,
-      fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
-    },
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -611,20 +447,20 @@ function createStyles(compact: boolean) {
       paddingHorizontal: 2,
     },
     sectionTitle: {
-      color: "#111B3D",
+      color: colors.foreground,
       fontSize: compact ? 22 : 26,
       lineHeight: compact ? 27 : 32,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
     },
     seeAll: {
-      color: Colors.light.primary,
+      color: colors.primary,
       fontSize: compact ? 14 : 16,
       lineHeight: compact ? 20 : 22,
       fontWeight: "800",
     },
     seeAllArrow: {
-      color: Colors.light.primary,
+      color: colors.primary,
       fontSize: compact ? 22 : 25,
       lineHeight: 20,
     },
@@ -642,60 +478,41 @@ function createStyles(compact: boolean) {
     },
     gameTile: {
       width: "100%",
-      height: compact ? 190 : 238,
+      minHeight: compact ? 196 : 238,
       alignItems: "flex-start",
       justifyContent: "flex-start",
-      paddingHorizontal: compact ? 12 : 18,
-      paddingVertical: compact ? 12 : 18,
+      paddingHorizontal: compact ? 13 : 18,
+      paddingTop: compact ? 12 : 18,
+      paddingBottom: compact ? 48 : 62,
       borderRadius: compact ? 22 : 28,
       borderCurve: "continuous",
       borderWidth: 1,
-      borderColor: "rgba(148, 163, 184, 0.10)",
+      borderColor: colors.border,
       overflow: "hidden",
       ...crossShadow({ color: "#64748B", offsetY: 5, blur: 14, opacity: 0.06 }),
     },
     gameTileRtl: {
       alignItems: "flex-end",
     },
-    tileWash: {
-      position: "absolute",
-      width: compact ? 150 : 210,
-      height: compact ? 104 : 140,
-      borderRadius: 999,
-      right: compact ? -54 : -70,
-      bottom: compact ? -48 : -58,
-      opacity: 0.58,
-    },
-    tileWashRtl: {
-      right: "auto",
-      left: compact ? -54 : -70,
-    },
-    tileImageWell: {
-      width: compact ? 72 : 100,
-      height: compact ? 72 : 100,
-      borderRadius: compact ? 20 : 26,
-      alignItems: "center",
-      justifyContent: "center",
-      borderCurve: "continuous",
-      zIndex: 1,
-    },
     tileImage: {
-      width: compact ? 66 : 92,
-      height: compact ? 66 : 92,
+      width: compact ? 60 : 86,
+      height: compact ? 60 : 86,
+      alignSelf: "flex-end",
+      zIndex: 1,
     },
     tileCopy: {
       width: "100%",
       alignItems: "flex-start",
-      marginTop: compact ? 9 : 12,
+      marginTop: compact ? 14 : 18,
       zIndex: 1,
     },
     tileCopyRtl: {
       alignItems: "flex-end",
     },
     tileTitle: {
-      color: Colors.light.foreground,
-      fontSize: compact ? 14 : 17,
-      lineHeight: compact ? 18 : 22,
+      color: colors.foreground,
+      fontSize: compact ? 17 : 21,
+      lineHeight: compact ? 22 : 27,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
       textAlign: "left",
@@ -706,11 +523,11 @@ function createStyles(compact: boolean) {
       writingDirection: "rtl",
     },
     tileSubtitle: {
-      color: Colors.light.mutedForeground,
-      fontSize: compact ? 10 : 12,
-      lineHeight: compact ? 14 : 17,
+      color: colors.mutedForeground,
+      fontSize: compact ? 12 : 15,
+      lineHeight: compact ? 17 : 21,
       marginTop: compact ? 4 : 6,
-      paddingRight: compact ? 22 : 32,
+      paddingRight: compact ? 28 : 36,
       textAlign: "left",
     },
     tileSubtitleRtl: {
@@ -741,13 +558,13 @@ function createStyles(compact: boolean) {
       paddingHorizontal: compact ? 18 : 24,
       paddingVertical: compact ? 22 : 26,
       borderRadius: compact ? 30 : 34,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       flexDirection: "row",
       alignItems: "flex-start",
       position: "relative",
       overflow: "hidden",
       borderWidth: 1,
-      borderColor: "#EEE8FA",
+      borderColor: colors.border,
       ...crossShadow({ color: "#6674A9", offsetY: 10, blur: 24, opacity: 0.1 }),
     },
     streakCopy: {
@@ -771,13 +588,13 @@ function createStyles(compact: boolean) {
       lineHeight: 32,
     },
     streakLabel: {
-      color: "#111B3D",
+      color: colors.foreground,
       fontSize: 16,
       lineHeight: 21,
       fontWeight: "800",
     },
     streakSub: {
-      color: "#8790A2",
+      color: colors.mutedForeground,
       fontSize: 13,
       lineHeight: 18,
       marginTop: 4,
@@ -799,7 +616,7 @@ function createStyles(compact: boolean) {
       width: compact ? 20 : 26,
       height: 10,
       borderRadius: 5,
-      backgroundColor: "#EEF0F8",
+      backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "#EEF0F8",
     },
     streakBarDone: {
       backgroundColor: "#FFB42C",

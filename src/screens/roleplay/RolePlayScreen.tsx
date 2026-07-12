@@ -25,7 +25,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -41,6 +41,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 const C = HomePalette;
 
@@ -209,6 +210,7 @@ const PulseRing = React.memo(function PulseRing({ size, color, delay, status }: 
 /* ─── Chat Bubble ─── */
 const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, isKu }: { sender: "user" | "ai"; text: string; accent: string; icon: HugeiconsIconData; isKu: boolean }) {
   const isAi = sender === "ai";
+  const st = useRolePlayStyles();
   return (
     <Animated.View
       entering={FadeInUp.duration(300).springify().damping(18)}
@@ -246,6 +248,8 @@ export function RolePlayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
+  const st = useRolePlayStyles();
   const isRtl = isKu || locale === "ar";
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
@@ -478,12 +482,12 @@ export function RolePlayScreen() {
   if (!sessionStarted) {
     return (
       <View style={st.root}>
-        <HomeMeshBackground />
+        {!isDark && <HomeMeshBackground />}
 
         {/* Header */}
         <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
           <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
           </HomeLiquidPill>
           <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={36} />
@@ -598,12 +602,12 @@ export function RolePlayScreen() {
   /* ─── In-Session Conversation UI ─── */
   return (
     <View style={st.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
 
       {/* Session Header */}
       <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
         <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
         </HomeLiquidPill>
 
         {/* Active scenario chip */}
@@ -617,7 +621,7 @@ export function RolePlayScreen() {
         </PressableScale>
 
         <HomeLiquidPill onPress={resetSession} size={44}>
-          <HugeiconsIcon icon={RotateLeft01Icon} size={20} color={C.navy} strokeWidth={2.5} />
+          <HugeiconsIcon icon={RotateLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} />
         </HomeLiquidPill>
       </View>
 
@@ -701,8 +705,14 @@ export function RolePlayScreen() {
 }
 
 /* ─── Styles ─── */
-const st = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.meshBottom },
+function useRolePlayStyles() {
+  const { colors, isDark } = useThemeColors();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
 
   /* Header */
   header: {
@@ -722,13 +732,13 @@ const st = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
     letterSpacing: -0.3,
   },
   headerSub: {
     ...HomeType.caption,
-    color: C.grayLight,
+    color: colors.mutedForeground,
   },
 
   /* Hero card */
@@ -769,13 +779,13 @@ const st = StyleSheet.create({
   heroTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: C.navy,
+    color: colors.foreground,
     textAlign: "center",
     fontFamily: "DINNextRoundedBold",
   },
   heroSubtitle: {
     fontSize: 14,
-    color: C.gray,
+    color: colors.mutedForeground,
     textAlign: "center",
     lineHeight: 20,
   },
@@ -783,7 +793,7 @@ const st = StyleSheet.create({
   /* Section label */
   sectionLabel: {
     ...HomeType.section,
-    color: C.navy,
+    color: colors.foreground,
     marginBottom: 10,
   },
 
@@ -809,12 +819,12 @@ const st = StyleSheet.create({
   scenarioTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: C.navy,
+    color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
   },
   scenarioSubtitle: {
     fontSize: 12,
-    color: C.grayLight,
+    color: colors.mutedForeground,
   },
   checkCircle: {
     width: 24,
@@ -825,14 +835,14 @@ const st = StyleSheet.create({
   },
   rowDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: C.divider,
+    backgroundColor: colors.border,
     marginHorizontal: 16,
   },
 
   /* Disclaimer */
   disclaimer: {
     ...HomeType.caption,
-    color: C.grayLight,
+    color: colors.mutedForeground,
     marginTop: 14,
     marginBottom: 4,
     lineHeight: 18,
@@ -848,7 +858,7 @@ const st = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)",
   },
   sessionChipText: {
     fontSize: 13,
@@ -917,9 +927,9 @@ const st = StyleSheet.create({
     paddingVertical: 10,
   },
   aiBubble: {
-    backgroundColor: "rgba(255,255,255,0.85)",
+    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.85)",
     borderWidth: 1,
-    borderColor: C.divider,
+    borderColor: colors.border,
   },
   userBubble: {
     alignSelf: "flex-end",
@@ -928,7 +938,7 @@ const st = StyleSheet.create({
   bubbleText: {
     fontSize: 15,
     fontWeight: "500",
-    color: C.navy,
+    color: colors.foreground,
     lineHeight: 22,
     fontFamily: "DINNextRoundedRegular",
   },
@@ -952,4 +962,5 @@ const st = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: "transparent",
   },
-});
+  });
+}

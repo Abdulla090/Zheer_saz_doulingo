@@ -233,7 +233,7 @@ const createStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.background,
     },
     container: {
       flex: 1,
@@ -261,7 +261,7 @@ const createStyles = (colors: any, isDark: boolean) =>
     },
     dotActive: {
       width: 24,
-      backgroundColor: "#0F172A",
+      backgroundColor: isDark ? colors.primary : "#0F172A",
     },
     dotInactive: {
       width: 8,
@@ -270,7 +270,7 @@ const createStyles = (colors: any, isDark: boolean) =>
     nextButton: {
       width: "100%",
       height: 56,
-      backgroundColor: "#0F172A",
+      backgroundColor: isDark ? colors.primary : "#0F172A",
       borderRadius: 28,
       alignItems: "center",
       justifyContent: "center",

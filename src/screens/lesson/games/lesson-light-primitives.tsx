@@ -50,6 +50,9 @@ import { LessonUnitLessonChip } from "../components/LessonUnitLessonChip";
 import { EmojiSticker } from "../../../components/ui/EmojiSticker";
 import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMascot";
 import { RiveMascot } from "../../../components/mascot/RiveMascot";
+import { DirectionalView } from "../../../components/ui/Directional";
+import { useLocaleStore } from "../../../stores/useLocaleStore";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 export function LightGameHeading({
   title,
@@ -62,6 +65,8 @@ export function LightGameHeading({
 }) {
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
+  const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
+  const { colors } = useThemeColors();
   return (
     <View style={[lh.headingWrap, { alignItems: rtl ? "flex-end" : "flex-start" }]}>
       {badge ? (
@@ -71,11 +76,11 @@ export function LightGameHeading({
           </AppText>
         </View>
       ) : null}
-      <AppText style={[LightType.title, { textAlign: rtl ? "right" : "left", width: "100%" }]}>
+      <AppText languageCode={uiLanguage} align="start" fullWidth style={[LightType.title, { color: colors.foreground }]}>
         {title}
       </AppText>
       {subtitle ? (
-        <AppText style={[LightType.subtitle, { textAlign: rtl ? "right" : "left", width: "100%" }]} latinRole="regular">
+        <AppText languageCode={uiLanguage} align="start" fullWidth style={[LightType.subtitle, { color: colors.mutedForeground }]} latinRole="regular">
           {subtitle}
         </AppText>
       ) : null}
@@ -88,13 +93,20 @@ export function LightPromptCard({
   english,
   onSpeak,
   variant = "default",
+  sourceLanguage,
+  targetLanguage,
 }: {
   kurdish?: string;
   english?: string;
   onSpeak?: () => void;
   variant?: "default" | "kids";
+  sourceLanguage?: string;
+  targetLanguage?: string;
 }) {
   const isKids = variant === "kids";
+  const storedSourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
+  const storedTargetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
+  const { colors } = useThemeColors();
 
   const inner = (
     <>
@@ -114,12 +126,12 @@ export function LightPromptCard({
       </SpringPressable>
       <View style={lh.promptTextCol}>
         {kurdish ? (
-          <AppText style={LightType.promptKu} forceKurdishFont>
+          <AppText languageCode={sourceLanguage ?? storedSourceLanguage} style={[LightType.promptKu, { color: colors.foreground }]}>
             {kurdish}
           </AppText>
         ) : null}
         {english ? (
-          <AppText style={LightType.promptEn} forceLatinFont latinRole="medium">
+          <AppText languageCode={targetLanguage ?? storedTargetLanguage} style={[LightType.promptEn, { color: colors.mutedForeground }]} latinRole="medium">
             {english}
           </AppText>
         ) : null}
@@ -185,19 +197,23 @@ export function LightSurfaceCard({
 export function LightDialogueCard({
   label,
   children,
-  forceLatinFont = true,
+  contentLanguageCode,
 }: {
   label: string;
   children: string;
-  forceLatinFont?: boolean;
+  contentLanguageCode?: string;
 }) {
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
+  const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
+  const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
+  const languageCode = contentLanguageCode ?? targetLanguage;
+  const { colors, isDark } = useThemeColors();
   return (
     <View style={[lh.dialogueWrap, rtl ? { marginLeft: 0, marginRight: 4 } : undefined]}>
       <View style={lh.dialogueBubble}>
         <LinearGradient
-          colors={["#F0F9FF", "#E0F2FE", "#BAE6FD"]}
+          colors={isDark ? [colors.surfaceRaised, colors.surface, "#172A46"] : ["#F0F9FF", "#E0F2FE", "#BAE6FD"]}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -205,20 +221,21 @@ export function LightDialogueCard({
         >
           <View style={lh.dialogueContent}>
             <View style={[lh.dialogueBadge, { alignSelf: rtl ? "flex-end" : "flex-start" }]}>
-              <AppText style={LightType.dialogueBadge} forceKurdishFont>
+              <AppText languageCode={uiLanguage} style={LightType.dialogueBadge}>
                 {label}
               </AppText>
             </View>
-            <View style={lh.dialogueRow}>
+            <DirectionalView languageCode={languageCode} style={lh.dialogueRow}>
               <DialogueQuoteIcon />
               <AppText
-                style={[LightType.dialogueText, { textAlign: rtl ? "right" : "left" }]}
-                forceLatinFont={forceLatinFont}
+                languageCode={languageCode}
+                align="start"
+                style={[LightType.dialogueText, { color: colors.foreground }]}
                 latinRole="medium"
               >
                 {children}
               </AppText>
-            </View>
+            </DirectionalView>
           </View>
         </LinearGradient>
         <View style={[
@@ -251,6 +268,7 @@ export function LightQuestionPrompt({
   variant = "default",
   layout = "row",
   expanded = false,
+  contentLanguageCode,
 }: {
   children: string;
   label: string;
@@ -258,6 +276,7 @@ export function LightQuestionPrompt({
   variant?: "default" | "kids";
   layout?: "row" | "stacked";
   expanded?: boolean;
+  contentLanguageCode?: string;
 }) {
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
@@ -267,6 +286,9 @@ export function LightQuestionPrompt({
   const { speak } = useTTS();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
+  const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
+  const sourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
+  const languageCode = contentLanguageCode ?? (forceKurdishFont ? sourceLanguage : uiLanguage);
   const compactLayout = width < 480 || height < 720;
   const stacked = layout === "stacked" || compactLayout;
   const compact = width < 380 || height < 720;
@@ -320,7 +342,7 @@ export function LightQuestionPrompt({
   }));
 
   const handleSpeak = () => {
-    speak(children, "en");
+    speak(children, languageCode);
   };
 
   const pose = React.useMemo<TwinoPose>(() => {
@@ -373,12 +395,13 @@ export function LightQuestionPrompt({
             ]} />
             <View style={lh.bubbleTextCol}>
               <AppText
+                languageCode={languageCode}
+                align="start"
+                fullWidth
                 style={[
                   lh.kidsBubbleTextEn,
                   compact && lh.kidsBubbleTextCompact,
-                  rtl ? { textAlign: "right" } : { textAlign: stacked ? "center" : "left" },
                 ]}
-                forceLatinFont
                 latinRole="bold"
               >
                 {children}
@@ -433,17 +456,18 @@ export function LightQuestionPrompt({
           ]} />
           
           <View style={lh.bubbleTextCol}>
-            <AppText style={lh.normalBubbleLabel} forceLatinFont>
+            <AppText languageCode={uiLanguage} style={lh.normalBubbleLabel}>
               {label}
             </AppText>
             <AppText
+              languageCode={languageCode}
+              align="start"
+              fullWidth
               style={[
                 lh.normalBubbleText,
                 compact && lh.normalBubbleTextCompact,
                 expanded && lh.normalBubbleTextExpanded,
-                rtl ? { textAlign: "right" } : { textAlign: stacked ? "center" : "left" },
               ]}
-              forceKurdishFont={forceKurdishFont}
             >
               {children}
             </AppText>
@@ -460,9 +484,10 @@ export function LightQuestionPrompt({
 
 /** Mesh backdrop for lesson + path screens */
 export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) {
+  const { colors, isDark } = useThemeColors();
   return (
-    <View style={lh.backdrop}>
-      <HomeMeshBackground />
+    <View style={[lh.backdrop, { backgroundColor: colors.background }]}>
+      {!isDark && <HomeMeshBackground />}
       <View style={lh.backdropContent}>{children}</View>
     </View>
   );
@@ -568,6 +593,7 @@ export function LightOptionRow({
   rtl,
   forceLatinFont,
   isKids = false,
+  languageCode,
 }: {
   label: string;
   tierLabel?: string;
@@ -577,6 +603,7 @@ export function LightOptionRow({
   rtl?: boolean;
   forceLatinFont?: boolean;
   isKids?: boolean;
+  languageCode?: string;
 }) {
   return (
     <View style={lh.optionRowWrap}>
@@ -588,7 +615,9 @@ export function LightOptionRow({
         disabled={disabled}
         rtl={rtl}
         forceLatinFont={forceLatinFont}
+        languageCode={languageCode}
         isKids={isKids}
+        centerLabel
         wide
       />
     </View>
@@ -630,7 +659,10 @@ export function LightWordTile({
   isKids = false,
   fontSize,
   centerLabel = false,
+  fitLabel = false,
+  fitLabelLines = 1,
   style,
+  languageCode,
 }: {
   label: string;
   tierLabel?: string;
@@ -645,11 +677,20 @@ export function LightWordTile({
   isKids?: boolean;
   fontSize?: number;
   centerLabel?: boolean;
+  /** Shrink a word to fit inside a fixed-size tile. */
+  fitLabel?: boolean;
+  /** Fixed number of lines available when fitting text inside a tile. */
+  fitLabelLines?: 1 | 2;
   style?: StyleProp<ViewStyle>;
+  languageCode?: string;
 }) {
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKidsRoute = rawMode === "kids" || isKids;
+  const sourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
+  const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
+  const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
+  const { colors, isDark } = useThemeColors();
 
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -675,11 +716,11 @@ export function LightWordTile({
   }, [state, STATE_INDEX]);
 
   const colorMap = React.useMemo(() => {
-    const dividerColor = L.border || "#E2E8F0";
+    const dividerColor = colors.border;
     return {
       bg: [
-        "#FFFFFF", // idle
-        "#F8FAFC", // pending
+        isDark && !isKidsRoute ? colors.surfaceRaised : "#FFFFFF", // idle
+        isDark && !isKidsRoute ? colors.surface : "#F8FAFC", // pending
         isKidsRoute ? "#7DD3FC" : "#E8EFFF", // selected
         isKidsRoute ? "#BBF7D0" : "#E7F9E0", // correct — vivid green (~85%+ contrast)
         isKidsRoute ? "#FEF2F2" : "#FFE8E8", // wrong
@@ -732,6 +773,9 @@ export function LightWordTile({
   const { emoji: parsedEmoji, cleanText } = isKidsRoute
     ? extractEmoji(label)
     : { emoji: null, cleanText: label };
+  const labelLanguageCode = forceLatinFont
+    ? "en"
+    : languageCode ?? (rtl ? sourceLanguage : targetLanguage);
 
   const content = (
     <Animated.View
@@ -769,36 +813,37 @@ export function LightWordTile({
     >
 
       {parsedEmoji ? (
-        <View style={{ alignItems: "center", gap: 8 }}>
+        <DirectionalView languageCode={labelLanguageCode} style={{ alignItems: "center", gap: 8 }}>
           <EmojiSticker emoji={parsedEmoji} size={36} animateOnMount={false} />
           {cleanText ? (
             <AppText
+              languageCode={labelLanguageCode}
+              align="center"
               style={[
                 LightType.tile,
                 {
-                  color: L.navy,
+                  color: isKidsRoute ? L.navy : colors.foreground,
                   fontSize: 15,
                   fontFamily: "DINNextRoundedBold",
                   textAlign: "center",
                 },
               ]}
-              forceKurdishFont={rtl && !forceLatinFont}
-              forceLatinFont={forceLatinFont || !rtl}
             >
               {cleanText}
             </AppText>
           ) : null}
-        </View>
+        </DirectionalView>
       ) : tierLabel ? (
-        <View style={lh.tileRow}>
+        <DirectionalView languageCode={labelLanguageCode} style={lh.tileRow}>
           <AppText
-            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: L.navy }, rtl ? { textAlign: "right" } : undefined, isKidsRoute && { fontFamily: "DINNextRoundedBold" }]}
-            forceKurdishFont={rtl && !forceLatinFont}
-            forceLatinFont={forceLatinFont || !rtl}
+            languageCode={labelLanguageCode}
+            align="start"
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: isKidsRoute ? L.navy : colors.foreground }, isKidsRoute && { fontFamily: "DINNextRoundedBold" }]}
           >
             {label}
           </AppText>
           <AppText
+            languageCode={uiLanguage}
             style={[
               lh.tierBadge,
               {
@@ -815,13 +860,17 @@ export function LightWordTile({
           >
             {tierLabel}
           </AppText>
-        </View>
+        </DirectionalView>
       ) : (
         <AppText
+          languageCode={labelLanguageCode}
+          align={centerLabel ? "center" : "start"}
+          fullWidth={centerLabel || wide}
           style={[
             LightType.tile,
             wrapLabel && lh.tileWrapText,
-            centerLabel && { textAlign: "center" as const, alignSelf: "center", width: "100%" },
+            centerLabel && { alignSelf: "center", width: "100%" },
+            wide && { alignSelf: "stretch", width: "100%" },
             {
               zIndex: 1,
               color:
@@ -833,14 +882,15 @@ export function LightWordTile({
                       ? "#0284C7"
                       : state === "selected"
                         ? L.blue
-                        : L.navy,
+                        : (isKidsRoute ? L.navy : colors.foreground),
             },
             isKidsRoute && { fontFamily: "DINNextRoundedBold", fontSize: fontSize ?? 16 },
             fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: fontSize + 8 },
             fontSize !== undefined && isKidsRoute && { lineHeight: fontSize + 8 },
           ]}
-          forceKurdishFont={rtl && !forceLatinFont}
-          forceLatinFont={forceLatinFont || !rtl}
+          numberOfLines={fitLabel ? fitLabelLines : undefined}
+          adjustsFontSizeToFit={fitLabel}
+          minimumFontScale={fitLabel ? 0.58 : undefined}
         >
           {label}
         </AppText>
@@ -951,7 +1001,7 @@ export function LightCheckButton({
     if (disabled) {
       return (
         <View style={lh.kidsCheckBtnDisabled}>
-          <AppText style={lh.kidsCheckLabelDisabled} forceLatinFont latinRole="bold">
+          <AppText style={lh.kidsCheckLabelDisabled} latinRole="bold">
             {label.toLowerCase()}
           </AppText>
         </View>
@@ -969,7 +1019,7 @@ export function LightCheckButton({
           }
         ]}
       >
-        <AppText style={lh.kidsCheckLabelActive} forceLatinFont latinRole="bold">
+        <AppText style={lh.kidsCheckLabelActive} latinRole="bold">
           {label.toLowerCase()}
         </AppText>
       </Pressable>
@@ -983,7 +1033,7 @@ export function LightCheckButton({
       </View>
     );
   }
-  return <HomeLiquidButton label={label} onPress={onPress} color={color} />;
+  return <HomeLiquidButton label={label} onPress={onPress} color={color} flush />;
 }
 
 /** Match row: tile + connector dot + tile */
@@ -996,6 +1046,8 @@ export function LightMatchRow({
   onRight,
   leftDisabled,
   rightDisabled,
+  leftLanguageCode,
+  rightLanguageCode,
 }: {
   left: string;
   right: string;
@@ -1005,6 +1057,8 @@ export function LightMatchRow({
   onRight: () => void;
   leftDisabled?: boolean;
   rightDisabled?: boolean;
+  leftLanguageCode?: string;
+  rightLanguageCode?: string;
 }) {
   return (
     <View style={lh.matchRow}>
@@ -1015,6 +1069,7 @@ export function LightMatchRow({
           onPress={onLeft}
           disabled={leftDisabled}
           rtl
+          languageCode={leftLanguageCode}
         />
       </View>
       <View style={lh.matchDotCol}>
@@ -1028,6 +1083,7 @@ export function LightMatchRow({
           state={rightState}
           onPress={onRight}
           disabled={rightDisabled}
+          languageCode={rightLanguageCode}
         />
       </View>
     </View>
@@ -1091,6 +1147,7 @@ export function LessonLightHeader({
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const isKids = variant === "kids";
+  const { colors, isDark } = useThemeColors();
 
   if (isKids) {
     return (
@@ -1133,7 +1190,7 @@ export function LessonLightHeader({
     <View style={lh.lessonHeader}>
       <HomeLiquidPill onPress={onBack} size={44}>
         <View style={{ transform: [{ scaleX: rtl ? -1 : 1 }] }}>
-          <BackChevron />
+          <BackChevron color={colors.foreground} />
         </View>
       </HomeLiquidPill>
       <LessonUnitLessonChip
@@ -1141,7 +1198,7 @@ export function LessonLightHeader({
         lessonNumber={lessonNumber}
       />
       <HomeLiquidCard style={lh.progressGlass} contentStyle={lh.progressGlassInner} radius={14}>
-        <View style={lh.progressTrack}>
+        <View style={[lh.progressTrack, isDark && { backgroundColor: "rgba(255,255,255,0.12)" }]}>
           <Animated.View style={[lh.progressFill, progressFillStyle]}>
             <View style={lh.progressKnob} />
           </Animated.View>
@@ -1225,7 +1282,7 @@ export function LessonLiquidFeedback({
             }
           ]}
         >
-          <AppText style={lh.kidsFeedbackCtaText} forceLatinFont latinRole="bold">
+          <AppText style={lh.kidsFeedbackCtaText} latinRole="bold">
             {(buttonLabel ?? t("common.continue")).toLowerCase()}
           </AppText>
         </Pressable>

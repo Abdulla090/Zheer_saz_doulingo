@@ -344,7 +344,7 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
                   state={rState(item.pairIdx)}
                   onPress={() => handleR(item.pairIdx)}
                   disabled={matched.has(item.pairIdx)}
-                  forceLatinFont
+                  languageCode={question.targetLanguage}
                   wrapLabel
                   centerLabel
                   isKids={isKids}

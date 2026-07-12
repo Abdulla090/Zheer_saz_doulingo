@@ -186,7 +186,13 @@
     "tapMicStop": "Tap to stop recording",
     "typeSpeaking": "Type what you said…",
     "typeWriting": "Type your response in English…",
-    "minAnswer": "Write or record at least a short answer (12+ characters)."
+    "minAnswer": "Write or record at least a short answer (12+ characters).",
+    "criteria": {
+      "fluency": "Fluency & Coherence",
+      "lexical": "Lexical Resource",
+      "grammar": "Grammatical Range & Accuracy",
+      "pronunciation": "Pronunciation"
+    }
   },
   "rolePlay": {
     "headerTitle": "AI Role Play",

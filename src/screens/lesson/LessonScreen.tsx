@@ -44,6 +44,7 @@ import { useI18n } from "../../hooks/useI18n";
 import { useProgressStore, getCurrentProgress } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import type { AnswerTier } from "../../utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
 import { getCurrentLessonMeta, buildPathReturnRoute, buildLessonRouteForMode } from "../../utils/lesson-navigation";
@@ -96,6 +97,7 @@ function StatCard({
 
 export default function LessonScreen() {
   const { t } = useI18n();
+  const { colors } = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -329,9 +331,9 @@ export default function LessonScreen() {
   };
   if (questions.length === 0) {
     return (
-      <SafeAreaView style={[sSum.root, { backgroundColor: G.bg, justifyContent: "center", alignItems: "center", padding: 24 }]}>
+      <SafeAreaView style={[sSum.root, { backgroundColor: colors.background, justifyContent: "center", alignItems: "center", padding: 24 }]}>
         <StatusBar hidden />
-        <Text style={{ fontSize: 18, fontWeight: "700", color: G.textMid, textAlign: "center", marginBottom: 16 }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: colors.mutedForeground, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
         <HomeLiquidButton label="Go Back" onPress={exitToPath} />

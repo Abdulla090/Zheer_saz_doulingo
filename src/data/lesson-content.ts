@@ -579,7 +579,11 @@ function buildLessonQuestionsFromBank(
       questions.push(pick(shuffledVoices, i));
     }
 
-    return shuffle(questions, seed + 99);
+    return shuffle(questions, seed + 99).map((question) => ({
+      ...question,
+      sourceLanguage: nativeLang,
+      targetLanguage: targetLang,
+    }));
   }
 
   // ── Normal / Street Mode Generator ─────────────────────────────────────────
@@ -738,7 +742,11 @@ function buildLessonQuestionsFromBank(
     }
   }
 
-  return result;
+  return result.map((question) => ({
+    ...question,
+    sourceLanguage: nativeLang,
+    targetLanguage: targetLang,
+  }));
 }
 
 /** Preview games from a draft lesson bank (admin). */

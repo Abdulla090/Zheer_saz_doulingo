@@ -4,6 +4,7 @@
  */
 
 import { AppText } from "../../../components/ui/AppText";
+import { getLanguageDirection } from "../../../i18n/direction";
 import { HomeLiquidButton, HomeLiquidCard } from "../../../components/ui/ios-liquid-home";
 import { KidsPlayQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -13,7 +14,7 @@ import { useTTS } from "../../../hooks/use-tts";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -90,12 +91,14 @@ function FloatingBubble({
   index,
   onPop,
   disabled,
+  languageCode,
 }: {
   emoji: string;
   label: string;
   index: number;
   onPop: () => void;
   disabled: boolean;
+  languageCode?: string;
 }) {
   const driftY = useSharedValue(0);
   const driftX = useSharedValue(0);
@@ -163,7 +166,7 @@ function FloatingBubble({
       >
         <Animated.View style={[kb.bubble, popStyle]}>
           <EmojiSticker emoji={emoji} size={42} animateOnMount={false} />
-          <AppText style={kb.bubbleLabel} forceLatinFont latinRole="bold">
+          <AppText languageCode={languageCode} align="center" style={kb.bubbleLabel} latinRole="bold">
             {label}
           </AppText>
         </Animated.View>
@@ -177,6 +180,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const { speak } = useTTS();
   const firedRef = useRef(false);
   const heading = variantHeading(question.variant, t);
+  const targetDirection = getLanguageDirection(question.targetLanguage);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -378,13 +382,13 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
     setTimeout(() => {
       setTreasureOpen(true);
       if (question.treasureRevealLabel) {
-        speak(question.treasureRevealLabel, "en");
+        speak(question.treasureRevealLabel, question.targetLanguage ?? "en");
       }
     }, 320);
   };
 
   const renderChoicesGrid = (floating?: boolean) => (
-    <View style={[kb.grid, floating && kb.bubbleRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
+    <View {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})} style={[kb.grid, floating && kb.bubbleRow, { flexDirection: "row", direction: targetDirection }]}>
       {question.choices.map((c, i) =>
         floating ? (
           <FloatingBubble
@@ -394,6 +398,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
             index={i}
             disabled={revealed}
             onPop={() => pickChoice(c.id)}
+            languageCode={question.targetLanguage}
           />
         ) : (
           <Animated.View key={c.id} entering={FadeIn.delay(i * 60).duration(280)} style={kb.gridItem}>
@@ -415,6 +420,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               wide
               wrapLabel
               isKids={true}
+              languageCode={question.targetLanguage}
             />
           </Animated.View>
         ),
@@ -429,8 +435,9 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
       </GameHeader>
 
       <LightPromptCard
-        kurdish={isKu ? question.prompt : undefined}
-        english={!isKu ? question.prompt : undefined}
+        kurdish={question.prompt}
+        sourceLanguage={question.promptLang || question.sourceLanguage}
+        targetLanguage={question.targetLanguage}
         onSpeak={speakPrompt}
         variant={pathMode === "kids" ? "kids" : "default"}
       />
@@ -469,7 +476,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
 
       {question.variant === "shadow" ? (
         <View style={kb.shadowArea}>
-          <View style={[kb.chipRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
+          <View {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})} style={[kb.chipRow, { flexDirection: "row", direction: targetDirection }]}>
             {question.choices.map((c) => {
               const used = Object.values(shadowPicks).includes(c.id);
               return (
@@ -481,11 +488,12 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                   disabled={used || revealed}
                   wide
                   isKids={true}
+                  languageCode={question.targetLanguage}
                 />
               );
             })}
           </View>
-          <View style={[kb.slotRow, { flexDirection: rtl ? "row-reverse" : "row" }]}>
+          <View {...(Platform.OS === "web" ? ({ dir: "ltr" } as any) : {})} style={[kb.slotRow, { flexDirection: "row" }]}>
             {slots.map((slotId) => {
               const chip = question.choices.find((c) => c.id === slotId);
               const placed = shadowPicks[slotId];
@@ -540,7 +548,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               </AppText>
             </View>
           </HomeLiquidCard>
-          <View style={[kb.trickBtns, { flexDirection: rtl ? "row-reverse" : "row" }]}>
+          <View {...(Platform.OS === "web" ? ({ dir: "ltr" } as any) : {})} style={[kb.trickBtns, { flexDirection: "row" }]}>
             <Animated.View style={[yesStyle, { flex: 1 }]}>
               <Pressable
                 onPressIn={() => { yesScale.value = withSpring(0.92, { damping: 10 }); }}
@@ -606,7 +614,8 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                 <Pressable
                   key={c.id}
                   onPress={() => pickChoice(c.id)}
-                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: rtl ? "row-reverse" : "row" }]}
+                  {...(Platform.OS === "web" ? ({ dir: "ltr" } as any) : {})}
+                  style={({ pressed }) => [kb.audioOpt, pressed && { opacity: 0.85 }, { flexDirection: "row" }]}
                 >
                   <AppText style={kb.audioLabel} forceLatinFont>
                     {c.label}

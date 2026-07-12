@@ -11,7 +11,7 @@ import {
   LockIcon,
   InformationCircleIcon,
 } from "@hugeicons/core-free-icons";
-import React from "react";
+import React, { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -22,25 +22,15 @@ import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useLocaleStore } from "../../stores/useLocaleStore";
-
-const Colors = {
-  background: "#FFFFFF",
-  foreground: "#0F172A",
-  primary: "#FF6B4A",
-  secondary: "#3B82F6",
-  muted: "#F1F5F9",
-  mutedForeground: "#64748B",
-  border: "#E2E8F0",
-  card: "#FFFFFF",
-  success: "#10B981",
-  successBg: "#D1FAE5",
-};
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 export function CourseDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const locale = useLocaleStore((s) => s.locale);
   const isRTL = locale === "ku" || locale === "ar";
+  const { colors: Colors, isDark } = useThemeColors();
+  const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
 
   const handleBack = () => {
     router.back();
@@ -200,7 +190,8 @@ export function CourseDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(Colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -344,7 +335,7 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 107, 74, 0.05)",
+    backgroundColor: isDark ? "rgba(255, 107, 74, 0.12)" : "rgba(255, 107, 74, 0.05)",
     borderWidth: 1,
     borderColor: "rgba(255, 107, 74, 0.2)",
   },
@@ -392,10 +383,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     padding: 24,
-    backgroundColor: "rgba(59, 130, 246, 0.05)",
+    backgroundColor: isDark ? "rgba(59, 130, 246, 0.12)" : "rgba(59, 130, 246, 0.05)",
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.1)",
+    borderColor: isDark ? "rgba(96, 165, 250, 0.22)" : "rgba(59, 130, 246, 0.1)",
     marginTop: 24,
   },
   tipTitle: {
@@ -409,4 +400,5 @@ const styles = StyleSheet.create({
     color: Colors.mutedForeground,
     lineHeight: 18,
   },
-});
+  });
+}

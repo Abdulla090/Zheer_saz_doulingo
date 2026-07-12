@@ -49,6 +49,7 @@ import { PressableScale } from "../../components/animations";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { tabBarScrollPadding } from "../../constants/layout";
+import { getLanguageDirection } from "../../i18n/direction";
 
 const BRAND_ICON = require("../../../assets/images/logo-compressed.png");
 
@@ -147,8 +148,8 @@ function getHomeColors(colors: any, isDark: boolean) {
 export function TwinoLearnHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { t, locale, isKu } = useI18n();
-  const isRtl = isKu || locale === "ar";
+  const { t, locale } = useI18n();
+  const isRtl = getLanguageDirection(locale) === "rtl";
   const { colors, isDark } = useThemeColors();
 
   const Colors = useMemo(() => getHomeColors(colors, isDark), [colors, isDark]);
@@ -232,6 +233,13 @@ export function TwinoLearnHomeScreen() {
 
   const displayName = (userName?.trim() || (isRtl ? "هاوڕێ" : "Friend")).trim();
   const localizedDisplayName = isRtl ? localizeNameForRtl(displayName) : displayName;
+  const upgradeLabel = locale === "ku" ? "نوێکردنەوە" : locale === "ar" ? "ترقية" : "Upgrade";
+  const getLocalizedLessonTopic = (bank?: LessonTopicSource) => {
+    if (!bank) return undefined;
+    if (locale === "ku") return bank.topicKu ?? bank.topic;
+    if (locale === "ar") return bank.topicAr ?? bank.topic;
+    return bank.topic;
+  };
 
   const getLessonIcon = (type: string, bank?: LessonTopicSource) => {
     const text = getLessonTopicText(bank);
@@ -305,8 +313,8 @@ export function TwinoLearnHomeScreen() {
             scaleDown={0.9}
           >
             <HugeiconsIcon icon={CrownIcon} size={18} color="#92700A" strokeWidth={2.5} />
-            <AppText style={styles.upgradeBtnText} forceLatinFont latinRole="bold">
-              {isKu ? "نوێکردنەوە" : "Upgrade"}
+            <AppText style={styles.upgradeBtnText} languageCode={locale} align="center" latinRole="bold">
+              {upgradeLabel}
             </AppText>
           </PressableScale>
           <PressableScale
@@ -336,16 +344,17 @@ export function TwinoLearnHomeScreen() {
           <View style={[styles.greetingSection, isRtl && styles.greetingSectionRtl]}>
             <AppText
               style={[styles.greetingSub, isRtl && styles.greetingSubRtl]}
-              forceKurdishFont={isRtl}
-              forceLatinFont={!isRtl}
+              languageCode={locale}
+              align="start"
+              fullWidth
             >
               {t("twinoHome.welcomeBack")}
             </AppText>
             <View style={[styles.greetingNameRow, isRtl && styles.greetingNameRowRtl]}>
               <AppText
                 style={[styles.greetingTitle, isRtl && styles.greetingTitleRtl]}
-                forceKurdishFont={isRtl}
-                forceLatinFont={!isRtl}
+                languageCode={locale}
+                align="start"
                 latinRole="bold"
               >
                 {localizedDisplayName}
@@ -361,7 +370,7 @@ export function TwinoLearnHomeScreen() {
             <View 
               style={[
                 styles.aiCardContent, 
-                isKu 
+                isRtl
                   ? (I18nManager.isRTL ? { paddingRight: 75, paddingLeft: 0 } : { paddingRight: 0, paddingLeft: 75 }) 
                   : { paddingRight: 75, paddingLeft: 0 }
               ]}
@@ -369,7 +378,7 @@ export function TwinoLearnHomeScreen() {
               <View 
                 style={[
                   styles.aiBadge, 
-                  isKu && { 
+                  isRtl && {
                     alignSelf: I18nManager.isRTL ? "flex-start" : "flex-end", 
                     flexDirection: I18nManager.isRTL ? "row" : "row-reverse" 
                   }
@@ -379,11 +388,11 @@ export function TwinoLearnHomeScreen() {
                   <View style={styles.aiPulsePing} />
                   <View style={styles.aiPulseDot} />
                 </View>
-                <AppText style={styles.aiBadgeText}>{t("twinoHome.aiLiveTutor")}</AppText>
+                <AppText style={styles.aiBadgeText} languageCode={locale} align="start">{t("twinoHome.aiLiveTutor")}</AppText>
               </View>
               
-              <AppText style={[styles.aiCardTitle, isKu && { textAlign: "right" }]} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.speakNatural")}</AppText>
-              <AppText style={[styles.aiCardSub, isKu && { textAlign: "right" }]}>
+              <AppText style={[styles.aiCardTitle, isRtl && styles.rtlText]} languageCode={locale} align="start" fullWidth latinRole="bold">{t("twinoHome.speakNatural")}</AppText>
+              <AppText style={[styles.aiCardSub, isRtl && styles.rtlText]} languageCode={locale} align="start" fullWidth>
                 {t("twinoHome.aiTutorDesc")}
               </AppText>
             </View>
@@ -393,26 +402,26 @@ export function TwinoLearnHomeScreen() {
                 style={[
                   styles.aiCardBtn, 
                   styles.btn3DPrimary, 
-                  isKu && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
+                  isRtl && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
                 ]}
                 onPress={onOpenVoiceTutor}
                 scaleDown={0.96}
               >
                 <HugeiconsIcon icon={Mic01Icon} size={18} color={isDark ? "#0F172A" : "#FFFFFF"} strokeWidth={2.5} />
-                <AppText style={styles.aiCardBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.startConversation")}</AppText>
+                <AppText style={styles.aiCardBtnText} languageCode={locale} align="center" latinRole="bold">{t("twinoHome.startConversation")}</AppText>
               </PressableScale>
 
               <PressableScale 
                 style={[
                   styles.learnBtn, 
                   styles.btnFlat, 
-                  isKu && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
+                  isRtl && { flexDirection: I18nManager.isRTL ? "row" : "row-reverse" }
                 ]}
                 onPress={onOpenPath}
                 scaleDown={0.96}
               >
                 <HugeiconsIcon icon={BookOpen02Icon} size={18} color={Colors.foreground} strokeWidth={2.5} />
-                <AppText style={styles.learnBtnText} forceLatinFont={!isKu} latinRole="bold">{t("twinoHome.learn")}</AppText>
+                <AppText style={styles.learnBtnText} languageCode={locale} align="center" latinRole="bold">{t("twinoHome.learn")}</AppText>
               </PressableScale>
             </View>
             
@@ -420,7 +429,7 @@ export function TwinoLearnHomeScreen() {
               source={BRAND_ICON} 
               style={[
                 styles.aiCardLogo, 
-                isKu 
+                isRtl
                   ? (I18nManager.isRTL ? { right: -20, left: 'auto' } : { right: 'auto', left: -20 }) 
                   : { right: -20, left: 'auto' }
               ]} 
@@ -443,8 +452,9 @@ export function TwinoLearnHomeScreen() {
                 <AppText style={styles.statNumber} forceLatinFont latinRole="bold">{streakDays}</AppText>
                 <AppText
                   style={[styles.statLabel, isRtl && styles.rtlText]}
-                  forceKurdishFont={isRtl}
-                  forceLatinFont={!isRtl}
+                  languageCode={locale}
+                  align="start"
+                  fullWidth
                   latinRole="bold"
                 >
                   {t("twinoHome.dayStreak")}
@@ -466,8 +476,8 @@ export function TwinoLearnHomeScreen() {
                   </AppText>
                   <AppText
                     style={[styles.statUnit, isRtl && styles.rtlText]}
-                    forceKurdishFont={isRtl}
-                    forceLatinFont={!isRtl}
+                    languageCode={locale}
+                    align="start"
                     latinRole="bold"
                   >
                     {t("twinoHome.min")}
@@ -475,8 +485,9 @@ export function TwinoLearnHomeScreen() {
                 </View>
                 <AppText
                   style={[styles.statLabel, isRtl && styles.rtlText]}
-                  forceKurdishFont={isRtl}
-                  forceLatinFont={!isRtl}
+                  languageCode={locale}
+                  align="start"
+                  fullWidth
                   latinRole="bold"
                 >
                   {t("twinoHome.practiceToday")}
@@ -491,16 +502,16 @@ export function TwinoLearnHomeScreen() {
           <View style={[styles.upNextHeader, isRtl && styles.upNextHeaderRtl]}>
             <AppText
               style={[styles.upNextTitle, isRtl && styles.rtlText]}
-              forceKurdishFont={isRtl}
-              forceLatinFont={!isRtl}
+              languageCode={locale}
+              align="start"
               latinRole="bold"
             >
               {t("twinoHome.upNext")}
             </AppText>
             <AppText
               style={[styles.viewAllText, isRtl && styles.rtlText]}
-              forceKurdishFont={isRtl}
-              forceLatinFont={!isRtl}
+              languageCode={locale}
+              align="start"
               latinRole="bold"
             >
               {t("twinoHome.viewAll")}
@@ -520,25 +531,26 @@ export function TwinoLearnHomeScreen() {
               <View style={[styles.lessonDetails, isRtl && styles.lessonDetailsRtl]}>
                 <AppText
                   style={[styles.lessonTitle, isRtl && styles.rtlText]}
-                  forceKurdishFont={isRtl}
-                  forceLatinFont={!isRtl}
+                  languageCode={locale}
+                  align="start"
+                  fullWidth
                   latinRole="bold"
                 >
-                  {activeBank ? (isKu ? activeBank.topicKu : activeBank.topic) : t("twinoHome.fallbackActive")}
+                  {getLocalizedLessonTopic(activeBank) ?? t("twinoHome.fallbackActive")}
                 </AppText>
                 <View style={[styles.lessonMeta, isRtl && styles.lessonMetaRtl]}>
                   <AppText
                     style={[styles.lessonCategory, isRtl && styles.rtlText]}
-                    forceKurdishFont={isRtl}
-                    forceLatinFont={!isRtl}
+                    languageCode={locale}
+                    align="start"
                   >
                     {activeItem ? t(getLessonCategoryKey(activeItem.type)) : t("twinoHome.categoryPractice")}
                   </AppText>
                   <View style={styles.lessonDot} />
                   <AppText
                     style={[styles.lessonDurationActive, isRtl && styles.rtlText]}
-                    forceKurdishFont={isRtl}
-                    forceLatinFont={!isRtl}
+                    languageCode={locale}
+                    align="start"
                     latinRole="bold"
                   >
                     {activeItem?.type === "conversation" ? `10 ${t("twinoHome.mins")}` : `5 ${t("twinoHome.mins")}`}
@@ -559,25 +571,26 @@ export function TwinoLearnHomeScreen() {
                 <View style={[styles.lessonDetails, isRtl && styles.lessonDetailsRtl]}>
                   <AppText
                     style={[styles.lessonTitle, isRtl && styles.rtlText]}
-                    forceKurdishFont={isRtl}
-                    forceLatinFont={!isRtl}
+                    languageCode={locale}
+                    align="start"
+                    fullWidth
                     latinRole="bold"
                   >
-                    {lockedBank ? (isKu ? lockedBank.topicKu : lockedBank.topic) : t("twinoHome.fallbackLocked")}
+                    {getLocalizedLessonTopic(lockedBank) ?? t("twinoHome.fallbackLocked")}
                   </AppText>
                   <View style={[styles.lessonMeta, isRtl && styles.lessonMetaRtl]}>
                     <AppText
                       style={[styles.lessonCategory, isRtl && styles.rtlText]}
-                      forceKurdishFont={isRtl}
-                      forceLatinFont={!isRtl}
+                      languageCode={locale}
+                      align="start"
                     >
                       {lockedItem ? t(getLessonCategoryKey(lockedItem.type)) : t("twinoHome.categoryPractice")}
                     </AppText>
                     <View style={styles.lessonDot} />
                     <AppText
                       style={[styles.lessonDuration, isRtl && styles.rtlText]}
-                      forceKurdishFont={isRtl}
-                      forceLatinFont={!isRtl}
+                      languageCode={locale}
+                      align="start"
                     >
                       {lockedItem?.type === "conversation" ? `10 ${t("twinoHome.mins")}` : `5 ${t("twinoHome.mins")}`}
                     </AppText>
