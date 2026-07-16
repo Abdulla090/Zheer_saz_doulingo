@@ -1,11 +1,11 @@
 /* eslint-disable */
 import React from "react";
+import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import {
   View,
   Text,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   Platform,
   StyleSheet,
   I18nManager,
@@ -21,24 +21,23 @@ import {
   GlassCard,
 } from "../../components/animations";
 import {
-  Icon3DCheck,
-  Icon3DStar,
-  Icon3DFire,
-  Icon3DDiamond,
-  Icon3DBell,
-  Icon3DShield,
-  Icon3DStarPurple,
-  Icon3DZap,
-  Icon3DAward,
-  Icon3DLock,
-  Icon3DTarget,
-  Icon3DBook,
-  Icon3DGamepad,
-  Icon3DPencil,
-  Icon3DFlag,
-  Icon3DSearch,
-  Icon3DMic,
-} from "../../components/icons/Icon3D";
+  AppAwardIcon,
+  AppBellIcon,
+  AppBookIcon,
+  AppCheckIcon,
+  AppDiamondIcon,
+  AppFireIcon,
+  AppFlagIcon,
+  AppGamepadIcon,
+  AppLockIcon,
+  AppMicIcon,
+  AppPencilIcon,
+  AppSearchIcon,
+  AppShieldIcon,
+  AppStarIcon,
+  AppTargetIcon,
+  AppZapIcon,
+} from "../../components/icons/AppHugeIcons";
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 const C = {
@@ -105,17 +104,17 @@ export function MainDashboardScreen({
             <View style={s.headerRight}>
               {/* Streak pill */}
               <PressableScale style={[s.pill, shadow(1)]}>
-                <Icon3DFire size={18} />
+                <AppFireIcon size={18} />
                 <Text style={s.pillText}>12</Text>
               </PressableScale>
               {/* Gems pill */}
               <PressableScale style={[s.pill, shadow(1)]}>
-                <Icon3DDiamond size={18} />
+                <AppDiamondIcon size={18} />
                 <Text style={s.pillText}>340</Text>
               </PressableScale>
               {/* Bell */}
               <PressableScale style={s.bellBtn} hapticStyle={"light" as any}>
-                <Icon3DBell size={22} />
+                <AppBellIcon size={22} />
                 <View style={s.bellDot} />
               </PressableScale>
             </View>
@@ -146,13 +145,13 @@ export function MainDashboardScreen({
             intensity={35}
             borderRadius={99}
           >
-            <Icon3DSearch size={20} />
+            <AppSearchIcon size={20} />
             <TextInput
               placeholder="Search anything to learn..."
               placeholderTextColor={C.textTertiary}
               style={s.searchInput}
             />
-            <Icon3DMic size={20} />
+            <AppMicIcon size={20} />
           </GlassCard>
         </AnimatedCard>
 
@@ -161,7 +160,7 @@ export function MainDashboardScreen({
           {/* Today's Goal */}
           <View style={[s.gridCard, s.gridCardSmall, shadow(1)]}>
             <View style={s.cardHeaderRow}>
-              <Icon3DTarget size={14} />
+              <AppTargetIcon size={14} />
               <Text style={s.cardLabel}>Today's Goal</Text>
             </View>
             <View style={s.goalMiddle}>
@@ -174,7 +173,7 @@ export function MainDashboardScreen({
               </View>
               {/* Goal ring */}
               <View style={s.goalRing}>
-                <Icon3DCheck size={22} />
+                <AppCheckIcon size={22} />
               </View>
             </View>
           </View>
@@ -182,7 +181,7 @@ export function MainDashboardScreen({
           {/* Learning Streak */}
           <View style={[s.gridCard, s.gridCardSmall, shadow(1)]}>
             <View style={s.cardHeaderRow}>
-              <Icon3DFire size={14} />
+              <AppFireIcon size={14} />
               <Text style={s.cardLabel}>Learning Streak</Text>
             </View>
             <View style={s.streakMiddle}>
@@ -197,9 +196,9 @@ export function MainDashboardScreen({
                   <View key={i} style={s.streakDay}>
                     <Text style={s.streakDayLabel}>{day}</Text>
                     {isActive ? (
-                      <Icon3DCheck size={18} />
+                      <AppCheckIcon size={18} />
                     ) : isStar ? (
-                      <Icon3DStar size={18} />
+                      <AppStarIcon size={18} />
                     ) : (
                       <View style={s.streakInactive}>
                         <View style={s.streakInactiveDot} />
@@ -216,7 +215,7 @@ export function MainDashboardScreen({
         <AnimatedCard index={4} delay={100} style={[s.xpCard, shadow(1)]}>
           <View style={s.xpHeader}>
             <View style={s.xpHeaderLeft}>
-              <Icon3DShield size={20} />
+              <AppShieldIcon size={20} />
               <Text style={s.cardLabel}>XP Progress</Text>
             </View>
             <Text style={s.xpLevel}>Level 12</Text>
@@ -238,7 +237,7 @@ export function MainDashboardScreen({
             <View style={s.journeyContent}>
               <Text style={s.journeyTitle}>Continue Your Journey</Text>
               <View style={s.journeyLessonRow}>
-                <Icon3DCheck size={18} />
+                <AppCheckIcon size={18} />
                 <Text style={s.journeyLessonName}>AI Basics</Text>
               </View>
               <Text style={s.journeyLessonSub}>Lesson 3: What is AI?</Text>
@@ -281,7 +280,7 @@ export function MainDashboardScreen({
               {
                 label: "Learn",
                 sub: "Path &\nLessons",
-                Icon: Icon3DBook,
+                Icon: AppBookIcon,
                 bg: "#EAF3FF",
                 border: "#BFDBFE",
                 onPress: onSwitchToNormal,
@@ -289,21 +288,21 @@ export function MainDashboardScreen({
               {
                 label: "Game",
                 sub: "Play & earn\nrewards",
-                Icon: Icon3DGamepad,
+                Icon: AppGamepadIcon,
                 bg: "#F4EAFF",
                 border: "#E9D5FF",
               },
               {
                 label: "Practice",
                 sub: "Hands-on\nexercises",
-                Icon: Icon3DPencil,
+                Icon: AppPencilIcon,
                 bg: "#FFFBEB",
                 border: "#FDE68A",
               },
               {
                 label: "Quests",
                 sub: "Complete quests\n& unlock",
-                Icon: Icon3DFlag,
+                Icon: AppFlagIcon,
                 bg: "#EFF6FF",
                 border: "#BFDBFE",
               },
@@ -337,20 +336,20 @@ export function MainDashboardScreen({
           </View>
           <View style={[s.badgesRow, shadow(1)]}>
             {[
-              { Icon: Icon3DShield, label: "Ocean\nStarter", locked: false },
+              { Icon: AppShieldIcon, label: "Ocean\nStarter", locked: false },
               {
-                Icon: Icon3DStarPurple,
+                Icon: AppStarIcon,
                 label: "Quick\nLearner",
                 locked: false,
               },
               {
-                Icon: Icon3DZap,
+                Icon: AppZapIcon,
                 label: "Streak\nMaster",
                 locked: false,
                 badge: "3x",
               },
-              { Icon: Icon3DAward, label: "Quiz\nWhiz", locked: false },
-              { Icon: Icon3DLock, label: "Code\nExplorer", locked: true },
+              { Icon: AppAwardIcon, label: "Quiz\nWhiz", locked: false },
+              { Icon: AppLockIcon, label: "Code\nExplorer", locked: true },
             ].map(({ Icon, label, locked, badge }, i) => (
               <View key={i} style={[s.badgeItem, locked && { opacity: 0.5 }]}>
                 <View style={{ position: "relative" }}>

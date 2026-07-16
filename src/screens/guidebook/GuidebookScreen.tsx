@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Text, Pressable, Platform } from "react-native";
+import { IOSPressable as Pressable } from "../../components/ui/ios-pressable";
+import { View, StyleSheet, Text, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";

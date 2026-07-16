@@ -12,6 +12,7 @@ import {
   FadeInRight,
   FadeInUp,
   LinearTransition,
+  type WithSpringConfig,
   type WithTimingConfig,
 } from "react-native-reanimated";
 import { Platform } from "react-native";
@@ -20,6 +21,16 @@ import { Platform } from "react-native";
 export const CSS_PRESS_MS = 90;
 /** Release — 130ms */
 export const CSS_RELEASE_MS = 130;
+/** Current iOS control response: restrained compression, fast release, no bounce. */
+export const IOS_BUTTON_PRESS_SCALE = 0.975;
+export const IOS_BUTTON_PRESS_OPACITY = 0.88;
+export const IOS_BUTTON_PRESS_Y = 1;
+export const IOS_BUTTON_RELEASE_SPRING: WithSpringConfig = {
+  damping: 24,
+  stiffness: 420,
+  mass: 0.62,
+  overshootClamping: true,
+};
 /** Screen/card entrance */
 export const CSS_ENTER_MS = 180;
 /** List stagger step */

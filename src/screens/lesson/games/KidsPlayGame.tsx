@@ -166,7 +166,7 @@ function FloatingBubble({
       >
         <Animated.View style={[kb.bubble, popStyle]}>
           <EmojiSticker emoji={emoji} size={42} animateOnMount={false} />
-          <AppText languageCode={languageCode} align="center" style={kb.bubbleLabel} latinRole="bold">
+          <AppText languageCode={languageCode} align="center" nativeAlign="start" fullWidth style={kb.bubbleLabel} latinRole="bold">
             {label}
           </AppText>
         </Animated.View>

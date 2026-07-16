@@ -1,5 +1,5 @@
-/** Paid shop / subscriptions — enabled for production & QA simulation */
-export const ENABLE_SHOP = true;
+/** Paid shop / subscriptions — keep hidden until store IAP is production-ready. */
+export const ENABLE_SHOP = false;
 
 /** Content admin panel — on in dev or when EXPO_PUBLIC_ENABLE_ADMIN=true */
 export const ENABLE_ADMIN =

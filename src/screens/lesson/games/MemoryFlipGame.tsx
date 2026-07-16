@@ -182,7 +182,17 @@ const MemoryCard = memo(function MemoryCard({
             recyclingKey={card.id}
           />
         ) : (
-          <AppText languageCode={languageCode} align="center" fullWidth style={s.cardText} latinRole="bold" numberOfLines={2}>
+          <AppText
+            languageCode={languageCode}
+            align="center"
+            nativeAlign="start"
+            fullWidth
+            style={s.cardText}
+            latinRole="bold"
+            numberOfLines={3}
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+          >
             {card.value}
           </AppText>
         )}

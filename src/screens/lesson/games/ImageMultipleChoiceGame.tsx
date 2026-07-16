@@ -161,6 +161,8 @@ export default function ImageMultipleChoiceGame({
                   isKids
                   fontSize={18}
                   centerLabel
+                  fitLabel
+                  fitLabelLines={3}
                   languageCode={question.targetLanguage}
                   style={s.choiceTile}
                 />

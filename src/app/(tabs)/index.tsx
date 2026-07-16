@@ -1,14 +1,10 @@
-/**
- * Home tab — Duolingo-style learn dashboard (Phingo).
- */
-
 import { TabScreenChrome } from "../../components/TabScreenChrome";
-import { TwinoLearnHomeScreen } from "../../screens/home/TwinoLearnHomeScreen";
+import { LearningPathScreen } from "../../screens/home/LearningPathScreen";
 
 export default function HomeIndex() {
   return (
-    <TabScreenChrome lazy={false} openingVariant="home">
-      <TwinoLearnHomeScreen />
+    <TabScreenChrome lazy={false} openingVariant="path">
+      <LearningPathScreen topChromeHeight={8} />
     </TabScreenChrome>
   );
 }

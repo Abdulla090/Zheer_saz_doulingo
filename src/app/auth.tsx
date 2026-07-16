@@ -1,4 +1,5 @@
 import { AppText } from "../components/ui/AppText";
+import { IOSPressable as TouchableOpacity } from "../components/ui/ios-pressable";
 import { useI18n } from "../hooks/useI18n";
 import { supabase } from "../lib/supabase";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -14,7 +15,6 @@ import {
   StyleSheet,
   View,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,

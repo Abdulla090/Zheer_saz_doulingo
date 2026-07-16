@@ -1,4 +1,5 @@
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { hapticSelection } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
@@ -12,7 +13,6 @@ import {
   Text,
   View,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 import Animated, {
@@ -348,6 +348,61 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
     setSelectedTargetLang(langId);
   }, []);
 
+  const renderLanguageOptions = (
+    selectedLanguage: string,
+    onSelect: (langId: string) => void,
+  ) => (
+    <View style={styles.languageList} accessibilityRole="radiogroup">
+      {LANGUAGES.map((language) => {
+        const isSelected = selectedLanguage === language.id;
+
+        return (
+          <TouchableOpacity
+            key={language.id}
+            accessibilityRole="radio"
+            accessibilityLabel={`${language.label}, ${language.country}`}
+            accessibilityState={{ selected: isSelected }}
+            style={[
+              styles.languageRow,
+              isRtl && styles.languageRowRtl,
+              isSelected && styles.languageRowSelected,
+            ]}
+            activeOpacity={0.82}
+            onPress={() => onSelect(language.id)}
+          >
+            <View style={styles.flagFrame}>
+              <Image
+                source={language.flag}
+                style={styles.flagImage}
+                contentFit="contain"
+                contentPosition="center"
+              />
+            </View>
+
+            <View style={[styles.languageCopy, isRtl && styles.languageCopyRtl]}>
+              <Text style={[styles.languageName, isRtl && styles.rtlText]}>
+                {language.label}
+              </Text>
+              <Text style={[styles.languageCountry, isRtl && styles.rtlText]}>
+                {language.country}
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.radioDot,
+                styles.languageRadio,
+                isSelected && styles.radioDotSelected,
+              ]}
+            >
+              {isSelected ? <View style={styles.radioInner} /> : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
   const handleLevelContinue = useCallback(() => {
     hapticSelection();
     setEnglishLevel(selectedLevel);
@@ -408,6 +463,22 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             ? 4
             : 5;
 
+  const continueDisabled = step === "profile" && !name.trim();
+  const continueLabel = step === "goal" ? copy.start : copy.continue;
+  const handleCurrentContinue = () => {
+    if (step === "nativeLanguage") {
+      handleNativeLanguageContinue();
+    } else if (step === "targetLanguage") {
+      handleTargetLanguageContinue();
+    } else if (step === "profile") {
+      handleProfileContinue();
+    } else if (step === "level") {
+      handleLevelContinue();
+    } else if (step === "goal") {
+      void handleGoalContinue();
+    }
+  };
+
   // Background animated gradient
   const bgScrollX = useSharedValue(0);
   React.useEffect(() => {
@@ -461,13 +532,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingBottom:
-              Math.max(insets.bottom, 24) + (keyboardVisible ? 120 : 20),
-          },
-        ]}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* STEP 1: NATIVE LANGUAGE */}
         {step === "nativeLanguage" && (
@@ -479,50 +544,8 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
           >
             <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(1)}</Text>
             <Text style={[styles.title, textDirectionStyle]}>{copy.nativeLanguageTitle}</Text>
-            <View style={styles.gridList}>
-              {LANGUAGES.map((l) => {
-                const isSelected = selectedNativeLang === l.id;
-                return (
-                  <TouchableOpacity
-                    key={l.id}
-                    style={[
-                      styles.gridCard,
-                      styles.flagGridCard,
-                      isSelected && styles.gridCardSelected,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => handleNativeLanguageSelect(l.id)}
-                  >
-                    <Image
-                      source={l.flag}
-                      style={styles.flagImage}
-                      contentFit="cover"
-                    />
-                    <View style={styles.flagShade} />
-                    <View style={[styles.radioDot, styles.radioDotGrid, styles.flagRadio, isSelected && styles.radioDotSelected]}>
-                      {isSelected && <View style={styles.radioInner} />}
-                    </View>
-                    <View style={styles.flagLabelPanel}>
-                      <Text style={styles.flagLanguageLabel}>{l.label}</Text>
-                      <Text style={styles.flagCountryLabel}>{l.country}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {renderLanguageOptions(selectedNativeLang, handleNativeLanguageSelect)}
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                styles.bottomButton,
-                isRtl && styles.primaryButtonRtl,
-              ]}
-              activeOpacity={0.85}
-              onPress={handleNativeLanguageContinue}
-            >
-              <Text style={styles.primaryButtonText}>{copy.continue}</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
           </Animated.View>
         )}
 
@@ -536,50 +559,8 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
           >
             <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(2)}</Text>
             <Text style={[styles.title, textDirectionStyle]}>{copy.targetLanguageTitle}</Text>
-            <View style={styles.gridList}>
-              {LANGUAGES.map((l) => {
-                const isSelected = selectedTargetLang === l.id;
-                return (
-                  <TouchableOpacity
-                    key={l.id}
-                    style={[
-                      styles.gridCard,
-                      styles.flagGridCard,
-                      isSelected && styles.gridCardSelected,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => handleTargetLanguageSelect(l.id)}
-                  >
-                    <Image
-                      source={l.flag}
-                      style={styles.flagImage}
-                      contentFit="cover"
-                    />
-                    <View style={styles.flagShade} />
-                    <View style={[styles.radioDot, styles.radioDotGrid, styles.flagRadio, isSelected && styles.radioDotSelected]}>
-                      {isSelected && <View style={styles.radioInner} />}
-                    </View>
-                    <View style={styles.flagLabelPanel}>
-                      <Text style={styles.flagLanguageLabel}>{l.label}</Text>
-                      <Text style={styles.flagCountryLabel}>{l.country}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {renderLanguageOptions(selectedTargetLang, handleTargetLanguageSelect)}
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                styles.bottomButton,
-                isRtl && styles.primaryButtonRtl,
-              ]}
-              activeOpacity={0.85}
-              onPress={handleTargetLanguageContinue}
-            >
-              <Text style={styles.primaryButtonText}>{copy.continue}</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
           </Animated.View>
         )}
 
@@ -625,19 +606,6 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                isRtl && styles.primaryButtonRtl,
-                !name.trim() && styles.primaryButtonDisabled,
-              ]}
-              activeOpacity={0.85}
-              onPress={handleProfileContinue}
-              disabled={!name.trim()}
-            >
-              <Text style={styles.primaryButtonText}>{copy.continue}</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
           </Animated.View>
         )}
 
@@ -649,7 +617,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(5)}</Text>
+            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(4)}</Text>
             <Text style={[styles.title, textDirectionStyle]}>
               {copy.levelTitle(LANGUAGES.find((l) => l.id === selectedTargetLang)?.label ?? "")}
             </Text>
@@ -682,18 +650,6 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               })}
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                styles.bottomButton,
-                isRtl && styles.primaryButtonRtl,
-              ]}
-              activeOpacity={0.85}
-              onPress={handleLevelContinue}
-            >
-              <Text style={styles.primaryButtonText}>{copy.continue}</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
           </Animated.View>
         )}
 
@@ -705,7 +661,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(4)}</Text>
+            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(5)}</Text>
             <Text style={[styles.title, textDirectionStyle]}>{copy.goalTitle}</Text>
 
 
@@ -736,18 +692,6 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               })}
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                styles.bottomButton,
-                isRtl && styles.primaryButtonRtl,
-              ]}
-              activeOpacity={0.85}
-              onPress={handleGoalContinue}
-            >
-              <Text style={styles.primaryButtonText}>{copy.start}</Text>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
-            </TouchableOpacity>
           </Animated.View>
         )}
         {/* STEP 5: GENERATING (LOADING) */}
@@ -767,6 +711,36 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
           </Animated.View>
         )}
       </ScrollView>
+
+      {step !== "generating" ? (
+        <View
+          style={[
+            styles.onboardingFooter,
+            { paddingBottom: Math.max(insets.bottom, 18) },
+          ]}
+        >
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ disabled: continueDisabled }}
+            style={[
+              styles.primaryButton,
+              isRtl && styles.primaryButtonRtl,
+              continueDisabled && styles.primaryButtonDisabled,
+            ]}
+            activeOpacity={0.85}
+            onPress={handleCurrentContinue}
+            disabled={continueDisabled}
+          >
+            <Text style={styles.primaryButtonText}>{continueLabel}</Text>
+            <HugeiconsIcon
+              icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+              size={20}
+              color="#FFFFFF"
+              strokeWidth={2.5}
+            />
+          </TouchableOpacity>
+        </View>
+      ) : null}
       </KeyboardAvoidingView>
     </View>
   );
@@ -825,15 +799,18 @@ function createStyles(colors: any, isDark: boolean) {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 14,
+    paddingBottom: 18,
   },
   contentWrap: {
     width: "100%",
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
     justifyContent: "flex-end",
     alignItems: "stretch",
     position: "relative",
   },
   choiceContentWrap: {
+    flexGrow: 0,
     justifyContent: "flex-start",
   },
   ltrText: {
@@ -933,6 +910,73 @@ function createStyles(colors: any, isDark: boolean) {
     justifyContent: "space-between",
     marginBottom: 18,
   },
+  languageList: {
+    width: "100%",
+    maxWidth: 640,
+    alignSelf: "center",
+    overflow: "hidden",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  languageRow: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surfaceRaised,
+  },
+  languageRowRtl: {
+    flexDirection: "row-reverse",
+  },
+  languageRowSelected: {
+    backgroundColor: colors.primaryGlow,
+  },
+  flagFrame: {
+    width: 58,
+    height: 40,
+    overflow: "hidden",
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: "#FFFFFF",
+  },
+  flagImage: {
+    width: "100%",
+    height: "100%",
+  },
+  languageCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+    alignItems: "flex-start",
+  },
+  languageCopyRtl: {
+    alignItems: "flex-end",
+  },
+  languageName: {
+    color: colors.foreground,
+    fontSize: 15,
+    lineHeight: 19,
+    fontFamily: "DINNextRoundedBold",
+  },
+  languageCountry: {
+    color: colors.mutedForeground,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "DINNextRoundedMedium",
+  },
+  languageRadio: {
+    flexShrink: 0,
+    marginRight: 0,
+  },
   gridCard: {
     width: "48%",
     aspectRatio: 1,
@@ -944,62 +988,10 @@ function createStyles(colors: any, isDark: boolean) {
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  flagGridCard: {
-    padding: 0,
-    overflow: "hidden",
-    backgroundColor: colors.muted,
-  },
   gridCardSelected: {
     borderColor: "rgba(15, 23, 42, 0.35)",
     borderWidth: 2,
     backgroundColor: colors.surfaceRaised,
-  },
-  flagImage: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: "100%",
-    height: "100%",
-  },
-  flagShade: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(15, 23, 42, 0.05)",
-  },
-  flagRadio: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
-    borderColor: "rgba(15, 23, 42, 0.55)",
-    zIndex: 3,
-  },
-  flagLabelPanel: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 10,
-    paddingTop: 18,
-    paddingBottom: 10,
-    backgroundColor: "rgba(15, 23, 42, 0.32)",
-  },
-  flagLanguageLabel: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "DINNextRoundedBold",
-    lineHeight: 18,
-  },
-  flagCountryLabel: {
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: 11,
-    fontFamily: "DINNextRoundedMedium",
-    marginTop: 1,
   },
   gridCardTop: {
     flexDirection: "row",
@@ -1205,11 +1197,11 @@ function createStyles(colors: any, isDark: boolean) {
   primaryButtonRtl: {
     flexDirection: "row-reverse",
   },
-  bottomButton: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 22,
+  onboardingFooter: {
+    width: "100%",
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    backgroundColor: "transparent",
   },
   primaryButtonDisabled: {
     backgroundColor: "#94A3B8",

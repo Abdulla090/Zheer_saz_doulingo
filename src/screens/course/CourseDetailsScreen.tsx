@@ -1,4 +1,5 @@
 import { AppText } from "../../components/ui/AppText";
+import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { hapticSelection } from "../../utils/haptics";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -15,7 +16,6 @@ import React, { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";

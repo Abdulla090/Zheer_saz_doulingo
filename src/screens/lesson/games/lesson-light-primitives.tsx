@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { AppText } from "../../../components/ui/AppText";
+import { IOSPressable as TouchableOpacity } from "../../../components/ui/ios-pressable";
 import {
   Image,
   Platform,
@@ -23,7 +24,6 @@ import {
   StyleSheet,
   View,
   ViewStyle,
-  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -680,7 +680,7 @@ export function LightWordTile({
   /** Shrink a word to fit inside a fixed-size tile. */
   fitLabel?: boolean;
   /** Fixed number of lines available when fitting text inside a tile. */
-  fitLabelLines?: 1 | 2;
+  fitLabelLines?: 1 | 2 | 3;
   style?: StyleProp<ViewStyle>;
   languageCode?: string;
 }) {
@@ -819,6 +819,8 @@ export function LightWordTile({
             <AppText
               languageCode={labelLanguageCode}
               align="center"
+              nativeAlign="start"
+              fullWidth
               style={[
                 LightType.tile,
                 {
@@ -865,6 +867,7 @@ export function LightWordTile({
         <AppText
           languageCode={labelLanguageCode}
           align={centerLabel ? "center" : "start"}
+          nativeAlign="start"
           fullWidth={centerLabel || wide}
           style={[
             LightType.tile,

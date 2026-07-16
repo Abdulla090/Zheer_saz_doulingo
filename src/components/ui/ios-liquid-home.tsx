@@ -6,6 +6,13 @@
  */
 
 import { LiquidGlassSurface } from "../LiquidGlassSurface";
+import {
+  CSS_PRESS_MS,
+  IOS_BUTTON_PRESS_OPACITY,
+  IOS_BUTTON_PRESS_SCALE,
+  IOS_BUTTON_PRESS_Y,
+  IOS_BUTTON_RELEASE_SPRING,
+} from "../animations/motion";
 import { AppText } from "./AppText";
 import { Glass, Motion, Radius } from "../../screens/lesson/games/game-design";
 import { IS_ANDROID } from "../../utils/native-perf";
@@ -30,6 +37,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 let GlassViewComponent: React.ComponentType<any> | null = null;
@@ -100,8 +108,14 @@ export function HomeLiquidPill({
   );
 
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
   const anim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
 
   if (!onPress) return inner;
@@ -240,8 +254,14 @@ export function HomeLiquidButton({
   flush?: boolean;
 }) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
   const anim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
 
   return (
@@ -252,10 +272,14 @@ export function HomeLiquidButton({
           onPress();
         }}
         onPressIn={() => {
-          scale.value = withSpring(0.965, Motion.soft);
+          scale.value = withTiming(IOS_BUTTON_PRESS_SCALE, { duration: CSS_PRESS_MS });
+          opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+          translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, Motion.soft);
+          scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
         }}
         style={[
           styles.primaryBtn,
@@ -300,8 +324,14 @@ export function HomeLiquidLessonTile({
   style?: StyleProp<ViewStyle>;
 }) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
   const anim = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
   const nativeGlass = useNativeLiquidGlass();
   const GlassView = GlassViewComponent;
@@ -340,10 +370,14 @@ export function HomeLiquidLessonTile({
           onPress();
         }}
         onPressIn={() => {
-          scale.value = withSpring(0.985, Motion.soft);
+          scale.value = withTiming(IOS_BUTTON_PRESS_SCALE, { duration: CSS_PRESS_MS });
+          opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+          translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, Motion.soft);
+          scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
         }}
         style={[
           styles.lessonShell,

@@ -2,8 +2,8 @@
 import { PressableScale } from "../../components/animations";
 import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import {
-  Icon3DSettings,
-} from "../../components/icons/Icon3D";
+  AppSettingsIcon,
+} from "../../components/icons/AppHugeIcons";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import {
@@ -287,7 +287,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
             />
           </PressableScale>
 
-          <Icon3DSettings size={28} />
+          <AppSettingsIcon size={28} />
           <View
             style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}
           >

@@ -91,10 +91,10 @@ function NativeTabsLayout() {
 
         <NativeTabs.Trigger name="dashboard" contentStyle={contentStyle}>
           <NativeTabs.Trigger.Icon
-            sf={{ default: "map", selected: "map.fill" }}
-            md={{ default: "route", selected: "route" }}
+            sf={{ default: "trophy", selected: "trophy.fill" }}
+            md={{ default: "leaderboard", selected: "leaderboard" }}
           />
-          <NativeTabs.Trigger.Label>{t("tabs.path")}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Label>{t("tabs.leaderboard")}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
         <NativeTabs.Trigger

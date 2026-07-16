@@ -1,8 +1,9 @@
 import { PathSwitcher, type PathMode } from "../screens/home/components/PathSwitcher";
+import { IOSPressable as TouchableOpacity } from "../components/ui/ios-pressable";
 import { LearningPathScreen } from "../screens/home/LearningPathScreen";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import React, { useCallback, useMemo, useState } from "react";
-import { StyleSheet, View, TouchableOpacity } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";

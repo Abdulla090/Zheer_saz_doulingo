@@ -1,9 +1,13 @@
-import { Star } from "../../../constants/icons";
+import { AppText } from "../../../components/ui/AppText";
+import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { StarIcon } from "@hugeicons/core-free-icons";
 import React, { useEffect } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withSequence,
@@ -31,24 +35,25 @@ type SvgButtonProps = {
   variant?: SvgButtonVariant;
   IconComponent?: React.ComponentType<any>;
   iconColor?: string;
+  label?: string | number;
   isCurrentLesson?: boolean;
+  isSelected?: boolean;
   isLocked?: boolean;
   accessibilityLabel?: string;
 };
 
-function CurrentLessonIcon({
-  IconComponent,
-  color,
-  size,
-}: {
-  IconComponent: React.ComponentType<any>;
-  color: string;
-  size: number;
-}) {
+export function CurrentLessonIcon({ size }: { size: number }) {
   const translateY = useSharedValue(0);
   const rotate = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      translateY.value = 0;
+      rotate.value = 0;
+      return;
+    }
+
     translateY.value = withRepeat(
       withSequence(
         withTiming(5, { duration: 200 }),
@@ -73,7 +78,7 @@ function CurrentLessonIcon({
       cancelAnimation(translateY);
       cancelAnimation(rotate);
     };
-  }, [rotate, translateY]);
+  }, [reduceMotion, rotate, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -84,12 +89,12 @@ function CurrentLessonIcon({
 
   return (
     <Animated.View style={animatedStyle}>
-      <IconComponent
-        fill={color}
-        stroke={color}
-        strokeWidth={1}
-        width={size}
-        height={size}
+      <HugeiconsIcon
+        icon={StarIcon}
+        color="#FFFFFF"
+        fill="#FFFFFF"
+        strokeWidth={2.4}
+        size={size}
       />
     </Animated.View>
   );
@@ -101,9 +106,11 @@ export const SvgButton = React.memo(
     onPress,
     translateX,
     variant = "green",
-    IconComponent = Star,
+    IconComponent,
     iconColor,
+    label,
     isCurrentLesson = false,
+    isSelected = false,
     isLocked = false,
     accessibilityLabel,
   }: SvgButtonProps) => {
@@ -111,36 +118,31 @@ export const SvgButton = React.memo(
     const resolvedIconColor =
       iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
     const depth = Math.max(5, Math.round(size * 0.09));
-    const faceHeight = Math.round(size * 0.72);
-    const faceTop = Math.round(size * 0.08);
-    const rimTop = faceTop + depth;
+    const faceSize = size - depth;
+    const faceTop = 0;
+    const rimTop = depth;
     const iconSize = Math.round(size * 0.44);
 
     return (
       <Pressable
-        disabled={isLocked}
-        onPress={isLocked ? undefined : onPress}
+        disabled={!onPress}
+        onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked, selected: isCurrentLesson }}
-        style={({ pressed }) => ({
-          width: size,
-          height: size,
-          transform: [
-            { translateX: translateX || 0 },
-            { translateY: pressed && !isLocked ? depth - 1 : 0 },
-            { scale: pressed && !isLocked ? 0.97 : 1 },
-          ],
-        })}
+        accessibilityState={{ disabled: isLocked, selected: isSelected }}
+        style={[
+          { width: size, height: size },
+          translateX ? { transform: [{ translateX }] } : undefined,
+        ]}
       >
         <View style={{ width: size, height: size, alignItems: "center" }}>
           <View
             style={{
               position: "absolute",
               top: rimTop,
-              width: size,
-              height: faceHeight,
-              borderRadius: faceHeight / 2,
+              width: faceSize,
+              height: faceSize,
+              borderRadius: faceSize / 2,
               backgroundColor: colors.rim,
             }}
           />
@@ -148,10 +150,12 @@ export const SvgButton = React.memo(
             style={{
               position: "absolute",
               top: faceTop,
-              width: size,
-              height: faceHeight,
-              borderRadius: faceHeight / 2,
+              width: faceSize,
+              height: faceSize,
+              borderRadius: faceSize / 2,
               backgroundColor: colors.face,
+              borderWidth: 1.5,
+              borderColor: "rgba(255,255,255,0.34)",
               alignItems: "center",
               justifyContent: "center",
               overflow: "hidden",
@@ -161,7 +165,7 @@ export const SvgButton = React.memo(
               pointerEvents="none"
               style={{
                 position: "absolute",
-                top: -Math.round(size * 0.1),
+                top: -Math.round(size * 0.04),
                 left: -Math.round(size * 0.18),
                 width: Math.round(size * 1.35),
                 height: Math.round(size * 0.22),
@@ -182,20 +186,32 @@ export const SvgButton = React.memo(
               }}
             />
             {isCurrentLesson && !isLocked ? (
-              <CurrentLessonIcon
-                IconComponent={IconComponent}
-                color={resolvedIconColor}
-                size={iconSize}
-              />
-            ) : (
+              <CurrentLessonIcon size={iconSize} />
+            ) : label !== undefined ? (
+              <AppText
+                forceLatinFont
+                latinRole="bold"
+                style={{
+                  color: resolvedIconColor,
+                  fontSize: Math.round(size * 0.34),
+                  lineHeight: Math.round(size * 0.4),
+                  fontWeight: "900",
+                  fontVariant: ["tabular-nums"],
+                  letterSpacing: -0.5,
+                }}
+              >
+                {label}
+              </AppText>
+            ) : IconComponent ? (
               <IconComponent
+                color={resolvedIconColor}
                 fill={resolvedIconColor}
                 stroke={resolvedIconColor}
                 strokeWidth={1}
                 width={iconSize}
                 height={iconSize}
               />
-            )}
+            ) : null}
           </View>
         </View>
       </Pressable>

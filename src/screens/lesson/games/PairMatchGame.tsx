@@ -91,6 +91,8 @@ const MatchChip = memo(function MatchChip({
         languageCode={languageCode}
         wrapLabel
         centerLabel
+        fitLabel
+        fitLabelLines={3}
         isKids={isKids}
         fontSize={isKids ? 19 : 17}
         style={s.pairTile}
@@ -295,7 +297,7 @@ const s = StyleSheet.create({
     gap: 10,
   },
   chipWrap: {
-    width: 132,
+    width: "100%",
     alignSelf: "center",
   },
   progressRow: {
@@ -338,29 +340,31 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-    gap: 40,
+    gap: 16,
   },
   colLabel: {
-    width: 132,
+    flex: 1,
+    maxWidth: 164,
     textAlign: "center",
   },
   board: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 36,
+    gap: 16,
     alignItems: "flex-start",
     flex: 1,
   },
   column: {
-    width: 132,
+    flex: 1,
+    maxWidth: 164,
     gap: 8,
     alignItems: "center",
   },
   pairTile: {
-    width: 132,
-    height: 96,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    width: "100%",
+    minHeight: 104,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 24,
   },
   bottomSpacer: {

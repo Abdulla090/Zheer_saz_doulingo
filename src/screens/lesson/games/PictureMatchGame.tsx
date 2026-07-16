@@ -347,6 +347,8 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
                   languageCode={question.targetLanguage}
                   wrapLabel
                   centerLabel
+                  fitLabel
+                  fitLabelLines={3}
                   isKids={isKids}
                   fontSize={isKids ? 19 : 17}
                   style={s.pairTile}

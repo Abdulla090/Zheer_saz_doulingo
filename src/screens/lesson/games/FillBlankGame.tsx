@@ -1,7 +1,7 @@
 
 
 import { useI18n } from "../../../hooks/useI18n";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { StyleSheet, View, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
@@ -20,6 +20,7 @@ import { DirectionalView } from "../../../components/ui/Directional";
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
+import { measureGameElement } from "./game-layout-measure";
 import { L } from "./lesson-light-design";
 import {
   LightCheckButton,
@@ -41,32 +42,6 @@ type FlySession = {
   toY: number;
   toW: number;
   toH: number;
-};
-
-const getWebCoords = (el: any) => {
-  if (!el) return null;
-  if (Platform.OS !== "web") return null;
-  try {
-    let node = el;
-    if (typeof node.getBoundingClientRect === "function") {
-      const r = node.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
-    }
-    if (node._component && typeof node._component.getBoundingClientRect === "function") {
-      const r = node._component.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
-    }
-    if (typeof node.getHostNode === "function") {
-      const host = node.getHostNode();
-      if (host && typeof host.getBoundingClientRect === "function") {
-        const r = host.getBoundingClientRect();
-        return { x: r.left, y: r.top, w: r.width, h: r.height };
-      }
-    }
-  } catch (err) {
-    console.error("Error measuring web coords:", err);
-  }
-  return null;
 };
 
 function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlySession; onFinish: (id: string, word: string) => void; isKids?: boolean; languageCode?: string }) {
@@ -115,6 +90,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
+  const measuringWordRef = useRef<string | null>(null);
   
   const rootRef = useRef<View>(null);
   const blankRef = useRef<View>(null);
@@ -136,31 +112,38 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     setFlySession(null);
     setRevealed(false);
     firedRef.current = false;
+    measuringWordRef.current = null;
     bankCoords.current = {};
     blankCoords.current = null;
   }, [question]);
 
-  const finishFly = (id: string, word: string) => {
+  const finishFly = useCallback((_id: string, word: string) => {
     setSelected(word);
     setFlySession(null);
-  };
+  }, []);
 
-  const pick = (word: string) => {
+  const pick = async (word: string) => {
     if (revealed) return;
     if (selected === word) return;
+    if (flySession || measuringWordRef.current) return;
 
-    let root = rootCoords.current;
-    let bank = bankCoords.current[word];
-    let target = blankCoords.current;
-
-    if (Platform.OS === 'web') {
-      const webRoot = getWebCoords(rootRef.current);
-      const webBank = getWebCoords(bankRefs.current[word]);
-      const webTarget = getWebCoords(blankRef.current);
-      if (webRoot) root = webRoot;
-      if (webBank) bank = webBank;
-      if (webTarget) target = webTarget;
+    measuringWordRef.current = word;
+    if (Platform.OS !== "web") {
+      void Haptics.selectionAsync();
     }
+
+    const [measuredRoot, measuredBank, measuredTarget] = await Promise.all([
+      measureGameElement(rootRef.current),
+      measureGameElement(bankRefs.current[word]),
+      measureGameElement(blankRef.current),
+    ]);
+
+    if (measuringWordRef.current !== word) return;
+
+    const root = measuredRoot ?? rootCoords.current;
+    const bank = measuredBank ?? bankCoords.current[word];
+    const target = measuredTarget ?? blankCoords.current;
+    measuringWordRef.current = null;
 
     if (!root || !bank || !target) {
       setSelected(word);
@@ -320,6 +303,8 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         </LightSurfaceCard>
       </Animated.View>
 
+      <View style={s.optionsSpacer} />
+
       <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.chipsWrap}>
         {shuffledOptions.map((w) => {
           const isFlying = flySession?.word === w;
@@ -355,8 +340,6 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
           );
         })}
       </DirectionalView>
-
-      <View style={{ flex: 1 }} />
 
       <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
         {flySession ? (
@@ -440,10 +423,16 @@ const s = StyleSheet.create({
     opacity: 0.35,
   },
   chipsWrap: {
+    flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     justifyContent: "center",
-    marginTop: 20,
+    marginBottom: 24,
+    width: "100%",
+  },
+  optionsSpacer: {
+    flex: 1,
+    minHeight: 20,
   },
   flySessionLayer: {
     position: "absolute",

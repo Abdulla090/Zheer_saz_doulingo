@@ -3,6 +3,8 @@ import { useLanguageFont } from "../../hooks/useLanguageFont";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import {
   getLanguageDirection,
+  resolvePlatformAlignment,
+  resolvePlatformTextAlign,
   resolveTextAlign,
   type LogicalAlignment,
 } from "../../i18n/direction";
@@ -27,6 +29,8 @@ export type AppTextProps = TextProps & {
   languageCode?: string;
   /** Logical alignment resolved against languageCode. */
   align?: LogicalAlignment;
+  /** Optional native-only alignment; useful when web intentionally stays centered. */
+  nativeAlign?: LogicalAlignment;
   /** Stretch the text block so native alignment is deterministic. */
   fullWidth?: boolean;
 };
@@ -42,6 +46,7 @@ export function AppText({
   latinRole,
   languageCode,
   align,
+  nativeAlign,
   fullWidth,
   ...props
 }: AppTextProps) {
@@ -74,12 +79,21 @@ export function AppText({
     flat?.textAlign === "left" || flat?.textAlign === "right" || flat?.textAlign === "center"
       ? flat.textAlign
       : undefined;
-  const textAlign = align
-    ? resolveTextAlign(direction, align)
+  const effectiveAlignment = resolvePlatformAlignment(Platform.OS, align, nativeAlign);
+  const desiredPhysicalAlignment = effectiveAlignment
+    ? resolveTextAlign(direction, effectiveAlignment)
     : requestedPhysicalAlignment ?? resolveTextAlign(direction, "start");
+  const textAlign = resolvePlatformTextAlign(
+    Platform.OS,
+    direction,
+    desiredPhysicalAlignment,
+  );
   const directionStyle = {
     direction,
     textAlign,
+    // Android can clip Kurdish/Arabic glyph ascenders when a compact tile
+    // disables native font padding. Keep it on for RTL lesson content.
+    ...(Platform.OS === "android" && direction === "rtl" ? { includeFontPadding: true } : null),
     ...(Platform.OS === "ios" ? { writingDirection: direction } : null),
   } as const;
 

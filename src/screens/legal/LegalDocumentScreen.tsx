@@ -1,4 +1,5 @@
 import { AppText } from "../../components/ui/AppText";
+import { IOSPressable as Pressable } from "../../components/ui/ios-pressable";
 import type { LegalDocId } from "../../content/legal";
 import { getLegalDocument } from "../../content/legal";
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "../../constants/app-meta";
@@ -9,7 +10,6 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import React from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,

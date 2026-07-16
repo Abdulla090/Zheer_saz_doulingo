@@ -44,6 +44,7 @@ import {
   GameHeader,
   GameRoot,
 } from "./GameAnimatedShell";
+import { measureGameElement } from "./game-layout-measure";
 
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
@@ -67,32 +68,6 @@ type Props = {
   question: SentenceBuilderQuestion;
   onAnswer: (correct: boolean | "skip", explanation?: string) => void;
   pathMode?: LessonPathMode;
-};
-
-const getWebCoords = (el: any) => {
-  if (!el) return null;
-  if (Platform.OS !== "web") return null;
-  try {
-    let node = el;
-    if (typeof node.getBoundingClientRect === "function") {
-      const r = node.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
-    }
-    if (node._component && typeof node._component.getBoundingClientRect === "function") {
-      const r = node._component.getBoundingClientRect();
-      return { x: r.left, y: r.top, w: r.width, h: r.height };
-    }
-    if (typeof node.getHostNode === "function") {
-      const host = node.getHostNode();
-      if (host && typeof host.getBoundingClientRect === "function") {
-        const r = host.getBoundingClientRect();
-        return { x: r.left, y: r.top, w: r.width, h: r.height };
-      }
-    }
-  } catch (err) {
-    console.error("Error measuring web coords:", err);
-  }
-  return null;
 };
 
 function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; languageCode?: string }) {
@@ -164,6 +139,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const slotN = useRef(0);
   const completedRef = useRef(false);
   const wrongSentRef = useRef(false);
+  const measuringBankRef = useRef<number | null>(null);
   
   const rootRef = useRef<RNView>(null);
   const bankRefs = useRef<(RNView | null)[]>([]);
@@ -188,6 +164,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     slotN.current = 0;
     completedRef.current = false;
     wrongSentRef.current = false;
+    measuringBankRef.current = null;
     bankCoords.current = {};
     slotCoords.current = {};
   }, [shuffledWordBank]);
@@ -219,26 +196,28 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   );
 
   const startFlyToSlot = useCallback(
-    (bankIndex: number) => {
+    async (bankIndex: number) => {
       if (fb === "correct") return;
       if (usedBank[bankIndex]) return;
+      if (flySessions.length > 0 || measuringBankRef.current !== null) return;
       
-      const slotIndex = sentence.length + flySessions.length;
+      const slotIndex = sentence.length;
       if (slotIndex >= slotCount) return;
 
       const word = shuffledWordBank[bankIndex];
-      let root = rootCoords.current;
-      let bank = bankCoords.current[bankIndex];
-      let slot = slotCoords.current[slotIndex];
+      measuringBankRef.current = bankIndex;
+      const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
+        measureGameElement(rootRef.current),
+        measureGameElement(bankRefs.current[bankIndex]),
+        measureGameElement(slotRefs.current[slotIndex]),
+      ]);
 
-      if (Platform.OS === 'web') {
-        const webRoot = getWebCoords(rootRef.current);
-        const webBank = getWebCoords(bankRefs.current[bankIndex]);
-        const webSlot = getWebCoords(slotRefs.current[slotIndex]);
-        if (webRoot) root = webRoot;
-        if (webBank) bank = webBank;
-        if (webSlot) slot = webSlot;
-      }
+      if (measuringBankRef.current !== bankIndex) return;
+
+      const root = measuredRoot ?? rootCoords.current;
+      const bank = measuredBank ?? bankCoords.current[bankIndex];
+      const slot = measuredSlot ?? slotCoords.current[slotIndex];
+      measuringBankRef.current = null;
 
       // If coordinates are not cached yet, fallback to synchronous add
       if (!root || !bank || !slot) {
@@ -278,7 +257,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     if (Platform.OS !== "web") {
       void Haptics.selectionAsync();
     }
-    startFlyToSlot(bankIndex);
+    void startFlyToSlot(bankIndex);
   };
 
   const removeFromSlot = (index: number) => {

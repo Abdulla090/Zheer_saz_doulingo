@@ -7,12 +7,20 @@
 import { AppText } from "../../components/ui/AppText";
 import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
 import { tabBarScrollPadding } from "../../constants/layout";
-import type { LessonListItem, SectionDataItem, SectionTheme } from "../../data/list-items";
+import type {
+  LessonListItem,
+  SectionDataItem,
+  SectionTheme,
+} from "../../data/list-items";
 import { getUnitsForPath } from "../../data/content-access";
 import { resolveLessonStatus, type LessonType } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
+import { usePathLessonSelection } from "../../hooks/use-path-lesson-selection";
 import { useCurrentProgress } from "../../stores/useProgressStore";
-import { getSkippedUnitsCount, normalSectionConfigs } from "../../data/normal-english";
+import {
+  getSkippedUnitsCount,
+  normalSectionConfigs,
+} from "../../data/normal-english";
 import { ListFooter } from "./components/list-footer";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
@@ -25,7 +33,13 @@ import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { ltrText, rtlText } from "../lesson/games/game-text";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { PressableScale } from "../../components/animations/PressableScale";
-import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -40,6 +54,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
+import { PathStatsBar } from "./components/path-stats-bar";
+import { PathLessonPopup } from "./components/path-lesson-popup";
 import { useThemeColors } from "../../hooks/useThemeColors";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
@@ -76,6 +92,7 @@ export function NormalEnglishPathScreen({
   const { locale, isKu } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
+  const overlayRootRef = useRef<View>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
@@ -88,22 +105,27 @@ export function NormalEnglishPathScreen({
   const { normalNextLessonPathIndex } = useCurrentProgress();
   const englishLevel = useSettingsStore((s) => s.englishLevel);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
-  const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
-    "blue",
-  );
+  const [activeSectionTheme, setActiveSectionTheme] =
+    useState<SectionTheme>("blue");
 
   const localizedSections = useMemo(() => {
     const units = getUnitsForPath("normal");
     const skipCount = getSkippedUnitsCount(englishLevel || 5);
     const activeConfigs = normalSectionConfigs.slice(skipCount);
     let pathIndex = skipCount * 10;
-    
+
     const sections: SectionDataItem[] = units.map((unit, unitIndex) => {
-      const config = activeConfigs[unitIndex] || { theme: "blue", displayTheme: "blue" };
+      const config = activeConfigs[unitIndex] || {
+        theme: "blue",
+        displayTheme: "blue",
+      };
       const displayTheme = config.displayTheme;
-      
+
       const data: LessonListItem[] = unit.map((lesson, lessonIndex) => {
-        const itemStatus = resolveLessonStatus(pathIndex, normalNextLessonPathIndex, lessonIndex === 0);
+        const itemStatus = resolveLessonStatus(
+          pathIndex,
+          normalNextLessonPathIndex,
+        );
         const currentIndex = pathIndex++;
         return {
           id: `normal-level-${currentIndex}`,
@@ -135,13 +157,13 @@ export function NormalEnglishPathScreen({
   // Find the unit index of the user's active/current lesson
   const currentUnitIndex = useMemo(() => {
     const idx = localizedSections.findIndex((section) =>
-      section.data.some((item) => item.isCurrent)
+      section.data.some((item) => item.isCurrent),
     );
     return idx !== -1 ? idx : 0;
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
+    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2)),
   );
 
   // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
@@ -149,22 +171,26 @@ export function NormalEnglishPathScreen({
     setVisibleUnitsCount((prev) =>
       Math.max(
         prev,
-        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
-      )
+        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2)),
+      ),
     );
   }, [localizedSections.length, currentUnitIndex]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),
-    [localizedSections, visibleUnitsCount]
+    [localizedSections, visibleUnitsCount],
   );
 
   const hasMore = visibleUnitsCount < localizedSections.length;
+  const { selectedLesson, selectLesson, dismissLesson } =
+    usePathLessonSelection(listRef, visibleSections, overlayRootRef);
 
   const renderFooter = useCallback(() => {
     if (!hasMore) return <ListFooter />;
     return (
-      <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+      <View
+        style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}
+      >
         <PressableScale
           style={{
             paddingVertical: 14,
@@ -212,7 +238,9 @@ export function NormalEnglishPathScreen({
       orange: { rim: "#E65100", face: "#FF9800" },
       red: { rim: "#B71C1C", face: "#F44336" },
     };
-    return lightColorSets[activeSectionTheme] ?? { rim: "#0277BD", face: "#039BE5" };
+    return (
+      lightColorSets[activeSectionTheme] ?? { rim: "#0277BD", face: "#039BE5" }
+    );
   }, [isDark, activeSectionTheme]);
 
   const recalcMaxScroll = useCallback(() => {
@@ -238,18 +266,31 @@ export function NormalEnglishPathScreen({
     [recalcMaxScroll],
   );
 
-  const onScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollYRef.current = e.nativeEvent.contentOffset.y;
-    },
-    [],
-  );
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollYRef.current = e.nativeEvent.contentOffset.y;
+  }, []);
 
   const renderItem = useCallback(
-    ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
-      <ListItem item={item} screenWidth={windowWidth} pathMode="normal" />
+    ({
+      item,
+      section,
+    }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
+      <ListItem
+        item={item}
+        screenWidth={windowWidth}
+        unitLessonCount={section.data.length}
+        pathMode="normal"
+        isActiveLesson={item.pathIndex === normalNextLessonPathIndex}
+        isSelected={selectedLesson?.item.id === item.id}
+        onSelect={(node) => selectLesson(item, section.title, node)}
+      />
     ),
-    [windowWidth],
+    [
+      normalNextLessonPathIndex,
+      selectLesson,
+      selectedLesson?.item.id,
+      windowWidth,
+    ],
   );
 
   const renderSectionHeader = useCallback(
@@ -275,7 +316,11 @@ export function NormalEnglishPathScreen({
   }).current;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      ref={overlayRootRef}
+      style={{ flex: 1, backgroundColor: colors.background }}
+      onTouchStart={dismissLesson}
+    >
       {!isDark && <HomeMeshBackground />}
       <View
         style={[
@@ -285,6 +330,7 @@ export function NormalEnglishPathScreen({
           },
         ]}
       >
+        <PathStatsBar pathMode="normal" />
         <HomeMainButton
           unitLabel={activeSectionDisplay.unitLabel}
           sectionTitle={activeSectionDisplay.sectionTitle}
@@ -304,6 +350,8 @@ export function NormalEnglishPathScreen({
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
+          onScrollBeginDrag={dismissLesson}
+          onTouchMove={dismissLesson}
           scrollEventThrottle={16}
           style={darkStyles.list}
           contentContainerStyle={[
@@ -320,6 +368,11 @@ export function NormalEnglishPathScreen({
           onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>
+      <PathLessonPopup
+        selection={selectedLesson}
+        pathMode="normal"
+        onDismiss={dismissLesson}
+      />
     </View>
   );
 }
@@ -327,7 +380,7 @@ export function NormalEnglishPathScreen({
 const darkStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
   list: { flex: 1, backgroundColor: "transparent" },
-  listContent: { backgroundColor: "transparent", paddingTop: 24 },
+  listContent: { backgroundColor: "transparent", paddingTop: 8 },
   sectionHeader: {
     height: 56,
     flexDirection: "row",

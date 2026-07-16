@@ -1,6 +1,7 @@
 import { captureError } from "../lib/sentry";
+import { IOSPressable as Pressable } from "./ui/ios-pressable";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = { children: ReactNode };

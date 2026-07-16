@@ -9,7 +9,6 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
-  TouchableOpacity,
   I18nManager,
 } from "react-native";
 import Animated, {
@@ -22,9 +21,11 @@ import Animated, {
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { OnboardingSlide, type OnboardingSlideModel } from "./components/OnboardingSlide";
+import { OnboardingPetPicker } from "./components/OnboardingPetPicker";
 import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { AppText } from "../../components/ui/AppText";
+import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { useThemeColors } from "../../hooks/useThemeColors";
 
 /* Blue → Indigo order */
@@ -41,6 +42,7 @@ export function OnboardingFlow() {
 
   const [index, setIndex] = useState(0);
   const [showLangSelection, setShowLangSelection] = useState(false);
+  const [showPetSelection, setShowPetSelection] = useState(false);
 
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
@@ -97,6 +99,10 @@ export function OnboardingFlow() {
     setShowLangSelection(true);
   }, []);
 
+  const finishLanguageSelection = useCallback(() => {
+    setShowPetSelection(true);
+  }, []);
+
   const finishAll = useCallback(() => {
     setPathMode(selectedPath);
     if (Platform.OS !== "web") {
@@ -151,10 +157,18 @@ export function OnboardingFlow() {
     return <View style={styles.root} />;
   }
 
+  if (showPetSelection) {
+    return (
+      <Animated.View style={[styles.root, animatedRootStyle]}>
+        <OnboardingPetPicker onFinish={finishAll} />
+      </Animated.View>
+    );
+  }
+
   if (showLangSelection) {
     return (
       <View style={{ flex: 1 }}>
-        <LanguageSelectionFlow onFinish={finishAll} />
+        <LanguageSelectionFlow onFinish={finishLanguageSelection} />
       </View>
     );
   }

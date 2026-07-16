@@ -1,4 +1,4 @@
-import { Icon3DLock } from "../../../components/icons/Icon3D";
+import { AppLockIcon } from "../../../components/icons/AppHugeIcons";
 import { StyleSheet, View } from "react-native";
 import { AppText } from "../../../components/ui/AppText";
 import { useI18n } from "../../../hooks/useI18n";
@@ -10,7 +10,7 @@ export const ListFooter = () => {
 
   return (
     <View style={s.wrap}>
-      <Icon3DLock size={24} />
+      <AppLockIcon size={24} filled />
       <AppText
         style={s.title}
         forceKurdishFont={isKu}

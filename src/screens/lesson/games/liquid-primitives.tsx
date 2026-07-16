@@ -41,7 +41,15 @@ import Animated, {
 
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { CheckmarkBadge01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { resolvePlatformTextAlign } from "../../../i18n/direction";
 import { crossShadow } from "../../../utils/shadows";
+import {
+  CSS_PRESS_MS,
+  IOS_BUTTON_PRESS_OPACITY,
+  IOS_BUTTON_PRESS_SCALE,
+  IOS_BUTTON_PRESS_Y,
+  IOS_BUTTON_RELEASE_SPRING,
+} from "../../../components/animations/motion";
 import { Glass, Motion, Radius, Type, USE_GAME_BLUR, iOS } from "./game-design";
 
 /* ════════════════════════════════════════════════════════════════════
@@ -482,8 +490,14 @@ export function LiquidPrimaryButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
 
   return (
@@ -496,10 +510,15 @@ export function LiquidPrimaryButton({
         }}
         disabled={disabled}
         onPressIn={() => {
-          if (!disabled) scale.value = withSpring(0.96, Motion.soft);
+          if (disabled) return;
+          scale.value = withTiming(IOS_BUTTON_PRESS_SCALE, { duration: CSS_PRESS_MS });
+          opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+          translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, Motion.soft);
+          scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
         }}
         style={[
           lpb.btn,
@@ -579,7 +598,15 @@ export function LiquidGhostButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
 
   return (
     <Animated.View style={[{ width: "100%" }, animStyle, style]}>
@@ -588,8 +615,16 @@ export function LiquidGhostButton({
           if (Platform.OS !== "web") void Haptics.selectionAsync().catch(() => {});
           onPress();
         }}
-        onPressIn={() => { scale.value = withSpring(0.96, Motion.soft); }}
-        onPressOut={() => { scale.value = withSpring(1, Motion.soft); }}
+        onPressIn={() => {
+          scale.value = withTiming(IOS_BUTTON_PRESS_SCALE, { duration: CSS_PRESS_MS });
+          opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+          translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+          translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
+        }}
         style={[
           lgb.btn,
           {
@@ -734,7 +769,18 @@ export function LiquidWordChip({
         onPressOut={() => { scale.value = withSpring(1, Motion.soft); }}
         style={lwc.pressable}
       >
-        <Animated.Text style={[lwc.label, { fontSize }, rtl && { writingDirection: "rtl", textAlign: "right" }, textColorStyle]}>
+        <Animated.Text
+          style={[
+            lwc.label,
+            { fontSize },
+            rtl && {
+              direction: "rtl",
+              writingDirection: "rtl",
+              textAlign: resolvePlatformTextAlign(Platform.OS, "rtl", "right"),
+            },
+            textColorStyle,
+          ]}
+        >
           {label}
         </Animated.Text>
       </Pressable>

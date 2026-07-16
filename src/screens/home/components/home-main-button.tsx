@@ -1,13 +1,14 @@
 /* eslint-disable */
 import { NoteBook } from "../../../constants/icons";
 import { AppText } from "../../../components/ui/AppText";
+import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { ltrText, rtlText } from "../../lesson/games/game-text";
 import { hapticSelection } from "../../../utils/haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 
 type HomeMainButtonProps = {
   unitLabel: string;
@@ -38,12 +39,10 @@ function GuidebookBtn({
       accessibilityRole="button"
       accessibilityLabel={label}
       android_ripple={{ color: "rgba(255,255,255,0.22)", borderless: false }}
-      style={({ pressed }) => ({
+      style={{
         flexShrink: 0,
         alignSelf: "center",
-        opacity: pressed ? 0.9 : 1,
-        transform: [{ scale: pressed ? 0.97 : 1 }],
-      })}
+      }}
     >
       <View
         style={{
@@ -93,7 +92,7 @@ export const HomeMainButton = React.memo(({
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { t, isKu } = useI18n();
-  const barWidth = Math.min(width - 48, 320);
+  const barWidth = Math.min(width - 32, 640);
   const guidebookCompact = width < 360;
   const direction = isKu ? rtlText : ltrText;
 
@@ -106,19 +105,27 @@ export const HomeMainButton = React.memo(({
   }, [pathMode, router, unitIndex]);
 
   return (
-    <View style={{ alignSelf: "center", marginTop: 2, marginBottom: 10, width: barWidth }}>
+    <View style={{ alignSelf: "center", marginTop: 0, marginBottom: 0, width: barWidth }}>
       <View
         style={{
-          borderRadius: 24,
+          borderRadius: 22,
+          borderCurve: "continuous",
           backgroundColor: faceColor,
+          borderTopWidth: 1,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderColor: "rgba(255,255,255,0.22)",
+          borderBottomWidth: 6,
+          borderBottomColor: rimColor,
           flexDirection: isKu ? "row-reverse" : "row",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "nowrap",
           gap: 12,
-          paddingHorizontal: 14,
-          paddingVertical: 14,
-          minHeight: 76,
+          paddingHorizontal: 18,
+          paddingTop: 16,
+          paddingBottom: 14,
+          minHeight: 92,
         }}
       >
         <View
@@ -134,19 +141,16 @@ export const HomeMainButton = React.memo(({
           <View
             style={{
               alignSelf: isKu ? "flex-end" : "flex-start",
-              backgroundColor: "rgba(255,255,255,0.2)",
-              paddingHorizontal: 10,
-              paddingVertical: 3,
-              borderRadius: 10,
-              marginBottom: 2,
+              paddingVertical: 2,
+              marginBottom: 3,
             }}
           >
             <AppText
               style={{
                 color: "rgba(255,255,255,0.95)",
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: "800",
-                letterSpacing: 0.8,
+                letterSpacing: 1.1,
                 textTransform: "uppercase",
                 ...direction,
               }}
@@ -160,9 +164,9 @@ export const HomeMainButton = React.memo(({
           <AppText
             style={{
               color: "#FFFFFF",
-              fontSize: 17,
+              fontSize: 19,
               fontWeight: "800",
-              lineHeight: 22,
+              lineHeight: 24,
               width: "100%",
               ...direction,
             }}

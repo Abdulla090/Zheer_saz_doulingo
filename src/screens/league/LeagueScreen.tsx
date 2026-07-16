@@ -10,7 +10,7 @@ import {
   LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
-import { Icon3DClock } from "../../components/icons/Icon3D";
+import { AppClockIcon } from "../../components/icons/AppHugeIcons";
 import { StyleSheet, View } from "react-native";
 import { AppText } from "../../components/ui/AppText";
 import { useI18n } from "../../hooks/useI18n";
@@ -139,7 +139,7 @@ export const LeagueScreen = () => {
             {t("league.title")}
           </AppText>
           <View style={[styles.timeRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <Icon3DClock size={16} />
+            <AppClockIcon size={16} />
             <AppText style={styles.timeText} forceKurdishFont={isKu}>
               {t("league.daysLeft").replace("{count}", "5")}
             </AppText>

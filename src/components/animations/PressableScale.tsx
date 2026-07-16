@@ -7,12 +7,20 @@ import React from "react";
 import { Pressable, StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { hapticImpact } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import { CSS_PRESS_MS, CSS_RELEASE_MS } from "./motion";
+import {
+  CSS_PRESS_MS,
+  IOS_BUTTON_PRESS_OPACITY,
+  IOS_BUTTON_PRESS_SCALE,
+  IOS_BUTTON_PRESS_Y,
+  IOS_BUTTON_RELEASE_SPRING,
+} from "./motion";
 
 export type PressableScaleProps = {
   children: React.ReactNode;
@@ -65,7 +73,7 @@ export function PressableScale({
   onPress,
   onLongPress,
   style,
-  scaleDown = 0.96,
+  scaleDown = IOS_BUTTON_PRESS_SCALE,
   haptic = true,
   hapticStyle = Haptics.ImpactFeedbackStyle.Light,
   disabled = false,
@@ -75,9 +83,16 @@ export function PressableScale({
   accessibilityLabel,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
 
   const layoutStyle = React.useMemo(() => extractLayoutStyles(style), [style]);
@@ -86,7 +101,7 @@ export function PressableScale({
     <Animated.View
       style={[
         glass ? undefined : style,
-        { width: "100%" },
+        { width: "100%", borderCurve: "continuous" },
         animatedStyle,
       ]}
     >
@@ -106,10 +121,22 @@ export function PressableScale({
       accessibilityRole={accessibilityRole as any}
       accessibilityLabel={accessibilityLabel}
       onPressIn={() => {
+        if (reduceMotion) {
+          opacity.value = IOS_BUTTON_PRESS_OPACITY;
+          return;
+        }
         scale.value = withTiming(scaleDown, { duration: CSS_PRESS_MS });
+        opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+        translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
       }}
       onPressOut={() => {
-        scale.value = withTiming(1, { duration: CSS_RELEASE_MS });
+        if (reduceMotion) {
+          opacity.value = 1;
+          return;
+        }
+        scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+        opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+        translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
       }}
       onPress={() => {
         if (haptic) fireHaptic(hapticStyle);

@@ -1,6 +1,11 @@
 import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 import type { RealAnalysis } from "../data/voice-tutor-types";
+import {
+  DEFAULT_MASCOT_ID,
+  isMascotId,
+  type MascotId,
+} from "../constants/mascots";
 
 const STORAGE_KEY = "twino.app.settings";
 
@@ -20,6 +25,7 @@ interface SettingsState {
   englishLevel: number;
   tutorVoice: string;
   avatarUrl: string;
+  selectedMascotId: MascotId;
   isPremium: boolean;
   subscriptionTier: string | null;
   // ── Voice tutor state ──
@@ -38,6 +44,7 @@ interface SettingsState {
   setEnglishLevel: (level: number) => void;
   setTutorVoice: (voice: string) => void;
   setAvatarUrl: (url: string) => void;
+  setSelectedMascotId: (mascotId: MascotId) => void;
   setIsPremium: (isPremium: boolean) => void;
   setSubscriptionTier: (tier: string | null) => void;
   // ── Voice tutor setters ──
@@ -75,6 +82,7 @@ const initialSettings = (() => {
       englishLevel: 5,
       tutorVoice: "Aoede",
       avatarUrl: "",
+      selectedMascotId: DEFAULT_MASCOT_ID,
       isPremium: false,
       subscriptionTier: null,
       knownWords: [],
@@ -101,6 +109,9 @@ const initialSettings = (() => {
       englishLevel: typeof parsed.englishLevel === "number" ? parsed.englishLevel : 5,
       tutorVoice: typeof parsed.tutorVoice === "string" ? parsed.tutorVoice : "Aoede",
       avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : "",
+      selectedMascotId: isMascotId(parsed.selectedMascotId)
+        ? parsed.selectedMascotId
+        : DEFAULT_MASCOT_ID,
       isPremium: parsed.isPremium === true,
       subscriptionTier: typeof parsed.subscriptionTier === "string" ? parsed.subscriptionTier : null,
       knownWords: Array.isArray((parsed as any).knownWords) ? (parsed as any).knownWords : [],
@@ -121,6 +132,7 @@ const initialSettings = (() => {
       englishLevel: 5,
       tutorVoice: "Aoede",
       avatarUrl: "",
+      selectedMascotId: DEFAULT_MASCOT_ID,
       isPremium: false,
       subscriptionTier: null,
       knownWords: [],
@@ -188,6 +200,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAvatarUrl: (avatarUrl) => {
     set({ avatarUrl });
     persist({ avatarUrl });
+  },
+
+  setSelectedMascotId: (selectedMascotId) => {
+    set({ selectedMascotId });
+    persist({ selectedMascotId });
   },
 
   setIsPremium: (isPremium) => {

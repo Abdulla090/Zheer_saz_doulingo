@@ -407,7 +407,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           <AppText style={[s.targetLabel, { textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
 
           <View style={s.targetRow}>
-            <AppText languageCode={question.targetLanguage} align="center" fullWidth style={s.targetEn} latinRole="bold">
+            <AppText languageCode={question.targetLanguage} align="center" nativeAlign="start" fullWidth style={s.targetEn} latinRole="bold">
               {question.targetWord}
             </AppText>
             <SpringPressable

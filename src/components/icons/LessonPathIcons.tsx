@@ -13,6 +13,7 @@ import {
   Video01Icon,
 } from "@hugeicons/core-free-icons";
 import React from "react";
+import { StyleSheet, View } from "react-native";
 
 export type LessonPathIconType =
   | "practice"
@@ -30,30 +31,83 @@ type Props = {
   size?: number;
   /** Slightly bolder strokes for the active (current) lesson node */
   active?: boolean;
+  /** Fill closed Hugeicons shapes for a bolder, solid treatment. */
+  filled?: boolean;
+  /** Rounded duotone treatment: soft fill under a crisp primary stroke. */
+  duotone?: boolean;
 };
 
-export function LessonPathIcon({ type, color, size = 28, active = false }: Props) {
-  const strokeWidth = active ? 2.65 : 2.35;
-  const common = { color, size, strokeWidth };
+export function LessonPathIcon({
+  type,
+  color,
+  size = 28,
+  active = false,
+  filled = false,
+  duotone = true,
+}: Props) {
+  const strokeWidth = filled ? 2.75 : active ? 2.65 : 2.35;
+  let icon = SparklesIcon;
 
   switch (type) {
     case "practice":
-      return <HugeiconsIcon icon={SparklesIcon} {...common} />;
+      icon = SparklesIcon;
+      break;
     case "cup":
-      return <HugeiconsIcon icon={Trophy} {...common} />;
+      icon = Trophy;
+      break;
     case "video":
-      return <HugeiconsIcon icon={Video01Icon} {...common} />;
+      icon = Video01Icon;
+      break;
     case "reading":
-      return <HugeiconsIcon icon={BookOpen02Icon} {...common} />;
+      icon = BookOpen02Icon;
+      break;
     case "listening":
-      return <HugeiconsIcon icon={HeadphonesIcon} {...common} />;
+      icon = HeadphonesIcon;
+      break;
     case "game":
-      return <HugeiconsIcon icon={Gamepad2Icon} {...common} />;
+      icon = Gamepad2Icon;
+      break;
     case "speaking":
-      return <HugeiconsIcon icon={Mic01Icon} {...common} />;
+      icon = Mic01Icon;
+      break;
     case "conversation":
-      return <HugeiconsIcon icon={Message01Icon} {...common} />;
+      icon = Message01Icon;
+      break;
     default:
-      return <HugeiconsIcon icon={SparklesIcon} {...common} />;
+      icon = SparklesIcon;
   }
+
+  if (duotone) {
+    return (
+      <View style={{ width: size, height: size }}>
+        <HugeiconsIcon
+          icon={icon}
+          color={color}
+          fill={color}
+          opacity={0.22}
+          size={size}
+          strokeWidth={0}
+          style={StyleSheet.absoluteFill}
+        />
+        <HugeiconsIcon
+          icon={icon}
+          color={color}
+          fill="none"
+          size={size}
+          strokeWidth={active ? 2.65 : 2.35}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <HugeiconsIcon
+      icon={icon}
+      color={color}
+      fill={filled ? color : "none"}
+      size={size}
+      strokeWidth={strokeWidth}
+    />
+  );
 }

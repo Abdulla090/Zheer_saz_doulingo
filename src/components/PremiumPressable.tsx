@@ -1,5 +1,4 @@
 import { LiquidGlassSurface } from "./LiquidGlassSurface";
-import { Motion } from "../screens/lesson/games/game-design";
 import React from "react";
 import {
   Platform,
@@ -10,9 +9,18 @@ import {
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
+import {
+  CSS_PRESS_MS,
+  IOS_BUTTON_PRESS_OPACITY,
+  IOS_BUTTON_PRESS_SCALE,
+  IOS_BUTTON_PRESS_Y,
+  IOS_BUTTON_RELEASE_SPRING,
+} from "./animations/motion";
 
 type Props = PressableProps & {
   children: React.ReactNode;
@@ -58,7 +66,7 @@ export function PremiumPressable({
   children,
   style,
   containerStyle,
-  pressScale = 0.96,
+  pressScale = IOS_BUTTON_PRESS_SCALE,
   glass = false,
   glassRadius = 14,
   disableSystemHighlight = true,
@@ -69,10 +77,37 @@ export function PremiumPressable({
   ...rest
 }: Props) {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
   }));
+
+  const pressIn = () => {
+    if (reduceMotion) {
+      opacity.value = IOS_BUTTON_PRESS_OPACITY;
+      return;
+    }
+    scale.value = withTiming(pressScale, { duration: CSS_PRESS_MS });
+    opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
+    translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
+  };
+
+  const pressOut = () => {
+    if (reduceMotion) {
+      opacity.value = 1;
+      return;
+    }
+    scale.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+    opacity.value = withSpring(1, IOS_BUTTON_RELEASE_SPRING);
+    translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
+  };
 
   const body = glass ? (
     <LiquidGlassSurface borderRadius={glassRadius} style={style}>
@@ -81,11 +116,11 @@ export function PremiumPressable({
         {...(disableSystemHighlight ? noSystemHighlightProps : undefined)}
         onLongPress={onLongPress}
         onPressIn={(e) => {
-          scale.value = withSpring(pressScale, Motion.soft);
+          pressIn();
           onPressIn?.(e);
         }}
         onPressOut={(e) => {
-          scale.value = withSpring(1, Motion.soft);
+          pressOut();
           onPressOut?.(e);
         }}
         android_ripple={
@@ -107,11 +142,11 @@ export function PremiumPressable({
       {...(disableSystemHighlight ? noSystemHighlightProps : undefined)}
       onLongPress={onLongPress}
       onPressIn={(e) => {
-        scale.value = withSpring(pressScale, Motion.soft);
+        pressIn();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        scale.value = withSpring(1, Motion.soft);
+        pressOut();
         onPressOut?.(e);
       }}
       android_ripple={
@@ -126,7 +161,13 @@ export function PremiumPressable({
   );
 
   return (
-    <Animated.View style={[containerStyle, animStyle, { alignSelf: 'stretch' }]}>
+    <Animated.View
+      style={[
+        containerStyle,
+        animStyle,
+        { alignSelf: "stretch", borderCurve: "continuous" },
+      ]}
+    >
       {body}
     </Animated.View>
   );

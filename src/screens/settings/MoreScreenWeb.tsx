@@ -4,7 +4,7 @@ import { FlashList } from "@shopify/flash-list";
 import { PressableScale } from "../../components/animations";
 import { useFontStore } from "../../stores/useFontStore";
 import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
-import { Icon3DSettings, Icon3DChevronRight, Icon3DCheckCircle } from "../../components/icons/Icon3D";
+import { AppCheckCircleIcon, AppChevronRightIcon, AppSettingsIcon } from "../../components/icons/AppHugeIcons";
 import { AppText } from "../../components/ui/AppText";
 
 export default function MoreScreenWeb() {
@@ -23,7 +23,7 @@ export default function MoreScreenWeb() {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-          <Icon3DSettings size={28} />
+          <AppSettingsIcon size={28} />
           <AppText className="font-rd-bold" style={{ fontSize: 24, color: "#4B4B4B" }}>
             ڕێکخستنەکان (Settings)
           </AppText>
@@ -57,7 +57,7 @@ export default function MoreScreenWeb() {
           >
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               {selectedFont === item ? (
-                <Icon3DCheckCircle size={24} />
+                <AppCheckCircleIcon size={24} />
               ) : (
                 <View
                   style={{
@@ -81,7 +81,7 @@ export default function MoreScreenWeb() {
                 فێربوونی زمان - {item.replace("Rabar_", "فۆنتی ")}
               </AppText>
             </View>
-            <Icon3DChevronRight size={22} />
+            <AppChevronRightIcon size={22} />
           </PressableScale>
         )}
       />

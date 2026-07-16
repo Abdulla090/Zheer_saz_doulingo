@@ -30,23 +30,23 @@ import type { UnitBank } from "../types";
 
 export const NORMAL_UNITS: UnitBank[] = [
   unit0BasicGreetingsAndIntroductions, // Unit 1 (A1)
-  unit0bElementarySituations,         // Unit 2 (A1-A2)
-  unit11MoneyShopping,                // Unit 3 (A2)
-  unit14FoodDiningStorytelling,       // Unit 4 (A2)
-  unit1EverydayEssentials,            // Unit 5 (A2-B1)
-  unit2SocialAndDailyLife,            // Unit 6 (B1)
-  unit8DigitalLife,                   // Unit 7 (B1)
-  unit9Relationships,                 // Unit 8 (B1)
-  unit6TravelAndExploring,            // Unit 9 (B1-B2)
-  unit10HealthEmergencies,            // Unit 10 (B1-B2)
-  unit15LogicPlansHypotheticals,      // Unit 11 (B2)
-  unit3WorkAndBusiness,               // Unit 12 (B2)
-  unit13OpinionsAndConfidence,        // Unit 13 (B2-C1)
-  unit16ScienceMediaModernIssues,     // Unit 14 (B2-C1)
-  unit7IdiomsAndSlang,                // Unit 15 (C1)
-  unit4DeepConversations,             // Unit 16 (C1)
-  unit12RealWorldMastery,             // Unit 17 (C1-C2)
-  unit5SpecialEncounters,             // Unit 18 (C2)
+  unit0bElementarySituations, // Unit 2 (A1-A2)
+  unit11MoneyShopping, // Unit 3 (A2)
+  unit14FoodDiningStorytelling, // Unit 4 (A2)
+  unit1EverydayEssentials, // Unit 5 (A2-B1)
+  unit2SocialAndDailyLife, // Unit 6 (B1)
+  unit8DigitalLife, // Unit 7 (B1)
+  unit9Relationships, // Unit 8 (B1)
+  unit6TravelAndExploring, // Unit 9 (B1-B2)
+  unit10HealthEmergencies, // Unit 10 (B1-B2)
+  unit15LogicPlansHypotheticals, // Unit 11 (B2)
+  unit3WorkAndBusiness, // Unit 12 (B2)
+  unit13OpinionsAndConfidence, // Unit 13 (B2-C1)
+  unit16ScienceMediaModernIssues, // Unit 14 (B2-C1)
+  unit7IdiomsAndSlang, // Unit 15 (C1)
+  unit4DeepConversations, // Unit 16 (C1)
+  unit12RealWorldMastery, // Unit 17 (C1-C2)
+  unit5SpecialEncounters, // Unit 18 (C2)
 ];
 
 export const normalSectionConfigs: {
@@ -104,49 +104,44 @@ export function buildNormalSectionData(
 
   let normalPathIndex = skipCount * 10;
 
-  return activeUnits.map(
-    (unit, sectionIndex): SectionDataItem => {
-      const sourceUnitIndex = sectionIndex + skipCount;
-      const config =
-        normalSectionConfigs[sourceUnitIndex] ??
-        normalSectionConfigs[sectionIndex] ??
-        { theme: "blue" as SectionTheme, displayTheme: "blue" as SectionTheme };
-      const { theme, displayTheme } = config;
+  return activeUnits.map((unit, sectionIndex): SectionDataItem => {
+    const sourceUnitIndex = sectionIndex + skipCount;
+    const config = normalSectionConfigs[sourceUnitIndex] ??
+      normalSectionConfigs[sectionIndex] ?? {
+        theme: "blue" as SectionTheme,
+        displayTheme: "blue" as SectionTheme,
+      };
+    const { theme, displayTheme } = config;
 
-      const data: LessonListItem[] = unit.map((_, itemIndex) => {
-        const pathIndex = normalPathIndex++;
-        const lessonType = BASE_PATTERN[itemIndex % BASE_PATTERN.length];
-        const itemStatus = resolveLessonStatus(
-          pathIndex,
-          nextLessonPathIndex,
-          itemIndex === 0,
-        );
-
-        return {
-          id: `ne-level-${pathIndex}`,
-          pathIndex,
-          globalIndex: pathIndex,
-          sectionItemIndex: itemIndex,
-          type: lessonType,
-          sectionTheme: theme,
-          displayTheme,
-          status: itemStatus,
-          isCurrent: itemStatus === "current",
-          progressSegments: itemStatus === "current" ? 2 : 0,
-          lessonId: sectionIndex,
-          displayUnitNumber: sourceUnitIndex + 1,
-        };
-      });
+    const data: LessonListItem[] = unit.map((_, itemIndex) => {
+      const pathIndex = normalPathIndex++;
+      const lessonType = BASE_PATTERN[itemIndex % BASE_PATTERN.length];
+      const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
 
       return {
-        unitIndex: sourceUnitIndex,
-        title: "",
-        theme,
+        id: `ne-level-${pathIndex}`,
+        pathIndex,
+        globalIndex: pathIndex,
+        sectionItemIndex: itemIndex,
+        type: lessonType,
+        sectionTheme: theme,
         displayTheme,
-        data,
+        status: itemStatus,
+        isCurrent: itemStatus === "current",
+        progressSegments: itemStatus === "current" ? 2 : 0,
+        lessonId: sectionIndex,
+        displayUnitNumber: sourceUnitIndex + 1,
       };
-    },
-  );
+    });
+
+    return {
+      unitIndex: sourceUnitIndex,
+      title: "",
+      theme,
+      displayTheme,
+      data,
+    };
+  });
 }
 
 /** @deprecated Use buildNormalSectionData(index) */

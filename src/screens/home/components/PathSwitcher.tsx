@@ -3,11 +3,12 @@
  */
 
 import {
-  Icon3DLayers,
-  Icon3DStar,
-  Icon3DZapBlue,
-} from "../../../components/icons/Icon3D";
+  AppLayersIcon,
+  AppStarIcon,
+  AppZapIcon,
+} from "../../../components/icons/AppHugeIcons";
 import { LiquidGlassSurface } from "../../../components/LiquidGlassSurface";
+import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useI18n } from "../../../hooks/useI18n";
 import { useContentPackStore } from "../../../stores/useContentPackStore";
@@ -16,7 +17,6 @@ import { crossShadow } from "../../../utils/shadows";
 import React, { useCallback, useEffect, useRef, useMemo } from "react";
 import {
   LayoutChangeEvent,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -43,19 +43,19 @@ const TABS: TabDef[] = [
     key: "street",
     label: "Street",
     activeColor: "#1CB0F6",
-    icon: (active) => <Icon3DZapBlue size={16} active={active} />,
+    icon: (active) => <AppZapIcon size={16} active={active} filled />,
   },
   {
     key: "normal",
     label: "Normal",
     activeColor: "#7C3AED",
-    icon: (active) => <Icon3DLayers size={16} active={active} />,
+    icon: (active) => <AppLayersIcon size={16} active={active} filled />,
   },
   {
     key: "kids",
     label: "Kids",
     activeColor: "#FF9600",
-    icon: (active) => <Icon3DStar size={16} active={active} />,
+    icon: (active) => <AppStarIcon size={16} active={active} filled />,
   },
 ];
 

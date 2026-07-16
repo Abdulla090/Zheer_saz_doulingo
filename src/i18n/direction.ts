@@ -3,6 +3,7 @@ import { LANGUAGES } from "../config/languages";
 export type Direction = "ltr" | "rtl";
 export type LogicalAlignment = "start" | "end" | "center";
 export type PhysicalTextAlign = "left" | "right" | "center";
+export type DirectionPlatform = "android" | "ios" | "web" | string;
 
 const RTL_SCRIPTS = new Set(["arab", "hebr", "syrc", "thaa", "nkoo", "adlm"]);
 const LTR_SCRIPTS = new Set(["latn", "cyrl", "grek"]);
@@ -66,6 +67,39 @@ export function resolveTextAlign(
   if (alignment === "center") return "center";
   if (alignment === "start") return direction === "rtl" ? "right" : "left";
   return direction === "rtl" ? "left" : "right";
+}
+
+/**
+ * Encode a desired physical edge for React Native's platform text engines.
+ *
+ * Android and iOS both swap explicit left/right paragraph alignment when the
+ * same text node also has RTL layout direction. Web does not. Compensating at
+ * this boundary keeps `start` physically right for Kurdish/Arabic while
+ * leaving every LTR alignment unchanged.
+ */
+export function resolvePlatformTextAlign(
+  platform: DirectionPlatform,
+  direction: Direction,
+  physicalAlignment: PhysicalTextAlign,
+): PhysicalTextAlign {
+  if (platform === "web" || direction === "ltr" || physicalAlignment === "center") {
+    return physicalAlignment;
+  }
+
+  return physicalAlignment === "right" ? "left" : "right";
+}
+
+/**
+ * Keep an established web alignment while allowing native lesson content to
+ * opt into an explicit logical edge. Native text otherwise inherits the app's
+ * global RTL paragraph context even when its own content language is LTR.
+ */
+export function resolvePlatformAlignment(
+  platform: DirectionPlatform,
+  alignment?: LogicalAlignment,
+  nativeAlignment?: LogicalAlignment,
+): LogicalAlignment | undefined {
+  return platform === "web" ? alignment : nativeAlignment ?? alignment;
 }
 
 export function resolveFlexDirection(

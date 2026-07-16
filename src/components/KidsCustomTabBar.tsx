@@ -1,4 +1,4 @@
-import { Icon3DGradCap, Icon3DBook, Icon3DSettings } from "./icons/Icon3D";
+import { AppBookIcon, AppGraduationIcon, AppSettingsIcon } from "./icons/AppHugeIcons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
@@ -35,13 +35,13 @@ function TabBarButton({ routeName, isFocused, onPress }: TabBarButtonProps) {
     const size = 38;
     switch (routeName) {
       case "index":
-        return <Icon3DGradCap size={size} />;
+        return <AppGraduationIcon size={size} />;
       case "classic-path":
-        return <Icon3DBook size={size} />;
+        return <AppBookIcon size={size} />;
       case "profile":
-        return <Icon3DSettings size={size} />;
+        return <AppSettingsIcon size={size} />;
       default:
-        return <Icon3DGradCap size={size} />;
+        return <AppGraduationIcon size={size} />;
     }
   };
 

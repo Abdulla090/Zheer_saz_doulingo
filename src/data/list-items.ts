@@ -9,7 +9,8 @@ export type LessonType =
   | "conversation"
   | "cup";
 
-export type SectionTheme = "purple" | "green" | "blue" | "yellow" | "gray" | "orange" | "red" | "mint";
+export type SectionTheme =
+  "purple" | "green" | "blue" | "yellow" | "gray" | "orange" | "red" | "mint";
 
 export type LessonListItem = {
   id: string;
@@ -32,10 +33,10 @@ export type LessonStatus = "completed" | "current" | "locked";
 export function resolveLessonStatus(
   pathIndex: number,
   nextLessonPathIndex: number,
-  isFirstInUnit: boolean = false
 ): LessonStatus {
   if (pathIndex < nextLessonPathIndex) return "completed";
-  return "current"; // Make all future lessons current/unlocked so developer can test them all
+  if (pathIndex === nextLessonPathIndex) return "current";
+  return "locked";
 }
 
 export type SectionDataItem = {
@@ -79,7 +80,9 @@ export const sectionConfigs: {
 ];
 
 /** Build path sections from persisted progress (0 = first lesson is current). */
-export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[] {
+export function buildSectionData(
+  nextLessonPathIndex: number,
+): SectionDataItem[] {
   let streetPathIndex = 0;
 
   return sectionConfigs.map(
@@ -95,7 +98,7 @@ export function buildSectionData(nextLessonPathIndex: number): SectionDataItem[]
       const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
         const currentGlobalIndex = startGlobalIndex + itemIndex;
         const pathIndex = streetPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex, itemIndex === 0);
+        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
 
         return {
           id: `level-${currentGlobalIndex}`,

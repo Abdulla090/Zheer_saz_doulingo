@@ -8,7 +8,11 @@ import {
   type SectionTheme,
 } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
-import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
+import { usePathLessonSelection } from "../../hooks/use-path-lesson-selection";
+import {
+  useProgressStore,
+  useCurrentProgress,
+} from "../../stores/useProgressStore";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -36,6 +40,8 @@ import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
 import { ListItem } from "./components/list-item";
 import { ListSectionHeader } from "./components/list-section-header";
+import { PathStatsBar } from "./components/path-stats-bar";
+import { PathLessonPopup } from "./components/path-lesson-popup";
 
 import { useThemeColors } from "../../hooks/useThemeColors";
 
@@ -51,15 +57,15 @@ export const StreetEnglishPathScreen = ({
   const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
+  const overlayRootRef = useRef<View>(null);
   const scrollYRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportHeightRef = useRef(0);
   const maxScrollYRef = useRef(0);
   const nextLessonPathIndex = useCurrentProgress().nextLessonPathIndex;
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
-  const [activeSectionTheme, setActiveSectionTheme] = useState<SectionTheme>(
-    "green",
-  );
+  const [activeSectionTheme, setActiveSectionTheme] =
+    useState<SectionTheme>("green");
 
   const localizedSections = useMemo(
     () =>
@@ -74,13 +80,13 @@ export const StreetEnglishPathScreen = ({
   // Find the unit index of the user's active/current lesson
   const currentUnitIndex = useMemo(() => {
     const idx = localizedSections.findIndex((section) =>
-      section.data.some((item) => item.isCurrent)
+      section.data.some((item) => item.isCurrent),
     );
     return idx !== -1 ? idx : 0;
   }, [localizedSections]);
 
   const [visibleUnitsCount, setVisibleUnitsCount] = useState(() =>
-    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
+    Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2)),
   );
 
   // Sync visibleUnitsCount if user's currentUnitIndex advances or list expands
@@ -88,22 +94,26 @@ export const StreetEnglishPathScreen = ({
     setVisibleUnitsCount((prev) =>
       Math.max(
         prev,
-        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2))
-      )
+        Math.min(localizedSections.length, Math.max(currentUnitIndex + 2, 2)),
+      ),
     );
   }, [localizedSections.length, currentUnitIndex]);
 
   const visibleSections = useMemo(
     () => localizedSections.slice(0, visibleUnitsCount),
-    [localizedSections, visibleUnitsCount]
+    [localizedSections, visibleUnitsCount],
   );
 
   const hasMore = visibleUnitsCount < localizedSections.length;
+  const { selectedLesson, selectLesson, dismissLesson } =
+    usePathLessonSelection(listRef, visibleSections, overlayRootRef);
 
   const renderFooter = useCallback(() => {
     if (!hasMore) return <ListFooter />;
     return (
-      <View style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}>
+      <View
+        style={{ width: "100%", alignItems: "center", paddingVertical: 20 }}
+      >
         <PressableScale
           style={{
             paddingVertical: 14,
@@ -151,7 +161,9 @@ export const StreetEnglishPathScreen = ({
       orange: { rim: "#E65100", face: "#FF9800" },
       red: { rim: "#B71C1C", face: "#F44336" },
     };
-    return lightColorSets[activeSectionTheme] ?? { rim: "#0B8A6C", face: "#08c296" };
+    return (
+      lightColorSets[activeSectionTheme] ?? { rim: "#0B8A6C", face: "#08c296" }
+    );
   }, [isDark, activeSectionTheme]);
 
   const recalcMaxScroll = useCallback(() => {
@@ -185,10 +197,21 @@ export const StreetEnglishPathScreen = ({
   );
 
   const renderItem = useCallback(
-    ({ item }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
-      <ListItem item={item} screenWidth={windowWidth} pathMode="street" />
+    ({
+      item,
+      section,
+    }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
+      <ListItem
+        item={item}
+        screenWidth={windowWidth}
+        unitLessonCount={section.data.length}
+        pathMode="street"
+        isActiveLesson={item.pathIndex === nextLessonPathIndex}
+        isSelected={selectedLesson?.item.id === item.id}
+        onSelect={(node) => selectLesson(item, section.title, node)}
+      />
     ),
-    [windowWidth],
+    [nextLessonPathIndex, selectLesson, selectedLesson?.item.id, windowWidth],
   );
 
   const renderSectionHeader = useCallback(
@@ -220,7 +243,11 @@ export const StreetEnglishPathScreen = ({
   }).current;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View
+      ref={overlayRootRef}
+      style={{ flex: 1, backgroundColor: colors.background }}
+      onTouchStart={dismissLesson}
+    >
       {!isDark && <HomeMeshBackground />}
       <View
         style={{
@@ -228,6 +255,7 @@ export const StreetEnglishPathScreen = ({
           paddingTop: insets.top + topChromeHeight,
         }}
       >
+        <PathStatsBar pathMode="street" />
         <HomeMainButton
           unitLabel={activeSectionDisplay.unitLabel}
           sectionTitle={activeSectionDisplay.sectionTitle}
@@ -245,6 +273,8 @@ export const StreetEnglishPathScreen = ({
           onLayout={onListLayout}
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
+          onScrollBeginDrag={dismissLesson}
+          onTouchMove={dismissLesson}
           scrollEventThrottle={16}
           style={styles.list}
           ListFooterComponent={renderFooter}
@@ -262,6 +292,11 @@ export const StreetEnglishPathScreen = ({
           onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>
+      <PathLessonPopup
+        selection={selectedLesson}
+        pathMode="street"
+        onDismiss={dismissLesson}
+      />
     </View>
   );
 };
@@ -270,7 +305,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 10,
     backgroundColor: "transparent",
-    paddingTop: 24,
+    paddingTop: 8,
   },
   list: { flex: 1, width: "100%", backgroundColor: "transparent" },
 });

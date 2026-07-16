@@ -8,7 +8,7 @@ import {
     SettingsTuneIcon,
     WaveformIcon,
 } from "../../components/icons/TwinoHomeIcons";
-import { Icon3DLayers, Icon3DZapBlue } from "../../components/icons/Icon3D";
+import { AppLayersIcon, AppZapIcon } from "../../components/icons/AppHugeIcons";
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -227,14 +227,14 @@ export function TwinoHomeScreen({
       id: "street-path",
       title: streetAvailable ? "Street English" : "Street English",
       subtitle: streetAvailable ? "Daily path" : "Download to unlock",
-      Icon: ({ size }) => <Icon3DZapBlue size={size ?? 36} active />,
+      Icon: ({ size }) => <AppZapIcon size={size ?? 36} active />,
       onPress: () => router.push("/dashboard?mode=street"),
     },
     {
       id: "normal-path",
       title: "Normal English",
       subtitle: "Structured units",
-      Icon: ({ size }) => <Icon3DLayers size={size ?? 36} active />,
+      Icon: ({ size }) => <AppLayersIcon size={size ?? 36} active />,
       onPress: () => router.push("/dashboard?mode=normal"),
     },
     {

@@ -15,11 +15,19 @@ const LESSONS_PER_UNIT = 5;
 type Props = {
   item: LessonListItem;
   screenWidth: number;
+  unitLessonCount: number;
+  isActiveLesson?: boolean;
+  isSelected?: boolean;
+  onSelect?: (node: View | null) => void;
 };
 
 export const KidsPathListRow = React.memo(function KidsPathListRow({
   item,
   screenWidth,
+  unitLessonCount,
+  isActiveLesson = false,
+  isSelected = false,
+  onSelect,
 }: Props) {
   const showMascot = item.sectionItemIndex === KIDS_CURVE_MASCOT_ROW_INDEX;
   const unitBase = item.lessonId * LESSONS_PER_UNIT;
@@ -32,7 +40,7 @@ export const KidsPathListRow = React.memo(function KidsPathListRow({
     <View
       style={{
         width: "100%",
-        height: KIDS_ROW_HEIGHT,
+        minHeight: 108,
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -45,7 +53,15 @@ export const KidsPathListRow = React.memo(function KidsPathListRow({
           rowHeight={KIDS_ROW_HEIGHT}
         />
       ) : null}
-      <ListItem item={item} screenWidth={screenWidth} pathMode="kids" />
+      <ListItem
+        item={item}
+        screenWidth={screenWidth}
+        unitLessonCount={unitLessonCount}
+        pathMode="kids"
+        isActiveLesson={isActiveLesson}
+        isSelected={isSelected}
+        onSelect={onSelect}
+      />
     </View>
   );
 });

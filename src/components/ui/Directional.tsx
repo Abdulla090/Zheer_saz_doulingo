@@ -10,6 +10,7 @@ import {
 
 import {
   getLanguageDirection,
+  resolvePlatformTextAlign,
   resolveTextAlign,
   type LogicalAlignment,
 } from "../../i18n/direction";
@@ -64,6 +65,11 @@ export function DirectionalTextInput({
   ...props
 }: DirectionalTextInputProps) {
   const direction = getLanguageDirection(languageCode);
+  const textAlign = resolvePlatformTextAlign(
+    Platform.OS,
+    direction,
+    resolveTextAlign(direction, align),
+  );
   const webProps = Platform.OS === "web"
     ? ({ dir: direction, lang: languageCode } as Record<string, string>)
     : undefined;
@@ -78,7 +84,7 @@ export function DirectionalTextInput({
         fullWidth && { width: "100%", alignSelf: "stretch" },
         {
           direction,
-          textAlign: resolveTextAlign(direction, align),
+          textAlign,
           ...(Platform.OS === "ios" ? { writingDirection: direction } : null),
         },
       ])}

@@ -20,13 +20,13 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PressableScale } from "../../components/animations";
+import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import { PREMADE_AVATARS, getLocalPremadeAvatar } from "../../constants/avatars";

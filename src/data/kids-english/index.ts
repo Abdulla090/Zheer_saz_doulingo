@@ -6,8 +6,8 @@ import kidsUnit3DailyRoutines from "./unit-3-daily-routines";
 import kidsUnit4Food from "./unit-4-kids-food";
 import kidsUnit5Family from "./unit-5-kids-family";
 import {
+  resolveLessonStatus,
   type LessonListItem,
-  type LessonStatus,
   type LessonType,
   type SectionDataItem,
   type SectionTheme,
@@ -53,15 +53,6 @@ const KIDS_PATTERN: LessonType[] = [
   "gift",
 ];
 
-function resolveKidsLessonStatus(
-  pathIndex: number,
-  nextLessonPathIndex: number,
-  isFirstInUnit: boolean = false
-): LessonStatus {
-  // Make all dots active as requested by the user
-  return "completed";
-}
-
 /** Build kids-English path sections from persisted progress (0 = first lesson current). */
 export function buildKidsSectionData(
   nextLessonPathIndex: number,
@@ -72,29 +63,30 @@ export function buildKidsSectionData(
     ({ theme, displayTheme }, sectionIndex): SectionDataItem => {
       const startGlobalIndex = sectionIndex * KIDS_PATTERN.length;
 
-      const data: LessonListItem[] = KIDS_PATTERN.map((lessonType, itemIndex) => {
-        const currentGlobalIndex = startGlobalIndex + itemIndex;
-        const pathIndex = kidsPathIndex++;
-        const itemStatus = resolveKidsLessonStatus(
-          pathIndex,
-          nextLessonPathIndex,
-          itemIndex === 0
-        );
+      const data: LessonListItem[] = KIDS_PATTERN.map(
+        (lessonType, itemIndex) => {
+          const currentGlobalIndex = startGlobalIndex + itemIndex;
+          const pathIndex = kidsPathIndex++;
+          const itemStatus = resolveLessonStatus(
+            pathIndex,
+            nextLessonPathIndex,
+          );
 
-        return {
-          id: `kids-level-${currentGlobalIndex}`,
-          pathIndex,
-          globalIndex: currentGlobalIndex,
-          sectionItemIndex: itemIndex,
-          type: lessonType,
-          sectionTheme: theme,
-          displayTheme,
-          status: itemStatus,
-          isCurrent: itemStatus === "current",
-          progressSegments: itemStatus === "current" ? 2 : 0,
-          lessonId: sectionIndex,
-        };
-      });
+          return {
+            id: `kids-level-${currentGlobalIndex}`,
+            pathIndex,
+            globalIndex: currentGlobalIndex,
+            sectionItemIndex: itemIndex,
+            type: lessonType,
+            sectionTheme: theme,
+            displayTheme,
+            status: itemStatus,
+            isCurrent: itemStatus === "current",
+            progressSegments: itemStatus === "current" ? 2 : 0,
+            lessonId: sectionIndex,
+          };
+        },
+      );
 
       return { unitIndex: sectionIndex, title: "", theme, displayTheme, data };
     },

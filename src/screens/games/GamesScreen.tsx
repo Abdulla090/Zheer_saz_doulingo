@@ -3,7 +3,6 @@ import { crossShadow } from "../../utils/shadows";
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, View, ScrollView, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
@@ -15,10 +14,12 @@ import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 
 import { AppText } from "../../components/ui/AppText";
+import { getMascot, getMascotDisplayName } from "../../constants/mascots";
 import { Colors } from "../../constants/theme";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
 const GAMES = [
   {
@@ -82,11 +83,17 @@ function ProgressRing({
   level,
   label,
   compact,
+  languageCode,
+  foregroundColor,
+  trackColor,
 }: {
   progress: number;
   level: number;
   label: string;
   compact: boolean;
+  languageCode: string;
+  foregroundColor: string;
+  trackColor: string;
 }) {
   const size = compact ? 76 : 96;
   const center = size / 2;
@@ -103,7 +110,7 @@ function ProgressRing({
           cy={center}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.28)"
+          stroke={trackColor}
           strokeWidth={strokeWidth}
         />
         <Circle
@@ -111,7 +118,7 @@ function ProgressRing({
           cy={center}
           r={radius}
           fill="none"
-          stroke="#FFFFFF"
+          stroke={foregroundColor}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
@@ -119,8 +126,14 @@ function ProgressRing({
         />
       </Svg>
       <View style={styles.ringCopy}>
-        <AppText style={[styles.ringLabel, compact && styles.ringLabelCompact]} forceLatinFont latinRole="bold">{label}</AppText>
-        <AppText style={[styles.ringValue, compact && styles.ringValueCompact]} forceLatinFont latinRole="bold">{level}</AppText>
+        <AppText
+          style={[styles.ringLabel, compact && styles.ringLabelCompact, { color: foregroundColor }]}
+          languageCode={languageCode}
+          latinRole="bold"
+        >
+          {label}
+        </AppText>
+        <AppText style={[styles.ringValue, compact && styles.ringValueCompact, { color: foregroundColor }]} forceLatinFont latinRole="bold">{level}</AppText>
       </View>
     </View>
   );
@@ -133,8 +146,12 @@ export function GamesScreen() {
   const { t, locale, isKu } = useI18n();
   const { colors, isDark } = useThemeColors();
   const { streakDays, totalXp } = useProgressStore();
+  const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const isRtl = isKu || locale === "ar";
-  const compact = width < 430;
+  const compact = width < 600;
+  const selectedMascot = getMascot(selectedMascotId);
+  const selectedMascotName = getMascotDisplayName(selectedMascot, locale);
+  const progressPalette = selectedMascot.progressPalette;
 
   const level = Math.max(1, Math.floor((totalXp || 0) / 300) + 1);
   const levelXp = Math.max(0, (totalXp || 0) % 300);
@@ -168,28 +185,85 @@ export function GamesScreen() {
               </AppText>
             </View>
             <Image
-              source={require("../../../assets/images/mascots/mascot-02.webp")}
-              style={[stylesForScreen.heroMascot, isRtl && stylesForScreen.heroMascotRtl]}
+              source={selectedMascot.source}
+              accessibilityLabel={
+                locale === "ku"
+                  ? `ماسکۆتی ${selectedMascotName}`
+                  : `${selectedMascotName} mascot`
+              }
+              style={[
+                stylesForScreen.heroMascot,
+                selectedMascot.framed && stylesForScreen.heroMascotFramed,
+                isRtl && stylesForScreen.heroMascotRtl,
+              ]}
               contentFit="contain"
             />
           </View>
 
-          <LinearGradient
-            colors={["#7545E8", "#9A69F4"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[stylesForScreen.progressBanner, isRtl && stylesForScreen.rowReverse]}
+          <View
+            style={[
+              stylesForScreen.progressBanner,
+              {
+                backgroundColor: progressPalette.background,
+                ...crossShadow({
+                  color: progressPalette.shadow,
+                  offsetY: 10,
+                  blur: 22,
+                  opacity: 0.2,
+                }),
+              },
+              isRtl && stylesForScreen.rowReverse,
+            ]}
           >
-            <ProgressRing progress={levelProgress} level={level} label={t("games.level")} compact={compact} />
+            <ProgressRing
+              progress={levelProgress}
+              level={level}
+              label={t("games.level")}
+              compact={compact}
+              languageCode={locale}
+              foregroundColor={progressPalette.foreground}
+              trackColor={progressPalette.ringTrack}
+            />
              <View style={[stylesForScreen.progressCopy, isRtl && stylesForScreen.progressCopyRtl]}>
-              <AppText style={stylesForScreen.progressEyebrow} forceKurdishFont={isRtl}>
+              <AppText
+                style={[stylesForScreen.progressEyebrow, { color: progressPalette.secondaryText }]}
+                forceKurdishFont={isRtl}
+              >
                 {t("games.xpProgress")}
               </AppText>
-              <AppText style={stylesForScreen.progressValue} forceLatinFont latinRole="bold">
-                {levelXp} / 300 <AppText style={stylesForScreen.progressUnit} forceLatinFont latinRole="bold">XP</AppText>
+              <AppText
+                style={[stylesForScreen.progressValue, { color: progressPalette.foreground }]}
+                forceLatinFont
+                latinRole="bold"
+              >
+                {levelXp} / 300{" "}
+                <AppText
+                  style={[
+                    stylesForScreen.progressUnit,
+                    { color: progressPalette.foreground },
+                  ]}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  XP
+                </AppText>
               </AppText>
-              <View style={[stylesForScreen.progressTrack, isRtl && stylesForScreen.progressTrackRtl]}>
-                <View style={[stylesForScreen.progressFill, { width: `${levelProgress * 100}%` }]} />
+              <View
+                style={[
+                  stylesForScreen.progressTrack,
+                  { backgroundColor: progressPalette.track },
+                  isRtl && stylesForScreen.progressTrackRtl,
+                ]}
+              >
+                <View
+                  style={[
+                    stylesForScreen.progressFill,
+                    {
+                      width: `${levelProgress * 100}%`,
+                      backgroundColor: progressPalette.fill,
+                    },
+                  ]}
+                />
               </View>
             </View>
             <Image
@@ -197,7 +271,7 @@ export function GamesScreen() {
                style={[stylesForScreen.chestImage, isRtl && stylesForScreen.chestImageRtl]}
               contentFit="contain"
             />
-          </LinearGradient>
+          </View>
 
           <View style={[stylesForScreen.sectionHeader, isRtl && stylesForScreen.rowReverse]}>
             <AppText style={stylesForScreen.sectionTitle} forceKurdishFont={isRtl}>{t("games.sectionExperiences")}</AppText>
@@ -298,12 +372,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ringLabel: {
-    color: "#FFFFFF",
     fontSize: 12,
     lineHeight: 16,
   },
   ringValue: {
-    color: "#FFFFFF",
     fontSize: 28,
     lineHeight: 31,
   },
@@ -374,6 +446,11 @@ function createStyles(
       left: compact ? -10 : -8,
       transform: [{ scaleX: -1 }],
     },
+    heroMascotFramed: {
+      borderRadius: compact ? 30 : 48,
+      overflow: "hidden",
+      backgroundColor: colors.muted,
+    },
     progressBanner: {
       minHeight: compact ? 116 : 168,
       borderRadius: compact ? 24 : 28,
@@ -382,7 +459,6 @@ function createStyles(
       flexDirection: "row",
       alignItems: "center",
       overflow: "hidden",
-      ...crossShadow({ color: "#7041DC", offsetY: 10, blur: 22, opacity: 0.2 }),
     },
     progressCopy: {
       flex: 1,
@@ -396,13 +472,11 @@ function createStyles(
       alignItems: "flex-end",
     },
     progressEyebrow: {
-      color: "rgba(255,255,255,0.9)",
       fontSize: compact ? 12 : 14,
       lineHeight: compact ? 15 : 18,
       fontWeight: "700",
     },
     progressValue: {
-      color: "#FFFFFF",
       fontSize: compact ? 21 : 31,
       lineHeight: compact ? 27 : 39,
       marginTop: compact ? 2 : 4,
@@ -413,7 +487,6 @@ function createStyles(
     progressTrack: {
       height: compact ? 8 : 11,
       borderRadius: 6,
-      backgroundColor: "rgba(55,32,151,0.5)",
       overflow: "hidden",
       marginTop: compact ? 8 : 12,
       width: compact ? "46%" : "78%",
@@ -424,7 +497,6 @@ function createStyles(
     progressFill: {
       height: "100%",
       borderRadius: 6,
-      backgroundColor: "#FFD46A",
     },
     chestImage: {
       position: "absolute",

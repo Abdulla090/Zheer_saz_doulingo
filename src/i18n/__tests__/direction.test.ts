@@ -3,6 +3,8 @@ import { describe, expect, it, test } from "@jest/globals";
 import {
   getLanguageDirection,
   normalizeLanguageCode,
+  resolvePlatformAlignment,
+  resolvePlatformTextAlign,
   resolveTextAlign,
   type Direction,
   type LogicalAlignment,
@@ -48,5 +50,33 @@ describe("logical alignment", () => {
 
   test.each(cases)("maps %s %s to %s", (direction, alignment, expected) => {
     expect(resolveTextAlign(direction, alignment)).toBe(expected);
+  });
+});
+
+describe("platform alignment", () => {
+  it("preserves centered lesson cards on web", () => {
+    expect(resolvePlatformAlignment("web", "center", "start")).toBe("center");
+  });
+
+  it.each(["android", "ios"])(
+    "uses the explicit language edge on %s",
+    (platform) => {
+      expect(resolvePlatformAlignment(platform, "center", "start")).toBe("start");
+    },
+  );
+
+  it.each(["android", "ios"])(
+    "encodes the Kurdish right edge for React Native on %s",
+    (platform) => {
+      expect(resolvePlatformTextAlign(platform, "rtl", "right")).toBe("left");
+      expect(resolvePlatformTextAlign(platform, "rtl", "left")).toBe("right");
+      expect(resolvePlatformTextAlign(platform, "rtl", "center")).toBe("center");
+    },
+  );
+
+  it("keeps web RTL and every English physical alignment unchanged", () => {
+    expect(resolvePlatformTextAlign("web", "rtl", "right")).toBe("right");
+    expect(resolvePlatformTextAlign("android", "ltr", "left")).toBe("left");
+    expect(resolvePlatformTextAlign("ios", "ltr", "right")).toBe("right");
   });
 });

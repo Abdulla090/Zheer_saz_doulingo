@@ -474,10 +474,18 @@ export function AiPodcastScreen() {
         {activeEpisode && (
           <HomeLiquidCard style={styles.generatorCard} contentStyle={styles.generatorInner}>
             <View style={styles.infoArea}>
-              <AppText style={styles.podcastTitle}>
+              <AppText
+                style={styles.podcastTitle}
+                nativeAlign={isRtl ? "start" : undefined}
+                fullWidth={isRtl}
+              >
                 {isKu ? activeEpisode.titleKu : activeEpisode.title}
               </AppText>
-              <AppText style={styles.podcastSub}>
+              <AppText
+                style={styles.podcastSub}
+                nativeAlign={isRtl ? "start" : undefined}
+                fullWidth={isRtl}
+              >
                 {isKu ? activeEpisode.subtitleKu : activeEpisode.subtitle}
               </AppText>
             </View>
