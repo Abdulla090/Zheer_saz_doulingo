@@ -19,6 +19,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
+  deleteAccount: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -76,8 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           path_mode: state.pathMode,
           tutor_voice: state.tutorVoice,
           avatar_url: state.avatarUrl || null,
-          is_premium: state.isPremium,
-          subscription_tier: state.subscriptionTier || null,
         })
         .eq("id", userId);
 
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Fetch Profile
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, username, display_name, avatar_url, age, path_mode, tutor_voice, is_premium, subscription_tier")
         .eq("id", loggedUser.id)
         .single();
       
@@ -236,26 +236,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [pushSettingsToDatabase, user]);
 
+  const clearSignedInUserState = () => {
+    useProgressStore.getState().resetProgress();
+    useSettingsStore.getState().setUserName("");
+    useSettingsStore.getState().setUserAge("");
+    useSettingsStore.getState().setPathMode("normal");
+    useSettingsStore.getState().setTutorVoice("Aoede");
+    useSettingsStore.getState().setAvatarUrl("");
+    useSettingsStore.getState().setIsPremium(false);
+    useSettingsStore.getState().setSubscriptionTier(null);
+  };
+
   const signOut = async () => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
-      useProgressStore.getState().resetProgress();
-      useSettingsStore.getState().setUserName("");
-      useSettingsStore.getState().setUserAge("");
-      useSettingsStore.getState().setPathMode("normal");
-      useSettingsStore.getState().setTutorVoice("Aoede");
-      useSettingsStore.getState().setIsPremium(false);
-      useSettingsStore.getState().setSubscriptionTier(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      clearSignedInUserState();
     } catch (e) {
       console.error("Error signing out:", e);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    if (!user) {
+      throw new Error("You must be signed in to delete an account.");
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+
+      // The remote account no longer exists; remove its token from this device.
+      await supabase.auth.signOut({ scope: "local" });
+      clearSignedInUserState();
+      setProfile(null);
+      setUser(null);
+      setSession(null);
+    } catch (e) {
+      console.error("Error deleting account:", e);
+      throw e;
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

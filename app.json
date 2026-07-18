@@ -7,18 +7,29 @@
     "icon": "./assets/images/real-app-icon.png",
     "scheme": "twino",
     "userInterfaceStyle": "automatic",
-    "androidStatusBar": {
-      "hidden": true,
-      "translucent": true,
-      "backgroundColor": "#00000000"
-    },
     "ios": {
       "icon": "./assets/images/real-app-icon.png",
       "bundleIdentifier": "com.hewad.mubariz.twino",
       "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ]
+      },
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow Twino English to transcribe your speech for lessons and AI feedback.",
-        "NSMicrophoneUsageDescription": "Allow Twino English to use the microphone for speaking practice."
+        "NSMicrophoneUsageDescription": "Allow Twino English to use the microphone for speaking practice.",
+        "NSPhotoLibraryUsageDescription": "Allow Twino to choose a profile photo from your photo library."
       }
     },
     "android": {
@@ -31,10 +42,7 @@
       "package": "com.hewad.mubariz.twino",
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -62,7 +70,8 @@
             "kotlinVersion": "2.1.20"
           },
           "ios": {
-            "useHermesV1": true
+            "useHermesV1": true,
+            "privacyManifestAggregationEnabled": true
           }
         }
       ],
@@ -84,9 +93,24 @@
       ],
       "expo-font",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Twino to choose a profile photo from your photo library.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": true,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
+        }
+      ],
       [
         "expo-speech-recognition",
         {
@@ -123,10 +147,7 @@
       [
         "@sentry/react-native",
         {
-          "organization": "",
-          "project": "",
-          "url": "https://sentry.io/",
-          "enableSourceMapsUpload": false
+          "url": "https://sentry.io/"
         }
       ],
       "expo-secure-store"

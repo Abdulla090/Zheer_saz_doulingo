@@ -19,8 +19,6 @@ import { applyUiLanguageDirection, useLocaleStore } from "../stores/useLocaleSto
 import { getLanguageDirection } from "../i18n/direction";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
-import * as SecureStore from "expo-secure-store";
-import { setRuntimeGeminiApiKey } from "../constants/gemini";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -114,27 +112,6 @@ function InnerLayout() {
     applyGlobalFont(selectedFont);
   }, [selectedFont]);
 
-  useEffect(() => {
-    if (Platform.OS !== "web") {
-      SecureStore.getItemAsync("twino.gemini.apikey")
-        .then((key: string | null) => {
-          if (key) {
-            setRuntimeGeminiApiKey(key);
-          }
-        })
-        .catch(() => {});
-    } else {
-      try {
-        if (typeof localStorage !== "undefined") {
-          const key = localStorage.getItem("twino.gemini.apikey");
-          if (key) {
-            setRuntimeGeminiApiKey(key);
-          }
-        }
-      } catch {}
-    }
-  }, []);
-
   const [coreFontsLoaded] = useFonts({
     DINNextRoundedBold: require("../../assets/fonts/DIN_BOLD.ttf"),
     DINNextRoundedMedium: require("../../assets/fonts/DIN_MEDIUM.ttf"),
@@ -214,7 +191,7 @@ function InnerLayout() {
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  animation: "slide_from_right",
+                  animation: "fade",
                 }}
               >
                   <Stack.Screen name="(tabs)" />

@@ -1,5 +1,6 @@
 import { RealConversationTurn, RealAnalysis, SessionWordState, GrammarError } from "../data/voice-tutor-types";
-import { getGeminiApiKey, GEMINI_SPEECH_MODEL } from "../constants/gemini";
+import { GEMINI_SPEECH_MODEL } from "../constants/gemini";
+import { generateGeminiContent } from "./gemini-gateway";
 
 // QA test mode flags. Can be toggled via env or runtime.
 let testForceFailAnalysis = false;
@@ -77,11 +78,6 @@ export async function computeSessionAnalysis(
     };
   }
 
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    return emptyAnalysisWithError("Gemini API key is not configured. Cannot perform real analysis.");
-  }
-
   // Build conversation transcript text for Gemini to analyze
   const transcriptText = turns
     .map((t) => `${t.sender === "user" ? "Student" : "Tutor"}: ${t.text}`)
@@ -107,37 +103,17 @@ ${transcriptText}
 `;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
-
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
+    const data = await generateGeminiContent<any>(
+      GEMINI_SPEECH_MODEL,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1024,
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 1024,
-          }
-        }),
-        signal: controller.signal,
-      }
-    ).finally(() => clearTimeout(timeout));
-
-    if (!res.ok) {
-      throw new Error(`Gemini service failed with status ${res.status}`);
-    }
-
-    const data = await res.json();
+      },
+      12_000,
+    );
     const responseText =
       data.candidates?.[0]?.content?.parts
         ?.map((part: any) => part.text ?? "")

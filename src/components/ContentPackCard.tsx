@@ -1,6 +1,5 @@
 /**
- * ContentPackCard — modern download card shown when a learning path
- * is not yet downloaded.  Three states: locked → downloading → done.
+ * ContentPackCard — activation card for bundled learning paths.
  */
 
 import { PressableScale } from "./animations";
@@ -16,45 +15,14 @@ import {
   Text,
   View,
   useWindowDimensions,
-  Platform,
-  PermissionsAndroid,
 } from "react-native";
-import { confirmAction } from "../utils/confirm-action";
 import Animated, {
-  Easing,
   FadeIn,
   FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
-
-function CloudDownloadIcon({ size = 28, color = "#FFF" }: { size?: number; color?: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 16L12 8M12 16L9 13M12 16L15 13"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path
-        d="M20 16.7428C21.2215 15.734 22 14.2079 22 12.5C22 9.46243 19.5376 7 16.5 7C16.2815 7 16.0771 6.886 15.9661 6.69774C14.6621 4.48484 12.2544 3 9.5 3C5.35786 3 2 6.35786 2 10.5C2 12.5661 2.83545 14.4371 4.18695 15.7935"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
 
 function CheckCircleIcon({ size = 28, color = "#FFF" }: { size?: number; color?: string }) {
   return (
@@ -105,142 +73,26 @@ function PackageIcon({ size = 44, color = "#1CB0F6" }: { size?: number; color?: 
   );
 }
 
-// ── Pulsing dot indicator ────────────────────────────────────────────────────
-
-function PulsingDot({ color }: { color: string }) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.4, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-      true,
-    );
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.5, { duration: 800 }),
-        withTiming(1, { duration: 800 }),
-      ),
-      -1,
-      true,
-    );
-  }, [scale, opacity]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        {
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: color,
-        },
-        style,
-      ]}
-    />
-  );
-}
-
 // ── Main Component ───────────────────────────────────────────────────────────
 
 type Props = {
   pack: ContentPackMeta;
-  /** Optional callback after download completes */
+  /** Optional callback after a bundled path is activated. */
   onDownloadComplete?: () => void;
 };
 
 export function ContentPackCard({ pack, onDownloadComplete }: Props) {
   const status = useContentPackStore((s) => s.getStatus(pack.id));
-  const progress = useContentPackStore((s) => s.getProgress(pack.id));
   const startDownload = useContentPackStore((s) => s.startDownload);
-  const cancelDownload = useContentPackStore((s) => s.cancelDownload);
   const { width } = useWindowDimensions();
-
-  // Progress bar animation
-  const progressWidth = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (status === "downloading") {
-      progressWidth.value = withSpring(progress, { damping: 15, stiffness: 100 });
-      glowOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.6, { duration: 1000 }),
-          withTiming(0.2, { duration: 1000 }),
-        ),
-        -1,
-        true,
-      );
-    } else if (status === "downloaded") {
-      progressWidth.value = withSpring(1, { damping: 12, stiffness: 80 });
-      glowOpacity.value = withTiming(0, { duration: 500 });
-    } else {
-      progressWidth.value = withTiming(0, { duration: 200 });
-      glowOpacity.value = withTiming(0, { duration: 200 });
-    }
-  }, [status, progress, progressWidth, glowOpacity]);
-
-  const progressBarStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value * 100}%` as any,
-  }));
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
 
   const handlePress = useCallback(() => {
     if (status === "not_downloaded" || status === "error") {
-      const runDownload = async () => {
-        if (Platform.OS === "web") {
-          if (typeof Notification !== "undefined" && Notification.permission === "default") {
-            try {
-              await Notification.requestPermission();
-            } catch (e) {
-              console.warn("Notification request failed:", e);
-            }
-          }
-          startDownload(pack.id);
-        } else if (Platform.OS === "android") {
-          try {
-            const writePerm = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-            const postNotifications = (PermissionsAndroid.PERMISSIONS as any).POST_NOTIFICATIONS || "android.permission.POST_NOTIFICATIONS";
-            
-            await PermissionsAndroid.requestMultiple([writePerm, postNotifications]);
-          } catch (err) {
-            console.warn("Android permissions request failed:", err);
-          }
-          startDownload(pack.id);
-        } else {
-          startDownload(pack.id);
-        }
-      };
-
-      if (status === "error") {
-        // Direct retry without showing permission prompt again
-        runDownload();
-      } else {
-        confirmAction(
-          "Storage & Notification Permission",
-          "Twino needs permission to store the downloaded learning assets on your device and notify you when the download completes. Do you grant permission?",
-          runDownload,
-          { confirmLabel: "Allow", cancelLabel: "Deny" }
-        );
-      }
-    } else if (status === "downloading") {
-      cancelDownload(pack.id);
+      startDownload(pack.id);
     }
-  }, [status, pack.id, startDownload, cancelDownload]);
+  }, [status, pack.id, startDownload]);
 
-  // Notify parent when download completes
+  // Notify the parent after local activation completes.
   useEffect(() => {
     if (status === "downloaded" && onDownloadComplete) {
       const timeout = setTimeout(onDownloadComplete, 600);
@@ -267,7 +119,7 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
             color: pack.accentColor,
             offsetY: 12,
             blur: 32,
-            opacity: status === "downloading" ? 0.18 : 0.08,
+            opacity: status === "downloaded" ? 0.14 : 0.08,
             elevation: 8,
           }),
         ]}
@@ -313,39 +165,11 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
             <Text style={[styles.statValue, { color: pack.accentColor }]}>
               {pack.sizeLabel}
             </Text>
-            <Text style={styles.statLabel}>Size</Text>
+            <Text style={styles.statLabel}>Access</Text>
           </View>
         </View>
 
-        {/* Progress bar (visible during download) */}
-        {status === "downloading" && (
-          <Animated.View entering={FadeIn.duration(300)} style={styles.progressSection}>
-            <View style={styles.progressRow}>
-              <PulsingDot color={pack.accentColor} />
-              <Text style={[styles.progressText, { color: pack.accentColor }]}>
-                Downloading... {Math.round(progress * 100)}%
-              </Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  { backgroundColor: pack.accentColor },
-                  progressBarStyle,
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.progressGlow,
-                  { backgroundColor: pack.accentColor },
-                  glowStyle,
-                ]}
-              />
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Download complete banner */}
+        {/* Activation complete banner */}
         {status === "downloaded" && (
           <Animated.View
             entering={FadeIn.duration(400)}
@@ -353,7 +177,7 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
           >
             <CheckCircleIcon size={20} color={pack.accentColor} />
             <Text style={[styles.completeText, { color: pack.accentColor }]}>
-              Downloaded — Ready to learn!
+              Added — Ready to learn!
             </Text>
           </Animated.View>
         )}
@@ -372,18 +196,11 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
               end={{ x: 1, y: 1 }}
               style={styles.downloadBtn}
             >
-              {status === "error" ? null : <CloudDownloadIcon size={22} color="#FFF" />}
+              {status === "error" ? null : <PackageIcon size={22} color="#FFF" />}
               <Text style={styles.downloadBtnText}>
-                {status === "error" ? "Download Failed — Retry" : "Download Pack"}
+                {status === "error" ? "Could not add — Try again" : "Add to My Paths"}
               </Text>
             </LinearGradient>
-          )}
-          {status === "downloading" && (
-            <View style={[styles.cancelBtn, { borderColor: pack.accentColor }]}>
-              <Text style={[styles.cancelBtnText, { color: pack.accentColor }]}>
-                Cancel
-              </Text>
-            </View>
           )}
         </PressableScale>
       </View>
@@ -472,43 +289,6 @@ const styles = StyleSheet.create({
     height: 28,
     backgroundColor: "#E2E8F0",
   },
-  progressSection: {
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    gap: 8,
-  },
-  progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  progressText: {
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: -0.1,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#F1F5F9",
-    overflow: "hidden",
-    position: "relative",
-  },
-  progressFill: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    borderRadius: 3,
-  },
-  progressGlow: {
-    position: "absolute",
-    top: -2,
-    right: 0,
-    width: 24,
-    height: 10,
-    borderRadius: 5,
-  },
   completeBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -540,19 +320,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
-    letterSpacing: 0.2,
-  },
-  cancelBtn: {
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  cancelBtnText: {
-    fontSize: 16,
-    fontWeight: "700",
     letterSpacing: 0.2,
   },
 });

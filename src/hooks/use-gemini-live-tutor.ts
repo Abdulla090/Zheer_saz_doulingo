@@ -1,4 +1,4 @@
-import { isGeminiConfigured } from "../constants/gemini";
+import { isGeminiLiveConfigured } from "../constants/gemini";
 import {
   GeminiLiveSession,
   type LiveSessionPhase,
@@ -55,7 +55,7 @@ function parseLevelFromTranscript(text: string): number | null {
 }
 
 export function useGeminiLiveTutor() {
-  const configured = isGeminiConfigured();
+  const configured = isGeminiLiveConfigured();
   const supported = isLiveAudioSupported();
 
   const sessionRef = useRef<GeminiLiveSession | null>(null);

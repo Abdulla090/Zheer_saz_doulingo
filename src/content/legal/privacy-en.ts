@@ -2,49 +2,50 @@ import type { LegalDocument } from "./types";
 
 export const privacyEn: LegalDocument = {
   title: "Privacy Policy",
-  lastUpdated: "May 27, 2026",
+  lastUpdated: "July 17, 2026",
   sections: [
     {
       title: "Overview",
       paragraphs: [
-        "Twino English (“Twino”, “we”, “our”) helps Kurdish speakers learn English. This policy explains what data the app uses on your device and when optional online features are enabled.",
-        "Twino is free to use. We do not sell your personal data.",
+        "Twino English (“Twino”, “we”, “our”) helps Kurdish speakers learn English. This policy explains the data used on your device and by optional account, cloud-sync, and AI features.",
+        "Twino is free in this release. We do not sell personal data or use it for advertising.",
       ],
     },
     {
       title: "Data stored on your device",
       paragraphs: [
-        "The app may store locally: learning progress (lessons completed, XP, streak), app language preference, Kurdish font choice, optional AI Teacher practice history, and settings such as haptics.",
-        "This data stays on your phone unless you clear app storage or uninstall the app. We do not operate user accounts in this version.",
+        "The app stores learning progress, XP, streak, language, Kurdish font choice, AI practice history, and app settings on your device.",
+        "If you create an account, Twino uses Supabase to store your email address, profile, preferences, avatar choice, and learning progress so they can sync across sessions. Authentication tokens are stored in the device's protected credential storage on iOS and Android.",
+        "If you choose a photo while signed in, Twino uploads it to Supabase Storage as your public profile image. Anyone with its public URL can view it. You can use a bundled avatar instead; replacing the photo overwrites the prior upload, and deleting your account removes the uploaded photo. A guest photo stays only on that device.",
       ],
     },
     {
       title: "Microphone & speech",
       paragraphs: [
-        "Speaking practice (lessons, Speak Up, AI Role Play, AI Teacher) may use the device microphone and on-device or OS speech recognition to transcribe your voice.",
-        "Audio is used to provide practice feedback. We do not record or upload voice audio to our servers unless you connect a future cloud AI service and we update this policy.",
+        "Speaking practice uses the microphone and may use device speech recognition or cloud AI to transcribe and evaluate your voice.",
+        "When you use a Gemini-powered speech feature, the recorded audio, requested phrase, and related prompt are sent to Google Gemini for processing. Audio is used to return the requested learning feedback and is not used by Twino for advertising.",
       ],
     },
     {
       title: "Optional online services",
       paragraphs: [
-        "Lesson content is bundled in the app and works offline.",
-        "If you configure an AI Teacher API URL (developer setting), typed or transcribed answers may be sent to that HTTPS endpoint for scoring. Only enable endpoints you trust.",
-        "The app may load non-essential images from the internet (for example decorative avatars). No account is required.",
+        "Core lesson content is bundled in the app and can be used without an account. Account sync requires an internet connection. Cloud AI features require both an internet connection and a signed-in account so Twino can protect the service from abuse.",
+        "Typed answers, transcripts, prompts, and voice audio may be processed by Google Gemini when you choose an AI feature. Account and synced learning data are processed by Supabase.",
+        "The app may load non-essential images from public internet storage. Paid subscriptions and external checkout are disabled in this release.",
       ],
     },
     {
       title: "Children",
       paragraphs: [
-        "Twino is an education app suitable for learners of many ages. Parents or guardians should supervise younger children’s use of microphone and online features.",
+        "Twino is an education app for learners of different ages. A parent or guardian should supervise younger learners and decide whether they may create an account or use microphone and cloud AI features.",
       ],
     },
     {
       title: "Your choices",
       paragraphs: [
-        "You can deny microphone permission; voice features will be limited.",
-        "You can clear app data in system settings or uninstall to remove local storage.",
-        "Contact us to ask questions about this policy (see Support in Settings).",
+        "You can deny microphone permission and continue using non-voice lessons. You can also use core lessons without creating an account.",
+        "You can permanently delete your Twino account and synced data in Settings → Your Account → Delete Account. You can clear remaining local app data through system settings or by uninstalling the app. If the in-app option is unavailable, contact support@twino.app from the account email address.",
+        "For privacy questions or data requests, contact support@twino.app.",
       ],
     },
     {

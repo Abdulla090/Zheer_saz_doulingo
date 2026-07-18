@@ -1,46 +1,36 @@
 /**
- * Client-side Gemini config (Expo requires EXPO_PUBLIC_ prefix).
- * Production: proxy Live + REST through your HTTPS backend — keys in the APK are extractable.
+ * Client-side Gemini configuration.
+ *
+ * Gemini credentials never ship in the app. REST requests go through the
+ * authenticated Supabase `gemini-generate` Edge Function.
  */
-let runtimeApiKey: string | undefined;
-
-export function setRuntimeGeminiApiKey(key: string | undefined) {
-  runtimeApiKey = key ? key.trim() : undefined;
-}
-
-export function getGeminiApiKey(): string | undefined {
-  if (runtimeApiKey) return runtimeApiKey;
-  const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim();
-  return key || undefined;
-}
-
 export function isGeminiConfigured(): boolean {
-  return Boolean(getGeminiApiKey());
+  return Boolean(
+    process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() &&
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim(),
+  );
 }
 
-/** REST model for speech grading in lessons. */
+/** REST model for speech grading and text generation. */
 export const GEMINI_SPEECH_MODEL =
   process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 
-/** Fallback model when the primary hits quota / rate limits (429/503). */
+/** Fallback model when the primary hits quota / rate limits. */
 export const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
 /**
- * Gemini Live native-audio model (voice-in / voice-out over WebSocket).
- * @see https://ai.google.dev/gemini-api/docs/live-api/capabilities
+ * Direct Gemini Live sockets require a client-visible API key, so they are
+ * disabled in release builds until a server-side WebSocket relay is deployed.
+ * The production voice tutor uses the authenticated REST gateway instead.
  */
-export const GEMINI_LIVE_MODEL =
-  process.env.EXPO_PUBLIC_GEMINI_LIVE_MODEL?.trim() ||
-  "gemini-3.1-flash-live-preview";
-
-export const GEMINI_LIVE_WS_HOST = "generativelanguage.googleapis.com";
-
-export function getGeminiLiveWebSocketUrl(): string | null {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) return null;
-  return `wss://${GEMINI_LIVE_WS_HOST}/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+export function isGeminiLiveConfigured(): boolean {
+  return false;
 }
 
-/** Input: 16-bit PCM mono 16 kHz. Output: 16-bit PCM mono 24 kHz. */
+export function getGeminiLiveWebSocketUrl(): null {
+  return null;
+}
+
+export const GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview";
 export const GEMINI_LIVE_INPUT_RATE = 16_000;
 export const GEMINI_LIVE_OUTPUT_RATE = 24_000;

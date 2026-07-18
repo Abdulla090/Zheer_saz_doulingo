@@ -20,6 +20,9 @@
   ],
   "exclude": [
     "node_modules",
-    "supabase"
+    "supabase",
+    ".agents",
+    "agent",
+    "videos"
   ]
 }

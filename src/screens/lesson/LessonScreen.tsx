@@ -10,7 +10,7 @@
 // @ts-expect-error No type declarations for hugeicons cjs paths
 import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
 // @ts-expect-error No type declarations for hugeicons cjs paths
-import { Cancel01Icon, FlashIcon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { FlashIcon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
 import { AppText } from "../../components/ui/AppText";
 import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -51,7 +51,6 @@ import { getCurrentLessonMeta, buildPathReturnRoute, buildLessonRouteForMode } f
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { G } from "./games/game-design";
 import { L } from "./games/lesson-light-design";
 import {
   LessonLightHeader,
@@ -116,7 +115,6 @@ export default function LessonScreen() {
   const pathIndex = parseInt(
     (Array.isArray(params.pi) ? params.pi[0] : params.pi) as string,
   );
-  const fromPath = (Array.isArray(params.fromPath) ? params.fromPath[0] : params.fromPath) === "true";
   const recordLessonComplete = useProgressStore((s) => s.recordLessonComplete);
   const requestPathScrollAfterLesson = useProgressStore(
     (s) => s.requestPathScrollAfterLesson,
@@ -173,12 +171,8 @@ export default function LessonScreen() {
 
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
-    if (fromPath && router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace(buildPathReturnRoute(pathMode));
-    }
-  }, [fromPath, pathMode, router, setPathMode]);
+    router.replace(buildPathReturnRoute(pathMode));
+  }, [pathMode, router, setPathMode]);
 
   /* Animations */
   const progressW = useSharedValue(0);
@@ -356,8 +350,8 @@ export default function LessonScreen() {
                   <TwinoMascot size={120} pose="party" />
                 </View>
               ) : (
-                <View style={[sSum.iconWrap, { backgroundColor: isKidsMode ? "#FF4B4B" : L.red }]}>
-                  <HugeiconsIcon icon={Cancel01Icon} size={52} color="#FFFFFF" />
+                <View style={sSum.mascotWrap}>
+                  <TwinoMascot size={120} pose="losing" />
                 </View>
               )}
               <AppText style={[sSum.title, { color: ok ? (isKidsMode ? "#3C8400" : L.greenDeep) : (isKidsMode ? "#CC0000" : L.redDeep) }]}>

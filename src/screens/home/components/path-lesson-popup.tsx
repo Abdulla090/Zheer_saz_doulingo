@@ -5,6 +5,7 @@ import { AppText } from "../../../components/ui/AppText";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import type { SelectedPathLesson } from "../../../hooks/use-path-lesson-selection";
 import { useI18n } from "../../../hooks/useI18n";
+import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
@@ -18,6 +19,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SVG_BUTTON_COLOR_SETS, type SvgButtonVariant } from "./list-button";
+
+const LOCKED_POPUP_FACE = "#475569";
+const LOCKED_POPUP_RIM = "#1E293B";
 
 function popupVariant(selection: SelectedPathLesson): SvgButtonVariant {
   const { item } = selection;
@@ -52,6 +56,8 @@ export function PathLessonPopup({
   const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;
   const colors = SVG_BUTTON_COLOR_SETS[popupVariant(selection)];
+  const popupFace = isLocked ? LOCKED_POPUP_FACE : colors.face;
+  const popupRim = isLocked ? LOCKED_POPUP_RIM : colors.rim;
   const popupWidth = Math.min(windowWidth - 32, 560);
   const popupLeft = (windowWidth - popupWidth) / 2;
   const caretLeft = selection.anchor
@@ -83,7 +89,11 @@ export function PathLessonPopup({
         entering={FadeIn.duration(90)}
         exiting={FadeOut.duration(70)}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, styles.scrim]}
+        style={[
+          StyleSheet.absoluteFill,
+          styles.scrim,
+          isLocked && styles.lockedScrim,
+        ]}
       />
       <Animated.View
         entering={FadeInDown.duration(140)}
@@ -94,8 +104,9 @@ export function PathLessonPopup({
           {
             width: popupWidth,
             left: popupLeft,
-            backgroundColor: colors.face,
-            borderBottomColor: colors.rim,
+            backgroundColor: popupFace,
+            borderColor: isLocked ? "#64748B" : "rgba(255,255,255,0.28)",
+            borderBottomColor: popupRim,
           },
           selection.anchor
             ? { top: selection.anchor.y }
@@ -110,7 +121,7 @@ export function PathLessonPopup({
               styles.caret,
               {
                 left: caretLeft,
-                borderBottomColor: colors.face,
+                borderBottomColor: popupFace,
               },
             ]}
           />
@@ -121,10 +132,10 @@ export function PathLessonPopup({
             { flexDirection: isRtl ? "row-reverse" : "row" },
           ]}
         >
-          <View style={styles.iconWell}>
+          <View style={[styles.iconWell, isLocked && styles.lockedIconWell]}>
             <LessonPathIcon
               type={item.type === "gift" ? "practice" : item.type}
-              color={colors.rim}
+              color={popupRim}
               size={25}
               active
               filled
@@ -176,7 +187,7 @@ export function PathLessonPopup({
             <HugeiconsIcon
               icon={Cancel01Icon}
               size={19}
-              color={isLocked ? "#71717A" : "#FFFFFF"}
+              color="#FFFFFF"
               strokeWidth={2.4}
             />
           </Pressable>
@@ -193,7 +204,7 @@ export function PathLessonPopup({
           <AppText
             style={[
               styles.startText,
-              { color: isLocked ? "#9CA3AF" : colors.rim },
+              { color: isLocked ? "#64748B" : colors.rim },
             ]}
             forceKurdishFont={isKu}
             forceLatinFont={!isKu}
@@ -208,8 +219,11 @@ export function PathLessonPopup({
 
 const styles = StyleSheet.create({
   scrim: {
-    backgroundColor: "rgba(15,23,42,0.08)",
+    backgroundColor: "rgba(15,23,42,0.12)",
     zIndex: 30,
+  },
+  lockedScrim: {
+    backgroundColor: "rgba(15,23,42,0.18)",
   },
   popup: {
     position: "absolute",
@@ -221,6 +235,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 6,
     padding: 18,
     gap: 16,
+    ...crossShadow({
+      color: "#0F172A",
+      offsetY: 12,
+      blur: 28,
+      opacity: 0.26,
+      elevation: 12,
+    }),
   },
   caret: {
     position: "absolute",
@@ -246,6 +267,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.92)",
   },
+  lockedIconWell: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+  },
   headingCopy: {
     flex: 1,
     minWidth: 0,
@@ -266,10 +292,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   lockedTitle: {
-    color: "#52525B",
+    color: "#FFFFFF",
   },
   lockedMeta: {
-    color: "#71717A",
+    color: "#E2E8F0",
   },
   closeButton: {
     width: 38,
@@ -304,8 +330,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.35,
   },
   lockedStartButton: {
-    backgroundColor: "#F4F4F5",
-    borderColor: "#D4D4D8",
-    borderBottomColor: "#C4C4C8",
+    backgroundColor: "#F1F5F9",
+    borderColor: "#CBD5E1",
+    borderBottomColor: "#94A3B8",
   },
 });

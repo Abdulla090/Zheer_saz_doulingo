@@ -1,90 +1,60 @@
-/**
- * Twino mascot — vector sprite sheet with per-pose crop.
- * Source: assets/images/svg/pingo-mascot-sheet.svg (5 poses).
- *
- * The crop is clipped to the EXACT sprite cell (an inner View with
- * overflow:hidden sized to the cell), so neighbouring poses can never bleed in.
- */
-
-import PingoMascotSheet from "../../../assets/images/svg/pingo-mascot-sheet.svg";
-import React, { useMemo } from "react";
+import { Image } from "expo-image";
+import React from "react";
 import { StyleSheet, View } from "react-native";
 
-const SHEET_W = 180;
-const SHEET_H = 109.4;
-const TOP_ROW_H = 55.5;
-const BOTTOM_COLS = 4;
-const COL_W = SHEET_W / BOTTOM_COLS;
+import {
+  getMascotExpressionSource,
+  type MascotExpression,
+} from "../../constants/mascot-expressions";
+import { getMascot, type MascotId } from "../../constants/mascots";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 
-export type TwinoPose = "wave" | "happy" | "wink" | "party" | "headset";
+const LEGACY_POSE_MAP = {
+  wave: "happy",
+  wink: "encouraging",
+  party: "winning",
+  headset: "thinking",
+  sad: "losing",
+  fail: "losing",
+} as const satisfies Record<string, MascotExpression>;
 
-const POSE_INDEX: Record<Exclude<TwinoPose, "headset">, number> = {
-  wave: 0,
-  happy: 1,
-  wink: 2,
-  party: 3,
-};
-
-type Crop = { x: number; y: number; w: number; h: number };
-
-/** Trim a hair off each cell edge so antialiased neighbour pixels are excluded. */
-const CELL_INSET = 2.5;
-
-function poseCrop(pose: TwinoPose): Crop {
-  if (pose === "headset") {
-    const w = SHEET_W * 0.42;
-    return { x: (SHEET_W - w) / 2, y: 1, w, h: TOP_ROW_H - 2 };
-  }
-  const col = POSE_INDEX[pose];
-  // Remove inset for wave and party poses, and expand height bounds to prevent clipping of wings and feet.
-  const isOuterCol = pose === "wave" || pose === "party";
-  const inset = isOuterCol ? 0 : CELL_INSET;
-  const paddingBottom = isOuterCol ? 0 : 2;
-  const paddingTop = isOuterCol ? 0 : 1;
-  return {
-    x: col * COL_W + inset,
-    y: TOP_ROW_H + paddingTop,
-    w: COL_W - inset * 2,
-    h: SHEET_H - TOP_ROW_H - paddingTop - paddingBottom,
-  };
-}
+export type TwinoPose =
+  | MascotExpression
+  | keyof typeof LEGACY_POSE_MAP;
 
 type Props = {
   size?: number;
   pose?: TwinoPose;
+  mascotId?: MascotId;
 };
 
-export function TwinoMascot({ size = 100, pose = "wave" }: Props) {
-  const layout = useMemo(() => {
-    const crop = poseCrop(pose);
-    const scale = size / Math.max(crop.w, crop.h);
-    return {
-      clipW: crop.w * scale,
-      clipH: crop.h * scale,
-      sheetW: SHEET_W * scale,
-      sheetH: SHEET_H * scale,
-      sheetLeft: -crop.x * scale,
-      sheetTop: -crop.y * scale,
-    };
-  }, [pose, size]);
+function resolveExpression(pose: TwinoPose): MascotExpression {
+  if (pose in LEGACY_POSE_MAP) {
+    return LEGACY_POSE_MAP[pose as keyof typeof LEGACY_POSE_MAP];
+  }
+  return pose as MascotExpression;
+}
+
+/** Renders the user's selected pet with a state-specific full-body pose. */
+export function TwinoMascot({
+  size = 100,
+  pose = "happy",
+  mascotId,
+}: Props) {
+  const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
+  const resolvedMascot = getMascot(mascotId ?? selectedMascotId);
+  const expression = resolveExpression(pose);
 
   return (
     <View
       style={[styles.outer, { width: size, height: size }]}
-      accessibilityLabel="Twino mascot"
+      accessibilityLabel={`${resolvedMascot.name} mascot, ${expression}`}
     >
-      <View
-        style={[
-          styles.clip,
-          { width: layout.clipW, height: layout.clipH },
-        ]}
-      >
-        <PingoMascotSheet
-          width={layout.sheetW}
-          height={layout.sheetH}
-          style={{ position: "absolute", left: layout.sheetLeft, top: layout.sheetTop }}
-        />
-      </View>
+      <Image
+        source={getMascotExpressionSource(resolvedMascot.id, expression)}
+        style={styles.image}
+        contentFit="contain"
+      />
     </View>
   );
 }
@@ -94,7 +64,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  clip: {
-    overflow: "hidden",
+  image: {
+    width: "100%",
+    height: "100%",
   },
 });

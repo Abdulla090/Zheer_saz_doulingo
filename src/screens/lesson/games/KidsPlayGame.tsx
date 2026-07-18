@@ -147,6 +147,11 @@ function FloatingBubble({
   return (
     <Animated.View style={[style, kb.bubbleWrap]} entering={FadeInDown.delay(index * 80).duration(320)}>
       <Pressable
+        style={
+          Platform.OS !== "web" && getLanguageDirection(languageCode) === "ltr"
+            ? { direction: "ltr" }
+            : undefined
+        }
         onPress={() => {
           if (disabled) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

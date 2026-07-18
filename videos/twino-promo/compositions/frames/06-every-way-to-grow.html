@@ -1,0 +1,547 @@
+<template>
+  <div data-hf-id="hf-025l" id="root" data-composition-id="06-every-way-to-grow" data-start="0" data-duration="6.6" data-track-index="0" data-width="1920" data-height="1080">
+    <style>
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_REGULAR.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_MEDIUM.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_BOLD.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        container-type: size;
+        font-family: "DIN Next Rounded", sans-serif;
+        color: #0f172a;
+      }
+
+      #root * {
+        box-sizing: border-box;
+      }
+
+      .f06-ground {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 39%, rgba(255, 200, 0, 0.12), transparent 22%),
+          linear-gradient(180deg, #ffffff 0%, #fffef8 82%, #ffffff 100%);
+      }
+
+      .f06-ground::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+        background-size: 32px 32px;
+        opacity: 0.22;
+        mask-image: linear-gradient(90deg, transparent 4%, #000 28%, #000 72%, transparent 96%);
+      }
+
+      .f06-stage {
+        position: absolute;
+        inset: 0 0 184px 0;
+        overflow: hidden;
+      }
+
+      .f06-rail {
+        position: absolute;
+        left: 949px;
+        top: 62px;
+        width: 22px;
+        height: 760px;
+        border-radius: 100px;
+        background: linear-gradient(180deg, rgba(255, 200, 0, 0.26), #ffc800 18%, #ffc800 82%, rgba(255, 200, 0, 0.22));
+        transform-origin: 50% 50%;
+        will-change: transform, opacity;
+      }
+
+      .f06-rail::after {
+        content: "";
+        position: absolute;
+        inset: 7px;
+        border-radius: inherit;
+        background: #fff;
+        opacity: 0.52;
+      }
+
+      .f06-core {
+        position: absolute;
+        left: 897px;
+        top: 404px;
+        width: 126px;
+        height: 126px;
+        border: 2px solid rgba(255, 200, 0, 0.32);
+        border-radius: 50%;
+        background: #fffdf0;
+        display: grid;
+        place-items: center;
+        will-change: transform, opacity;
+      }
+
+      .f06-core::before {
+        content: "";
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #ffc800;
+      }
+
+      .f06-grow {
+        position: absolute;
+        z-index: 10;
+        left: 704px;
+        top: 494px;
+        width: 512px;
+        height: 142px;
+        display: grid;
+        place-items: center;
+        color: #0f172a;
+        font-size: 100px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        will-change: transform, opacity, filter;
+      }
+
+      .f06-grow span {
+        display: inline-block;
+        position: relative;
+      }
+
+      .f06-grow span::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        right: 2px;
+        bottom: -16px;
+        height: 9px;
+        border-radius: 100px;
+        background: #ffc800;
+      }
+
+      .f06-lane {
+        position: absolute;
+        border: 2px solid rgba(255, 200, 0, 0.24);
+        border-radius: 14px;
+        background: rgba(255, 200, 0, 0.055);
+        overflow: hidden;
+        will-change: transform, opacity, filter;
+      }
+
+      .f06-lane::after {
+        content: "";
+        position: absolute;
+        height: 6px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #ffc800;
+        transform-origin: 0 50%;
+        opacity: 0.82;
+      }
+
+      .f06-lane-label {
+        position: absolute;
+        z-index: 3;
+        color: #0f172a;
+        font-size: 48px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+
+      .f06-lane-kicker {
+        position: absolute;
+        z-index: 3;
+        color: #6b6b6b;
+        font-size: 21px;
+        font-weight: 600;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+      }
+
+      .f06-pet {
+        position: absolute;
+        z-index: 2;
+        object-fit: contain;
+        will-change: transform, opacity;
+      }
+
+      .f06-pet-lead {
+        width: 230px;
+        height: 230px;
+      }
+
+      .f06-pet-support {
+        width: 158px;
+        height: 158px;
+      }
+
+      .f06-learn {
+        left: 114px;
+        top: 68px;
+        width: 688px;
+        height: 318px;
+      }
+
+      .f06-learn .f06-lane-kicker {
+        left: 42px;
+        top: 42px;
+      }
+
+      .f06-learn .f06-lane-label {
+        left: 42px;
+        top: 88px;
+      }
+
+      .f06-learn .f06-pet {
+        right: 34px;
+        bottom: 18px;
+      }
+
+      .f06-speak {
+        left: 1152px;
+        top: 46px;
+        width: 654px;
+        height: 356px;
+      }
+
+      .f06-speak .f06-lane-kicker {
+        right: 42px;
+        top: 42px;
+        text-align: right;
+      }
+
+      .f06-speak .f06-lane-label {
+        right: 42px;
+        top: 88px;
+        text-align: right;
+      }
+
+      .f06-speak .f06-pet {
+        left: 32px;
+        bottom: 22px;
+      }
+
+      .f06-play {
+        left: 154px;
+        top: 494px;
+        width: 698px;
+        height: 296px;
+      }
+
+      .f06-play .f06-lane-kicker {
+        left: 42px;
+        top: 42px;
+      }
+
+      .f06-play .f06-lane-label {
+        left: 42px;
+        top: 88px;
+      }
+
+      .f06-play-pets {
+        position: absolute;
+        right: 20px;
+        top: 28px;
+        width: 350px;
+        height: 240px;
+      }
+
+      .f06-play-pets .f06-pet:first-child {
+        position: absolute;
+        left: 4px;
+        bottom: 10px;
+        width: 184px;
+        height: 184px;
+      }
+
+      .f06-play-pets .f06-pet:last-child {
+        position: absolute;
+        right: 0;
+        top: 4px;
+        width: 152px;
+        height: 152px;
+      }
+
+      .f06-listen {
+        left: 1068px;
+        top: 474px;
+        width: 738px;
+        height: 330px;
+      }
+
+      .f06-listen .f06-lane-kicker {
+        right: 42px;
+        top: 42px;
+        text-align: right;
+      }
+
+      .f06-listen .f06-lane-label {
+        right: 42px;
+        top: 88px;
+        text-align: right;
+      }
+
+      .f06-listen-pets {
+        position: absolute;
+        left: 18px;
+        top: 24px;
+        width: 390px;
+        height: 272px;
+      }
+
+      .f06-listen-pets .f06-pet:first-child {
+        left: 0;
+        bottom: 8px;
+        width: 172px;
+        height: 172px;
+      }
+
+      .f06-listen-pets .f06-pet:last-child {
+        right: 26px;
+        top: 0;
+        width: 164px;
+        height: 164px;
+      }
+
+      .f06-connector {
+        position: absolute;
+        height: 10px;
+        border-radius: 100px;
+        background: rgba(255, 200, 0, 0.23);
+        overflow: hidden;
+        will-change: transform, opacity;
+      }
+
+      .f06-connector::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: #ffc800;
+        transform: scaleX(0.72);
+        opacity: 0.48;
+      }
+
+      .f06-connector-a { left: 802px; top: 252px; width: 147px; }
+      .f06-connector-b { left: 971px; top: 250px; width: 181px; }
+      .f06-connector-c { left: 852px; top: 650px; width: 97px; }
+      .f06-connector-d { left: 971px; top: 646px; width: 97px; }
+
+      .f06-sweep {
+        position: absolute;
+        z-index: 8;
+        top: 62px;
+        bottom: 82px;
+        left: -420px;
+        width: 360px;
+        background: linear-gradient(100deg, transparent 0%, rgba(255, 200, 0, 0.06) 30%, rgba(255, 200, 0, 0.34) 52%, rgba(255, 200, 0, 0.08) 72%, transparent 100%);
+        opacity: 0;
+        pointer-events: none;
+        will-change: transform, opacity;
+      }
+
+      .f06-trophy {
+        position: absolute;
+        z-index: 12;
+        left: 794px;
+        top: 62px;
+        width: 332px;
+        height: 332px;
+        border-radius: 50%;
+        border: 6px solid #ffc800;
+        background: #fff;
+        overflow: hidden;
+        opacity: 0;
+        will-change: transform, opacity, filter;
+      }
+
+      .f06-trophy img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .f06-progress {
+        position: absolute;
+        left: 114px;
+        right: 114px;
+        top: 860px;
+        height: 6px;
+        border-radius: 6px;
+        background: rgba(255, 200, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .f06-progress-fill {
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        background: #ffc800;
+        transform-origin: 0 50%;
+        will-change: transform;
+      }
+    </style>
+
+    <div data-hf-id="hf-iug3" id="f06-ground" class="clip f06-ground" data-start="0" data-duration="6" data-track-index="1"></div>
+
+    <div data-hf-id="hf-3czy" id="f06-stage" class="clip f06-stage" data-start="0" data-duration="6" data-track-index="2">
+      <div data-hf-id="hf-tlue" id="f06-rail" class="f06-rail"></div>
+      <div data-hf-id="hf-wfii" id="f06-core" class="f06-core"></div>
+
+      <div data-hf-id="hf-fd5q" id="f06-grow" class="f06-grow"><span data-hf-id="hf-ku40">GROW.</span></div>
+
+      <div data-hf-id="hf-z2pl" id="f06-learn" class="f06-lane f06-learn">
+        <div data-hf-id="hf-985y" class="f06-lane-kicker">GUIDED LESSONS</div>
+        <div data-hf-id="hf-7j6m" class="f06-lane-label">LEARN.</div>
+            <img data-hf-id="hf-8ej8" id="f06-pingo" class="f06-pet f06-pet-lead" src="assets/image_021.webp" alt="Pingo learning guide">
+      </div>
+
+      <div data-hf-id="hf-31r9" id="f06-speak" class="f06-lane f06-speak">
+        <div data-hf-id="hf-a908" class="f06-lane-kicker">AI CONVERSATION</div>
+        <div data-hf-id="hf-vj6u" class="f06-lane-label">SPEAK.</div>
+            <img data-hf-id="hf-jkug" id="f06-violet" class="f06-pet f06-pet-lead" src="assets/image_022.webp" alt="Violet conversation guide">
+      </div>
+
+      <div data-hf-id="hf-etob" id="f06-play" class="f06-lane f06-play">
+        <div data-hf-id="hf-t872" class="f06-lane-kicker">LEARNING GAMES</div>
+        <div data-hf-id="hf-itp2" class="f06-lane-label">PLAY.</div>
+        <div data-hf-id="hf-rwcy" class="f06-play-pets">
+            <img data-hf-id="hf-kuz8" id="f06-ember" class="f06-pet f06-pet-support" src="assets/image_023.webp" alt="Ember fox">
+            <img data-hf-id="hf-f20b" id="f06-quacks" class="f06-pet f06-pet-support" src="assets/image_024.webp" alt="Quacks duck">
+        </div>
+      </div>
+
+      <div data-hf-id="hf-f6lj" id="f06-listen" class="f06-lane f06-listen">
+        <div data-hf-id="hf-9dn1" class="f06-lane-kicker">PODCASTS &amp; STORIES</div>
+        <div data-hf-id="hf-51p5" class="f06-lane-label">LISTEN.</div>
+        <div data-hf-id="hf-r2wn" class="f06-listen-pets">
+            <img data-hf-id="hf-sp8a" id="f06-orbit" class="f06-pet f06-pet-support" src="assets/image_025.webp" alt="Orbit listening companion">
+            <img data-hf-id="hf-zelb" id="f06-moonbun" class="f06-pet f06-pet-support" src="assets/image_026.webp" alt="Moonbun story companion">
+        </div>
+      </div>
+
+      <div data-hf-id="hf-s625" id="f06-con-a" class="f06-connector f06-connector-a"></div>
+      <div data-hf-id="hf-h6tr" id="f06-con-b" class="f06-connector f06-connector-b"></div>
+      <div data-hf-id="hf-3qzd" id="f06-con-c" class="f06-connector f06-connector-c"></div>
+      <div data-hf-id="hf-91cn" id="f06-con-d" class="f06-connector f06-connector-d"></div>
+
+      <div data-hf-id="hf-qn2o" id="f06-sweep" class="f06-sweep"></div>
+
+      <div data-hf-id="hf-c85q" id="f06-trophy" class="f06-trophy">
+        <img data-hf-id="hf-avr7" id="f06-trophy-art" src="assets/achievement-trophy.png" alt="Achievement trophy">
+      </div>
+
+      <div data-hf-id="hf-9bsd" class="f06-progress" aria-hidden="true">
+        <div data-hf-id="hf-ft42" id="f06-progress-fill" class="f06-progress-fill"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.querySelector('[data-composition-id="06-every-way-to-grow"]');
+      const q = (selector) => root.querySelector(selector);
+      const tl = gsap.timeline({ paused: true });
+
+      const rail = q("#f06-rail");
+      const core = q("#f06-core");
+      const grow = q("#f06-grow");
+      const lanes = [
+        { el: q("#f06-learn"), x: 430, y: 145, at: 1.0 },
+        { el: q("#f06-speak"), x: -450, y: 135, at: 1.58 },
+        { el: q("#f06-play"), x: 390, y: -105, at: 2.16 },
+        { el: q("#f06-listen"), x: -390, y: -100, at: 2.74 }
+      ];
+      const pets = [
+        { el: q("#f06-pingo"), at: 1.28, x: 42 },
+        { el: q("#f06-violet"), at: 1.86, x: -42 },
+        { el: q("#f06-ember"), at: 2.44, x: 30 },
+        { el: q("#f06-quacks"), at: 2.62, x: 24 },
+        { el: q("#f06-orbit"), at: 3.02, x: -30 },
+        { el: q("#f06-moonbun"), at: 3.18, x: -24 }
+      ];
+      const connectors = [q("#f06-con-a"), q("#f06-con-b"), q("#f06-con-c"), q("#f06-con-d")];
+
+      tl.fromTo(rail, { scaleY: 0.08, opacity: 0 }, { scaleY: 1, opacity: 1, duration: 0.86, ease: "power3.out" }, 0.08);
+      tl.fromTo(core, { scale: 0.55, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.72, ease: "power3.out" }, 0.2);
+      tl.fromTo(grow, { scale: 0.82, opacity: 0, filter: "blur(8px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.72, ease: "power3.out" }, 0.34);
+      tl.fromTo(q("#f06-progress-fill"), { scaleX: 0 }, { scaleX: 0.72, duration: 0.92, ease: "power2.out" }, 0.08);
+
+      lanes.forEach((lane) => {
+        tl.fromTo(
+          lane.el,
+          { x: lane.x, y: lane.y, scale: 0.76, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 1.06, ease: "power3.out" },
+          lane.at
+        );
+      });
+
+      connectors.forEach((connector, index) => {
+        tl.fromTo(
+          connector,
+          { scaleX: 0, opacity: 0 },
+          { scaleX: 1, opacity: 1, duration: 0.58, ease: "power2.out" },
+          1.44 + index * 0.56
+        );
+      });
+
+      pets.forEach((pet) => {
+        tl.fromTo(
+          pet.el,
+          { scale: 0.84, opacity: 0, y: 20, x: pet.x },
+          { scale: 1, opacity: 1, y: 0, x: 0, duration: 0.66, ease: "power2.out" },
+          pet.at
+        );
+      });
+
+      tl.fromTo(
+        q("#f06-sweep"),
+        { x: 0, opacity: 0 },
+        { x: 2400, opacity: 0.30, duration: 1.20, ease: "none" },
+        3.62
+      );
+      tl.to(q("#f06-sweep"), { opacity: 0, duration: 0.22, ease: "power1.in" }, 4.60);
+
+      lanes.forEach((lane, index) => {
+        tl.to(lane.el, { filter: "brightness(1.08)", duration: 0.18, ease: "power1.out" }, 3.78 + index * 0.18);
+        tl.to(lane.el, { filter: "brightness(1)", opacity: 0.80, duration: 0.36, ease: "power1.inOut" }, 4.08 + index * 0.16);
+      });
+      tl.to(connectors, { backgroundColor: "#ffc800", opacity: 1, duration: 0.48, ease: "power2.out", stagger: 0.07 }, 3.92);
+      tl.to(grow, { scale: 1.30, duration: 0.74, ease: "power3.out" }, 4.16);
+      tl.to(core, { scale: 1.18, duration: 0.52, ease: "power2.out" }, 4.18);
+      tl.to(q("#f06-progress-fill"), { scaleX: 0.94, duration: 0.82, ease: "power2.inOut" }, 4.10);
+
+      tl.fromTo(
+        q("#f06-trophy"),
+        { y: 220, scale: 0.62, opacity: 0, filter: "blur(10px)" },
+        { y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.82, ease: "power3.out" },
+        5.02
+      );
+      tl.to(grow, { y: 78, scale: 1.08, duration: 0.72, ease: "power3.out" }, 5.02);
+      tl.to(core, { y: 88, scale: 0.84, opacity: 0.56, duration: 0.62, ease: "power2.inOut" }, 5.02);
+      tl.to(q("#f06-progress-fill"), { scaleX: 1, duration: 0.56, ease: "power2.out" }, 5.12);
+
+      window.__timelines["06-every-way-to-grow"] = tl;
+    </script>
+  </div>
+</template>

@@ -4,11 +4,11 @@ import type {
   AiTeacherResult,
 } from "../data/ai-teacher-types";
 import {
-  getGeminiApiKey,
   GEMINI_SPEECH_MODEL,
   GEMINI_FALLBACK_MODEL,
 } from "../constants/gemini";
 import { AI_TEACHER_PROMPTS } from "../data/ai-teacher-prompts";
+import { generateGeminiContent } from "./gemini-gateway";
 
 const CRITERION_LABELS: Record<
   AiTeacherCriterion["key"],
@@ -25,15 +25,6 @@ const FETCH_TIMEOUT_MS = 30_000;
 
 function clampBand(n: number): number {
   return Math.min(9, Math.max(3, Math.round(n * 2) / 2));
-}
-
-function isAllowedTeacherApiUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function sanitizeRequest(request: AiTeacherRequest): AiTeacherRequest {
@@ -154,50 +145,10 @@ export async function evaluateEnglish(
     throw new Error("Answer too short");
   }
 
-  // 1. If custom URL configured, try that first
-  const customUrl = process.env.EXPO_PUBLIC_AI_TEACHER_URL;
-  if (customUrl && isAllowedTeacherApiUrl(customUrl)) {
-    try {
-      const apiKey = process.env.EXPO_PUBLIC_AI_TEACHER_API_KEY;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers.Authorization = `Bearer ${apiKey}`;
-      }
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-      const res = await fetch(customUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(safe),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (res.ok) {
-        const data = (await res.json()) as AiTeacherResult;
-        if (
-          typeof data.overallBand === "number" &&
-          Array.isArray(data.criteria) &&
-          data.criteria.length >= 4
-        ) {
-          return data;
-        }
-      }
-    } catch {
-      // fall through
-    }
-  }
-
-  // 2. Otherwise, check for local Gemini API key and call Gemini directly
-  const geminiKey = getGeminiApiKey();
-  if (geminiKey) {
-    const promptDetails = AI_TEACHER_PROMPTS.find((p) => p.id === safe.promptId);
-    const taskDescription = promptDetails
-      ? `Task: "${promptDetails.title}"\nInstructions: ${promptDetails.scenario}`
-      : `Task ID: ${safe.promptId}`;
+  const promptDetails = AI_TEACHER_PROMPTS.find((p) => p.id === safe.promptId);
+  const taskDescription = promptDetails
+    ? `Task: "${promptDetails.title}"\nInstructions: ${promptDetails.scenario}`
+    : `Task ID: ${safe.promptId}`;
 
     const prompt = [
       "You are an IELTS expert English examiner and tutor.",
@@ -229,45 +180,18 @@ export async function evaluateEnglish(
       "}"
     ].join("\n");
 
-    /** Try a single Gemini model — returns result or null. Throws on quota errors. */
-    async function tryGeminiModel(model: string): Promise<AiTeacherResult | null> {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+  async function tryGeminiModel(model: string): Promise<AiTeacherResult | null> {
+      const payload = await generateGeminiContent<any>(
+        model,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": geminiKey as string,
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1024,
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.2,
-              maxOutputTokens: 1024,
-            }
-          }),
-          signal: controller.signal,
-        }
+        },
+        FETCH_TIMEOUT_MS,
       );
-      clearTimeout(timeout);
-
-      // Quota / rate-limit — signal the caller to retry with fallback
-      if (res.status === 429 || res.status === 503) {
-        const err = new Error(`Gemini ${model} quota limit (${res.status})`);
-        (err as any).isQuotaError = true;
-        throw err;
-      }
-
-      if (!res.ok) return null;
-
-      const payload = await res.json();
       const responseText =
         payload.candidates?.[0]?.content?.parts
           ?.map((part: any) => part.text ?? "")
@@ -304,25 +228,23 @@ export async function evaluateEnglish(
       return null;
     }
 
-    // Try primary model first, fallback to lite on quota errors
-    try {
-      const result = await tryGeminiModel(GEMINI_SPEECH_MODEL);
-      if (result) return result;
-    } catch (err: any) {
-      if (err?.isQuotaError) {
-        console.warn(`Primary model ${GEMINI_SPEECH_MODEL} hit quota limit, falling back to ${GEMINI_FALLBACK_MODEL}...`);
-        try {
-          const fallbackResult = await tryGeminiModel(GEMINI_FALLBACK_MODEL);
-          if (fallbackResult) return fallbackResult;
-        } catch (fallbackErr) {
-          console.warn("Fallback model also failed:", fallbackErr);
-        }
-      } else {
-        console.warn("Direct Gemini evaluateEnglish failed, falling back to mock:", err);
+  try {
+    const result = await tryGeminiModel(GEMINI_SPEECH_MODEL);
+    if (result) return result;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (/quota|limit|429/i.test(message)) {
+      try {
+        const fallbackResult = await tryGeminiModel(GEMINI_FALLBACK_MODEL);
+        if (fallbackResult) return fallbackResult;
+      } catch (fallbackErr) {
+        console.warn("Fallback AI model failed:", fallbackErr);
       }
+    } else if (!/sign in/i.test(message)) {
+      console.warn("Twino AI evaluation unavailable, using local practice result:", err);
     }
   }
 
-  // 3. Keep practice usable when network/model providers are unavailable.
+  // Keep practice usable when network/model providers are unavailable.
   return mockEvaluateEnglish(safe);
 }

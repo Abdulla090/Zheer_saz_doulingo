@@ -103,7 +103,7 @@ export function buildLessonRouteForMode(
 
 export function buildPathReturnRoute(pathMode: LessonPathMode) {
   return {
-    pathname: "/path" as const,
+    pathname: "/(tabs)" as const,
     params: { mode: pathMode },
   };
 }

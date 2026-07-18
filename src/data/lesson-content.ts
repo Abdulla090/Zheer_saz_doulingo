@@ -19,6 +19,15 @@ import { getUnitsForPath } from "./content-access";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getWord3DImage, getWordsWithDistinctImages } from "../utils/kids-assets";
+import {
+  buildFillDistractors,
+  buildProgressiveConversationChoices,
+  buildSentenceNearMisses,
+  getNormalLessonDifficulty,
+  orderByLessonDifficulty,
+  selectProgressiveDistractors,
+  selectSentenceBuilderExtras,
+} from "./normal-english/difficulty";
 
 import arTranslations from "./translations/ar.json";
 import kuTranslations from "./translations/ku.json";
@@ -414,22 +423,59 @@ function buildLessonQuestionsFromBank(
   unitIndex: number,
   lessonIndex: number,
   mode: LessonPathMode,
+  rawUnit?: LessonBank[],
 ): GameQuestion[] {
   const nativeLang = useLocaleStore.getState().selectedSourceLanguage;
   const targetLang = useLocaleStore.getState().selectedTargetLanguage;
   const lesson = mapLessonBankGenerically(rawLesson, nativeLang, targetLang);
+  const normalDifficulty =
+    mode === "normal" && targetLang === "en"
+      ? getNormalLessonDifficulty(unitIndex, lessonIndex)
+      : null;
 
   // Removed kidsGames full-screen diversion to use standard beautiful React Native UI
 
   const seed = unitIndex * 997 + lessonIndex * 137;
 
   const words     = shuffle(lesson.words,         seed);
-  const voices    = shuffle(lesson.voices,        seed + 1);
-  const sentences = shuffle(lesson.sentences,     seed + 2);
+  const shuffledVoices = shuffle(lesson.voices, seed + 1);
+  const shuffledSentences = shuffle(lesson.sentences, seed + 2);
+  const voices = normalDifficulty
+    ? orderByLessonDifficulty(
+        shuffledVoices,
+        (voice) => voice.target.split(/\s+/).length,
+        normalDifficulty.progress,
+      )
+    : shuffledVoices;
+  const sentences = normalDifficulty
+    ? orderByLessonDifficulty(
+        shuffledSentences,
+        (sentence) => sentence.english.length,
+        normalDifficulty.progress,
+      )
+    : shuffledSentences;
   const fills     = shuffle(lesson.fillBlanks,    seed + 3);
   const convos    = shuffle(lesson.conversations, seed + 4);
   const lessonPool = lessonEnglishPool(lesson);
   const lessonWords = lessonSingleWordPool(lesson);
+  const learnedLessons = (rawUnit?.slice(0, lessonIndex + 1) ?? [rawLesson]);
+  const learnedWordPhrases = learnedLessons.flatMap((item) =>
+    item.words.map((word) => word.english),
+  );
+  const learnedSentences = learnedLessons.flatMap((item) =>
+    item.sentences.map((sentence) => sentence.english.join(" ")),
+  );
+  const learnedSingleWords = (() => {
+    const seen = new Set<string>();
+    return [...learnedWordPhrases, ...learnedSentences].flatMap((phrase) =>
+      phrase.split(/\s+/).filter((token) => {
+        const key = token.toLowerCase().replace(/[^a-z']/g, "");
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+    );
+  })();
 
   const questions: GameQuestion[] = [];
   const isNormal = mode === "normal";
@@ -437,12 +483,20 @@ function buildLessonQuestionsFromBank(
 
   const pushWordMc = (wordIndex: number, optionSeed: number) => {
     const mcWord = pick(words, wordIndex);
-    const mcWrongs = pickLessonWrongs(
-      words.map((w) => w.english),
-      mcWord.english,
-      3,
-      optionSeed,
-    );
+    const mcWrongs = normalDifficulty
+      ? selectProgressiveDistractors({
+          correct: mcWord.english,
+          closeCandidates: words.map((word) => word.english),
+          fallbackCandidates: learnedWordPhrases,
+          closeCount: normalDifficulty.closeDistractorCount,
+          seed: optionSeed,
+        })
+      : pickLessonWrongs(
+          words.map((w) => w.english),
+          mcWord.english,
+          3,
+          optionSeed,
+        );
     questions.push({
       type: "multiple_choice",
       prompt: getPromptText(
@@ -589,7 +643,7 @@ function buildLessonQuestionsFromBank(
   // ── Normal / Street Mode Generator ─────────────────────────────────────────
 
   // 1. Pair Match (1×)
-  const pairCount = Math.min(4, words.length);
+  const pairCount = Math.min(normalDifficulty?.pairCount ?? 4, words.length);
   questions.push({
     type: "pair_match",
     pairs: Array.from({ length: pairCount }, (_, i) => pick(words, i)),
@@ -600,13 +654,26 @@ function buildLessonQuestionsFromBank(
   const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;
   if (isNormal && mcSource) {
     const correctSentence = mcSource.english.join(" ");
-    const sentenceWrongs = pickLessonWrongs(
-      lessonPool,
-      correctSentence,
-      3,
-      seed + 10,
-      (d) => d.split(" ").length > 2,
-    );
+    const sentenceWrongs = normalDifficulty
+      ? selectProgressiveDistractors({
+          correct: correctSentence,
+          closeCandidates: [
+            ...buildSentenceNearMisses(mcSource.english),
+            ...learnedSentences,
+          ],
+          fallbackCandidates: lessonPool.filter(
+            (candidate) => candidate.split(" ").length > 2,
+          ),
+          closeCount: normalDifficulty.closeDistractorCount,
+          seed: seed + 10,
+        })
+      : pickLessonWrongs(
+          lessonPool,
+          correctSentence,
+          3,
+          seed + 10,
+          (d) => d.split(" ").length > 2,
+        );
     questions.push({
       type: "multiple_choice",
       prompt: getPromptText("choose_correct", nativeLang, targetLang, mcSource.kurdish),
@@ -629,13 +696,20 @@ function buildLessonQuestionsFromBank(
   for (let i = 0; i < 2; i++) {
     const s = pick(sentences, i);
     const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-    const extra = pickLessonWrongs(
-      lessonWords,
-      "",
-      2,
-      seed + 20 + i,
-      (d) => !sentSet.has(d.toLowerCase()),
-    );
+    const extra = normalDifficulty
+      ? selectSentenceBuilderExtras(
+          learnedSingleWords,
+          s.english,
+          normalDifficulty.sentenceExtraCount,
+          seed + 20 + i,
+        )
+      : pickLessonWrongs(
+          lessonWords,
+          "",
+          2,
+          seed + 20 + i,
+          (d) => !sentSet.has(d.toLowerCase()),
+        );
     questions.push({
       type: "sentence_builder",
       kurdishSentence: s.kurdish,
@@ -648,7 +722,14 @@ function buildLessonQuestionsFromBank(
   // 5. Fill Blank (2×)
   for (let i = 0; i < 2; i++) {
     const f = pick(fills, i);
-    const fillWrongs = sanitizeFillWrongs(f.answer, f.wrongs);
+    const fillWrongs = normalDifficulty
+      ? buildFillDistractors(
+          f.answer,
+          f.wrongs,
+          normalDifficulty.closeDistractorCount,
+          learnedSingleWords,
+        )
+      : sanitizeFillWrongs(f.answer, f.wrongs);
     questions.push({
       type: "fill_blank",
       sentenceParts: f.parts,
@@ -666,13 +747,23 @@ function buildLessonQuestionsFromBank(
       pushWordMc(6 + i, seed + 50 + i);
       continue;
     }
+    const progressiveConversation = normalDifficulty
+      ? buildProgressiveConversationChoices(
+          c,
+          normalDifficulty.closeDistractorCount,
+        )
+      : null;
     questions.push({
       type: "conversation_pick",
       situation: c.situation,
       theyAsk: c.theyAsk,
       correctAnswer: c.correct,
-      optionTiers: buildConversationOptionTiers(c),
-      options: shuffle([c.correct, c.wrong1, c.wrong2, c.wrong3], seed + 50 + i),
+      optionTiers:
+        progressiveConversation?.optionTiers ?? buildConversationOptionTiers(c),
+      options: shuffle(
+        progressiveConversation?.options ?? [c.correct, c.wrong1, c.wrong2, c.wrong3],
+        seed + 50 + i,
+      ),
       explanation: c.explanation,
       xp: 25,
     });
@@ -694,8 +785,21 @@ function buildLessonQuestionsFromBank(
     if (unitIndex >= 2) {
       let paragraphsToUse: string[] = [];
       if (sentences.length > 0) {
-        // Use sentences from the lesson
-        paragraphsToUse = sentences.slice(0, 2).map((s) => s.english.join(" "));
+        const currentLessonSentences = sentences.map((sentence) =>
+          sentence.english.join(" "),
+        );
+        const readingCandidates = [...new Set([
+          ...currentLessonSentences,
+          ...orderByLessonDifficulty(
+            learnedSentences,
+            (sentence) => sentence.length,
+            normalDifficulty?.progress ?? 0,
+          ),
+        ])];
+        paragraphsToUse = readingCandidates.slice(
+          0,
+          normalDifficulty?.readingSentenceCount ?? 2,
+        );
       } else if (voices.length > 0) {
         // Use target words/phrases from the lesson's voices
         paragraphsToUse = [voices.slice(0, 3).map((v) => v.target).join(". ") + "."];
@@ -777,5 +881,5 @@ export function getLessonQuestions(
     unit[Math.abs(lessonIndex) % unit.length];
   if (!lesson) return [];
 
-  return buildLessonQuestionsFromBank(lesson, unitIndex, lessonIndex, mode);
+  return buildLessonQuestionsFromBank(lesson, unitIndex, lessonIndex, mode, unit);
 }

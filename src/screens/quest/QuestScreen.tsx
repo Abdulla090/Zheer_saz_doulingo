@@ -11,7 +11,7 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
 import { AnimatedCard } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import { useI18n } from "../../hooks/useI18n";
-import { HomeMeshBackground, HomePalette as C } from "../../components/ui/ios-liquid-home";
+import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hapticImpact } from "../../utils/haptics";

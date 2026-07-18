@@ -1,21 +1,20 @@
-appId: com.hewad.mubariz.duolingoclone
+appId: com.hewad.mubariz.twino
 ---
 - launchApp
 - runFlow: onboarding.yaml
 
-# Assert logo on the main dashboard screen
-- assertVisible: "PINGO"
+# Onboarding now hands off to authentication before the main app.
+- tapOn: "Continue as Guest"
 
-# Navigate to Games/Feed tab
-- tapOn: "Games"
-- assertVisible: "Immersive AI Speaking"
-- assertVisible: "Drills & Practice"
+# Assert the localized home screen.
+- assertVisible: "سڵاو!"
 
-# Navigate to Path/Dashboard tab
-- tapOn: "Path"
-- assertVisible: "Normal English"
+# Navigate through the localized production tab bar.
+- tapOn: "یاریەکان"
+- assertVisible: "ڕاهێنان"
 
-# Navigate to Settings/More tab
-- tapOn: "Profile"
-- assertVisible: "Settings"
-- assertVisible: "Kurdish (Sorani)"
+- tapOn: "لیگ"
+- assertVisible: "لیگ"
+
+- tapOn: "پڕۆفایل"
+- assertVisible: "ڕێکخستنەکان"

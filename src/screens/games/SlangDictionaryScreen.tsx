@@ -278,7 +278,6 @@ const SlangItemRow = React.memo(function SlangItemRow({
 });
 
 export function SlangDictionaryScreen() {
-  const { colors } = useThemeColors();
   const styles = useSlangStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();

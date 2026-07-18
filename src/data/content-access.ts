@@ -8,7 +8,7 @@ import { getSkippedUnitsCount } from "./normal-english";
 
 /** Effective units for gameplay — admin overrides or cached/bundled defaults. */
 export function getUnitsForPath(mode: LessonPathMode): UnitBank[] {
-  // Guard: if the content pack for this mode is not downloaded, return empty
+  // Guard: if this bundled path has not been activated, return no units.
   if (!useContentPackStore.getState().isAvailable(mode)) {
     return [];
   }

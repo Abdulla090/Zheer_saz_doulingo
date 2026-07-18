@@ -1,9 +1,16 @@
+import { usePathname } from "expo-router";
 import React from "react";
-import { TabScreenTransition } from "./TabScreenTransition";
+import { Platform, useWindowDimensions, View } from "react-native";
+
+import {
+  isDesktopWebWidth,
+  WEB_DESKTOP_NAV_WIDTH,
+  WEB_DESKTOP_RAIL_WIDTH,
+} from "../constants/web-layout";
 
 /**
  * TabScreenChrome wraps each tab screen.
- * Keep tab switches immediate; decorative openers make navigation feel slow.
+ * Navigation owns the transition so tab screens do not animate twice.
  */
 export function TabScreenChrome({
   children,
@@ -12,5 +19,24 @@ export function TabScreenChrome({
   lazy?: boolean;
   openingVariant?: string;
 }) {
-  return <TabScreenTransition>{children}</TabScreenTransition>;
+  const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const isDesktopWeb =
+    Platform.OS === "web" && isDesktopWebWidth(width);
+  const usesDesktopRail =
+    pathname === "/" || pathname === "/index" || pathname === "/play";
+
+  return (
+    <View
+      style={[
+        { flex: 1 },
+        isDesktopWeb && {
+          marginLeft: WEB_DESKTOP_NAV_WIDTH,
+          marginRight: usesDesktopRail ? WEB_DESKTOP_RAIL_WIDTH : 0,
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
 }

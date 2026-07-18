@@ -2,7 +2,15 @@ import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMas
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
-const UNIT_POSES: TwinoPose[] = ["wave", "happy", "headset"];
+const UNIT_POSES: TwinoPose[] = [
+  "happy",
+  "encouraging",
+  "thinking",
+  "surprised",
+  "comfy",
+  "sleepy",
+  "winning",
+];
 
 export const KIDS_CURVE_MASCOT_SIZE = 116;
 /** Show mascot on this lesson row (under the mic node). */

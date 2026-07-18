@@ -57,6 +57,10 @@ import { ListItem } from "./components/list-item";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import {
+  isDesktopWebWidth,
+  WEB_DESKTOP_PATH_WIDTH,
+} from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
@@ -91,6 +95,12 @@ export function NormalEnglishPathScreen({
   const { colors, isDark } = useThemeColors();
   const { locale, isKu } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
+  const pathLayoutWidth =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth)
+      ? WEB_DESKTOP_PATH_WIDTH
+      : windowWidth;
+  const desktopTopInset =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
   const scrollYRef = useRef(0);
@@ -277,7 +287,7 @@ export function NormalEnglishPathScreen({
     }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
       <ListItem
         item={item}
-        screenWidth={windowWidth}
+        screenWidth={pathLayoutWidth}
         unitLessonCount={section.data.length}
         pathMode="normal"
         isActiveLesson={item.pathIndex === normalNextLessonPathIndex}
@@ -289,7 +299,7 @@ export function NormalEnglishPathScreen({
       normalNextLessonPathIndex,
       selectLesson,
       selectedLesson?.item.id,
-      windowWidth,
+      pathLayoutWidth,
     ],
   );
 
@@ -326,7 +336,7 @@ export function NormalEnglishPathScreen({
         style={[
           darkStyles.root,
           {
-            paddingTop: insets.top + topChromeHeight,
+            paddingTop: insets.top + topChromeHeight + desktopTopInset,
           },
         ]}
       >

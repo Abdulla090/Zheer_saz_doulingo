@@ -33,6 +33,7 @@ import { LightGameHeading } from "./lesson-light-primitives";
 import { L, LightMotion } from "./lesson-light-design";
 import { crossShadow } from "../../../utils/shadows";
 import { AppText } from "../../../components/ui/AppText";
+import { getLanguageDirection } from "../../../i18n/direction";
 
 type Props = {
   question: MemoryFlipQuestion;
@@ -134,7 +135,12 @@ const MemoryCard = memo(function MemoryCard({
       onPressOut={() => {
         scale.value = withSpring(1, LightMotion.soft);
       }}
-      style={s.cardWrapper}
+      style={[
+        s.cardWrapper,
+        Platform.OS !== "web" && getLanguageDirection(languageCode) === "ltr"
+          ? { direction: "ltr" }
+          : undefined,
+      ]}
     >
       {/* Front Side (Face Down — Question Mark) */}
       <Animated.View

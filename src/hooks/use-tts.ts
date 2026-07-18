@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { createAudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
-import { generateSpeech, isBosonConfigured } from "../lib/boson-ai";
 import { isGeminiConfigured } from "../constants/gemini";
 import { generateGeminiSpeech, pcmBase64ToWavBase64 } from "../services/gemini-speech-service";
 
@@ -205,62 +204,6 @@ export function useTTS() {
         bosonUriRef.current = null;
         setSpeaking(false);
         setActiveId(null);
-      }
-    }
-
-    if (!useDeviceTts && Platform.OS !== "web" && isBosonConfigured()) {
-      try {
-        setSpeaking(true);
-        setActiveId(id ?? null);
-        const uri = await generateSpeech(normalized, "default");
-        if (speakTokenRef.current !== token) {
-          if (uri.startsWith("file://")) {
-            try {
-              await FileSystem.deleteAsync(uri, { idempotent: true });
-            } catch {
-              /* noop */
-            }
-          }
-          return;
-        }
-
-        bosonUriRef.current = uri;
-        const player = createAudioPlayer(uri, {
-          keepAudioSessionActive: true,
-          updateInterval: 100,
-        });
-        bosonPlayerRef.current = player;
-        const sub = player.addListener("playbackStatusUpdate", async (status: any) => {
-          if (status.didJustFinish || (status.currentTime > 0 && !status.playing && !status.isBuffering)) {
-            sub.remove();
-            if (bosonPlayerRef.current === player) {
-              bosonPlayerRef.current = null;
-            }
-            const playedUri = bosonUriRef.current;
-            bosonUriRef.current = null;
-            try {
-              player.remove();
-            } catch {
-              /* noop */
-            }
-            if (playedUri && playedUri.startsWith("file://")) {
-              try {
-                await FileSystem.deleteAsync(playedUri, { idempotent: true });
-              } catch {
-                /* noop */
-              }
-            }
-            finish();
-          }
-        });
-        player.play();
-        return;
-      } catch {
-        bosonPlayerRef.current = null;
-        bosonUriRef.current = null;
-        setSpeaking(false);
-        setActiveId(null);
-        // fall through to the native speech fallback below
       }
     }
 

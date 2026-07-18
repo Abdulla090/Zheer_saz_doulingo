@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { AppText } from "../../../components/ui/AppText";
+import { getMascotExpressionSource } from "../../../constants/mascot-expressions";
 import {
   getMascotDisplayName,
   MASCOTS,
@@ -31,7 +32,7 @@ const PET_COPY = {
   en: {
     eyebrow: "FINAL STEP",
     title: "Choose your learning buddy",
-    subtitle: "Your pet will cheer you on from the Games screen.",
+    subtitle: "Your pet will cheer you on throughout the app.",
     featured: "Twino originals",
     more: "More friendly faces",
     selected: "Selected",
@@ -40,7 +41,7 @@ const PET_COPY = {
   ku: {
     eyebrow: "هەنگاوی کۆتایی",
     title: "هاوڕێی فێربوونت هەڵبژێرە",
-    subtitle: "ئاژەڵەکەت لە شاشەی یارییەکان هانت دەدات.",
+    subtitle: "ئاژەڵەکەت لە سەرانسەری ئەپەکە هانت دەدات.",
     featured: "هاوڕێ سەرەکییەکانی Twino",
     more: "هاوڕێ نوێکان",
     selected: "هەڵبژێردرا",
@@ -49,7 +50,7 @@ const PET_COPY = {
   ar: {
     eyebrow: "الخطوة الأخيرة",
     title: "اختر رفيق التعلّم",
-    subtitle: "سيشجعك حيوانك الأليف من شاشة الألعاب.",
+    subtitle: "سيشجعك حيوانك الأليف في جميع أنحاء التطبيق.",
     featured: "رفيقا Twino الأصليان",
     more: "وجوه ودودة أخرى",
     selected: "تم الاختيار",
@@ -58,7 +59,7 @@ const PET_COPY = {
   es: {
     eyebrow: "ÚLTIMO PASO",
     title: "Elige a tu compañero",
-    subtitle: "Tu mascota te animará desde la pantalla de Juegos.",
+    subtitle: "Tu mascota te animará en toda la aplicación.",
     featured: "Los originales de Twino",
     more: "Más caras amigables",
     selected: "Seleccionado",
@@ -67,7 +68,7 @@ const PET_COPY = {
   ru: {
     eyebrow: "ПОСЛЕДНИЙ ШАГ",
     title: "Выбери помощника",
-    subtitle: "Твой питомец будет поддерживать тебя на экране игр.",
+    subtitle: "Твой питомец будет поддерживать тебя во всём приложении.",
     featured: "Оригинальные герои Twino",
     more: "Другие друзья",
     selected: "Выбрано",
@@ -129,7 +130,7 @@ export function OnboardingPetPicker({ onFinish }: Props) {
       >
         <View style={[styles.petImageFrame, selected && styles.petImageFrameSelected]}>
           <Image
-            source={mascot.source}
+            source={getMascotExpressionSource(mascot.id, "happy")}
             style={styles.petImage}
             contentFit="contain"
             transition={120}

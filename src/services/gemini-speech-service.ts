@@ -1,8 +1,8 @@
 import {
   GEMINI_SPEECH_MODEL,
-  getGeminiApiKey,
   isGeminiConfigured,
 } from "../constants/gemini";
+import { generateGeminiContent } from "./gemini-gateway";
 import { matchesTarget } from "../utils/speech-match";
 
 export type GeminiSpeechEvaluation = {
@@ -46,43 +46,11 @@ async function requestGeminiGenerateContent(
   timeoutMs = API_TIMEOUT_MS,
   model?: string,
 ): Promise<GeminiGenerateResponse> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
-  const resolvedModel = model || GEMINI_SPEECH_MODEL;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${resolvedModel}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      },
-    );
-
-    const data = (await res.json()) as GeminiGenerateResponse;
-    if (!res.ok) {
-      throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
-    }
-
-    return data;
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("Network timeout: Gemini request took too long.");
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return generateGeminiContent<GeminiGenerateResponse>(
+    model || GEMINI_SPEECH_MODEL,
+    body,
+    timeoutMs,
+  );
 }
 
 function extractJsonObject(text: string): string | null {
@@ -151,11 +119,6 @@ export async function evaluateSpeechWithGemini(input: {
   mimeType: string;
   targetPhrase: string;
 }): Promise<GeminiSpeechEvaluation> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    console.warn("[evaluateSpeechWithGemini] API key missing!");
-    throw new Error("Gemini API key is not configured.");
-  }
   if (!input.audioBase64) {
     console.warn("[evaluateSpeechWithGemini] audioBase64 missing!");
     throw new Error("No audio was captured.");
@@ -172,82 +135,29 @@ export async function evaluateSpeechWithGemini(input: {
     "Set matches to false when unrelated or clearly wrong.",
   ].join("\n");
 
-  const controller = new AbortController();
-
-  const fetchPromise = fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
+  const data = await requestGeminiGenerateContent({
+    contents: [
+      {
+        parts: [
+          { text: prompt },
           {
-            parts: [
-              { text: prompt },
-              {
-                inline_data: {
-                  mime_type: mimeType,
-                  data: input.audioBase64,
-                },
-              },
-            ],
+            inline_data: {
+              mime_type: mimeType,
+              data: input.audioBase64,
+            },
           },
         ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 256,
-        },
-      }),
-      signal: controller.signal,
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 256,
     },
-  );
-
-  let timeoutId: ReturnType<typeof setTimeout>;
-
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      controller.abort();
-      console.warn("[evaluateSpeechWithGemini] Request timed out after", API_TIMEOUT_MS, "ms");
-      reject(new Error("Network timeout: Gemini request took too long."));
-    }, API_TIMEOUT_MS);
   });
 
-  try {
-    const res = (await Promise.race([
-      fetchPromise,
-      timeoutPromise,
-    ])) as Response;
-    clearTimeout(timeoutId!);
-
-    console.log("[evaluateSpeechWithGemini] Response status:", res.status);
-    const data = (await res.json()) as GeminiGenerateResponse;
-    console.log("[evaluateSpeechWithGemini] Response JSON:", JSON.stringify(data));
-
-    if (!res.ok) {
-      throw new Error(
-        data.error?.message ?? `Gemini request failed (${res.status})`,
-      );
-    }
-
-    const text =
-      data.candidates?.[0]?.content?.parts
-        ?.map((part) => part.text ?? "")
-        .join("")
-        .trim() ?? "";
-
-    if (!text) {
-      throw new Error("Gemini returned an empty response.");
-    }
-
-    const evaluation = parseEvaluationPayload(text, input.targetPhrase);
-    console.log("[evaluateSpeechWithGemini] Parsed evaluation:", evaluation);
-    return evaluation;
-  } finally {
-    clearTimeout(timeoutId!);
-  }
+  const text = extractGeminiText(data);
+  if (!text) throw new Error("Gemini returned an empty response.");
+  return parseEvaluationPayload(text, input.targetPhrase);
 }
 
 export async function generateRolePlayResponse(
@@ -519,48 +429,16 @@ export function pcmBase64ToWavBase64(pcmBase64: string, sampleRate = 24000): str
 }
 
 export async function generateGeminiSpeech(text: string, voiceName = "Aoede"): Promise<string> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
   const model = "gemini-3.1-flash-tts-preview";
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  const data = await generateGeminiContent<any>(model, {
+    contents: [{ parts: [{ text }] }],
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: text,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: voiceName,
-              },
-            },
-          },
-        },
-      }),
-    }
-  );
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error?.message ?? `Gemini TTS request failed (${response.status})`);
-  }
+    },
+  }, 50_000);
 
   const base64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   if (!base64) {
@@ -673,10 +551,6 @@ export async function evaluateParagraphSpeechWithGemini(
   mimeType: string,
   targetParagraphs: string[]
 ): Promise<ParagraphSpeechEvaluation> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
   if (!audioBase64) {
     throw new Error("No audio was captured.");
   }
@@ -705,57 +579,26 @@ export async function evaluateParagraphSpeechWithGemini(
     `- Strip punctuation from the "word" field in wordAnalysis for cleaner UI mapping, but keep it in the transcript.`
   ].join("\n");
 
-  const controller = new AbortController();
-  const fetchPromise = fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inline_data: {
-                  mime_type: normalizedMimeType,
-                  data: audioBase64,
-                },
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 2048,
-        },
-      }),
-      signal: controller.signal,
-    },
-  );
-
-  let timeoutId: ReturnType<typeof setTimeout>;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      controller.abort();
-      reject(new Error("Network timeout: Gemini request took too long."));
-    }, API_TIMEOUT_MS * 2); // Longer timeout since paragraphs are longer
-  });
-
   try {
-    const res = (await Promise.race([
-      fetchPromise,
-      timeoutPromise,
-    ])) as Response;
-    clearTimeout(timeoutId!);
-
-    const data = (await res.json()) as GeminiGenerateResponse;
-    if (!res.ok) {
-      throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
-    }
+    const data = await requestGeminiGenerateContent({
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: normalizedMimeType,
+                data: audioBase64,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 2048,
+      },
+    }, API_TIMEOUT_MS * 2);
 
     let text =
       data.candidates?.[0]?.content?.parts
@@ -778,8 +621,6 @@ export async function evaluateParagraphSpeechWithGemini(
   } catch (err: any) {
     console.error("[evaluateParagraphSpeechWithGemini] Error:", err);
     throw new Error(err.message || "Failed to evaluate paragraph speech.");
-  } finally {
-    clearTimeout(timeoutId!);
   }
 }
 

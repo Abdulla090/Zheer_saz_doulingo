@@ -1,0 +1,617 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_REGULAR.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_MEDIUM.ttf") format("truetype");
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_BOLD.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      color: #0f172a;
+      font-family: "DIN Next Rounded";
+      --f05-restaurant-art: url("assets/roleplay-restaurant.png");
+    }
+
+    .f05-ground {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, #ffffff 0%, #fffdf4 100%);
+    }
+
+    .f05-ground-rule {
+      position: absolute;
+      left: 104px;
+      right: 104px;
+      top: 888px;
+      height: 3px;
+      border-radius: 3px;
+      background: rgba(255, 200, 0, 0.14);
+    }
+
+    .f05-ground-rule::before {
+      content: "";
+      display: block;
+      width: 64%;
+      height: 100%;
+      border-radius: inherit;
+      background: #ffc800;
+    }
+
+    .f05-environment {
+      position: absolute;
+      left: 124px;
+      top: 48px;
+      width: 1672px;
+      height: 780px;
+      overflow: hidden;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      border-radius: 38px;
+      background: #f7f3ec;
+      transform-origin: 27% 50%;
+      will-change: transform, opacity;
+      z-index: 3;
+    }
+
+    .f05-environment::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(15, 23, 42, 0.04), transparent 28%, transparent 68%, rgba(15, 23, 42, 0.12)),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.04), transparent 48%, rgba(15, 23, 42, 0.28));
+    }
+
+    .f05-env-image {
+      position: absolute;
+      inset: -260px 0 auto 0;
+      width: 100%;
+      height: 1300px;
+      background-image: var(--f05-restaurant-art);
+      background-size: cover;
+      background-position: 50% 54%;
+      background-repeat: no-repeat;
+      will-change: transform;
+    }
+
+    .f05-roleplay-label {
+      position: absolute;
+      left: 36px;
+      top: 32px;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 17px;
+      border: 1.5px solid rgba(255, 200, 0, 0.28);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      font-size: 17px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      will-change: transform, opacity;
+    }
+
+    .f05-roleplay-label i,
+    .f05-confidence-dot {
+      display: block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ffc800;
+    }
+
+    .f05-prompt {
+      position: absolute;
+      left: 58px;
+      bottom: 52px;
+      z-index: 5;
+      width: 510px;
+      box-sizing: border-box;
+      padding: 22px 26px;
+      border: 1.5px solid rgba(255, 200, 0, 0.28);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      will-change: transform, opacity;
+    }
+
+    .f05-prompt-eyebrow {
+      margin-bottom: 8px;
+      color: #997800;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .f05-prompt-line {
+      color: #0f172a;
+      font-size: 31px;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .f05-confidence {
+      position: absolute;
+      right: 46px;
+      bottom: 54px;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border: 1.5px solid rgba(255, 200, 0, 0.28);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.94);
+      color: #0f172a;
+      font-size: 15px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      will-change: transform, opacity;
+    }
+
+    .f05-real-stage {
+      position: absolute;
+      left: 820px;
+      top: 240px;
+      width: 990px;
+      height: 330px;
+      z-index: 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform, opacity;
+      transform-origin: 50% 50%;
+    }
+
+    .f05-real-depth {
+      position: relative;
+      width: 100%;
+      height: 248px;
+    }
+
+    .f05-real-word {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      color: #0f172a;
+      font-size: 226px;
+      line-height: 0.93;
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      text-align: center;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .f05-real-word.is-front {
+      position: relative;
+      z-index: 6;
+    }
+
+    .f05-real-word.is-back-1 { color: rgba(255, 200, 0, 0.72); transform: translate(2px, 2px); z-index: 5; }
+    .f05-real-word.is-back-2 { color: rgba(255, 200, 0, 0.55); transform: translate(4px, 4px); z-index: 4; }
+    .f05-real-word.is-back-3 { color: rgba(255, 200, 0, 0.39); transform: translate(6px, 6px); z-index: 3; }
+    .f05-real-word.is-back-4 { color: rgba(255, 200, 0, 0.23); transform: translate(8px, 8px); z-index: 2; }
+
+    .f05-usecase-stage {
+      position: absolute;
+      left: 112px;
+      top: 122px;
+      width: 1696px;
+      height: 660px;
+      z-index: 12;
+      display: grid;
+      place-items: center;
+      will-change: transform, opacity;
+    }
+
+    .f05-usecase-eyebrow {
+      position: absolute;
+      top: 44px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #997800;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    .f05-usecase-window {
+      position: relative;
+      width: 100%;
+      height: 310px;
+    }
+
+    .f05-usecase {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0f172a;
+      font-size: 164px;
+      line-height: 0.96;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      text-align: center;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    .f05-usecase.is-long {
+      font-size: 126px;
+    }
+
+    .f05-char {
+      display: inline-block;
+      min-width: 0.18em;
+      will-change: transform, opacity, filter;
+    }
+
+    .f05-usecase-rail {
+      position: absolute;
+      left: 50%;
+      bottom: 52px;
+      width: 400px;
+      height: 4px;
+      margin-left: -200px;
+      overflow: hidden;
+      border-radius: 4px;
+      background: rgba(255, 200, 0, 0.14);
+    }
+
+    .f05-usecase-fill {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: #ffc800;
+      transform-origin: left center;
+      will-change: transform;
+    }
+
+    .f05-final-stage {
+      position: absolute;
+      left: 92px;
+      top: 76px;
+      width: 1736px;
+      height: 748px;
+      z-index: 18;
+      display: grid;
+      grid-template-columns: 764px 1fr;
+      align-items: center;
+      column-gap: 54px;
+    }
+
+    .f05-final-glow {
+      position: absolute;
+      left: -160px;
+      top: 48px;
+      width: 1040px;
+      height: 650px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(208, 159, 0, 0.23) 0%, rgba(255, 200, 0, 0.1) 42%, transparent 72%);
+      pointer-events: none;
+      will-change: transform, opacity;
+      z-index: 1;
+    }
+
+    .f05-final-lockup {
+      position: relative;
+      z-index: 4;
+      width: 764px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .f05-final-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 22px 8px;
+      color: #806500;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    .f05-final-eyebrow::before {
+      content: "";
+      width: 48px;
+      height: 4px;
+      border-radius: 4px;
+      background: #ffc800;
+    }
+
+    .f05-final-pill {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      width: 732px;
+      min-height: 270px;
+      box-sizing: border-box;
+      padding: 38px 52px 44px;
+      border-radius: 46px;
+      background: #ffc800;
+      color: #0f172a;
+      font-size: 106px;
+      line-height: 0.86;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f05-final-pill span:last-child {
+      margin-top: 13px;
+    }
+
+    .f05-final-usecases {
+      width: 732px;
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .f05-final-usecase {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      box-sizing: border-box;
+      padding: 11px 20px 10px;
+      border: 1.5px solid rgba(15, 23, 42, 0.16);
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f172a;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.025em;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    .f05-final-art {
+      position: relative;
+      z-index: 4;
+      width: 918px;
+      height: 680px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 200, 0, 0.28);
+      border-radius: 46px;
+      background-color: #f7f3ec;
+      background-image: var(--f05-restaurant-art);
+      background-size: cover;
+      background-position: 50% 48%;
+      background-repeat: no-repeat;
+      transform-origin: 42% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f05-final-art::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(15, 23, 42, 0.06), transparent 36%),
+        linear-gradient(180deg, transparent 58%, rgba(15, 23, 42, 0.28));
+    }
+
+    .f05-final-art-label {
+      position: absolute;
+      left: 28px;
+      top: 28px;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 18px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #0f172a;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      will-change: transform, opacity;
+    }
+
+    .f05-final-art-label::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffc800;
+    }
+
+    .f05-pet {
+      position: absolute;
+      z-index: 7;
+      width: 210px;
+      height: 210px;
+      object-fit: contain;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+
+    .f05-pet.is-orange {
+      left: 28px;
+      bottom: -8px;
+    }
+
+    .f05-pet.is-violet {
+      right: 24px;
+      bottom: -8px;
+    }
+  </style>
+
+  <div data-hf-id="hf-9r0u" id="root" data-composition-id="05-practice-real-life" data-start="0" data-duration="7.5" data-track-index="0" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-ynlh" id="f05-ground-clip" class="clip f05-ground" data-start="0" data-duration="7" data-track-index="1">
+      <div data-hf-id="hf-juqw" class="f05-ground-rule"></div>
+    </div>
+
+    <section data-hf-id="hf-lcdy" id="f05-environment" class="f05-environment" aria-label="TWINO restaurant roleplay environment">
+      <div data-hf-id="hf-li3h" id="f05-env-image" class="f05-env-image" role="img" aria-label="Restaurant conversation roleplay scene"></div>
+      <div data-hf-id="hf-7519" id="f05-roleplay-label" class="f05-roleplay-label"><i data-hf-id="hf-wt6k"></i>TWINO ROLEPLAY</div>
+      <div data-hf-id="hf-x7c2" id="f05-prompt" class="f05-prompt">
+        <div data-hf-id="hf-a5zm" class="f05-prompt-eyebrow">YOUR TURN</div>
+        <div data-hf-id="hf-23rp" class="f05-prompt-line">A table for two.</div>
+      </div>
+      <div data-hf-id="hf-100k" id="f05-confidence" class="f05-confidence"><span data-hf-id="hf-4zvb" class="f05-confidence-dot"></span>READY TO SPEAK</div>
+    </section>
+
+    <section data-hf-id="hf-del5" id="f05-real-stage" class="f05-real-stage" aria-label="Real life emphasis">
+      <div data-hf-id="hf-3jbk" class="f05-real-depth">
+        <div data-hf-id="hf-ffd8" class="f05-real-word is-back-4">REAL LIFE</div>
+        <div data-hf-id="hf-byzp" class="f05-real-word is-back-3">REAL LIFE</div>
+        <div data-hf-id="hf-dewi" class="f05-real-word is-back-2">REAL LIFE</div>
+        <div data-hf-id="hf-n2ur" class="f05-real-word is-back-1">REAL LIFE</div>
+        <div data-hf-id="hf-57jt" class="f05-real-word is-front">REAL LIFE</div>
+      </div>
+    </section>
+
+    <section data-hf-id="hf-lt89" id="f05-usecase-stage" class="f05-usecase-stage" aria-label="Roleplay use cases">
+      <div data-hf-id="hf-zyuo" class="f05-usecase-eyebrow">REAL-WORLD ROLEPLAY</div>
+      <div data-hf-id="hf-hwo2" class="f05-usecase-window">
+        <div data-hf-id="hf-ae3n" id="f05-usecase-0" class="f05-usecase">CAFÉS</div>
+        <div data-hf-id="hf-j8ri" id="f05-usecase-1" class="f05-usecase">INTERVIEWS</div>
+        <div data-hf-id="hf-1n2t" id="f05-usecase-2" class="f05-usecase">TRAVEL</div>
+        <div data-hf-id="hf-fsgn" id="f05-usecase-3" class="f05-usecase is-long">EVERYDAY MOMENTS</div>
+      </div>
+      <div data-hf-id="hf-fo62" class="f05-usecase-rail"><div data-hf-id="hf-2ste" id="f05-usecase-fill" class="f05-usecase-fill"></div></div>
+    </section>
+
+    <section data-hf-id="hf-0gvx" class="f05-final-stage" aria-label="Practice real life lockup">
+      <div data-hf-id="hf-ruci" id="f05-final-glow" class="f05-final-glow"></div>
+      <div data-hf-id="hf-poij" class="f05-final-lockup">
+        <div data-hf-id="hf-6c0r" id="f05-final-eyebrow" class="f05-final-eyebrow">REAL-WORLD ROLEPLAY</div>
+        <div data-hf-id="hf-zcj6" id="f05-final-pill" class="f05-final-pill"><span data-hf-id="hf-pvjw">PRACTICE</span><span data-hf-id="hf-9839">REAL LIFE.</span></div>
+        <div data-hf-id="hf-bhet" class="f05-final-usecases" aria-label="Roleplay moments">
+          <div data-hf-id="hf-blxk" class="f05-final-usecase">CAFÉS</div>
+          <div data-hf-id="hf-f3bi" class="f05-final-usecase">INTERVIEWS</div>
+          <div data-hf-id="hf-t7c6" class="f05-final-usecase">TRAVEL</div>
+          <div data-hf-id="hf-k96w" class="f05-final-usecase">EVERYDAY MOMENTS</div>
+        </div>
+      </div>
+      <div data-hf-id="hf-zwp6" id="f05-final-art" class="f05-final-art">
+        <div data-hf-id="hf-ctt0" id="f05-final-art-label" class="f05-final-art-label">CONVERSATION READY</div>
+        <img data-hf-id="hf-il5m" id="f05-pet-orange" class="f05-pet is-orange" src="assets/image_021.webp" alt="Orange Pingo conversation partner">
+        <img data-hf-id="hf-1x4w" id="f05-pet-violet" class="f05-pet is-violet" src="assets/image_022.webp" alt="Violet TWINO conversation partner">
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    const f05Sequence = [
+      { id: "f05-usecase-0", text: "CAFÉS", hold: 0.05 },
+      { id: "f05-usecase-1", text: "INTERVIEWS", hold: 0.04 },
+      { id: "f05-usecase-2", text: "TRAVEL", hold: 0.05 },
+      { id: "f05-usecase-3", text: "EVERYDAY MOMENTS", hold: 0.10 }
+    ];
+    const f05SequenceStart = 3.58;
+    const f05BaseDuration = 0.26;
+    const f05SecondsPerChar = 0.006;
+    let f05Cursor = f05SequenceStart;
+
+    f05Sequence.forEach((item) => {
+      item.start = f05Cursor;
+      item.duration = f05BaseDuration + item.text.length * f05SecondsPerChar + item.hold;
+      item.end = item.start + item.duration;
+      f05Cursor = item.end;
+
+      const node = document.getElementById(item.id);
+      const chars = Array.from(item.text);
+      node.textContent = "";
+      chars.forEach((char) => {
+        const span = document.createElement("span");
+        span.className = "f05-char";
+        span.textContent = char === " " ? "\u00a0" : char;
+        node.appendChild(span);
+      });
+    });
+
+    const f05Tl = gsap.timeline({ paused: true });
+
+    f05Tl.fromTo("#f05-environment", { opacity: 0.72, scale: 0.985, y: 18 }, { opacity: 1, scale: 1, y: 0, duration: 0.52, ease: "power3.out" }, 0);
+    f05Tl.fromTo("#f05-env-image", { x: 18, scale: 1.03 }, { x: -18, scale: 1.055, duration: 1.65, ease: "power2.out" }, 0);
+    f05Tl.fromTo("#f05-roleplay-label", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.44, ease: "power3.out" }, 0.24);
+    f05Tl.fromTo("#f05-prompt", { opacity: 0, y: 28, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.56, ease: "power3.out" }, 0.46);
+    f05Tl.fromTo("#f05-confidence", { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.48, ease: "power3.out" }, 0.82);
+
+    f05Tl.to("#f05-environment", { x: -430, scale: 0.64, opacity: 0.84, duration: 0.78, ease: "power2.in", transformOrigin: "27% 50%" }, 1.7);
+    f05Tl.to("#f05-prompt", { opacity: 0.44, scale: 0.94, duration: 0.36, ease: "power2.in" }, 1.72);
+    f05Tl.to("#f05-confidence", { opacity: 0.52, duration: 0.30, ease: "power2.in" }, 1.76);
+    f05Tl.fromTo("#f05-real-stage", { opacity: 0, scale: 0.64, x: 132 }, { opacity: 1, scale: 1, x: 0, duration: 0.72, ease: "back.out(1.5)" }, 2.18);
+
+    f05Tl.to("#f05-environment", { x: -660, opacity: 0, duration: 0.34, ease: "power4.in" }, 3.24);
+    f05Tl.to("#f05-real-stage", { x: -230, opacity: 0, duration: 0.34, ease: "power4.in" }, 3.24);
+    f05Tl.fromTo("#f05-usecase-stage", { x: 230, opacity: 0.35 }, { x: 0, opacity: 1, duration: 0.34, ease: "power4.out" }, 3.56);
+    f05Tl.fromTo("#f05-usecase-fill", { scaleX: 0 }, { scaleX: 1, duration: 1.76, ease: "none", transformOrigin: "left center" }, 3.58);
+
+    f05Sequence.forEach((item, index) => {
+      const selector = `#${item.id}`;
+      const charSelector = `${selector} .f05-char`;
+      f05Tl.fromTo(selector, { opacity: 0, x: 42 }, { opacity: 1, x: 0, duration: 0.22, ease: "power3.out" }, item.start);
+      f05Tl.fromTo(charSelector, { opacity: 0, y: 24, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.24, ease: "power3.out", stagger: 0.012 }, item.start);
+      if (index < f05Sequence.length - 1) {
+        f05Tl.to(selector, { opacity: 0, x: -44, duration: 0.16, ease: "power4.in" }, item.end - 0.16);
+      }
+    });
+
+    f05Tl.to("#f05-usecase-stage", { opacity: 0, scale: 0.82, duration: 0.30, ease: "power2.in" }, 5.20);
+    f05Tl.fromTo("#f05-final-glow", { opacity: 0, scale: 0.86 }, { opacity: 0.26, scale: 1, duration: 0.78, ease: "power2.out" }, 5.16);
+    f05Tl.fromTo("#f05-final-art", { opacity: 0, x: 108, scale: 0.94 }, { opacity: 1, x: 0, scale: 1, duration: 0.64, ease: "power3.out" }, 5.26);
+    f05Tl.fromTo("#f05-final-pill", { opacity: 0, scaleX: 0.08, scaleY: 0.88 }, { opacity: 1, scaleX: 1, scaleY: 1, duration: 0.56, ease: "back.out(1.45)" }, 5.34);
+    f05Tl.fromTo("#f05-final-eyebrow", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 5.46);
+    f05Tl.fromTo(".f05-final-usecase", { opacity: 0, y: 20, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power3.out", stagger: 0.075 }, 5.60);
+    f05Tl.fromTo("#f05-final-art-label", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 5.62);
+    f05Tl.fromTo("#f05-pet-orange", { opacity: 0, x: -38, y: 34, scale: 0.84, rotation: -4 }, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0, duration: 0.58, ease: "back.out(1.35)" }, 5.68);
+    f05Tl.fromTo("#f05-pet-violet", { opacity: 0, x: 38, y: 36, scale: 0.84, rotation: 4 }, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0, duration: 0.58, ease: "back.out(1.35)" }, 5.82);
+    f05Tl.to({}, { duration: 0.70 }, 6.30);
+
+    window.__timelines["05-practice-real-life"] = f05Tl;
+  </script>
+</template>

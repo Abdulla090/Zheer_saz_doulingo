@@ -1,0 +1,469 @@
+<template>
+  <div data-hf-id="hf-ugrw" id="root" data-composition-id="07-your-english-in-motion" data-start="0" data-duration="6" data-track-index="0" data-width="1920" data-height="1080">
+    <style>
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_REGULAR.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_MEDIUM.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "DIN Next Rounded";
+        src: url("assets/fonts/DIN_BOLD.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        container-type: size;
+        font-family: "DIN Next Rounded", sans-serif;
+        color: #0f172a;
+      }
+
+      #root * {
+        box-sizing: border-box;
+      }
+
+      .f07-ground {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 36%, rgba(255, 200, 0, 0.11), transparent 26%),
+          linear-gradient(180deg, #ffffff 0%, #fffef8 78%, #ffffff 100%);
+      }
+
+      .f07-ground::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+        background-size: 34px 34px;
+        opacity: 0.2;
+        mask-image: radial-gradient(circle at 50% 38%, #000 0%, transparent 66%);
+      }
+
+      .f07-stage {
+        position: absolute;
+        inset: 0 0 184px 0;
+        overflow: hidden;
+      }
+
+      .f07-ring {
+        position: absolute;
+        border: 2px solid rgba(255, 200, 0, 0.18);
+        border-radius: 50%;
+        transform-origin: 50% 50%;
+        will-change: transform, opacity;
+      }
+
+      .f07-ring-a {
+        left: 310px;
+        top: -244px;
+        width: 1300px;
+        height: 1300px;
+      }
+
+      .f07-ring-b {
+        left: 482px;
+        top: -72px;
+        width: 956px;
+        height: 956px;
+      }
+
+      .f07-ring-c {
+        left: 648px;
+        top: 94px;
+        width: 624px;
+        height: 624px;
+      }
+
+      .f07-hero,
+      .f07-cta-wrap {
+        position: absolute;
+        left: 320px;
+        top: 56px;
+        width: 1280px;
+        height: 600px;
+        transform-origin: 50% 50%;
+        will-change: transform, opacity, filter;
+      }
+
+      .f07-hero {
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .f07-icon-shell {
+        width: 224px;
+        height: 224px;
+        border-radius: 54px;
+        border: 1.5px solid rgba(255, 200, 0, 0.2);
+        background: rgba(255, 200, 0, 0.04);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        will-change: transform;
+      }
+
+      .f07-icon-shell img {
+        width: 184px;
+        height: 184px;
+        object-fit: contain;
+        display: block;
+      }
+
+      .f07-hero-title {
+        margin-top: 38px;
+        color: #0f172a;
+        font-size: 104px;
+        font-weight: 700;
+        line-height: 1.02;
+        letter-spacing: -0.045em;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .f07-hero-title span {
+        position: relative;
+        display: inline-block;
+      }
+
+      .f07-hero-title span::after {
+        content: "";
+        position: absolute;
+        left: 2px;
+        right: 0;
+        bottom: -17px;
+        height: 8px;
+        border-radius: 100px;
+        background: #ffc800;
+      }
+
+      .f07-cta-wrap {
+        z-index: 7;
+        display: grid;
+        place-items: center;
+        opacity: 0;
+      }
+
+      .f07-cta {
+        width: 790px;
+        height: 142px;
+        border-radius: 100px;
+        background: #ffc800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        line-height: 1;
+        white-space: nowrap;
+        transform-origin: 50% 50%;
+        will-change: transform;
+      }
+
+      .f07-cta-mark {
+        width: 32px;
+        height: 32px;
+        border: 6px solid #0f172a;
+        border-radius: 50%;
+        position: relative;
+      }
+
+      .f07-cta-mark::after {
+        content: "";
+        position: absolute;
+        right: -11px;
+        top: 8px;
+        width: 15px;
+        height: 7px;
+        border-radius: 100px;
+        background: #0f172a;
+      }
+
+      .f07-final-bloom {
+        position: absolute;
+        z-index: 2;
+        left: 280px;
+        top: -112px;
+        width: 1360px;
+        height: 860px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 200, 0, 0.3) 0%, rgba(255, 200, 0, 0.11) 38%, transparent 72%);
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: 50% 50%;
+        will-change: transform, opacity;
+      }
+
+      .f07-final-lockup {
+        position: absolute;
+        z-index: 6;
+        left: 320px;
+        top: 34px;
+        width: 1280px;
+        height: 468px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        will-change: transform, opacity, filter;
+      }
+
+      .f07-final-icon {
+        width: 160px;
+        height: 160px;
+        display: block;
+        background: url("assets/twino-app-icon.png") center / contain no-repeat;
+      }
+
+      .f07-wordmark {
+        margin-top: 12px;
+        color: #0f172a;
+        font-size: 116px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.065em;
+      }
+
+      .f07-final-line {
+        margin-top: 20px;
+        color: #0f172a;
+        font-size: 36px;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.012em;
+        white-space: nowrap;
+      }
+
+      .f07-final-line span {
+        color: #6b6b6b;
+        font-weight: 400;
+      }
+
+      .f07-mascot {
+        position: absolute;
+        z-index: 9;
+        top: 500px;
+        width: 340px;
+        height: 360px;
+        object-fit: contain;
+        display: block;
+        opacity: 0.2;
+        transform-origin: 50% 100%;
+        will-change: transform, opacity, filter;
+      }
+
+      .f07-mascot-orange {
+        left: 64px;
+      }
+
+      .f07-mascot-violet {
+        left: 1516px;
+      }
+
+      .f07-cursor {
+        position: absolute;
+        z-index: 30;
+        left: 1780px;
+        top: 420px;
+        width: 70px;
+        height: 70px;
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: 8px 6px;
+        will-change: transform, opacity;
+      }
+
+      .f07-cursor path {
+        fill: #0f172a;
+        stroke: #ffffff;
+        stroke-width: 2.2;
+        stroke-linejoin: round;
+      }
+
+      .f07-ripple {
+        position: absolute;
+        z-index: 4;
+        left: 947px;
+        top: 352px;
+        width: 100px;
+        height: 100px;
+        border: 3px solid #ffc800;
+        border-radius: 50%;
+        opacity: 0;
+        pointer-events: none;
+        transform-origin: 50% 50%;
+        will-change: transform, opacity;
+      }
+
+      .f07-progress {
+        position: absolute;
+        z-index: 20;
+        left: 96px;
+        right: 96px;
+        top: 872px;
+        height: 4px;
+        border-radius: 6px;
+        background: rgba(255, 200, 0, 0.08);
+        overflow: hidden;
+      }
+
+      .f07-progress::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: #ffc800;
+      }
+    </style>
+
+    <div data-hf-id="hf-nf5f" id="f07-ground" class="clip f07-ground" data-start="0" data-duration="6" data-track-index="1"></div>
+
+    <div data-hf-id="hf-5avs" id="f07-stage" class="clip f07-stage" data-start="0" data-duration="6" data-track-index="2">
+      <div data-hf-id="hf-kjz6" id="f07-ring-a" class="f07-ring f07-ring-a"></div>
+      <div data-hf-id="hf-xipu" id="f07-ring-b" class="f07-ring f07-ring-b"></div>
+      <div data-hf-id="hf-nar2" id="f07-ring-c" class="f07-ring f07-ring-c"></div>
+
+      <div data-hf-id="hf-n8ke" id="f07-final-bloom" class="f07-final-bloom"></div>
+
+      <div data-hf-id="hf-11sq" id="f07-hero" class="f07-hero">
+        <div data-hf-id="hf-7fc6" id="f07-icon-shell" class="f07-icon-shell">
+          <img data-hf-id="hf-bk6x" id="f07-hero-icon" src="assets/twino-app-icon.png" alt="TWINO app icon">
+        </div>
+        <div data-hf-id="hf-8csy" class="f07-hero-title">YOUR ENGLISH. <span data-hf-id="hf-wefy">IN MOTION.</span></div>
+      </div>
+
+      <div data-hf-id="hf-rmnm" id="f07-cta-wrap" class="f07-cta-wrap">
+        <div data-hf-id="hf-5v2u" id="f07-cta" class="f07-cta">
+          <span data-hf-id="hf-v9m0" class="f07-cta-mark" aria-hidden="true"></span>
+          <span data-hf-id="hf-4k28">START WITH TWINO.</span>
+        </div>
+      </div>
+
+      <div data-hf-id="hf-si92" id="f07-final-lockup" class="f07-final-lockup">
+        <div data-hf-id="hf-20yu" id="f07-final-icon" class="f07-final-icon" role="img" aria-label="TWINO"></div>
+        <div data-hf-id="hf-v11o" class="f07-wordmark">TWINO</div>
+        <div data-hf-id="hf-7cn8" class="f07-final-line">YOUR ENGLISH. <span data-hf-id="hf-fria">IN MOTION.</span></div>
+      </div>
+
+      <img data-hf-id="hf-nsiv" id="f07-mascot-orange" class="f07-mascot f07-mascot-orange" src="assets/image_021.webp" alt="Orange TWINO pet">
+      <img data-hf-id="hf-dz6j" id="f07-mascot-violet" class="f07-mascot f07-mascot-violet" src="assets/image_022.webp" alt="Violet TWINO pet">
+
+      <svg data-hf-id="hf-arp1" id="f07-cursor" class="f07-cursor" viewBox="0 0 64 64" aria-hidden="true">
+        <path data-hf-id="hf-ejfh" d="M8 5 L53 33 L34 37 L24 57 Z" />
+      </svg>
+
+      <div data-hf-id="hf-d7e0" id="f07-ripple-a" class="f07-ripple"></div>
+      <div data-hf-id="hf-lv9v" id="f07-ripple-b" class="f07-ripple"></div>
+      <div data-hf-id="hf-hx5u" id="f07-ripple-c" class="f07-ripple"></div>
+
+      <div data-hf-id="hf-we4e" class="f07-progress" aria-hidden="true"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const root = document.querySelector('[data-composition-id="07-your-english-in-motion"]');
+      const q = (selector) => root.querySelector(selector);
+      const tl = gsap.timeline({ paused: true });
+
+      const hero = q("#f07-hero");
+      const iconShell = q("#f07-icon-shell");
+      const ctaWrap = q("#f07-cta-wrap");
+      const cta = q("#f07-cta");
+      const cursor = q("#f07-cursor");
+      const mascotOrange = q("#f07-mascot-orange");
+      const mascotViolet = q("#f07-mascot-violet");
+      const rings = [q("#f07-ring-a"), q("#f07-ring-b"), q("#f07-ring-c")];
+      const ripples = [q("#f07-ripple-a"), q("#f07-ripple-b"), q("#f07-ripple-c")];
+
+      tl.fromTo(hero, { opacity: 1, scale: 1 }, { opacity: 1, scale: 1, duration: 1.4, ease: "none" }, 0);
+      tl.to(iconShell, { rotation: 1.15, duration: 0.7, ease: "sine.inOut" }, 0);
+      tl.to(iconShell, { rotation: 0, duration: 0.7, ease: "sine.inOut" }, 0.7);
+      tl.fromTo(
+        mascotOrange,
+        { opacity: 0.1, x: -42, y: 22, scale: 0.94 },
+        { opacity: 0.22, x: 0, y: 0, scale: 1, duration: 0.9, ease: "power2.out" },
+        0.18
+      );
+      tl.fromTo(
+        mascotViolet,
+        { opacity: 0.1, x: 42, y: 22, scale: 0.94 },
+        { opacity: 0.22, x: 0, y: 0, scale: 1, duration: 0.9, ease: "power2.out" },
+        0.32
+      );
+
+      tl.to(hero, { scale: 0.72, opacity: 0, filter: "blur(8px)", duration: 0.42, ease: "power2.in" }, 1.4);
+      tl.fromTo(
+        ctaWrap,
+        { scale: 0.72, opacity: 0, filter: "blur(8px)" },
+        { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.64, ease: "back.out(1.45)", immediateRender: false },
+        1.66
+      );
+
+      tl.fromTo(cursor, { x: 0, y: 0, opacity: 0 }, { x: -773, y: -48, opacity: 1, duration: 1.04, ease: "power3.out" }, 2.6);
+      tl.fromTo(rings, { scale: 1, opacity: 0.9 }, { scale: 0.58, opacity: 0.42, duration: 1.12, ease: "power2.inOut" }, 2.6);
+
+      tl.to([cta, cursor], { scale: 0.93, duration: 0.12, ease: "power1.in" }, 3.8);
+      tl.fromTo(
+        ripples,
+        { scale: 0, opacity: 0 },
+        { scale: 5.2, opacity: 0, duration: 0.72, ease: "power3.out", stagger: 0.08, immediateRender: false },
+        3.8
+      );
+      tl.to([cta, cursor], { scale: 1, duration: 0.48, ease: "back.out(1.65)" }, 3.98);
+      tl.fromTo(
+        mascotOrange,
+        { x: -34, y: 34, scale: 0.9, opacity: 0.22, filter: "blur(6px)" },
+        { x: 0, y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.62, ease: "power3.out", immediateRender: false },
+        3.86
+      );
+      tl.fromTo(
+        mascotViolet,
+        { x: 34, y: 34, scale: 0.9, opacity: 0.22, filter: "blur(6px)" },
+        { x: 0, y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.62, ease: "power3.out", immediateRender: false },
+        4.02
+      );
+
+      tl.to(ctaWrap, { y: 292, scale: 0.78, duration: 0.44, ease: "power3.inOut" }, 4.34);
+      tl.to(cursor, { opacity: 0, duration: 0.18, ease: "power1.out" }, 4.42);
+      tl.fromTo(
+        q("#f07-final-lockup"),
+        { y: 18, scale: 0.94, opacity: 0, filter: "blur(7px)" },
+        { y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.44, ease: "power3.out", immediateRender: false },
+        4.36
+      );
+      tl.fromTo(
+        q("#f07-final-bloom"),
+        { scale: 0.88, opacity: 0 },
+        { scale: 1, opacity: 0.24, duration: 0.5, ease: "power2.out", immediateRender: false },
+        4.3
+      );
+      tl.to(rings, { scale: 0.72, opacity: 0.2, duration: 0.4, ease: "power2.out" }, 4.38);
+
+      const heldRead = { progress: 0 };
+      tl.to(heldRead, { progress: 1, duration: 1.2, ease: "none" }, 4.8);
+
+      window.__timelines["07-your-english-in-motion"] = tl;
+    </script>
+  </div>
+</template>

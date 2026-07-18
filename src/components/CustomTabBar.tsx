@@ -16,7 +16,6 @@ import {
 } from "../constants/tab-navigation";
 import { TAB_FAB_ROUTE } from "../constants/tab-order";
 import { useI18n } from "../hooks/useI18n";
-import { useTabTransition } from "../context/TabTransitionContext";
 import type { I18nKey } from "../i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { router, usePathname } from "expo-router";
@@ -156,7 +155,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
-  const { prepareTransition } = useTabTransition();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const activeRouteName = state.routes[state.index]?.name;
@@ -184,12 +182,21 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.host, { paddingBottom: bottomPad }]}>
       <View
+        {...(Platform.OS === "web"
+          ? ({ dir: isRtl ? "rtl" : "ltr" } as any)
+          : null)}
         style={[
           styles.bar,
           {
             width: barWidth,
             marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
-            flexDirection: isRtl ? "row-reverse" : "row",
+            // `row-reverse` inside the app's RTL root double-mirrors the tabs.
+            // An explicit direction + normal row keeps Home physically right
+            // for Kurdish/Arabic and physically left for English.
+            flexDirection: "row",
+          },
+          Platform.OS !== "web" && {
+            direction: isRtl ? "rtl" : "ltr",
           },
         ]}
       >
@@ -206,7 +213,6 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              prepareTransition(activeRouteName ?? "", item.route, isRtl);
               navigation.navigate(routeState.name, routeState.params);
             }
           };

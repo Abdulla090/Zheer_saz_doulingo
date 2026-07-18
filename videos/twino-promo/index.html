@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #FFFFFF;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-i657" id="root" data-composition-id="main" data-start="0" data-duration="45" data-width="1920" data-height="1080">
+      <div data-hf-id="hf-lexk" id="el-01-english-that-moves" class="scene" data-composition-id="01-english-that-moves" data-composition-src="compositions/frames/01-english-that-moves.html" data-start="0" data-duration="5" data-track-index="1"></div>
+
+      <div data-hf-id="hf-aauo" id="el-02-meet-twino" class="scene" data-composition-id="02-meet-twino" data-composition-src="compositions/frames/02-meet-twino.html" data-start="5" data-duration="5" data-track-index="1"></div>
+
+      <div data-hf-id="hf-3uid" id="el-03-path-built-around-you" class="scene" data-composition-id="03-path-built-around-you" data-composition-src="compositions/frames/03-path-built-around-you.html" data-start="10" data-duration="8" data-track-index="1"></div>
+
+      <div data-hf-id="hf-4hen" id="el-04-speak-get-sharper" class="scene" data-composition-id="04-speak-get-sharper" data-composition-src="compositions/frames/04-speak-get-sharper.html" data-start="18" data-duration="8" data-track-index="1"></div>
+
+      <div data-hf-id="hf-kj8a" id="el-05-practice-real-life" class="scene" data-composition-id="05-practice-real-life" data-composition-src="compositions/frames/05-practice-real-life.html" data-start="26" data-duration="7" data-track-index="1"></div>
+
+      <div data-hf-id="hf-94g8" id="el-06-every-way-to-grow" class="scene" data-composition-id="06-every-way-to-grow" data-composition-src="compositions/frames/06-every-way-to-grow.html" data-start="33" data-duration="6" data-track-index="1"></div>
+
+      <div data-hf-id="hf-wygp" id="el-07-your-english-in-motion" class="scene" data-composition-id="07-your-english-in-motion" data-composition-src="compositions/frames/07-your-english-in-motion.html" data-start="39" data-duration="6" data-track-index="1"></div>
+
+      <!-- BGM -->
+      <audio data-hf-id="hf-r7pr" id="el-bgm" src=".media/audio/bgm/bgm_001.wav" data-start="0" data-duration="45" data-track-index="11" data-volume="0.82"></audio>
+
+      <!-- SFX -->
+      <audio data-hf-id="hf-3oq7" id="el-sfx-0" src=".media/audio/sfx/sfx_001.wav" data-start="2.8" data-duration="0.65" data-track-index="20" data-volume="0.42"></audio>
+      <audio data-hf-id="hf-vqg3" id="el-sfx-1" src=".media/audio/sfx/sfx_005.wav" data-start="6.1" data-duration="1.25" data-track-index="21" data-volume="0.26"></audio>
+      <audio data-hf-id="hf-p3e3" id="el-sfx-2" src=".media/audio/sfx/sfx_004.wav" data-start="15.6" data-duration="0.85" data-track-index="22" data-volume="0.32"></audio>
+      <audio data-hf-id="hf-g5qq" id="el-sfx-3" src=".media/audio/sfx/sfx_003.wav" data-start="19.9" data-duration="0.16" data-track-index="23" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-7xxy" id="el-sfx-4" src=".media/audio/sfx/sfx_002.wav" data-start="27.7" data-duration="0.75" data-track-index="24" data-volume="0.3"></audio>
+      <audio data-hf-id="hf-erqb" id="el-sfx-5" src=".media/audio/sfx/sfx_001.wav" data-start="38" data-duration="0.65" data-track-index="25" data-volume="0.34"></audio>
+      <audio data-hf-id="hf-gcl3" id="el-sfx-6" src=".media/audio/sfx/sfx_002.wav" data-start="40.4" data-duration="0.75" data-track-index="26" data-volume="0.24"></audio>
+      <audio data-hf-id="hf-f3ez" id="el-sfx-7" src=".media/audio/sfx/sfx_003.wav" data-start="42.8" data-duration="0.16" data-track-index="27" data-volume="0.42"></audio>
+      <audio data-hf-id="hf-yzxb" id="el-sfx-8" src=".media/audio/sfx/sfx_005.wav" data-start="43.8" data-duration="1.2" data-track-index="28" data-volume="0.3"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

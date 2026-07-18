@@ -51,6 +51,7 @@ import { EmojiSticker } from "../../../components/ui/EmojiSticker";
 import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMascot";
 import { RiveMascot } from "../../../components/mascot/RiveMascot";
 import { DirectionalView } from "../../../components/ui/Directional";
+import { getLanguageDirection } from "../../../i18n/direction";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 
@@ -776,6 +777,14 @@ export function LightWordTile({
   const labelLanguageCode = forceLatinFont
     ? "en"
     : languageCode ?? (rtl ? sourceLanguage : targetLanguage);
+  const isLtrLabel = getLanguageDirection(labelLanguageCode) === "ltr";
+  const shouldCenterLabel = centerLabel && !isLtrLabel;
+  // Native Pressable inherits the app's RTL direction. Keep English answer
+  // tiles explicitly LTR before checking; Kurdish/Arabic tiles are untouched.
+  const nativeLtrBoundary =
+    Platform.OS !== "web" && isLtrLabel
+      ? ({ direction: "ltr" } as const)
+      : undefined;
 
   const content = (
     <Animated.View
@@ -809,6 +818,7 @@ export function LightWordTile({
             elevation: isKidsRoute ? 4 : 3,
           }),
         style,
+        nativeLtrBoundary,
       ]}
     >
 
@@ -866,13 +876,13 @@ export function LightWordTile({
       ) : (
         <AppText
           languageCode={labelLanguageCode}
-          align={centerLabel ? "center" : "start"}
+          align={shouldCenterLabel ? "center" : "start"}
           nativeAlign="start"
-          fullWidth={centerLabel || wide}
+          fullWidth={shouldCenterLabel || wide}
           style={[
             LightType.tile,
             wrapLabel && lh.tileWrapText,
-            centerLabel && { alignSelf: "center", width: "100%" },
+            shouldCenterLabel && { alignSelf: "center", width: "100%" },
             wide && { alignSelf: "stretch", width: "100%" },
             {
               zIndex: 1,
@@ -902,12 +912,13 @@ export function LightWordTile({
   );
 
   if (!onPress || disabled || state === "ghost") {
-    return <Animated.View style={animScale}>{content}</Animated.View>;
+    return <Animated.View style={[animScale, nativeLtrBoundary]}>{content}</Animated.View>;
   }
 
   return (
-    <Animated.View style={animScale}>
+    <Animated.View style={[animScale, nativeLtrBoundary]}>
       <Pressable
+        style={nativeLtrBoundary}
         onPress={() => {
           if (Platform.OS !== "web") void Haptics.selectionAsync();
           onPress();
@@ -1243,7 +1254,7 @@ export function LessonLiquidFeedback({
     const kidsBorder = isPassing ? "#58CC02" : "#EF4444";
     const kidsShadow = isPassing ? "#3F9302" : "#B91C1C";
     const kidsDeepText = isPassing ? "#46A302" : "#DC2626";
-    const kidsPose = isPassing ? "happy" : "wave";
+    const kidsPose = isPassing ? "happy" : "losing";
 
     return (
       <View
@@ -1298,7 +1309,7 @@ export function LessonLiquidFeedback({
 
   // Decide Pingo pose based on correctness
   const isTierGoodOrGreat = tier === "good" || tier === "great";
-  const pose = isPassing ? (isTierGoodOrGreat ? "wink" : "happy") : "wave";
+  const pose = isPassing ? (isTierGoodOrGreat ? "wink" : "happy") : "losing";
 
   return (
     <HomeLiquidCard

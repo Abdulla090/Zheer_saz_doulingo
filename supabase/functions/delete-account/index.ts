@@ -1,0 +1,69 @@
+import "@supabase/functions-js/edge-runtime.d.ts";
+import { withSupabase } from "@supabase/server";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  Response.json(body, {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Cache-Control": "no-store",
+    },
+  });
+
+const deleteAccount = withSupabase(
+  { auth: "user" },
+  async (req, ctx) => {
+    if (req.method !== "POST") {
+      return json({ error: "Method not allowed" }, 405);
+    }
+
+    // The account id is resolved exclusively from the verified user token.
+    // Never accept a user id from the request body for this operation.
+    const userId = ctx.userClaims?.id;
+    if (!userId) {
+      return json({ error: "Authentication required" }, 401);
+    }
+
+    const avatarBucket = ctx.supabaseAdmin.storage.from("avatars");
+    const { data: avatarObjects, error: avatarListError } = await avatarBucket.list(userId, {
+      limit: 100,
+    });
+    if (avatarListError) {
+      console.error("Avatar listing failed", { code: avatarListError.name });
+      return json({ error: "Unable to delete account data" }, 500);
+    }
+
+    const avatarPaths = (avatarObjects ?? []).map((object) => `${userId}/${object.name}`);
+    if (avatarPaths.length > 0) {
+      const { error: avatarDeleteError } = await avatarBucket.remove(avatarPaths);
+      if (avatarDeleteError) {
+        console.error("Avatar deletion failed", { code: avatarDeleteError.name });
+        return json({ error: "Unable to delete account data" }, 500);
+      }
+    }
+
+    const { error } = await ctx.supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("Account deletion failed", { code: error.code });
+      return json({ error: "Unable to delete account" }, 500);
+    }
+
+    return json({ deleted: true });
+  },
+);
+
+export default {
+  fetch(req: Request) {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
+    return deleteAccount(req);
+  },
+};

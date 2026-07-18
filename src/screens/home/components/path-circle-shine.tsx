@@ -3,8 +3,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -12,22 +14,34 @@ import Animated, {
 
 type PathCircleShineProps = {
   size: number;
+  radius?: number;
 };
 
 /**
  * Premium diagonal light sheen for the active path lesson node.
  * Static soft highlight + slow shimmer band; light blur softens the face.
  */
-export function PathCircleShine({ size }: PathCircleShineProps) {
+export function PathCircleShine({
+  size,
+  radius = size / 2,
+}: PathCircleShineProps) {
   const shimmer = useSharedValue(-1.2);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      shimmer.value = 0;
+      return;
+    }
+
     shimmer.value = withRepeat(
-      withTiming(1.2, { duration: 3200, easing: Easing.inOut(Easing.quad) }),
+      withTiming(1.2, { duration: 2800, easing: Easing.linear }),
       -1,
       false,
     );
-  }, [shimmer]);
+
+    return () => cancelAnimation(shimmer);
+  }, [reduceMotion, shimmer]);
 
   const bandStyle = useAnimatedStyle(() => ({
     transform: [
@@ -35,8 +49,6 @@ export function PathCircleShine({ size }: PathCircleShineProps) {
       { translateX: shimmer.value * size * 0.72 },
     ],
   }));
-
-  const radius = size / 2;
 
   return (
     <View

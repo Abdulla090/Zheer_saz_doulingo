@@ -41,6 +41,22 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { hapticSelection } from "../../utils/haptics";
 import { crossShadow } from "../../utils/shadows";
 
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function resolveAvatarMimeType(asset: ImagePicker.ImagePickerAsset): string | null {
+  const declared = asset.mimeType?.toLowerCase() === "image/jpg"
+    ? "image/jpeg"
+    : asset.mimeType?.toLowerCase();
+  if (declared && ALLOWED_AVATAR_MIME_TYPES.has(declared)) return declared;
+
+  const extension = asset.uri.split(/[?#]/)[0]?.split(".").pop()?.toLowerCase();
+  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+  if (extension === "png") return "image/png";
+  if (extension === "webp") return "image/webp";
+  return null;
+}
+
 const CameraIcon = ({ size = 14, color = "#FFFFFF" }) => (
   <Svg
     width={size}
@@ -88,6 +104,7 @@ type ScreenCopy = {
   lessonCompleted: string;
   gameCompleted: string;
   galleryPermission: string;
+  invalidPhoto: string;
   uploadFailed: string;
 };
 
@@ -121,6 +138,7 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     lessonCompleted: "Lesson completed",
     gameCompleted: "Game completed",
     galleryPermission: "Gallery access permission is required.",
+    invalidPhoto: "Choose a JPG, PNG, or WebP image smaller than 5 MB.",
     uploadFailed: "Failed to upload image",
   },
   ku: {
@@ -152,6 +170,7 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     lessonCompleted: "وانە تەواوکراوە",
     gameCompleted: "یاری تەواوکراوە",
     galleryPermission: "مۆڵەتی دەستگەیشتن بە گالێری پێویستە.",
+    invalidPhoto: "وێنەی JPG، PNG یان WebP هەڵبژێرە کە لە ٥ MB بچووکتر بێت.",
     uploadFailed: "بارکردنی وێنەکە سەرکەوتوو نەبوو",
   },
   ar: {
@@ -183,6 +202,7 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     lessonCompleted: "اكتمل الدرس",
     gameCompleted: "اكتملت اللعبة",
     galleryPermission: "يلزم السماح بالوصول إلى معرض الصور.",
+    invalidPhoto: "اختر صورة JPG أو PNG أو WebP أصغر من 5 ميغابايت.",
     uploadFailed: "تعذر رفع الصورة",
   },
 };
@@ -372,7 +392,16 @@ export default function ProfileScreen() {
       });
 
       if (result.canceled || !result.assets[0]) return;
-      const selectedUri = result.assets[0].uri;
+      const asset = result.assets[0];
+      const selectedUri = asset.uri;
+      const contentType = resolveAvatarMimeType(asset);
+      if (
+        !contentType ||
+        (typeof asset.fileSize === "number" && asset.fileSize > MAX_AVATAR_BYTES)
+      ) {
+        alert(copy.invalidPhoto);
+        return;
+      }
       setUploading(true);
 
       if (!user) {
@@ -381,18 +410,24 @@ export default function ProfileScreen() {
         return;
       }
 
-      const fileExtension = selectedUri.split(".").pop() || "jpg";
-      const filePath = `${user.id}/avatar_${Date.now()}.${fileExtension}`;
       const response = await fetch(selectedUri);
       const blob = await response.blob();
+      if (blob.size > MAX_AVATAR_BYTES) {
+        alert(copy.invalidPhoto);
+        return;
+      }
+
+      // One deterministic object per user prevents abandoned uploads and makes
+      // the Storage ownership policy exact and auditable.
+      const filePath = `${user.id}/avatar`;
       const { error } = await supabase.storage.from("avatars").upload(filePath, blob, {
-        contentType: `image/${fileExtension === "png" ? "png" : "jpeg"}`,
+        contentType,
         upsert: true,
       });
 
       if (error) throw error;
       const publicUrl = supabase.storage.from("avatars").getPublicUrl(filePath).data.publicUrl;
-      setAvatarUrl(publicUrl);
+      setAvatarUrl(`${publicUrl}?v=${Date.now()}`);
       hapticSelection();
     } catch (error) {
       console.error("Avatar upload error:", error);

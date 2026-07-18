@@ -14,8 +14,10 @@ import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 
 import { AppText } from "../../components/ui/AppText";
+import { getMascotExpressionSource } from "../../constants/mascot-expressions";
 import { getMascot, getMascotDisplayName } from "../../constants/mascots";
 import { Colors } from "../../constants/theme";
+import { isDesktopWebWidth } from "../../constants/web-layout";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -149,6 +151,8 @@ export function GamesScreen() {
   const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const isRtl = isKu || locale === "ar";
   const compact = width < 600;
+  const isDesktopWeb =
+    Platform.OS === "web" && isDesktopWebWidth(width);
   const selectedMascot = getMascot(selectedMascotId);
   const selectedMascotName = getMascotDisplayName(selectedMascot, locale);
   const progressPalette = selectedMascot.progressPalette;
@@ -158,8 +162,8 @@ export function GamesScreen() {
   const levelProgress = levelXp / 300;
 
   const stylesForScreen = useMemo(
-    () => createStyles(compact, colors, isDark),
-    [colors, compact, isDark],
+    () => createStyles(compact, colors, isDark, isDesktopWeb),
+    [colors, compact, isDark, isDesktopWeb],
   );
 
   return (
@@ -174,18 +178,26 @@ export function GamesScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           stylesForScreen.scrollContent,
-          { paddingTop: insets.top + (compact ? 6 : 12), paddingBottom: insets.bottom + 112 },
+          {
+            paddingTop:
+              insets.top + (isDesktopWeb ? 24 : compact ? 6 : 12),
+            paddingBottom:
+              insets.bottom + (isDesktopWeb ? 48 : 112),
+          },
         ]}
       >
-        <View style={stylesForScreen.content}>
-           <View style={[stylesForScreen.hero, isRtl && stylesForScreen.heroRtl]}>
+          <View style={stylesForScreen.content}>
+           <View style={stylesForScreen.hero}>
              <View style={[stylesForScreen.heroCopy, isRtl && stylesForScreen.heroCopyRtl]}>
-              <AppText style={stylesForScreen.heroTitle} forceKurdishFont={isRtl}>
+              <AppText
+                style={[stylesForScreen.heroTitle, isRtl && stylesForScreen.heroTitleRtl]}
+                forceKurdishFont={isRtl}
+              >
                 {t("games.screenTitle")}
               </AppText>
             </View>
             <Image
-              source={selectedMascot.source}
+              source={getMascotExpressionSource(selectedMascot.id, "happy")}
               accessibilityLabel={
                 locale === "ku"
                   ? `ماسکۆتی ${selectedMascotName}`
@@ -193,7 +205,6 @@ export function GamesScreen() {
               }
               style={[
                 stylesForScreen.heroMascot,
-                selectedMascot.framed && stylesForScreen.heroMascotFramed,
                 isRtl && stylesForScreen.heroMascotRtl,
               ]}
               contentFit="contain"
@@ -305,17 +316,26 @@ export function GamesScreen() {
                   <AppText
                     style={[stylesForScreen.tileTitle, isRtl && stylesForScreen.tileTitleRtl]}
                     forceKurdishFont={isRtl}
-                    numberOfLines={2}
+                    numberOfLines={game.key === "voice-tutor" ? 2 : 1}
+                    adjustsFontSizeToFit={game.key !== "voice-tutor"}
+                    minimumFontScale={0.72}
                   >
-                    {t(game.titleKey)}
+                    {game.key === "voice-tutor" && isKu
+                      ? t(game.titleKey).replace(/\s+(\S+)$/, "\n$1")
+                      : t(game.titleKey)}
                   </AppText>
-                  <AppText
-                    style={[stylesForScreen.tileSubtitle, isRtl && stylesForScreen.tileSubtitleRtl]}
-                    forceKurdishFont={isRtl}
-                    numberOfLines={2}
-                  >
-                    {t(game.subKey)}
-                  </AppText>
+                  {isDesktopWeb ? (
+                    <AppText
+                      style={[
+                        stylesForScreen.tileSubtitle,
+                        isRtl && stylesForScreen.tileSubtitleRtl,
+                      ]}
+                      forceKurdishFont={isRtl}
+                      numberOfLines={2}
+                    >
+                      {t(game.subKey)}
+                    </AppText>
+                  ) : null}
                 </View>
                 <View style={[
                   stylesForScreen.tileArrow,
@@ -333,6 +353,7 @@ export function GamesScreen() {
             ))}
           </View>
 
+          {!isDesktopWeb ? (
           <View style={[stylesForScreen.streakCard, isRtl && stylesForScreen.rowReverse]}>
             <HugeiconsIcon icon={FireIcon} size={32} color="#FF7A2F" strokeWidth={2.3} />
              <View style={[stylesForScreen.streakCopy, isRtl && stylesForScreen.streakCopyRtl]}>
@@ -353,6 +374,7 @@ export function GamesScreen() {
               contentFit="contain"
             />
           </View>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -393,6 +415,7 @@ function createStyles(
   compact: boolean,
   colors: (typeof Colors)["light"] | (typeof Colors)["dark"],
   isDark: boolean,
+  isDesktopWeb: boolean,
 ) {
   return StyleSheet.create({
     root: {
@@ -404,58 +427,63 @@ function createStyles(
     },
     content: {
       width: "100%",
-      maxWidth: 720,
-      paddingHorizontal: compact ? 16 : 24,
+      maxWidth: isDesktopWeb ? 820 : 720,
+      paddingHorizontal: isDesktopWeb ? 28 : compact ? 16 : 24,
     },
     rowReverse: {
       flexDirection: "row-reverse",
     },
     hero: {
-      minHeight: compact ? 188 : 262,
+      minHeight: isDesktopWeb ? 154 : compact ? 146 : 224,
       position: "relative",
       justifyContent: "flex-start",
-      paddingTop: compact ? 10 : 18,
-    },
-    heroRtl: {
-      alignItems: "flex-end",
+      paddingTop: isDesktopWeb ? 14 : compact ? 2 : 8,
     },
     heroCopy: {
-      width: compact ? "56%" : "58%",
-      zIndex: 2,
+      position: "absolute",
+      left: 0,
+      right: "auto",
+      top: isDesktopWeb ? 20 : compact ? 8 : 14,
+      width: isDesktopWeb ? "64%" : compact ? "56%" : "58%",
+      alignItems: "flex-start",
+      zIndex: 3,
     },
     heroCopyRtl: {
+      left: "auto",
+      right: 0,
       alignItems: "flex-end",
     },
     heroTitle: {
       color: colors.foreground,
-      fontSize: compact ? 40 : 56,
-      lineHeight: compact ? 47 : 64,
+      fontSize: isDesktopWeb ? 42 : compact ? 40 : 56,
+      lineHeight: isDesktopWeb ? 50 : compact ? 47 : 64,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
+      textAlign: "left",
+    },
+    heroTitleRtl: {
+      textAlign: "right",
+      writingDirection: "rtl",
     },
     heroMascot: {
       position: "absolute",
-      right: compact ? -10 : -8,
-      bottom: compact ? -2 : -4,
-      width: compact ? 132 : 282,
-      height: compact ? 132 : 282,
-      zIndex: 1,
+      left: "auto",
+      right: isDesktopWeb ? 4 : compact ? -10 : -8,
+      top: isDesktopWeb ? -2 : compact ? 10 : 14,
+      width: isDesktopWeb ? 164 : compact ? 132 : 282,
+      height: isDesktopWeb ? 164 : compact ? 132 : 282,
+      zIndex: 3,
     },
     heroMascotRtl: {
       right: "auto",
-      left: compact ? -10 : -8,
+      left: isDesktopWeb ? 4 : compact ? -10 : -8,
       transform: [{ scaleX: -1 }],
     },
-    heroMascotFramed: {
-      borderRadius: compact ? 30 : 48,
-      overflow: "hidden",
-      backgroundColor: colors.muted,
-    },
     progressBanner: {
-      minHeight: compact ? 116 : 168,
-      borderRadius: compact ? 24 : 28,
-      paddingHorizontal: compact ? 14 : 22,
-      paddingVertical: compact ? 12 : 18,
+      minHeight: isDesktopWeb ? 124 : compact ? 116 : 168,
+      borderRadius: isDesktopWeb ? 22 : compact ? 24 : 28,
+      paddingHorizontal: isDesktopWeb ? 18 : compact ? 14 : 22,
+      paddingVertical: isDesktopWeb ? 14 : compact ? 12 : 18,
       flexDirection: "row",
       alignItems: "center",
       overflow: "hidden",
@@ -463,33 +491,33 @@ function createStyles(
     progressCopy: {
       flex: 1,
       minWidth: 0,
-      marginLeft: compact ? 8 : 20,
+      marginLeft: isDesktopWeb ? 16 : compact ? 8 : 20,
       zIndex: 2,
     },
     progressCopyRtl: {
       marginLeft: 0,
-      marginRight: compact ? 8 : 20,
+      marginRight: isDesktopWeb ? 16 : compact ? 8 : 20,
       alignItems: "flex-end",
     },
     progressEyebrow: {
-      fontSize: compact ? 12 : 14,
-      lineHeight: compact ? 15 : 18,
+      fontSize: isDesktopWeb ? 13 : compact ? 12 : 14,
+      lineHeight: isDesktopWeb ? 17 : compact ? 15 : 18,
       fontWeight: "700",
     },
     progressValue: {
-      fontSize: compact ? 21 : 31,
-      lineHeight: compact ? 27 : 39,
-      marginTop: compact ? 2 : 4,
+      fontSize: isDesktopWeb ? 25 : compact ? 21 : 31,
+      lineHeight: isDesktopWeb ? 32 : compact ? 27 : 39,
+      marginTop: isDesktopWeb ? 2 : compact ? 2 : 4,
     },
     progressUnit: {
-      fontSize: compact ? 15 : 23,
+      fontSize: isDesktopWeb ? 18 : compact ? 15 : 23,
     },
     progressTrack: {
-      height: compact ? 8 : 11,
+      height: isDesktopWeb ? 9 : compact ? 8 : 11,
       borderRadius: 6,
       overflow: "hidden",
-      marginTop: compact ? 8 : 12,
-      width: compact ? "46%" : "78%",
+      marginTop: isDesktopWeb ? 9 : compact ? 8 : 12,
+      width: isDesktopWeb ? "72%" : compact ? "46%" : "78%",
     },
     progressTrackRtl: {
       alignSelf: "flex-end",
@@ -500,28 +528,28 @@ function createStyles(
     },
     chestImage: {
       position: "absolute",
-      right: compact ? 4 : 8,
-      bottom: compact ? 2 : -4,
-      width: compact ? 82 : 142,
-      height: compact ? 82 : 142,
+      right: isDesktopWeb ? 8 : compact ? 4 : 8,
+      bottom: isDesktopWeb ? 0 : compact ? 2 : -4,
+      width: isDesktopWeb ? 104 : compact ? 82 : 142,
+      height: isDesktopWeb ? 104 : compact ? 82 : 142,
       zIndex: 1,
     },
     chestImageRtl: {
       right: "auto",
-      left: compact ? 4 : 8,
+      left: isDesktopWeb ? 8 : compact ? 4 : 8,
     },
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginTop: compact ? 30 : 36,
-      marginBottom: compact ? 14 : 18,
+      marginTop: isDesktopWeb ? 28 : compact ? 30 : 36,
+      marginBottom: isDesktopWeb ? 14 : compact ? 14 : 18,
       paddingHorizontal: 2,
     },
     sectionTitle: {
       color: colors.foreground,
-      fontSize: compact ? 22 : 26,
-      lineHeight: compact ? 27 : 32,
+      fontSize: isDesktopWeb ? 24 : compact ? 22 : 26,
+      lineHeight: isDesktopWeb ? 30 : compact ? 27 : 32,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
     },
@@ -546,17 +574,17 @@ function createStyles(
     },
     gameTileContainer: {
       width: "50%",
-      padding: compact ? 5 : 7,
+      padding: isDesktopWeb ? 8 : compact ? 5 : 7,
     },
     gameTile: {
       width: "100%",
-      minHeight: compact ? 196 : 238,
+      aspectRatio: isDesktopWeb ? 1.55 : 1,
       alignItems: "flex-start",
       justifyContent: "flex-start",
-      paddingHorizontal: compact ? 13 : 18,
-      paddingTop: compact ? 12 : 18,
-      paddingBottom: compact ? 48 : 62,
-      borderRadius: compact ? 22 : 28,
+      paddingHorizontal: isDesktopWeb ? 18 : compact ? 13 : 18,
+      paddingTop: isDesktopWeb ? 14 : compact ? 10 : 18,
+      paddingBottom: isDesktopWeb ? 46 : compact ? 40 : 62,
+      borderRadius: isDesktopWeb ? 22 : compact ? 22 : 28,
       borderCurve: "continuous",
       borderWidth: 1,
       borderColor: colors.border,
@@ -567,15 +595,15 @@ function createStyles(
       alignItems: "flex-end",
     },
     tileImage: {
-      width: compact ? 60 : 86,
-      height: compact ? 60 : 86,
+      width: isDesktopWeb ? 82 : compact ? 70 : 104,
+      height: isDesktopWeb ? 82 : compact ? 70 : 104,
       alignSelf: "flex-end",
       zIndex: 1,
     },
     tileCopy: {
       width: "100%",
       alignItems: "flex-start",
-      marginTop: compact ? 14 : 18,
+      marginTop: isDesktopWeb ? 4 : compact ? 8 : 18,
       zIndex: 1,
     },
     tileCopyRtl: {
@@ -583,8 +611,9 @@ function createStyles(
     },
     tileTitle: {
       color: colors.foreground,
-      fontSize: compact ? 17 : 21,
-      lineHeight: compact ? 22 : 27,
+      width: "100%",
+      fontSize: isDesktopWeb ? 18 : compact ? 16 : 20,
+      lineHeight: isDesktopWeb ? 23 : compact ? 21 : 26,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
       textAlign: "left",
@@ -596,25 +625,25 @@ function createStyles(
     },
     tileSubtitle: {
       color: colors.mutedForeground,
-      fontSize: compact ? 12 : 15,
-      lineHeight: compact ? 17 : 21,
-      marginTop: compact ? 4 : 6,
-      paddingRight: compact ? 28 : 36,
+      fontSize: isDesktopWeb ? 12 : compact ? 12 : 15,
+      lineHeight: isDesktopWeb ? 16 : compact ? 17 : 21,
+      marginTop: isDesktopWeb ? 3 : compact ? 4 : 6,
+      paddingRight: isDesktopWeb ? 34 : compact ? 28 : 36,
       textAlign: "left",
     },
     tileSubtitleRtl: {
       width: "100%",
       paddingRight: 0,
-      paddingLeft: compact ? 22 : 32,
+      paddingLeft: isDesktopWeb ? 34 : compact ? 22 : 32,
       textAlign: "right",
       writingDirection: "rtl",
     },
     tileArrow: {
       position: "absolute",
-      right: compact ? 11 : 16,
-      bottom: compact ? 11 : 16,
-      width: compact ? 30 : 38,
-      height: compact ? 30 : 38,
+      right: isDesktopWeb ? 14 : compact ? 11 : 16,
+      bottom: isDesktopWeb ? 14 : compact ? 11 : 16,
+      width: isDesktopWeb ? 34 : compact ? 30 : 38,
+      height: isDesktopWeb ? 34 : compact ? 30 : 38,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -622,7 +651,7 @@ function createStyles(
     },
     tileArrowRtl: {
       right: "auto",
-      left: compact ? 11 : 16,
+      left: isDesktopWeb ? 14 : compact ? 11 : 16,
     },
     streakCard: {
       minHeight: compact ? 142 : 158,

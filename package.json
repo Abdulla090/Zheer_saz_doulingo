@@ -1,8 +1,8 @@
 {
-  "name": "duolingo-clone",
+  "name": "twino",
   "main": "index.js",
   "version": "1.0.0",
-  "packageManager": "npm@10.9.2",
+  "packageManager": "npm@10.9.4",
   "scripts": {
     "postinstall": "patch-package",
     "start": "expo start",
@@ -21,7 +21,11 @@
     "start:web:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/clear-metro-cache.ps1 && expo start --web --clear",
     "web:mcp": "node ./scripts/start-with-mcp.js --web",
     "lint": "expo lint",
+    "lint:strict": "expo lint --max-warnings=0",
     "test": "jest",
+    "test:ci": "jest --runInBand",
+    "typecheck": "tsc --noEmit",
+    "doctor": "npx expo-doctor@latest",
     "verify": "node scripts/verify-release.mjs",
     "eas-build-pre-install": "node scripts/eas-pre-install.mjs",
     "build:apk": "npx eas-cli build --platform android --profile preview --non-interactive"
@@ -114,6 +118,22 @@
   },
   "resolutions": {
     "tslib": "2.6.2"
+  },
+  "overrides": {
+    "form-data": "4.0.6",
+    "hono": "4.12.25",
+    "@react-native/dev-middleware": {
+      "ws": "7.5.11"
+    },
+    "metro": {
+      "ws": "7.5.11"
+    },
+    "react-devtools-core": {
+      "ws": "7.5.11"
+    },
+    "react-native": {
+      "ws": "7.5.11"
+    }
   },
   "private": true,
   "expo": {

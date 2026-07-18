@@ -47,6 +47,10 @@ import { KidsPathListRow } from "./components/kids-path-list-row";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import {
+  isDesktopWebWidth,
+  WEB_DESKTOP_PATH_WIDTH,
+} from "../../constants/web-layout";
 
 import { ListFooter } from "./components/list-footer";
 
@@ -61,6 +65,12 @@ export function KidsEnglishPathScreen({
   const { colors, isDark } = useThemeColors();
   const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
+  const pathLayoutWidth =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth)
+      ? WEB_DESKTOP_PATH_WIDTH
+      : windowWidth;
+  const desktopTopInset =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
   const scrollYRef = useRef(0);
@@ -209,7 +219,7 @@ export function KidsEnglishPathScreen({
     }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
       <KidsPathListRow
         item={item}
-        screenWidth={windowWidth}
+        screenWidth={pathLayoutWidth}
         unitLessonCount={section.data.length}
         isActiveLesson={item.pathIndex === kidsNextLessonPathIndex}
         isSelected={selectedLesson?.item.id === item.id}
@@ -220,7 +230,7 @@ export function KidsEnglishPathScreen({
       kidsNextLessonPathIndex,
       selectLesson,
       selectedLesson?.item.id,
-      windowWidth,
+      pathLayoutWidth,
     ],
   );
 
@@ -255,7 +265,7 @@ export function KidsEnglishPathScreen({
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + topChromeHeight,
+          paddingTop: insets.top + topChromeHeight + desktopTopInset,
         }}
       >
         <PathStatsBar pathMode="kids" />

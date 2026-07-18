@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "DIN Next Rounded";
+          src: url("assets/fonts/DIN_REGULAR.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: "DIN Next Rounded";
+          src: url("assets/fonts/DIN_MEDIUM.ttf") format("truetype");
+          font-weight: 600;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: "DIN Next Rounded";
+          src: url("assets/fonts/DIN_BOLD.ttf") format("truetype");
+          font-weight: 700;
+          font-style: normal;
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: hidden;
+          container-type: size;
+          color: #0f172a;
+          font-family: "DIN Next Rounded", sans-serif;
+          perspective: 1800px;
+        }
+
+        .scene-ground {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          background:
+            radial-gradient(circle at 50% 28%, rgba(255, 200, 0, 0.09) 0%, rgba(255, 200, 0, 0.025) 24%, transparent 54%),
+            #ffffff;
+        }
+
+        .content-stage {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+        }
+
+        .micro-grid {
+          position: absolute;
+          left: 96px;
+          top: 84px;
+          width: 120px;
+          height: 120px;
+          opacity: 0.52;
+          background-image: radial-gradient(circle, rgba(255, 200, 0, 0.72) 0 3px, transparent 3.5px);
+          background-size: 30px 30px;
+        }
+
+        .frame-index {
+          position: absolute;
+          top: 89px;
+          right: 104px;
+          padding: 10px 18px 8px;
+          border: 1.5px solid rgba(255, 200, 0, 0.2);
+          border-radius: 100px;
+          background: rgba(255, 200, 0, 0.08);
+          color: #6b6b6b;
+          font-size: 21px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+        }
+
+        .orbit-plane {
+          position: absolute;
+          left: 210px;
+          top: 0;
+          width: 1500px;
+          height: 700px;
+          transform-style: preserve-3d;
+          transform-origin: 50% 50%;
+          will-change: transform;
+        }
+
+        .guide-ring {
+          position: absolute;
+          border: 2px solid rgba(255, 200, 0, 0.32);
+          border-radius: 50%;
+          will-change: transform, opacity;
+        }
+
+        .ring-1 {
+          left: 530px;
+          top: 128px;
+          width: 440px;
+          height: 440px;
+        }
+
+        .ring-2 {
+          left: 370px;
+          top: 54px;
+          width: 760px;
+          height: 588px;
+          border-color: rgba(255, 200, 0, 0.22);
+        }
+
+        .ring-3 {
+          left: 90px;
+          top: 8px;
+          width: 1320px;
+          height: 684px;
+          border-color: rgba(255, 200, 0, 0.14);
+        }
+
+        .axis-line {
+          position: absolute;
+          left: 190px;
+          top: 349px;
+          width: 1120px;
+          height: 2px;
+          border-radius: 2px;
+          background: linear-gradient(90deg, transparent, rgba(255, 200, 0, 0.7) 18%, rgba(255, 200, 0, 0.7) 82%, transparent);
+          transform-origin: 50% 50%;
+          will-change: transform, opacity;
+        }
+
+        .orbit-fragment {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: var(--fragment-width);
+          height: var(--fragment-height);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          border-radius: 100px;
+          background: var(--fragment-color);
+          opacity: 0.88;
+          transform-style: preserve-3d;
+          will-change: transform, opacity;
+        }
+
+        .hero-halo {
+          position: absolute;
+          left: 650px;
+          top: 40px;
+          z-index: 12;
+          width: 620px;
+          height: 620px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255, 200, 0, 0.29) 0%, rgba(255, 200, 0, 0.1) 34%, transparent 72%);
+          pointer-events: none;
+          will-change: transform, opacity;
+        }
+
+        .icon-lock {
+          position: absolute;
+          left: 815px;
+          top: 205px;
+          z-index: 20;
+          width: 290px;
+          height: 290px;
+          display: grid;
+          place-items: center;
+          transform: translateZ(220px);
+        }
+
+        .icon-lock::before {
+          content: "";
+          position: absolute;
+          inset: 20px;
+          border: 1.5px solid rgba(255, 200, 0, 0.24);
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.86);
+        }
+
+        .icon-lock img {
+          position: relative;
+          width: 270px;
+          height: 270px;
+          object-fit: contain;
+        }
+
+        .identity-lockup {
+          position: absolute;
+          left: 240px;
+          top: 515px;
+          z-index: 30;
+          width: 1440px;
+          text-align: center;
+        }
+
+        .eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 18px;
+          color: #ffc800;
+          font-size: 28px;
+          font-weight: 700;
+          letter-spacing: 0.18em;
+          line-height: 1;
+        }
+
+        .eyebrow::before,
+        .eyebrow::after {
+          content: "";
+          display: block;
+          width: 62px;
+          height: 4px;
+          border-radius: 4px;
+          background: #ffc800;
+        }
+
+        .wordmark-wrap {
+          width: 1050px;
+          min-height: 174px;
+          margin: 10px auto 0;
+          text-align: center;
+        }
+
+        .wordmark {
+          display: inline-block;
+          min-width: 1050px;
+          color: #0f172a;
+          font-size: 164px;
+          font-weight: 700;
+          line-height: 0.96;
+          letter-spacing: 0.045em;
+          white-space: nowrap;
+        }
+
+        .tagline-mask {
+          position: absolute;
+          left: 260px;
+          top: 735px;
+          z-index: 30;
+          width: 1400px;
+          height: 76px;
+          overflow: hidden;
+          text-align: center;
+        }
+
+        .tagline {
+          display: block;
+          color: #6b6b6b;
+          font-size: 36px;
+          font-weight: 600;
+          letter-spacing: 0.04em;
+          line-height: 1.2;
+          white-space: nowrap;
+          will-change: transform, opacity;
+        }
+
+        .tagline-accent {
+          color: #0f172a;
+        }
+
+        .lead-pet {
+          position: absolute;
+          z-index: 22;
+          width: 320px;
+          height: 320px;
+          object-fit: contain;
+          will-change: transform, opacity;
+        }
+
+        .lead-pet-orange {
+          left: 86px;
+          top: 548px;
+        }
+
+        .lead-pet-violet {
+          left: 1514px;
+          top: 548px;
+        }
+
+        .progress-track {
+          position: absolute;
+          left: 96px;
+          top: 886px;
+          width: 1728px;
+          height: 3px;
+          border-radius: 3px;
+          background: rgba(255, 200, 0, 0.12);
+          overflow: hidden;
+        }
+
+        .progress-fill {
+          display: block;
+          width: 100%;
+          height: 100%;
+          border-radius: 3px;
+          background: #ffc800;
+          transform-origin: 0 50%;
+          will-change: transform;
+        }
+      </style>
+
+      <div data-hf-id="hf-zsbv" id="root" data-composition-id="02-meet-twino" data-start="0" data-duration="5.5" data-track-index="0" data-width="1920" data-height="1080">
+        <div data-hf-id="hf-lj0b" id="frame02-ground" class="clip scene-ground" data-start="0" data-duration="5" data-track-index="1"></div>
+
+        <div data-hf-id="hf-fq42" class="content-stage">
+          <div data-hf-id="hf-uvqs" class="micro-grid" aria-hidden="true"></div>
+          <div data-hf-id="hf-wdjc" class="frame-index">02 / TWINO</div>
+
+          <div data-hf-id="hf-1c0f" class="orbit-plane" id="frame02-orbit-plane" aria-hidden="true">
+            <div data-hf-id="hf-jirt" class="guide-ring ring-1"></div>
+            <div data-hf-id="hf-ngvu" class="guide-ring ring-2"></div>
+            <div data-hf-id="hf-rezv" class="guide-ring ring-3"></div>
+            <div data-hf-id="hf-k5e9" class="axis-line" id="frame02-axis"></div>
+
+            <div data-hf-id="hf-87kk" class="orbit-fragment" data-angle="0" style="--fragment-width: 56px; --fragment-height: 22px; --fragment-color: #ff6b4a"></div>
+            <div data-hf-id="hf-zz4g" class="orbit-fragment" data-angle="36" style="--fragment-width: 34px; --fragment-height: 18px; --fragment-color: #3b82f6"></div>
+            <div data-hf-id="hf-8q3q" class="orbit-fragment" data-angle="72" style="--fragment-width: 48px; --fragment-height: 20px; --fragment-color: #ff6b4a"></div>
+            <div data-hf-id="hf-7umc" class="orbit-fragment" data-angle="108" style="--fragment-width: 30px; --fragment-height: 16px; --fragment-color: #3b82f6"></div>
+            <div data-hf-id="hf-hvm0" class="orbit-fragment" data-angle="144" style="--fragment-width: 44px; --fragment-height: 19px; --fragment-color: #ff6b4a"></div>
+            <div data-hf-id="hf-wxqu" class="orbit-fragment" data-angle="180" style="--fragment-width: 52px; --fragment-height: 21px; --fragment-color: #3b82f6"></div>
+            <div data-hf-id="hf-sb5n" class="orbit-fragment" data-angle="216" style="--fragment-width: 36px; --fragment-height: 17px; --fragment-color: #ff6b4a"></div>
+            <div data-hf-id="hf-935g" class="orbit-fragment" data-angle="252" style="--fragment-width: 46px; --fragment-height: 20px; --fragment-color: #3b82f6"></div>
+            <div data-hf-id="hf-ow7v" class="orbit-fragment" data-angle="288" style="--fragment-width: 32px; --fragment-height: 16px; --fragment-color: #ff6b4a"></div>
+            <div data-hf-id="hf-6gq7" class="orbit-fragment" data-angle="324" style="--fragment-width: 50px; --fragment-height: 20px; --fragment-color: #3b82f6"></div>
+          </div>
+
+          <div data-hf-id="hf-5vmu" class="hero-halo" id="frame02-halo" aria-hidden="true"></div>
+          <div data-hf-id="hf-tw4x" class="icon-lock">
+            <img data-hf-id="hf-vr5b" src="assets/twino-app-icon.png" alt="TWINO">
+          </div>
+
+          <div data-hf-id="hf-4rfh" class="identity-lockup">
+            <div data-hf-id="hf-3mpt" class="eyebrow" id="frame02-eyebrow">MEET</div>
+            <div data-hf-id="hf-3tjc" class="wordmark-wrap">
+              <span data-hf-id="hf-itah" class="wordmark" id="frame02-wordmark"></span>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-nh77" class="tagline-mask">
+            <div data-hf-id="hf-mjqr" class="tagline" id="frame02-tagline">
+              YOUR ENGLISH. <span data-hf-id="hf-zuoj" class="tagline-accent">ONE CONNECTED JOURNEY.</span>
+            </div>
+          </div>
+
+          <img data-hf-id="hf-7fyl" class="lead-pet lead-pet-orange" id="frame02-pet-orange" src="assets/image_021.webp" alt="">
+          <img data-hf-id="hf-huvw" class="lead-pet lead-pet-violet" id="frame02-pet-violet" src="assets/image_022.webp" alt="">
+
+          <div data-hf-id="hf-1xti" class="progress-track" aria-hidden="true">
+            <span data-hf-id="hf-f5hv" class="progress-fill" id="frame02-progress"></span>
+          </div>
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+      <script>
+        window.__timelines = window.__timelines || {};
+
+        const tl = gsap.timeline({ paused: true });
+        const frameRoot = document.querySelector('[data-composition-id="02-meet-twino"]');
+        const orbitPlane = document.getElementById("frame02-orbit-plane");
+        const rings = Array.from(frameRoot.querySelectorAll(".guide-ring"));
+        const fragments = Array.from(frameRoot.querySelectorAll(".orbit-fragment"));
+        const axis = document.getElementById("frame02-axis");
+        const halo = document.getElementById("frame02-halo");
+        const eyebrow = document.getElementById("frame02-eyebrow");
+        const wordmark = document.getElementById("frame02-wordmark");
+        const tagline = document.getElementById("frame02-tagline");
+        const orangePet = document.getElementById("frame02-pet-orange");
+        const violetPet = document.getElementById("frame02-pet-violet");
+        const progress = document.getElementById("frame02-progress");
+
+        // Scene 1 — center-outward guide system. The current mark is intentionally
+        // present at t=0; the universe assembles around the fixed product anchor.
+        rings.forEach((ring, index) => {
+          tl.fromTo(
+            ring,
+            { scale: 0.22, opacity: 0 },
+            {
+              scale: 1,
+              opacity: 0.82 - index * 0.15,
+              duration: 0.82,
+              ease: "power3.out",
+            },
+            index * 0.11,
+          );
+          tl.to(
+            ring,
+            {
+              scale: 1.04 + index * 0.015,
+              opacity: 0.38 - index * 0.06,
+              duration: 0.38,
+              ease: "power2.inOut",
+            },
+            0.72 + index * 0.08,
+          );
+        });
+
+        tl.fromTo(
+          progress,
+          { scaleX: 0.12 },
+          { scaleX: 0.28, duration: 1.05, ease: "power2.out" },
+          0,
+        );
+
+        // Scene 2 — fragments flip in at their orbital positions, then run a
+        // deterministic partial orbit while the guide plane tilts into depth.
+        const radiusX = 610;
+        const radiusY = 255;
+        fragments.forEach((fragment, index) => {
+          const initialAngle = (Number(fragment.dataset.angle) / 180) * Math.PI;
+          const startX = Math.cos(initialAngle) * radiusX;
+          const startY = Math.sin(initialAngle) * radiusY;
+
+          tl.fromTo(
+            fragment,
+            {
+              xPercent: -50,
+              yPercent: -50,
+              x: startX,
+              y: startY,
+              rotationX: 68,
+              rotationY: -42,
+              z: -180,
+              scale: 0.34,
+              opacity: 0,
+            },
+            {
+              xPercent: -50,
+              yPercent: -50,
+              x: startX,
+              y: startY,
+              rotationX: 0,
+              rotationY: 0,
+              z: 0,
+              scale: 1,
+              opacity: 0.9,
+              duration: 0.48,
+              ease: "back.out(1.35)",
+            },
+            1.1 + index * 0.055,
+          );
+
+          const orbitState = { p: 0 };
+          tl.to(
+            orbitState,
+            {
+              p: 0.24,
+              duration: 1.12,
+              ease: "none",
+              onUpdate: () => {
+                const angle = initialAngle + orbitState.p * Math.PI * 2;
+                const x = Math.cos(angle) * radiusX;
+                const y = Math.sin(angle) * radiusY;
+                gsap.set(fragment, { xPercent: -50, yPercent: -50, x, y });
+                fragment.style.zIndex = String(1 + Math.round(((y + radiusY) / (radiusY * 2)) * 49));
+              },
+            },
+            1.58 + index * 0.055,
+          );
+        });
+
+        tl.fromTo(
+          halo,
+          { scale: 0.84, opacity: 0 },
+          { scale: 1.05, opacity: 0.29, duration: 0.92, ease: "power2.out" },
+          1.18,
+        );
+        tl.to(halo, { scale: 1, opacity: 0.21, duration: 0.34, ease: "power2.inOut" }, 2.1);
+
+        tl.fromTo(
+          orbitPlane,
+          { rotationX: 0, scale: 1, y: 0 },
+          { rotationX: 48, scale: 0.96, y: -8, duration: 1.28, ease: "power2.inOut" },
+          1.22,
+        );
+        tl.to(orbitPlane, { rotationX: 24, scale: 0.92, y: -18, duration: 0.46, ease: "power3.out" }, 2.5);
+        tl.to(progress, { scaleX: 0.56, duration: 1.7, ease: "power2.inOut" }, 1.1);
+
+        // Scene 3 — orbital matter resolves onto one exact rail, then the name
+        // is constructed as a discrete threshold sequence.
+        tl.fromTo(axis, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 0.64, duration: 0.54, ease: "power3.out" }, 2.8);
+        fragments.forEach((fragment, index) => {
+          const railX = -560 + index * (1120 / (fragments.length - 1));
+          tl.to(
+            fragment,
+            {
+              xPercent: -50,
+              yPercent: -50,
+              x: railX,
+              y: 0,
+              rotation: 0,
+              opacity: 0.52,
+              scale: 0.78,
+              duration: 0.58,
+              ease: "power3.inOut",
+            },
+            2.8 + index * 0.018,
+          );
+        });
+
+        tl.fromTo(
+          eyebrow,
+          { y: 18, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.46, ease: "power3.out" },
+          2.93,
+        );
+
+        const wordStates = [
+          { t: 0.0, text: "" },
+          { t: 0.08, text: "T" },
+          { t: 0.19, text: "TW" },
+          { t: 0.31, text: "TWI" },
+          { t: 0.44, text: "TWIN" },
+          { t: 0.59, text: "TWINO" },
+        ];
+        const wordAt = (time) => {
+          for (let i = wordStates.length - 1; i >= 0; i -= 1) {
+            if (time >= wordStates[i].t) return wordStates[i].text;
+          }
+          return "";
+        };
+        const wordDriver = { t: 0 };
+        tl.to(
+          wordDriver,
+          {
+            t: 0.66,
+            duration: 0.66,
+            ease: "none",
+            onUpdate: () => {
+              wordmark.textContent = wordAt(wordDriver.t);
+            },
+          },
+          3.08,
+        );
+        tl.fromTo(
+          wordmark,
+          { opacity: 0.74, y: 10 },
+          { opacity: 1, y: 0, duration: 0.72, ease: "power2.out" },
+          3.08,
+        );
+        tl.to(progress, { scaleX: 0.82, duration: 1.2, ease: "power2.inOut" }, 2.8);
+
+        // Scene 4 — the lead pair arrives sequentially after the wordmark has
+        // fully resolved, framing the lockup without covering the typography.
+        // No exit: the characters and identity hold fully still for the cut.
+        tl.fromTo(
+          orangePet,
+          { x: -180, y: 18, scale: 0.96, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.58, ease: "power3.out" },
+          3.78,
+        );
+        tl.fromTo(
+          violetPet,
+          { x: 180, y: 18, scale: 0.96, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.58, ease: "power3.out" },
+          4.02,
+        );
+        tl.fromTo(
+          tagline,
+          { y: 52, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.62, ease: "power3.out" },
+          4.08,
+        );
+        tl.to(progress, { scaleX: 1, duration: 0.72, ease: "power2.out" }, 4.12);
+
+        window.__timelines["02-meet-twino"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

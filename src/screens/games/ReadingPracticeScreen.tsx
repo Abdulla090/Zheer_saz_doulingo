@@ -465,7 +465,7 @@ export default function ReadingPracticeScreen() {
       compact && styles.passageTextCompact,
       { textAlign: isRtl ? "right" as const : "left" as const },
     ],
-    [compact, isRtl],
+    [compact, isRtl, styles.passageText, styles.passageTextCompact],
   );
 
   const scrollStyle = useAnimatedStyle(() => ({

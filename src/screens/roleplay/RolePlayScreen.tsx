@@ -11,7 +11,6 @@ import {
   HomeLiquidCard,
   HomeLiquidPill,
   HomeMeshBackground,
-  HomePalette,
   HomeType,
 } from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
@@ -42,8 +41,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
 import { useThemeColors } from "../../hooks/useThemeColors";
-
-const C = HomePalette;
 
 type HugeiconsIconData = {
   name: string;

@@ -13,7 +13,14 @@ import {
   useProgressStore,
 } from "../../../stores/useProgressStore";
 import React, { useMemo } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
+
+import { isDesktopWebWidth } from "../../../constants/web-layout";
 
 type StatItem = {
   key: string;
@@ -76,6 +83,10 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
     () => createStyles(colors, isDark, compact),
     [colors, compact, isDark],
   );
+
+  if (Platform.OS === "web" && isDesktopWebWidth(width)) {
+    return null;
+  }
 
   return (
     <View

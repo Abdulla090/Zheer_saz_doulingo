@@ -35,6 +35,7 @@ import { useAuth } from "../../context/AuthContext";
 import * as Font from "expo-font";
 import { fontMap } from "../../fontMap";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -203,7 +204,8 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const router = useRouter();
   const { t, locale, setLocale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
+  const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -704,29 +706,79 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   {isKu ? "ئەکاونتەکەت" : "Your Account"}
                 </AppText>
                 {user ? (
-                  <PressableScale
-                    onPress={() => {
-                      confirmAction(
-                        isKu ? "چوونەدەرەوە" : "Sign Out",
-                        isKu ? "دڵنیای لە چوونەدەرەوە لە ئەکاونتەکەت؟" : "Are you sure you want to sign out?",
-                        async () => {
-                          await signOut();
-                          router.replace("/more");
-                        },
-                        {
-                          confirmLabel: isKu ? "بچۆ دەرەوە" : "Sign Out",
-                          cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
-                          destructive: true,
-                        },
-                      );
-                    }}
-                    scaleDown={0.98}
-                    style={[styles.signOutBtn, styles.card]}
-                  >
-                    <AppText style={styles.signOutLabel} forceKurdishFont={isKu}>
-                      {isKu ? "چوونەدەرەوە لە ئەکاونت" : "Sign Out"}
-                    </AppText>
-                  </PressableScale>
+                  <>
+                    <PressableScale
+                      onPress={() => {
+                        confirmAction(
+                          isKu ? "چوونەدەرەوە" : "Sign Out",
+                          isKu ? "دڵنیای لە چوونەدەرەوە لە ئەکاونتەکەت؟" : "Are you sure you want to sign out?",
+                          async () => {
+                            try {
+                              await signOut();
+                              router.replace("/more");
+                            } catch {
+                              Alert.alert(
+                                isKu ? "هەڵەیەک ڕوویدا" : "Could not sign out",
+                                isKu ? "تکایە دووبارە هەوڵ بدەرەوە." : "Please try again.",
+                              );
+                            }
+                          },
+                          {
+                            confirmLabel: isKu ? "بچۆ دەرەوە" : "Sign Out",
+                            cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+                            destructive: true,
+                          },
+                        );
+                      }}
+                      scaleDown={0.98}
+                      style={[styles.signOutBtn, styles.card]}
+                    >
+                      <AppText style={styles.signOutLabel} forceKurdishFont={isKu}>
+                        {isKu ? "چوونەدەرەوە لە ئەکاونت" : "Sign Out"}
+                      </AppText>
+                    </PressableScale>
+
+                    <PressableScale
+                      onPress={() => {
+                        if (isDeletingAccount) return;
+                        confirmAction(
+                          isKu ? "سڕینەوەی ئەکاونت" : "Delete Account",
+                          isKu
+                            ? "هەموو زانیاری و پێشکەوتنە هاوکاتکراوەکانت بە هەمیشەیی دەسڕێتەوە. ئەم کردارە ناگەڕێتەوە."
+                            : "This permanently deletes your account and synced learning progress. This cannot be undone.",
+                          async () => {
+                            setIsDeletingAccount(true);
+                            try {
+                              await deleteAccount();
+                              router.replace("/more");
+                            } catch {
+                              Alert.alert(
+                                isKu ? "ئەکاونتەکە نەسڕایەوە" : "Account not deleted",
+                                isKu
+                                  ? "هیچ شتێک نەگۆڕاوە. تکایە پەیوەندیی ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە."
+                                  : "Nothing was changed. Check your connection and try again.",
+                              );
+                            } finally {
+                              setIsDeletingAccount(false);
+                            }
+                          },
+                          {
+                            confirmLabel: isKu ? "بە هەمیشەیی بیسڕەوە" : "Delete Permanently",
+                            cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+                            destructive: true,
+                          },
+                        );
+                      }}
+                      scaleDown={0.98}
+                      style={[styles.deleteAccountBtn, styles.card]}
+                    >
+                      <AppText style={styles.deleteAccountLabel} forceKurdishFont={isKu}>
+                        {isDeletingAccount
+                          ? isKu ? "لە سڕینەوەدایە..." : "Deleting..."
+                          : isKu ? "سڕینەوەی ئەکاونت" : "Delete Account"}
+                      </AppText>
+                    </PressableScale>
+                  </>
                 ) : (
                   <PressableScale
                     onPress={() => {
@@ -983,6 +1035,21 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.card,
     },
     signOutLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.error,
+      fontFamily: "DINNextRoundedBold",
+    },
+    deleteAccountBtn: {
+      marginTop: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.error,
+      backgroundColor: "transparent",
+    },
+    deleteAccountLabel: {
       fontSize: 15,
       fontWeight: "700",
       color: colors.error,

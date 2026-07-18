@@ -44,6 +44,10 @@ import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
 
 import { useThemeColors } from "../../hooks/useThemeColors";
+import {
+  isDesktopWebWidth,
+  WEB_DESKTOP_PATH_WIDTH,
+} from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
 
@@ -56,6 +60,12 @@ export const StreetEnglishPathScreen = ({
   const { colors, isDark } = useThemeColors();
   const { locale } = useI18n();
   const { width: windowWidth } = useWindowDimensions();
+  const pathLayoutWidth =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth)
+      ? WEB_DESKTOP_PATH_WIDTH
+      : windowWidth;
+  const desktopTopInset =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
   const scrollYRef = useRef(0);
@@ -203,7 +213,7 @@ export const StreetEnglishPathScreen = ({
     }: SectionListRenderItemInfo<LessonListItem, SectionDataItem>) => (
       <ListItem
         item={item}
-        screenWidth={windowWidth}
+        screenWidth={pathLayoutWidth}
         unitLessonCount={section.data.length}
         pathMode="street"
         isActiveLesson={item.pathIndex === nextLessonPathIndex}
@@ -211,7 +221,7 @@ export const StreetEnglishPathScreen = ({
         onSelect={(node) => selectLesson(item, section.title, node)}
       />
     ),
-    [nextLessonPathIndex, selectLesson, selectedLesson?.item.id, windowWidth],
+    [nextLessonPathIndex, pathLayoutWidth, selectLesson, selectedLesson?.item.id],
   );
 
   const renderSectionHeader = useCallback(
@@ -252,7 +262,7 @@ export const StreetEnglishPathScreen = ({
       <View
         style={{
           flex: 1,
-          paddingTop: insets.top + topChromeHeight,
+          paddingTop: insets.top + topChromeHeight + desktopTopInset,
         }}
       >
         <PathStatsBar pathMode="street" />

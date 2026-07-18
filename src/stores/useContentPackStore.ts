@@ -1,9 +1,9 @@
 /**
- * useContentPackStore — tracks download state for Street & Kids content packs.
+ * useContentPackStore — tracks activation state for Street & Kids content packs.
  *
- * Normal English is always available.  Street and Kids are "downloadable"
- * (simulated — all data is bundled, but we gate access behind a persisted flag
- * for a modern app-store-style UX).
+ * All curriculum data ships with the app. Normal English is always active;
+ * Street and Kids are copied from the bundled registry into the local cache
+ * when a learner adds either path.
  */
 
 import type { LessonPathMode } from "../data/types";
@@ -33,7 +33,7 @@ export const CONTENT_PACKS: ContentPackMeta[] = [
     id: "street",
     titleKey: "Street English",
     descriptionKey: "Real-world conversations, slang & daily English for the streets",
-    sizeLabel: "24 MB",
+    sizeLabel: "Offline",
     unitCount: 12,
     lessonCount: 120,
     accentColor: "#1CB0F6",
@@ -43,7 +43,7 @@ export const CONTENT_PACKS: ContentPackMeta[] = [
     id: "kids",
     titleKey: "Kids English",
     descriptionKey: "Fun interactive lessons with games, animals & colors for children",
-    sizeLabel: "18 MB",
+    sizeLabel: "Offline",
     unitCount: 5,
     lessonCount: 50,
     accentColor: "#FF9600",
@@ -58,27 +58,24 @@ interface ContentPackState {
   streetProgress: number;
   kidsProgress: number;
 
-  /** Check if a learning path mode is available (downloaded or always-available). */
+  /** Check if a learning path mode is active or always available. */
   isAvailable: (mode: LessonPathMode) => boolean;
 
   /** Get status for a specific pack. */
   getStatus: (pack: PackId) => PackStatus;
 
-  /** Get download progress (0..1) for a specific pack. */
+  /** Get activation progress (0..1) for a specific pack. */
   getProgress: (pack: PackId) => number;
 
-  /** Start the simulated download for a pack. */
+  /** Add a bundled path to the learner's active paths. */
   startDownload: (pack: PackId) => void;
 
-  /** Cancel an in-progress download. */
+  /** Cancel an in-progress activation (kept for API compatibility). */
   cancelDownload: (pack: PackId) => void;
 
-  /** Remove a downloaded pack (resets to not_downloaded). */
+  /** Remove an active path (resets its legacy persisted status). */
   removePack: (pack: PackId) => void;
 }
-
-// Active XHR requests to track and cancel downloads
-const downloadXHRs: Partial<Record<PackId, XMLHttpRequest>> = {};
 
 function persistState(state: ContentPackState) {
   const data = {
@@ -150,81 +147,31 @@ export const useContentPackStore = create<ContentPackState>((set, get) => ({
     const statusKey = pack === "street" ? "streetStatus" : "kidsStatus";
     const progressKey = pack === "street" ? "streetProgress" : "kidsProgress";
 
-    // Already downloaded or downloading
+    // Legacy persisted status names are retained so existing installs migrate
+    // without losing which bundled paths the learner activated.
     const current = get()[statusKey];
     if (current === "downloaded" || current === "downloading") return;
 
-    // 1. Immediately cache the local curriculum units from shipped content
+    // Cache only the curriculum already shipped inside the application.
     try {
       const curriculumData = getBundledUnits(pack);
       appStorage.setItemSync(`${CACHE_PREFIX}${pack}`, JSON.stringify(curriculumData));
     } catch (err) {
-      console.error("Failed to write downloaded curriculum to cache:", err);
+      console.error("Failed to activate bundled curriculum:", err);
       set({ [statusKey]: "error" as PackStatus } as any);
       return;
     }
 
-    // 2. Immediately persist the downloaded state to storage disk so it is unlocked/saved permanently
-    const diskState = {
-      ...get(),
+    set({
       [statusKey]: "downloaded" as PackStatus,
       [progressKey]: 1,
-    };
-    persistState(diskState);
-
-    // 3. Set memory Zustand state to downloading to trigger the visual progress bar UX signal
-    set({ [statusKey]: "downloading", [progressKey]: 0 } as any);
-
-    // Cancel any existing request
-    if (downloadXHRs[pack]) {
-      downloadXHRs[pack]?.abort();
-      delete downloadXHRs[pack];
-    }
-
-    const xhr = new XMLHttpRequest();
-    downloadXHRs[pack] = xhr;
-
-    // 4. Run Cloudflare download speed test purely as a UX signal for network progress
-    const bytes = pack === "street" ? 25000000 : 15000000;
-    xhr.open("GET", `https://speed.cloudflare.com/__down?bytes=${bytes}&nocache=${Date.now()}`, true);
-
-    xhr.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = event.loaded / event.total;
-        set({ [progressKey]: progress } as any);
-      }
-    };
-
-    xhr.onload = () => {
-      delete downloadXHRs[pack];
-      set({
-        [statusKey]: "downloaded" as PackStatus,
-        [progressKey]: 1,
-      } as any);
-      persistState(get());
-    };
-
-    xhr.onerror = () => {
-      delete downloadXHRs[pack];
-      // Even if speed test fails/no network, transition Zustand state to downloaded
-      set({
-        [statusKey]: "downloaded" as PackStatus,
-        [progressKey]: 1,
-      } as any);
-      persistState(get());
-    };
-
-    xhr.send();
+    } as any);
+    persistState(get());
   },
 
   cancelDownload: (pack: PackId) => {
     const statusKey = pack === "street" ? "streetStatus" : "kidsStatus";
     const progressKey = pack === "street" ? "streetProgress" : "kidsProgress";
-
-    if (downloadXHRs[pack]) {
-      downloadXHRs[pack]?.abort();
-      delete downloadXHRs[pack];
-    }
 
     set({
       [statusKey]: "not_downloaded" as PackStatus,
@@ -235,11 +182,6 @@ export const useContentPackStore = create<ContentPackState>((set, get) => ({
   removePack: (pack: PackId) => {
     const statusKey = pack === "street" ? "streetStatus" : "kidsStatus";
     const progressKey = pack === "street" ? "streetProgress" : "kidsProgress";
-
-    if (downloadXHRs[pack]) {
-      downloadXHRs[pack]?.abort();
-      delete downloadXHRs[pack];
-    }
 
     try {
       appStorage.removeItemSync(`${CACHE_PREFIX}${pack}`);

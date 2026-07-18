@@ -89,7 +89,10 @@ export function AppText({
     desiredPhysicalAlignment,
   );
   const directionStyle = {
-    direction,
+    // Android already receives the app direction from the root view. Applying
+    // `direction` again to each native Text creates opaque glyph-bound boxes
+    // on some devices; physical textAlign is sufficient for mixed-language text.
+    ...(Platform.OS !== "android" ? { direction } : null),
     textAlign,
     // Android can clip Kurdish/Arabic glyph ascenders when a compact tile
     // disables native font padding. Keep it on for RTL lesson content.

@@ -1,0 +1,692 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_REGULAR.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_MEDIUM.ttf") format("truetype");
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "DIN Next Rounded";
+      src: url("assets/fonts/DIN_BOLD.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      color: #0f172a;
+      font-family: "DIN Next Rounded";
+    }
+
+    .f03-ground {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 73% 38%, rgba(255, 200, 0, 0.13), transparent 29%),
+        linear-gradient(180deg, #ffffff 0%, #fffdf4 100%);
+    }
+
+    .f03-grid {
+      position: absolute;
+      inset: 0 0 184px 0;
+      opacity: 0.38;
+      background-image:
+        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      -webkit-mask-image: linear-gradient(90deg, transparent, black 25%, black 85%, transparent);
+      mask-image: linear-gradient(90deg, transparent, black 25%, black 85%, transparent);
+    }
+
+    .f03-route-wide {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 896px;
+      pointer-events: none;
+    }
+
+    .f03-route-wide path {
+      fill: none;
+      stroke: #ffc800;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+      opacity: 0.66;
+    }
+
+    .f03-copy {
+      position: absolute;
+      left: 96px;
+      top: 138px;
+      width: 760px;
+      height: 610px;
+      z-index: 8;
+    }
+
+    .f03-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 15px;
+      padding: 13px 21px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      background: rgba(255, 200, 0, 0.08);
+      color: #806400;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .f03-kicker-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffc800;
+    }
+
+    .f03-headline-stack {
+      position: relative;
+      width: 750px;
+      height: 292px;
+      margin-top: 42px;
+    }
+
+    .f03-headline {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      display: block;
+      width: 100%;
+      max-width: 750px;
+      font-size: 96px;
+      line-height: 0.94;
+      letter-spacing: -0.05em;
+      font-weight: 700;
+      color: #0f172a;
+      transform-origin: 0 45%;
+      will-change: transform, opacity;
+    }
+
+    .f03-headline span {
+      display: block;
+      width: 100%;
+      white-space: nowrap;
+    }
+
+    .f03-copy-rule {
+      width: 140px;
+      height: 6px;
+      margin-top: 22px;
+      border-radius: 4px;
+      background: #ffc800;
+    }
+
+    .f03-mode-copy {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 34px;
+      color: #6b6b6b;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .f03-mode-copy span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      border-radius: 100px;
+      background: rgba(255, 200, 0, 0.055);
+    }
+
+    .f03-mode-copy span:first-child {
+      background: #ffc800;
+      color: #0f172a;
+    }
+
+    .f03-depth-layer,
+    .f03-phone {
+      position: absolute;
+      left: 972px;
+      top: 72px;
+      width: 824px;
+      height: 790px;
+      border-radius: 48px;
+    }
+
+    .f03-depth-one {
+      left: 936px;
+      top: 106px;
+      border: 1.5px solid rgba(255, 200, 0, 0.16);
+      background: rgba(255, 200, 0, 0.035);
+      z-index: 2;
+    }
+
+    .f03-depth-two {
+      left: 954px;
+      top: 88px;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      background: rgba(255, 200, 0, 0.055);
+      z-index: 3;
+    }
+
+    .f03-phone {
+      z-index: 5;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 2px solid rgba(15, 23, 42, 0.16);
+      background: #0f172a;
+      overflow: hidden;
+    }
+
+    .f03-phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 38px;
+      background: #fffdf8;
+    }
+
+    .f03-topbar {
+      position: relative;
+      height: 156px;
+      box-sizing: border-box;
+      padding: 24px 34px 22px;
+      z-index: 8;
+      background: rgba(255, 253, 248, 0.96);
+      border-bottom: 1px solid rgba(255, 200, 0, 0.15);
+    }
+
+    .f03-topbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 19px;
+    }
+
+    .f03-topbar-title {
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .f03-streak {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 15px;
+      border-radius: 100px;
+      background: rgba(255, 200, 0, 0.1);
+      color: #806400;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .f03-mode-rail {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      min-height: 52px;
+      padding: 5px;
+      border-radius: 100px;
+      background: rgba(15, 23, 42, 0.055);
+      isolation: isolate;
+    }
+
+    .f03-mode-active {
+      position: absolute;
+      left: 5px;
+      top: 5px;
+      width: calc((100% - 10px) / 3);
+      height: calc(100% - 10px);
+      border-radius: 100px;
+      background: #ffc800;
+      z-index: 0;
+    }
+
+    .f03-mode {
+      position: relative;
+      z-index: 1;
+      padding: 10px 0;
+      text-align: center;
+      color: #6b6b6b;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .f03-mode.is-current {
+      color: #0f172a;
+    }
+
+    .f03-path-viewport {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 156px;
+      bottom: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 83% 22%, rgba(255, 200, 0, 0.14), transparent 28%),
+        #ffffff;
+    }
+
+    .f03-path-world {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 1240px;
+      will-change: transform;
+    }
+
+    .f03-path-base,
+    .f03-path-fill {
+      position: absolute;
+      left: 110px;
+      top: 86px;
+      width: 6px;
+      height: 980px;
+      border-radius: 6px;
+      transform-origin: top center;
+    }
+
+    .f03-path-base {
+      background: rgba(15, 23, 42, 0.08);
+    }
+
+    .f03-path-fill {
+      background: #ffc800;
+    }
+
+    .f03-node {
+      position: absolute;
+      left: 70px;
+      width: 680px;
+      min-height: 154px;
+      display: grid;
+      grid-template-columns: 76px 1fr auto;
+      align-items: center;
+      gap: 22px;
+      box-sizing: border-box;
+      padding: 24px 26px 24px 18px;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      border-radius: 14px;
+      background: rgba(255, 200, 0, 0.045);
+      color: #0f172a;
+    }
+
+    .f03-node-one { top: 32px; }
+    .f03-node-two { top: 252px; left: 100px; }
+    .f03-node-three { top: 472px; }
+    .f03-node-four { top: 692px; left: 100px; }
+    .f03-node-five { top: 912px; }
+
+    .f03-node-icon {
+      width: 68px;
+      height: 68px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #ffc800;
+      color: #0f172a;
+    }
+
+    .f03-node-icon svg {
+      width: 34px;
+      height: 34px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .f03-node-title {
+      font-size: 34px;
+      line-height: 1.04;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .f03-node-state {
+      padding: 9px 14px;
+      border-radius: 100px;
+      background: rgba(255, 200, 0, 0.11);
+      color: #806400;
+      font-size: 24px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .f03-card-swap {
+      position: absolute;
+      left: 72px;
+      top: 338px;
+      width: 676px;
+      height: 248px;
+      z-index: 12;
+      pointer-events: none;
+    }
+
+    .f03-swap-card {
+      position: absolute;
+      inset: 0;
+      box-sizing: border-box;
+      padding: 20px 22px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      background: #ffffff;
+      transform-origin: 72% 30%;
+      will-change: transform, opacity;
+    }
+
+    .f03-swap-old {
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .f03-swap-new {
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 204px;
+      align-items: center;
+      gap: 10px;
+      background: #fffdf4;
+    }
+
+    .f03-card-eyebrow {
+      margin-bottom: 12px;
+      color: #806400;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .f03-card-title {
+      margin-bottom: 18px;
+      color: #0f172a;
+      font-size: 36px;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .f03-card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 17px;
+      border-radius: 100px;
+      background: #ffc800;
+      color: #0f172a;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .f03-card-orbit {
+      width: 104px;
+      height: 104px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 200, 0, 0.2);
+      background: rgba(255, 200, 0, 0.08);
+    }
+
+    .f03-card-orbit span {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #ffc800;
+    }
+
+    .f03-mascot {
+      position: relative;
+      width: 204px;
+      height: 204px;
+      object-fit: contain;
+      align-self: center;
+      justify-self: end;
+      z-index: 3;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+
+    .f03-final-dot {
+      position: absolute;
+      right: 130px;
+      top: 804px;
+      width: 18px;
+      height: 18px;
+      border: 5px solid #ffffff;
+      border-radius: 50%;
+      background: #ffc800;
+      z-index: 13;
+    }
+
+    .f03-bottom-rule {
+      position: absolute;
+      left: 104px;
+      right: 104px;
+      top: 886px;
+      height: 3px;
+      overflow: hidden;
+      border-radius: 3px;
+      background: rgba(255, 200, 0, 0.12);
+      z-index: 20;
+    }
+
+    .f03-bottom-fill {
+      width: 100%;
+      height: 100%;
+      border-radius: 3px;
+      background: #ffc800;
+      transform-origin: left center;
+    }
+  </style>
+
+  <div data-hf-id="hf-j67z" id="root" data-composition-id="03-path-built-around-you" data-start="0" data-duration="8.4" data-track-index="0" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-tsbt" id="f03-ground" class="clip f03-ground" data-start="0" data-duration="8" data-track-index="1">
+      <div data-hf-id="hf-lrea" class="f03-grid"></div>
+      <svg data-hf-id="hf-rqg1" class="f03-route-wide" viewBox="0 0 1920 896" aria-hidden="true">
+        <path data-hf-id="hf-dtef" id="f03-route-line" pathLength="1" d="M 0 742 C 245 742, 244 646, 452 646 S 736 754, 916 678 S 1038 474, 1174 418 S 1486 523, 1920 282" />
+      </svg>
+    </div>
+
+    <section data-hf-id="hf-tmrx" class="f03-copy">
+      <div data-hf-id="hf-q2np" id="f03-kicker" class="f03-kicker"><span data-hf-id="hf-e0bq" class="f03-kicker-dot"></span>DAILY FLOW</div>
+      <div data-hf-id="hf-94e5" class="f03-headline-stack">
+        <h1 data-hf-id="hf-e7em" id="f03-headline-a" class="f03-headline"><span data-hf-id="hf-sqxf">A PATH BUILT</span><span data-hf-id="hf-q9tj">AROUND YOU.</span></h1>
+        <h1 data-hf-id="hf-a9al" id="f03-headline-b" class="f03-headline"><span data-hf-id="hf-b29y">ONE CLEAR</span><span data-hf-id="hf-yxyg">NEXT STEP.</span></h1>
+      </div>
+      <div data-hf-id="hf-q8s6" id="f03-copy-rule" class="f03-copy-rule"></div>
+      <div data-hf-id="hf-0yak" id="f03-mode-copy" class="f03-mode-copy"><span data-hf-id="hf-za2y">STREET</span><span data-hf-id="hf-iyan">CLASSIC</span><span data-hf-id="hf-2c9c">KIDS</span></div>
+    </section>
+
+    <div data-hf-id="hf-afu1" id="f03-depth-one" class="f03-depth-layer f03-depth-one"></div>
+    <div data-hf-id="hf-h0qp" id="f03-depth-two" class="f03-depth-layer f03-depth-two"></div>
+
+    <section data-hf-id="hf-te2w" id="f03-phone" class="f03-phone" aria-label="Reconstructed TWINO learning path">
+      <div data-hf-id="hf-y42n" class="f03-phone-screen">
+        <header data-hf-id="hf-pu0q" class="f03-topbar">
+          <div data-hf-id="hf-zj4l" class="f03-topbar-row">
+            <span data-hf-id="hf-x5dc" class="f03-topbar-title">Your learning path</span>
+            <span data-hf-id="hf-93qs" class="f03-streak">READY</span>
+          </div>
+          <div data-hf-id="hf-11cw" class="f03-mode-rail">
+            <div data-hf-id="hf-lzqi" id="f03-mode-active" class="f03-mode-active"></div>
+            <span data-hf-id="hf-gsiu" id="f03-mode-street" class="f03-mode is-current">STREET</span>
+            <span data-hf-id="hf-4wkw" id="f03-mode-classic" class="f03-mode">CLASSIC</span>
+            <span data-hf-id="hf-ass6" id="f03-mode-kids" class="f03-mode">KIDS</span>
+          </div>
+        </header>
+
+        <div data-hf-id="hf-a6ly" class="f03-path-viewport">
+          <div data-hf-id="hf-lgqf" id="f03-path-world" class="f03-path-world" data-layout-allow-overflow="">
+            <div data-hf-id="hf-o4k7" class="f03-path-base"></div>
+            <div data-hf-id="hf-kz1k" id="f03-path-fill" class="f03-path-fill"></div>
+
+            <article data-hf-id="hf-1mzg" class="f03-node f03-node-one">
+              <div data-hf-id="hf-wuiw" class="f03-node-icon">
+                <svg data-hf-id="hf-37y7" viewBox="0 0 32 32"><path data-hf-id="hf-dbga" d="M9 16h14M16 9v14" /></svg>
+              </div>
+              <div data-hf-id="hf-yr4e" class="f03-node-title">First conversation</div>
+              <span data-hf-id="hf-wu9r" class="f03-node-state">OPEN</span>
+            </article>
+
+            <article data-hf-id="hf-mny7" id="f03-node-two" class="f03-node f03-node-two">
+              <div data-hf-id="hf-tzb4" class="f03-node-icon">
+                <svg data-hf-id="hf-m0hr" viewBox="0 0 32 32"><path data-hf-id="hf-zuzx" d="M9 18c4 4 10 4 14 0M12 12h.01M20 12h.01" /></svg>
+              </div>
+              <div data-hf-id="hf-vbgb" class="f03-node-title">Listen &amp; respond</div>
+              <span data-hf-id="hf-h4bu" class="f03-node-state">NEXT</span>
+            </article>
+
+            <article data-hf-id="hf-stuj" id="f03-node-three" class="f03-node f03-node-three">
+              <div data-hf-id="hf-sse1" class="f03-node-icon">
+                <svg data-hf-id="hf-lm6q" viewBox="0 0 32 32"><path data-hf-id="hf-ec61" d="M6 11h20v13H11l-5 4V11Z" /></svg>
+              </div>
+              <div data-hf-id="hf-7l1l" class="f03-node-title">Order with confidence</div>
+              <span data-hf-id="hf-mfd4" class="f03-node-state">SOON</span>
+            </article>
+
+            <article data-hf-id="hf-ijh5" id="f03-node-four" class="f03-node f03-node-four">
+              <div data-hf-id="hf-t6p2" class="f03-node-icon">
+                <svg data-hf-id="hf-l7vp" viewBox="0 0 32 32"><path data-hf-id="hf-ox51" d="M8 22 14 16l4 4 7-9M22 11h3v3" /></svg>
+              </div>
+              <div data-hf-id="hf-jnru" class="f03-node-title">Make it stick</div>
+              <span data-hf-id="hf-mg25" class="f03-node-state">LOCKED</span>
+            </article>
+
+            <article data-hf-id="hf-9gs1" id="f03-node-five" class="f03-node f03-node-five">
+              <div data-hf-id="hf-rzrz" class="f03-node-icon">
+                <svg data-hf-id="hf-o00w" viewBox="0 0 32 32"><path data-hf-id="hf-t2z3" d="m10 16 4 4 8-9" /></svg>
+              </div>
+              <div data-hf-id="hf-7391" class="f03-node-title">Real-world ready</div>
+              <span data-hf-id="hf-bxmo" class="f03-node-state">AHEAD</span>
+            </article>
+          </div>
+
+          <div data-hf-id="hf-hjx8" class="f03-card-swap">
+            <article data-hf-id="hf-w5id" id="f03-swap-old" class="f03-swap-card f03-swap-old">
+              <div data-hf-id="hf-n90n" class="f03-card-orbit"><span data-hf-id="hf-uckh"></span></div>
+              <div data-hf-id="hf-yeow"><div data-hf-id="hf-66zl" class="f03-card-eyebrow">YOUR MOMENTUM</div><div data-hf-id="hf-6gq6" class="f03-card-title">The path stays focused.</div></div>
+            </article>
+            <article data-hf-id="hf-b3b1" id="f03-swap-new" class="f03-swap-card f03-swap-new">
+              <div data-hf-id="hf-y7yw">
+                <div data-hf-id="hf-6p4w" class="f03-card-eyebrow">UP NEXT</div>
+                <div data-hf-id="hf-q755" class="f03-card-title">Speak in the real world.</div>
+                <span data-hf-id="hf-nxk4" class="f03-card-cta">START LESSON <b data-hf-id="hf-qmvp">→</b></span>
+              </div>
+          <img data-hf-id="hf-k3ql" id="f03-mascot" class="f03-mascot" src="assets/image_021.webp" alt="Orange Pingo ready for the next lesson">
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div data-hf-id="hf-di7y" id="f03-final-dot" class="f03-final-dot"></div>
+    <div data-hf-id="hf-xrmq" class="f03-bottom-rule"><div data-hf-id="hf-kw8k" id="f03-bottom-fill" class="f03-bottom-fill"></div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    const f03Modes = [
+      { t: 0.0, index: 0, id: "f03-mode-street" },
+      { t: 1.95, index: 1, id: "f03-mode-classic" },
+      { t: 2.62, index: 2, id: "f03-mode-kids" }
+    ];
+    const f03ModeDriver = { t: 0 };
+    const f03ModeNodes = document.querySelectorAll(".f03-mode");
+
+    function f03ModeAt(time) {
+      for (let i = f03Modes.length - 1; i >= 0; i -= 1) {
+        if (time >= f03Modes[i].t) return f03Modes[i];
+      }
+      return f03Modes[0];
+    }
+
+    function f03PaintMode(time) {
+      const state = f03ModeAt(time);
+      f03ModeNodes.forEach((node) => node.classList.toggle("is-current", node.id === state.id));
+    }
+
+    const f03Tl = gsap.timeline({ paused: true });
+
+    f03Tl.set("#f03-swap-old", { opacity: 0 }, 0);
+
+    f03Tl.fromTo("#f03-route-line", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.2, ease: "power3.out" }, 0);
+    f03Tl.fromTo("#f03-depth-one", { opacity: 0, x: 50, y: 82, scale: 0.92 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 1.0, ease: "power3.out" }, 0);
+    f03Tl.fromTo("#f03-depth-two", { opacity: 0, x: 34, y: 70, scale: 0.94 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.9, ease: "power3.out" }, 0.08);
+    f03Tl.fromTo("#f03-phone", { opacity: 0, x: 52, y: 128, scale: 0.95 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.95, ease: "power4.out" }, 0);
+    f03Tl.fromTo("#f03-kicker", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.22);
+    f03Tl.fromTo("#f03-headline-a", { opacity: 0, y: 34, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.82, ease: "power3.out" }, 0.34);
+    f03Tl.fromTo("#f03-copy-rule", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.55, ease: "power3.out", transformOrigin: "left center" }, 0.76);
+    f03Tl.fromTo("#f03-mode-copy", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.92);
+    f03Tl.fromTo("#f03-path-fill", { scaleY: 0.14 }, { scaleY: 0.28, duration: 0.78, ease: "power2.out", transformOrigin: "top center" }, 0.42);
+
+    f03Tl.to(f03ModeDriver, {
+      t: 3.2,
+      duration: 3.2,
+      ease: "none",
+      onUpdate: () => f03PaintMode(f03ModeDriver.t)
+    }, 0);
+    f03Tl.to("#f03-mode-active", { xPercent: 100, duration: 0.42, ease: "power3.out" }, 1.95);
+    f03Tl.to("#f03-mode-active", { xPercent: 200, duration: 0.42, ease: "power3.out" }, 2.62);
+
+    f03Tl.fromTo("#f03-node-two", { opacity: 0, x: 28 }, { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" }, 3.25);
+    f03Tl.to("#f03-path-world", { y: -192, duration: 0.78, ease: "power3.out", overwrite: "auto" }, 3.25);
+    f03Tl.to("#f03-path-fill", { scaleY: 0.48, duration: 0.78, ease: "power2.out", transformOrigin: "top center", overwrite: "auto" }, 3.25);
+
+    f03Tl.fromTo("#f03-node-three", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.52, ease: "power3.out" }, 4.05);
+    f03Tl.to("#f03-path-world", { y: -405, duration: 0.62, ease: "power3.out", overwrite: "auto" }, 4.08);
+    f03Tl.to("#f03-path-fill", { scaleY: 0.7, duration: 0.62, ease: "power2.out", transformOrigin: "top center", overwrite: "auto" }, 4.08);
+
+    f03Tl.fromTo("#f03-node-four", { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.52, ease: "power3.out" }, 4.75);
+    f03Tl.to("#f03-path-world", { y: -680, duration: 0.68, ease: "power3.out", overwrite: "auto" }, 4.78);
+    f03Tl.to("#f03-path-fill", { scaleY: 0.88, duration: 0.68, ease: "power2.out", transformOrigin: "top center", overwrite: "auto" }, 4.78);
+    f03Tl.to("#f03-node-three", { opacity: 0, duration: 0.26, ease: "power1.out" }, 4.78);
+    f03Tl.to("#f03-node-four", { opacity: 0, duration: 0.28, ease: "power1.out" }, 5.3);
+
+    f03Tl.fromTo("#f03-swap-old", { opacity: 0, scale: 0.88, y: 24 }, { opacity: 1, scale: 1, y: 0, duration: 0.36, ease: "power3.out" }, 5.18);
+    f03Tl.to("#f03-swap-old", { opacity: 0, scale: 0.72, duration: 0.38, ease: "power2.in" }, 5.6);
+    f03Tl.fromTo("#f03-swap-new", { opacity: 0, scale: 0.72 }, { opacity: 1, scale: 1, duration: 0.62, ease: "back.out(1.55)" }, 5.82);
+    f03Tl.to("#f03-headline-a", { opacity: 0, scale: 0.72, duration: 0.38, ease: "power2.in" }, 5.6);
+    f03Tl.fromTo("#f03-headline-b", { opacity: 0, scale: 0.72 }, { opacity: 1, scale: 1, duration: 0.62, ease: "back.out(1.45)" }, 5.82);
+    f03Tl.fromTo("#f03-mascot", { opacity: 0, y: 34, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.62, ease: "power3.out" }, 5.92);
+    f03Tl.fromTo("#f03-final-dot", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, 6.1);
+    f03Tl.to("#f03-path-fill", { scaleY: 1, duration: 0.7, ease: "power2.out", transformOrigin: "top center" }, 5.75);
+    f03Tl.fromTo("#f03-bottom-fill", { scaleX: 0.54 }, { scaleX: 1, duration: 1.35, ease: "power2.out", transformOrigin: "left center" }, 5.72);
+
+    f03Tl.to({}, { duration: 0.8 }, 7.2);
+
+    window.__timelines["03-path-built-around-you"] = f03Tl;
+  </script>
+</template>

@@ -22,16 +22,18 @@ type HomeMainButtonProps = {
 /** Solid frosted chip — liquid glass clips/misaligns on small controls over saturated headers. */
 function GuidebookBtn({
   label,
+  isRtl,
   isKu,
   compact,
   onPress,
 }: {
   label: string;
+  isRtl: boolean;
   isKu: boolean;
   compact: boolean;
   onPress: () => void;
 }) {
-  const direction = isKu ? rtlText : ltrText;
+  const direction = isRtl ? rtlText : ltrText;
 
   return (
     <Pressable
@@ -46,7 +48,8 @@ function GuidebookBtn({
     >
       <View
         style={{
-          flexDirection: isKu ? "row-reverse" : "row",
+          direction: isRtl ? "rtl" : "ltr",
+          flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
           gap: compact ? 0 : 6,
@@ -70,7 +73,7 @@ function GuidebookBtn({
               ...direction,
             }}
             forceKurdishFont={isKu}
-            forceLatinFont={!isKu}
+            forceLatinFont={!isRtl}
             numberOfLines={1}
           >
             {label}
@@ -91,10 +94,11 @@ export const HomeMainButton = React.memo(({
 }: HomeMainButtonProps) => {
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const { t, isKu } = useI18n();
+  const { t, isKu, isAr } = useI18n();
+  const isRtl = isKu || isAr;
   const barWidth = Math.min(width - 32, 640);
   const guidebookCompact = width < 360;
-  const direction = isKu ? rtlText : ltrText;
+  const direction = isRtl ? rtlText : ltrText;
 
   const openGuidebook = useCallback(() => {
     hapticSelection();
@@ -117,7 +121,8 @@ export const HomeMainButton = React.memo(({
           borderColor: "rgba(255,255,255,0.22)",
           borderBottomWidth: 6,
           borderBottomColor: rimColor,
-          flexDirection: isKu ? "row-reverse" : "row",
+          direction: isRtl ? "rtl" : "ltr",
+          flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "nowrap",
@@ -133,14 +138,14 @@ export const HomeMainButton = React.memo(({
             flex: 1,
             flexShrink: 1,
             minWidth: 0,
-            marginRight: isKu ? 0 : 4,
-            marginLeft: isKu ? 4 : 0,
-            alignItems: isKu ? "flex-end" : "flex-start",
+            marginRight: isRtl ? 0 : 4,
+            marginLeft: isRtl ? 4 : 0,
+            alignItems: isRtl ? "flex-end" : "flex-start",
           }}
         >
           <View
             style={{
-              alignSelf: isKu ? "flex-end" : "flex-start",
+              alignSelf: isRtl ? "flex-end" : "flex-start",
               paddingVertical: 2,
               marginBottom: 3,
             }}
@@ -155,7 +160,7 @@ export const HomeMainButton = React.memo(({
                 ...direction,
               }}
               forceKurdishFont={isKu}
-              forceLatinFont={!isKu}
+              forceLatinFont={!isRtl}
               numberOfLines={1}
             >
               {unitLabel}
@@ -171,7 +176,7 @@ export const HomeMainButton = React.memo(({
               ...direction,
             }}
             forceKurdishFont={isKu}
-            forceLatinFont={!isKu}
+            forceLatinFont={!isRtl}
             numberOfLines={2}
           >
             {sectionTitle}
@@ -181,6 +186,7 @@ export const HomeMainButton = React.memo(({
         <View style={{ flexShrink: 0, flexGrow: 0 }}>
           <GuidebookBtn
             label={t("path.guidebook")}
+            isRtl={isRtl}
             isKu={isKu}
             compact={guidebookCompact}
             onPress={openGuidebook}

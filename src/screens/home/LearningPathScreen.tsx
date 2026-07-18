@@ -66,7 +66,7 @@ export function LearningPathScreen({
 
     if (status === "downloaded") {
       if (prevStatus === "downloading") {
-        // Just finished downloading! Wait 1000ms for checkmark/success banner animation
+        // The bundled path was just activated. Briefly show the success banner.
         const timer = setTimeout(() => {
           setShowPath(true);
         }, 1000);
@@ -79,7 +79,7 @@ export function LearningPathScreen({
     }
   }, [activeMode, streetStatus, kidsStatus]);
 
-  // If the selected mode is not downloaded, show the download card
+  // If the selected bundled path is not active, show its activation card.
   if (!showPath) {
     const packMeta = CONTENT_PACKS.find((p) => p.id === activeMode);
     if (packMeta) {

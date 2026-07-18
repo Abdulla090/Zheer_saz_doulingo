@@ -45,7 +45,7 @@ export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
     return getBundledUnits("normal");
   }
 
-  // For kids and street modes, we ONLY load from local storage cache (downloaded assets)
+  // Kids and Street are loaded from the local cache after the learner activates them.
   try {
     const cached = appStorage.getItemSync(`${CACHE_PREFIX}${mode}`);
     if (cached) {
@@ -58,6 +58,6 @@ export function getUnitsFromCacheOrBundle(mode: LessonPathMode): UnitBank[] {
     /* ignore and return empty */
   }
 
-  // If not downloaded yet (not in cache), return an empty array to make the path inactive
+  // If not activated yet (not in cache), return an empty array to keep the path inactive.
   return [];
 }

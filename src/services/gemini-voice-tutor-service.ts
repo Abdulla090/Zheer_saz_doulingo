@@ -1,8 +1,8 @@
 import {
   GEMINI_SPEECH_MODEL,
-  getGeminiApiKey,
   isGeminiConfigured,
 } from "../constants/gemini";
+import { generateGeminiContent } from "./gemini-gateway";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
@@ -225,11 +225,6 @@ export { isGeminiConfigured };
 export async function sendTutorTurn(
   input: TutorTurnInput,
 ): Promise<TutorTurnResponse> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error("Gemini API key is not configured.");
-  }
-
   const userPrompt = buildUserPrompt(input);
   const parts: { text?: string; inline_data?: { mime_type: string; data: string } }[] =
     [{ text: userPrompt }];
@@ -248,58 +243,36 @@ export async function sendTutorTurn(
     { role: "user" as const, parts },
   ];
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_SPEECH_MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text: buildTutorSystem(
-                  useLocaleStore.getState().selectedSourceLanguage,
-                  useLocaleStore.getState().selectedTargetLanguage,
-                  useSettingsStore.getState().userAge,
-                  useSettingsStore.getState().englishLevel || 5
-                )
-              }
-            ]
+  const data = await generateGeminiContent<GeminiGenerateResponse>(
+    GEMINI_SPEECH_MODEL,
+    {
+      systemInstruction: {
+        parts: [
+          {
+            text: buildTutorSystem(
+              useLocaleStore.getState().selectedSourceLanguage,
+              useLocaleStore.getState().selectedTargetLanguage,
+              useSettingsStore.getState().userAge,
+              useSettingsStore.getState().englishLevel || 5,
+            ),
           },
-          contents,
-          generationConfig: {
-            temperature: 0.65,
-            maxOutputTokens: 200,
-          },
-        }),
-        signal: controller.signal,
+        ],
       },
-    );
+      contents,
+      generationConfig: {
+        temperature: 0.65,
+        maxOutputTokens: 200,
+      },
+    },
+    API_TIMEOUT_MS,
+  );
 
-    const data = (await res.json()) as GeminiGenerateResponse;
-    if (!res.ok) {
-      throw new Error(data.error?.message ?? `Gemini request failed (${res.status})`);
-    }
+  const text =
+    data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim() ?? "";
 
-    const text =
-      data.candidates?.[0]?.content?.parts
-        ?.map((part) => part.text ?? "")
-        .join("")
-        .trim() ?? "";
-
-    if (!text) {
-      throw new Error("Gemini returned an empty response.");
-    }
-
-    return parseTutorPayload(text);
-  } finally {
-    clearTimeout(timeout);
-  }
+  if (!text) throw new Error("Gemini returned an empty response.");
+  return parseTutorPayload(text);
 }
