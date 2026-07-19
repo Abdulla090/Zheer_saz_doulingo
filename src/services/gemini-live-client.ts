@@ -3,6 +3,7 @@ import {
   GEMINI_LIVE_MODEL,
   getGeminiLiveWebSocketUrl,
 } from "../constants/gemini";
+import { supabase } from "../lib/supabase";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
@@ -23,6 +24,47 @@ export type LiveSessionCallbacks = {
   onError?: (message: string) => void;
 };
 
+type GeminiLiveTokenResponse = {
+  token?: string;
+};
+
+async function createGeminiLiveToken(): Promise<string> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session?.access_token) {
+    throw new Error("Sign in to use the live AI tutor.");
+  }
+
+  const { data, error } =
+    await supabase.functions.invoke<GeminiLiveTokenResponse>(
+      "gemini-live-token",
+      { body: {}, timeout: 12_000 },
+    );
+
+  if (error) {
+    let backendMessage = "";
+    const response = (error as { context?: Response }).context;
+    if (response?.clone) {
+      try {
+        const payload = await response.clone().json() as { error?: unknown };
+        if (typeof payload.error === "string") {
+          backendMessage = payload.error;
+        }
+      } catch {
+        // Fall back to the transport error below.
+      }
+    }
+    throw new Error(
+      backendMessage ||
+        error.message ||
+        "Gemini Live session could not start.",
+    );
+  }
+  if (!data?.token) {
+    throw new Error("Gemini Live session token was empty.");
+  }
+  return data.token;
+}
+
 function getLanguageName(code: string): string {
   switch (code?.toLowerCase()) {
     case "ku":
@@ -36,7 +78,7 @@ function getLanguageName(code: string): string {
   }
 }
 
-function buildLiveTutorSystem(): string {
+export function buildLiveTutorSystem(): string {
   const level = useSettingsStore.getState().englishLevel || 5;
   const age = useSettingsStore.getState().userAge || "";
   const name = useSettingsStore.getState().userName || "Student";
@@ -187,19 +229,25 @@ export class GeminiLiveSession {
   private callbacks: LiveSessionCallbacks = {};
   private setupDone = false;
 
-  connect(callbacks: LiveSessionCallbacks): Promise<void> {
+  async connect(callbacks: LiveSessionCallbacks): Promise<void> {
     this.callbacks = callbacks;
     this.setupDone = false;
 
-    const url = getGeminiLiveWebSocketUrl();
-    if (!url) {
-      return Promise.reject(new Error("Gemini API key is not configured."));
-    }
+    const ephemeralToken = await createGeminiLiveToken();
+    const url = getGeminiLiveWebSocketUrl(ephemeralToken);
 
-    return new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       let settled = false;
       const ws = new WebSocket(url);
       this.ws = ws;
+      const setupTimeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        const message = "Gemini Live took too long to connect.";
+        this.callbacks.onError?.(message);
+        ws.close();
+        reject(new Error(message));
+      }, 15_000);
 
       ws.onopen = () => {
         this.callbacks.onOpen?.();
@@ -227,6 +275,7 @@ export class GeminiLiveSession {
           this.callbacks.onError?.(err.message);
           if (!settled) {
             settled = true;
+            clearTimeout(setupTimeout);
             reject(new Error(err.message));
           }
           return;
@@ -237,6 +286,7 @@ export class GeminiLiveSession {
           this.callbacks.onSetupComplete?.();
           if (!settled) {
             settled = true;
+            clearTimeout(setupTimeout);
             resolve();
           }
           return;
@@ -275,6 +325,7 @@ export class GeminiLiveSession {
         this.callbacks.onError?.(err.message);
         if (!settled) {
           settled = true;
+          clearTimeout(setupTimeout);
           reject(err);
         }
       };
@@ -284,6 +335,7 @@ export class GeminiLiveSession {
         this.callbacks.onClose?.(event.reason || undefined);
         if (!settled) {
           settled = true;
+          clearTimeout(setupTimeout);
           reject(new Error(event.reason || "Connection closed before setup."));
         }
       };
@@ -302,6 +354,9 @@ export class GeminiLiveSession {
         model: `models/${GEMINI_LIVE_MODEL}`,
         generationConfig: {
           responseModalities: ["AUDIO"],
+          thinkingConfig: {
+            thinkingLevel: "minimal",
+          },
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: useSettingsStore.getState().tutorVoice || "Aoede" },
@@ -324,17 +379,7 @@ export class GeminiLiveSession {
       ? "Start this live voice tutor session now. Greet the student briefly in English, and ask if they are ready for their first word drill."
       : "Start this live voice tutor session now. Greet the student with exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'";
 
-    this.send({
-      clientContent: {
-        turns: [
-          {
-            role: "user",
-            parts: [{ text: promptText }],
-          },
-        ],
-        turnComplete: true,
-      },
-    });
+    this.sendClientText(promptText);
   }
 
   sendPcmChunk(pcmBase64: string) {
@@ -371,14 +416,8 @@ export class GeminiLiveSession {
 
   sendClientText(text: string) {
     this.send({
-      clientContent: {
-        turns: [
-          {
-            role: "user",
-            parts: [{ text }],
-          },
-        ],
-        turnComplete: true,
+      realtimeInput: {
+        text,
       },
     });
   }

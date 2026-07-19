@@ -4,7 +4,7 @@ import { Chest, ChestUnlocked } from "../../../constants/icons";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useI18n } from "../../../hooks/useI18n";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { getPathCurveOffset } from "./path-curve";
@@ -16,13 +16,7 @@ import {
   SvgButton,
   SvgButtonVariant,
 } from "./list-button";
-
-const STREET_LESSON_BUTTON_SIZE = 76;
-const NORMAL_LESSON_BUTTON_SIZE = 82;
-const KIDS_LESSON_BUTTON_SIZE = 78;
-const ITEM_SLOT_HEIGHT = 106;
-const NORMAL_ITEM_SLOT_HEIGHT = 112;
-const KIDS_ITEM_SLOT_HEIGHT = 108;
+import { getPathMetrics } from "./path-metrics";
 
 export type UnitChestKind = "silver" | "gold";
 
@@ -42,25 +36,6 @@ function getNormalPathOffset(globalIndex: number, screenWidth: number) {
   const baseSine = Math.sin(globalIndex * (Math.PI / 4));
   const adjustedSine = Math.sign(baseSine) * Math.pow(Math.abs(baseSine), 1.25);
   return adjustedSine * amplitude * -1;
-}
-
-function pathMetrics(pathMode: LessonPathMode) {
-  const isKids = pathMode === "kids";
-  const isNormal = pathMode === "normal";
-  const lessonButtonSize = isKids
-    ? KIDS_LESSON_BUTTON_SIZE
-    : isNormal
-      ? NORMAL_LESSON_BUTTON_SIZE
-      : STREET_LESSON_BUTTON_SIZE;
-  const slotHeight = isKids
-    ? KIDS_ITEM_SLOT_HEIGHT
-    : isNormal
-      ? NORMAL_ITEM_SLOT_HEIGHT
-      : ITEM_SLOT_HEIGHT;
-  return {
-    lessonButtonSize,
-    slotHeight,
-  };
 }
 
 function lessonColorTheme(item: LessonListItem): SectionTheme {
@@ -105,7 +80,8 @@ export const ListItem = React.memo(
   }: ListItemProps) => {
     const router = useRouter();
     const nodeRef = useRef<View>(null);
-    const metrics = pathMetrics(pathMode);
+    const compactWeb = Platform.OS === "web" && screenWidth < 768;
+    const metrics = getPathMetrics(pathMode, compactWeb);
     const { isKu, isAr } = useI18n();
 
     const { globalIndex, status } = item;
@@ -206,7 +182,10 @@ export const ListItem = React.memo(
                 {isActiveLesson && !isLocked ? (
                   <View
                     pointerEvents="none"
-                    style={{ position: "absolute", top: 24 }}
+                    style={{
+                      position: "absolute",
+                      top: Math.round(metrics.lessonButtonSize * 0.31),
+                    }}
                   >
                     <CurrentLessonIcon
                       size={Math.round(metrics.lessonButtonSize * 0.34)}
@@ -217,10 +196,10 @@ export const ListItem = React.memo(
                     pointerEvents="none"
                     style={{
                       position: "absolute",
-                      top: 25,
-                      width: 30,
-                      height: 30,
-                      borderRadius: 15,
+                      top: Math.round(metrics.lessonButtonSize * 0.32),
+                      width: Math.round(metrics.lessonButtonSize * 0.39),
+                      height: Math.round(metrics.lessonButtonSize * 0.39),
+                      borderRadius: Math.round(metrics.lessonButtonSize * 0.2),
                       alignItems: "center",
                       justifyContent: "center",
                       backgroundColor: "#F2A900",
@@ -228,7 +207,10 @@ export const ListItem = React.memo(
                       borderColor: "rgba(255,255,255,0.72)",
                     }}
                   >
-                    <CompletedCheckIcon width={21} height={21} />
+                    <CompletedCheckIcon
+                      width={Math.round(metrics.lessonButtonSize * 0.28)}
+                      height={Math.round(metrics.lessonButtonSize * 0.28)}
+                    />
                   </View>
                 ) : null}
               </IOSPressable>

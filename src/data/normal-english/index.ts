@@ -20,7 +20,7 @@ import unit14FoodDiningStorytelling from "./unit-14-food-dining-storytelling";
 import unit15LogicPlansHypotheticals from "./unit-15-logic-plans-hypotheticals";
 import unit16ScienceMediaModernIssues from "./unit-16-science-media-modern-issues";
 import {
-  resolveLessonStatus,
+  resolveUnitLessonStatus,
   type LessonListItem,
   type LessonType,
   type SectionDataItem,
@@ -116,7 +116,11 @@ export function buildNormalSectionData(
     const data: LessonListItem[] = unit.map((_, itemIndex) => {
       const pathIndex = normalPathIndex++;
       const lessonType = BASE_PATTERN[itemIndex % BASE_PATTERN.length];
-      const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+      const itemStatus = resolveUnitLessonStatus(
+        pathIndex,
+        nextLessonPathIndex,
+        itemIndex,
+      );
 
       return {
         id: `ne-level-${pathIndex}`,

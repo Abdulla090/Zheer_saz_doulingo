@@ -18,14 +18,17 @@ import { TAB_FAB_ROUTE } from "../constants/tab-order";
 import { useI18n } from "../hooks/useI18n";
 import type { I18nKey } from "../i18n";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
+import { BlurView } from "expo-blur";
 import { router, usePathname } from "expo-router";
-import React, { useMemo } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useMemo, type RefObject } from "react";
 import {
   Platform,
   Pressable,
   StyleSheet,
   useWindowDimensions,
   View,
+  type View as NativeView,
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -112,7 +115,6 @@ function TabButton({
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      android_ripple={{ color: isDark ? "rgba(255,255,255,0.08)" : "rgba(15, 23, 42, 0.08)", borderless: false }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={label}
@@ -150,7 +152,15 @@ function TabButton({
   );
 }
 
-export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+type CustomTabBarProps = BottomTabBarProps & {
+  blurTarget?: RefObject<NativeView | null>;
+};
+
+export function CustomTabBar({
+  state,
+  navigation,
+  blurTarget,
+}: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
@@ -179,28 +189,36 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     return null;
   }
 
-  return (
-    <View style={[styles.host, { paddingBottom: bottomPad }]}>
-      <View
-        {...(Platform.OS === "web"
-          ? ({ dir: isRtl ? "rtl" : "ltr" } as any)
-          : null)}
-        style={[
-          styles.bar,
-          {
-            width: barWidth,
-            marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
-            // `row-reverse` inside the app's RTL root double-mirrors the tabs.
-            // An explicit direction + normal row keeps Home physically right
-            // for Kurdish/Arabic and physically left for English.
-            flexDirection: "row",
-          },
-          Platform.OS !== "web" && {
-            direction: isRtl ? "rtl" : "ltr",
-          },
-        ]}
-      >
-        {items.map((item) => {
+  const barStyle = [
+    styles.bar,
+    {
+      width: barWidth,
+      marginBottom: TAB_BAR_FLOAT_MARGIN_BOTTOM,
+      // `row-reverse` inside the app's RTL root double-mirrors the tabs.
+      // An explicit direction + normal row keeps Home physically right
+      // for Kurdish/Arabic and physically left for English.
+      flexDirection: "row" as const,
+    },
+    Platform.OS !== "web" && {
+      direction: isRtl ? ("rtl" as const) : ("ltr" as const),
+    },
+  ];
+
+  const tabButtons = (
+    <>
+      {Platform.OS === "android" ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.12)", "rgba(255,255,255,0.025)", "rgba(255,255,255,0)"]
+              : ["rgba(255,255,255,0.62)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0)"]
+          }
+          locations={[0, 0.42, 1]}
+          style={styles.glassSheen}
+        />
+      ) : null}
+      {items.map((item) => {
           const routeState = state.routes.find((route) => route.name === item.route);
           if (!routeState) return null;
 
@@ -229,7 +247,32 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             />
           );
         })}
-      </View>
+    </>
+  );
+
+  return (
+    <View style={[styles.host, { paddingBottom: bottomPad }]}>
+      {Platform.OS === "android" ? (
+        <BlurView
+          blurTarget={blurTarget}
+          blurMethod="dimezisBlurViewSdk31Plus"
+          blurReductionFactor={3}
+          intensity={72}
+          tint={isDark ? "dark" : "extraLight"}
+          style={barStyle}
+        >
+          {tabButtons}
+        </BlurView>
+      ) : (
+        <View
+          {...(Platform.OS === "web"
+            ? ({ dir: isRtl ? "rtl" : "ltr" } as any)
+            : null)}
+          style={barStyle}
+        >
+          {tabButtons}
+        </View>
+      )}
     </View>
   );
 }
@@ -255,9 +298,10 @@ function createStyles(colors: any, isDark: boolean) {
     borderColor: colors.border,
     backgroundColor: Platform.OS === "web"
       ? colors.surfaceRaised
-      : (isDark ? "rgba(22,32,51,0.97)" : "rgba(255,255,255,0.96)"),
+      : (isDark ? "rgba(17,25,40,0.7)" : "rgba(255,255,255,0.62)"),
     paddingHorizontal: 6,
     paddingVertical: 6,
+    overflow: "hidden",
     ...crossShadow({
       color: "#0F172A",
       offsetY: 8,
@@ -265,6 +309,10 @@ function createStyles(colors: any, isDark: boolean) {
       opacity: 0.16,
       elevation: 10,
     }),
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 28,
   },
   tabButton: {
     flex: 1,
@@ -276,6 +324,7 @@ function createStyles(colors: any, isDark: boolean) {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "transparent",
     paddingHorizontal: 4,
+    overflow: "hidden",
   },
   tabButtonActive: {
     backgroundColor: isDark ? "rgba(255,255,255,0.09)" : ACTIVE_FILL,
@@ -283,6 +332,7 @@ function createStyles(colors: any, isDark: boolean) {
   },
   tabButtonPressed: {
     opacity: 0.72,
+    backgroundColor: isDark ? "rgba(255,255,255,0.09)" : ACTIVE_FILL,
   },
   iconWrap: {
     width: 28,

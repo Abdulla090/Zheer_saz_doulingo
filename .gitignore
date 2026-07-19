@@ -53,3 +53,6 @@ app-example
 # skill dirs
 goat-expo-skill/
 goat-expo-skill-fixed/
+.vercel
+.env*
+.codex-export-check/

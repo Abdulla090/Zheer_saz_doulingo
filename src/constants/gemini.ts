@@ -18,17 +18,17 @@ export const GEMINI_SPEECH_MODEL =
 /** Fallback model when the primary hits quota / rate limits. */
 export const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 
-/**
- * Direct Gemini Live sockets require a client-visible API key, so they are
- * disabled in release builds until a server-side WebSocket relay is deployed.
- * The production voice tutor uses the authenticated REST gateway instead.
- */
 export function isGeminiLiveConfigured(): boolean {
-  return false;
+  return isGeminiConfigured();
 }
 
-export function getGeminiLiveWebSocketUrl(): null {
-  return null;
+export function getGeminiLiveWebSocketUrl(ephemeralToken: string): string {
+  return (
+    "wss://generativelanguage.googleapis.com/ws/" +
+    "google.ai.generativelanguage.v1alpha.GenerativeService." +
+    "BidiGenerateContentConstrained?access_token=" +
+    encodeURIComponent(ephemeralToken)
+  );
 }
 
 export const GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview";

@@ -1,4 +1,7 @@
-import { isGeminiLiveConfigured } from "../constants/gemini";
+import {
+  GEMINI_LIVE_INPUT_RATE,
+  isGeminiLiveConfigured,
+} from "../constants/gemini";
 import {
   GeminiLiveSession,
   type LiveSessionPhase,
@@ -111,6 +114,9 @@ export function useGeminiLiveTutor() {
         if (!micMutedRef.current) {
           sessionRef.current?.sendPcmChunk(chunk);
         }
+      }, {
+        sampleRate: GEMINI_LIVE_INPUT_RATE,
+        filterSilence: false,
       });
       micActiveRef.current = true;
       setStatus("listening");
@@ -245,18 +251,35 @@ export function useGeminiLiveTutor() {
     setTranscript("");
 
     playerRef.current?.destroy();
-    playerRef.current = new LivePcmPlayer((isPlaying) => {
-      setSpeaking(isPlaying);
-      if (isPlaying) {
-        setStatus("speaking");
-      } else {
-        if (autoLiveRef.current) {
-          void startMic();
+    playerRef.current = new LivePcmPlayer(
+      (isPlaying) => {
+        setSpeaking(isPlaying);
+        if (isPlaying) {
+          micMutedRef.current = true;
+          setStatus("speaking");
         } else {
-          setStatus("live");
+          if (autoLiveRef.current) {
+            micMutedRef.current = false;
+            if (micActiveRef.current) {
+              setStatus("listening");
+            } else {
+              void startMic();
+            }
+          } else {
+            setStatus("live");
+          }
         }
-      }
-    });
+      },
+      (message) => {
+        if (!isCurrentSession()) return;
+        setError(message);
+        setSessionActive(false);
+        setSpeaking(false);
+        setStatus("error");
+        void stopMic();
+        sessionRef.current?.disconnect();
+      },
+    );
 
     const session = new GeminiLiveSession();
     sessionRef.current = session;
@@ -272,9 +295,6 @@ export function useGeminiLiveTutor() {
           if (!isCurrentSession()) return;
           micMutedRef.current = true;
           playerRef.current?.enqueueBase64Pcm(pcm);
-          if (micActiveRef.current) {
-            void stopMic();
-          }
         },
         onText: () => {
           // Audio-only responses are already captured by output transcription.
@@ -372,12 +392,22 @@ export function useGeminiLiveTutor() {
         onError: (msg) => {
           if (!isCurrentSession()) return;
           setError(msg);
+          setSessionActive(false);
+          setStatus("error");
+        },
+        onClose: (reason) => {
+          if (!isCurrentSession()) return;
+          setSessionActive(false);
+          setSpeaking(false);
+          void stopMic();
+          setError(reason || "Gemini Live connection closed.");
           setStatus("error");
         },
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Could not connect to Live tutor.";
       setError(msg);
+      setSessionActive(false);
       setStatus("error");
     }
   }, [appendAiText, configured, flushTranscript, recordUserTurn, startMic, stopMic, stopPlayer]);
@@ -446,6 +476,15 @@ export function useGeminiLiveTutor() {
     }
   }, [stopPlayer]);
 
+  const startSession = useCallback(async () => {
+    autoLiveRef.current = true;
+    await connectSession();
+  }, [connectSession]);
+
+  const signalReady = useCallback(async () => {
+    sendClientTextWithTracking("I'm ready.");
+  }, [sendClientTextWithTracking]);
+
   // Runs full transcript analysis and saves results to storage
   const runAnalysis = useCallback(async () => {
     if (turns.length === 0) return;
@@ -474,9 +513,15 @@ export function useGeminiLiveTutor() {
     turns,
     analysisLoading,
     sessionWords,
+    messages: [],
+    wordHighlight: null,
+    teachNote: null,
+    startSession,
     handleMicPress,
+    signalReady,
     interruptAi,
     runAnalysis,
+    sendText: sendClientTextWithTracking,
     sendClientText: sendClientTextWithTracking,
     stopAll,
   };

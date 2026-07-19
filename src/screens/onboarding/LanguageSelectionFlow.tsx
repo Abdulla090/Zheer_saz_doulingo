@@ -271,6 +271,7 @@ const GOAL_LABELS: Record<string, Record<string, string>> = {
 export function LanguageSelectionFlow({ onFinish }: Props) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
@@ -494,7 +495,13 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         style={styles.keyboardAvoider}
       >
       {/* HEADER: Back Button & Step Indicators */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20), flexDirection: "row" }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingTop: Math.max(insets.top, 20), flexDirection: "row" },
+          isDesktopWeb && styles.desktopFrame,
+        ]}
+      >
         <View style={[styles.headerLeft, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
           {step !== "nativeLanguage" ? (
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
@@ -532,7 +539,10 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isDesktopWeb && styles.desktopFrame,
+        ]}
       >
         {/* STEP 1: NATIVE LANGUAGE */}
         {step === "nativeLanguage" && (
@@ -717,6 +727,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
           style={[
             styles.onboardingFooter,
             { paddingBottom: Math.max(insets.bottom, 18) },
+            isDesktopWeb && styles.desktopFrame,
           ]}
         >
           <TouchableOpacity
@@ -1202,6 +1213,11 @@ function createStyles(colors: any, isDark: boolean) {
     paddingHorizontal: 24,
     paddingTop: 12,
     backgroundColor: "transparent",
+  },
+  desktopFrame: {
+    width: "100%",
+    maxWidth: 720,
+    alignSelf: "center",
   },
   primaryButtonDisabled: {
     backgroundColor: "#94A3B8",

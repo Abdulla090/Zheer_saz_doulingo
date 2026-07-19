@@ -1,5 +1,6 @@
 import { appStorage } from "../lib/app-storage";
 import { router } from "expo-router";
+import { Platform } from "react-native";
 import { create } from "zustand";
 
 const STORAGE_KEY = "twino.onboarding.completed";
@@ -14,7 +15,11 @@ interface OnboardingState {
   resetOnboarding: () => Promise<void>;
 }
 
-const savedOnboarding = appStorage.getItemSync(STORAGE_KEY) !== "false";
+const savedOnboardingValue = appStorage.getItemSync(STORAGE_KEY);
+const savedOnboarding =
+  Platform.OS === "web"
+    ? savedOnboardingValue === "true"
+    : savedOnboardingValue !== "false";
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ready: true,

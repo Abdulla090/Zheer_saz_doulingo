@@ -1,6 +1,6 @@
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import React, { useMemo } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AppText } from "../../../components/ui/AppText";
 import { OnboardingHeroScene, type OnboardingSceneVariant } from "./OnboardingHeroScene";
 
@@ -24,12 +24,20 @@ type Props = {
  */
 export function OnboardingSlide({ slide }: Props) {
   const { colors } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && width >= 900;
+  const styles = useMemo(
+    () => createStyles(colors, isDesktopWeb),
+    [colors, isDesktopWeb],
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <OnboardingHeroScene variant={slide.id as OnboardingSceneVariant} height={292} />
+        <OnboardingHeroScene
+          variant={slide.id as OnboardingSceneVariant}
+          height={isDesktopWeb ? 360 : 292}
+        />
       </View>
       
       <View style={styles.textContainer}>
@@ -44,38 +52,44 @@ export function OnboardingSlide({ slide }: Props) {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, isDesktopWeb: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     width: "100%",
+    maxWidth: isDesktopWeb ? 1040 : undefined,
+    alignSelf: "center",
+    flexDirection: isDesktopWeb ? "row" : "column",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
+    gap: isDesktopWeb ? 64 : 0,
+    paddingHorizontal: isDesktopWeb ? 56 : 32,
+    paddingBottom: isDesktopWeb ? 40 : 0,
     backgroundColor: "transparent",
   },
   iconContainer: {
-    width: "100%",
-    height: 292,
+    width: isDesktopWeb ? "48%" : "100%",
+    height: isDesktopWeb ? 360 : 292,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 22,
+    marginBottom: isDesktopWeb ? 0 : 22,
     backgroundColor: "transparent",
   },
   textContainer: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: isDesktopWeb ? "flex-start" : "center",
+    width: isDesktopWeb ? "42%" : "100%",
+    maxWidth: 460,
   },
   title: {
     fontSize: 28,
     lineHeight: 36,
     color: "#0F172A",
-    textAlign: "center",
+    textAlign: isDesktopWeb ? "left" : "center",
     marginBottom: 16,
   },
   subtitle: {
     fontSize: 15,
     lineHeight: 22,
     color: "#475569",
-    textAlign: "center",
+    textAlign: isDesktopWeb ? "left" : "center",
   },
 });

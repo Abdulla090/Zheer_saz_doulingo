@@ -7,8 +7,9 @@ import { pathnameHidesTabBar } from "../constants/tab-navigation";
 import { isDesktopWebWidth } from "../constants/web-layout";
 import { DesktopWebSidebar } from "../components/web/DesktopWebSidebar";
 import { DesktopWebRail } from "../components/web/DesktopWebRail";
+import { BlurTargetView } from "expo-blur";
 import { router, Tabs, usePathname } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform, useWindowDimensions, View } from "react-native";
 
 const WARM_TAB_ROUTES = ["/play", "/dashboard", "/more"] as const;
@@ -41,6 +42,7 @@ function useWarmTabRoutes() {
 
 function JsTabsLayoutInner() {
   useWarmTabRoutes();
+  const blurTargetRef = useRef<View | null>(null);
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { hidden: contextHidden } = useTabBarVisibility();
@@ -51,12 +53,13 @@ function JsTabsLayoutInner() {
     isDesktopWeb &&
     (pathname === "/" || pathname === "/index" || pathname === "/play");
 
-  return (
-    <View style={{ flex: 1 }}>
+  const tabs = (
     <Tabs
       initialRouteName="index"
       tabBar={(props) =>
-        isDesktopWeb ? null : <CustomTabBar {...props} />
+        isDesktopWeb ? null : (
+          <CustomTabBar {...props} blurTarget={blurTargetRef} />
+        )
       }
       screenOptions={{
         headerShown: false,
@@ -98,6 +101,15 @@ function JsTabsLayoutInner() {
         options={{ href: null }}
       />
     </Tabs>
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+    {Platform.OS === "android" ? (
+      <BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
+        {tabs}
+      </BlurTargetView>
+    ) : tabs}
     {isDesktopWeb && !hideTabBar ? <DesktopWebSidebar /> : null}
     {showDesktopRail ? <DesktopWebRail /> : null}
     </View>

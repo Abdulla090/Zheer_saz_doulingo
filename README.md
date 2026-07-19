@@ -1,6 +1,7 @@
-# Duolingo Clone (Expo + React Native)
+# TWINO English (Expo + React Native)
 
-A Duolingo-inspired mobile app built with Expo, React Native, Expo Router, Uniwind, Reanimated, and SVG-based custom UI components.
+An English-learning app for Kurdish speakers built with Expo, React Native,
+Expo Router, Uniwind, Reanimated, and custom native UI components.
 
 ## Tech Stack
 
@@ -80,7 +81,9 @@ This checks:
 
 ## EAS Android APK (cloud)
 
-Project ID: `57df22e9-341f-4e45-a08d-fb5ca28d69c5` (in `app.json`).
+Project: `@abdullla0001/twino`
+
+Project ID: `b5e68008-a935-431d-a61e-2a3477973f7f` (in `app.json`).
 
 **Option A — local / CI with token**
 
@@ -91,13 +94,13 @@ Project ID: `57df22e9-341f-4e45-a08d-fb5ca28d69c5` (in `app.json`).
 **Option B — GitHub Actions**
 
 1. Add repository secret `EXPO_TOKEN` with your Expo token.
-2. Run workflow **EAS Android APK** (`.github/workflows/eas-android-apk.yml`) or push to `main` / `cursor/twino-home-dashboard-bb74`.
-3. Download the APK from the [Expo builds dashboard](https://expo.dev/accounts/abdulla001/projects/duolingo-clone/builds).
+2. Run the configured release workflow.
+3. Download internal test artifacts from the [TWINO Expo dashboard](https://expo.dev/accounts/abdullla0001/projects/twino/builds).
 
 Profiles in `eas.json`:
 
 - `preview` — internal APK (`buildType: apk`)
-- `production` — store-ready APK
+- `production` — Google Play app bundle
 
 ## Notes
 

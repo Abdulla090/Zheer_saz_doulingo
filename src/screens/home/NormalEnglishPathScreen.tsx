@@ -13,7 +13,7 @@ import type {
   SectionTheme,
 } from "../../data/list-items";
 import { getUnitsForPath } from "../../data/content-access";
-import { resolveLessonStatus, type LessonType } from "../../data/list-items";
+import { resolveUnitLessonStatus, type LessonType } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { usePathLessonSelection } from "../../hooks/use-path-lesson-selection";
 import { useCurrentProgress } from "../../stores/useProgressStore";
@@ -29,7 +29,6 @@ import {
   splitPathUnitTitle,
 } from "../../data/path-unit-titles";
 import { useI18n } from "../../hooks/useI18n";
-import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { ltrText, rtlText } from "../lesson/games/game-text";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { PressableScale } from "../../components/animations/PressableScale";
@@ -51,6 +50,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image } from "expo-image";
 import { HomeMainButton } from "./components/home-main-button";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
@@ -63,6 +63,18 @@ import {
 } from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
+
+const NORMAL_PATH_BACKGROUNDS = [
+  require("../../../assets/images/path-backgrounds/normal-viking.png"),
+  require("../../../assets/images/path-backgrounds/normal-rome.png"),
+  require("../../../assets/images/path-backgrounds/normal-islamic-golden-age.png"),
+  require("../../../assets/images/path-backgrounds/normal-egypt.png"),
+  require("../../../assets/images/path-backgrounds/normal-east-asia.png"),
+  require("../../../assets/images/path-backgrounds/normal-maya.png"),
+  require("../../../assets/images/path-backgrounds/normal-mali.png"),
+  require("../../../assets/images/path-backgrounds/normal-renaissance.png"),
+  require("../../../assets/images/path-backgrounds/normal-polynesia.png"),
+] as const;
 
 const NormalSectionHeader = React.memo(
   ({ section, isKu }: { section: SectionDataItem; isKu: boolean }) => {
@@ -117,6 +129,10 @@ export function NormalEnglishPathScreen({
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] =
     useState<SectionTheme>("blue");
+  const activePathBackground =
+    NORMAL_PATH_BACKGROUNDS[
+      Math.abs(activeSectionIndex) % NORMAL_PATH_BACKGROUNDS.length
+    ];
 
   const localizedSections = useMemo(() => {
     const units = getUnitsForPath("normal");
@@ -132,9 +148,10 @@ export function NormalEnglishPathScreen({
       const displayTheme = config.displayTheme;
 
       const data: LessonListItem[] = unit.map((lesson, lessonIndex) => {
-        const itemStatus = resolveLessonStatus(
+        const itemStatus = resolveUnitLessonStatus(
           pathIndex,
           normalNextLessonPathIndex,
+          lessonIndex,
         );
         const currentIndex = pathIndex++;
         return {
@@ -331,7 +348,17 @@ export function NormalEnglishPathScreen({
       style={{ flex: 1, backgroundColor: colors.background }}
       onTouchStart={dismissLesson}
     >
-      {!isDark && <HomeMeshBackground />}
+      <Image
+        source={activePathBackground}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={240}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+      {isDark ? <View pointerEvents="none" style={darkStyles.backgroundDim} /> : null}
       <View
         style={[
           darkStyles.root,
@@ -389,20 +416,24 @@ export function NormalEnglishPathScreen({
 
 const darkStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
+  backgroundDim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(2, 6, 23, 0.72)",
+  },
   list: { flex: 1, backgroundColor: "transparent" },
-  listContent: { backgroundColor: "transparent", paddingTop: 8 },
+  listContent: { backgroundColor: "transparent", paddingTop: 4 },
   sectionHeader: {
-    height: 56,
+    height: 48,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 20,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   sectionLine: { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#6B7280",
     letterSpacing: 0.5,

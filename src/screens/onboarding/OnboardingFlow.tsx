@@ -33,6 +33,7 @@ const STEP_IDS = ["learn_conversation", "grow_every_day", "achieve_fluency"] as 
 
 export function OnboardingFlow() {
   const { width: screenWidth } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
   const scrollRef = useRef<Animated.ScrollView>(null);
 
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
@@ -45,7 +46,10 @@ export function OnboardingFlow() {
   const [showPetSelection, setShowPetSelection] = useState(false);
 
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(
+    () => createStyles(colors, isDark, isDesktopWeb),
+    [colors, isDark, isDesktopWeb],
+  );
   const [selectedPath] = useState<PathMode>(
     pathMode === "street" || pathMode === "kids" ? pathMode : "normal",
   );
@@ -243,7 +247,7 @@ export function OnboardingFlow() {
   );
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
+const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean) =>
   StyleSheet.create({
     root: {
       flex: 1,
@@ -283,6 +287,7 @@ const createStyles = (colors: any, isDark: boolean) =>
     },
     nextButton: {
       width: "100%",
+      maxWidth: isDesktopWeb ? 520 : undefined,
       height: 56,
       backgroundColor: isDark ? colors.primary : "#0F172A",
       borderRadius: 28,

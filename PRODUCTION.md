@@ -21,6 +21,12 @@ The release verifier covers routes, native security flags, protected auth
 storage, authenticated AI/account-deletion functions, store asset dimensions,
 legal disclosures, and production build profiles.
 
+`npm audit --omit=dev` currently reports moderate advisories inherited through
+the Expo native build toolchain, with no compatible upstream fix. Do not force
+major downgrades of Expo or Sentry to silence them. Publication is blocked by
+any high or critical runtime advisory; re-check the moderate toolchain
+advisories whenever Expo publishes compatible updates.
+
 ## 2. Production monitoring
 
 Create a React Native project in Sentry and configure these variables in the
@@ -62,11 +68,16 @@ npx supabase db advisors --linked --type security --level warn --fail-on error
 Deploy the authenticated Edge Functions:
 
 ```powershell
-npx supabase functions deploy delete-account gemini-generate --use-api
+npx supabase functions deploy delete-account gemini-generate gemini-live-token openai-realtime-token --use-api
 ```
 
-Set the `GEMINI_API_KEY` Edge Function secret in Supabase before testing cloud
-AI. Do not create an `EXPO_PUBLIC_GEMINI_API_KEY`.
+Set the `GEMINI_API_KEY` and `OPENAI_API_KEY` Edge Function secrets in
+Supabase before testing cloud AI. Do not create public client-side provider
+keys.
+
+In Authentication settings, keep an eight-character minimum with letters and
+digits. Supabase leaked-password protection is an additional Pro-plan control;
+enable it when the project moves to Pro.
 
 Required live verification:
 
@@ -112,4 +123,3 @@ After Sections 1–4 pass:
    offline fallback, sign-out, and account deletion on physical devices.
 4. Confirm Sentry receives a readable test event with symbolicated source.
 5. Promote only the exact tested binaries to production.
-

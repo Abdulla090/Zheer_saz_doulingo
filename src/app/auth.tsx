@@ -19,6 +19,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontStore } from "../stores/useFontStore";
@@ -32,7 +33,12 @@ export default function AuthScreen() {
   const isRtl = isKu || locale === "ar";
   const { selectedFont } = useFontStore();
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && windowWidth >= 900;
+  const styles = useMemo(
+    () => createStyles(colors, isDark, isDesktopWeb),
+    [colors, isDark, isDesktopWeb],
+  );
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -73,8 +79,22 @@ export default function AuthScreen() {
       return;
     }
 
-    if (password.length < 6) {
+    if (!isSignUp && password.length < 6) {
       setErrorMessage(isKu ? "تێپەڕەوشە دەبێت بەلایەنی کەمەوە ٦ پیت بێت" : "Password must be at least 6 characters");
+      return;
+    }
+
+    if (
+      isSignUp &&
+      (password.length < 8 ||
+        !/[A-Za-z]/.test(password) ||
+        !/\d/.test(password))
+    ) {
+      setErrorMessage(
+        isKu
+          ? "تێپەڕەوشە دەبێت لانیکەم ٨ پیت بێت و پیت و ژمارەی تێدا بێت"
+          : "Use at least 8 characters with both letters and numbers",
+      );
       return;
     }
 
@@ -161,6 +181,7 @@ export default function AuthScreen() {
             paddingBottom: insets.bottom + 40,
             paddingHorizontal: 24,
             justifyContent: "center",
+            alignItems: isDesktopWeb ? "center" : "stretch",
           }}
         >
           {/* Back Button */}
@@ -303,6 +324,13 @@ export default function AuthScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                {isSignUp ? (
+                  <AppText style={styles.passwordHint}>
+                    {isKu
+                      ? "لانیکەم ٨ پیت، لەگەڵ پیت و ژمارە"
+                      : "At least 8 characters, including letters and numbers"}
+                  </AppText>
+                ) : null}
               </View>
             </View>
 
@@ -379,7 +407,7 @@ export default function AuthScreen() {
   );
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
   return StyleSheet.create({
   root: {
     flex: 1,
@@ -398,6 +426,8 @@ function createStyles(colors: any, isDark: boolean) {
     zIndex: 10,
   },
   shadcnContainer: {
+    width: "100%",
+    maxWidth: isDesktopWeb ? 460 : undefined,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -475,6 +505,11 @@ function createStyles(colors: any, isDark: boolean) {
     fontSize: 13,
     color: colors.foreground,
     fontFamily: "DINNextRoundedBold",
+  },
+  passwordHint: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.mutedForeground,
   },
   shadcnInput: {
     height: 42,

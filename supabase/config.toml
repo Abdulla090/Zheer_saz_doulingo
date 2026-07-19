@@ -179,10 +179,10 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "letters_digits"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -225,7 +225,7 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
-secure_password_change = false
+secure_password_change = true
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.
@@ -443,3 +443,15 @@ entrypoint = "./functions/gemini-generate/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/gemini-generate/*.html" ]
+
+[functions.openai-realtime-token]
+enabled = true
+verify_jwt = true
+import_map = "./functions/openai-realtime-token/deno.json"
+entrypoint = "./functions/openai-realtime-token/index.ts"
+
+[functions.gemini-live-token]
+enabled = true
+verify_jwt = true
+import_map = "./functions/gemini-live-token/deno.json"
+entrypoint = "./functions/gemini-live-token/index.ts"

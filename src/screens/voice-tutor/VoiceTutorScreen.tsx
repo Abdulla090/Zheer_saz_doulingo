@@ -3,7 +3,7 @@ import {
   HomeMeshBackground,
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
-import { useGeminiVoiceTutor } from "../../hooks/use-gemini-voice-tutor";
+import { useLiveVoiceTutor } from "../../hooks/use-live-voice-tutor";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSettingsStore } from "../../stores/useSettingsStore";
@@ -54,7 +54,7 @@ export function VoiceTutorScreen() {
   const insets = useSafeAreaInsets();
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
-  const tutor = useGeminiVoiceTutor();
+  const tutor = useLiveVoiceTutor();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 

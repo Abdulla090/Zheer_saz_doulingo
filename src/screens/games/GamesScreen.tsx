@@ -314,8 +314,12 @@ export function GamesScreen() {
                   isRtl && stylesForScreen.tileCopyRtl,
                 ]}>
                   <AppText
-                    style={[stylesForScreen.tileTitle, isRtl && stylesForScreen.tileTitleRtl]}
+                    style={stylesForScreen.tileTitle}
                     forceKurdishFont={isRtl}
+                    languageCode={locale}
+                    align="start"
+                    nativeAlign={Platform.OS === "android" && isRtl ? "end" : "start"}
+                    fullWidth
                     numberOfLines={game.key === "voice-tutor" ? 2 : 1}
                     adjustsFontSizeToFit={game.key !== "voice-tutor"}
                     minimumFontScale={0.72}
@@ -617,11 +621,6 @@ function createStyles(
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
       textAlign: "left",
-    },
-    tileTitleRtl: {
-      width: "100%",
-      textAlign: "right",
-      writingDirection: "rtl",
     },
     tileSubtitle: {
       color: colors.mutedForeground,

@@ -39,8 +39,9 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const streakDays = useProgressStore((state) => state.streakDays);
   const currentProgress = useCurrentProgress();
   const isRtl = isKu || isAr;
-  const compact = width < 370;
-  const iconSize = compact ? 29 : 33;
+  const mobileWeb = Platform.OS === "web" && width < 768;
+  const compact = width < 370 || mobileWeb;
+  const iconSize = mobileWeb ? 22 : compact ? 26 : 29;
 
   const completedLessons =
     pathMode === "normal"
@@ -80,8 +81,8 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   );
 
   const styles = useMemo(
-    () => createStyles(colors, isDark, compact),
-    [colors, compact, isDark],
+    () => createStyles(colors, isDark, compact, mobileWeb),
+    [colors, compact, isDark, mobileWeb],
   );
 
   if (Platform.OS === "web" && isDesktopWebWidth(width)) {
@@ -120,25 +121,30 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   );
 }
 
-function createStyles(colors: any, isDark: boolean, compact: boolean) {
+function createStyles(
+  colors: any,
+  isDark: boolean,
+  compact: boolean,
+  mobileWeb: boolean,
+) {
   return StyleSheet.create({
     row: {
       alignSelf: "center",
       width: "100%",
       maxWidth: 640,
-      minHeight: compact ? 62 : 68,
+      minHeight: mobileWeb ? 48 : compact ? 54 : 60,
       alignItems: "center",
-      paddingHorizontal: 16,
-      marginBottom: 10,
+      paddingHorizontal: mobileWeb ? 10 : 14,
+      marginBottom: mobileWeb ? 4 : 6,
     },
     item: {
       flex: 1,
       minWidth: 0,
-      minHeight: compact ? 50 : 54,
+      minHeight: mobileWeb ? 40 : compact ? 44 : 48,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: compact ? 3 : 6,
+      gap: mobileWeb ? 2 : compact ? 3 : 5,
       paddingHorizontal: compact ? 2 : 6,
     },
     divider: {
@@ -154,8 +160,8 @@ function createStyles(colors: any, isDark: boolean, compact: boolean) {
       minWidth: 0,
       flexShrink: 1,
       color: colors.foreground,
-      fontSize: compact ? 14 : 16,
-      lineHeight: 20,
+      fontSize: mobileWeb ? 12 : compact ? 13 : 14,
+      lineHeight: mobileWeb ? 16 : 18,
       fontWeight: "800",
       fontVariant: ["tabular-nums"],
       letterSpacing: -0.25,

@@ -96,7 +96,7 @@ export const HomeMainButton = React.memo(({
   const router = useRouter();
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
-  const barWidth = Math.min(width - 32, 640);
+  const barWidth = Math.min(width - 44, 620);
   const guidebookCompact = width < 360;
   const direction = isRtl ? rtlText : ltrText;
 
@@ -112,25 +112,25 @@ export const HomeMainButton = React.memo(({
     <View style={{ alignSelf: "center", marginTop: 0, marginBottom: 0, width: barWidth }}>
       <View
         style={{
-          borderRadius: 22,
+          borderRadius: 20,
           borderCurve: "continuous",
           backgroundColor: faceColor,
           borderTopWidth: 1,
           borderLeftWidth: 1,
           borderRightWidth: 1,
           borderColor: "rgba(255,255,255,0.22)",
-          borderBottomWidth: 6,
+          borderBottomWidth: 5,
           borderBottomColor: rimColor,
           direction: isRtl ? "rtl" : "ltr",
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "nowrap",
-          gap: 12,
-          paddingHorizontal: 18,
-          paddingTop: 16,
-          paddingBottom: 14,
-          minHeight: 92,
+          gap: 10,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 10,
+          minHeight: 78,
         }}
       >
         <View
@@ -153,7 +153,7 @@ export const HomeMainButton = React.memo(({
             <AppText
               style={{
                 color: "rgba(255,255,255,0.95)",
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: "800",
                 letterSpacing: 1.1,
                 textTransform: "uppercase",
@@ -169,9 +169,9 @@ export const HomeMainButton = React.memo(({
           <AppText
             style={{
               color: "#FFFFFF",
-              fontSize: 19,
+              fontSize: 17,
               fontWeight: "800",
-              lineHeight: 24,
+              lineHeight: 22,
               width: "100%",
               ...direction,
             }}

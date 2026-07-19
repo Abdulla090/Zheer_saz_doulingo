@@ -1,5 +1,5 @@
 import { appStorage } from "../lib/app-storage";
-import { Alert, DevSettings, I18nManager } from "react-native";
+import { Alert, DevSettings, I18nManager, Platform } from "react-native";
 import { create } from "zustand";
 import * as Updates from "expo-updates";
 import { getLanguageDirection } from "../i18n/direction";
@@ -28,6 +28,12 @@ let rtlReloadPending = false;
 /** Global mirroring belongs to app chrome only; lesson content sets its own direction. */
 export function applyUiLanguageDirection(languageCode: string) {
   const shouldBeRtl = getLanguageDirection(languageCode) === "rtl";
+
+  // Web direction is applied live by the root layout using document.dir.
+  // Reloading through expo-updates here creates a loop because I18nManager's
+  // native RTL flag does not persist across browser page loads.
+  if (Platform.OS === "web") return;
+
   if (I18nManager.isRTL === shouldBeRtl || rtlReloadPending) return;
 
   rtlReloadPending = true;

@@ -6,7 +6,7 @@ import kidsUnit3DailyRoutines from "./unit-3-daily-routines";
 import kidsUnit4Food from "./unit-4-kids-food";
 import kidsUnit5Family from "./unit-5-kids-family";
 import {
-  resolveLessonStatus,
+  resolveUnitLessonStatus,
   type LessonListItem,
   type LessonType,
   type SectionDataItem,
@@ -67,9 +67,10 @@ export function buildKidsSectionData(
         (lessonType, itemIndex) => {
           const currentGlobalIndex = startGlobalIndex + itemIndex;
           const pathIndex = kidsPathIndex++;
-          const itemStatus = resolveLessonStatus(
+          const itemStatus = resolveUnitLessonStatus(
             pathIndex,
             nextLessonPathIndex,
+            itemIndex,
           );
 
           return {

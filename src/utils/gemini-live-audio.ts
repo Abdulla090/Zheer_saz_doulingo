@@ -74,10 +74,14 @@ export class LivePcmPlayer {
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private generatedFiles: string[] = [];
   private playing = false;
+  private playRequested = false;
   private destroyed = false;
   private audioModeSet = false;
 
-  constructor(private onPlayingStateChange?: (isPlaying: boolean) => void) {}
+  constructor(
+    private onPlayingStateChange?: (isPlaying: boolean) => void,
+    private onPlaybackError?: (message: string) => void,
+  ) {}
 
   /**
    * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM.
@@ -91,17 +95,45 @@ export class LivePcmPlayer {
    */
   private static FLUSH_DELAY_MS = 28;
 
-  private ensurePlaylist() {
+  private reportPlaybackError(message: string, error?: unknown) {
+    console.warn(message, error);
+    this.onPlaybackError?.(message);
+  }
+
+  private ensurePlaylist(initialSource?: string) {
     if (this.playlist) return this.playlist;
 
     this.playlist = createAudioPlaylist({
-      sources: [],
-      updateInterval: 100,
+      sources: initialSource ? [{ uri: initialSource }] : [],
+      updateInterval: 50,
       loop: "none",
     });
 
     this.statusListener = this.playlist.addListener("playlistStatusUpdate", (status: any) => {
       if (this.destroyed) return;
+
+      if (status.error) {
+        const message =
+          typeof status.error?.message === "string"
+            ? status.error.message
+            : "Live tutor audio playback failed.";
+        this.playRequested = false;
+        this.reportPlaybackError(message);
+        return;
+      }
+
+      if (this.playRequested && status.isLoaded && !status.playing) {
+        this.playRequested = false;
+        try {
+          this.playlist?.play();
+        } catch (error) {
+          this.reportPlaybackError(
+            "Live tutor audio could not start.",
+            error,
+          );
+        }
+        return;
+      }
 
       if (status.playing) {
         if (!this.playing) {
@@ -130,6 +162,26 @@ export class LivePcmPlayer {
     });
 
     return this.playlist;
+  }
+
+  private requestPlayback() {
+    const playlist = this.playlist;
+    if (!playlist || playlist.playing) {
+      this.playRequested = false;
+      return;
+    }
+
+    if (!playlist.isLoaded) {
+      this.playRequested = true;
+      return;
+    }
+
+    this.playRequested = false;
+    try {
+      playlist.play();
+    } catch (error) {
+      this.reportPlaybackError("Live tutor audio could not start.", error);
+    }
   }
 
   enqueueBase64Pcm(base64: string) {
@@ -184,33 +236,39 @@ export class LivePcmPlayer {
         encoding: FileSystem.EncodingType.Base64,
       });
       this.generatedFiles.push(uri);
-      const playlist = this.ensurePlaylist();
-      playlist.add(uri);
+      const existingPlaylist = this.playlist;
+      const playlist = this.ensurePlaylist(
+        existingPlaylist ? undefined : uri,
+      );
 
-      if (!this.playing) {
-        this.playing = true;
-        this.onPlayingStateChange?.(true);
-      }
-
-      if (!playlist.playing) {
-        try {
-          playlist.play();
-        } catch (e) {
-          console.warn("LivePcmPlayer: playlist play failed", e);
+      if (existingPlaylist) {
+        const appendedIndex = playlist.trackCount;
+        const queueWasActive = playlist.playing || playlist.isBuffering;
+        // The native Android bridge expects the record form even though the
+        // public AudioSource type also permits a bare string.
+        playlist.add({ uri });
+        if (!queueWasActive) {
+          playlist.skipTo(appendedIndex);
         }
       }
+      this.requestPlayback();
     } catch (e) {
-      console.warn("LivePcmPlayer: flush failed", e);
+      this.reportPlaybackError("Live tutor audio could not be prepared.", e);
     }
   }
 
   private async ensureAudioMode() {
     if (this.audioModeSet) return;
     try {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await setAudioModeAsync({
+        allowsRecording: true,
+        interruptionMode: "doNotMix",
+        playsInSilentMode: true,
+        shouldRouteThroughEarpiece: false,
+      });
       this.audioModeSet = true;
     } catch (e) {
-      console.warn("LivePcmPlayer: setAudioModeAsync failed", e);
+      this.reportPlaybackError("Live tutor audio mode could not start.", e);
     }
   }
 
@@ -220,6 +278,7 @@ export class LivePcmPlayer {
       this.flushTimeout = null;
     }
     this.pendingBytes = new Uint8Array(0);
+    this.playRequested = false;
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);
       this.idleTimer = null;
@@ -275,8 +334,11 @@ export class LivePcmPlayer {
 }
 
 export async function startMicPcmStream(
-  onData: (base64: string) => void
+  onData: (base64: string) => void,
+  options: { sampleRate?: number; filterSilence?: boolean } = {},
 ): Promise<MicStreamHandle> {
+  const sampleRate = options.sampleRate ?? 16_000;
+  const filterSilence = options.filterSilence ?? true;
   let perm = await requestRecordingPermissionsAsync();
 
   if (!perm.granted && Platform.OS === "android") {
@@ -306,10 +368,15 @@ export async function startMicPcmStream(
     throw new Error("Microphone permission required.");
   }
 
-  await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+  await setAudioModeAsync({
+    allowsRecording: true,
+    interruptionMode: "doNotMix",
+    playsInSilentMode: true,
+    shouldRouteThroughEarpiece: false,
+  });
 
   const stream = new AudioModule.AudioStream({
-    sampleRate: 16000,
+    sampleRate,
     channels: 1,
     encoding: "int16",
   });
@@ -331,7 +398,7 @@ export async function startMicPcmStream(
     const rms = Math.sqrt(sum / samples);
 
     // Threshold of 0.004 filters silent rooms and low echoes
-    if (rms < 0.004) {
+    if (filterSilence && rms < 0.004) {
       return;
     }
 

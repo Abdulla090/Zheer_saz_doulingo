@@ -192,8 +192,11 @@ export class LivePcmPlayer {
 }
 
 export async function startMicPcmStream(
-  onData: (base64: string) => void
+  onData: (base64: string) => void,
+  options: { sampleRate?: number; filterSilence?: boolean } = {},
 ): Promise<MicStreamHandle> {
+  const sampleRate = options.sampleRate ?? 16_000;
+  const filterSilence = options.filterSilence ?? true;
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     throw new Error("Microphone is not supported in this browser.");
   }
@@ -201,7 +204,7 @@ export async function startMicPcmStream(
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-  const audioCtx = new AudioContextClass({ sampleRate: 16000 });
+  const audioCtx = new AudioContextClass({ sampleRate });
   const source = audioCtx.createMediaStreamSource(stream);
   
   // Use 2048 buffer size, 1 input channel, 1 output channel
@@ -221,7 +224,7 @@ export async function startMicPcmStream(
     const rms = Math.sqrt(sum / inputData.length);
     
     // Threshold of 0.004 filters quiet room noise
-    if (rms < 0.004) {
+    if (filterSilence && rms < 0.004) {
       return;
     }
 

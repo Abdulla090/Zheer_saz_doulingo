@@ -39,6 +39,16 @@ export function resolveLessonStatus(
   return "locked";
 }
 
+/** Every unit remains discoverable by keeping its first lesson available. */
+export function resolveUnitLessonStatus(
+  pathIndex: number,
+  nextLessonPathIndex: number,
+  sectionItemIndex: number,
+): LessonStatus {
+  const status = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+  return sectionItemIndex === 0 && status === "locked" ? "current" : status;
+}
+
 export type SectionDataItem = {
   unitIndex: number;
   title: string;
@@ -98,7 +108,11 @@ export function buildSectionData(
       const data: LessonListItem[] = pattern.map((lessonType, itemIndex) => {
         const currentGlobalIndex = startGlobalIndex + itemIndex;
         const pathIndex = streetPathIndex++;
-        const itemStatus = resolveLessonStatus(pathIndex, nextLessonPathIndex);
+        const itemStatus = resolveUnitLessonStatus(
+          pathIndex,
+          nextLessonPathIndex,
+          itemIndex,
+        );
 
         return {
           id: `level-${currentGlobalIndex}`,
