@@ -298,9 +298,9 @@ if (eas.build?.production?.android?.buildType !== "app-bundle") {
 
 const featureFlags = read("src/constants/feature-flags.ts");
 if (!featureFlags.includes("ENABLE_SHOP = false")) {
-  fail("Shop should stay disabled (ENABLE_SHOP = false) until IAP exists");
+  fail("Native shop must stay hidden; credit checkout is web-only");
 } else {
-  ok("Shop disabled until IAP");
+  ok("Native shop hidden from the web-only credit checkout");
 }
 
 const subscriptionScreen = read("src/screens/subscriptions/SubscriptionScreen.tsx");
@@ -312,6 +312,29 @@ if (
   fail("Subscription screen must not contain simulator checkout or client entitlement writes");
 } else {
   ok("Subscription simulator removed from the public release");
+}
+
+const webCreditScreen = read("src/screens/subscriptions/SubscriptionScreen.web.tsx");
+const waylCheckoutFunction = read("supabase/functions/wayl-checkout/index.ts");
+const waylWebhookFunction = read("supabase/functions/wayl-webhook/index.ts");
+const creditsFunction = read("supabase/functions/credits/index.ts");
+const walletMigration = read(
+  "supabase/migrations/20260719143218_credit_wallet_and_wayl_payments.sql",
+);
+if (
+  !webCreditScreen.includes('functions.invoke("wayl-checkout"') ||
+  webCreditScreen.includes("EXPO_PUBLIC_WAYL") ||
+  !waylCheckoutFunction.includes('Deno.env.get("WAYL_API_KEY")') ||
+  !waylCheckoutFunction.includes('"X-WAYL-AUTHENTICATION"') ||
+  !waylWebhookFunction.includes('"x-wayl-signature-256"') ||
+  !waylWebhookFunction.includes('await req.text()') ||
+  !creditsFunction.includes('"spend_credits"') ||
+  !walletMigration.includes("credit_transactions_are_immutable") ||
+  !walletMigration.includes("record_wayl_payment_event")
+) {
+  fail("Wayl credits must keep secrets and all wallet mutations server-side");
+} else {
+  ok("Wayl credit wallet is server-authoritative and webhook-signed");
 }
 
 const authContext = read("src/context/AuthContext.tsx");

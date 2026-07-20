@@ -58,6 +58,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Web password-recovery links return an auth session in the URL. Native
+    // keeps URL detection off because deep links are handled by Expo Router.
+    detectSessionInUrl: Platform.OS === "web",
   },
 });

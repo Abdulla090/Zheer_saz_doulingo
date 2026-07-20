@@ -10,6 +10,7 @@ import {
   HomeMeshBackground,
 } from "../../../components/ui/ios-liquid-home";
 import { useI18n } from "../../../hooks/useI18n";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 import { crossShadow } from "../../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -998,7 +999,7 @@ export function LightCheckButton({
   label = "CHECK",
   onPress,
   disabled,
-  color = L.blue,
+  color: _color = L.blue,
   variant,
 }: {
   label?: string;
@@ -1027,9 +1028,8 @@ export function LightCheckButton({
         style={({ pressed }) => [
           lh.kidsCheckBtnActive,
           {
-            borderBottomWidth: pressed ? 0 : 5,
-            transform: [{ translateY: pressed ? 5 : 0 }],
-            marginTop: pressed ? 5 : 0,
+            borderBottomWidth: 3,
+            transform: [{ translateY: pressed ? 1 : 0 }],
           }
         ]}
       >
@@ -1047,7 +1047,14 @@ export function LightCheckButton({
       </View>
     );
   }
-  return <HomeLiquidButton label={label} onPress={onPress} color={color} flush />;
+  return (
+    <HomeLiquidButton
+      label={label}
+      onPress={onPress}
+      flush
+      variant="login"
+    />
+  );
 }
 
 /** Match row: tile + connector dot + tile */
@@ -1289,10 +1296,10 @@ export function LessonLiquidFeedback({
           style={({ pressed }) => [
             lh.kidsFeedbackCta,
             {
-              backgroundColor: kidsBorder,
-              borderBottomColor: kidsShadow,
-              borderBottomWidth: pressed ? 2 : 6,
-              transform: [{ translateY: pressed ? 4 : 0 }],
+              backgroundColor: PRIMARY_ACTION.face,
+              borderBottomColor: PRIMARY_ACTION.rim,
+              borderBottomWidth: 3,
+              transform: [{ translateY: pressed ? 1 : 0 }],
             }
           ]}
         >
@@ -1338,7 +1345,7 @@ export function LessonLiquidFeedback({
       <HomeLiquidButton
         label={buttonLabel ?? t("common.continue")}
         onPress={onContinue}
-        color={accent}
+        variant="login"
         style={{ marginTop: 8 }}
       />
     </HomeLiquidCard>
@@ -1652,10 +1659,12 @@ const lh = StyleSheet.create({
   },
   checkBtnDisabled: {
     height: 52,
-    borderRadius: LightRadius.btn,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: L.track,
+    backgroundColor: PRIMARY_ACTION.disabledFace,
+    borderBottomWidth: 3,
+    borderBottomColor: PRIMARY_ACTION.disabledRim,
   },
   feedbackInner: {
     paddingTop: 20,
@@ -1937,10 +1946,9 @@ const lh = StyleSheet.create({
   },
   kidsFeedbackCta: {
     height: 52,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderBottomWidth: 5,
+    borderRadius: 14,
+    borderWidth: 0,
+    borderBottomWidth: 3,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
@@ -2109,16 +2117,18 @@ const lh = StyleSheet.create({
     lineHeight: 21,
   },
   kidsCheckBtnDisabled: {
-    height: 56,
-    borderRadius: 24,
-    backgroundColor: "#E5E7EB",
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PRIMARY_ACTION.disabledFace,
     borderWidth: 0,
+    borderBottomWidth: 3,
+    borderBottomColor: PRIMARY_ACTION.disabledRim,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
   },
   kidsCheckLabelDisabled: {
-    color: "#9CA3AF",
+    color: PRIMARY_ACTION.disabledText,
     fontSize: 17,
     fontWeight: "800",
     fontFamily: "DINNextRoundedBold",
@@ -2126,12 +2136,12 @@ const lh = StyleSheet.create({
     textTransform: "none",
   },
   kidsCheckBtnActive: {
-    height: 56,
-    borderRadius: 24,
-    backgroundColor: "#58CC02",
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PRIMARY_ACTION.face,
     borderWidth: 0,
-    borderBottomWidth: 5,
-    borderBottomColor: "#58A700",
+    borderBottomWidth: 3,
+    borderBottomColor: PRIMARY_ACTION.rim,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",

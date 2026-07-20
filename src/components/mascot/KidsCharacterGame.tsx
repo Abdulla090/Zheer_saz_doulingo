@@ -25,6 +25,7 @@ import Svg, { Path, Circle, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "../ui/AppText";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
 
  
 const MASCOT = require("../../../assets/images/characters/kids-rhino-mascot.png");
@@ -368,8 +369,6 @@ export function KidsCharacterGame({
   };
 
   const buttonLabel = revealed ? "continue" : "check";
-  const buttonColor = revealed ? (correct ? C.green : C.red) : C.cardSelectedBorder;
-  const buttonBottomColor = revealed ? (correct ? C.greenShadow : C.redShadow) : C.cardSelectedShadow;
 
   const contentLayout = (
     <View
@@ -480,18 +479,28 @@ export function KidsCharacterGame({
           style={({ pressed }) => [
             styles.cta,
             {
-              backgroundColor: !revealed && !canSubmit ? C.track : (revealed ? buttonColor : "#FFFFFF"),
-              borderColor: !revealed && !canSubmit ? C.track : (revealed ? buttonColor : "#E4ECF5"),
-              borderBottomColor: !revealed && !canSubmit ? "#D1D5DB" : buttonBottomColor,
-              borderBottomWidth: !revealed && !canSubmit ? 4 : (pressed ? 2 : 6),
-              transform: [{ translateY: pressed ? 4 : 0 }],
+              backgroundColor:
+                !revealed && !canSubmit
+                  ? PRIMARY_ACTION.disabledFace
+                  : PRIMARY_ACTION.face,
+              borderBottomColor:
+                !revealed && !canSubmit
+                  ? PRIMARY_ACTION.disabledRim
+                  : PRIMARY_ACTION.rim,
+              borderBottomWidth: 3,
+              transform: [{ translateY: pressed ? 1 : 0 }],
             },
           ]}
         >
           <AppText
             style={[
               styles.ctaText,
-              { color: !revealed && !canSubmit ? "#9CA3AF" : (revealed ? C.white : "#374151") },
+              {
+                color:
+                  !revealed && !canSubmit
+                    ? PRIMARY_ACTION.disabledText
+                    : C.white,
+              },
             ]}
             forceLatinFont
             latinRole="bold"
@@ -699,9 +708,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   cta: {
-    height: 56,
-    borderRadius: 24,
-    borderWidth: 2,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
   },

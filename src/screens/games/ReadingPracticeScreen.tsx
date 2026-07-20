@@ -43,9 +43,13 @@ import {
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useI18n } from "../../hooks/useI18n";
-import { generateReadingPracticeParagraphs } from "../../services/gemini-speech-service";
+import {
+  generateReadingPracticeParagraphs,
+  evaluateParagraphSpeechWithGemini,
+} from "../../services/gemini-speech-service";
 import { hapticImpact } from "../../utils/haptics";
 
 type Difficulty = "Beginner" | "Intermediate" | "Advanced";
@@ -317,6 +321,9 @@ export default function ReadingPracticeScreen() {
   const styles = useReadingStyles();
   const isRtl = isKu || isAr;
   const speech = useSpeechCapture("en-US");
+  const geminiCapture = useGeminiVoiceCapture();
+  /** true when Gemini recording is the active capture backend */
+  const useGeminiBackend = !speech.available && geminiCapture.available;
 
   const [state, setState] = useState<PracticeState>("setup");
   const [sourceMode, setSourceMode] = useState<SourceMode>("ai");
@@ -407,17 +414,86 @@ export default function ReadingPracticeScreen() {
     if (state === "processing") return;
     setState("processing");
     cancelAnimation(scrollY);
-    speech.stop();
 
-    const result = evaluateReading(
-      transcriptRef.current,
-      paragraphs,
-      difficulty,
-      startedAtRef.current,
-      Date.now(),
-    );
-    setEvaluation(result);
-    setState("results");
+    if (useGeminiBackend) {
+      // Gemini path: stop recording, get audio, send to Gemini for AI evaluation
+      try {
+        const audio = await geminiCapture.stopAndGetAudio();
+        if (audio?.base64) {
+          try {
+            const geminiResult = await evaluateParagraphSpeechWithGemini(
+              audio.base64,
+              audio.mimeType,
+              paragraphs,
+            );
+            // Map Gemini result to local ReadingEvaluation format
+            const durationSeconds = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000));
+            const spokenWords = geminiResult.transcript.split(/\s+/).filter(Boolean);
+            const wpm = Math.round((spokenWords.length / durationSeconds) * 60);
+            const correctWords = geminiResult.wordAnalysis.filter((w) => w.correct).length;
+            const totalWords = geminiResult.wordAnalysis.length;
+            const coverageScore = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+            const fluencyTarget = TARGET_WPM[difficulty];
+            const fluencyScore = Math.max(0, Math.min(100, Math.round((wpm / fluencyTarget) * 100)));
+
+            setEvaluation({
+              accuracyScore: geminiResult.accuracyScore,
+              coverageScore,
+              orderScore: coverageScore, // Gemini evaluates holistically
+              fluencyScore,
+              wpm,
+              durationSeconds,
+              transcript: geminiResult.transcript,
+              wordResults: geminiResult.wordAnalysis.map((w) => ({
+                word: w.word,
+                normalized: w.word.toLowerCase().replace(/[^a-z]/g, ""),
+                spoken: w.correct,
+                orderCorrect: w.correct,
+              })),
+              missedWords: geminiResult.wordAnalysis
+                .filter((w) => !w.correct)
+                .slice(0, 12)
+                .map((w) => w.word),
+              strengths: coverageScore >= 85
+                ? ["You covered most of the passage clearly."]
+                : [],
+              nextSteps: coverageScore < 85
+                ? ["Read slower and focus on finishing each sentence."]
+                : [],
+            });
+            setState("results");
+            return;
+          } catch (err) {
+            console.warn("Gemini paragraph evaluation failed, using local:", err);
+          }
+        }
+        // Fallback to local evaluation with whatever transcript we have
+        const result = evaluateReading(
+          transcriptRef.current,
+          paragraphs,
+          difficulty,
+          startedAtRef.current,
+          Date.now(),
+        );
+        setEvaluation(result);
+        setState("results");
+      } catch (err) {
+        console.warn("stopReading gemini path failed:", err);
+        setState("results");
+      }
+    } else {
+      // Speech recognition path (original behavior)
+      speech.stop();
+      const result = evaluateReading(
+        transcriptRef.current,
+        paragraphs,
+        difficulty,
+        startedAtRef.current,
+        Date.now(),
+      );
+      setEvaluation(result);
+      setState("results");
+    }
   }
 
   async function startReading() {
@@ -432,14 +508,30 @@ export default function ReadingPracticeScreen() {
     const distance = start + textHeight + 120;
     const duration = Math.max(12_000, distance * SPEED_MULTIPLIER[speed]);
 
-    const started = await speech.start({
-      onResult: (text) => {
-        transcriptRef.current = text;
-      },
-      onError: () => {
-        void stopReading();
-      },
-    });
+    let started = false;
+
+    if (useGeminiBackend) {
+      // Gemini path: record audio via expo-audio
+      started = await geminiCapture.start({
+        onResult: () => {
+          // Gemini evaluates on stop, not during recording
+        },
+        onError: (message) => {
+          console.warn("Gemini recording error:", message);
+          void stopReading();
+        },
+      });
+    } else {
+      // Speech recognition path (original behavior)
+      started = await speech.start({
+        onResult: (text) => {
+          transcriptRef.current = text;
+        },
+        onError: () => {
+          void stopReading();
+        },
+      });
+    }
 
     if (!started) {
       setState("preview");

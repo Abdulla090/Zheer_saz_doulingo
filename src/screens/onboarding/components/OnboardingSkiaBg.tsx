@@ -99,7 +99,8 @@ function AnimatedGradientLayer({
       [0, 1, 0],
       Extrapolation.CLAMP,
     );
-    return { opacity };
+    const smoothOpacity = opacity * opacity * (3 - 2 * opacity);
+    return { opacity: smoothOpacity };
   });
 
   return (

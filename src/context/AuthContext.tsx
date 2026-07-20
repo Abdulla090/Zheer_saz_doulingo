@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState, use
 import { supabase } from "../lib/supabase";
 import { useProgressStore } from "../stores/useProgressStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { isMascotId } from "../constants/mascots";
 import type { Session, User } from "@supabase/supabase-js";
 
 interface Profile {
@@ -9,6 +10,7 @@ interface Profile {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  selected_mascot_id: string;
   is_premium: boolean;
   subscription_tier: string | null;
 }
@@ -78,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           path_mode: state.pathMode,
           tutor_voice: state.tutorVoice,
           avatar_url: state.avatarUrl || null,
+          selected_mascot_id: state.selectedMascotId,
         })
         .eq("id", userId);
 
@@ -95,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Fetch Profile
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
-        .select("id, username, display_name, avatar_url, age, path_mode, tutor_voice, is_premium, subscription_tier")
+        .select("id, username, display_name, avatar_url, selected_mascot_id, age, path_mode, tutor_voice, is_premium, subscription_tier")
         .eq("id", loggedUser.id)
         .single();
       
@@ -115,8 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (profileData.tutor_voice) {
           useSettingsStore.getState().setTutorVoice(profileData.tutor_voice);
         }
-        if (profileData.avatar_url) {
-          useSettingsStore.getState().setAvatarUrl(profileData.avatar_url);
+        useSettingsStore.getState().setAvatarUrl(profileData.avatar_url || "");
+        if (isMascotId(profileData.selected_mascot_id)) {
+          useSettingsStore.getState().setSelectedMascotId(profileData.selected_mascot_id);
         }
         useSettingsStore.getState().setIsPremium(!!profileData.is_premium);
         useSettingsStore.getState().setSubscriptionTier(profileData.subscription_tier || null);

@@ -6,6 +6,8 @@ import { DirectionalView } from "../../../components/ui/Directional";
 import { MicCaptureOrb } from "../../../components/voice/MicCaptureOrb";
 import { ParagraphSpeechQuestion } from "../../../data/types";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
+import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
+import { evaluateParagraphSpeechWithGemini } from "../../../services/gemini-speech-service";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { LightGameHeading, LightCheckButton } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
@@ -68,6 +70,8 @@ function evaluateSpeechLocally(transcript: string, paragraphs: string[]): Paragr
 export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
   const speech = useSpeechCapture("en-US");
+  const geminiCapture = useGeminiVoiceCapture();
+  const useGeminiBackend = !speech.available && geminiCapture.available;
   const scrollY = useSharedValue(0);
 
   const [state, setState] = useState<ListenState>("idle");
@@ -81,8 +85,9 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   useEffect(() => {
     return () => {
       speech.abort();
+      geminiCapture.abort();
     };
-  }, [speech]);
+  }, [speech, geminiCapture]);
 
   const handleStart = async () => {
     setState("listening");
@@ -93,15 +98,26 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     const distance = containerHeight + textHeight;
     const duration = distance * 28;
     
-    const started = await speech.start({
-      onResult: (text: string, _isFinal: boolean) => {
-        transcriptRef.current = text;
-      },
-      onError: (code: string, message: string) => {
-        console.warn("Speech recognition error:", code, message);
-        setState("fail");
-      }
-    });
+    let started = false;
+    if (useGeminiBackend) {
+      started = await geminiCapture.start({
+        onResult: () => {},
+        onError: (message) => {
+          console.warn("Gemini recording error:", message);
+          setState("fail");
+        }
+      });
+    } else {
+      started = await speech.start({
+        onResult: (text: string, _isFinal: boolean) => {
+          transcriptRef.current = text;
+        },
+        onError: (code: string, message: string) => {
+          console.warn("Speech recognition error:", code, message);
+          setState("fail");
+        }
+      });
+    }
 
     if (started) {
       scrollY.value = withTiming(-textHeight, { duration, easing: Easing.linear });
@@ -116,10 +132,29 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     cancelAnimation(scrollY);
     
     try {
-      speech.stop();
+      let evalResult: ParagraphSpeechEvaluation;
       
-      const lastTranscript = transcriptRef.current;
-      const evalResult = evaluateSpeechLocally(lastTranscript, question.paragraphs);
+      if (useGeminiBackend) {
+        const audio = await geminiCapture.stopAndGetAudio();
+        if (audio?.base64) {
+          const geminiResult = await evaluateParagraphSpeechWithGemini(audio.base64, audio.mimeType, question.paragraphs);
+          evalResult = {
+            accuracyScore: geminiResult.accuracyScore,
+            transcript: geminiResult.transcript,
+            wordAnalysis: geminiResult.wordAnalysis.map((w) => ({
+              word: w.word,
+              correct: w.correct
+            }))
+          };
+        } else {
+          throw new Error("No audio captured");
+        }
+      } else {
+        speech.stop();
+        const lastTranscript = transcriptRef.current;
+        evalResult = evaluateSpeechLocally(lastTranscript, question.paragraphs);
+      }
+
       setEvaluation(evalResult);
       
       if (question.mode === "practice") {
@@ -174,7 +209,17 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     );
   };
 
-  const micColor = state === "listening" || speech.listening ? L.blue : state === "processing" ? L.blue : state === "success" ? L.green : state === "fail" ? L.red : L.blue;
+  const micColor =
+    state === "listening" ||
+    (useGeminiBackend ? geminiCapture.listening : speech.listening)
+      ? L.blue
+      : state === "processing"
+        ? L.blue
+        : state === "success"
+          ? L.green
+          : state === "fail"
+            ? L.red
+            : L.blue;
   
   const statusText =
     state === "processing"
@@ -227,7 +272,11 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
 
       <View style={styles.micStage}>
         <MicCaptureOrb
-          listening={state === "listening" || state === "processing" || speech.listening}
+          listening={
+            state === "listening" ||
+            state === "processing" ||
+            (useGeminiBackend ? geminiCapture.listening : speech.listening)
+          }
           disabled={state === "success"}
           color={micColor}
           size={108}

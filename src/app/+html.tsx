@@ -14,6 +14,44 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
+        <meta name="theme-color" content="#111827" />
+        <meta name="application-name" content="TWINO" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="TWINO" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/pwa-192.png" />
+        {process.env.NODE_ENV === "production" ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ("serviceWorker" in navigator) {
+                  window.addEventListener("load", function () {
+                    navigator.serviceWorker.register("/sw.js").catch(function () {});
+                  });
+                }
+              `,
+            }}
+          />
+        ) : (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ("serviceWorker" in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    registrations.forEach(function (registration) {
+                      registration.unregister();
+                    });
+                  });
+                }
+              `,
+            }}
+          />
+        )}
         <style
           dangerouslySetInnerHTML={{
             __html: `

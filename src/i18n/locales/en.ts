@@ -369,7 +369,7 @@ export const en = {
     mLessons: "{count} lessons",
   },
   league: {
-    title: "Blue League",
+      title: "Leaderboard",
     daysLeft: "{count} days left",
   },
 };

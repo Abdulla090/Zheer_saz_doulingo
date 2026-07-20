@@ -1,8 +1,7 @@
 import { AppText } from "../../../components/ui/AppText";
+import { TwinoMascot } from "../../../components/mascot/TwinoMascot";
 import React from "react";
-import { StyleSheet, View, Image, Platform } from "react-native";
-const MascotOrange = require("../../../../assets/images/svg/gamescreenmascotorange.png");
-const MascotPurple = require("../../../../assets/images/svg/gamescreenmascotpurple.png");
+import { StyleSheet, View, Platform } from "react-native";
 
 
 export type OnboardingSceneVariant =
@@ -38,7 +37,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Hello! 👋
               </AppText>
             </View>
-            <Image source={MascotOrange} style={{ width: 156, height: 182 }} resizeMode="contain" />
+            <TwinoMascot mascotId="pingo" pose="wave" size={190} />
           </View>
         </View>
       </View>
@@ -55,7 +54,11 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
                 Ready? 🚀
               </AppText>
             </View>
-            <Image source={MascotPurple} style={{ width: 164, height: 164 }} resizeMode="contain" />
+            <TwinoMascot
+              mascotId="violet"
+              pose="encouraging"
+              size={184}
+            />
           </View>
         </View>
       </View>
@@ -66,9 +69,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
     <View style={styles.scene}>
       <View style={styles.mascotsRow}>
         <View style={styles.mascotWrapper}>
-          <View style={[styles.orangeMascotCropper, { transform: [{ scaleX: -1 }] }]}>
-            <Image source={MascotOrange} style={{ width: 146, height: 172 }} resizeMode="contain" />
-          </View>
+          <TwinoMascot mascotId="pingo" pose="winning" size={170} />
         </View>
 
         <View style={[styles.mascotWrapper, { marginTop: 12 }]}>
@@ -77,7 +78,7 @@ function MascotScene({ variant }: { variant: OnboardingSceneVariant }) {
               {"Let's go! ✨"}
             </AppText>
           </View>
-          <Image source={MascotPurple} style={{ width: 154, height: 154 }} resizeMode="contain" />
+          <TwinoMascot mascotId="violet" pose="happy" size={166} />
         </View>
       </View>
     </View>
@@ -114,13 +115,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     position: "relative",
-  },
-  orangeMascotCropper: {
-    width: 126,
-    height: 174,
-    overflow: "hidden",
-    alignItems: "flex-start",
-    justifyContent: "flex-end",
   },
   helloBubble: {
     position: "absolute",

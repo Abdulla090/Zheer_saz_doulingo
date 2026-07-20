@@ -1,4 +1,6 @@
 import { router, usePathname } from "expo-router";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Wallet02Icon } from "@hugeicons/core-free-icons";
 import React, { useMemo } from "react";
 import {
   Platform,
@@ -14,16 +16,17 @@ import {
   LeaderboardTabIcon,
   ProfileTabIconFlat,
 } from "../icons/HomeDashboardIcons";
-import { TwinoWordmark } from "../icons/TwinoHomeIcons";
 import { AppText } from "../ui/AppText";
+import { TwinoBrandMark } from "../branding/twino-brand-mark";
 import { WEB_DESKTOP_NAV_WIDTH } from "../../constants/web-layout";
 import type { I18nKey } from "../../i18n";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 
 const ITEMS: {
-  href: "/" | "/play" | "/dashboard" | "/more";
-  labelKey: I18nKey;
+  href: "/" | "/play" | "/dashboard" | "/credits" | "/more";
+  labelKey?: I18nKey;
+  label?: string;
   isActive: (pathname: string) => boolean;
   renderIcon: (active: boolean, color: string) => React.ReactNode;
 }[] = [
@@ -51,6 +54,20 @@ const ITEMS: {
       <LeaderboardTabIcon
         size={28}
         color={active ? "#1CB0F6" : color}
+      />
+    ),
+  },
+  {
+    href: "/credits",
+    label: "TWINO Credits",
+    isActive: (pathname) =>
+      pathname === "/credits" || pathname === "/subscription",
+    renderIcon: (active, color) => (
+      <HugeiconsIcon
+        icon={Wallet02Icon}
+        size={28}
+        color={active ? "#1CB0F6" : color}
+        strokeWidth={2.2}
       />
     ),
   },
@@ -89,13 +106,13 @@ export function DesktopWebSidebar() {
   return (
     <View style={styles.host}>
       <View style={styles.brand}>
-        <TwinoWordmark height={38} />
+        <TwinoBrandMark size={42} showName nameSize={27} />
       </View>
 
       <View style={styles.nav}>
         {ITEMS.map((item) => {
           const active = item.isActive(pathname);
-          const label = t(item.labelKey);
+          const label = item.labelKey ? t(item.labelKey) : item.label ?? "";
 
           return (
             <Pressable

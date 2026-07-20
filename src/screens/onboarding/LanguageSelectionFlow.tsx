@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeInRight,
   FadeOutLeft,
   LinearTransition,
@@ -483,8 +484,11 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   // Background animated gradient
   const bgScrollX = useSharedValue(0);
   React.useEffect(() => {
-    let targetIndex = stepIndex - 1;
-    bgScrollX.value = withTiming(targetIndex * screenWidth, { duration: 600 });
+    const targetIndex = stepIndex - 1;
+    bgScrollX.value = withTiming(targetIndex * screenWidth, {
+      duration: 900,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+    });
   }, [stepIndex, screenWidth, bgScrollX]);
 
   return (
@@ -923,41 +927,46 @@ function createStyles(colors: any, isDark: boolean) {
   },
   languageList: {
     width: "100%",
-    maxWidth: 640,
+    maxWidth: 720,
     alignSelf: "center",
-    overflow: "hidden",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+    backgroundColor: "transparent",
     marginTop: 6,
     marginBottom: 4,
   },
   languageRow: {
-    minHeight: 64,
+    width: "48%",
+    minHeight: 78,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: "transparent",
   },
   languageRowRtl: {
     flexDirection: "row-reverse",
   },
   languageRowSelected: {
-    backgroundColor: colors.primaryGlow,
+    borderColor: isDark ? colors.primary : "#2563EB",
+    backgroundColor: isDark
+      ? "rgba(37, 99, 235, 0.16)"
+      : "rgba(37, 99, 235, 0.10)",
   },
   flagFrame: {
-    width: 58,
-    height: 40,
+    width: 50,
+    height: 34,
     overflow: "hidden",
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
   },
   flagImage: {
     width: "100%",

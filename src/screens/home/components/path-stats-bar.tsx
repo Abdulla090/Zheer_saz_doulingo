@@ -5,6 +5,7 @@ import {
   AppTargetIcon,
 } from "../../../components/icons/AppHugeIcons";
 import { AppText } from "../../../components/ui/AppText";
+import { TwinoBrandMark } from "../../../components/branding/twino-brand-mark";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
@@ -19,8 +20,11 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Wallet02Icon } from "@hugeicons/core-free-icons";
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
+import { useCreditBalance } from "../../../hooks/useCreditBalance";
 
 type StatItem = {
   key: string;
@@ -38,6 +42,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const streakDays = useProgressStore((state) => state.streakDays);
   const currentProgress = useCurrentProgress();
+  const { balance: creditBalance } = useCreditBalance();
   const isRtl = isKu || isAr;
   const mobileWeb = Platform.OS === "web" && width < 768;
   const compact = width < 370 || mobileWeb;
@@ -90,33 +95,69 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   }
 
   return (
-    <View
-      style={[styles.row, { flexDirection: isRtl ? "row-reverse" : "row" }]}
-      accessibilityRole="summary"
-    >
-      {items.map((item, index) => (
-        <View
-          key={item.key}
-          style={[
-            styles.item,
-            index > 0 && styles.divider,
-            isRtl && index > 0 && styles.dividerRtl,
-          ]}
-          accessibilityLabel={`${item.label}: ${item.value}`}
-        >
-          {item.icon}
-          <AppText
-            style={styles.value}
-            forceLatinFont
-            latinRole="bold"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
+    <View style={styles.shell}>
+      <View
+        style={[
+          styles.brandRow,
+          { flexDirection: isRtl ? "row-reverse" : "row" },
+        ]}
+      >
+        <TwinoBrandMark
+          size={34}
+          showName
+          nameSize={20}
+          style={styles.brand}
+        />
+        {creditBalance !== null ? (
+          <View
+            style={styles.creditBadge}
+            accessibilityLabel={`TWINO credits: ${creditBalance}`}
           >
-            {item.value}
-          </AppText>
-        </View>
-      ))}
+            <HugeiconsIcon
+              icon={Wallet02Icon}
+              size={17}
+              color="#168BD2"
+              strokeWidth={2.5}
+            />
+            <AppText
+              style={styles.creditValue}
+              forceLatinFont
+              latinRole="bold"
+              numberOfLines={1}
+            >
+              {creditBalance.toLocaleString()}
+            </AppText>
+          </View>
+        ) : null}
+      </View>
+      <View
+        style={[styles.row, { flexDirection: isRtl ? "row-reverse" : "row" }]}
+        accessibilityRole="summary"
+      >
+        {items.map((item, index) => (
+          <View
+            key={item.key}
+            style={[
+              styles.item,
+              index > 0 && styles.divider,
+              isRtl && index > 0 && styles.dividerRtl,
+            ]}
+            accessibilityLabel={`${item.label}: ${item.value}`}
+          >
+            {item.icon}
+            <AppText
+              style={styles.value}
+              forceLatinFont
+              latinRole="bold"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {item.value}
+            </AppText>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -128,10 +169,42 @@ function createStyles(
   mobileWeb: boolean,
 ) {
   return StyleSheet.create({
-    row: {
+    shell: {
       alignSelf: "center",
       width: "100%",
       maxWidth: 640,
+    },
+    brandRow: {
+      minHeight: 38,
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginHorizontal: mobileWeb ? 12 : 18,
+      marginBottom: mobileWeb ? 2 : 4,
+    },
+    brand: {
+      flexShrink: 1,
+    },
+    creditBadge: {
+      minHeight: 34,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(69,180,240,0.3)" : "#CDEBFA",
+      borderRadius: 11,
+      backgroundColor: isDark ? "rgba(22,139,210,0.12)" : "#EFF9FE",
+      paddingHorizontal: 10,
+    },
+    creditValue: {
+      color: isDark ? "#75CCFA" : "#0E6FA9",
+      fontSize: 12.5,
+      lineHeight: 16,
+      fontVariant: ["tabular-nums"],
+    },
+    row: {
+      alignSelf: "center",
+      width: "100%",
       minHeight: mobileWeb ? 48 : compact ? 54 : 60,
       alignItems: "center",
       paddingHorizontal: mobileWeb ? 10 : 14,

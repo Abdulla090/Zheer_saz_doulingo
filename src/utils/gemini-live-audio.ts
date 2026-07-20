@@ -375,6 +375,10 @@ export async function startMicPcmStream(
     shouldRouteThroughEarpiece: false,
   });
 
+  if (!AudioModule?.AudioStream) {
+    throw new Error("Live audio streaming is not supported in Expo Go. Please use a development build.");
+  }
+
   const stream = new AudioModule.AudioStream({
     sampleRate,
     channels: 1,
@@ -406,7 +410,12 @@ export async function startMicPcmStream(
     onData(b64);
   });
 
-  await stream.start();
+  try {
+    await stream.start();
+  } catch (err) {
+    subscription.remove();
+    throw new Error("Could not start live audio input stream: " + (err instanceof Error ? err.message : String(err)));
+  }
 
   return {
     stop: () => {

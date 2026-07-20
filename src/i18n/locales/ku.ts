@@ -372,7 +372,7 @@ export const ku = {
     mLessons: "{count} وانە",
   },
   league: {
-    title: "خولی شین",
+      title: "پلەبەندی",
     daysLeft: "{count} ڕۆژ",
   },
 } satisfies TranslationKey;

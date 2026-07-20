@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import React from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -19,6 +19,11 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SVG_BUTTON_COLOR_SETS, type SvgButtonVariant } from "./list-button";
+import {
+  isDesktopWebWidth,
+  WEB_DESKTOP_NAV_WIDTH,
+  WEB_DESKTOP_RAIL_WIDTH,
+} from "../../../constants/web-layout";
 
 const LOCKED_POPUP_FACE = "#475569";
 const LOCKED_POPUP_RIM = "#1E293B";
@@ -45,7 +50,7 @@ export function PathLessonPopup({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
 
   if (!selection) return null;
@@ -58,8 +63,19 @@ export function PathLessonPopup({
   const colors = SVG_BUTTON_COLOR_SETS[popupVariant(selection)];
   const popupFace = isLocked ? LOCKED_POPUP_FACE : colors.face;
   const popupRim = isLocked ? LOCKED_POPUP_RIM : colors.rim;
-  const popupWidth = Math.min(windowWidth - 32, 560);
-  const popupLeft = (windowWidth - popupWidth) / 2;
+  const isDesktopWeb =
+    Platform.OS === "web" && isDesktopWebWidth(windowWidth);
+  const popupViewportWidth = isDesktopWeb
+    ? Math.max(
+        320,
+        windowWidth - WEB_DESKTOP_NAV_WIDTH - WEB_DESKTOP_RAIL_WIDTH,
+      )
+    : windowWidth;
+  const popupWidth = Math.min(popupViewportWidth - 32, 560);
+  const popupLeft = (popupViewportWidth - popupWidth) / 2;
+  const popupTop = isDesktopWeb
+    ? Math.max(24, (windowHeight - 220) / 2)
+    : selection.anchor?.y;
   const caretLeft = selection.anchor
     ? Math.max(
         22,
@@ -108,13 +124,13 @@ export function PathLessonPopup({
             borderColor: isLocked ? "#64748B" : "rgba(255,255,255,0.28)",
             borderBottomColor: popupRim,
           },
-          selection.anchor
-            ? { top: selection.anchor.y }
+          popupTop != null
+            ? { top: popupTop }
             : { bottom: Math.max(insets.bottom + 20, 106) },
         ]}
         accessibilityViewIsModal={false}
       >
-        {selection.anchor ? (
+        {selection.anchor && !isDesktopWeb ? (
           <View
             pointerEvents="none"
             style={[

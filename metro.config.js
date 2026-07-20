@@ -3,7 +3,6 @@ gracefulFs.gracefulify(require("fs"));
 
 const { getDefaultConfig } = require("expo/metro-config");
 const { FileStore } = require("@expo/metro-config/build/file-store");
-const { DiskCacheManager } = require("@expo/metro-file-map");
 const { withUniwindConfig } = require("uniwind/metro");
 const fs = require("fs");
 const path = require("path");
@@ -26,28 +25,6 @@ if (!fs.existsSync(expoTypesDir)) {
 }
 
 const config = getDefaultConfig(projectRoot);
-
-// Windows: EMFILE fix achieved via watchFolder exclusions
-config.fileMapCacheDirectory = projectCacheRoot;
-config.hasteMapCacheDirectory = projectCacheRoot;
-config.cacheManagerFactory = (factoryParams) =>
-  new DiskCacheManager(factoryParams, {
-    cacheDirectory: projectCacheRoot,
-    cacheFilePrefix: "metro-file-map",
-  });
-
-config.watcher = {
-  ...config.watcher,
-  additionalExcludes: [
-    ...(config.watcher?.additionalExcludes ?? []),
-    /[/\\]node_modules[/\\]\.babel-preset-expo-[^/\\]+[/\\].*/,
-    /[/\\]node_modules[/\\]\.cache[/\\].*/,
-    /[/\\]\.metro-cache[/\\].*/,
-    /[/\\]android[/\\].*/,
-    /[/\\]ios[/\\].*/,
-    /[/\\]dist[/\\].*/,
-  ],
-};
 
 const { transformer, resolver } = config;
 
@@ -125,15 +102,10 @@ const metroConfig = withUniwindConfig(config, {
 });
 
 metroConfig.cacheStores = [new FileStore({ root: transformCacheRoot })];
-metroConfig.fileMapCacheDirectory = projectCacheRoot;
-metroConfig.hasteMapCacheDirectory = projectCacheRoot;
-metroConfig.cacheManagerFactory = config.cacheManagerFactory;
 metroConfig.maxWorkers = config.maxWorkers;
 metroConfig.transformer = {
   ...metroConfig.transformer,
   babelTransformerPath: config.transformer.babelTransformerPath,
   ...(isWindows ? { unstable_workerThreads: false } : {}),
 };
-metroConfig.watcher = config.watcher;
-
 module.exports = metroConfig;

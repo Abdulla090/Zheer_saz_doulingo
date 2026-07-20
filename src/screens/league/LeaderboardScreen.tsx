@@ -1,256 +1,152 @@
-/**
- * LeaderboardScreen — Premium Duolingo-style leaderboard with playful 3D podium and professional UI.
- */
-
-import React, { useMemo } from "react";
-import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
+import { Trophy, ZapIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   LegendList,
   type LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
+import { Image } from "expo-image";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Trophy, ArrowUp01Icon, Clock01Icon, ZapIcon, StarIcon } from "@hugeicons/core-free-icons";
 
-import { useThemeColors } from "../../hooks/useThemeColors";
+import { PressableScale } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import { PressableScale } from "../../components/animations";
-import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
-import { useI18n } from "../../hooks/useI18n";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { LEAGUE_ENTRIES, LeagueEntry } from "../../data/league-items";
-import { getLocalPremadeAvatar } from "../../constants/avatars";
-import { hapticImpact } from "../../utils/haptics";
+import { getMascot } from "../../constants/mascots";
 import { tabBarScrollPadding } from "../../constants/layout";
+import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../hooks/useI18n";
+import { useThemeColors } from "../../hooks/useThemeColors";
+import { supabase } from "../../lib/supabase";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { hapticImpact } from "../../utils/haptics";
 
-function getLeaderboardColors(colors: any, isDark: boolean) {
-  return {
-    background: isDark ? "#0F172A" : "#FFFFFF",
-    surface: isDark ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
-    foreground: isDark ? "#FFFFFF" : "#0F172A",
-    mutedForeground: isDark ? "#94A3B8" : "#64748B",
-    border: isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
-    promotion: "#22C55E",
-    promotionBg: "rgba(34, 197, 94, 0.08)",
-    currentUser: isDark ? "#FFFFFF" : "#0F172A",
-    currentUserBg: isDark ? "rgba(249, 115, 22, 0.15)" : "#FFF7ED",
-    currentUserBorder: isDark ? "#F97316" : "#FF963C",
-    purpleText: isDark ? "#A78BFA" : "#6B5AED",
-    purpleBg: isDark ? "rgba(107, 90, 237, 0.15)" : "#F5F3FF",
-  };
-}
+export type LeaderboardEntry = {
+  userId: string;
+  rank: number;
+  name: string;
+  avatarUrl: string | null;
+  selectedMascotId: string;
+  xp: number;
+};
 
-const getAvatarUrl = (seed: string) =>
-  `https://api.dicebear.com/9.x/adventurer/png?seed=${encodeURIComponent(seed)}`;
+type LeaderboardRow = {
+  user_id: string;
+  rank: number | string;
+  display_name: string;
+  avatar_url: string | null;
+  selected_mascot_id: string;
+  total_xp: number;
+};
 
-const keyExtractor = (item: LeagueEntry) => item.id;
+const keyExtractor = (item: LeaderboardEntry) => item.userId;
 
 export const LeaderboardScreen = () => {
   const { colors, isDark } = useThemeColors();
-  const Colors = useMemo(() => getLeaderboardColors(colors, isDark), [colors, isDark]);
-  const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
-  const isRtl = isKu || locale === 'ar';
+  const { user } = useAuth();
+  const isRtl = isKu || locale === "ar";
+  const localAvatarUrl = useSettingsStore((state) => state.avatarUrl);
+  const localMascotId = useSettingsStore((state) => state.selectedMascotId);
+  const localUserName = useSettingsStore((state) => state.userName);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
-  const userName = useSettingsStore((s) => s.userName);
-
-
-  const renderAvatar = (item: LeagueEntry, size: number, style: any) => {
-    if (item.isCurrentUser && avatarUrl) {
-      const SVGComponent = getLocalPremadeAvatar(avatarUrl);
-      if (SVGComponent) {
-        return <SVGComponent width={size} height={size} style={style} />;
-      }
-      return (
-        <Image
-          source={{ uri: avatarUrl }}
-          contentFit="cover"
-          style={style}
-        />
-      );
+  const loadLeaderboard = useCallback(async () => {
+    if (!user) {
+      setEntries([]);
+      setLoadFailed(false);
+      setLoading(false);
+      setRefreshing(false);
+      return;
     }
-    return (
-      <Image
-        source={{ uri: getAvatarUrl(item.avatarSeed) }}
-        contentFit="cover"
-        style={style}
-      />
-    );
+
+    const { data, error } = await supabase.rpc("get_leaderboard", { p_limit: 50 });
+    if (error) {
+      console.error("Failed to load leaderboard:", error.message);
+      setEntries([]);
+      setLoadFailed(true);
+    } else {
+      setEntries(
+        ((data ?? []) as LeaderboardRow[]).map((row) => ({
+          userId: row.user_id,
+          rank: Number(row.rank),
+          name: row.display_name,
+          avatarUrl: row.avatar_url,
+          selectedMascotId: row.selected_mascot_id,
+          xp: row.total_xp,
+        })),
+      );
+      setLoadFailed(false);
+    }
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
+  useEffect(() => {
+    void loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadLeaderboard();
   };
 
-  const top3 = useMemo(() => LEAGUE_ENTRIES.slice(0, 3), []);
-  const rest = useMemo(() => LEAGUE_ENTRIES.slice(3), []);
-
-  const podiumOrder = useMemo(() => {
-    // 2nd | 1st | 3rd
-    if (top3.length < 3) return top3;
-    return [top3[1], top3[0], top3[2]];
-  }, [top3]);
-
-  const renderPodiumItem = (item: LeagueEntry) => {
-    const isFirst = item.rank === 1;
-    const isSecond = item.rank === 2;
-
-    const avatarSize = isFirst ? 76 : 60;
-    const pedestalHeight = isFirst ? 110 : isSecond ? 80 : 64;
-
-    // Playful 3D Pedestal Colors - Rank 3 is soft blue
-    let pedestalBg = "#EFF6FF"; 
-    let pedestalBorder = "#BFDBFE";
-    let pedestalBottom = "#3B82F6";
-    let badgeColor = "#3B82F6";
-    let trophyColor = "#3B82F6";
-
-    if (isFirst) {
-      pedestalBg = "#FFF7ED"; // Soft Orange
-      pedestalBorder = "#FFD8A8";
-      pedestalBottom = "#FF963C";
-      badgeColor = "#FF963C";
-      trophyColor = "#FF963C";
-    } else if (isSecond) {
-      pedestalBg = "#F5F3FF"; // Soft Purple
-      pedestalBorder = "#D8D4FD";
-      pedestalBottom = "#6B5AED";
-      badgeColor = "#6B5AED";
-      trophyColor = "#6B5AED";
+  const renderAvatar = (item: LeaderboardEntry) => {
+    const isMe = item.userId === user?.id;
+    const uploadedUrl = isMe && localAvatarUrl ? localAvatarUrl : item.avatarUrl;
+    if (
+      uploadedUrl &&
+      /^(https?:|file:|content:|data:|blob:)/i.test(uploadedUrl) &&
+      !/\.svg(?:[?#]|$)|\/premade\//i.test(uploadedUrl)
+    ) {
+      return <Image source={{ uri: uploadedUrl }} contentFit="cover" style={styles.avatar} />;
     }
 
+    const mascot = getMascot(isMe ? localMascotId : item.selectedMascotId);
     return (
-      <View key={item.id} style={styles.podiumSlot}>
-        {/* Crown/Star overlay on top of 1st place */}
-        {isFirst && (
-          <View style={styles.crownContainer}>
-            <HugeiconsIcon icon={StarIcon} size={18} color="#FF963C" strokeWidth={2.5} />
-          </View>
-        )}
-
-        {/* Avatar Ring */}
-        <View style={styles.avatarContainer}>
-          <View
-            style={[
-              styles.avatarRing,
-              {
-                width: avatarSize + 8,
-                height: avatarSize + 8,
-                borderRadius: (avatarSize + 8) / 2,
-                borderColor: pedestalBorder,
-                backgroundColor: Colors.background,
-              },
-            ]}
-          >
-            {renderAvatar(item, avatarSize, [
-              styles.podiumAvatar,
-              {
-                width: avatarSize,
-                height: avatarSize,
-                borderRadius: avatarSize / 2,
-              },
-            ])}
-          </View>
-          
-          {/* Badge */}
-          <View style={[styles.podiumRankBadge, { backgroundColor: badgeColor }]}>
-            <AppText style={styles.podiumRankText} forceLatinFont latinRole="bold">
-              {item.rank}
-            </AppText>
-          </View>
-        </View>
-
-        {/* Name */}
-        <AppText
-          style={[styles.podiumName, isFirst && styles.podiumNameFirst]}
-          numberOfLines={1}
-          forceLatinFont
-          latinRole="bold"
-        >
-          {item.isCurrentUser ? (userName ? userName.split(" ")[0] : item.name.split(" ")[0]) : item.name.split(" ")[0]}
-        </AppText>
-
-        {/* XP */}
-        <View style={styles.podiumXpBadge}>
-          <HugeiconsIcon icon={ZapIcon} size={10} color="#F59E0B" strokeWidth={3} />
-          <AppText style={styles.podiumXpText} forceLatinFont latinRole="bold">
-            {item.xp}
-          </AppText>
-        </View>
-
-        {/* Playful 3D Pedestal Bar */}
-        <View
-          style={[
-            styles.pedestalBar,
-            {
-              height: pedestalHeight,
-              backgroundColor: pedestalBg,
-              borderColor: pedestalBorder,
-              borderBottomColor: pedestalBottom,
-            },
-          ]}
-        >
-          <HugeiconsIcon icon={Trophy} size={22} color={trophyColor} strokeWidth={2.5} />
-        </View>
+      <View style={styles.avatar}>
+        <Image source={mascot.source} contentFit="contain" style={styles.mascotImage} />
       </View>
     );
   };
 
-  const renderListItem = ({ item }: LegendListRenderItemProps<LeagueEntry>) => {
-    const isMe = item.isCurrentUser;
-
+  const renderItem = ({ item }: LegendListRenderItemProps<LeaderboardEntry>) => {
+    const isMe = item.userId === user?.id;
+    const level = Math.max(1, Math.floor(item.xp / 120) + 1);
     return (
       <PressableScale
-        key={item.id}
         onPress={() => hapticImpact()}
-        scaleDown={0.98}
-        style={[
-          styles.listRow,
-          isMe && styles.listRowMe,
-        ]}
+        scaleDown={0.985}
+        style={[styles.row, isMe && styles.currentUserRow, isRtl && styles.rowRtl]}
       >
-        {/* Rank column */}
-        <View style={styles.listRankWrap}>
-          <AppText
-            style={[styles.listRank, isMe && styles.listRankMe]}
-            forceLatinFont
-            latinRole="bold"
-          >
+        <View style={[styles.rank, item.rank <= 3 && styles.topRank]}>
+          <AppText style={[styles.rankText, item.rank <= 3 && styles.topRankText]} forceLatinFont latinRole="bold">
             {item.rank}
           </AppText>
         </View>
-
-        {/* Avatar */}
-        {renderAvatar(item, 44, styles.listAvatar)}
-
-        {/* Name and Level */}
-        <View style={[styles.listNameCol, isRtl && { alignItems: "flex-end" }]}>
+        {renderAvatar(item)}
+        <View style={styles.nameColumn}>
           <AppText
-            style={[styles.listName, isMe && styles.listNameMe]}
+            style={styles.name}
             numberOfLines={1}
-            forceLatinFont
+            align="start"
+            languageCode={locale}
             latinRole="bold"
           >
-            {isMe ? (userName || item.name) : item.name}
+            {isMe && localUserName ? localUserName : item.name}
           </AppText>
-          <View style={styles.metaRow}>
-            <AppText style={styles.flagText}>{item.countryFlag}</AppText>
-            <View style={styles.levelChip}>
-              <AppText style={styles.levelText} forceLatinFont>
-                Lvl {item.level}
-              </AppText>
-            </View>
-          </View>
+          <AppText style={styles.level} forceLatinFont>
+            Level {level}
+          </AppText>
         </View>
-
-        {/* XP Value */}
-        <View style={[styles.xpChip, isMe && styles.xpChipMe]}>
-          <HugeiconsIcon icon={ZapIcon} size={12} color={isMe ? "#FFFFFF" : "#F59E0B"} strokeWidth={3} />
-          <AppText
-            style={[styles.listXp, isMe && styles.listXpMe]}
-            forceLatinFont
-            latinRole="bold"
-          >
+        <View style={styles.xp}>
+          <HugeiconsIcon icon={ZapIcon} size={13} color="#F59E0B" strokeWidth={3} />
+          <AppText style={styles.xpText} forceLatinFont latinRole="bold">
             {item.xp} XP
           </AppText>
         </View>
@@ -258,296 +154,157 @@ export const LeaderboardScreen = () => {
     );
   };
 
+  const emptyTitle = loadFailed
+    ? "Leaderboard unavailable"
+    : user
+      ? "Be the first learner here"
+      : "Sign in to join the leaderboard";
+  const emptyBody = loadFailed
+    ? "Pull down to try again."
+    : user
+      ? "Complete a lesson to earn XP and start the ranking."
+      : "Your real XP and profile pet will appear after you sign in.";
+
   return (
     <View style={styles.root}>
-      {/* Header section */}
-      <GsapEnterBlock index={0}>
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 8 }]}>
-          <View style={styles.headerTop}>
-            <View style={isRtl && { alignItems: "flex-end" }}>
-              <AppText style={[styles.headerTitle, isRtl && { textAlign: "right" }]} forceLatinFont={!isRtl} latinRole="bold">
-                {t("league.title")}
-              </AppText>
-              {/* Promotion zone indicator */}
-              <View style={styles.promotionBadge}>
-                <HugeiconsIcon icon={ArrowUp01Icon} size={12} color={Colors.promotion} strokeWidth={2.5} />
-                <AppText style={styles.promotionText} forceLatinFont={!isRtl} latinRole="bold">
-                  {t("league.promotionZone")}
-                </AppText>
-              </View>
-            </View>
-            
-            <View style={styles.headerTimeBadge}>
-              <HugeiconsIcon icon={Clock01Icon} size={14} color={Colors.mutedForeground} strokeWidth={2} />
-              <AppText style={styles.headerTimeText} forceLatinFont={!isRtl} latinRole="bold">
-                {t("league.daysLeft").replace("{count}", "5")}
-              </AppText>
-            </View>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 8 }]}>
+        <View style={[styles.titleRow, isRtl && styles.rowRtl]}>
+          <View style={styles.trophy}>
+            <HugeiconsIcon icon={Trophy} size={22} color="#F59E0B" strokeWidth={2.4} />
+          </View>
+          <View>
+            <AppText style={styles.title} languageCode={locale} align="start" latinRole="bold">
+              {t("league.title")}
+            </AppText>
+            <AppText style={styles.subtitle} languageCode={locale} align="start">
+              Real learners ranked by total XP
+            </AppText>
           </View>
         </View>
-      </GsapEnterBlock>
+      </View>
 
-      <LegendList
-        data={rest}
-        keyExtractor={keyExtractor}
-        renderItem={renderListItem}
-        recycleItems
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
-        }}
-        ListHeaderComponent={(
-          <GsapEnterBlock index={1}>
-            <View style={styles.podiumSection}>
-              {podiumOrder.map((item) => renderPodiumItem(item))}
+      {loading ? (
+        <View style={styles.centerState}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : (
+        <LegendList
+          data={entries}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          recycleItems
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={{
+            paddingTop: 14,
+            paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
+          }}
+          ListEmptyComponent={
+            <View style={styles.centerState}>
+              <View style={styles.emptyIcon}>
+                <HugeiconsIcon icon={Trophy} size={30} color={colors.mutedForeground} strokeWidth={1.8} />
+              </View>
+              <AppText style={styles.emptyTitle} languageCode={locale} align="center" latinRole="bold">
+                {emptyTitle}
+              </AppText>
+              <AppText style={styles.emptyBody} languageCode={locale} align="center">
+                {emptyBody}
+              </AppText>
             </View>
-          </GsapEnterBlock>
-        )}
-      />
-
+          }
+        />
+      )}
       <BottomScrollFade />
     </View>
   );
 };
 
-function createStyles(Colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 26,
-    color: Colors.foreground,
-  },
-  headerTimeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  headerTimeText: {
-    fontSize: 12,
-    color: Colors.mutedForeground,
-  },
-  promotionBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  promotionText: {
-    fontSize: 12,
-    color: Colors.promotion,
-  },
-
-  // -- Podium --
-  podiumSection: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    paddingHorizontal: 20,
-    paddingTop: 36,
-    paddingBottom: 16,
-  },
-  podiumSlot: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  crownContainer: {
-    position: "absolute",
-    top: -24,
-    zIndex: 10,
-    backgroundColor: "#FEF08A",
-    padding: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "#EAB308",
-  },
-  avatarContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  avatarRing: {
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  podiumAvatar: {
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
-  },
-  podiumRankBadge: {
-    position: "absolute",
-    bottom: -6,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: Colors.background,
-  },
-  podiumRankText: {
-    fontSize: 11,
-    color: "#FFFFFF",
-  },
-  podiumName: {
-    fontSize: 13,
-    color: Colors.foreground,
-    marginTop: 10,
-  },
-  podiumNameFirst: {
-    fontSize: 15,
-  },
-  podiumXpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "#FFFBEB",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginTop: 4,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#FEF3C7",
-  },
-  podiumXpText: {
-    fontSize: 11,
-    color: "#D97706",
-  },
-  pedestalBar: {
-    width: "82%",
-    borderWidth: 1.5,
-    borderBottomWidth: 6,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // -- List Section --
-  listSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 8,
-  },
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: Colors.background,
-    borderWidth: 1.5,
-    borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
-    borderBottomWidth: 4,
-    borderBottomColor: Colors.border,
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  listRowMe: {
-    backgroundColor: Colors.currentUserBg,
-    borderColor: isDark ? "rgba(249, 115, 22, 0.3)" : "#FFE4D6",
-    borderBottomColor: isDark ? "rgba(249, 115, 22, 0.5)" : "#FFC29E",
-  },
-  listRankWrap: {
-    width: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  listRank: {
-    fontSize: 14,
-    color: Colors.mutedForeground,
-  },
-  listRankMe: {
-    color: Colors.currentUserBorder,
-  },
-  listAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
-    marginStart: 8,
-  },
-  listNameCol: {
-    flex: 1,
-    marginStart: 12,
-  },
-  listName: {
-    fontSize: 14,
-    color: Colors.foreground,
-  },
-  listNameMe: {
-    color: Colors.foreground,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 2,
-  },
-  flagText: {
-    fontSize: 12,
-  },
-  levelChip: {
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#F1F5F9",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  levelText: {
-    fontSize: 10,
-    color: Colors.mutedForeground,
-  },
-  xpChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#FFFBEB",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "#FEF3C7",
-    borderBottomWidth: 3,
-    borderBottomColor: "#FDE68A",
-  },
-  xpChipMe: {
-    backgroundColor: Colors.currentUserBorder,
-    borderColor: "#EA580C",
-    borderBottomColor: "#C2410C",
-  },
-  listXp: {
-    fontSize: 12,
-    color: "#D97706",
-  },
-  listXpMe: {
-    color: "#FFFFFF",
-  },
+    root: { flex: 1, backgroundColor: colors.background },
+    header: {
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    rowRtl: { flexDirection: "row-reverse" },
+    trophy: {
+      width: 44,
+      height: 44,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
+    },
+    title: { fontSize: 25, color: colors.foreground },
+    subtitle: { marginTop: 2, fontSize: 12, color: colors.mutedForeground },
+    row: {
+      minHeight: 72,
+      marginHorizontal: 16,
+      marginBottom: 9,
+      paddingHorizontal: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 11,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderBottomWidth: 3,
+      borderColor: colors.border,
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+    },
+    currentUserRow: {
+      borderColor: isDark ? "rgba(249,115,22,0.45)" : "#FED7AA",
+      backgroundColor: isDark ? "rgba(249,115,22,0.10)" : "#FFF7ED",
+    },
+    rank: { width: 28, alignItems: "center", justifyContent: "center" },
+    topRank: {
+      width: 28,
+      height: 28,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
+    },
+    rankText: { fontSize: 14, color: colors.mutedForeground },
+    topRankText: { color: "#D97706" },
+    avatar: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      overflow: "hidden",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9",
+    },
+    mascotImage: { width: 42, height: 42 },
+    nameColumn: { flex: 1, minWidth: 0 },
+    name: { fontSize: 15, color: colors.foreground },
+    level: { marginTop: 2, fontSize: 11, color: colors.mutedForeground },
+    xp: { flexDirection: "row", alignItems: "center", gap: 4 },
+    xpText: { fontSize: 12, color: colors.foreground },
+    centerState: {
+      flex: 1,
+      minHeight: 360,
+      paddingHorizontal: 34,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyIcon: {
+      width: 64,
+      height: 64,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F8FAFC",
+      marginBottom: 16,
+    },
+    emptyTitle: { fontSize: 18, color: colors.foreground },
+    emptyBody: {
+      maxWidth: 310,
+      marginTop: 7,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.mutedForeground,
+    },
   });
 }

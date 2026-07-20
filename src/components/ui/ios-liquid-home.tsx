@@ -18,6 +18,7 @@ import { Glass, Motion, Radius } from "../../screens/lesson/games/game-design";
 import { IS_ANDROID } from "../../utils/native-perf";
 import { crossShadow } from "../../utils/shadows";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
 import { BlurView } from "expo-blur";
 import { hapticImpact } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
@@ -245,6 +246,7 @@ export function HomeLiquidButton({
   color = HomePalette.blue,
   style,
   flush = false,
+  variant = "liquid",
 }: {
   label: string;
   onPress: () => void;
@@ -252,6 +254,7 @@ export function HomeLiquidButton({
   style?: StyleProp<ViewStyle>;
   /** Remove the default top spacing when the button sits in a fixed footer. */
   flush?: boolean;
+  variant?: "liquid" | "login";
 }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -263,6 +266,8 @@ export function HomeLiquidButton({
       { scale: scale.value },
     ],
   }));
+  const loginStyle = variant === "login";
+  const resolvedColor = loginStyle ? PRIMARY_ACTION.face : color;
 
   return (
     <Animated.View style={[{ width: "100%" }, anim, style]}>
@@ -284,30 +289,47 @@ export function HomeLiquidButton({
         style={[
           styles.primaryBtn,
           flush && styles.primaryBtnFlush,
+          loginStyle && styles.loginPrimaryBtn,
           {
-            backgroundColor: color,
-            borderColor: "rgba(255,255,255,0.35)",
+            backgroundColor: resolvedColor,
+            borderColor: loginStyle
+              ? "transparent"
+              : "rgba(255,255,255,0.35)",
+            borderBottomColor: loginStyle
+              ? PRIMARY_ACTION.rim
+              : "rgba(255,255,255,0.35)",
           },
-          crossShadow({
-            color,
-            offsetY: 8,
-            blur: 20,
-            opacity: 0.35,
-            elevation: 6,
-          }),
+          loginStyle
+            ? undefined
+            : crossShadow({
+                color: resolvedColor,
+                offsetY: 8,
+                blur: 20,
+                opacity: 0.35,
+                elevation: 6,
+              }),
         ]}
       >
-        <LinearGradient
-          colors={[
-            "rgba(255,255,255,0.42)",
-            "rgba(255,255,255,0.08)",
-            "rgba(255,255,255,0)",
+        {!loginStyle ? (
+          <LinearGradient
+            colors={[
+              "rgba(255,255,255,0.42)",
+              "rgba(255,255,255,0.08)",
+              "rgba(255,255,255,0)",
+            ]}
+            locations={[0, 0.45, 1]}
+            style={styles.primarySheen}
+            pointerEvents="none"
+          />
+        ) : null}
+        <AppText
+          style={[
+            styles.primaryLabel,
+            loginStyle && styles.loginPrimaryLabel,
           ]}
-          locations={[0, 0.45, 1]}
-          style={styles.primarySheen}
-          pointerEvents="none"
-        />
-        <AppText style={styles.primaryLabel}>{label}</AppText>
+        >
+          {label}
+        </AppText>
       </Pressable>
     </Animated.View>
   );
@@ -533,6 +555,12 @@ const styles = StyleSheet.create({
   primaryBtnFlush: {
     marginTop: 0,
   },
+  loginPrimaryBtn: {
+    borderWidth: 0,
+    borderBottomWidth: 3,
+    borderBottomColor: PRIMARY_ACTION.rim,
+    borderRadius: 14,
+  },
   primarySheen: {
     position: "absolute",
     top: 0,
@@ -548,6 +576,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontFamily: "DINNextRoundedBold",
     zIndex: 1,
+  },
+  loginPrimaryLabel: {
+    fontSize: 15,
+    letterSpacing: 0.1,
   },
   lessonShell: {
     minHeight: 124,

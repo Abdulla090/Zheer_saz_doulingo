@@ -455,3 +455,36 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/gemini-live-token/deno.json"
 entrypoint = "./functions/gemini-live-token/index.ts"
+
+[functions.wayl-checkout]
+enabled = true
+verify_jwt = true
+import_map = "./functions/wayl-checkout/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/wayl-checkout/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/wayl-checkout/*.html" ]
+
+[functions.wayl-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/wayl-webhook/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/wayl-webhook/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/wayl-webhook/*.html" ]
+
+[functions.credits]
+enabled = true
+verify_jwt = true
+import_map = "./functions/credits/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/credits/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/credits/*.html" ]

@@ -1,4 +1,5 @@
-import { Image } from "expo-image";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Wallet02Icon } from "@hugeicons/core-free-icons";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -19,8 +20,6 @@ import {
 } from "../icons/HomeDashboardIcons";
 import { PremiumPressable } from "../PremiumPressable";
 import { AppText } from "../ui/AppText";
-import { getMascotExpressionSource } from "../../constants/mascot-expressions";
-import { getMascot } from "../../constants/mascots";
 import { WEB_DESKTOP_RAIL_WIDTH } from "../../constants/web-layout";
 import type { I18nKey } from "../../i18n";
 import { useI18n } from "../../hooks/useI18n";
@@ -30,7 +29,6 @@ import {
   type HomeQuestId,
 } from "../../screens/home/home-daily-quests";
 import { useProgressStore } from "../../stores/useProgressStore";
-import { useSettingsStore } from "../../stores/useSettingsStore";
 
 const QUEST_TITLE_KEYS: Record<HomeQuestId, I18nKey> = {
   dailyXp: "home.questXp",
@@ -53,11 +51,6 @@ export function DesktopWebRail() {
   const dailyXp = useProgressStore((state) => state.dailyXp);
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const lastActivity = useProgressStore((state) => state.lastActivity);
-  const isPremium = useSettingsStore((state) => state.isPremium);
-  const selectedMascotId = useSettingsStore(
-    (state) => state.selectedMascotId,
-  );
-  const mascot = getMascot(selectedMascotId);
   const quests = useMemo(
     () =>
       buildHomeDailyQuests({
@@ -113,8 +106,7 @@ export function DesktopWebRail() {
           </View>
         </View>
 
-        {!isPremium ? (
-          <View style={styles.premiumPanel}>
+        <View style={styles.premiumPanel}>
             <View
               style={[
                 styles.premiumTop,
@@ -135,7 +127,7 @@ export function DesktopWebRail() {
                   forceKurdishFont={isKu}
                   latinRole="bold"
                 >
-                  {t("subscription.title")}
+                  {isKu ? "کرێدیتی TWINO" : isAr ? "رصيد TWINO" : "TWINO CREDITS"}
                 </AppText>
                 <AppText
                   style={[
@@ -145,7 +137,11 @@ export function DesktopWebRail() {
                   forceKurdishFont={isKu}
                   latinRole="bold"
                 >
-                  {t("subscription.superDesc")}
+                  {isKu
+                    ? "کاتێک پێویستتە AI زیاتر بەکاربهێنە"
+                    : isAr
+                      ? "استخدم ميزات الذكاء الاصطناعي عند الحاجة"
+                      : "Use AI when you need it"}
                 </AppText>
                 <AppText
                   style={[
@@ -154,19 +150,28 @@ export function DesktopWebRail() {
                   ]}
                   forceKurdishFont={isKu}
                 >
-                  {t("subscription.featureUnlimited")} · {t("subscription.featureNoAds")}
+                  {isKu
+                    ? "کڕینی یەکجار · بێ بەشداریکردن"
+                    : isAr
+                      ? "شراء لمرة واحدة · بدون اشتراك"
+                      : "One-time credit packs · no subscription"}
                 </AppText>
               </View>
-              <Image
-                source={getMascotExpressionSource(mascot.id, "happy")}
-                contentFit="contain"
-                style={styles.mascot}
-              />
+              <View style={styles.walletArt}>
+                <HugeiconsIcon
+                  icon={Wallet02Icon}
+                  size={29}
+                  color="#168BD2"
+                  strokeWidth={2.5}
+                />
+              </View>
             </View>
             <PremiumPressable
               accessibilityRole="button"
-              accessibilityLabel={t("subscription.comparePlans")}
-              onPress={() => router.push("/subscription")}
+              accessibilityLabel={
+                isKu ? "پاکەتەکانی کرێدیت ببینە" : isAr ? "عرض حزم الرصيد" : "View credit packs"
+              }
+              onPress={() => router.push("/credits")}
               style={styles.primaryButton}
               containerStyle={styles.primaryButtonContainer}
             >
@@ -175,11 +180,10 @@ export function DesktopWebRail() {
                 forceKurdishFont={isKu}
                 latinRole="bold"
               >
-                {t("subscription.comparePlans")}
+                {isKu ? "پاکەتەکان ببینە" : isAr ? "عرض الحزم" : "View credit packs"}
               </AppText>
             </PremiumPressable>
           </View>
-        ) : null}
 
         <PremiumPressable
           accessibilityRole="button"
@@ -382,9 +386,15 @@ function createStyles(colors: any, isDark: boolean) {
       fontSize: 13,
       lineHeight: 18,
     },
-    mascot: {
-      width: 92,
-      height: 92,
+    walletArt: {
+      width: 72,
+      height: 72,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 22,
+      backgroundColor: isDark
+        ? "rgba(22,139,210,0.14)"
+        : "#EAF7FE",
     },
     primaryButtonContainer: {
       alignSelf: "stretch",

@@ -238,178 +238,201 @@ export function useGeminiLiveTutor() {
     sessionTokenRef.current = sessionToken;
     const isCurrentSession = () => sessionTokenRef.current === sessionToken;
 
-    setError(null);
-    setStatus("connecting");
-    setSessionActive(true);
-    setPhase("intro_ku");
-    setTurns([]);
-    setSessionWords(createEmptySessionWordState());
-    sessionStartTimeRef.current = Date.now();
-    activeWordRef.current = null;
-    aiTurnTextRef.current = "";
-    userTurnTextRef.current = "";
-    setTranscript("");
+    const attemptConnect = async (attempt: number): Promise<void> => {
+      if (!isCurrentSession()) return;
 
-    playerRef.current?.destroy();
-    playerRef.current = new LivePcmPlayer(
-      (isPlaying) => {
-        setSpeaking(isPlaying);
-        if (isPlaying) {
-          micMutedRef.current = true;
-          setStatus("speaking");
-        } else {
-          if (autoLiveRef.current) {
-            micMutedRef.current = false;
-            if (micActiveRef.current) {
-              setStatus("listening");
-            } else {
-              void startMic();
-            }
+      setError(null);
+      setStatus("connecting");
+      setSessionActive(true);
+      if (attempt === 1) {
+        setPhase("intro_ku");
+        setTurns([]);
+        setSessionWords(createEmptySessionWordState());
+        sessionStartTimeRef.current = Date.now();
+        activeWordRef.current = null;
+        setTranscript("");
+      }
+      aiTurnTextRef.current = "";
+      userTurnTextRef.current = "";
+
+      playerRef.current?.destroy();
+      playerRef.current = new LivePcmPlayer(
+        (isPlaying) => {
+          if (!isCurrentSession()) return;
+          setSpeaking(isPlaying);
+          if (isPlaying) {
+            micMutedRef.current = true;
+            setStatus("speaking");
           } else {
-            setStatus("live");
+            if (autoLiveRef.current) {
+              micMutedRef.current = false;
+              if (micActiveRef.current) {
+                setStatus("listening");
+              } else {
+                void startMic();
+              }
+            } else {
+              setStatus("live");
+            }
           }
-        }
-      },
-      (message) => {
-        if (!isCurrentSession()) return;
-        setError(message);
+        },
+        (message) => {
+          if (!isCurrentSession()) return;
+          handleConnectionError(message, attempt);
+        },
+      );
+
+      const session = new GeminiLiveSession();
+      sessionRef.current = session;
+
+      try {
+        await session.connect({
+          onSetupComplete: () => {
+            if (!isCurrentSession()) return;
+            setStatus("live");
+            session.startGreeting();
+          },
+          onAudio: (pcm) => {
+            if (!isCurrentSession()) return;
+            micMutedRef.current = true;
+            playerRef.current?.enqueueBase64Pcm(pcm);
+          },
+          onText: () => {
+            // Audio-only responses are already captured by output transcription.
+          },
+          onInputTranscription: (text) => {
+            if (!isCurrentSession()) return;
+            const next = text.trim();
+            if (!next) return;
+            const current = userTurnTextRef.current;
+            userTurnTextRef.current = next.startsWith(current) ? next : `${current} ${next}`.trim();
+          },
+          onOutputTranscription: (text) => {
+            if (!isCurrentSession()) return;
+            appendAiText(text);
+          },
+          onTurnComplete: () => {
+            if (!isCurrentSession()) return;
+            flushTranscript();
+            const userResponseText = userTurnTextRef.current.trim();
+            if (userResponseText) {
+              recordUserTurn(userResponseText);
+              userTurnTextRef.current = "";
+            }
+
+            const aiResponseText = aiTurnTextRef.current.trim();
+            aiTurnTextRef.current = "";
+
+            // 1. Process AI response text for word introductions
+            const currentLevel = useSettingsStore.getState().englishLevel || 5;
+            const levelWordBank = WORD_BANKS[currentLevel] || [];
+            let detectedWord: string | null = null;
+
+            for (const entry of levelWordBank) {
+              if (new RegExp(`\\b${entry.word}\\b`, 'i').test(aiResponseText)) {
+                detectedWord = entry.word;
+                break;
+              }
+            }
+
+            if (detectedWord) {
+              activeWordRef.current = detectedWord;
+              setSessionWords((prev) => {
+                if (prev.introduced.includes(detectedWord!)) return prev;
+                return {
+                  ...prev,
+                  introduced: [...prev.introduced, detectedWord!],
+                  wordsSinceLastConversation: prev.wordsSinceLastConversation + 1,
+                };
+              });
+            }
+
+            // 2. Add AI turn to history log
+            if (aiResponseText.length > 0) {
+              setTurns((prev) => [
+                ...prev,
+                {
+                  id: `ai-${Date.now()}`,
+                  sender: "ai",
+                  text: aiResponseText,
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  targetWord: detectedWord || undefined,
+                },
+              ]);
+            }
+
+            // 3. Fallback: if player isn't playing and has no pending chunks, recover state
+            if (!playerRef.current?.isPlaying) {
+              setSpeaking(false);
+              if (autoLiveRef.current) {
+                void startMic();
+              } else {
+                setStatus("live");
+              }
+            }
+          },
+          onInterrupted: () => {
+            if (!isCurrentSession()) return;
+            if (transcriptFlushRef.current) {
+              clearTimeout(transcriptFlushRef.current);
+              transcriptFlushRef.current = null;
+            }
+            aiTurnTextRef.current = "";
+            userTurnTextRef.current = "";
+            setTranscript("");
+            stopPlayer();
+            if (!playerRef.current?.isPlaying) {
+              setSpeaking(false);
+              if (autoLiveRef.current) {
+                void startMic();
+              } else {
+                setStatus("live");
+              }
+            }
+          },
+          onError: (msg) => {
+            if (!isCurrentSession()) return;
+            handleConnectionError(msg, attempt);
+          },
+          onClose: (reason) => {
+            if (!isCurrentSession()) return;
+            handleConnectionError(reason || "Gemini Live connection closed.", attempt);
+          },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not connect to Live tutor.";
+        handleConnectionError(msg, attempt);
+      }
+    };
+
+    const handleConnectionError = (msg: string, attempt: number) => {
+      if (!isCurrentSession()) return;
+
+      console.warn(`[LiveTutor] Connection attempt ${attempt} failed: ${msg}`);
+
+      // Determine if error is transient and we should retry
+      const isTransient =
+        !/sign in|auth|unauthorized|limit|quota|config/i.test(msg);
+
+      if (isTransient && attempt < 2) {
+        console.log("[LiveTutor] Retrying connection in 1.5 seconds...");
+        setStatus("connecting");
+        void stopMic();
+        sessionRef.current?.disconnect();
+        setTimeout(() => {
+          void attemptConnect(attempt + 1);
+        }, 1500);
+      } else {
+        setError(msg);
         setSessionActive(false);
         setSpeaking(false);
         setStatus("error");
         void stopMic();
         sessionRef.current?.disconnect();
-      },
-    );
+      }
+    };
 
-    const session = new GeminiLiveSession();
-    sessionRef.current = session;
-
-    try {
-      await session.connect({
-        onSetupComplete: () => {
-          if (!isCurrentSession()) return;
-          setStatus("live");
-          session.startGreeting();
-        },
-        onAudio: (pcm) => {
-          if (!isCurrentSession()) return;
-          micMutedRef.current = true;
-          playerRef.current?.enqueueBase64Pcm(pcm);
-        },
-        onText: () => {
-          // Audio-only responses are already captured by output transcription.
-        },
-        onInputTranscription: (text) => {
-          if (!isCurrentSession()) return;
-          const next = text.trim();
-          if (!next) return;
-          const current = userTurnTextRef.current;
-          userTurnTextRef.current = next.startsWith(current) ? next : `${current} ${next}`.trim();
-        },
-        onOutputTranscription: (text) => {
-          if (!isCurrentSession()) return;
-          appendAiText(text);
-        },
-        onTurnComplete: () => {
-          if (!isCurrentSession()) return;
-          flushTranscript();
-          const userResponseText = userTurnTextRef.current.trim();
-          if (userResponseText) {
-            recordUserTurn(userResponseText);
-            userTurnTextRef.current = "";
-          }
-
-          const aiResponseText = aiTurnTextRef.current.trim();
-          aiTurnTextRef.current = "";
-
-          // 1. Process AI response text for word introductions
-          const currentLevel = useSettingsStore.getState().englishLevel || 5;
-          const levelWordBank = WORD_BANKS[currentLevel] || [];
-          let detectedWord: string | null = null;
-
-          for (const entry of levelWordBank) {
-            if (new RegExp(`\\b${entry.word}\\b`, 'i').test(aiResponseText)) {
-              detectedWord = entry.word;
-              break;
-            }
-          }
-
-          if (detectedWord) {
-            activeWordRef.current = detectedWord;
-            setSessionWords((prev) => {
-              if (prev.introduced.includes(detectedWord!)) return prev;
-              return {
-                ...prev,
-                introduced: [...prev.introduced, detectedWord!],
-                wordsSinceLastConversation: prev.wordsSinceLastConversation + 1,
-              };
-            });
-          }
-
-          // 2. Add AI turn to history log
-          if (aiResponseText.length > 0) {
-            setTurns((prev) => [
-              ...prev,
-              {
-                id: `ai-${Date.now()}`,
-                sender: "ai",
-                text: aiResponseText,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                targetWord: detectedWord || undefined,
-              },
-            ]);
-          }
-
-          // 3. Fallback: if player isn't playing and has no pending chunks, recover state
-          if (!playerRef.current?.isPlaying) {
-            setSpeaking(false);
-            if (autoLiveRef.current) {
-              void startMic();
-            } else {
-              setStatus("live");
-            }
-          }
-        },
-        onInterrupted: () => {
-          if (!isCurrentSession()) return;
-          if (transcriptFlushRef.current) {
-            clearTimeout(transcriptFlushRef.current);
-            transcriptFlushRef.current = null;
-          }
-          aiTurnTextRef.current = "";
-          userTurnTextRef.current = "";
-          setTranscript("");
-          stopPlayer();
-          if (!playerRef.current?.isPlaying) {
-            setSpeaking(false);
-            if (autoLiveRef.current) {
-              void startMic();
-            } else {
-              setStatus("live");
-            }
-          }
-        },
-        onError: (msg) => {
-          if (!isCurrentSession()) return;
-          setError(msg);
-          setSessionActive(false);
-          setStatus("error");
-        },
-        onClose: (reason) => {
-          if (!isCurrentSession()) return;
-          setSessionActive(false);
-          setSpeaking(false);
-          void stopMic();
-          setError(reason || "Gemini Live connection closed.");
-          setStatus("error");
-        },
-      });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not connect to Live tutor.";
-      setError(msg);
-      setSessionActive(false);
-      setStatus("error");
-    }
+    void attemptConnect(1);
   }, [appendAiText, configured, flushTranscript, recordUserTurn, startMic, stopMic, stopPlayer]);
 
   // Intercept client inputs to track speech and parse onboarding

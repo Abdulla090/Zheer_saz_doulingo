@@ -1,5 +1,8 @@
 import { AppText } from "../components/ui/AppText";
 import { IOSPressable as TouchableOpacity } from "../components/ui/ios-pressable";
+import { TwinoBrandMark } from "../components/branding/twino-brand-mark";
+import { TwinoMascot } from "../components/mascot/TwinoMascot";
+import { PRIMARY_ACTION } from "../constants/primary-action";
 import { useI18n } from "../hooks/useI18n";
 import { supabase } from "../lib/supabase";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -10,7 +13,7 @@ import {
   Cancel01Icon,
   AlertCircleIcon,
 } from "@hugeicons/core-free-icons";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -24,15 +27,39 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontStore } from "../stores/useFontStore";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useSettingsStore } from "../stores/useSettingsStore";
+
+type AuthMode = "signIn" | "signUp" | "forgot" | "recovery";
+
+function getInitialMode(mode?: string): AuthMode {
+  if (mode === "forgot") return "forgot";
+  if (mode === "recovery" || mode === "reset") return "recovery";
+  if (mode === "signup") return "signUp";
+  return "signIn";
+}
+
+function getRecoveryRedirectUrl() {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    return `${window.location.origin}/auth?mode=recovery`;
+  }
+  return "twino://auth?mode=recovery";
+}
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { redirect, showSkip } = useLocalSearchParams<{ redirect?: string; showSkip?: string }>();
+  const {
+    redirect,
+    mode: modeParam,
+  } = useLocalSearchParams<{
+    redirect?: string;
+    mode?: string;
+  }>();
   const { locale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
   const { selectedFont } = useFontStore();
   const { colors, isDark } = useThemeColors();
+  const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const { width: windowWidth } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && windowWidth >= 900;
   const styles = useMemo(
@@ -40,158 +67,356 @@ export default function AuthScreen() {
     [colors, isDark, isDesktopWeb],
   );
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>(() =>
+    getInitialMode(modeParam),
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
-  
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingRecovery, setCheckingRecovery] = useState(
+    getInitialMode(modeParam) === "recovery",
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalDesc, setModalDesc] = useState("");
   const [modalType, setModalType] = useState<"success" | "error">("success");
 
-  const showModal = (title: string, desc: string, type: "success" | "error" = "success") => {
+  const showModal = (
+    title: string,
+    desc: string,
+    type: "success" | "error" = "success",
+  ) => {
     setModalTitle(title);
     setModalDesc(desc);
     setModalType(type);
     setModalVisible(true);
   };
 
-  const validateEmail = (val: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  const changeMode = (nextMode: AuthMode) => {
+    setAuthMode(nextMode);
+    setErrorMessage(null);
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordVisible(false);
   };
 
-  const handleSubmit = async () => {
+  useEffect(() => {
+    const nextMode = getInitialMode(modeParam);
+    setAuthMode(nextMode);
+    setCheckingRecovery(nextMode === "recovery");
+  }, [modeParam]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthMode("recovery");
+        setCheckingRecovery(false);
+        setErrorMessage(null);
+      }
+    });
+
+    if (authMode === "recovery") {
+      void supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          setCheckingRecovery(false);
+          return;
+        }
+
+        setCheckingRecovery(false);
+        setAuthMode("forgot");
+        showModal(
+          isKu ? "بەستەرەکە بەسەرچووە" : "Reset link expired",
+          isKu
+            ? "تکایە داواکارییەکی نوێی گۆڕینی تێپەڕەوشە بنێرە."
+            : "This recovery link is invalid or expired. Request a fresh password reset email.",
+          "error",
+        );
+      });
+    }
+
+    return () => subscription.unsubscribe();
+  }, [authMode, isKu]);
+
+  const validateEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+  const validateStrongPassword = (value: string) =>
+    value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+
+  const handleAuthSubmit = async () => {
     setErrorMessage(null);
+    const isSignUp = authMode === "signUp";
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!email || !password) {
-      setErrorMessage(isKu ? "تكایە ئیمەیڵ و تێپەڕەوشە بنووسە" : "Please fill in all required fields");
+    if (!normalizedEmail || !password) {
+      setErrorMessage(
+        isKu
+          ? "تکایە ئیمەیڵ و تێپەڕەوشە بنووسە"
+          : "Enter your email and password to continue.",
+      );
       return;
     }
-
-    if (!validateEmail(email)) {
-      setErrorMessage(isKu ? "ناونیشانی ئیمەیڵەکە ڕاست نییە" : "Please enter a valid email address");
+    if (!validateEmail(normalizedEmail)) {
+      setErrorMessage(
+        isKu ? "ناونیشانی ئیمەیڵەکە ڕاست نییە" : "Enter a valid email address.",
+      );
       return;
     }
-
-    if (!isSignUp && password.length < 6) {
-      setErrorMessage(isKu ? "تێپەڕەوشە دەبێت بەلایەنی کەمەوە ٦ پیت بێت" : "Password must be at least 6 characters");
-      return;
-    }
-
-    if (
-      isSignUp &&
-      (password.length < 8 ||
-        !/[A-Za-z]/.test(password) ||
-        !/\d/.test(password))
-    ) {
+    if (isSignUp && !validateStrongPassword(password)) {
       setErrorMessage(
         isKu
           ? "تێپەڕەوشە دەبێت لانیکەم ٨ پیت بێت و پیت و ژمارەی تێدا بێت"
-          : "Use at least 8 characters with both letters and numbers",
+          : "Use at least 8 characters with both letters and numbers.",
+      );
+      return;
+    }
+    if (isSignUp && (!username.trim() || !displayName.trim())) {
+      setErrorMessage(
+        isKu
+          ? "تکایە ناوی بەکارهێنەر و ناوی پیشاندان بنووسە"
+          : "Add a display name and username.",
       );
       return;
     }
 
     setLoading(true);
-
     try {
       if (isSignUp) {
-        if (!username || !displayName) {
-          setErrorMessage(isKu ? "تكایە ناوی بەکارهێنەر و ناوی پیشاندان بنووسە" : "Please fill in username and display name");
-          setLoading(false);
-          return;
-        }
-
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
             data: {
               username: username.toLowerCase().trim(),
               display_name: displayName.trim(),
+              selected_mascot_id: selectedMascotId,
             },
           },
         });
-
         if (error) throw error;
 
         if (data.session) {
           showModal(
-            isKu ? "تۆماربوون سەرکەوتوو بوو!" : "Registration Successful!",
-            isKu ? "ئەکاونتەکەت دروستکرا و بە سەرکەوتوویی چوویە ژوورەوە." : "Your account was successfully created and you are now signed in.",
-            "success"
+            isKu ? "ئەکاونتەکەت ئامادەیە" : "Your account is ready",
+            isKu
+              ? "بە سەرکەوتوویی چوویتە ژوورەوە."
+              : "Account created. You are securely signed in.",
           );
-          setTimeout(() => router.replace((redirect as any) || "/more"), 1500);
+          setTimeout(() => router.replace((redirect as any) || "/more"), 900);
         } else {
           showModal(
-            isKu ? "تۆماربوون سەرکەوتوو بوو!" : "Account Created!",
-            isKu ? "تکایە سەیری ئیمەیڵەکەت بکە بۆ چالاککردنی ئەکاونتەکەت." : "Please check your inbox to confirm your email before logging in.",
-            "success"
+            isKu ? "ئیمەیڵەکەت بپشکنە" : "Check your email",
+            isKu
+              ? "کۆد یان بەستەری پشتڕاستکردنەوەمان بۆ ناردیت."
+              : "We sent your confirmation code or secure link. Open it to finish creating your account.",
           );
-          setEmail("");
           setPassword("");
           setUsername("");
           setDisplayName("");
+          setAuthMode("signIn");
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: normalizedEmail,
           password,
         });
-
         if (error) throw error;
+
         showModal(
-          isKu ? "چوونەژوورەوە سەرکەوتوو بوو!" : "Welcome Back!",
-          isKu ? "بە سەرکەوتوویی چوویە ژوورەوە." : "You have logged in successfully.",
-          "success"
+          isKu ? "بەخێربێیتەوە" : "Welcome back",
+          isKu
+            ? "بە سەرکەوتوویی چوویتە ژوورەوە."
+            : "You are signed in. Your learning progress is ready.",
         );
-        setTimeout(() => router.replace((redirect as any) || "/more"), 1000);
+        setTimeout(() => router.replace((redirect as any) || "/more"), 700);
       }
-    } catch (err: any) {
-      console.error("Auth error:", err);
-      const errMsg = err.message || (isKu ? "هەڵەیەک ڕوویدا" : "An unexpected error occurred");
-      setErrorMessage(errMsg);
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        (isKu ? "هەڵەیەک ڕوویدا" : "Something went wrong. Please try again.");
+      setErrorMessage(message);
       showModal(
-        isKu ? "هەڵەیەک ڕوویدا" : "Authentication Error",
-        errMsg,
-        "error"
+        isKu ? "نەتوانرا بەردەوام بێت" : "Could not continue",
+        message,
+        "error",
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleForgotPassword = async () => {
+    setErrorMessage(null);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!validateEmail(normalizedEmail)) {
+      setErrorMessage(
+        isKu
+          ? "ئیمەیڵێکی دروست بنووسە بۆ گەڕاندنەوەی ئەکاونتەکەت"
+          : "Enter the email address connected to your account.",
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        normalizedEmail,
+        { redirectTo: getRecoveryRedirectUrl() },
+      );
+      if (error) throw error;
+
+      showModal(
+        isKu ? "ئیمەیڵەکەت بپشکنە" : "Reset email sent",
+        isKu
+          ? "کۆد یان بەستەری پارێزراوی گۆڕینی تێپەڕەوشەمان بۆ ناردیت. ئەگەر نەیبینیت، سپام بپشکنە."
+          : "Use the code or secure link in your inbox to reset your password. Check spam if it does not arrive.",
+      );
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        (isKu
+          ? "نەتوانرا ئیمەیڵی گۆڕینی تێپەڕەوشە بنێردرێت"
+          : "We could not send the reset email. Try again shortly.");
+      setErrorMessage(message);
+      showModal(
+        isKu ? "ناردن سەرکەوتوو نەبوو" : "Email not sent",
+        message,
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    setErrorMessage(null);
+    if (!validateStrongPassword(newPassword)) {
+      setErrorMessage(
+        isKu
+          ? "تێپەڕەوشە دەبێت لانیکەم ٨ پیت بێت و پیت و ژمارەی تێدا بێت"
+          : "Use at least 8 characters with both letters and numbers.",
+      );
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMessage(
+        isKu ? "تێپەڕەوشەکان یەکسان نین" : "The passwords do not match.",
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+
+      showModal(
+        isKu ? "تێپەڕەوشە گۆڕدرا" : "Password updated",
+        isKu
+          ? "تێپەڕەوشە نوێیەکەت پارێزرا و بە سەرکەوتوویی چوویتە ژوورەوە."
+          : "Your new password is saved and you are securely signed in.",
+      );
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => router.replace((redirect as any) || "/more"), 1000);
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        (isKu
+          ? "نەتوانرا تێپەڕەوشەکە بگۆڕدرێت"
+          : "We could not update your password. Request a new reset link.");
+      setErrorMessage(message);
+      showModal(
+        isKu ? "گۆڕین سەرکەوتوو نەبوو" : "Password not updated",
+        message,
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isSignUp = authMode === "signUp";
+  const isForgot = authMode === "forgot";
+  const isRecovery = authMode === "recovery";
+
+  const title = isRecovery
+    ? isKu
+      ? "تێپەڕەوشەی نوێ دابنێ"
+      : "Create a new password"
+    : isForgot
+      ? isKu
+        ? "گەڕاندنەوەی ئەکاونت"
+        : "Reset your password"
+      : isSignUp
+        ? isKu
+          ? "ئەکاونتێک دروست بکە"
+          : "Create your account"
+        : isKu
+          ? "بەخێربێیتەوە"
+          : "Welcome back";
+
+  const subtitle = isRecovery
+    ? isKu
+      ? "تێپەڕەوشەیەکی بەهێز هەڵبژێرە کە پێشتر بەکارت نەهێناوە."
+      : "Choose a strong password you have not used before."
+    : isForgot
+      ? isKu
+        ? "ئیمەیڵەکەت بنووسە تا بەستەر یان کۆدی گۆڕینت بۆ بنێرین."
+        : "Enter your account email and we will send a secure recovery link or code."
+      : isSignUp
+        ? isKu
+          ? "پێشکەوتنت بپارێزە و لە هەر ئامێرێکەوە بەردەوام بە."
+          : "Save your progress and keep learning from any device."
+        : isKu
+          ? "لەو شوێنەوە بەردەوام بە کە وازت لێهێنا."
+          : "Sign in to continue exactly where you left off.";
+
   return (
     <View style={styles.root}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.flex}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            flexGrow: 1,
-            paddingTop: insets.top + 80,
-            paddingBottom: insets.bottom + 40,
-            paddingHorizontal: 24,
-            justifyContent: "center",
-            alignItems: isDesktopWeb ? "center" : "stretch",
-          }}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + (isDesktopWeb ? 32 : 72),
+              paddingBottom: insets.bottom + 32,
+            },
+          ]}
         >
-          {/* Back Button */}
           <TouchableOpacity
             style={[
               styles.backBtn,
               { top: insets.top + 16 },
-              isRtl ? { right: 20, left: "auto" } : { left: 20, right: "auto" },
+              isRtl ? { right: 20 } : { left: 20 },
             ]}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (isForgot || isRecovery) {
+                changeMode("signIn");
+              } else {
+                router.back();
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={isKu ? "گەڕانەوە" : "Go back"}
           >
             <HugeiconsIcon
               icon={ArrowLeft02Icon}
@@ -202,440 +427,949 @@ export default function AuthScreen() {
             />
           </TouchableOpacity>
 
-          <View style={styles.shadcnContainer}>
-            <View style={styles.shadcnHeader}>
-              <AppText style={styles.shadcnTitle} forceLatinFont latinRole="bold">
-                {isSignUp ? (isKu ? "تۆمارکردنی ئەکاونت" : "Create an account") : (isKu ? "چوونە ژوورەوە" : "Welcome back")}
-              </AppText>
-              <AppText style={styles.shadcnSubTitle}>
-                {isSignUp
-                  ? (isKu ? "زانیارییەکانت بنووسە بۆ دروستکردنی ئەکاونتی نوێ" : "Enter your details to create your learning account")
-                  : (isKu ? "ناونیشانی ئیمەیڵ و تێپەڕەوشەکەت بنووسە بۆ چوونەژوورەوە" : "Enter your email and password to access your profile")}
-              </AppText>
-            </View>
-
-            {/* Tabs */}
-            <View style={[styles.shadcnTabsContainer, isKu && { flexDirection: "row-reverse" }]}>
-              <TouchableOpacity
-                style={[styles.shadcnTab, !isSignUp && styles.shadcnActiveTab]}
-                onPress={() => {
-                  setIsSignUp(false);
-                  setErrorMessage(null);
-                }}
-              >
-                <AppText
-                  style={[styles.shadcnTabText, !isSignUp && styles.shadcnActiveTabText]}
-                  forceLatinFont
-                  latinRole="bold"
-                >
-                  {isKu ? "چوونەژوورەوە" : "Sign In"}
-                </AppText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.shadcnTab, isSignUp && styles.shadcnActiveTab]}
-                onPress={() => {
-                  setIsSignUp(true);
-                  setErrorMessage(null);
-                }}
-              >
-                <AppText
-                  style={[styles.shadcnTabText, isSignUp && styles.shadcnActiveTabText]}
-                  forceLatinFont
-                  latinRole="bold"
-                >
-                  {isKu ? "تۆماربوون" : "Sign Up"}
-                </AppText>
-              </TouchableOpacity>
-            </View>
-
-            {/* Error Alert */}
-            {errorMessage && (
-              <View style={[styles.shadcnAlertError, isKu && { flexDirection: "row-reverse" }]}>
-                <HugeiconsIcon icon={AlertCircleIcon} size={16} color={colors.error} strokeWidth={2.5} />
-                <AppText style={styles.shadcnAlertErrorText}>{errorMessage}</AppText>
-              </View>
-            )}
-
-            <View style={styles.shadcnForm}>
-              {isSignUp && (
-                <>
-                  {/* Display Name Input */}
-                  <View style={styles.shadcnField}>
-                    <AppText style={styles.shadcnLabel}>
-                      {isKu ? "ناوی تەواو" : "Display Name"}
+          <View style={styles.authShell}>
+            {isDesktopWeb ? (
+              <View style={styles.brandPanel}>
+                <View style={styles.brandOrbOne} />
+                <View style={styles.brandOrbTwo} />
+                <View style={styles.brandWordmark}>
+                  <TwinoBrandMark size={42} showName nameSize={24} />
+                </View>
+                <View style={styles.brandCopy}>
+                  <View style={styles.brandBadge}>
+                    <View style={styles.brandBadgeDot} />
+                    <AppText style={styles.brandBadgeText} forceLatinFont latinRole="bold">
+                      BUILT FOR DAILY PROGRESS
                     </AppText>
-                    <TextInput
-                      style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
-                      placeholder={isKu ? "جەمال عەلی" : "Jamal Ali"}
-                      placeholderTextColor={colors.mutedForeground}
-                      value={displayName}
-                      onChangeText={setDisplayName}
-                      autoCapitalize="words"
-                    />
                   </View>
-
-                  {/* Username Input */}
-                  <View style={styles.shadcnField}>
-                    <AppText style={styles.shadcnLabel}>
-                      {isKu ? "ناوی بەکارهێنەر" : "Username"}
-                    </AppText>
-                    <TextInput
-                      style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
-                      placeholder={isKu ? "jamal_ali" : "jamal_ali"}
-                      placeholderTextColor={colors.mutedForeground}
-                      value={username}
-                      onChangeText={(val) => setUsername(val.replace(/\s+/g, ""))}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-                </>
-              )}
-
-              {/* Email Input */}
-              <View style={styles.shadcnField}>
-                <AppText style={styles.shadcnLabel}>
-                  {isKu ? "ناونیشانی ئیمەیڵ" : "Email Address"}
-                </AppText>
-                <TextInput
-                  style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
-                  placeholder={isKu ? "jamal@example.com" : "name@example.com"}
-                  placeholderTextColor={colors.mutedForeground}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              {/* Password Input */}
-              <View style={styles.shadcnField}>
-                <AppText style={styles.shadcnLabel}>
-                  {isKu ? "تێپەڕەوشە" : "Password"}
-                </AppText>
-                <TextInput
-                  style={[styles.shadcnInput, { fontFamily: selectedFont }, isKu && { textAlign: "right" }]}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                {isSignUp ? (
-                  <AppText style={styles.passwordHint}>
-                    {isKu
-                      ? "لانیکەم ٨ پیت، لەگەڵ پیت و ژمارە"
-                      : "At least 8 characters, including letters and numbers"}
+                  <AppText style={styles.brandTitle} forceLatinFont latinRole="bold">
+                    Small lessons.{"\n"}Real confidence.
                   </AppText>
+                  <AppText style={styles.brandBody} forceLatinFont>
+                    Speaking, listening, and practical English in one focused learning path.
+                  </AppText>
+                  <View style={styles.benefitList}>
+                    {[
+                      "Progress synced across devices",
+                      "Short sessions that fit your day",
+                      "A private, secure learning account",
+                    ].map((benefit) => (
+                      <View key={benefit} style={styles.benefitRow}>
+                        <View style={styles.benefitCheck}>
+                          <HugeiconsIcon
+                            icon={CheckmarkCircle02Icon}
+                            size={18}
+                            color="#FFFFFF"
+                            strokeWidth={2.8}
+                          />
+                        </View>
+                        <AppText style={styles.benefitText} forceLatinFont>
+                          {benefit}
+                        </AppText>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.brandMascot}>
+                  <TwinoMascot size={180} mascotId="pingo" pose="encouraging" />
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.formPanel}>
+              <View style={styles.mobileBrand}>
+                <TwinoBrandMark size={54} showName nameSize={28} />
+              </View>
+
+              <View style={styles.formWrap}>
+                <View style={styles.header}>
+                  <AppText
+                    style={[styles.title, { textAlign: isRtl ? "right" : "left" }]}
+                    forceLatinFont={!isKu}
+                    forceKurdishFont={isKu}
+                    latinRole="bold"
+                  >
+                    {title}
+                  </AppText>
+                  <AppText
+                    style={[styles.subtitle, { textAlign: isRtl ? "right" : "left" }]}
+                    forceKurdishFont={isKu}
+                  >
+                    {subtitle}
+                  </AppText>
+                </View>
+
+                {!isForgot && !isRecovery ? (
+                  <View
+                    style={[
+                      styles.tabs,
+                      isRtl && { flexDirection: "row-reverse" },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={[styles.tab, !isSignUp && styles.activeTab]}
+                      onPress={() => changeMode("signIn")}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: !isSignUp }}
+                    >
+                      <AppText
+                        style={[styles.tabText, !isSignUp && styles.activeTabText]}
+                        forceLatinFont={!isKu}
+                        forceKurdishFont={isKu}
+                        latinRole="bold"
+                      >
+                        {isKu ? "چوونەژوورەوە" : "Sign in"}
+                      </AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.tab, isSignUp && styles.activeTab]}
+                      onPress={() => changeMode("signUp")}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: isSignUp }}
+                    >
+                      <AppText
+                        style={[styles.tabText, isSignUp && styles.activeTabText]}
+                        forceLatinFont={!isKu}
+                        forceKurdishFont={isKu}
+                        latinRole="bold"
+                      >
+                        {isKu ? "تۆماربوون" : "Create account"}
+                      </AppText>
+                    </TouchableOpacity>
+                  </View>
                 ) : null}
+
+                {errorMessage ? (
+                  <View
+                    style={[
+                      styles.errorAlert,
+                      isRtl && { flexDirection: "row-reverse" },
+                    ]}
+                    accessibilityRole="alert"
+                  >
+                    <HugeiconsIcon
+                      icon={AlertCircleIcon}
+                      size={18}
+                      color={colors.error}
+                      strokeWidth={2.5}
+                    />
+                    <AppText style={styles.errorText}>{errorMessage}</AppText>
+                  </View>
+                ) : null}
+
+                {checkingRecovery ? (
+                  <View style={styles.recoveryLoader}>
+                    <ActivityIndicator size="small" color="#168BD2" />
+                    <AppText style={styles.recoveryLoaderText}>
+                      {isKu ? "بەستەرە پارێزراوەکە دەپشکنین..." : "Verifying your secure reset link…"}
+                    </AppText>
+                  </View>
+                ) : (
+                  <View style={styles.form}>
+                    {isSignUp ? (
+                      <View style={styles.nameRow}>
+                        <View style={styles.growField}>
+                          <Field
+                            label={isKu ? "ناوی پیشاندان" : "Display name"}
+                            value={displayName}
+                            onChangeText={setDisplayName}
+                            placeholder={isKu ? "جەمال عەلی" : "Jamal Ali"}
+                            selectedFont={selectedFont}
+                            colors={colors}
+                            styles={styles}
+                            isRtl={isRtl}
+                            autoCapitalize="words"
+                          />
+                        </View>
+                        <View style={styles.growField}>
+                          <Field
+                            label={isKu ? "ناوی بەکارهێنەر" : "Username"}
+                            value={username}
+                            onChangeText={(value) =>
+                              setUsername(value.replace(/\s+/g, ""))
+                            }
+                            placeholder="jamal_ali"
+                            selectedFont={selectedFont}
+                            colors={colors}
+                            styles={styles}
+                            isRtl={isRtl}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                          />
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {!isRecovery ? (
+                      <Field
+                        label={isKu ? "ناونیشانی ئیمەیڵ" : "Email address"}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="name@example.com"
+                        selectedFont={selectedFont}
+                        colors={colors}
+                        styles={styles}
+                        isRtl={isRtl}
+                        keyboardType="email-address"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    ) : null}
+
+                    {!isForgot ? (
+                      <>
+                        <PasswordField
+                          label={
+                            isRecovery
+                              ? isKu
+                                ? "تێپەڕەوشەی نوێ"
+                                : "New password"
+                              : isKu
+                                ? "تێپەڕەوشە"
+                                : "Password"
+                          }
+                          value={isRecovery ? newPassword : password}
+                          onChangeText={isRecovery ? setNewPassword : setPassword}
+                          visible={passwordVisible}
+                          onToggle={() => setPasswordVisible((value) => !value)}
+                          selectedFont={selectedFont}
+                          colors={colors}
+                          styles={styles}
+                          isRtl={isRtl}
+                          showLabel={isKu ? "پیشاندان" : "Show"}
+                          hideLabel={isKu ? "شاردنەوە" : "Hide"}
+                          autoComplete={isRecovery ? "new-password" : "current-password"}
+                        />
+                        {isSignUp || isRecovery ? (
+                          <AppText style={styles.passwordHint}>
+                            {isKu
+                              ? "لانیکەم ٨ پیت، لەگەڵ پیت و ژمارە"
+                              : "At least 8 characters, including letters and numbers"}
+                          </AppText>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {isRecovery ? (
+                      <PasswordField
+                        label={isKu ? "دووبارەکردنەوەی تێپەڕەوشە" : "Confirm new password"}
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        visible={passwordVisible}
+                        onToggle={() => setPasswordVisible((value) => !value)}
+                        selectedFont={selectedFont}
+                        colors={colors}
+                        styles={styles}
+                        isRtl={isRtl}
+                        showLabel={isKu ? "پیشاندان" : "Show"}
+                        hideLabel={isKu ? "شاردنەوە" : "Hide"}
+                        autoComplete="new-password"
+                      />
+                    ) : null}
+
+                    {authMode === "signIn" ? (
+                      <TouchableOpacity
+                        onPress={() => changeMode("forgot")}
+                        style={[
+                          styles.forgotLink,
+                          { alignSelf: isRtl ? "flex-start" : "flex-end" },
+                        ]}
+                        accessibilityRole="link"
+                      >
+                        <AppText
+                          style={styles.forgotLinkText}
+                          forceKurdishFont={isKu}
+                          latinRole="bold"
+                        >
+                          {isKu ? "تێپەڕەوشەت لەبیرکردووە؟" : "Forgot password?"}
+                        </AppText>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                )}
+
+                {!checkingRecovery ? (
+                  <TouchableOpacity
+                    style={[styles.primaryButton, loading && styles.buttonDisabled]}
+                    onPress={
+                      isForgot
+                        ? handleForgotPassword
+                        : isRecovery
+                          ? handlePasswordUpdate
+                          : handleAuthSubmit
+                    }
+                    disabled={loading}
+                    accessibilityRole="button"
+                  >
+                    {loading ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <AppText
+                        style={styles.primaryButtonText}
+                        forceLatinFont={!isKu}
+                        forceKurdishFont={isKu}
+                        latinRole="bold"
+                      >
+                        {isForgot
+                          ? isKu
+                            ? "ناردنی بەستەری گۆڕین"
+                            : "Send reset link"
+                          : isRecovery
+                            ? isKu
+                              ? "پاراستنی تێپەڕەوشە"
+                              : "Save new password"
+                            : isSignUp
+                              ? isKu
+                                ? "دروستکردنی ئەکاونت"
+                                : "Create account"
+                              : isKu
+                                ? "چوونە ژوورەوە"
+                                : "Sign in"}
+                      </AppText>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+
+                {isForgot ? (
+                  <TouchableOpacity
+                    style={styles.secondaryAction}
+                    onPress={() => changeMode("signIn")}
+                  >
+                    <AppText style={styles.secondaryActionText} latinRole="bold">
+                      {isKu ? "گەڕانەوە بۆ چوونەژوورەوە" : "Back to sign in"}
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null}
+
+                {Platform.OS === "web" ? (
+                  <TouchableOpacity
+                    style={styles.plansLink}
+                    onPress={() => router.push("/credits")}
+                    accessibilityRole="link"
+                  >
+                    <AppText style={styles.plansLinkText} forceLatinFont latinRole="bold">
+                      View TWINO credits
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null}
+
+                <AppText style={styles.legalText} forceKurdishFont={isKu}>
+                  {isKu
+                    ? "بە بەردەوامبوون، ڕازی دەبیت بە مەرجەکان و سیاسەتی تایبەتمەندی TWINO."
+                    : "By continuing, you agree to TWINO’s Terms and Privacy Policy."}
+                </AppText>
               </View>
             </View>
-
-            {/* Action button */}
-            <TouchableOpacity
-              style={[styles.shadcnButton, loading && styles.shadcnButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <AppText style={styles.shadcnButtonText} forceLatinFont latinRole="bold">
-                  {isSignUp
-                    ? (isKu ? "تۆمارکردنی ئەکاونت" : "Create Account")
-                    : (isKu ? "چوونە ژوورەوە" : "Sign In")}
-                </AppText>
-              )}
-            </TouchableOpacity>
-
-            {/* Skip / Guest Play Button */}
-            {showSkip === "true" && (
-              <TouchableOpacity
-                style={styles.guestButton}
-                onPress={() => router.replace((redirect as any) || "/(tabs)")}
-                activeOpacity={0.7}
-              >
-                <AppText style={styles.guestButtonText} forceKurdishFont={isKu}>
-                  {isKu ? "وەک میوان بەردەوام بە" : "Continue as Guest"}
-                </AppText>
-              </TouchableOpacity>
-            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Sleek Shadcn UI Alert Dialog Overlay */}
-      {modalVisible && (
-        <View style={StyleSheet.absoluteFill}>
-          {/* Backdrop */}
+      {modalVisible ? (
+        <View
+          style={StyleSheet.absoluteFill}
+          accessibilityViewIsModal
+          accessibilityRole="alert"
+        >
           <View style={styles.modalBackdrop} />
-          {/* Dialog Container */}
           <View style={styles.modalWrapper}>
             <View style={styles.modalContent}>
-              <View style={[styles.modalHeader, isKu && { flexDirection: "row-reverse" }]}>
-                <HugeiconsIcon
-                  icon={modalType === "success" ? CheckmarkCircle02Icon : Cancel01Icon}
-                  size={20}
-                  color={modalType === "success" ? "#10B981" : "#EF4444"}
-                  strokeWidth={3}
-                />
-                <AppText style={styles.modalTitle} forceLatinFont={modalType === "success"} latinRole="bold">
+              <View
+                style={[
+                  styles.modalHeader,
+                  isRtl && { flexDirection: "row-reverse" },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.modalIcon,
+                    modalType === "error" && styles.modalErrorIcon,
+                  ]}
+                >
+                  <HugeiconsIcon
+                    icon={
+                      modalType === "success"
+                        ? CheckmarkCircle02Icon
+                        : Cancel01Icon
+                    }
+                    size={22}
+                    color={modalType === "success" ? "#168BD2" : "#EF4444"}
+                    strokeWidth={2.8}
+                  />
+                </View>
+                <AppText
+                  style={styles.modalTitle}
+                  forceKurdishFont={isKu}
+                  latinRole="bold"
+                >
                   {modalTitle}
                 </AppText>
               </View>
-              <AppText style={styles.modalDesc}>
+              <AppText style={styles.modalDesc} forceKurdishFont={isKu}>
                 {modalDesc}
               </AppText>
               <TouchableOpacity
-                style={styles.modalCloseBtn}
+                style={styles.modalCloseButton}
                 onPress={() => setModalVisible(false)}
-                activeOpacity={0.8}
               >
-                <AppText style={styles.modalCloseBtnText} forceLatinFont latinRole="bold">
-                  {isKu ? "باشە" : "Dismiss"}
+                <AppText style={styles.modalCloseText} latinRole="bold">
+                  {isKu ? "باشە" : "Got it"}
                 </AppText>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      )}
+      ) : null}
+    </View>
+  );
+}
+
+type FieldProps = {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  selectedFont: string;
+  colors: any;
+  styles: ReturnType<typeof createStyles>;
+  isRtl: boolean;
+  keyboardType?: "default" | "email-address";
+  autoComplete?: "email" | "current-password" | "new-password";
+  autoCapitalize?: "none" | "words";
+  autoCorrect?: boolean;
+};
+
+function Field({
+  label,
+  selectedFont,
+  colors,
+  styles,
+  isRtl,
+  ...inputProps
+}: FieldProps) {
+  return (
+    <View style={styles.field}>
+      <AppText
+        style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}
+        latinRole="bold"
+      >
+        {label}
+      </AppText>
+      <TextInput
+        {...inputProps}
+        style={[
+          styles.input,
+          { fontFamily: selectedFont, textAlign: isRtl ? "right" : "left" },
+        ]}
+        placeholderTextColor={colors.mutedForeground}
+      />
+    </View>
+  );
+}
+
+type PasswordFieldProps = Omit<
+  FieldProps,
+  "placeholder" | "keyboardType"
+> & {
+  visible: boolean;
+  onToggle: () => void;
+  showLabel: string;
+  hideLabel: string;
+};
+
+function PasswordField({
+  label,
+  value,
+  onChangeText,
+  visible,
+  onToggle,
+  showLabel,
+  hideLabel,
+  selectedFont,
+  colors,
+  styles,
+  isRtl,
+  autoComplete,
+}: PasswordFieldProps) {
+  return (
+    <View style={styles.field}>
+      <AppText
+        style={[styles.label, { textAlign: isRtl ? "right" : "left" }]}
+        latinRole="bold"
+      >
+        {label}
+      </AppText>
+      <View style={styles.passwordInputWrap}>
+        <TextInput
+          style={[
+            styles.input,
+            styles.passwordInput,
+            {
+              fontFamily: selectedFont,
+              textAlign: isRtl ? "right" : "left",
+              paddingRight: isRtl ? 14 : 68,
+              paddingLeft: isRtl ? 68 : 14,
+            },
+          ]}
+          placeholder="••••••••"
+          placeholderTextColor={colors.mutedForeground}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={!visible}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete={autoComplete}
+        />
+        <TouchableOpacity
+          style={[styles.passwordToggle, isRtl ? { left: 8 } : { right: 8 }]}
+          onPress={onToggle}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? hideLabel : showLabel}
+        >
+          <AppText style={styles.passwordToggleText} latinRole="bold">
+            {visible ? hideLabel : showLabel}
+          </AppText>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  backBtn: {
-    position: "absolute",
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    zIndex: 10,
-  },
-  shadcnContainer: {
-    width: "100%",
-    maxWidth: isDesktopWeb ? 460 : undefined,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  shadcnHeader: {
-    marginBottom: 20,
-  },
-  shadcnTitle: {
-    fontSize: 22,
-    color: colors.foreground,
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  shadcnSubTitle: {
-    fontSize: 13,
-    color: colors.mutedForeground,
-    lineHeight: 18,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  shadcnTabsContainer: {
-    flexDirection: "row",
-    backgroundColor: colors.muted,
-    borderRadius: 8,
-    padding: 2,
-    marginBottom: 20,
-  },
-  shadcnTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  shadcnActiveTab: {
-    backgroundColor: colors.surfaceRaised,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
-  },
-  shadcnTabText: {
-    fontSize: 13.5,
-    color: colors.mutedForeground,
-  },
-  shadcnActiveTabText: {
-    color: colors.foreground,
-  },
-  shadcnForm: {
-    gap: 14,
-    marginBottom: 20,
-  },
-  shadcnField: {
-    gap: 6,
-  },
-  shadcnLabel: {
-    fontSize: 13,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  passwordHint: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.mutedForeground,
-  },
-  shadcnInput: {
-    height: 42,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: colors.foreground,
-    backgroundColor: colors.surface,
-  },
-  shadcnButton: {
-    height: 42,
-    backgroundColor: isDark ? colors.primary : "#18181B",
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shadcnButtonDisabled: {
-    opacity: 0.7,
-  },
-  shadcnButtonText: {
-    color: "#FAFAFA",
-    fontSize: 14,
-  },
-  shadcnAlertError: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: isDark ? "rgba(239,68,68,0.12)" : "#FEF2F2",
-    borderWidth: 1,
-    borderColor: isDark ? "rgba(239,68,68,0.28)" : "#FEE2E2",
-    borderRadius: 6,
-    padding: 10,
-    gap: 8,
-    marginBottom: 16,
-  },
-  shadcnAlertErrorText: {
-    fontSize: 12.5,
-    color: isDark ? "#FCA5A5" : "#991B1B",
-    fontFamily: "DINNextRoundedMedium",
-    flex: 1,
-  },
-  modalBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(9, 9, 11, 0.4)",
-    zIndex: 998,
-  },
-  modalWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-    zIndex: 999,
-  },
-  modalContent: {
-    width: "100%",
-    maxWidth: 380,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-      },
-      android: {
-        elevation: 10,
-      },
-    }),
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  modalTitle: {
-    fontSize: 18,
-    color: colors.foreground,
-    letterSpacing: -0.4,
-    flex: 1,
-  },
-  modalDesc: {
-    fontSize: 13.5,
-    color: colors.mutedForeground,
-    lineHeight: 19,
-    marginBottom: 20,
-    fontFamily: "DINNextRoundedMedium",
-  },
-  modalCloseBtn: {
-    height: 40,
-    backgroundColor: isDark ? colors.primary : "#18181B",
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalCloseBtnText: {
-    color: "#FAFAFA",
-    fontSize: 13.5,
-  },
-  guestButton: {
-    height: 42,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-    marginTop: 10,
-  },
-  guestButtonText: {
-    color: colors.mutedForeground,
-    fontSize: 14,
-    fontFamily: "DINNextRoundedBold",
-  },
+    flex: { flex: 1 },
+    root: {
+      flex: 1,
+      backgroundColor: isDark ? "#0B1220" : "#F3F7FA",
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: isDesktopWeb ? 32 : 20,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    backBtn: {
+      position: "absolute",
+      width: 42,
+      height: 42,
+      borderRadius: 13,
+      backgroundColor: colors.surfaceRaised,
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      zIndex: 20,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 6px 20px rgba(15, 23, 42, 0.08)",
+          cursor: "pointer",
+        } as any,
+      }),
+    },
+    authShell: {
+      width: "100%",
+      maxWidth: isDesktopWeb ? 1080 : 520,
+      minHeight: isDesktopWeb ? 680 : undefined,
+      flexDirection: isDesktopWeb ? "row" : "column",
+      overflow: "hidden",
+      borderRadius: isDesktopWeb ? 30 : 0,
+      borderWidth: isDesktopWeb ? 1 : 0,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceRaised,
+      ...Platform.select({
+        web: isDesktopWeb
+          ? ({
+              boxShadow: isDark
+                ? "0 30px 80px rgba(0, 0, 0, 0.28)"
+                : "0 30px 80px rgba(15, 23, 42, 0.12)",
+            } as any)
+          : undefined,
+      }),
+    },
+    brandPanel: {
+      width: "43%",
+      minHeight: 680,
+      backgroundColor: "#0E5F95",
+      padding: 38,
+      position: "relative",
+      overflow: "hidden",
+    },
+    brandOrbOne: {
+      position: "absolute",
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      right: -150,
+      top: -100,
+      backgroundColor: "rgba(87, 194, 255, 0.18)",
+    },
+    brandOrbTwo: {
+      position: "absolute",
+      width: 230,
+      height: 230,
+      borderRadius: 115,
+      left: -110,
+      bottom: -70,
+      backgroundColor: "rgba(255, 255, 255, 0.08)",
+    },
+    brandWordmark: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 14,
+      backgroundColor: "#FFFFFF",
+    },
+    brandCopy: {
+      marginTop: 68,
+      zIndex: 2,
+    },
+    brandBadge: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 18,
+    },
+    brandBadgeDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: "#8EE3FF",
+    },
+    brandBadgeText: {
+      color: "#BEEBFF",
+      fontSize: 11,
+      letterSpacing: 1.2,
+    },
+    brandTitle: {
+      color: "#FFFFFF",
+      fontSize: 39,
+      lineHeight: 45,
+      letterSpacing: -1.4,
+    },
+    brandBody: {
+      color: "#D6F1FF",
+      fontSize: 15,
+      lineHeight: 23,
+      marginTop: 16,
+      maxWidth: 335,
+    },
+    benefitList: {
+      gap: 13,
+      marginTop: 28,
+    },
+    benefitRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 11,
+    },
+    benefitCheck: {
+      width: 24,
+      height: 24,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    benefitText: {
+      color: "#FFFFFF",
+      fontSize: 13.5,
+      lineHeight: 19,
+    },
+    brandMascot: {
+      position: "absolute",
+      right: 12,
+      bottom: -18,
+      zIndex: 1,
+    },
+    formPanel: {
+      flex: 1,
+      justifyContent: "center",
+      paddingHorizontal: isDesktopWeb ? 58 : 0,
+      paddingVertical: isDesktopWeb ? 42 : 0,
+      backgroundColor: colors.surfaceRaised,
+    },
+    mobileBrand: {
+      display: isDesktopWeb ? "none" : "flex",
+      alignItems: "center",
+      marginBottom: 30,
+    },
+    formWrap: {
+      width: "100%",
+      maxWidth: 470,
+      alignSelf: "center",
+    },
+    header: {
+      marginBottom: 24,
+    },
+    title: {
+      color: colors.foreground,
+      fontSize: isDesktopWeb ? 31 : 28,
+      lineHeight: isDesktopWeb ? 38 : 34,
+      letterSpacing: -0.9,
+    },
+    subtitle: {
+      color: colors.mutedForeground,
+      fontSize: 14.5,
+      lineHeight: 21,
+      marginTop: 8,
+    },
+    tabs: {
+      flexDirection: "row",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#EEF3F7",
+      borderRadius: 15,
+      padding: 4,
+      marginBottom: 22,
+    },
+    tab: {
+      flex: 1,
+      minHeight: 42,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+    },
+    activeTab: {
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 3px 10px rgba(15, 23, 42, 0.07)",
+        } as any,
+      }),
+    },
+    tabText: {
+      color: colors.mutedForeground,
+      fontSize: 13.5,
+    },
+    activeTabText: {
+      color: colors.foreground,
+    },
+    errorAlert: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 9,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(239,68,68,0.30)" : "#FECACA",
+      backgroundColor: isDark ? "rgba(239,68,68,0.10)" : "#FEF2F2",
+      marginBottom: 16,
+    },
+    errorText: {
+      flex: 1,
+      color: isDark ? "#FCA5A5" : "#991B1B",
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    form: {
+      gap: 15,
+    },
+    nameRow: {
+      flexDirection: isDesktopWeb ? "row" : "column",
+      gap: 12,
+    },
+    growField: {
+      flex: 1,
+      minWidth: 0,
+    },
+    field: {
+      gap: 7,
+    },
+    label: {
+      color: colors.foreground,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    input: {
+      width: "100%",
+      height: 50,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 13,
+      paddingHorizontal: 14,
+      color: colors.foreground,
+      backgroundColor: isDark ? colors.surface : "#FFFFFF",
+      fontSize: 14.5,
+      ...Platform.select({
+        web: {
+          outlineStyle: "none",
+        } as any,
+      }),
+    },
+    passwordInputWrap: {
+      position: "relative",
+      justifyContent: "center",
+    },
+    passwordInput: {
+      paddingHorizontal: 14,
+    },
+    passwordToggle: {
+      position: "absolute",
+      minWidth: 50,
+      height: 34,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 9,
+      ...Platform.select({
+        web: { cursor: "pointer" } as any,
+      }),
+    },
+    passwordToggleText: {
+      color: "#168BD2",
+      fontSize: 12,
+    },
+    passwordHint: {
+      color: colors.mutedForeground,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: -7,
+    },
+    forgotLink: {
+      minHeight: 28,
+      justifyContent: "center",
+      marginTop: -5,
+      ...Platform.select({
+        web: { cursor: "pointer" } as any,
+      }),
+    },
+    forgotLinkText: {
+      color: "#168BD2",
+      fontSize: 13,
+    },
+    primaryButton: {
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 14,
+      backgroundColor: PRIMARY_ACTION.face,
+      borderBottomWidth: 3,
+      borderBottomColor: PRIMARY_ACTION.rim,
+      marginTop: 22,
+      ...Platform.select({
+        web: { cursor: "pointer" } as any,
+      }),
+    },
+    buttonDisabled: {
+      opacity: 0.65,
+    },
+    primaryButtonText: {
+      color: "#FFFFFF",
+      fontSize: 15,
+      letterSpacing: 0.1,
+    },
+    secondaryAction: {
+      minHeight: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 8,
+    },
+    secondaryActionText: {
+      color: colors.foreground,
+      fontSize: 13.5,
+    },
+    plansLink: {
+      alignSelf: "center",
+      minHeight: 34,
+      justifyContent: "center",
+      marginTop: 10,
+      ...Platform.select({
+        web: { cursor: "pointer" } as any,
+      }),
+    },
+    plansLinkText: {
+      color: "#168BD2",
+      fontSize: 12.5,
+    },
+    legalText: {
+      color: colors.mutedForeground,
+      fontSize: 11.5,
+      lineHeight: 17,
+      textAlign: "center",
+      marginTop: 8,
+      paddingHorizontal: 10,
+    },
+    recoveryLoader: {
+      minHeight: 180,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
+    recoveryLoaderText: {
+      color: colors.mutedForeground,
+      fontSize: 13.5,
+    },
+    modalBackdrop: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: "rgba(5, 12, 24, 0.56)",
+    },
+    modalWrapper: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 22,
+      zIndex: 2,
+    },
+    modalContent: {
+      width: "100%",
+      maxWidth: 420,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceRaised,
+      padding: 24,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 28px 70px rgba(5, 12, 24, 0.28)",
+        } as any,
+        android: { elevation: 12 },
+      }),
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 13,
+    },
+    modalIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(22,139,210,0.15)" : "#E9F7FF",
+    },
+    modalErrorIcon: {
+      backgroundColor: isDark ? "rgba(239,68,68,0.13)" : "#FEF2F2",
+    },
+    modalTitle: {
+      flex: 1,
+      color: colors.foreground,
+      fontSize: 19,
+      lineHeight: 24,
+    },
+    modalDesc: {
+      color: colors.mutedForeground,
+      fontSize: 14,
+      lineHeight: 21,
+      marginBottom: 20,
+    },
+    modalCloseButton: {
+      height: 46,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: PRIMARY_ACTION.face,
+    },
+    modalCloseText: {
+      color: "#FFFFFF",
+      fontSize: 14,
+    },
   });
 }

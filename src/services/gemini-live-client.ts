@@ -31,7 +31,7 @@ type GeminiLiveTokenResponse = {
 async function createGeminiLiveToken(): Promise<string> {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session?.access_token) {
-    throw new Error("Sign in to use the live AI tutor.");
+    throw new Error("Sign in to use the AI tutor.");
   }
 
   const { data, error } =
@@ -41,26 +41,49 @@ async function createGeminiLiveToken(): Promise<string> {
     );
 
   if (error) {
-    let backendMessage = "";
+    // Extract HTTP status and backend error message from the Edge Function response
     const response = (error as { context?: Response }).context;
-    if (response?.clone) {
+    const httpStatus = response?.status ?? 0;
+    let backendMessage = "";
+
+    if (response) {
       try {
-        const payload = await response.clone().json() as { error?: unknown };
-        if (typeof payload.error === "string") {
-          backendMessage = payload.error;
+        const cloned = response.clone();
+        const text = await cloned.text();
+        if (text) {
+          try {
+            const payload = JSON.parse(text) as { error?: unknown; message?: unknown };
+            const msg = payload.error ?? payload.message;
+            if (typeof msg === "string") backendMessage = msg;
+          } catch {
+            // Response body was not JSON — use raw text if short enough
+            if (text.length < 200) backendMessage = text;
+          }
         }
       } catch {
-        // Fall back to the transport error below.
+        // Could not read response body at all
       }
     }
-    throw new Error(
-      backendMessage ||
-        error.message ||
-        "Gemini Live session could not start.",
+
+    console.warn(
+      `[GeminiLiveToken] Edge Function error — status=${httpStatus}, ` +
+      `backend="${backendMessage}", transport="${error.message}"`,
     );
+
+    // Map HTTP status codes to user-friendly messages
+    const userMessage =
+      httpStatus === 401
+        ? "Sign in to use the AI tutor."
+        : httpStatus === 429
+          ? "Daily AI limit reached. Try again tomorrow."
+          : httpStatus === 502 || httpStatus === 503
+            ? "AI tutor service is temporarily unavailable. Please try again."
+            : backendMessage || error.message || "Could not start AI tutor session.";
+
+    throw new Error(userMessage);
   }
   if (!data?.token) {
-    throw new Error("Gemini Live session token was empty.");
+    throw new Error("Could not start AI tutor session.");
   }
   return data.token;
 }

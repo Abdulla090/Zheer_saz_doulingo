@@ -22,6 +22,7 @@ import {
     SafeAreaView,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -99,6 +100,8 @@ export default function LessonScreen() {
   const { colors } = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: viewportWidth } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && viewportWidth >= 900;
   const params = useLocalSearchParams();
   const lessonId = parseInt(params.id as string) || 0;
   const displayUnitNumber =
@@ -330,7 +333,11 @@ export default function LessonScreen() {
         <Text style={{ fontSize: 18, fontWeight: "700", color: colors.mutedForeground, textAlign: "center", marginBottom: 16 }}>
           No questions available for this lesson yet.
         </Text>
-        <HomeLiquidButton label="Go Back" onPress={exitToPath} />
+        <HomeLiquidButton
+          label="Go Back"
+          onPress={exitToPath}
+          variant="login"
+        />
       </SafeAreaView>
     );
   }
@@ -343,7 +350,10 @@ export default function LessonScreen() {
       <SummaryBackdrop>
         <StatusBar hidden />
         <SafeAreaView style={sSum.root}>
-          <Animated.View entering={FadeInUp.duration(340)} style={sSum.wrap}>
+          <Animated.View
+            entering={FadeInUp.duration(340)}
+            style={[sSum.wrap, isDesktopWeb && sSum.wrapDesktop]}
+          >
             <HomeLiquidCard contentStyle={sSum.heroCard} radius={28}>
               {ok ? (
                 <View style={sSum.mascotWrap}>
@@ -407,7 +417,7 @@ export default function LessonScreen() {
 
             <HomeLiquidButton
               label={ok ? "Continue" : "Try Again"}
-              color={ok ? (isKidsMode ? "#58CC02" : L.green) : (isKidsMode ? "#1CB0F6" : L.blue)}
+              variant="login"
               onPress={() => {
                 if (ok && !Number.isNaN(pathIndex)) {
                   const currentProgress = getCurrentProgress();
@@ -536,28 +546,37 @@ export default function LessonScreen() {
     <Backdrop>
       <StatusBar hidden />
       <View style={[sL.root, { paddingTop: insets.top }]}>
-        <LessonLightHeader
-          progressFillStyle={progressStyle}
-          hearts={hearts}
-          onBack={exitToPath}
-          unitNumber={displayUnitNumber}
-          lessonNumber={lessonIndex + 1}
-          variant={isKidsMode ? "kids" : "default"}
-        />
+        <View style={[sL.learningRail, isDesktopWeb && sL.learningRailDesktop]}>
+          <LessonLightHeader
+            progressFillStyle={progressStyle}
+            hearts={hearts}
+            onBack={exitToPath}
+            unitNumber={displayUnitNumber}
+            lessonNumber={lessonIndex + 1}
+            variant={isKidsMode ? "kids" : "default"}
+          />
 
-        <View style={[sL.gameArea, { paddingBottom: Math.max(insets.bottom, isKidsMode ? 20 : 12) }]}>
-          <Animated.View
-            entering={enterGame}
-            style={{ flex: 1 }}
+          <View
+            style={[
+              sL.gameArea,
+              isDesktopWeb && sL.gameAreaDesktop,
+              { paddingBottom: Math.max(insets.bottom, isKidsMode ? 20 : 12) },
+            ]}
           >
-            {renderGame(questions[current]!)}
-          </Animated.View>
+            <Animated.View
+              entering={enterGame}
+              style={sL.gameContent}
+            >
+              {renderGame(questions[current]!)}
+            </Animated.View>
+          </View>
         </View>
 
         {feedback !== null && (
           <Animated.View
             style={[
               sL.sheet,
+              isDesktopWeb && sL.sheetDesktop,
               { paddingBottom: Math.max(insets.bottom, 16) + 8 },
               sheetStyle,
             ]}
@@ -580,7 +599,18 @@ export default function LessonScreen() {
 
 /* ─── styles ─── */
 const sL = StyleSheet.create({
-  root: { flex: 1 },
+  root: {
+    flex: 1,
+    alignItems: "center",
+  },
+  learningRail: {
+    flex: 1,
+    width: "100%",
+  },
+  learningRailDesktop: {
+    maxWidth: 640,
+    paddingHorizontal: 10,
+  },
 
   header: {
     flexDirection: "row",
@@ -614,7 +644,17 @@ const sL = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  gameArea: { flex: 1 },
+  gameArea: {
+    flex: 1,
+    width: "100%",
+  },
+  gameAreaDesktop: {
+    minHeight: 0,
+  },
+  gameContent: {
+    flex: 1,
+    width: "100%",
+  },
 
   skipRow: {
     alignItems: "flex-end",
@@ -651,6 +691,12 @@ const sL = StyleSheet.create({
     right: 0,
     paddingHorizontal: 16,
   },
+  sheetDesktop: {
+    width: "100%",
+    maxWidth: 640,
+    marginHorizontal: "auto",
+    paddingHorizontal: 10,
+  },
 });
 
 const sSum = StyleSheet.create({
@@ -661,6 +707,12 @@ const sSum = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 28,
     gap: 14,
+  },
+  wrapDesktop: {
+    width: "100%",
+    maxWidth: 580,
+    alignSelf: "center",
+    paddingHorizontal: 20,
   },
   mascotWrap: {
     alignItems: "center",

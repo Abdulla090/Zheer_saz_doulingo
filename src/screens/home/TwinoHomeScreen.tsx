@@ -4,7 +4,6 @@ import { enterFadeDown } from "../../components/animations/motion";
 import {
     CardWaveMini,
     HeroAuraRing,
-    TwinoWordmark,
     SettingsTuneIcon,
     WaveformIcon,
 } from "../../components/icons/TwinoHomeIcons";
@@ -25,6 +24,7 @@ import {
 } from "react-native";
 import { AppText } from "../../components/ui/AppText";
 import { TwinoMascot } from "../../components/mascot/TwinoMascot";
+import { TwinoBrandMark } from "../../components/branding/twino-brand-mark";
 import Animated, {
     Easing,
     useAnimatedStyle,
@@ -270,7 +270,7 @@ export function TwinoHomeScreen({
       >
         {/* Header */}
         <Animated.View entering={enterFadeDown(20)} style={styles.header}>
-          <TwinoWordmark height={26} />
+          <TwinoBrandMark size={40} showName nameSize={23} />
           <PressableScale
             onPress={() => router.push("/more")}
             scaleDown={0.92}

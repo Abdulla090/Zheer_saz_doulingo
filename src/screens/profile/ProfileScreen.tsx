@@ -11,12 +11,14 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Image as ExpoImage } from "expo-image";
+import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   I18nManager,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -29,7 +31,7 @@ import { PressableScale } from "../../components/animations";
 import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import { PREMADE_AVATARS, getLocalPremadeAvatar } from "../../constants/avatars";
+import { getMascot } from "../../constants/mascots";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../hooks/useI18n";
@@ -86,8 +88,8 @@ type ScreenCopy = {
   saveName: string;
   cancelEdit: string;
   namePlaceholder: string;
-  chooseAvatar: string;
   uploadPhoto: string;
+  useMyPet: string;
   progress: string;
   level: string;
   levelMessage: (remaining: number, next: number) => string;
@@ -120,8 +122,8 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     saveName: "Save name",
     cancelEdit: "Cancel editing",
     namePlaceholder: "Enter your name",
-    chooseAvatar: "Choose an avatar",
     uploadPhoto: "Upload a photo",
+    useMyPet: "Use my onboarding pet",
     progress: "Learning progress",
     level: "Level",
     levelMessage: (remaining, next) => `${remaining} XP to reach level ${next}`,
@@ -152,8 +154,8 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     saveName: "پاشەکەوتکردنی ناو",
     cancelEdit: "هەڵوەشاندنەوەی دەستکاری",
     namePlaceholder: "ناوەکەت بنووسە",
-    chooseAvatar: "هەڵبژاردنی وێنۆچکە",
     uploadPhoto: "بارکردنی وێنە",
+    useMyPet: "ئاژەڵە هەڵبژێردراوەکەم بەکاربهێنە",
     progress: "پێشکەوتنی فێربوون",
     level: "ئاست",
     levelMessage: (remaining, next) => `${remaining} خاڵ بۆ گەیشتن بە ئاستی ${next}`,
@@ -184,8 +186,8 @@ const COPY: Record<LocaleCode, ScreenCopy> = {
     saveName: "حفظ الاسم",
     cancelEdit: "إلغاء التعديل",
     namePlaceholder: "اكتب اسمك",
-    chooseAvatar: "اختر صورة رمزية",
     uploadPhoto: "رفع صورة",
+    useMyPet: "استخدم حيواني المختار",
     progress: "تقدم التعلم",
     level: "المستوى",
     levelMessage: (remaining, next) => `${remaining} نقطة للوصول إلى المستوى ${next}`,
@@ -212,6 +214,13 @@ function resolveLocale(locale: string): LocaleCode {
   return "en";
 }
 
+function isUploadedAvatarUrl(value: string | null | undefined) {
+  if (!value || /\.svg(?:[?#]|$)/i.test(value) || /\/premade\//i.test(value)) {
+    return false;
+  }
+  return /^(https?:|file:|content:|data:|blob:)/i.test(value);
+}
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -225,6 +234,7 @@ export default function ProfileScreen() {
 
   const avatarUrl = useSettingsStore((state) => state.avatarUrl);
   const setAvatarUrl = useSettingsStore((state) => state.setAvatarUrl);
+  const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const userName = useSettingsStore((state) => state.userName);
   const setUserName = useSettingsStore((state) => state.setUserName);
   const userAge = useSettingsStore((state) => state.userAge);
@@ -378,10 +388,12 @@ export default function ProfileScreen() {
 
   const handleDeviceUpload = async () => {
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        alert(copy.galleryPermission);
-        return;
+      if (Platform.OS !== "web") {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          alert(copy.galleryPermission);
+          return;
+        }
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -410,9 +422,13 @@ export default function ProfileScreen() {
         return;
       }
 
-      const response = await fetch(selectedUri);
-      const blob = await response.blob();
-      if (blob.size > MAX_AVATAR_BYTES) {
+      // Supabase's React Native client does not reliably upload Blob/File.
+      // Expo File gives Storage the ArrayBuffer it expects on native.
+      const fileData =
+        Platform.OS === "web"
+          ? await (await fetch(selectedUri)).arrayBuffer()
+          : await new File(selectedUri).arrayBuffer();
+      if (fileData.byteLength > MAX_AVATAR_BYTES) {
         alert(copy.invalidPhoto);
         return;
       }
@@ -420,17 +436,50 @@ export default function ProfileScreen() {
       // One deterministic object per user prevents abandoned uploads and makes
       // the Storage ownership policy exact and auditable.
       const filePath = `${user.id}/avatar`;
-      const { error } = await supabase.storage.from("avatars").upload(filePath, blob, {
+      const { error } = await supabase.storage.from("avatars").upload(filePath, fileData, {
         contentType,
         upsert: true,
       });
 
       if (error) throw error;
       const publicUrl = supabase.storage.from("avatars").getPublicUrl(filePath).data.publicUrl;
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+      if (profileError) throw profileError;
+
       setAvatarUrl(`${publicUrl}?v=${Date.now()}`);
       hapticSelection();
     } catch (error) {
       console.error("Avatar upload error:", error);
+      alert(copy.uploadFailed);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const useOnboardingPet = async () => {
+    try {
+      setUploading(true);
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ avatar_url: null, selected_mascot_id: selectedMascotId })
+          .eq("id", user.id);
+        if (error) throw error;
+
+        const { error: storageError } = await supabase.storage
+          .from("avatars")
+          .remove([`${user.id}/avatar`]);
+        if (storageError && !/not found/i.test(storageError.message)) {
+          console.warn("Could not remove previous avatar object:", storageError.message);
+        }
+      }
+      setAvatarUrl("");
+      hapticSelection();
+    } catch (error) {
+      console.error("Avatar reset error:", error);
       alert(copy.uploadFailed);
     } finally {
       setUploading(false);
@@ -446,18 +495,7 @@ export default function ProfileScreen() {
       );
     }
 
-    const PremadeAvatar = getLocalPremadeAvatar(avatarUrl);
-    if (PremadeAvatar) {
-      return <PremadeAvatar width={size} height={size} style={{ borderRadius: size / 2 }} />;
-    }
-
-    if (
-      avatarUrl &&
-      (avatarUrl.startsWith("http") ||
-        avatarUrl.startsWith("file") ||
-        avatarUrl.startsWith("content") ||
-        avatarUrl.startsWith("data"))
-    ) {
+    if (isUploadedAvatarUrl(avatarUrl)) {
       return (
         <ExpoImage
           source={{ uri: avatarUrl }}
@@ -468,11 +506,15 @@ export default function ProfileScreen() {
       );
     }
 
+    const mascot = getMascot(selectedMascotId);
     return (
       <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
-        <AppText style={styles.avatarInitial} languageCode={locale} align="center" latinRole="bold">
-          {(userName || copy.student).charAt(0).toUpperCase()}
-        </AppText>
+        <ExpoImage
+          source={mascot.source}
+          style={{ width: size - 8, height: size - 8 }}
+          contentFit="contain"
+          transition={180}
+        />
       </View>
     );
   };
@@ -633,42 +675,32 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.avatarPickerSection}>
-          <AppText style={styles.eyebrow} languageCode={locale} align="start" latinRole="bold">
-            {copy.chooseAvatar}
-          </AppText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.avatarList, isRtl && styles.avatarListRtl]}
+        <View style={[styles.photoActions, isRtl && styles.rowRtl]}>
+          <PressableScale
+            style={styles.photoAction}
+            onPress={handleDeviceUpload}
+            accessibilityRole="button"
+            accessibilityLabel={copy.uploadPhoto}
+            scaleDown={0.96}
           >
-            {PREMADE_AVATARS.map((avatar) => {
-              const publicUrl = supabase.storage.from("avatars").getPublicUrl(avatar.dbPath).data.publicUrl;
-              const selected = avatarUrl === publicUrl || Boolean(avatarUrl?.includes(avatar.dbPath));
-              const Avatar = avatar.Component;
-              return (
-                <PressableScale
-                  key={avatar.id}
-                  style={[styles.avatarOption, selected && styles.avatarOptionSelected]}
-                  onPress={() => setAvatarUrl(publicUrl)}
-                  accessibilityRole="button"
-                  accessibilityLabel={avatar.name}
-                  scaleDown={0.92}
-                >
-                  <Avatar width={50} height={50} style={{ borderRadius: 25 }} />
-                </PressableScale>
-              );
-            })}
+            <CameraIcon size={16} color={colors.foreground} />
+            <AppText style={styles.photoActionText} languageCode={locale} align="center" latinRole="bold">
+              {copy.uploadPhoto}
+            </AppText>
+          </PressableScale>
+          {isUploadedAvatarUrl(avatarUrl) ? (
             <PressableScale
-              style={styles.uploadOption}
-              onPress={handleDeviceUpload}
+              style={styles.photoAction}
+              onPress={useOnboardingPet}
               accessibilityRole="button"
-              accessibilityLabel={copy.uploadPhoto}
-              scaleDown={0.92}
+              accessibilityLabel={copy.useMyPet}
+              scaleDown={0.96}
             >
-              <CameraIcon size={18} color={colors.foreground} />
+              <AppText style={styles.photoActionText} languageCode={locale} align="center" latinRole="bold">
+                {copy.useMyPet}
+              </AppText>
             </PressableScale>
-          </ScrollView>
+          ) : null}
         </View>
 
         <View style={styles.progressPanel}>
@@ -940,10 +972,6 @@ function createStyles(colors: any, isDark: boolean) {
       justifyContent: "center",
       backgroundColor: panel,
     },
-    avatarInitial: {
-      color: "#FFFFFF",
-      fontSize: 32,
-    },
     cameraBadge: {
       position: "absolute",
       right: -1,
@@ -1035,43 +1063,26 @@ function createStyles(colors: any, isDark: boolean) {
       justifyContent: "center",
       backgroundColor: softSurface,
     },
-    avatarPickerSection: {
-      gap: 12,
+    photoActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
     },
-    eyebrow: {
-      fontSize: 13,
-      color: colors.mutedForeground,
-    },
-    avatarList: {
-      gap: 12,
-      paddingVertical: 2,
-      paddingHorizontal: 2,
-    },
-    avatarListRtl: {
-      flexDirection: "row-reverse",
-    },
-    avatarOption: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 2,
-      borderColor: "transparent",
-      backgroundColor: softSurface,
-    },
-    avatarOptionSelected: {
-      borderColor: colors.primary,
-    },
-    uploadOption: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
+    photoAction: {
+      minHeight: 44,
+      paddingHorizontal: 15,
+      flexDirection: "row",
+      gap: 8,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.border,
+      borderRadius: 14,
       backgroundColor: surface,
+    },
+    photoActionText: {
+      color: colors.foreground,
+      fontSize: 13,
     },
     progressPanel: {
       padding: 20,

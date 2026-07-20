@@ -24,6 +24,7 @@ import { VoiceQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
+import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
 import { useTTS } from "../../../hooks/use-tts";
 import { matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
@@ -65,6 +66,8 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const micOrbSize = compactLayout ? 82 : 92;
   const { speak } = useTTS();
   const speech = useSpeechCapture("en-US");
+  const geminiCapture = useGeminiVoiceCapture();
+  const useGeminiBackend = !speech.available && geminiCapture.available;
 
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
@@ -86,6 +89,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   React.useEffect(() => {
     speech.abort();
+    geminiCapture.abort();
     setState("idle");
     setTranscript("");
     setHasHintRevealed(false);
@@ -143,17 +147,26 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     clearListenTimeout();
     clearSpeechEvalTimeout();
     try {
-      speech.stop();
+      if (useGeminiBackend) {
+        geminiCapture.abort();
+      } else {
+        speech.stop();
+      }
     } catch (e) {
       console.warn("stopSession: failed to stop speech", e);
     }
-  }, [speech]);
+  }, [speech, useGeminiBackend, geminiCapture]);
 
   const speechAbortRef = useRef(speech.abort);
+  const geminiAbortRef = useRef(geminiCapture.abort);
 
   useEffect(() => {
     speechAbortRef.current = speech.abort;
   }, [speech.abort]);
+
+  useEffect(() => {
+    geminiAbortRef.current = geminiCapture.abort;
+  }, [geminiCapture.abort]);
 
   useEffect(
     () => () => {
@@ -161,6 +174,11 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
       clearSpeechEvalTimeout();
       try {
         speechAbortRef.current();
+      } catch (e) {
+        /* noop */
+      }
+      try {
+        geminiAbortRef.current();
       } catch (e) {
         /* noop */
       }
@@ -259,6 +277,22 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     [onFail, onSuccess, question.targetWord, scheduleSpeechEvaluation],
   );
 
+  const finishSpeechCapture = useCallback(async () => {
+    if (stateRef.current !== "listening") return;
+    clearListenTimeout();
+    updateState("processing");
+    if (useGeminiBackend) {
+      await geminiCapture.stopAndEvaluate(question.targetWord);
+    } else {
+      try {
+        speech.stop();
+      } catch (e) {
+        console.warn("finishSpeechCapture: speech.stop failed", e);
+      }
+      scheduleSpeechEvaluation();
+    }
+  }, [scheduleSpeechEvaluation, speech, useGeminiBackend, geminiCapture, question.targetWord]);
+
   const startSpeechListening = useCallback(async () => {
     firedRef.current = false;
     transcriptRef.current = "";
@@ -268,47 +302,66 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     clearListenTimeout();
     listenTimeoutRef.current = setTimeout(() => {
       if (stateRef.current === "listening") {
-        scheduleSpeechEvaluation();
+        if (useGeminiBackend) {
+          void finishSpeechCapture();
+        } else {
+          scheduleSpeechEvaluation();
+        }
       }
     }, LISTEN_TIMEOUT_MS);
 
     try {
-      const started = await speech.start(buildSpeechHandlers(), {
-        continuous: false,
-        contextualStrings: [question.targetWord],
-      });
-      if (!started) {
-        clearListenTimeout();
-        updateState("idle");
-        return;
+      if (useGeminiBackend) {
+        const started = await geminiCapture.start({
+          onResult: (text, matches) => {
+            transcriptRef.current = text;
+            setTranscript(text);
+            if (matches) {
+              onSuccess(text);
+            } else {
+              onFail();
+            }
+          },
+          onError: (message) => {
+            console.warn("Gemini recording error:", message);
+            onFail();
+          }
+        });
+        if (!started) {
+          clearListenTimeout();
+          updateState("idle");
+          return;
+        }
+      } else {
+        const started = await speech.start(buildSpeechHandlers(), {
+          continuous: false,
+          contextualStrings: [question.targetWord],
+        });
+        if (!started) {
+          clearListenTimeout();
+          updateState("idle");
+          return;
+        }
       }
     } catch (err) {
-      console.warn("speech.start failed:", err);
+      console.warn("Speech start failed:", err);
       clearListenTimeout();
       updateState("idle");
       return;
     }
 
     listenStartedAtRef.current = Date.now();
-  }, [buildSpeechHandlers, scheduleSpeechEvaluation, speech, question.targetWord]);
+  }, [buildSpeechHandlers, scheduleSpeechEvaluation, speech, question.targetWord, useGeminiBackend, geminiCapture, finishSpeechCapture, onSuccess, onFail]);
 
-  const finishSpeechCapture = useCallback(() => {
-    if (stateRef.current !== "listening") return;
-    clearListenTimeout();
-    updateState("processing");
-    try {
-      speech.stop();
-    } catch (e) {
-      console.warn("finishSpeechCapture: speech.stop failed", e);
-    }
-    scheduleSpeechEvaluation();
-  }, [scheduleSpeechEvaluation, speech]);
+  const finishSpeechCaptureSync = useCallback(() => {
+    void finishSpeechCapture();
+  }, [finishSpeechCapture]);
 
   const handleMicPress = () => {
     if (state === "processing") return;
 
     if (state === "listening") {
-      finishSpeechCapture();
+      finishSpeechCaptureSync();
       return;
     }
 
@@ -332,7 +385,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const micColor =
     state === "listening" ||
-    speech.listening
+    (useGeminiBackend ? geminiCapture.listening : speech.listening)
       ? L.blue
       : state === "processing"
         ? L.blue
@@ -426,7 +479,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             listening={
               state === "listening" ||
               state === "processing" ||
-              speech.listening
+              (useGeminiBackend ? geminiCapture.listening : speech.listening)
             }
             disabled={state === "success"}
             color={micColor}

@@ -9,9 +9,11 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
-  I18nManager,
 } from "react-native";
 import Animated, {
+  Easing,
+  FadeInRight,
+  FadeOutLeft,
   useSharedValue,
   useAnimatedScrollHandler,
   withTiming,
@@ -33,6 +35,7 @@ const STEP_IDS = ["learn_conversation", "grow_every_day", "achieve_fluency"] as 
 
 export function OnboardingFlow() {
   const { width: screenWidth } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
   const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
   const scrollRef = useRef<Animated.ScrollView>(null);
 
@@ -56,6 +59,7 @@ export function OnboardingFlow() {
 
   /* Continuous scroll position for smooth gradient morph */
   const scrollX = useSharedValue(0);
+  const isProgrammaticTransition = useSharedValue(0);
   const rootOpacity = useSharedValue(1);
 
   const animatedRootStyle = useAnimatedStyle(() => ({
@@ -64,7 +68,9 @@ export function OnboardingFlow() {
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollX.value = Math.abs(event.contentOffset.x);
+      if (isProgrammaticTransition.value === 0) {
+        scrollX.value = Math.abs(event.contentOffset.x);
+      }
     },
   });
 
@@ -115,7 +121,7 @@ export function OnboardingFlow() {
     // Smooth transition: fade out root view, then replace route to show login screen
     rootOpacity.value = withTiming(0, { duration: 400 }, (finished) => {
       if (finished) {
-        runOnJS(completeOnboarding)("/auth?redirect=/(tabs)&showSkip=true");
+        runOnJS(completeOnboarding)("/auth?redirect=/(tabs)");
       }
     });
   }, [completeOnboarding, rootOpacity, selectedPath, setPathMode]);
@@ -130,17 +136,39 @@ export function OnboardingFlow() {
     }
     const nextIndex = index + 1;
 
-    const isWebRTL = Platform.OS === "web" && I18nManager.isRTL;
-    const targetX = nextIndex * screenWidth * (isWebRTL ? -1 : 1);
+    const targetX = nextIndex * screenWidth;
+    const backgroundTarget = nextIndex * screenWidth;
 
-    scrollRef.current?.scrollTo({
-      x: targetX,
-      y: 0,
-      animated: true,
-    } as any);
+    isProgrammaticTransition.value = 1;
+    scrollX.value = withTiming(
+      backgroundTarget,
+      {
+        duration: 900,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      },
+      () => {
+        isProgrammaticTransition.value = 0;
+      },
+    );
+
+    if (!isWeb) {
+      scrollRef.current?.scrollTo({
+        x: targetX,
+        y: 0,
+        animated: true,
+      } as any);
+    }
 
     setIndex(nextIndex);
-  }, [finishSlides, index, isLast, screenWidth]);
+  }, [
+    finishSlides,
+    index,
+    isWeb,
+    isLast,
+    isProgrammaticTransition,
+    screenWidth,
+    scrollX,
+  ]);
 
   /* Derive discrete index from scroll for dots + button label */
   const handleMomentumEnd = useCallback(
@@ -153,8 +181,12 @@ export function OnboardingFlow() {
         }
         setIndex(newIndex);
       }
+      scrollX.value = withTiming(newIndex * screenWidth, {
+        duration: 480,
+        easing: Easing.out(Easing.cubic),
+      });
     },
-    [index, screenWidth, total],
+    [index, screenWidth, scrollX, total],
   );
 
   if (!localeReady) {
@@ -180,32 +212,43 @@ export function OnboardingFlow() {
   return (
     <Animated.View style={[styles.root, animatedRootStyle]}>
       <OnboardingSkiaBg scrollX={scrollX} />
-      <Animated.ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        bounces={false}
-        onScroll={scrollHandler}
-        onMomentumScrollEnd={handleMomentumEnd}
-        scrollEventThrottle={16}
-        style={styles.container}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        {slides.map((slide) => (
-          <View
-            key={slide.id}
-            style={{
-              width: screenWidth,
-              height: "100%",
-              justifyContent: "center",
-              backgroundColor: "transparent",
-            }}
-          >
-            <OnboardingSlide slide={slide} />
-          </View>
-        ))}
-      </Animated.ScrollView>
+      {isWeb ? (
+        <Animated.View
+          key={slides[index].id}
+          entering={FadeInRight.duration(520).easing(Easing.out(Easing.cubic))}
+          exiting={FadeOutLeft.duration(320).easing(Easing.in(Easing.cubic))}
+          style={styles.webSlide}
+        >
+          <OnboardingSlide slide={slides[index]} />
+        </Animated.View>
+      ) : (
+        <Animated.ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          onScroll={scrollHandler}
+          onMomentumScrollEnd={handleMomentumEnd}
+          scrollEventThrottle={16}
+          style={styles.container}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {slides.map((slide) => (
+            <View
+              key={slide.id}
+              style={{
+                width: screenWidth,
+                height: "100%",
+                justifyContent: "center",
+                backgroundColor: "transparent",
+              }}
+            >
+              <OnboardingSlide slide={slide} />
+            </View>
+          ))}
+        </Animated.ScrollView>
+      )}
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
@@ -255,6 +298,12 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean) =>
     },
     container: {
       flex: 1,
+    },
+    webSlide: {
+      flex: 1,
+      width: "100%",
+      justifyContent: "center",
+      backgroundColor: "transparent",
     },
     footer: {
       position: "absolute",
