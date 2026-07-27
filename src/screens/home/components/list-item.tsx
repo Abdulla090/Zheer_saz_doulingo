@@ -47,7 +47,6 @@ function lessonColorTheme(item: LessonListItem): SectionTheme {
 
 function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
   if (item.status === "locked") return "gray";
-  if (item.status === "completed") return "gold";
   if (item.type === "cup") return "yellow";
   if (item.isCurrent && item.sectionTheme === "gray") return "mint";
 
@@ -94,6 +93,8 @@ export const ListItem = React.memo(
     const xOffset = isRtl ? -rawOffset : rawOffset;
     const isLocked = status === "locked";
     const isCompleted = status === "completed";
+    const showsActiveStar =
+      !isLocked && !isCompleted && (isActiveLesson || item.isCurrent);
     const isGrayInProgress = isActiveLesson && item.sectionTheme === "gray";
     const buttonColor = resolveButtonVariant(item);
     const iconColorOverride = isCompleted
@@ -179,7 +180,7 @@ export const ListItem = React.memo(
                   width={metrics.lessonButtonSize}
                   height={metrics.lessonButtonSize}
                 />
-                {isActiveLesson && !isLocked ? (
+                {showsActiveStar && !isLocked ? (
                   <View
                     pointerEvents="none"
                     style={{
@@ -188,7 +189,7 @@ export const ListItem = React.memo(
                     }}
                   >
                     <CurrentLessonIcon
-                      size={Math.round(metrics.lessonButtonSize * 0.34)}
+                      size={Math.round(metrics.lessonButtonSize * 0.4)}
                     />
                   </View>
                 ) : isCompleted ? (
@@ -217,7 +218,8 @@ export const ListItem = React.memo(
             ) : (
               <SvgButton
                 isLocked={isLocked}
-                isCurrentLesson={isActiveLesson}
+                isCurrentLesson={showsActiveStar}
+                isCompleted={isCompleted}
                 isSelected={isSelected}
                 size={metrics.lessonButtonSize}
                 onPress={isLocked && !onSelect ? undefined : handleSelect}

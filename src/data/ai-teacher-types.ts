@@ -34,6 +34,8 @@ export type AiTeacherResult = {
   strengths: string[];
   improvements: string[];
   sampleRewrite?: string;
+  transcript?: string;
+  source: "ai" | "demo";
 };
 
 export type AiTeacherAttempt = AiTeacherResult & {

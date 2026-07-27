@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontStore } from "../stores/useFontStore";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { useSafeBack } from "../hooks/use-safe-back";
 
 type AuthMode = "signIn" | "signUp" | "forgot" | "recovery";
 
@@ -48,6 +49,7 @@ function getRecoveryRedirectUrl() {
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const safeBack = useSafeBack("/");
   const {
     redirect,
     mode: modeParam,
@@ -412,7 +414,7 @@ export default function AuthScreen() {
               if (isForgot || isRecovery) {
                 changeMode("signIn");
               } else {
-                router.back();
+                safeBack();
               }
             }}
             accessibilityRole="button"
@@ -907,8 +909,15 @@ function PasswordField({
             {
               fontFamily: selectedFont,
               textAlign: isRtl ? "right" : "left",
-              paddingRight: isRtl ? 14 : 68,
-              paddingLeft: isRtl ? 68 : 14,
+              ...(Platform.OS === "web"
+                ? {
+                    paddingRight: isRtl ? 14 : 68,
+                    paddingLeft: isRtl ? 68 : 14,
+                  }
+                : {
+                    paddingStart: 14,
+                    paddingEnd: 76,
+                  }),
             },
           ]}
           placeholder="••••••••"
@@ -921,7 +930,14 @@ function PasswordField({
           autoComplete={autoComplete}
         />
         <TouchableOpacity
-          style={[styles.passwordToggle, isRtl ? { left: 8 } : { right: 8 }]}
+          style={[
+            styles.passwordToggle,
+            Platform.OS === "web"
+              ? isRtl
+                ? { left: 8 }
+                : { right: 8 }
+              : { end: 8 },
+          ]}
           onPress={onToggle}
           accessibilityRole="button"
           accessibilityLabel={visible ? hideLabel : showLabel}
@@ -975,7 +991,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
       borderRadius: isDesktopWeb ? 30 : 0,
       borderWidth: isDesktopWeb ? 1 : 0,
       borderColor: colors.border,
-      backgroundColor: colors.surfaceRaised,
+      backgroundColor: isDesktopWeb ? colors.surfaceRaised : "transparent",
       ...Platform.select({
         web: isDesktopWeb
           ? ({
@@ -1085,7 +1101,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
       justifyContent: "center",
       paddingHorizontal: isDesktopWeb ? 58 : 0,
       paddingVertical: isDesktopWeb ? 42 : 0,
-      backgroundColor: colors.surfaceRaised,
+      backgroundColor: isDesktopWeb ? colors.surfaceRaised : "transparent",
     },
     mobileBrand: {
       display: isDesktopWeb ? "none" : "flex",
@@ -1204,8 +1220,10 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
     },
     passwordToggle: {
       position: "absolute",
+      top: 8,
       minWidth: 50,
       height: 34,
+      paddingHorizontal: 8,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: 9,
@@ -1236,12 +1254,12 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
       fontSize: 13,
     },
     primaryButton: {
-      height: 52,
+      height: PRIMARY_ACTION.height,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 14,
+      borderRadius: PRIMARY_ACTION.radius,
       backgroundColor: PRIMARY_ACTION.face,
-      borderBottomWidth: 3,
+      borderBottomWidth: PRIMARY_ACTION.rimWidth,
       borderBottomColor: PRIMARY_ACTION.rim,
       marginTop: 22,
       ...Platform.select({

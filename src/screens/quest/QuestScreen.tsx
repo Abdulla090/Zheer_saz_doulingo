@@ -3,10 +3,8 @@ import SafeContainer from "../../components/shared/safe-container";
 import { SvgAppButton } from "../../components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "../../constants/icons";
 import { Image } from "expo-image";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AnimatedCard } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";

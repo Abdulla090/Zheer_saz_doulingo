@@ -1,4 +1,3 @@
- 
 import "../utils/web-deprecations-patch";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { SkiaWebGate } from "../components/animations/skia-gsap-opening/SkiaWebGate";
@@ -35,9 +34,6 @@ initSentry();
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// BottomSheetModalProvider from @expo/ui/community/bottom-sheet loads Jetpack Compose
-// native modules (ModalBottomSheet, Host) which can crash in standard APK builds.
-// The original implementation is literally just <>{children}</>, so we inline it safely.
 function BottomSheetModalProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
@@ -212,10 +208,12 @@ function InnerLayout() {
                   <Stack.Screen name="privacy-policy" />
                   <Stack.Screen name="ai-safety" />
                   <Stack.Screen name="terms" />
+                  <Stack.Screen name="settings" />
+                  <Stack.Screen name="auth" />
                   <Stack.Screen name="admin/index" />
                   <Stack.Screen name="admin/unit" />
                   <Stack.Screen name="admin/lesson" />
-                <Stack.Screen name="onboarding" />
+                  <Stack.Screen name="onboarding" />
               </Stack>
             </BottomSheetModalProvider>
           </AppErrorBoundary>

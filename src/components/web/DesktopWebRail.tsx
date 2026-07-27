@@ -21,6 +21,7 @@ import {
 import { PremiumPressable } from "../PremiumPressable";
 import { AppText } from "../ui/AppText";
 import { WEB_DESKTOP_RAIL_WIDTH } from "../../constants/web-layout";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
 import type { I18nKey } from "../../i18n";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
@@ -400,16 +401,14 @@ function createStyles(colors: any, isDark: boolean) {
       alignSelf: "stretch",
     },
     primaryButton: {
-      minHeight: 46,
+      height: PRIMARY_ACTION.height,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 14,
-      backgroundColor: "#1CB0F6",
-      borderBottomWidth: 4,
-      borderBottomColor: "#1490CC",
+      borderRadius: PRIMARY_ACTION.radius,
+      backgroundColor: PRIMARY_ACTION.face,
+      borderBottomWidth: PRIMARY_ACTION.rimWidth,
+      borderBottomColor: PRIMARY_ACTION.rim,
       paddingHorizontal: 16,
-      paddingTop: 10,
-      paddingBottom: 8,
     },
     primaryButtonText: {
       color: "#FFFFFF",

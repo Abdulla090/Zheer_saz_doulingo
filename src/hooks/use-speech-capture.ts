@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { PermissionsAndroid, Platform } from "react-native";
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -59,15 +60,39 @@ export function useSpeechCapture(lang = "en-US") {
     ) => {
       handlersRef.current = handlers;
 
-      if (!available) {
-        setError("Speech recognition is not available on this device.");
-        return false;
-      }
-
       try {
-        const perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        let perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        if (!perm.granted && Platform.OS === "android" && perm.canAskAgain !== false) {
+          const result = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            {
+              title: "Microphone permission",
+              message:
+                "Twino English needs microphone access for speaking practice and AI feedback.",
+              buttonNegative: "Not now",
+              buttonPositive: "Allow",
+            },
+          );
+          if (result === PermissionsAndroid.RESULTS.GRANTED) {
+            perm = {
+              granted: true,
+              status: "granted" as any,
+              canAskAgain: true,
+              expires: "never",
+            };
+          }
+        }
         if (!perm.granted) {
-          setError("Microphone permission is required for speaking practice.");
+          setError(
+            perm.canAskAgain === false
+              ? "Microphone permission is blocked. Enable it for Twino in Android Settings."
+              : "Microphone permission is required for speaking practice.",
+          );
+          return false;
+        }
+
+        if (!available) {
+          setError("Speech recognition is not available on this device.");
           return false;
         }
 

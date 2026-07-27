@@ -17,7 +17,9 @@ import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   I18nManager,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -391,7 +393,13 @@ export default function ProfileScreen() {
       if (Platform.OS !== "web") {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          alert(copy.galleryPermission);
+          if (permission.canAskAgain === false) {
+            Alert.alert(copy.galleryPermission, undefined, [
+              { text: copy.settings, onPress: () => void Linking.openSettings() },
+            ]);
+          } else {
+            Alert.alert(copy.galleryPermission);
+          }
           return;
         }
       }

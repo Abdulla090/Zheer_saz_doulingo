@@ -7,14 +7,13 @@
  */
 /* eslint-disable react-hooks/exhaustive-deps */
 
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { FlashIcon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import React, { useCallback, useRef, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { FlashIcon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
 import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import {
     BackHandler,
     Platform,
@@ -172,10 +171,11 @@ export default function LessonScreen() {
     };
   });
 
+  const safeBack = useSafeBack("/(tabs)");
   const exitToPath = useCallback(() => {
     setPathMode(pathMode);
-    router.replace(buildPathReturnRoute(pathMode));
-  }, [pathMode, router, setPathMode]);
+    safeBack();
+  }, [pathMode, safeBack, setPathMode]);
 
   /* Animations */
   const progressW = useSharedValue(0);

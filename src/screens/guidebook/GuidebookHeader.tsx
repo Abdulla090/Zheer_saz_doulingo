@@ -7,10 +7,8 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 import type { GuidebookCopy } from "./guidebook-copy";
 import type { GuidebookViewModel } from "./guidebook-model";
 import type { GuidebookAccent } from "./guidebook-theme";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { BookOpen02Icon, Cancel01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { BookOpen02Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 
 type GuidebookHeaderProps = {
   guide: GuidebookViewModel;

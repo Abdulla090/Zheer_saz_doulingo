@@ -1,9 +1,5 @@
-/* eslint-disable */
 import { AppText } from "../../components/ui/AppText";
-import {
-  HomeMeshBackground,
-  HomePalette as C,
-} from "../../components/ui/ios-liquid-home";
+import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { AI_TEACHER_PROMPTS } from "../../data/ai-teacher-prompts";
 import type {
   AiTeacherAttempt,
@@ -12,23 +8,26 @@ import type {
   AiTeacherResult,
 } from "../../data/ai-teacher-types";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
-import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
-import { evaluateEnglish } from "../../services/ai-teacher-service";
+import {
+  evaluateEnglish,
+  evaluateSpokenEnglish,
+} from "../../services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { appStorage } from "../../lib/app-storage";
 import { hapticImpact, hapticNotification } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PressableScale } from "../../components/animations";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, RobotIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import {
   ActivityIndicator,
-  Pressable,
+  Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -40,21 +39,24 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
+
+const TEACHER_ACCENT = PRIMARY_ACTION.face;
 
 function createAiColors(theme: any, isDark: boolean) {
   return {
     background: theme.background,
     foreground: theme.foreground,
-    primary: isDark ? theme.primary : C.navy,
-    accent: theme.primary,
+    primary: TEACHER_ACCENT,
+    accent: TEACHER_ACCENT,
     secondary: theme.surface,
     mutedForeground: theme.mutedForeground,
     border: theme.border,
     borderStrong: theme.cardBorder,
     card: theme.surface,
     cardSurface: theme.surface,
-    warmBg: isDark ? "rgba(255,107,74,0.12)" : "rgba(255,98,84,0.12)",
-    chart1: theme.secondary,
+    warmBg: isDark ? "rgba(255,107,74,0.18)" : "rgba(255,107,74,0.08)",
+    chart1: TEACHER_ACCENT,
     destructive: theme.error,
     track: isDark ? "rgba(255,255,255,0.12)" : "rgba(26,43,72,0.1)",
   };
@@ -70,30 +72,30 @@ function useAiTeacherTheme() {
 const HISTORY_KEY = "twino.ai-teacher.last-attempt";
 
 const DEMO_RESULT: AiTeacherResult = {
-  overallBand: 6.5,
+  overallBand: 7.4,
   criteria: [
     {
       key: "fluency",
       label: "Fluency & coherence",
-      band: 6.5,
+      band: 7.2,
       note: "Ideas flow logically with only occasional hesitation.",
     },
     {
       key: "lexical",
       label: "Lexical resource",
-      band: 6,
+      band: 7.6,
       note: "Good topic vocabulary; a few word-choice upgrades possible.",
     },
     {
       key: "grammar",
       label: "Grammatical range",
-      band: 7,
+      band: 7.1,
       note: "Mix of simple and complex structures with minor slips.",
     },
     {
       key: "pronunciation",
       label: "Pronunciation",
-      band: 6.5,
+      band: 7.5,
       note: "Generally clear; stress patterns could be more natural.",
     },
   ],
@@ -107,6 +109,9 @@ const DEMO_RESULT: AiTeacherResult = {
   ],
   sampleRewrite:
     "My hometown is a medium-sized city in the mountains. I enjoy the fresh air and friendly community, though I would improve public transport for students.",
+  transcript:
+    "My hometown is a medium-sized city in the mountains. I enjoy the fresh air and friendly community.",
+  source: "demo",
 };
 
 type Phase = "input" | "loading" | "results";
@@ -154,8 +159,48 @@ function BrandPrimaryButton({
   );
 }
 
+function SpeakingCountdown({
+  seconds,
+  isKu,
+}: {
+  seconds: number;
+  isKu: boolean;
+}) {
+  const { styles } = useAiTeacherTheme();
+  const progress = `${Math.max(0, Math.min(100, (seconds / 60) * 100))}%` as `${number}%`;
+
+  return (
+    <View style={styles.countdown}>
+      <View style={styles.countdownTop}>
+        <AppText
+          style={styles.countdownLabel}
+          forceKurdishFont={isKu}
+          latinRole="bold"
+        >
+          {isKu ? "کاتی تۆمارکردن" : "Recording time"}
+        </AppText>
+        <Animated.View key={seconds} entering={FadeInDown.duration(160)}>
+          <AppText style={styles.countdownNumber} forceLatinFont latinRole="bold">
+            {seconds}
+          </AppText>
+        </Animated.View>
+        <AppText
+          style={styles.countdownUnit}
+          forceKurdishFont={isKu}
+          latinRole="medium"
+        >
+          {isKu ? "چرکە" : "sec"}
+        </AppText>
+      </View>
+      <View style={styles.countdownTrack}>
+        <Animated.View style={[styles.countdownFill, { width: progress }]} />
+      </View>
+    </View>
+  );
+}
+
 export function AiTeacherScreen() {
-  const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
   const { Colors, styles, isDark } = useAiTeacherTheme();
@@ -179,8 +224,15 @@ export function AiTeacherScreen() {
   );
   const [lastSaved, setLastSaved] = useState<AiTeacherAttempt | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showTyping, setShowTyping] = useState(false);
-  const speech = useSpeechCapture("en-US");
+  const voiceCapture = useGeminiVoiceCapture();
+  const {
+    abort: abortVoiceCapture,
+    error: voiceError,
+    listening: isListening,
+    permissionDenied,
+    start: startVoiceCapture,
+    stopAndGetAudio,
+  } = voiceCapture;
 
   const promptsForMode = useMemo(
     () => AI_TEACHER_PROMPTS.filter((p) => p.mode === mode),
@@ -207,44 +259,48 @@ export function AiTeacherScreen() {
 
   useEffect(() => {
     if (mode !== "speaking") {
-      speech.abort();
-      setShowTyping(false);
+      void abortVoiceCapture();
     }
-  }, [mode, speech]);
+  }, [abortVoiceCapture, mode]);
 
   // Countdown timer states & refs
   const [timeLeft, setTimeLeft] = useState(60);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const finishingRef = React.useRef(false);
 
-  const answerRef = React.useRef(answer);
-  useEffect(() => {
-    answerRef.current = answer;
-  }, [answer]);
-
-  const triggerAutoSubmit = useCallback(async () => {
-    const text = answerRef.current.trim();
-    if (text.length < 12) {
-      setError(t("aiTeacher.minAnswer"));
-      setPhase("input");
-      return;
-    }
+  const finishSpeaking = useCallback(async () => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    setIsTimerActive(false);
     setError(null);
     setPhase("loading");
     hapticImpact(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const evaluation = await evaluateEnglish({
-        text,
-        mode: "speaking",
+      const audio = await stopAndGetAudio();
+      if (!audio?.base64) {
+        throw new Error("No speech was captured. Tap the microphone and try again.");
+      }
+      const evaluation = await evaluateSpokenEnglish({
+        audioBase64: audio.base64,
+        mimeType: audio.mimeType,
         promptId: prompt.id,
       });
+      setAnswer(evaluation.transcript ?? "");
       setResult(evaluation);
       setPhase("results");
-    } catch {
-      setError("Could not check your English right now. Try again.");
+      hapticNotification(Haptics.NotificationFeedbackType.Success);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not check your speech right now.",
+      );
       setPhase("input");
+    } finally {
+      finishingRef.current = false;
     }
-  }, [prompt.id, t]);
+  }, [prompt.id, stopAndGetAudio]);
 
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | null = null;
@@ -254,8 +310,7 @@ export function AiTeacherScreen() {
       }, 1000);
     } else if (timeLeft === 0 && isTimerActive) {
       setIsTimerActive(false);
-      speech.stop();
-      void triggerAutoSubmit();
+      void finishSpeaking();
     }
 
     return () => {
@@ -263,7 +318,7 @@ export function AiTeacherScreen() {
         clearInterval(timerInterval);
       }
     };
-  }, [timeLeft, isTimerActive, speech, triggerAutoSubmit]);
+  }, [finishSpeaking, isTimerActive, timeLeft]);
 
   useEffect(() => {
     if (phase !== "input" || mode !== "speaking") {
@@ -289,8 +344,12 @@ export function AiTeacherScreen() {
       });
       setResult(evaluation);
       setPhase("results");
-    } catch {
-      setError("Could not check your English right now. Try again.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not check your English right now.",
+      );
       setPhase("input");
     }
   }, [answer, mode, prompt.id, t]);
@@ -315,43 +374,38 @@ export function AiTeacherScreen() {
     setResult(null);
     setAnswer("");
     setError(null);
-    setShowTyping(false);
-    speech.abort();
+    void abortVoiceCapture();
     setTimeLeft(60);
     setIsTimerActive(false);
-  }, [speech]);
+    finishingRef.current = false;
+  }, [abortVoiceCapture]);
 
   const toggleMic = useCallback(async () => {
-    if (speech.listening) {
-      speech.stop();
-      setIsTimerActive(false);
-      return;
-    }
-    if (!speech.available) {
-      setError("Speech recognition is not available on this device.");
+    if (isListening) {
+      await finishSpeaking();
       return;
     }
     setError(null);
+    setAnswer("");
     setTimeLeft(60);
-    setIsTimerActive(true);
-    await speech.start(
+    const started = await startVoiceCapture(
       {
-        onResult: (text, isFinal) => {
-          if (!isFinal) {
-            setAnswer(text);
-            return;
-          }
-          setAnswer((prev) => {
-            const next = text.trim();
-            if (!prev.trim()) return next;
-            if (prev.endsWith(next) || next.startsWith(prev)) return next;
-            return `${prev.trimEnd()} ${next}`;
-          });
-        },
+        onResult: () => {},
+        onError: (message) => setError(message),
       },
-      { continuous: true },
     );
-  }, [speech]);
+    setIsTimerActive(started);
+  }, [finishSpeaking, isListening, startVoiceCapture]);
+
+  const recoverMicrophonePermission = useCallback(async () => {
+    if (Platform.OS === "web") {
+      await toggleMic();
+      return;
+    }
+    await Linking.openSettings();
+  }, [toggleMic]);
+
+  const handleBack = safeBack;
 
   return (
     <View style={styles.root}>
@@ -365,6 +419,9 @@ export function AiTeacherScreen() {
           paddingTop: Math.max(insets.top, 20),
           paddingBottom: insets.bottom + 32,
           paddingHorizontal: 24,
+          width: "100%",
+          maxWidth: 760,
+          alignSelf: "center",
           direction: isRtl ? "rtl" : "ltr",
         }}
         keyboardShouldPersistTaps="handled"
@@ -376,7 +433,7 @@ export function AiTeacherScreen() {
           ]}
         >
           <PressableScale
-            onPress={() => router.back()}
+            onPress={handleBack}
             style={styles.backBtn}
             scaleDown={0.9}
           >
@@ -526,28 +583,38 @@ export function AiTeacherScreen() {
             </AppText>
             {mode === "speaking" ? (
               <BrandCard contentStyle={styles.speakingMicBlock}>
-                {isTimerActive && (
-                  <AppText style={styles.timerText} forceKurdishFont={isKu}>
-                    {isKu ? `کاتی ماوە: ${timeLeft} چرکە` : `Time remaining: ${timeLeft}s`}
-                  </AppText>
-                )}
+                {isTimerActive ? (
+                  <SpeakingCountdown seconds={timeLeft} isKu={isKu} />
+                ) : null}
                 <MicCaptureOrb
-                  listening={speech.listening}
+                  listening={isListening}
                   disabled={phase === "loading"}
-                  color={speech.listening ? Colors.accent : Colors.foreground}
-                  size={112}
+                  color={Colors.primary}
+                  size={104}
                   hint={
-                    speech.listening
-                      ? t("aiTeacher.tapMicStop")
-                      : t("aiTeacher.tapMicSpeak")
+                    isListening
+                      ? isKu
+                        ? "بۆ وەستاندن و ناردن دووبارە دایبگرە"
+                        : "Tap to stop and check your speech"
+                      : isKu
+                        ? "دایبگرە و بە ئینگلیزی قسە بکە"
+                        : "Tap once and speak in English"
                   }
                   onPress={toggleMic}
                 />
-                {answer.trim().length > 0 ? (
-                  <AppText style={[styles.speakingTranscript, directionStyle]} forceLatinFont>
-                    {answer}
-                  </AppText>
-                ) : null}
+                <AppText
+                  style={styles.recordingStatus}
+                  forceKurdishFont={isKu}
+                  latinRole="medium"
+                >
+                  {isListening
+                    ? isKu
+                      ? "گوێ دەگرێت… دوگمەکە ئێستا نیشانی وەستاندنە."
+                      : "Listening… the microphone is now a stop button."
+                    : isKu
+                      ? "دەنگەکەت تۆمار دەکرێت و AI خۆی گوێی لێ دەگرێت."
+                      : "Your audio is recorded so the teacher can assess what you actually say."}
+                </AppText>
               </BrandCard>
             ) : (
               <BrandCard contentStyle={styles.inputShell}>
@@ -566,14 +633,40 @@ export function AiTeacherScreen() {
               </BrandCard>
             )}
 
-            {error || speech.error ? (
-              <AppText
-                style={[styles.errorText, directionStyle]}
-                forceKurdishFont={isKu}
-                latinRole="medium"
-              >
-                {error || speech.error}
-              </AppText>
+            {error || voiceError ? (
+              <View style={styles.errorBox}>
+                <AppText
+                  style={[styles.errorText, directionStyle]}
+                  forceKurdishFont={isKu}
+                  latinRole="medium"
+                  selectable
+                >
+                  {isKu && permissionDenied
+                    ? "دەستگەیشتن بە مایکرۆفۆن ڕێگەپێنەدراوە. لە ڕێکخستنەکان ڕێگەی پێ بدە و دووبارە هەوڵ بدەرەوە."
+                    : error || voiceError}
+                </AppText>
+                {permissionDenied ? (
+                  <PressableScale
+                    onPress={recoverMicrophonePermission}
+                    style={styles.permissionButton}
+                    scaleDown={0.96}
+                  >
+                    <AppText
+                      style={styles.permissionButtonText}
+                      forceKurdishFont={isKu}
+                      latinRole="bold"
+                    >
+                      {Platform.OS === "web"
+                        ? isKu
+                          ? "دووبارە داوای ڕێگە بکە"
+                          : "Request microphone again"
+                        : isKu
+                          ? "کردنەوەی ڕێکخستنەکان"
+                          : "Open device settings"}
+                    </AppText>
+                  </PressableScale>
+                ) : null}
+              </View>
             ) : null}
 
             {phase === "loading" ? (
@@ -587,13 +680,13 @@ export function AiTeacherScreen() {
                   {t("aiTeacher.checking")}
                 </AppText>
               </View>
-            ) : (
+            ) : mode === "writing" ? (
               <BrandPrimaryButton
                 label={t("aiTeacher.checkEnglish")}
                 onPress={onSubmit}
                 style={styles.submitBtn}
               />
-            )}
+            ) : null}
 
             {lastSaved ? (
               <BrandCard
@@ -613,8 +706,8 @@ export function AiTeacherScreen() {
                 latinRole="bold"
               >
                   {isKu
-                    ? `باند ${lastSaved.overallBand} · ${lastSaved.mode === "speaking" ? "قسەکردن" : "نووسین"}`
-                    : `Band ${lastSaved.overallBand} · ${lastSaved.mode}`}
+                    ? `نمرە ${lastSaved.overallBand}/١٠ · ${lastSaved.mode === "speaking" ? "قسەکردن" : "نووسین"}`
+                    : `Score ${lastSaved.overallBand}/10 · ${lastSaved.mode}`}
                 </AppText>
                 <AppText
                   style={[styles.historyExcerpt, directionStyle]}
@@ -644,7 +737,7 @@ function ResultsView({
   isRtl: boolean;
 }) {
   const { t, isKu } = useI18n();
-  const { Colors, styles } = useAiTeacherTheme();
+  const { styles } = useAiTeacherTheme();
   const directionStyle = {
     textAlign: isRtl ? "right" : "left",
     writingDirection: isRtl ? "rtl" : "ltr",
@@ -653,30 +746,53 @@ function ResultsView({
     <Animated.View entering={FadeInDown.duration(320)}>
       <BrandCard contentStyle={styles.overallCard}>
         <View style={styles.overallBadge}>
-          <HugeiconsIcon
-            icon={RobotIcon}
-            size={18}
-            color={Colors.foreground}
-            strokeWidth={2.0}
-          />
           <AppText
             style={styles.overallBadgeText}
-            forceLatinFont
+            forceKurdishFont={isKu}
             latinRole="bold"
           >
-            AI TEACHER
+            {isKu ? "هەڵسەنگاندنی قسەکردن" : "Speaking feedback"}
           </AppText>
         </View>
         <AppText style={[styles.overallLabel, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="bold">
-          {isKu ? "نمرەی گشتی پێشبینیکراو" : "Overall indicative band"}
+          {isKu ? "نمرەی گشتی" : "Overall score"}
         </AppText>
-        <AppText style={styles.overallBand} forceLatinFont latinRole="bold">
-          {result.overallBand}
-        </AppText>
+        <View style={styles.scoreLine}>
+          <AppText style={styles.overallBand} forceLatinFont latinRole="bold">
+            {result.overallBand}
+          </AppText>
+          <AppText style={styles.scoreMaximum} forceLatinFont latinRole="bold">
+            /10
+          </AppText>
+        </View>
         <AppText style={[styles.overallHint, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="medium">
-          {isKu ? "لە دەوری ٩.٠ (شێوازی IELTS)" : "Out of 9.0 (IELTS-style)"}
+          {isKu
+            ? "لەسەر بنەمای ئەو شتەی بەڕاستی گوتووتە"
+            : "Based on the words and delivery in your recording"}
         </AppText>
       </BrandCard>
+
+      {result.transcript ? (
+        <>
+          <AppText
+            style={[styles.sectionTitle, directionStyle]}
+            forceKurdishFont={isKu}
+            latinRole="bold"
+          >
+            {isKu ? "ئەوەی AI بیستی" : "What the teacher heard"}
+          </AppText>
+          <View style={styles.transcriptPanel}>
+            <AppText
+              style={[styles.transcriptText, { textAlign: "left", writingDirection: "ltr" }]}
+              forceLatinFont
+              latinRole="medium"
+              selectable
+            >
+              “{result.transcript}”
+            </AppText>
+          </View>
+        </>
+      ) : null}
 
       <AppText
         style={[styles.sectionTitle, directionStyle]}
@@ -685,55 +801,58 @@ function ResultsView({
       >
         {isKu ? "پێوەرەکان" : "Criteria"}
       </AppText>
-      {result.criteria.map((c) => (
-        <View key={c.key} style={styles.criterionCard}>
+      <View style={styles.criteriaPanel}>
+        {result.criteria.map((c, index) => (
           <View
+            key={c.key}
             style={[
-              styles.criterionTop,
-              { flexDirection: isRtl ? "row-reverse" : "row" },
+              styles.criterionRow,
+              index > 0 && styles.criterionDivider,
             ]}
           >
-            <AppText
-              style={[
-                styles.criterionLabel,
-                {
-                  textAlign: isRtl ? "right" : "left",
-                  writingDirection: isRtl ? "rtl" : "ltr",
-                  paddingRight: isRtl ? 0 : 8,
-                  paddingLeft: isRtl ? 8 : 0,
-                },
-              ]}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isKu}
-              latinRole="bold"
-            >
-              {t(`aiTeacher.criteria.${c.key}`) || c.label}
-            </AppText>
-            <AppText
-              style={styles.criterionBand}
-              forceLatinFont
-              latinRole="bold"
-            >
-              {c.band}
-            </AppText>
-          </View>
-          <View style={styles.bandTrack}>
             <View
-              style={[styles.bandFill, { width: `${(c.band / 9) * 100}%` }]}
-            />
+              style={[
+                styles.criterionTop,
+                { flexDirection: isRtl ? "row-reverse" : "row" },
+              ]}
+            >
+              <AppText
+                style={[
+                  styles.criterionLabel,
+                  {
+                    textAlign: isRtl ? "right" : "left",
+                    writingDirection: isRtl ? "rtl" : "ltr",
+                  },
+                ]}
+                forceKurdishFont={isKu}
+                forceLatinFont={!isKu}
+                latinRole="bold"
+              >
+                {t(`aiTeacher.criteria.${c.key}`) || c.label}
+              </AppText>
+              <AppText
+                style={styles.criterionBand}
+                forceLatinFont
+                latinRole="bold"
+              >
+                {c.band}/10
+              </AppText>
+            </View>
+            <View style={styles.bandTrack}>
+              <View
+                style={[styles.bandFill, { width: `${c.band * 10}%` }]}
+              />
+            </View>
+            <AppText
+              style={[styles.criterionNote, directionStyle]}
+              forceLatinFont
+              latinRole="medium"
+            >
+              {c.note}
+            </AppText>
           </View>
-          <AppText
-            style={[
-              styles.criterionNote,
-              directionStyle,
-            ]}
-            forceLatinFont
-            latinRole="medium"
-          >
-            {c.note}
-          </AppText>
-        </View>
-      ))}
+        ))}
+      </View>
 
       <AppText
         style={[styles.sectionTitle, directionStyle]}
@@ -835,13 +954,13 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginBottom: 28,
+    marginBottom: 18,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.warmBg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -850,60 +969,65 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     gap: 4,
   },
   pageTitle: {
-    fontSize: 30,
+    fontSize: 26,
     color: Colors.foreground,
     letterSpacing: -0.5,
   },
   pageSub: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mutedForeground,
   },
   modeRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 24,
+    gap: 4,
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: Colors.track,
+    marginBottom: 18,
   },
   modeChip: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 99,
-    backgroundColor: Colors.cardSurface,
-    borderWidth: 1.5,
-    borderColor: Colors.borderStrong,
+    minHeight: 42,
+    paddingVertical: 10,
+    borderRadius: 11,
+    backgroundColor: "transparent",
     alignItems: "center",
+    justifyContent: "center",
   },
   modeChipOn: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.cardSurface,
+    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
   },
   modeChipText: {
     fontSize: 15,
     color: Colors.mutedForeground,
   },
   modeChipTextOn: {
-    color: "#FFFFFF",
+    color: Colors.primary,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.foreground,
-    marginBottom: 12,
+    marginBottom: 8,
     marginTop: 4,
   },
   promptScroll: {
-    gap: 12,
-    paddingBottom: 16,
+    gap: 8,
+    paddingBottom: 12,
   },
   promptCard: {
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 20,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     backgroundColor: Colors.cardSurface,
-    borderWidth: 1.5,
-    borderColor: Colors.borderStrong,
-    maxWidth: 220,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    maxWidth: 200,
+    justifyContent: "center",
   },
   promptCardOn: {
-    borderColor: "rgba(255, 112, 81, 0.45)",
+    borderColor: "rgba(37, 99, 235, 0.32)",
     backgroundColor: Colors.warmBg,
   },
   promptTitle: {
@@ -911,17 +1035,15 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     color: Colors.foreground,
   },
   taskCard: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   taskCardInner: {
-    padding: 20,
-    gap: 8,
+    padding: 16,
+    gap: 6,
   },
   promptScenarioLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: Colors.accent,
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   promptScenario: {
     fontSize: 16,
@@ -932,15 +1054,11 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     backgroundColor: Colors.cardSurface,
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 24,
-    shadowColor: C.navy,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    borderRadius: 16,
+    borderCurve: "continuous",
   },
   inputShell: {
-    minHeight: 140,
+    minHeight: 124,
     padding: 16,
   },
   textInput: {
@@ -952,9 +1070,59 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
   },
   speakingMicBlock: {
     alignItems: "center",
-    paddingVertical: 24,
-    gap: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    gap: 16,
     marginBottom: 4,
+  },
+  countdown: {
+    width: "100%",
+    gap: 10,
+  },
+  countdownTop: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+    gap: 6,
+  },
+  countdownLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.mutedForeground,
+  },
+  countdownNumber: {
+    minWidth: 44,
+    fontSize: 34,
+    lineHeight: 38,
+    color: Colors.foreground,
+    textAlign: "right",
+    fontVariant: ["tabular-nums"],
+  },
+  countdownUnit: {
+    width: 34,
+    fontSize: 13,
+    color: Colors.mutedForeground,
+  },
+  countdownTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.track,
+    overflow: "hidden",
+  },
+  countdownFill: {
+    height: "100%",
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+    transitionProperty: "width",
+    transitionDuration: 260,
+  },
+  recordingStatus: {
+    maxWidth: 420,
+    fontSize: 13,
+    lineHeight: 19,
+    color: Colors.mutedForeground,
+    textAlign: "center",
   },
   speakingTranscript: {
     fontSize: 16,
@@ -978,7 +1146,28 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
   errorText: {
     color: Colors.destructive,
     fontSize: 14,
-    marginTop: 8,
+    lineHeight: 20,
+  },
+  errorBox: {
+    marginTop: 10,
+    padding: 14,
+    gap: 10,
+    borderRadius: 14,
+    borderCurve: "continuous",
+    backgroundColor: Colors.warmBg,
+  },
+  permissionButton: {
+    alignSelf: "flex-start",
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  permissionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
   },
   loadingBox: {
     alignItems: "center",
@@ -991,16 +1180,15 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
   },
   primaryBtn: {
     width: "100%",
-    backgroundColor: C.blue,
-    paddingVertical: 18,
-    borderRadius: 20,
+    height: PRIMARY_ACTION.height,
+    backgroundColor: PRIMARY_ACTION.face,
+    paddingHorizontal: 18,
+    borderRadius: PRIMARY_ACTION.radius,
+    borderBottomWidth: PRIMARY_ACTION.rimWidth,
+    borderBottomColor: PRIMARY_ACTION.rim,
+    borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: C.blue,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 6,
   },
   primaryBtnDisabled: {
     opacity: 0.6,
@@ -1011,13 +1199,13 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     letterSpacing: 0.3,
   },
   submitBtn: {
-    marginTop: 16,
+    marginTop: 12,
   },
   historyCard: {
-    marginTop: 20,
+    marginTop: 16,
   },
   historyInner: {
-    padding: 20,
+    padding: 16,
     gap: 6,
   },
   historyLabel: {
@@ -1058,14 +1246,6 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     color: Colors.mutedForeground,
     lineHeight: 21,
   },
-  timerText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: Colors.accent,
-    textAlign: "center",
-    marginBottom: 12,
-    fontFamily: "DINNextRoundedBold",
-  },
   overallCard: {
     alignItems: "center",
     paddingVertical: 28,
@@ -1100,18 +1280,50 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     fontSize: 56,
     color: Colors.foreground,
     lineHeight: 60,
+    fontVariant: ["tabular-nums"],
+  },
+  scoreLine: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  scoreMaximum: {
+    fontSize: 20,
+    color: Colors.mutedForeground,
+    fontVariant: ["tabular-nums"],
   },
   overallHint: {
     fontSize: 14,
     color: Colors.mutedForeground,
   },
-  criterionCard: {
+  transcriptPanel: {
     backgroundColor: Colors.cardSurface,
-    borderRadius: 20,
+    borderRadius: 16,
+    borderCurve: "continuous",
     padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginBottom: 10,
+  },
+  transcriptText: {
+    color: Colors.foreground,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  criteriaPanel: {
+    backgroundColor: Colors.cardSurface,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  criterionRow: {
+    paddingVertical: 16,
+  },
+  criterionDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
   },
   criterionTop: {
     flexDirection: "row",

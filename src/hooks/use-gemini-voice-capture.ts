@@ -33,6 +33,7 @@ export function useGeminiVoiceCapture() {
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const handlersRef = useRef<GeminiVoiceHandlers | null>(null);
   const listeningRef = useRef(false);
@@ -79,10 +80,16 @@ export function useGeminiVoiceCapture() {
     }
 
     if (!perm.granted) {
-      setError("Microphone permission is required for speaking practice.");
+      setPermissionDenied(true);
+      setError(
+        perm.canAskAgain === false
+          ? "Microphone access is blocked. Enable it for Twino in your device Settings, then try again."
+          : "Microphone access is required to check your speaking.",
+      );
       return false;
     }
 
+    setPermissionDenied(false);
     try {
       await setAudioModeAsync({
         allowsRecording: true,
@@ -93,9 +100,11 @@ export function useGeminiVoiceCapture() {
     }
     
     try {
+      await recorderRef.current.prepareToRecordAsync();
       recorderRef.current.record();
-    } catch {
-      setError("Failed to start recording on Android.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Failed to start recording: ${message}`);
       return false;
     }
     
@@ -172,7 +181,10 @@ export function useGeminiVoiceCapture() {
 
   const start = useCallback(
     async (handlers: GeminiVoiceHandlers) => {
-      if (!available) return false;
+      if (!available) {
+        setError("Twino's speech evaluator is not configured.");
+        return false;
+      }
 
       handlersRef.current = handlers;
       setError(null);
@@ -279,6 +291,7 @@ export function useGeminiVoiceCapture() {
     listening,
     processing,
     error,
+    permissionDenied,
     start,
     stopAndEvaluate,
     stopAndGetAudio,

@@ -20,6 +20,7 @@ import { tabBarScrollPadding } from "../../constants/layout";
 import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import type { AppLocale } from "../../i18n";
 import { useFontStore } from "../../stores/useFontStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
@@ -202,6 +203,7 @@ const stylesStatic = StyleSheet.create({
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/more");
   const { t, locale, setLocale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
   const { user, signOut, deleteAccount } = useAuth();
@@ -276,7 +278,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   hapticSelection();
                 } catch {}
               }
-              router.back();
+              safeBack();
             }}
             scaleDown={0.9}
             style={styles.backButton}

@@ -26,6 +26,9 @@ export type PressableScaleProps = {
   children: React.ReactNode;
   onPress?: () => void;
   onLongPress?: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  delayLongPress?: number;
   style?: StyleProp<ViewStyle>;
   scaleDown?: number;
   haptic?: boolean;
@@ -53,8 +56,10 @@ function extractLayoutStyles(style: any) {
   if (flat.width !== undefined) layout.width = flat.width;
   if (flat.height !== undefined) layout.height = flat.height;
   if (flat.margin !== undefined) layout.margin = flat.margin;
-  if (flat.marginHorizontal !== undefined) layout.marginHorizontal = flat.marginHorizontal;
-  if (flat.marginVertical !== undefined) layout.marginVertical = flat.marginVertical;
+  if (flat.marginHorizontal !== undefined)
+    layout.marginHorizontal = flat.marginHorizontal;
+  if (flat.marginVertical !== undefined)
+    layout.marginVertical = flat.marginVertical;
   if (flat.marginTop !== undefined) layout.marginTop = flat.marginTop;
   if (flat.marginBottom !== undefined) layout.marginBottom = flat.marginBottom;
   if (flat.marginLeft !== undefined) layout.marginLeft = flat.marginLeft;
@@ -72,6 +77,9 @@ export function PressableScale({
   children,
   onPress,
   onLongPress,
+  onPressIn,
+  onPressOut,
+  delayLongPress,
   style,
   scaleDown = IOS_BUTTON_PRESS_SCALE,
   haptic = true,
@@ -89,10 +97,7 @@ export function PressableScale({
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
   }));
 
   const layoutStyle = React.useMemo(() => extractLayoutStyles(style), [style]);
@@ -121,15 +126,21 @@ export function PressableScale({
       accessibilityRole={accessibilityRole as any}
       accessibilityLabel={accessibilityLabel}
       onPressIn={() => {
+        onPressIn?.();
         if (reduceMotion) {
           opacity.value = IOS_BUTTON_PRESS_OPACITY;
           return;
         }
         scale.value = withTiming(scaleDown, { duration: CSS_PRESS_MS });
-        opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, { duration: CSS_PRESS_MS });
-        translateY.value = withTiming(IOS_BUTTON_PRESS_Y, { duration: CSS_PRESS_MS });
+        opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, {
+          duration: CSS_PRESS_MS,
+        });
+        translateY.value = withTiming(IOS_BUTTON_PRESS_Y, {
+          duration: CSS_PRESS_MS,
+        });
       }}
       onPressOut={() => {
+        onPressOut?.();
         if (reduceMotion) {
           opacity.value = 1;
           return;
@@ -146,10 +157,8 @@ export function PressableScale({
         if (haptic) fireHaptic(hapticStyle);
         onLongPress?.();
       }}
-      style={[
-        layoutStyle,
-        disabled ? { opacity: 0.5 } : undefined
-      ]}
+      delayLongPress={delayLongPress}
+      style={[layoutStyle, disabled ? { opacity: 0.5 } : undefined]}
     >
       {animatedShell}
     </Pressable>

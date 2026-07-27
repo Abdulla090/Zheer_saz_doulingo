@@ -319,7 +319,7 @@ const waylCheckoutFunction = read("supabase/functions/wayl-checkout/index.ts");
 const waylWebhookFunction = read("supabase/functions/wayl-webhook/index.ts");
 const creditsFunction = read("supabase/functions/credits/index.ts");
 const walletMigration = read(
-  "supabase/migrations/20260719143218_credit_wallet_and_wayl_payments.sql",
+  "supabase/migrations/20260723221118_credit_wallet_and_wayl_payments.sql",
 );
 if (
   !webCreditScreen.includes('functions.invoke("wayl-checkout"') ||

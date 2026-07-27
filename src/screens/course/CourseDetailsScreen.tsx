@@ -1,6 +1,7 @@
 import { AppText } from "../../components/ui/AppText";
 import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { hapticSelection } from "../../utils/haptics";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -26,6 +27,7 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 
 export function CourseDetailsScreen() {
   const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
   const locale = useLocaleStore((s) => s.locale);
   const isRTL = locale === "ku" || locale === "ar";
@@ -33,7 +35,7 @@ export function CourseDetailsScreen() {
   const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
 
   const handleBack = () => {
-    router.back();
+    safeBack();
   };
 
   const handleStartPractice = () => {
@@ -53,7 +55,7 @@ export function CourseDetailsScreen() {
         {/* BANNER */}
         <View style={styles.banner}>
           <Image
-            source={{ uri: "https://ggrhecslgdflloszjkwl.supabase.co/storage/v1/object/public/generation-assets/placeholder/landscape.png" }}
+            source={require("../../../assets/twino_restaurant.png")}
             style={styles.bannerImg}
             contentFit="cover"
           />

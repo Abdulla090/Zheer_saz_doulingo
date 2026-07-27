@@ -4,7 +4,7 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   BookOpen02Icon,
-  Gamepad2Icon,
+  GameController03Icon,
   HeadphonesIcon,
   Message01Icon,
   Mic01Icon,
@@ -65,7 +65,7 @@ export function LessonPathIcon({
       icon = HeadphonesIcon;
       break;
     case "game":
-      icon = Gamepad2Icon;
+      icon = GameController03Icon;
       break;
     case "speaking":
       icon = Mic01Icon;

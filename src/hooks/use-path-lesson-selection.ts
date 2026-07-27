@@ -8,6 +8,10 @@ export type SelectedPathLesson = {
   anchor?: {
     x: number;
     y: number;
+    nodeTop: number;
+    nodeHeight: number;
+    rootWidth: number;
+    rootHeight: number;
   };
 };
 
@@ -36,52 +40,35 @@ export function usePathLessonSelection(
       const requestId = selectionRequestRef.current + 1;
       selectionRequestRef.current = requestId;
 
-      const sectionIndex = sections.findIndex((section) =>
-        section.data.some((candidate) => candidate.id === item.id),
-      );
-      const itemIndex =
-        sectionIndex >= 0
-          ? sections[sectionIndex].data.findIndex((candidate) => candidate.id === item.id)
-          : -1;
+      const displayPopupWithAnchor = (anchor?: SelectedPathLesson["anchor"]) => {
+        if (selectionRequestRef.current !== requestId) return;
+        setSelectedLesson({ item, sectionTitle, anchor });
+      };
 
-      if (sectionIndex >= 0 && itemIndex >= 0) {
-        try {
-          listRef.current?.scrollToLocation({
-            sectionIndex,
-            itemIndex,
-            animated: true,
-            viewPosition: 0.28,
-          });
-        } catch {
-          // The popup still opens if a virtualized row has not measured yet.
-        }
+      const root = overlayRootRef.current;
+      if (!root || !node) {
+        displayPopupWithAnchor();
+        return;
       }
 
-      openTimerRef.current = setTimeout(() => {
-        openTimerRef.current = null;
+      // Measure node instantly on user tap before any async layout shifts
+      root.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
+        node.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
+          const anchorX = nodeX - rootX + nodeWidth / 2;
+          const nodeTop = nodeY - rootY;
 
-        const showPopup = (anchor?: SelectedPathLesson["anchor"]) => {
-          if (selectionRequestRef.current !== requestId) return;
-          setSelectedLesson({ item, sectionTitle, anchor });
-        };
-
-        const root = overlayRootRef.current;
-        if (!root || !node) {
-          showPopup();
-          return;
-        }
-
-        root.measureInWindow((rootX, rootY) => {
-          node.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
-            showPopup({
-              x: nodeX - rootX + nodeWidth / 2,
-              y: nodeY - rootY + nodeHeight + 10,
-            });
+          displayPopupWithAnchor({
+            x: anchorX,
+            y: nodeTop + nodeHeight,
+            nodeTop,
+            nodeHeight,
+            rootWidth,
+            rootHeight,
           });
         });
-      }, 180);
+      });
     },
-    [listRef, overlayRootRef, sections],
+    [overlayRootRef],
   );
 
   useEffect(

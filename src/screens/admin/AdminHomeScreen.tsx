@@ -4,6 +4,7 @@ import type { LessonPathMode } from "../../data/types";
 import { AdminButton, AdminCard, AdminSegment } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { downloadTextFile } from "../../utils/admin-export";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -20,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function AdminHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/more");
   const [mode, setMode] = useState<LessonPathMode>("street");
   const [importText, setImportText] = useState("");
   const [showImport, setShowImport] = useState(false);
@@ -80,7 +82,7 @@ export default function AdminHomeScreen() {
           label="← Back"
           variant="ghost"
           small
-          onPress={() => router.back()}
+          onPress={safeBack}
         />
         <AppText style={styles.title} forceLatinFont>
           Content Admin

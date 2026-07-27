@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { AppText } from "../../../components/ui/AppText";
 import { getMascotExpressionSource } from "../../../constants/mascot-expressions";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 import {
   getMascotDisplayName,
   MASCOTS,
@@ -350,15 +351,17 @@ const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
       backgroundColor: colors.background,
     },
     continueButton: {
-      minHeight: 56,
+      height: PRIMARY_ACTION.height,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 28,
-      backgroundColor: colors.primary,
+      borderRadius: PRIMARY_ACTION.radius,
+      backgroundColor: PRIMARY_ACTION.face,
+      borderBottomWidth: PRIMARY_ACTION.rimWidth,
+      borderBottomColor: PRIMARY_ACTION.rim,
       paddingHorizontal: 22,
     },
     continueButtonText: {
-      color: colors.onPrimary,
+      color: "#FFFFFF",
       fontSize: 17,
       lineHeight: 22,
       fontWeight: "800",

@@ -42,6 +42,8 @@ import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getSkippedUnitsCount } from "../../data/normal-english";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { AppText } from "../../components/ui/AppText";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
 
 type Step = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
 
@@ -62,6 +64,8 @@ const ONBOARDING_COPY = {
     goalTitle: "What's your main goal?",
     continue: "Continue",
     start: "Let's Get Started",
+    generatingTitle: "Generating your personalized path...",
+    generatingSubtitle: "Building content tailored for your goals and level.",
   },
   ku: {
     step: (current: number) => `هەنگاوی ${current} لە 5`,
@@ -75,6 +79,8 @@ const ONBOARDING_COPY = {
     goalTitle: "ئامانجی سەرەکیت چییە؟",
     continue: "بەردەوام بە",
     start: "دەست پێ بکە",
+    generatingTitle: "ڕێڕەوی تایبەت بە تۆ دروست دەکرێت...",
+    generatingSubtitle: "ناوەڕۆکێک دروست دەکەین کە گونجاوە لەگەڵ ئامانج و ئاستەکەت.",
   },
   ar: {
     step: (current: number) => `الخطوة ${current} من 5`,
@@ -88,6 +94,8 @@ const ONBOARDING_COPY = {
     goalTitle: "ما هدفك الرئيسي؟",
     continue: "متابعة",
     start: "ابدأ الآن",
+    generatingTitle: "جارٍ إنشاء مسارك المخصص...",
+    generatingSubtitle: "نُعِد محتوى يناسب أهدافك ومستواك.",
   },
   es: {
     step: (current: number) => `PASO ${current} DE 5`,
@@ -101,6 +109,8 @@ const ONBOARDING_COPY = {
     goalTitle: "¿Cuál es tu objetivo principal?",
     continue: "Continuar",
     start: "Empezar",
+    generatingTitle: "Creando tu ruta personalizada...",
+    generatingSubtitle: "Preparando contenido adaptado a tus objetivos y nivel.",
   },
   ru: {
     step: (current: number) => `ШАГ ${current} ИЗ 5`,
@@ -114,6 +124,8 @@ const ONBOARDING_COPY = {
     goalTitle: "Какая твоя главная цель?",
     continue: "Продолжить",
     start: "Начать",
+    generatingTitle: "Создаём твой персональный путь...",
+    generatingSubtitle: "Подбираем материалы под твои цели и уровень.",
   },
 } as const;
 
@@ -556,8 +568,12 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(1)}</Text>
-            <Text style={[styles.title, textDirectionStyle]}>{copy.nativeLanguageTitle}</Text>
+            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.step(1)}
+            </AppText>
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+              {copy.nativeLanguageTitle}
+            </AppText>
             {renderLanguageOptions(selectedNativeLang, handleNativeLanguageSelect)}
 
           </Animated.View>
@@ -571,8 +587,12 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(2)}</Text>
-            <Text style={[styles.title, textDirectionStyle]}>{copy.targetLanguageTitle}</Text>
+            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.step(2)}
+            </AppText>
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+              {copy.targetLanguageTitle}
+            </AppText>
             {renderLanguageOptions(selectedTargetLang, handleTargetLanguageSelect)}
 
           </Animated.View>
@@ -589,9 +609,15 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
               keyboardVisible && styles.contentWrapKeyboard,
             ]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(3)}</Text>
-            <Text style={[styles.title, textDirectionStyle]}>{copy.profileTitle}</Text>
-            <Text style={[styles.subtitle, textDirectionStyle]}>{copy.profileSubtitle}</Text>
+            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.step(3)}
+            </AppText>
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+              {copy.profileTitle}
+            </AppText>
+            <AppText style={styles.subtitle} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.profileSubtitle}
+            </AppText>
 
 
 
@@ -631,10 +657,12 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(4)}</Text>
-            <Text style={[styles.title, textDirectionStyle]}>
+            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.step(4)}
+            </AppText>
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
               {copy.levelTitle(LANGUAGES.find((l) => l.id === selectedTargetLang)?.label ?? "")}
-            </Text>
+            </AppText>
 
 
 
@@ -656,9 +684,14 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                         {isSelected && <View style={styles.radioInner} />}
                       </View>
                     </View>
-                    <Text style={[styles.gridCardTitle, textDirectionStyle, isSelected && styles.goalTitleSelected]}>
+                    <AppText
+                      style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
+                      languageCode={selectedNativeLang}
+                      align="start"
+                      fullWidth
+                    >
                       {levelLabels[lvl.id] ?? lvl.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -675,8 +708,12 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             layout={LinearTransition.springify()}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
-            <Text style={[styles.stepNumLabel, textDirectionStyle]}>{copy.step(5)}</Text>
-            <Text style={[styles.title, textDirectionStyle]}>{copy.goalTitle}</Text>
+            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
+              {copy.step(5)}
+            </AppText>
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+              {copy.goalTitle}
+            </AppText>
 
 
 
@@ -698,9 +735,14 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                         {isSelected && <View style={styles.radioInner} />}
                       </View>
                     </View>
-                    <Text style={[styles.gridCardTitle, textDirectionStyle, isSelected && styles.goalTitleSelected]}>
+                    <AppText
+                      style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
+                      languageCode={selectedNativeLang}
+                      align="start"
+                      fullWidth
+                    >
                       {goalLabels[g.id] ?? g.title}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -716,12 +758,23 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             style={[styles.contentWrap, { alignItems: "center", justifyContent: "center", paddingBottom: 100 }]}
           >
             <HugeiconsIcon icon={SparklesIcon} size={64} color={colors.foreground} />
-            <Text style={[styles.title, { textAlign: "center", marginTop: 24, fontSize: 32 }]}>
-              Generating your personalized path...
-            </Text>
-            <Text style={[styles.subtitle, { textAlign: "center", fontSize: 16 }]}>
-              Building content tailored for your goals and level.
-            </Text>
+            <AppText
+              style={[styles.title, { marginTop: 24, fontSize: 32 }]}
+              languageCode={selectedNativeLang}
+              align="center"
+              fullWidth
+              latinRole="bold"
+            >
+              {copy.generatingTitle}
+            </AppText>
+            <AppText
+              style={[styles.subtitle, { fontSize: 16 }]}
+              languageCode={selectedNativeLang}
+              align="center"
+              fullWidth
+            >
+              {copy.generatingSubtitle}
+            </AppText>
           </Animated.View>
         )}
       </ScrollView>
@@ -1199,20 +1252,15 @@ function createStyles(colors: any, isDark: boolean) {
   // -- Primary Action Button --
   primaryButton: {
     width: "100%",
-    backgroundColor: "#2563EB",
-    height: 54,
-    borderRadius: 27,
+    backgroundColor: PRIMARY_ACTION.face,
+    height: PRIMARY_ACTION.height,
+    borderRadius: PRIMARY_ACTION.radius,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    borderBottomWidth: 4,
-    borderBottomColor: "#1D4ED8",
-    shadowColor: "#2563EB",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderBottomWidth: PRIMARY_ACTION.rimWidth,
+    borderBottomColor: PRIMARY_ACTION.rim,
   },
   primaryButtonRtl: {
     flexDirection: "row-reverse",
@@ -1229,10 +1277,8 @@ function createStyles(colors: any, isDark: boolean) {
     alignSelf: "center",
   },
   primaryButtonDisabled: {
-    backgroundColor: "#94A3B8",
-    borderBottomColor: "#64748B",
-    shadowOpacity: 0,
-    elevation: 0,
+    backgroundColor: PRIMARY_ACTION.disabledFace,
+    borderBottomColor: PRIMARY_ACTION.disabledRim,
   },
   primaryButtonText: {
     color: "#FFFFFF",

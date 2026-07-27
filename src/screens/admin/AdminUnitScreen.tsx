@@ -3,6 +3,7 @@ import type { LessonPathMode } from "../../data/types";
 import { AdminButton, AdminCard } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
@@ -11,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function AdminUnitScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const safeBack = useSafeBack("/admin");
   const params = useLocalSearchParams<{ mode?: string; unit?: string }>();
   const mode = (params.mode === "normal" ? "normal" : "street") as LessonPathMode;
   const unitIndex = Math.max(0, Number(params.unit ?? 0));
@@ -67,7 +69,7 @@ export default function AdminUnitScreen() {
                   style: "destructive",
                   onPress: () => {
                     removeUnit(mode, unitIndex);
-                    router.back();
+                    safeBack();
                   },
                 },
               ])

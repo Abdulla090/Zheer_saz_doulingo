@@ -29,6 +29,7 @@ import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { AppText } from "../../components/ui/AppText";
 import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { PRIMARY_ACTION } from "../../constants/primary-action";
 
 /* Blue → Indigo order */
 const STEP_IDS = ["learn_conversation", "grow_every_day", "achieve_fluency"] as const;
@@ -337,23 +338,13 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean) =>
     nextButton: {
       width: "100%",
       maxWidth: isDesktopWeb ? 520 : undefined,
-      height: 56,
-      backgroundColor: isDark ? colors.primary : "#0F172A",
-      borderRadius: 28,
+      height: PRIMARY_ACTION.height,
+      backgroundColor: PRIMARY_ACTION.face,
+      borderRadius: PRIMARY_ACTION.radius,
+      borderBottomWidth: PRIMARY_ACTION.rimWidth,
+      borderBottomColor: PRIMARY_ACTION.rim,
       alignItems: "center",
       justifyContent: "center",
-      ...Platform.select({
-        web: {
-          boxShadow: "0px 8px 24px rgba(15, 23, 42, 0.18)",
-        },
-        default: {
-          shadowColor: "#0F172A",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
-          elevation: 5,
-        },
-      }),
     },
     nextButtonContent: {
       flexDirection: "row",

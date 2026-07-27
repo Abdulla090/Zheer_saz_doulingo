@@ -11,10 +11,8 @@ import type {
   GuidebookLessonViewModel,
 } from "./guidebook-model";
 import type { GuidebookAccent } from "./guidebook-theme";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft02Icon, ArrowRight02Icon, Cards02Icon, CheckmarkCircle02Icon, VolumeHighIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft02Icon, ArrowRight02Icon, Cards02Icon, CheckmarkCircle02Icon, VolumeHighIcon } from "@hugeicons/core-free-icons";
 
 type GuidebookPracticePanelProps = {
   lesson: GuidebookLessonViewModel;
@@ -42,7 +40,7 @@ function ActionButton({
   onPress,
 }: {
   label: string;
-  icon: object;
+  icon: any;
   accent: GuidebookAccent;
   isRtl: boolean;
   isKurdish: boolean;
@@ -81,7 +79,7 @@ function PreviousButton({
   onPress,
 }: {
   label: string;
-  icon: object;
+  icon: any;
   disabled: boolean;
   onPress: () => void;
 }) {

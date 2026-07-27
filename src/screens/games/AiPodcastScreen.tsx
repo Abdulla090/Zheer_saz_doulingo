@@ -1,20 +1,14 @@
 import { AppText } from "../../components/ui/AppText";
-import {
-  HomeLiquidCard,
-  HomeMeshBackground,
-  HomePalette as C,
-} from "../../components/ui/ios-liquid-home";
+import { HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import { PressableScale } from "../../components/animations";
 import { useI18n } from "../../hooks/useI18n";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { crossShadow } from "../../utils/shadows";
 import { canStartPodcastPlayback } from "../../utils/podcast-playback";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon, VolumeMuteIcon, Mic01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon, VolumeMuteIcon } from "@hugeicons/core-free-icons";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -32,6 +26,7 @@ import {
 } from "expo-audio";
 
 type PodcastLevel = "basic" | "intermediate" | "advanced";
+const PODCAST_BLUE = "#2563EB";
 
 type PodcastEpisode = {
   id: string;
@@ -46,22 +41,22 @@ const PODCASTS_BY_LEVEL: Record<PodcastLevel, Omit<PodcastEpisode, "id">> = {
   basic: {
     title: "Basic Podcast",
     titleKu: "پۆدکاستی سەرەتایی",
-    subtitle: "Jack & Cloie • AI Conversation",
-    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    subtitle: "Jack & Cloie • English conversation",
+    subtitleKu: "جاک و کلۆیی • گفتوگۆی ئینگلیزی",
     audioSource: require("../../../assets/aipodcast/basic/ai_radio_basic.mp3"),
   },
   intermediate: {
     title: "Intermediate Podcast",
     titleKu: "پۆدکاستی ناوەند",
-    subtitle: "Jack & Cloie • AI Conversation",
-    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    subtitle: "Jack & Cloie • English conversation",
+    subtitleKu: "جاک و کلۆیی • گفتوگۆی ئینگلیزی",
     audioSource: require("../../../assets/aipodcast/intermidate/erbil.mp3"),
   },
   advanced: {
     title: "Advanced Podcast",
     titleKu: "پۆدکاستی پێشکەوتوو",
-    subtitle: "Jack & Cloie • AI Conversation",
-    subtitleKu: "جاک و کلۆیی • قسەکردنی ژیری دەستکرد",
+    subtitle: "Jack & Cloie • English conversation",
+    subtitleKu: "جاک و کلۆیی • گفتوگۆی ئینگلیزی",
     audioSource: require("../../../assets/aipodcast/advance/sulaimany.mp3"),
   },
 };
@@ -74,7 +69,7 @@ const formatTime = (seconds: number) => {
 
 export function AiPodcastScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const { locale, isKu } = useI18n();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
@@ -83,14 +78,8 @@ export function AiPodcastScreen() {
   const [selectedLevel, setSelectedLevel] = useState<PodcastLevel>("basic");
   const [error, setError] = useState<string | null>(null);
 
-  // Fake Generation States
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [generationStatus, setGenerationStatus] = useState("");
-
   const [activeEpisode, setActiveEpisode] = useState<PodcastEpisode | null>(null);
   const [autoPlayEpisodeId, setAutoPlayEpisodeId] = useState<string | null>(null);
-  const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Volume & Speed States
   const [volume, setVolume] = useState(0.7);
@@ -119,6 +108,10 @@ export function AiPodcastScreen() {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
+
+  const handleBack = useCallback(() => {
+    safeBack();
+  }, [safeBack]);
 
   // The hook owns and releases the native player. Wait for the packaged asset to
   // finish resolving before changing playback state on Android or iOS.
@@ -203,21 +196,8 @@ export function AiPodcastScreen() {
     });
   }, [audioPlayer, audioStatus.didJustFinish]);
 
-  useEffect(
-    () => () => {
-      if (generationTimerRef.current) {
-        clearInterval(generationTimerRef.current);
-      }
-    },
-    [],
-  );
-
-  const handleGenerate = () => {
+  const handleOpenPodcast = () => {
     pulse();
-    if (generationTimerRef.current) {
-      clearInterval(generationTimerRef.current);
-      generationTimerRef.current = null;
-    }
     try {
       audioPlayer.pause();
       audioPlayer.replace(null);
@@ -225,48 +205,12 @@ export function AiPodcastScreen() {
       // The player can still be resolving a previous source.
     }
     setError(null);
-    setIsGenerating(true);
-    setGenerationProgress(0);
-    setActiveEpisode(null);
-    setAutoPlayEpisodeId(null);
-
-    // Random generation time between 8 and 13 seconds
-    const totalTimeMs = Math.floor(Math.random() * 5000) + 8000;
-    const intervalTime = 100;
-    const steps = totalTimeMs / intervalTime;
-    let currentStep = 0;
-
-    generationTimerRef.current = setInterval(() => {
-      currentStep++;
-      const progress = Math.min((currentStep / steps) * 100, 100);
-      setGenerationProgress(Math.floor(progress));
-
-      if (progress < 25) {
-        setGenerationStatus(isKu ? "شیکردنەوەی بابەتەکە..." : "Analyzing topic...");
-      } else if (progress < 55) {
-        setGenerationStatus(isKu ? "نووسینی دەق لە نێوان جاک و کلۆیی..." : "Writing script between Jack & Cloie...");
-      } else if (progress < 85) {
-        setGenerationStatus(isKu ? "دروستکردنی دەنگی جاک و کلۆیی..." : "Synthesizing AI host voices...");
-      } else {
-        setGenerationStatus(isKu ? "ڕێکخستنی کۆتایی دەنگەکە..." : "Optimizing audio track...");
-      }
-
-      if (currentStep >= steps) {
-        if (generationTimerRef.current) {
-          clearInterval(generationTimerRef.current);
-          generationTimerRef.current = null;
-        }
-
-        const nextEpisode: PodcastEpisode = {
-          ...PODCASTS_BY_LEVEL[selectedLevel],
-          id: `${selectedLevel}-${Date.now()}`,
-        };
-
-        setActiveEpisode(nextEpisode);
-        setIsGenerating(false);
-        setAutoPlayEpisodeId(nextEpisode.id);
-      }
-    }, intervalTime);
+    const nextEpisode: PodcastEpisode = {
+      ...PODCASTS_BY_LEVEL[selectedLevel],
+      id: `${selectedLevel}-${Date.now()}`,
+    };
+    setActiveEpisode(nextEpisode);
+    setAutoPlayEpisodeId(nextEpisode.id);
   };
 
   const togglePlay = () => {
@@ -374,17 +318,15 @@ export function AiPodcastScreen() {
 
   return (
     <View style={styles.root}>
-      {!isDark && <HomeMeshBackground />}
-
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: "row" }]}>
-        <PressableScale onPress={() => router.back()} style={styles.backBtn}>
+        <PressableScale onPress={handleBack} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
           </View>
         </PressableScale>
         <AppText style={styles.headerTitle}>
-          {isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast"}
+          {isKu ? "پۆدکاستەکان" : "Podcasts"}
         </AppText>
         <View style={{ width: 40 }} />
       </View>
@@ -397,14 +339,14 @@ export function AiPodcastScreen() {
         <HomeLiquidCard style={styles.generatorCard} contentStyle={styles.generatorInner}>
           <View style={[styles.generatorHeader, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <View style={styles.generatorIcon}>
-              <HugeiconsIcon icon={Mic01Icon} size={20} color={C.blue} strokeWidth={2.2} />
+                <HugeiconsIcon icon={VolumeHighIcon} size={20} color={PODCAST_BLUE} strokeWidth={2.2} />
             </View>
             <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
               <AppText style={styles.generatorEyebrow}>
-                {isKu ? "پۆدکاستی ژیری دەستکرد" : "AI Podcast Settings"}
+                {isKu ? "وانە دەنگییە ئامادەکراوەکان" : "Built-in audio lessons"}
               </AppText>
               <AppText style={styles.generatorTitle}>
-                {isKu ? "ئاستێک هەڵبژێرە بۆ دروستکردن" : "Choose level to generate"}
+                {isKu ? "ئاستێک هەڵبژێرە و گوێ بگرە" : "Choose a level and listen"}
               </AppText>
             </View>
           </View>
@@ -426,7 +368,6 @@ export function AiPodcastScreen() {
                 <PressableScale
                   key={lvl}
                   onPress={() => {
-                    if (isGenerating) return;
                     pulse();
                     setSelectedLevel(lvl);
                   }}
@@ -440,30 +381,11 @@ export function AiPodcastScreen() {
             })}
           </View>
 
-          {/* Generate Button / Progress Bar */}
-          {isGenerating ? (
-            <View style={styles.progressContainer}>
-              <View style={styles.progressHeader}>
-                <AppText style={styles.progressText}>{generationStatus}</AppText>
-                <AppText style={styles.progressPercent}>{generationProgress}%</AppText>
-              </View>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${generationProgress}%` }]} />
-              </View>
-            </View>
-          ) : (
-            <PressableScale
-              onPress={handleGenerate}
-              style={[
-                styles.generateBtn,
-                crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.22 }),
-              ]}
-            >
-              <AppText style={styles.generateText}>
-                {isKu ? "پۆدکاست دروست بکە" : "Generate Podcast"}
-              </AppText>
-            </PressableScale>
-          )}
+          <PressableScale onPress={handleOpenPodcast} style={styles.generateBtn}>
+            <AppText style={styles.generateText}>
+              {isKu ? "پۆدکاست لێبدە" : "Play podcast"}
+            </AppText>
+          </PressableScale>
 
           {error && (
             <AppText style={[styles.errorText, isRtl && styles.rtlText]}>{error}</AppText>
@@ -641,7 +563,7 @@ function createStyles(colors: any, isDark: boolean) {
   },
   generatorEyebrow: {
     fontSize: 11,
-    color: C.blue,
+    color: PODCAST_BLUE,
     fontWeight: "800",
     letterSpacing: 0.2,
     marginBottom: 2,
@@ -680,7 +602,7 @@ function createStyles(colors: any, isDark: boolean) {
     fontFamily: "DINNextRoundedBold",
   },
   levelBtnTextActive: {
-    color: C.blue,
+    color: PODCAST_BLUE,
   },
   topicInput: {
     minHeight: 82,
@@ -722,8 +644,8 @@ function createStyles(colors: any, isDark: boolean) {
   },
   generateBtn: {
     height: 52,
-    borderRadius: 20,
-    backgroundColor: C.blue,
+    borderRadius: 16,
+    backgroundColor: PODCAST_BLUE,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -749,7 +671,7 @@ function createStyles(colors: any, isDark: boolean) {
   },
   progressPercent: {
     fontSize: 14,
-    color: C.blue,
+    color: PODCAST_BLUE,
     fontWeight: "800",
   },
   errorText: {
@@ -790,7 +712,7 @@ function createStyles(colors: any, isDark: boolean) {
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: C.blue,
+    backgroundColor: PODCAST_BLUE,
     borderRadius: 3,
   },
   timeRow: {
@@ -829,8 +751,8 @@ function createStyles(colors: any, isDark: boolean) {
     borderColor: colors.border,
   },
   speedPillActive: {
-    backgroundColor: C.blue,
-    borderColor: C.blue,
+    backgroundColor: PODCAST_BLUE,
+    borderColor: PODCAST_BLUE,
   },
   speedPillText: {
     fontSize: 11,
@@ -855,10 +777,10 @@ function createStyles(colors: any, isDark: boolean) {
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: C.blue,
+    backgroundColor: PODCAST_BLUE,
     alignItems: "center",
     justifyContent: "center",
-    ...crossShadow({ color: C.blue, offsetY: 8, blur: 16, opacity: 0.3 }),
+    ...crossShadow({ color: PODCAST_BLUE, offsetY: 6, blur: 14, opacity: 0.22 }),
   },
   volumeArea: {
     flexDirection: "row",

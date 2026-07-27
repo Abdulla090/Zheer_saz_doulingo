@@ -2,34 +2,31 @@ import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { StarIcon } from "@hugeicons/core-free-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect } from "react";
 import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
+  ReduceMotion,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { PathCircleShine } from "./path-circle-shine";
 import { crossShadow } from "../../../utils/shadows";
 
 export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
 
 export const SVG_BUTTON_COLOR_SETS = {
-  green: { rim: "#58a700", face: "#58cc02" },
-  purple: { rim: "#a568cc", face: "#ce82ff" },
-  blue: { rim: "#2b70c9", face: "#1cb0f6" },
-  mint: { rim: "#0B8A6C", face: "#08c296" },
-  gray: { rim: "#b7b7b7", face: "#E5E5E5" },
-  yellow: { rim: "#ff9600", face: "#ffc800" },
-  gold: { rim: "#ff9600", face: "#ffc800" },
+  green: { rim: "#46a302", face: "#58cc02" },
+  purple: { rim: "#9b51e0", face: "#ce82ff" },
+  blue: { rim: "#1482b8", face: "#1cb0f6" },
+  mint: { rim: "#068265", face: "#08c296" },
+  gray: { rim: "#a6a6a6", face: "#e5e5e5" },
+  yellow: { rim: "#e59400", face: "#ffc800" },
+  gold: { rim: "#e59400", face: "#ffc800" },
   orange: { rim: "#d86f00", face: "#ff9600" },
-  red: { rim: "#d33131", face: "#ff4b4b" },
+  red: { rim: "#d32f2f", face: "#ff4b4b" },
 } as const;
 
 type SvgButtonProps = {
@@ -41,71 +38,47 @@ type SvgButtonProps = {
   iconColor?: string;
   label?: string | number;
   isCurrentLesson?: boolean;
+  isCompleted?: boolean;
   isSelected?: boolean;
   isLocked?: boolean;
   accessibilityLabel?: string;
 };
 
 export function CurrentLessonIcon({ size }: { size: number }) {
-  const translateY = useSharedValue(0);
-  const rotate = useSharedValue(0);
-  const reduceMotion = useReducedMotion();
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    if (reduceMotion) {
-      translateY.value = 0;
-      rotate.value = 0;
-      return;
-    }
-
-    // Settle once, then travel directly between the two endpoints. Returning
-    // to zero before starting the next descent caused a visible hitch.
-    translateY.value = withSequence(
-      withTiming(5, {
-        duration: 180,
-        easing: Easing.out(Easing.cubic),
-      }),
-      withRepeat(
-        withSequence(
-          withTiming(-8, {
-            duration: 500,
-            easing: Easing.out(Easing.cubic),
-          }),
-          withTiming(5, {
-            duration: 650,
-            easing: Easing.inOut(Easing.cubic),
-          }),
-        ),
-        -1,
-        false,
-      ),
-    );
-    // Five bounces make one full turn. Resetting at 360deg is visually
-    // identical, unlike the old 72deg-to-0deg snap at the loop boundary.
-    rotate.value = withRepeat(
-      withTiming(360, {
-        duration: 5750,
-        easing: Easing.linear,
+    progress.value = withRepeat(
+      withTiming(1, {
+        duration: 1200,
+        easing: Easing.inOut(Easing.sin),
       }),
       -1,
-      false,
+      true,
+      undefined,
+      ReduceMotion.Never,
     );
 
-    return () => {
-      cancelAnimation(translateY);
-      cancelAnimation(rotate);
-    };
-  }, [reduceMotion, rotate, translateY]);
+    return () => cancelAnimation(progress);
+  }, [progress]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY.value },
-      { rotate: `${rotate.value}deg` },
-    ],
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    const phase = progress.value;
+    return {
+      transform: [
+        { translateY: 3 - phase * 6 },
+        { rotate: `${-3 + phase * 6}deg` },
+        { scale: 1 + phase * 0.035 },
+      ],
+    };
+  });
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View
+      renderToHardwareTextureAndroid
+      shouldRasterizeIOS
+      style={animatedStyle}
+    >
       <HugeiconsIcon
         icon={StarIcon}
         color="#FFFFFF"
@@ -127,188 +100,136 @@ export const SvgButton = React.memo(
     iconColor,
     label,
     isCurrentLesson = false,
+    isCompleted = false,
     isSelected = false,
     isLocked = false,
     accessibilityLabel,
   }: SvgButtonProps) => {
-    const colors = SVG_BUTTON_COLOR_SETS[variant];
-    const nodeLift = useSharedValue(0);
-    const nodeScale = useSharedValue(1);
-    const reduceMotion = useReducedMotion();
+    const colors =
+      SVG_BUTTON_COLOR_SETS[variant] || SVG_BUTTON_COLOR_SETS.green;
+    const pressProgress = useSharedValue(0);
+
+    const depth = Math.max(7, Math.round(size * 0.12));
+    const buttonRadius = Math.round(size * 0.28);
+    const iconSize = Math.round(size * 0.42);
+    const starSize = Math.round(size * 0.5);
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
-    const depth = Math.max(4, Math.round(size * 0.055));
-    const faceSize = size - depth;
-    const cornerRadius = Math.round(faceSize * 0.31);
-    const faceTop = 0;
-    const rimTop = depth;
-    const iconSize = Math.round(size * 0.44);
+      iconColor ?? (variant === "gray" ? "#9E9E9E" : "#FFFFFF");
 
-    useEffect(() => {
-      if (!isCurrentLesson || isLocked || reduceMotion) {
-        nodeLift.value = withTiming(0, { duration: 180 });
-        nodeScale.value = withTiming(1, { duration: 180 });
-        return;
-      }
+    const handlePressIn = () => {
+      if (isLocked) return;
+      pressProgress.value = withTiming(1, {
+        duration: 60,
+        easing: Easing.out(Easing.quad),
+      });
+    };
 
-      nodeLift.value = withRepeat(
-        withSequence(
-          withTiming(-2.5, {
-            duration: 1350,
-            easing: Easing.inOut(Easing.sin),
-          }),
-          withTiming(0, {
-            duration: 1550,
-            easing: Easing.inOut(Easing.sin),
-          }),
-        ),
-        -1,
-        false,
-      );
-      nodeScale.value = withRepeat(
-        withSequence(
-          withTiming(1.018, {
-            duration: 1350,
-            easing: Easing.inOut(Easing.sin),
-          }),
-          withTiming(1, {
-            duration: 1550,
-            easing: Easing.inOut(Easing.sin),
-          }),
-        ),
-        -1,
-        false,
-      );
+    const handlePressOut = () => {
+      if (isLocked) return;
+      pressProgress.value = withTiming(0, {
+        duration: 90,
+        easing: Easing.out(Easing.quad),
+      });
+    };
 
-      return () => {
-        cancelAnimation(nodeLift);
-        cancelAnimation(nodeScale);
+    const topFaceStyle = useAnimatedStyle(() => {
+      const pressTranslate = pressProgress.value * (depth - 2);
+      return {
+        transform: [{ translateY: pressTranslate }],
       };
-    }, [isCurrentLesson, isLocked, nodeLift, nodeScale, reduceMotion]);
-
-    const nodeMotionStyle = useAnimatedStyle(() => ({
-      transform: [
-        { translateY: nodeLift.value },
-        { scale: nodeScale.value },
-      ],
-    }));
+    });
 
     return (
       <Pressable
-        disabled={!onPress}
+        disabled={!onPress || isLocked}
         onPress={onPress}
-        activeOpacity={0.96}
-        pressScale={0.94}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        pressScale={1}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityState={{ disabled: isLocked, selected: isSelected }}
         style={[
-          { width: size, height: size },
+          { width: size, height: size + depth },
           translateX ? { transform: [{ translateX }] } : undefined,
         ]}
       >
-        <Animated.View
-          style={[
-            { width: size, height: size, alignItems: "center" },
-            nodeMotionStyle,
-          ]}
+        <View
+          style={{ width: size, height: size + depth, alignItems: "center" }}
         >
-          <LinearGradient
-            colors={[colors.face, colors.rim]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
+          {/* 2.5D Fixed Extruded Rim Base (Stays 100% fixed) */}
+          <View
             style={{
               position: "absolute",
-              top: rimTop,
-              width: faceSize - 2,
-              height: faceSize,
-              borderRadius: cornerRadius - 1,
+              top: depth,
+              width: size,
+              height: size,
+              borderRadius: buttonRadius,
               borderCurve: "continuous",
+              backgroundColor: colors.rim,
               ...crossShadow({
                 color: colors.rim,
-                offsetY: 3,
-                blur: 7,
+                offsetY: 2,
+                blur: 4,
                 opacity: isLocked ? 0.1 : 0.2,
                 elevation: 2,
               }),
             }}
           />
-          <View
-            style={{
-              position: "absolute",
-              top: faceTop,
-              width: faceSize,
-              height: faceSize,
-              borderRadius: cornerRadius,
-              borderCurve: "continuous",
-              backgroundColor: colors.face,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.2)",
-              borderTopColor: "rgba(255,255,255,0.5)",
-              borderLeftColor: "rgba(255,255,255,0.28)",
-              borderRightColor: "rgba(255,255,255,0.14)",
-              borderBottomColor: "rgba(0,0,0,0.06)",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-            }}
-          >
-            <LinearGradient
-              pointerEvents="none"
-              colors={[
-                "rgba(255,255,255,0.17)",
-                "rgba(255,255,255,0)",
-                "rgba(0,0,0,0.055)",
-              ]}
-              locations={[0, 0.58, 1]}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={{
+
+          {/* 2.5D Pushable Top Face Button (Sinks into base when clicked!) */}
+          <Animated.View
+            style={[
+              {
                 position: "absolute",
-                inset: 0,
-                borderRadius: cornerRadius,
-              }}
-            />
+                top: 0,
+                width: size,
+                height: size,
+                borderRadius: buttonRadius,
+                borderCurve: "continuous",
+                backgroundColor: colors.face,
+                borderWidth: isCompleted ? 1.5 : 0,
+                borderColor: isCompleted
+                  ? "rgba(255,255,255,0.46)"
+                  : "transparent",
+                borderTopColor: isCompleted
+                  ? "rgba(255,255,255,0.72)"
+                  : "transparent",
+                borderBottomColor: isCompleted
+                  ? "rgba(0,0,0,0.08)"
+                  : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              },
+              topFaceStyle,
+            ]}
+          >
+            {isCompleted ? (
+              <View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: Math.round(size * 0.08),
+                  left: Math.round(size * 0.14),
+                  right: Math.round(size * 0.14),
+                  height: Math.max(2, Math.round(size * 0.035)),
+                  borderRadius: size,
+                  backgroundColor: "rgba(255,255,255,0.34)",
+                }}
+              />
+            ) : null}
             {isCurrentLesson && !isLocked ? (
-              <PathCircleShine size={faceSize} radius={cornerRadius} />
-            ) : (
-              <>
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    top: -Math.round(size * 0.04),
-                    left: -Math.round(size * 0.18),
-                    width: Math.round(size * 1.35),
-                    height: Math.round(size * 0.22),
-                    backgroundColor: "rgba(255,255,255,0.24)",
-                    transform: [{ rotate: "-24deg" }],
-                  }}
-                />
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    bottom: -Math.round(size * 0.02),
-                    left: -Math.round(size * 0.12),
-                    width: Math.round(size * 1.25),
-                    height: Math.round(size * 0.12),
-                    backgroundColor: "rgba(255,255,255,0.14)",
-                    transform: [{ rotate: "-24deg" }],
-                  }}
-                />
-              </>
-            )}
-            {isCurrentLesson && !isLocked ? (
-              <CurrentLessonIcon size={iconSize} />
+              <CurrentLessonIcon size={starSize} />
             ) : label !== undefined ? (
               <AppText
                 forceLatinFont
                 latinRole="bold"
                 style={{
                   color: resolvedIconColor,
-                  fontSize: Math.round(size * 0.34),
-                  lineHeight: Math.round(size * 0.4),
+                  fontSize: Math.round(size * 0.38),
+                  lineHeight: Math.round(size * 0.44),
                   fontWeight: "900",
                   fontVariant: ["tabular-nums"],
                   letterSpacing: -0.5,
@@ -318,16 +239,16 @@ export const SvgButton = React.memo(
               </AppText>
             ) : IconComponent ? (
               <IconComponent
-                color={resolvedIconColor}
-                fill={resolvedIconColor}
-                stroke={resolvedIconColor}
-                strokeWidth={1}
-                width={iconSize}
-                height={iconSize}
+                color={isCompleted ? "#FFFFFF" : resolvedIconColor}
+                fill={isCompleted ? "#FFFFFF" : resolvedIconColor}
+                stroke={isCompleted ? "#FFFFFF" : resolvedIconColor}
+                strokeWidth={isCompleted ? 1.5 : 1}
+                width={isCompleted ? Math.round(size * 0.5) : iconSize}
+                height={isCompleted ? Math.round(size * 0.5) : iconSize}
               />
             ) : null}
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
       </Pressable>
     );
   },

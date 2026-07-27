@@ -30,6 +30,7 @@ export function useGeminiVoiceCapture() {
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const handlersRef = useRef<GeminiVoiceHandlers | null>(null);
   const listeningRef = useRef(false);
@@ -59,8 +60,13 @@ export function useGeminiVoiceCapture() {
       setError("Microphone is not available in this browser.");
       return false;
     }
+    if (typeof MediaRecorder === "undefined") {
+      setError("Audio recording is not supported in this browser.");
+      return false;
+    }
 
     try {
+      setPermissionDenied(false);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       webStreamRef.current = stream;
       webChunksRef.current = [];
@@ -88,8 +94,14 @@ export function useGeminiVoiceCapture() {
       mr.start(250);
       return true;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Microphone permission denied.";
+      const errorName = err instanceof Error ? err.name : "";
+      const denied = errorName === "NotAllowedError" || errorName === "SecurityError";
+      setPermissionDenied(denied);
+      const message = denied
+        ? "Microphone access is blocked. Allow microphone access in this site's browser settings, then tap the microphone again."
+        : errorName === "NotFoundError"
+          ? "No microphone was found. Connect a microphone and try again."
+          : "The microphone could not start. Close other apps using it and try again.";
       setError(message);
       cleanupWebStream();
       return false;
@@ -177,7 +189,10 @@ export function useGeminiVoiceCapture() {
 
   const start = useCallback(
     async (handlers: GeminiVoiceHandlers) => {
-      if (!available) return false;
+      if (!available) {
+        setError("Twino's speech evaluator is not configured.");
+        return false;
+      }
 
       handlersRef.current = handlers;
       setError(null);
@@ -286,6 +301,7 @@ export function useGeminiVoiceCapture() {
     listening,
     processing,
     error,
+    permissionDenied,
     start,
     stopAndEvaluate,
     stopAndGetAudio,

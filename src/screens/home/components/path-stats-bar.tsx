@@ -16,12 +16,14 @@ import {
 import React, { useMemo } from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
 } from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Wallet02Icon } from "@hugeicons/core-free-icons";
+import { router } from "expo-router";
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
 import { useCreditBalance } from "../../../hooks/useCreditBalance";
@@ -61,25 +63,33 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         key: "xp",
         label: t("games.xpEarned"),
         value: totalXp.toLocaleString(),
-        icon: <AppAwardIcon size={iconSize} duotone={false} strokeWidth={2.65} />,
+        icon: (
+          <AppAwardIcon size={iconSize} duotone={false} strokeWidth={2.65} />
+        ),
       },
       {
         key: "streak",
         label: t("games.dayStreak"),
         value: streakDays.toLocaleString(),
-        icon: <AppFireIcon size={iconSize} duotone={false} strokeWidth={2.65} />,
+        icon: (
+          <AppFireIcon size={iconSize} duotone={false} strokeWidth={2.65} />
+        ),
       },
       {
         key: "goal",
         label: t("home.dailyGoal"),
         value: `${dailyXp}/${dailyGoalXp}`,
-        icon: <AppTargetIcon size={iconSize} duotone={false} strokeWidth={2.65} />,
+        icon: (
+          <AppTargetIcon size={iconSize} duotone={false} strokeWidth={2.65} />
+        ),
       },
       {
         key: "lessons",
         label: t("home.lessonsComplete"),
         value: completedLessons.toLocaleString(),
-        icon: <AppBookIcon size={iconSize} duotone={false} strokeWidth={2.65} />,
+        icon: (
+          <AppBookIcon size={iconSize} duotone={false} strokeWidth={2.65} />
+        ),
       },
     ],
     [completedLessons, dailyGoalXp, dailyXp, iconSize, streakDays, t, totalXp],
@@ -102,33 +112,35 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
           { flexDirection: isRtl ? "row-reverse" : "row" },
         ]}
       >
-        <TwinoBrandMark
-          size={34}
-          showName
-          nameSize={20}
-          style={styles.brand}
-        />
-        {creditBalance !== null ? (
-          <View
-            style={styles.creditBadge}
-            accessibilityLabel={`TWINO credits: ${creditBalance}`}
+        <TwinoBrandMark size={34} showName nameSize={20} style={styles.brand} />
+        <Pressable
+          onPress={() => router.push("/subscription")}
+          accessibilityRole="button"
+          accessibilityLabel={
+            creditBalance === null
+              ? "View TWINO credit packs"
+              : `TWINO credits: ${creditBalance}. View credit packs`
+          }
+          style={({ pressed }) => [
+            styles.creditBadge,
+            pressed && styles.creditBadgePressed,
+          ]}
+        >
+          <HugeiconsIcon
+            icon={Wallet02Icon}
+            size={17}
+            color="#168BD2"
+            strokeWidth={2.5}
+          />
+          <AppText
+            style={styles.creditValue}
+            forceLatinFont
+            latinRole="bold"
+            numberOfLines={1}
           >
-            <HugeiconsIcon
-              icon={Wallet02Icon}
-              size={17}
-              color="#168BD2"
-              strokeWidth={2.5}
-            />
-            <AppText
-              style={styles.creditValue}
-              forceLatinFont
-              latinRole="bold"
-              numberOfLines={1}
-            >
-              {creditBalance.toLocaleString()}
-            </AppText>
-          </View>
-        ) : null}
+            Packs
+          </AppText>
+        </Pressable>
       </View>
       <View
         style={[styles.row, { flexDirection: isRtl ? "row-reverse" : "row" }]}
@@ -201,6 +213,10 @@ function createStyles(
       fontSize: 12.5,
       lineHeight: 16,
       fontVariant: ["tabular-nums"],
+    },
+    creditBadgePressed: {
+      opacity: 0.72,
+      transform: [{ scale: 0.97 }],
     },
     row: {
       alignSelf: "center",

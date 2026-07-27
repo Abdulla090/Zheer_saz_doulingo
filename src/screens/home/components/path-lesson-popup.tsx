@@ -1,6 +1,5 @@
 import { PressableScale } from "../../../components/animations/PressableScale";
 import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
-import { LessonPathIcon } from "../../../components/icons/LessonPathIcons";
 import { AppText } from "../../../components/ui/AppText";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import type { SelectedPathLesson } from "../../../hooks/use-path-lesson-selection";
@@ -9,7 +8,7 @@ import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   FadeIn,
@@ -24,6 +23,7 @@ import {
   WEB_DESKTOP_NAV_WIDTH,
   WEB_DESKTOP_RAIL_WIDTH,
 } from "../../../constants/web-layout";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 
 const LOCKED_POPUP_FACE = "#475569";
 const LOCKED_POPUP_RIM = "#1E293B";
@@ -52,6 +52,7 @@ export function PathLessonPopup({
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
+  const [popupHeight, setPopupHeight] = useState(195);
 
   if (!selection) return null;
 
@@ -65,21 +66,40 @@ export function PathLessonPopup({
   const popupRim = isLocked ? LOCKED_POPUP_RIM : colors.rim;
   const isDesktopWeb =
     Platform.OS === "web" && isDesktopWebWidth(windowWidth);
-  const popupViewportWidth = isDesktopWeb
+  const fallbackViewportWidth = isDesktopWeb
     ? Math.max(
         320,
         windowWidth - WEB_DESKTOP_NAV_WIDTH - WEB_DESKTOP_RAIL_WIDTH,
       )
     : windowWidth;
+  const popupViewportWidth = selection.anchor?.rootWidth ?? fallbackViewportWidth;
   const popupWidth = Math.min(popupViewportWidth - 32, 560);
   const popupLeft = (popupViewportWidth - popupWidth) / 2;
-  const popupTop = isDesktopWeb
-    ? Math.max(24, (windowHeight - 220) / 2)
-    : selection.anchor?.y;
+
+  const GAP_OFFSET = 18;
+  const BOTTOM_CLEARANCE = 80;
+
+  const nodeTop = selection.anchor?.nodeTop ?? 0;
+  const nodeHeight = selection.anchor?.nodeHeight ?? 76;
+  const nodeBottom = nodeTop + nodeHeight;
+
+  const placeAbove =
+    Boolean(selection.anchor) &&
+    nodeBottom + popupHeight + GAP_OFFSET >
+      (selection.anchor?.rootHeight ?? windowHeight) -
+        Math.max(insets.bottom, 20) -
+        BOTTOM_CLEARANCE;
+
+  const popupTop = selection.anchor
+    ? placeAbove
+      ? Math.max(16, nodeTop - popupHeight - GAP_OFFSET)
+      : nodeBottom + GAP_OFFSET
+    : undefined;
+
   const caretLeft = selection.anchor
     ? Math.max(
-        22,
-        Math.min(popupWidth - 42, selection.anchor.x - popupLeft - 10),
+        24,
+        Math.min(popupWidth - 44, selection.anchor.x - popupLeft - 10),
       )
     : 0;
 
@@ -115,6 +135,12 @@ export function PathLessonPopup({
         entering={FadeInDown.duration(140)}
         exiting={FadeOutDown.duration(90)}
         onTouchStart={(event) => event.stopPropagation()}
+        onLayout={(event) => {
+          const measuredHeight = event.nativeEvent.layout.height;
+          if (Math.abs(measuredHeight - popupHeight) > 0.5) {
+            setPopupHeight(measuredHeight);
+          }
+        }}
         style={[
           styles.popup,
           {
@@ -130,14 +156,14 @@ export function PathLessonPopup({
         ]}
         accessibilityViewIsModal={false}
       >
-        {selection.anchor && !isDesktopWeb ? (
+        {selection.anchor ? (
           <View
             pointerEvents="none"
             style={[
-              styles.caret,
+              placeAbove ? styles.caretBottom : styles.caretTop,
               {
                 left: caretLeft,
-                borderBottomColor: popupFace,
+                [placeAbove ? "borderTopColor" : "borderBottomColor"]: popupFace,
               },
             ]}
           />
@@ -148,15 +174,6 @@ export function PathLessonPopup({
             { flexDirection: isRtl ? "row-reverse" : "row" },
           ]}
         >
-          <View style={[styles.iconWell, isLocked && styles.lockedIconWell]}>
-            <LessonPathIcon
-              type={item.type === "gift" ? "practice" : item.type}
-              color={popupRim}
-              size={25}
-              active
-              filled
-            />
-          </View>
           <View
             style={[
               styles.headingCopy,
@@ -174,7 +191,6 @@ export function PathLessonPopup({
               ]}
               forceKurdishFont={isKu}
               forceLatinFont={!isKu}
-              numberOfLines={2}
             >
               {sectionTitle || `${t("path.unitShort")} ${unitNumber}`}
             </AppText>
@@ -220,7 +236,7 @@ export function PathLessonPopup({
           <AppText
             style={[
               styles.startText,
-              { color: isLocked ? "#64748B" : colors.rim },
+              { color: isLocked ? "#64748B" : "#FFFFFF" },
             ]}
             forceKurdishFont={isKu}
             forceLatinFont={!isKu}
@@ -259,7 +275,7 @@ const styles = StyleSheet.create({
       elevation: 12,
     }),
   },
-  caret: {
+  caretTop: {
     position: "absolute",
     top: -10,
     width: 0,
@@ -270,23 +286,20 @@ const styles = StyleSheet.create({
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
   },
+  caretBottom: {
+    position: "absolute",
+    bottom: -10,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderTopWidth: 10,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+  },
   headingRow: {
     alignItems: "flex-start",
     gap: 12,
-  },
-  iconWell: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.92)",
-  },
-  lockedIconWell: {
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
   },
   headingCopy: {
     flex: 1,
@@ -327,14 +340,12 @@ const styles = StyleSheet.create({
   },
   startButton: {
     width: "100%",
-    minHeight: 52,
-    borderRadius: 17,
+    height: PRIMARY_ACTION.height,
+    borderRadius: PRIMARY_ACTION.radius,
     borderCurve: "continuous",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
-    borderBottomWidth: 4,
-    borderBottomColor: "rgba(15,23,42,0.18)",
+    backgroundColor: PRIMARY_ACTION.face,
+    borderBottomWidth: PRIMARY_ACTION.rimWidth,
+    borderBottomColor: PRIMARY_ACTION.rim,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 18,

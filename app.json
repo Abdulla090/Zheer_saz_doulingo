@@ -38,11 +38,21 @@
         "foregroundImage": "./assets/images/real-app-icon.png"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "predictiveBackGestureEnabled": true,
+      "predictiveBackGestureEnabled": false,
       "package": "com.hewad.mubariz.twino",
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {
@@ -98,7 +108,7 @@
         {
           "photosPermission": "Allow Twino to choose a profile photo from your photo library.",
           "cameraPermission": false,
-          "microphonePermission": false
+          "microphonePermission": "Allow Twino English to use the microphone for speaking practice and live tutoring."
         }
       ],
       "expo-status-bar",

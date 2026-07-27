@@ -1,8 +1,6 @@
 import { crossShadow } from "../../utils/shadows";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { Mic01Icon, SquareIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { Mic01Icon, SquareIcon } from "@hugeicons/core-free-icons";
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {

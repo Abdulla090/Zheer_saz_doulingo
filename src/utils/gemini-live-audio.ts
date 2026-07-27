@@ -3,7 +3,12 @@
  * Native: play Gemini Live PCM chunks via WAV data URIs.
  */
 
-import { createAudioPlaylist, setAudioModeAsync, requestRecordingPermissionsAsync, AudioModule } from "expo-audio";
+import {
+  createAudioPlaylist,
+  setAudioModeAsync,
+  requestRecordingPermissionsAsync,
+  AudioModule,
+} from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import { PermissionsAndroid, Platform } from "react-native";
 import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
@@ -77,11 +82,23 @@ export class LivePcmPlayer {
   private playRequested = false;
   private destroyed = false;
   private audioModeSet = false;
+  private turnComplete = true;
+  private queueDrained = true;
+  private paused = false;
+  private pendingWrites = 0;
+  private writeChain: Promise<void> = Promise.resolve();
+  private generation = 0;
+  private lastStatus: any = null;
 
   constructor(
     private onPlayingStateChange?: (isPlaying: boolean) => void,
     private onPlaybackError?: (message: string) => void,
   ) {}
+
+  async prepare() {
+    if (this.destroyed) return;
+    await this.ensureAudioMode();
+  }
 
   /**
    * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM.
@@ -109,64 +126,59 @@ export class LivePcmPlayer {
       loop: "none",
     });
 
-    this.statusListener = this.playlist.addListener("playlistStatusUpdate", (status: any) => {
-      if (this.destroyed) return;
-
-      if (status.error) {
-        const message =
-          typeof status.error?.message === "string"
-            ? status.error.message
-            : "Live tutor audio playback failed.";
-        this.playRequested = false;
-        this.reportPlaybackError(message);
-        return;
-      }
-
-      if (this.playRequested && status.isLoaded && !status.playing) {
-        this.playRequested = false;
-        try {
-          this.playlist?.play();
-        } catch (error) {
-          this.reportPlaybackError(
-            "Live tutor audio could not start.",
-            error,
-          );
-        }
-        return;
-      }
-
-      if (status.playing) {
-        if (!this.playing) {
-          this.playing = true;
-          this.onPlayingStateChange?.(true);
-        }
-        if (this.idleTimer) {
-          clearTimeout(this.idleTimer);
-          this.idleTimer = null;
-        }
-        return;
-      }
-
-      if (this.idleTimer) {
-        clearTimeout(this.idleTimer);
-      }
-      this.idleTimer = setTimeout(() => {
+    this.statusListener = this.playlist.addListener(
+      "playlistStatusUpdate",
+      (status: any) => {
         if (this.destroyed) return;
-        if (!this.playlist?.playing && this.pendingBytes.length === 0 && !this.flushTimeout) {
-          if (this.playing) {
-            this.playing = false;
-            this.onPlayingStateChange?.(false);
-          }
+        this.lastStatus = status;
+
+        if (status.error) {
+          const message =
+            typeof status.error?.message === "string"
+              ? status.error.message
+              : "Live tutor audio playback failed.";
+          this.playRequested = false;
+          this.reportPlaybackError(message);
+          return;
         }
-      }, 120);
-    });
+
+        if (
+          this.playRequested &&
+          status.isLoaded &&
+          !status.playing &&
+          !this.paused
+        ) {
+          this.playRequested = false;
+          try {
+            this.playlist?.play();
+          } catch (error) {
+            this.reportPlaybackError(
+              "Live tutor audio could not start.",
+              error,
+            );
+          }
+          return;
+        }
+
+        if (status.playing) {
+          this.markQueueActive();
+          if (this.idleTimer) {
+            clearTimeout(this.idleTimer);
+            this.idleTimer = null;
+          }
+          return;
+        }
+
+        this.maybeReportQueueDrained(status);
+      },
+    );
 
     return this.playlist;
   }
 
   private requestPlayback() {
     const playlist = this.playlist;
-    if (!playlist || playlist.playing) {
+    if (!playlist || playlist.playing || this.paused) {
       this.playRequested = false;
       return;
     }
@@ -191,10 +203,16 @@ export class LivePcmPlayer {
       const newBytes = decodeBase64(base64);
       if (newBytes.length === 0) return;
 
+      if (this.queueDrained) {
+        this.resetCompletedTurn();
+      }
+
       const merged = new Uint8Array(this.pendingBytes.length + newBytes.length);
       merged.set(this.pendingBytes, 0);
       merged.set(newBytes, this.pendingBytes.length);
       this.pendingBytes = merged;
+      this.turnComplete = false;
+      this.markQueueActive();
     } catch (e) {
       console.warn("LivePcmPlayer: decode failed", e);
       return;
@@ -214,15 +232,38 @@ export class LivePcmPlayer {
     }
   }
 
-  private async flushBuffer() {
+  private flushBuffer(): Promise<void> {
     this.flushTimeout = null;
-    if (this.destroyed || this.pendingBytes.length === 0) return;
+    if (this.destroyed || this.pendingBytes.length === 0) {
+      return this.writeChain;
+    }
 
+    const pcmBytes = this.pendingBytes;
+    this.pendingBytes = new Uint8Array(0);
+    const generation = this.generation;
+    this.pendingWrites += 1;
+
+    const write = this.writeChain
+      .then(() => this.appendBuffer(pcmBytes, generation))
+      .catch((error) => {
+        this.reportPlaybackError(
+          "Live tutor audio could not be prepared.",
+          error,
+        );
+      })
+      .finally(() => {
+        this.pendingWrites = Math.max(0, this.pendingWrites - 1);
+        this.maybeReportQueueDrained(this.lastStatus);
+      });
+
+    this.writeChain = write;
+    return write;
+  }
+
+  private async appendBuffer(pcmBytes: Uint8Array, generation: number) {
     try {
-      const pcmBytes = this.pendingBytes;
-      this.pendingBytes = new Uint8Array(0);
-
       await this.ensureAudioMode();
+      if (this.destroyed || generation !== this.generation) return;
 
       const wavB64 = pcmBytesToWavBase64(pcmBytes, GEMINI_LIVE_OUTPUT_RATE);
       const cacheDir = FileSystem.cacheDirectory;
@@ -235,15 +276,18 @@ export class LivePcmPlayer {
       await FileSystem.writeAsStringAsync(uri, wavB64, {
         encoding: FileSystem.EncodingType.Base64,
       });
+      if (this.destroyed || generation !== this.generation) {
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+        return;
+      }
       this.generatedFiles.push(uri);
       const existingPlaylist = this.playlist;
-      const playlist = this.ensurePlaylist(
-        existingPlaylist ? undefined : uri,
-      );
+      const playlist = this.ensurePlaylist(existingPlaylist ? undefined : uri);
 
       if (existingPlaylist) {
         const appendedIndex = playlist.trackCount;
-        const queueWasActive = playlist.playing || playlist.isBuffering;
+        const queueWasActive =
+          playlist.playing || playlist.isBuffering || this.paused;
         // The native Android bridge expects the record form even though the
         // public AudioSource type also permits a bare string.
         playlist.add({ uri });
@@ -252,9 +296,145 @@ export class LivePcmPlayer {
         }
       }
       this.requestPlayback();
-    } catch (e) {
-      this.reportPlaybackError("Live tutor audio could not be prepared.", e);
+    } catch (error) {
+      throw error;
     }
+  }
+
+  private markQueueActive() {
+    this.queueDrained = false;
+    if (!this.playing) {
+      this.playing = true;
+      this.onPlayingStateChange?.(true);
+    }
+  }
+
+  private resetCompletedTurn() {
+    this.lastStatus = null;
+    this.playRequested = false;
+    try {
+      this.playlist?.clear();
+    } catch {
+      /* noop */
+    }
+    const completedFiles = this.generatedFiles;
+    this.generatedFiles = [];
+    for (const uri of completedFiles) {
+      if (uri.startsWith("file://")) {
+        void FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {
+          /* noop */
+        });
+      }
+    }
+  }
+
+  private maybeReportQueueDrained(status: any) {
+    if (
+      this.destroyed ||
+      this.paused ||
+      this.queueDrained ||
+      !this.turnComplete ||
+      this.pendingBytes.length > 0 ||
+      this.flushTimeout ||
+      this.pendingWrites > 0
+    ) {
+      return;
+    }
+
+    const playlist = this.playlist;
+    if (!playlist) {
+      this.finishQueue();
+      return;
+    }
+
+    const currentStatus = status ?? this.lastStatus;
+    const isLastTrack =
+      currentStatus?.trackCount > 0 &&
+      currentStatus.currentIndex >= currentStatus.trackCount - 1;
+    const reachedTrackEnd =
+      currentStatus?.didJustFinish === true ||
+      (currentStatus?.duration > 0 &&
+        currentStatus.currentTime >= currentStatus.duration - 0.03);
+
+    if (
+      currentStatus?.playing ||
+      currentStatus?.isBuffering ||
+      !isLastTrack ||
+      !reachedTrackEnd
+    ) {
+      return;
+    }
+
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      if (
+        !this.playlist?.playing &&
+        !this.playlist?.isBuffering &&
+        this.turnComplete &&
+        this.pendingWrites === 0 &&
+        this.pendingBytes.length === 0 &&
+        !this.flushTimeout
+      ) {
+        this.finishQueue();
+      }
+    }, 100);
+  }
+
+  private finishQueue() {
+    if (this.queueDrained) return;
+    this.queueDrained = true;
+    this.playRequested = false;
+    if (this.playing) {
+      this.playing = false;
+      this.onPlayingStateChange?.(false);
+    }
+  }
+
+  async finishTurn() {
+    if (this.destroyed) return;
+    this.turnComplete = true;
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
+    }
+    if (this.pendingBytes.length > 0) {
+      await this.flushBuffer();
+    } else {
+      await this.writeChain;
+    }
+    this.maybeReportQueueDrained(this.lastStatus);
+  }
+
+  pause() {
+    if (this.destroyed || this.paused) return;
+    this.paused = true;
+    try {
+      this.playlist?.pause();
+    } catch {
+      /* noop */
+    }
+  }
+
+  resume() {
+    if (this.destroyed || !this.paused) return;
+    this.paused = false;
+    const status = this.lastStatus;
+    const finishedAtLastTrack =
+      this.turnComplete &&
+      status?.trackCount > 0 &&
+      status.currentIndex >= status.trackCount - 1 &&
+      (status.didJustFinish === true ||
+        (status.duration > 0 && status.currentTime >= status.duration - 0.03));
+    if (finishedAtLastTrack) {
+      this.maybeReportQueueDrained(status);
+      return;
+    }
+    if (!this.queueDrained) {
+      this.markQueueActive();
+      this.requestPlayback();
+    }
+    this.maybeReportQueueDrained(this.lastStatus);
   }
 
   private async ensureAudioMode() {
@@ -273,6 +453,10 @@ export class LivePcmPlayer {
   }
 
   async stop() {
+    this.generation += 1;
+    this.turnComplete = true;
+    this.queueDrained = true;
+    this.paused = false;
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
       this.flushTimeout = null;
@@ -329,7 +513,7 @@ export class LivePcmPlayer {
   }
 
   get isPlaying() {
-    return this.playing || this.pendingBytes.length > 0 || this.flushTimeout !== null || Boolean(this.playlist?.playing);
+    return !this.queueDrained;
   }
 }
 
@@ -347,17 +531,23 @@ export async function startMicPcmStream(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
           title: "Microphone Permission",
-          message: "Twino English needs access to your microphone to talk to the AI Tutor.",
+          message:
+            "Twino English needs access to your microphone to talk to the AI Tutor.",
           buttonNeutral: "Ask Me Later",
           buttonNegative: "Cancel",
           buttonPositive: "OK",
           buttonNeutralText: "Ask Me Later", // fallback for some RN versions
           buttonNegativeText: "Cancel",
-          buttonPositiveText: "OK"
-        } as any
+          buttonPositiveText: "OK",
+        } as any,
       );
       if (result === PermissionsAndroid.RESULTS.GRANTED) {
-        perm = { granted: true, status: "granted" as any, canAskAgain: true, expires: "never" } as any;
+        perm = {
+          granted: true,
+          status: "granted" as any,
+          canAskAgain: true,
+          expires: "never",
+        } as any;
       }
     } catch (err) {
       console.warn("PermissionsAndroid failed", err);
@@ -365,7 +555,11 @@ export async function startMicPcmStream(
   }
 
   if (!perm.granted) {
-    throw new Error("Microphone permission required.");
+    throw new Error(
+      perm.canAskAgain === false
+        ? "Microphone access is blocked. Enable it for Twino in Android Settings."
+        : "Microphone permission is required to speak with the tutor.",
+    );
   }
 
   await setAudioModeAsync({
@@ -376,7 +570,9 @@ export async function startMicPcmStream(
   });
 
   if (!AudioModule?.AudioStream) {
-    throw new Error("Live audio streaming is not supported in Expo Go. Please use a development build.");
+    throw new Error(
+      "Live audio streaming is not supported in Expo Go. Please use a development build.",
+    );
   }
 
   const stream = new AudioModule.AudioStream({
@@ -414,7 +610,10 @@ export async function startMicPcmStream(
     await stream.start();
   } catch (err) {
     subscription.remove();
-    throw new Error("Could not start live audio input stream: " + (err instanceof Error ? err.message : String(err)));
+    throw new Error(
+      "Could not start live audio input stream: " +
+        (err instanceof Error ? err.message : String(err)),
+    );
   }
 
   return {

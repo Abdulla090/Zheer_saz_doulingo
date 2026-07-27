@@ -4,14 +4,29 @@ import {
   HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { useLiveVoiceTutor } from "../../hooks/use-live-voice-tutor";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
 import { hapticImpact } from "../../utils/haptics";
-import { useRouter } from "expo-router";
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
-import { ActivityIndicator , StyleSheet, View, Dimensions, ScrollView, PanResponder, Image } from "react-native";
+import Svg, {
+  Path,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
+import {
+  ActivityIndicator,
+  Linking,
+  Platform,
+  StyleSheet,
+  View,
+  ScrollView,
+  PanResponder,
+  Image,
+  useWindowDimensions,
+} from "react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   AlertCircleIcon,
@@ -21,7 +36,13 @@ import {
   RefreshIcon,
 } from "@hugeicons/core-free-icons";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { PressableScale } from "../../components/animations";
 import Animated, {
   useAnimatedStyle,
@@ -38,7 +59,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BRAND_LOGO = require("../../../assets/images/logo-compressed.png");
 
-const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
+const SHEET_WAVE_HEIGHT = 180;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -50,8 +71,9 @@ const IOS_SPRING_CONFIG = {
 };
 
 export function VoiceTutorScreen() {
-  const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
   const tutor = useLiveVoiceTutor();
@@ -73,7 +95,7 @@ export function VoiceTutorScreen() {
         easing: Easing.linear,
       }),
       -1,
-      false
+      false,
     );
   }, [phase]);
 
@@ -87,7 +109,7 @@ export function VoiceTutorScreen() {
           withTiming(20, { duration: 350 }),
         ),
         -1,
-        true
+        true,
       );
     } else if (tutor.listening) {
       waveAmplitude.value = withRepeat(
@@ -98,7 +120,7 @@ export function VoiceTutorScreen() {
           withTiming(15, { duration: 450 }),
         ),
         -1,
-        true
+        true,
       );
     } else if (tutor.thinking) {
       waveAmplitude.value = withRepeat(
@@ -107,7 +129,7 @@ export function VoiceTutorScreen() {
           withTiming(10, { duration: 1000 }),
         ),
         -1,
-        true
+        true,
       );
     } else {
       waveAmplitude.value = withTiming(8, { duration: 800 });
@@ -116,21 +138,54 @@ export function VoiceTutorScreen() {
 
   const handleBack = useCallback(() => {
     tutor.stopAll();
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/");
-    }
-  }, [router, tutor]);
+    safeBack();
+  }, [safeBack, tutor]);
 
   const statusLabel = useMemo(() => {
+    if (tutor.paused) {
+      return isKu
+        ? "کاتییە وەستاوە — دەست هەڵبگرە بۆ بەردەوامبوون"
+        : isAr
+          ? "متوقف مؤقتًا — ارفع إصبعك للمتابعة"
+          : "Paused — release to resume";
+    }
     if (tutor.thinking) return t("voiceTutor.statusThinking");
     if (tutor.speaking) return t("voiceTutor.statusSpeaking");
     if (tutor.listening) return t("voiceTutor.statusListening");
     if (tutor.status === "error") return t("voiceTutor.statusError");
     if (!tutor.sessionActive) return t("voiceTutor.statusConnect");
     return t("voiceTutor.statusWaiting");
-  }, [tutor, t]);
+  }, [isAr, isKu, tutor, t]);
+
+  const holdActiveRef = useRef(false);
+  const holdResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (holdResetRef.current) clearTimeout(holdResetRef.current);
+    },
+    [],
+  );
+
+  const handleTutorPress = useCallback(() => {
+    if (holdActiveRef.current) return;
+    tutor.handleMicPress();
+  }, [tutor]);
+
+  const handleTutorLongPress = useCallback(() => {
+    holdActiveRef.current = true;
+    tutor.pauseInteraction();
+  }, [tutor]);
+
+  const handleTutorPressOut = useCallback(() => {
+    if (!holdActiveRef.current) return;
+    tutor.resumeInteraction();
+    if (holdResetRef.current) clearTimeout(holdResetRef.current);
+    holdResetRef.current = setTimeout(() => {
+      holdActiveRef.current = false;
+      holdResetRef.current = null;
+    }, 0);
+  }, [tutor]);
 
   const logoScale = useSharedValue(1);
 
@@ -139,56 +194,76 @@ export function VoiceTutorScreen() {
     if (tutor.speaking) {
       logoScale.value = withRepeat(
         withSequence(
-          withTiming(1.12, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.12, {
+            duration: 600,
+            easing: Easing.inOut(Easing.ease),
+          }),
           withTiming(1.0, { duration: 600, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
-        true
+        true,
       );
     } else if (tutor.listening) {
       logoScale.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.08, {
+            duration: 800,
+            easing: Easing.inOut(Easing.ease),
+          }),
           withTiming(1.0, { duration: 800, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
-        true
+        true,
       );
     } else {
       logoScale.value = withRepeat(
         withSequence(
-          withTiming(1.04, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.04, {
+            duration: 1800,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          withTiming(1.0, {
+            duration: 1800,
+            easing: Easing.inOut(Easing.ease),
+          }),
         ),
         -1,
-        true
+        true,
       );
     }
   }, [logoScale, tutor.speaking, tutor.listening]);
 
   const logoAnimStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: logoScale.value },
-    ],
+    transform: [{ scale: logoScale.value }],
   }));
 
   // Swipe Up / Analysis Modal Animation
-  const bottomSheetY = useSharedValue(screenHeight);
-  const topSheetY = useSharedValue(-screenHeight);
+  const sheetHiddenDistance = screenHeight + SHEET_WAVE_HEIGHT;
+  const bottomSheetY = useSharedValue(sheetHiddenDistance);
+  const topSheetY = useSharedValue(-sheetHiddenDistance);
   const isDragging = useSharedValue("none"); // "none" | "top" | "bottom"
   const [analysisOpen, setAnalysisOpen] = useState(false);
 
-  const openAnalysis = () => {
+  useEffect(() => {
+    if (!analysisOpen && isDragging.value === "none") {
+      bottomSheetY.value = sheetHiddenDistance;
+    }
+    if (isDragging.value === "none") {
+      topSheetY.value = -sheetHiddenDistance;
+    }
+  }, [analysisOpen, bottomSheetY, isDragging, sheetHiddenDistance, topSheetY]);
+
+  const openAnalysis = useCallback(() => {
     setAnalysisOpen(true);
     bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
     hapticImpact();
-    tutor.runAnalysis();
-  };
+    void tutor.runAnalysis();
+  }, [bottomSheetY, tutor]);
 
   const closeAnalysis = useCallback(() => {
-    bottomSheetY.value = withSpring(screenHeight, IOS_SPRING_CONFIG);
+    bottomSheetY.value = withSpring(sheetHiddenDistance, IOS_SPRING_CONFIG);
     setAnalysisOpen(false);
-  }, [bottomSheetY]);
+  }, [bottomSheetY, sheetHiddenDistance]);
 
   const analysisAnim = useAnimatedStyle(() => ({
     transform: [{ translateY: bottomSheetY.value }],
@@ -203,14 +278,14 @@ export function VoiceTutorScreen() {
     const points = [];
     const midline = 60;
     const amplitude = waveAmplitude.value;
-    
+
     for (let i = 0; i <= numPoints; i++) {
       const x = (i / numPoints) * screenWidth;
       const angle = (i / numPoints) * 2 * Math.PI - phase.value;
       const y = midline + amplitude * Math.sin(angle);
       points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
     }
-    
+
     const d = `M 0,0 L ${points.join(" L ")} L ${screenWidth},0 Z`;
     return { d };
   });
@@ -220,82 +295,98 @@ export function VoiceTutorScreen() {
     const points = [];
     const midline = 120;
     const amplitude = waveAmplitude.value;
-    
+
     for (let i = 0; i <= numPoints; i++) {
       const x = (i / numPoints) * screenWidth;
       const angle = (i / numPoints) * 2 * Math.PI + phase.value;
       const y = midline + amplitude * Math.sin(angle);
       points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
     }
-    
+
     const d = `M 0,180 L ${points.join(" L ")} L ${screenWidth},180 Z`;
     return { d };
   });
 
   // Gesture responder for real-time swipe down (return to path) and swipe up (open analysis)
   const panHandlers = useMemo(
-    () => PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        if (analysisOpen) return false;
-        return Math.abs(gestureState.dy) > 10;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const { dy } = gestureState;
-        if (dy < 0 && isDragging.value !== "top") {
-          isDragging.value = "bottom";
-          bottomSheetY.value = Math.max(0, screenHeight + dy);
-        } else if (dy > 0 && isDragging.value !== "bottom") {
-          isDragging.value = "top";
-          topSheetY.value = Math.min(0, -screenHeight + dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const { dy, vy } = gestureState;
-        if (isDragging.value === "bottom") {
-          if (dy < -120 || vy < -0.5) {
-            bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
-            setAnalysisOpen(true);
-            tutor.runAnalysis();
-          } else {
-            bottomSheetY.value = withSpring(screenHeight, IOS_SPRING_CONFIG);
-            setAnalysisOpen(false);
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (analysisOpen) return false;
+          return Math.abs(gestureState.dy) > 10;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          const { dy } = gestureState;
+          if (dy < 0 && isDragging.value !== "top") {
+            isDragging.value = "bottom";
+            bottomSheetY.value = Math.max(0, sheetHiddenDistance + dy);
+          } else if (dy > 0 && isDragging.value !== "bottom") {
+            isDragging.value = "top";
+            topSheetY.value = Math.min(0, -sheetHiddenDistance + dy);
           }
-        } else if (isDragging.value === "top") {
-          if (dy > 120 || vy > 0.5) {
-            topSheetY.value = withTiming(0, { duration: 250 }, () => {
-              runOnJS(handleBack)();
-            });
-          } else {
-            topSheetY.value = withSpring(-screenHeight, IOS_SPRING_CONFIG);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const { dy, vy } = gestureState;
+          if (isDragging.value === "bottom") {
+            if (dy < -120 || vy < -0.5) {
+              bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
+              setAnalysisOpen(true);
+              void tutor.runAnalysis();
+            } else {
+              bottomSheetY.value = withSpring(
+                sheetHiddenDistance,
+                IOS_SPRING_CONFIG,
+              );
+              setAnalysisOpen(false);
+            }
+          } else if (isDragging.value === "top") {
+            if (dy > 120 || vy > 0.5) {
+              topSheetY.value = withTiming(0, { duration: 250 }, () => {
+                runOnJS(handleBack)();
+              });
+            } else {
+              topSheetY.value = withSpring(
+                -sheetHiddenDistance,
+                IOS_SPRING_CONFIG,
+              );
+            }
           }
-        }
-        isDragging.value = "none";
-      },
-    }).panHandlers,
-    [analysisOpen, bottomSheetY, handleBack, isDragging, topSheetY, tutor],
+          isDragging.value = "none";
+        },
+      }).panHandlers,
+    [
+      analysisOpen,
+      bottomSheetY,
+      handleBack,
+      isDragging,
+      sheetHiddenDistance,
+      topSheetY,
+      tutor,
+    ],
   );
 
   // Analysis drag-handle responder
   const analysisCloseHandlers = useMemo(
-    () => PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gestureState) => {
-        const { dy } = gestureState;
-        if (dy > 0) {
-          bottomSheetY.value = Math.min(screenHeight, dy);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const { dy, vy } = gestureState;
-        if (dy > 100 || vy > 0.5) {
-          closeAnalysis();
-        } else {
-          bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
-        }
-      }
-    }).panHandlers,
-    [bottomSheetY, closeAnalysis],
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          const { dy } = gestureState;
+          if (dy > 0) {
+            bottomSheetY.value = Math.min(sheetHiddenDistance, dy);
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const { dy, vy } = gestureState;
+          if (dy > 100 || vy > 0.5) {
+            closeAnalysis();
+          } else {
+            bottomSheetY.value = withSpring(0, IOS_SPRING_CONFIG);
+          }
+        },
+      }).panHandlers,
+    [bottomSheetY, closeAnalysis, sheetHiddenDistance],
   );
 
   return (
@@ -317,15 +408,35 @@ export function VoiceTutorScreen() {
           topSheetAnim,
         ]}
       >
-        <View style={{ position: "absolute", bottom: -180, left: 0, width: screenWidth, height: 180 }}>
-          <Svg width={screenWidth} height={180} viewBox={`0 0 ${screenWidth} 180`} preserveAspectRatio="none">
+        <View
+          style={{
+            position: "absolute",
+            bottom: -180,
+            left: 0,
+            width: screenWidth,
+            height: 180,
+          }}
+        >
+          <Svg
+            width={screenWidth}
+            height={180}
+            viewBox={`0 0 ${screenWidth} 180`}
+            preserveAspectRatio="none"
+          >
             <Defs>
               <SvgLinearGradient id="topWaveGrad" x1="0" y1="1" x2="0" y2="0">
                 <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
-                <Stop offset="1" stopColor={colors.background} stopOpacity="1" />
+                <Stop
+                  offset="1"
+                  stopColor={colors.background}
+                  stopOpacity="1"
+                />
               </SvgLinearGradient>
             </Defs>
-            <AnimatedPath animatedProps={topWaveProps} fill="url(#topWaveGrad)" />
+            <AnimatedPath
+              animatedProps={topWaveProps}
+              fill="url(#topWaveGrad)"
+            />
           </Svg>
         </View>
       </Animated.View>
@@ -346,9 +457,18 @@ export function VoiceTutorScreen() {
 
         {/* Floating pill for level badge & language */}
         <View style={styles.topControlRow}>
-          <View style={[styles.langBadge, { width: "auto", paddingHorizontal: 12, borderRadius: 20 }]}>
+          <View
+            style={[
+              styles.langBadge,
+              { width: "auto", paddingHorizontal: 12, borderRadius: 20 },
+            ]}
+          >
             <AppText style={styles.langText} forceLatinFont latinRole="bold">
-              {onboardingComplete ? `Lv. ${level} / ${LEVEL_CONFIGS[level]?.cefr || "A1"}` : (isKu ? "ئۆنبۆردینگ" : "ONBOARDING")}
+              {onboardingComplete
+                ? `Lv. ${level} / ${LEVEL_CONFIGS[level]?.cefr || "A1"}`
+                : isKu
+                  ? "ئۆنبۆردینگ"
+                  : "ONBOARDING"}
             </AppText>
           </View>
         </View>
@@ -358,7 +478,12 @@ export function VoiceTutorScreen() {
       <View style={styles.main}>
         <PressableScale
           style={styles.orbContainer}
-          onPress={tutor.handleMicPress}
+          onPress={handleTutorPress}
+          onLongPress={handleTutorLongPress}
+          onPressOut={handleTutorPressOut}
+          delayLongPress={350}
+          accessibilityRole="button"
+          accessibilityLabel="Tap to interrupt or hold to pause"
         >
           {/* Actual Brand Logo (No glowing rings or outer circles) */}
           <Animated.View style={[styles.orbLogoContainer, logoAnimStyle]}>
@@ -373,38 +498,101 @@ export function VoiceTutorScreen() {
         {/* STATUS & LIVE TRANSCRIPT DISPLAY */}
         <View style={styles.transcriptBox}>
           <AppText
-            style={[
-              styles.statusLabel,
-              tutor.listening && { color: C.blue },
-            ]}
+            style={[styles.statusLabel, tutor.listening && { color: C.blue }]}
           >
             {statusLabel}
           </AppText>
           {tutor.speaking && tutor.transcript ? (
-          <AppText style={[styles.transcriptText, isRtl && styles.rtlText]}>{tutor.transcript}</AppText>
+            <AppText style={[styles.transcriptText, isRtl && styles.rtlText]}>
+              {tutor.transcript}
+            </AppText>
           ) : tutor.speaking ? (
-            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.5 }]}>
+            <AppText
+              style={[
+                styles.transcriptText,
+                isRtl && styles.rtlText,
+                { opacity: 0.5 },
+              ]}
+            >
               ...
             </AppText>
+          ) : tutor.paused ? (
+            <AppText
+              style={[
+                styles.transcriptText,
+                isRtl && styles.rtlText,
+                { opacity: 0.75, fontSize: 16 },
+              ]}
+            >
+              {isKu
+                ? "دەست هەڵبگرە بۆ بەردەوامبوونی گفتوگۆکە."
+                : isAr
+                  ? "ارفع إصبعك لمتابعة المحادثة."
+                  : "Release to continue the conversation."}
+            </AppText>
           ) : tutor.sessionActive ? (
-            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.75, fontSize: 16 }]}>
-              {isKu ? "مایکی لایڤ کاردەکات. دەست بکە بە قسەکردن." : "Live microphone active. Start speaking."}
+            <AppText
+              style={[
+                styles.transcriptText,
+                isRtl && styles.rtlText,
+                { opacity: 0.75, fontSize: 16 },
+              ]}
+            >
+              {isKu
+                ? "مایکی لایڤ کاردەکات. دەست بکە بە قسەکردن."
+                : "Live microphone active. Start speaking."}
             </AppText>
           ) : (
-            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { opacity: 0.45, fontSize: 15 }]}>
-              {isKu ? "دەست لە گۆکە بدە بۆ دەستپێکردن" : "Tap the central logo to connect"}
+            <AppText
+              style={[
+                styles.transcriptText,
+                isRtl && styles.rtlText,
+                { opacity: 0.45, fontSize: 15 },
+              ]}
+            >
+              {isKu
+                ? "دەست لە گۆکە بدە بۆ دەستپێکردن"
+                : "Tap the central logo to connect"}
             </AppText>
           )}
           {tutor.error && (
-            <AppText style={[styles.transcriptText, isRtl && styles.rtlText, { color: C.red, fontSize: 14, marginTop: 8 }]}>
-              {tutor.error}
-            </AppText>
+            <View style={styles.errorWrap}>
+              <AppText
+                style={[
+                  styles.transcriptText,
+                  isRtl && styles.rtlText,
+                  { color: C.red, fontSize: 14 },
+                ]}
+              >
+                {tutor.error}
+              </AppText>
+              {Platform.OS !== "web" &&
+              /microphone|permission/i.test(tutor.error) ? (
+                <PressableScale
+                  style={styles.permissionSettingsButton}
+                  onPress={() => void Linking.openSettings()}
+                >
+                  <AppText style={styles.permissionSettingsText}>
+                    {isKu
+                      ? "کردنەوەی ڕێکخستنەکان"
+                      : isAr
+                        ? "فتح الإعدادات"
+                        : "Open Settings"}
+                  </AppText>
+                </PressableScale>
+              ) : null}
+            </View>
           )}
         </View>
       </View>
 
       {/* BOTTOM SWIPE UP INDICATOR */}
-      <View style={[styles.bottomSwipeContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View
+        style={[
+          styles.bottomSwipeContainer,
+          { paddingBottom: Math.max(insets.bottom, 20) },
+        ]}
+      >
         <PressableScale style={styles.swipeIndicatorCol} onPress={openAnalysis}>
           <HugeiconsIcon
             icon={ArrowUp01Icon}
@@ -413,33 +601,68 @@ export function VoiceTutorScreen() {
             strokeWidth={2.5}
           />
           <AppText style={styles.swipeText}>
-            {isKu ? "بخشە سەرەوە بۆ بینینی شیکردنەوە" : "Swipe up to view analysis"}
+            {isKu
+              ? "بخشە سەرەوە بۆ بینینی شیکردنەوە"
+              : "Swipe up to view analysis"}
           </AppText>
         </PressableScale>
       </View>
 
       {/* CONVERSATION ANALYSIS SHEET */}
       <Animated.View
-        style={[styles.analysisOverlay, analysisAnim, { backgroundColor: colors.background }]}
+        style={[
+          styles.analysisOverlay,
+          analysisAnim,
+          { backgroundColor: colors.background },
+        ]}
         pointerEvents={analysisOpen ? "auto" : "none"}
       >
         {/* Wave at top edge of bottom sheet */}
-        <View style={{ position: "absolute", top: -180, left: 0, width: screenWidth, height: 180 }}>
-          <Svg width={screenWidth} height={180} viewBox={`0 0 ${screenWidth} 180`} preserveAspectRatio="none">
+        <View
+          style={{
+            position: "absolute",
+            top: -180,
+            left: 0,
+            width: screenWidth,
+            height: 180,
+          }}
+        >
+          <Svg
+            width={screenWidth}
+            height={180}
+            viewBox={`0 0 ${screenWidth} 180`}
+            preserveAspectRatio="none"
+          >
             <Defs>
-              <SvgLinearGradient id="bottomWaveGrad" x1="0" y1="0" x2="0" y2="1">
+              <SvgLinearGradient
+                id="bottomWaveGrad"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
                 <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
-                <Stop offset="1" stopColor={colors.background} stopOpacity="1" />
+                <Stop
+                  offset="1"
+                  stopColor={colors.background}
+                  stopOpacity="1"
+                />
               </SvgLinearGradient>
             </Defs>
-            <AnimatedPath animatedProps={bottomWaveProps} fill="url(#bottomWaveGrad)" />
+            <AnimatedPath
+              animatedProps={bottomWaveProps}
+              fill="url(#bottomWaveGrad)"
+            />
           </Svg>
         </View>
 
         <View
           style={[
             styles.analysisContainer,
-            { paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 16) }
+            {
+              paddingTop: insets.top + 8,
+              paddingBottom: Math.max(insets.bottom, 16),
+            },
           ]}
         >
           {/* Header Drag-handle */}
@@ -449,7 +672,9 @@ export function VoiceTutorScreen() {
 
           {/* Analysis Header */}
           <View style={[styles.analysisHeader, isRtl && styles.rtlRow]}>
-            <AppText style={[styles.analysisHeaderTitle, isRtl && styles.rtlText]}>
+            <AppText
+              style={[styles.analysisHeaderTitle, isRtl && styles.rtlText]}
+            >
               {isKu ? "شیکردنەوەی گفتوگۆکەت" : "Conversation Analysis"}
             </AppText>
             <PressableScale
@@ -468,70 +693,133 @@ export function VoiceTutorScreen() {
           {tutor.turns.length === 0 ? (
             <View style={styles.emptyState}>
               <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
-                {isKu ? "سەرەتا گفتوگۆیەک ئەنجام بدە بۆ بینینی شیکردنەوە." : "Complete a dialogue first to view linguistic stats!"}
+                {isKu
+                  ? "سەرەتا گفتوگۆیەک ئەنجام بدە بۆ بینینی شیکردنەوە."
+                  : "Complete a dialogue first to view linguistic stats!"}
               </AppText>
             </View>
           ) : tutor.analysisLoading ? (
             <View style={styles.emptyState}>
-              <ActivityIndicator size="large" color="#4F46E5" style={{ marginBottom: 16 }} />
+              <ActivityIndicator
+                size="large"
+                color="#4F46E5"
+                style={{ marginBottom: 16 }}
+              />
               <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
-                {isKu ? "شیکردنەوەی دەقی گفتوگۆکە دەکرێت..." : "Analyzing conversation transcripts..."}
+                {isKu
+                  ? "شیکردنەوەی دەقی گفتوگۆکە دەکرێت..."
+                  : "Analyzing conversation transcripts..."}
               </AppText>
             </View>
           ) : !analysisData ? (
             <View style={styles.emptyState}>
               <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
-                {isKu ? "شیکردنەوە بەردەست نییە. تکایە دووبارە تاقیبکەرەوە." : "No analysis data compiled yet."}
+                {isKu
+                  ? "شیکردنەوە بەردەست نییە. تکایە دووبارە تاقیبکەرەوە."
+                  : "No analysis data compiled yet."}
               </AppText>
-              <PressableScale style={[styles.vocabTag, { marginTop: 16 }]} onPress={() => tutor.runAnalysis()}>
-                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>{isKu ? "شیکردنەوە بکە" : "Compute Analysis"}</AppText>
+              <PressableScale
+                style={[styles.vocabTag, { marginTop: 16 }]}
+                onPress={() => tutor.runAnalysis()}
+              >
+                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>
+                  {isKu ? "شیکردنەوە بکە" : "Compute Analysis"}
+                </AppText>
               </PressableScale>
             </View>
           ) : analysisData.analysisError ? (
             <View style={styles.emptyState}>
-              <HugeiconsIcon icon={AlertCircleIcon} size={48} color={C.red} style={{ marginBottom: 16 }} />
-              <AppText style={[styles.emptyText, isRtl && styles.rtlText, { color: C.red, fontWeight: "600" }]}>
+              <HugeiconsIcon
+                icon={AlertCircleIcon}
+                size={48}
+                color={C.red}
+                style={{ marginBottom: 16 }}
+              />
+              <AppText
+                style={[
+                  styles.emptyText,
+                  isRtl && styles.rtlText,
+                  { color: C.red, fontWeight: "600" },
+                ]}
+              >
                 {analysisData.analysisError}
               </AppText>
               <PressableScale
-                style={[styles.vocabTag, { marginTop: 16, flexDirection: isRtl ? "row-reverse" : "row", alignItems: "center", gap: 8 }]}
+                style={[
+                  styles.vocabTag,
+                  {
+                    marginTop: 16,
+                    flexDirection: isRtl ? "row-reverse" : "row",
+                    alignItems: "center",
+                    gap: 8,
+                  },
+                ]}
                 onPress={() => tutor.runAnalysis()}
               >
                 <HugeiconsIcon icon={RefreshIcon} size={16} color="#4F46E5" />
-                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>{isKu ? "دووبارە هەوڵبدەرەوە" : "Retry"}</AppText>
+                <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>
+                  {isKu ? "دووبارە هەوڵبدەرەوە" : "Retry"}
+                </AppText>
               </PressableScale>
             </View>
           ) : (
             <ScrollView
               style={{ flex: 1, width: "100%" }}
-              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingBottom: 40,
+              }}
               showsVerticalScrollIndicator={false}
             >
               {/* METRIC SCORE SUMMARY */}
               <View style={[styles.metricsRow, isRtl && styles.rtlRow]}>
                 {/* Score */}
                 <View style={styles.metricCard}>
-                  <AppText style={styles.metricLabel}>{isKu ? "نمرە" : "SCORE"}</AppText>
+                  <AppText style={styles.metricLabel}>
+                    {isKu ? "نمرە" : "SCORE"}
+                  </AppText>
                   <AppText style={styles.metricVal} forceLatinFont>
-                    {analysisData.overallScore !== null ? `${analysisData.overallScore}%` : "—"}
+                    {analysisData.overallScore !== null
+                      ? `${analysisData.overallScore}%`
+                      : "—"}
                   </AppText>
                 </View>
 
                 {/* Level */}
                 <View style={styles.metricCard}>
-                  <AppText style={styles.metricLabel}>{isKu ? "ئاست" : "LEVEL"}</AppText>
-                  <AppText style={[styles.metricVal, { fontSize: 13, textAlign: "center", marginTop: 4 }]} forceLatinFont>
+                  <AppText style={styles.metricLabel}>
+                    {isKu ? "ئاست" : "LEVEL"}
+                  </AppText>
+                  <AppText
+                    style={[
+                      styles.metricVal,
+                      { fontSize: 13, textAlign: "center", marginTop: 4 },
+                    ]}
+                    forceLatinFont
+                  >
                     Lv. {level}
                   </AppText>
-                  <AppText style={{ fontSize: 9, color: colors.mutedForeground, fontWeight: "600", textTransform: "uppercase" }}>
+                  <AppText
+                    style={{
+                      fontSize: 9,
+                      color: colors.mutedForeground,
+                      fontWeight: "600",
+                      textTransform: "uppercase",
+                    }}
+                  >
                     {LEVEL_CONFIGS[level]?.cefr || "A1"}
                   </AppText>
                 </View>
 
                 {/* Weak Words */}
                 <View style={styles.metricCard}>
-                  <AppText style={styles.metricLabel}>{isKu ? "هەڵەکان" : "MISTAKES"}</AppText>
-                  <AppText style={[styles.metricVal, { color: C.red }]} forceLatinFont>
+                  <AppText style={styles.metricLabel}>
+                    {isKu ? "هەڵەکان" : "MISTAKES"}
+                  </AppText>
+                  <AppText
+                    style={[styles.metricVal, { color: C.red }]}
+                    forceLatinFont
+                  >
                     {analysisData.grammarErrors.length}
                   </AppText>
                 </View>
@@ -539,36 +827,60 @@ export function VoiceTutorScreen() {
 
               {/* VOCABULARY HIGHLIGHTS */}
               <View style={styles.sectionWrap}>
-                <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "وشە نوێیەکانی ئەم دانیشتنە" : "Vocabulary Taught this Session"}</AppText>
+                <AppText
+                  style={[styles.sectionHeading, isRtl && styles.rtlText]}
+                >
+                  {isKu
+                    ? "وشە نوێیەکانی ئەم دانیشتنە"
+                    : "Vocabulary Taught this Session"}
+                </AppText>
                 <View style={[styles.vocabTagsWrap, isRtl && styles.rtlRow]}>
                   {analysisData.wordsIntroduced.length > 0 ? (
-                    analysisData.wordsIntroduced.map((w: string, idx: number) => {
-                      const isMastered = analysisData.wordsMastered.includes(w);
-                      return (
-                        <View 
-                          key={idx} 
-                          style={[
-                            styles.vocabTag, 
-                            isMastered 
-                              ? { backgroundColor: "rgba(34, 197, 94, 0.08)", borderColor: "rgba(34, 197, 94, 0.2)" }
-                              : { backgroundColor: "rgba(239, 68, 68, 0.08)", borderColor: "rgba(239, 68, 68, 0.2)" }
-                          ]}
-                        >
-                          <AppText 
+                    analysisData.wordsIntroduced.map(
+                      (w: string, idx: number) => {
+                        const isMastered =
+                          analysisData.wordsMastered.includes(w);
+                        return (
+                          <View
+                            key={idx}
                             style={[
-                              styles.vocabTagText,
-                              isMastered ? { color: "#10B981" } : { color: C.red }
-                            ]} 
-                            forceLatinFont
+                              styles.vocabTag,
+                              isMastered
+                                ? {
+                                    backgroundColor: "rgba(34, 197, 94, 0.08)",
+                                    borderColor: "rgba(34, 197, 94, 0.2)",
+                                  }
+                                : {
+                                    backgroundColor: "rgba(239, 68, 68, 0.08)",
+                                    borderColor: "rgba(239, 68, 68, 0.2)",
+                                  },
+                            ]}
                           >
-                            {w} {isMastered ? "✓" : "✗"}
-                          </AppText>
-                        </View>
-                      );
-                    })
+                            <AppText
+                              style={[
+                                styles.vocabTagText,
+                                isMastered
+                                  ? { color: "#10B981" }
+                                  : { color: C.red },
+                              ]}
+                              forceLatinFont
+                            >
+                              {w} {isMastered ? "✓" : "✗"}
+                            </AppText>
+                          </View>
+                        );
+                      },
+                    )
                   ) : (
-                    <AppText style={[{ fontSize: 13, color: colors.mutedForeground }, isRtl && styles.rtlText]}>
-                      {isKu ? "هیچ وشەیەکی نوێ فێرنەکراوە." : "No new words introduced yet."}
+                    <AppText
+                      style={[
+                        { fontSize: 13, color: colors.mutedForeground },
+                        isRtl && styles.rtlText,
+                      ]}
+                    >
+                      {isKu
+                        ? "هیچ وشەیەکی نوێ فێرنەکراوە."
+                        : "No new words introduced yet."}
                     </AppText>
                   )}
                 </View>
@@ -576,7 +888,11 @@ export function VoiceTutorScreen() {
 
               {/* DIALOGUE TRANSCRIPT & RED WORD HIGHLIGHTING */}
               <View style={styles.sectionWrap}>
-                <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "دەقی گفتوگۆکە" : "Linguistic Transcript"}</AppText>
+                <AppText
+                  style={[styles.sectionHeading, isRtl && styles.rtlText]}
+                >
+                  {isKu ? "دەقی گفتوگۆکە" : "Linguistic Transcript"}
+                </AppText>
                 <View style={styles.transcriptLog}>
                   {tutor.turns.map((turn) => {
                     const isUser = turn.sender === "user";
@@ -586,44 +902,97 @@ export function VoiceTutorScreen() {
                         style={[
                           styles.chatRow,
                           isUser
-                            ? { justifyContent: isRtl ? "flex-start" : "flex-end" }
-                            : { justifyContent: isRtl ? "flex-end" : "flex-start" }
+                            ? {
+                                justifyContent: isRtl
+                                  ? "flex-start"
+                                  : "flex-end",
+                              }
+                            : {
+                                justifyContent: isRtl
+                                  ? "flex-end"
+                                  : "flex-start",
+                              },
                         ]}
                       >
                         <View
                           style={[
                             styles.bubble,
                             isUser ? styles.userBubble : styles.aiBubble,
-                            isRtl && (isUser ? styles.userBubbleRtl : styles.aiBubbleRtl),
+                            isRtl &&
+                              (isUser
+                                ? styles.userBubbleRtl
+                                : styles.aiBubbleRtl),
                           ]}
                         >
-                          <AppText style={[isUser ? styles.userBubbleSender : styles.aiBubbleSender, isRtl && styles.rtlText]}>
+                          <AppText
+                            style={[
+                              isUser
+                                ? styles.userBubbleSender
+                                : styles.aiBubbleSender,
+                              isRtl && styles.rtlText,
+                            ]}
+                          >
                             {isUser ? (isKu ? "تۆ" : "YOU") : "TWINO"}
                           </AppText>
 
                           {isUser ? (
-                            <AppText style={[styles.userBubbleText, isRtl && styles.rtlText]}>
-                              {turn.text.split(" ").map((word: string, idx: number) => {
-                                const clean = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").toLowerCase();
-                                const isTargetWord = turn.targetWord?.toLowerCase() === clean;
-                                const isWrongWord = isTargetWord && turn.wordCorrect === false;
-                                return (
-                                  <AppText
-                                    key={idx}
-                                    style={isWrongWord ? { color: "#FF7B7B", fontWeight: "800" as any, textDecorationLine: "underline" } : null}
-                                    forceLatinFont
-                                  >
-                                    {word}{" "}
-                                  </AppText>
-                                );
-                              })}
+                            <AppText
+                              style={[
+                                styles.userBubbleText,
+                                isRtl && styles.rtlText,
+                              ]}
+                            >
+                              {turn.text
+                                .split(" ")
+                                .map((word: string, idx: number) => {
+                                  const clean = word
+                                    .replace(
+                                      /[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,
+                                      "",
+                                    )
+                                    .toLowerCase();
+                                  const isTargetWord =
+                                    turn.targetWord?.toLowerCase() === clean;
+                                  const isWrongWord =
+                                    isTargetWord && turn.wordCorrect === false;
+                                  return (
+                                    <AppText
+                                      key={idx}
+                                      style={
+                                        isWrongWord
+                                          ? {
+                                              color: "#FF7B7B",
+                                              fontWeight: "800" as any,
+                                              textDecorationLine: "underline",
+                                            }
+                                          : null
+                                      }
+                                      forceLatinFont
+                                    >
+                                      {word}{" "}
+                                    </AppText>
+                                  );
+                                })}
                             </AppText>
                           ) : (
-                            <AppText style={[styles.aiBubbleText, isRtl && styles.rtlText]} forceLatinFont>
+                            <AppText
+                              style={[
+                                styles.aiBubbleText,
+                                isRtl && styles.rtlText,
+                              ]}
+                              forceLatinFont
+                            >
                               {turn.text}
                             </AppText>
                           )}
-                          <AppText style={[styles.bubbleTime, isRtl && styles.bubbleTimeRtl]}>{turn.timestamp}</AppText>
+                          <AppText
+                            style={[
+                              styles.bubbleTime,
+                              isRtl && styles.bubbleTimeRtl,
+                            ]}
+                          >
+                            {turn.timestamp}
+                          </AppText>
                         </View>
                       </View>
                     );
@@ -634,30 +1003,92 @@ export function VoiceTutorScreen() {
               {/* LINGUISTIC MISTAKES & RECOMMENDATIONS */}
               {analysisData.grammarErrors.length > 0 && (
                 <View style={styles.sectionWrap}>
-                  <AppText style={[styles.sectionHeading, isRtl && styles.rtlText]}>{isKu ? "پێشنیارەکانی باشترکردن" : "Weak Phrases & Improvements"}</AppText>
+                  <AppText
+                    style={[styles.sectionHeading, isRtl && styles.rtlText]}
+                  >
+                    {isKu
+                      ? "پێشنیارەکانی باشترکردن"
+                      : "Weak Phrases & Improvements"}
+                  </AppText>
                   {analysisData.grammarErrors.map((error, idx) => (
-                    <View key={idx} style={[styles.recommendationCard, isRtl && { alignItems: "flex-end" }]}>
+                    <View
+                      key={idx}
+                      style={[
+                        styles.recommendationCard,
+                        isRtl && { alignItems: "flex-end" },
+                      ]}
+                    >
                       <View style={styles.recOriginal}>
-                        <View style={[styles.recBadge, isRtl && styles.recBadgeRtl, { backgroundColor: "rgba(239, 68, 68, 0.1)" }]}>
-                          <AppText style={[styles.recBadgeText, isRtl && styles.rtlText, { color: C.red }]}>{isKu ? "وتت" : "YOU SAID"}</AppText>
+                        <View
+                          style={[
+                            styles.recBadge,
+                            isRtl && styles.recBadgeRtl,
+                            { backgroundColor: "rgba(239, 68, 68, 0.1)" },
+                          ]}
+                        >
+                          <AppText
+                            style={[
+                              styles.recBadgeText,
+                              isRtl && styles.rtlText,
+                              { color: C.red },
+                            ]}
+                          >
+                            {isKu ? "وتت" : "YOU SAID"}
+                          </AppText>
                         </View>
-                        <AppText style={[styles.recOriginalText, isRtl && styles.rtlText]} forceLatinFont>
+                        <AppText
+                          style={[
+                            styles.recOriginalText,
+                            isRtl && styles.rtlText,
+                          ]}
+                          forceLatinFont
+                        >
                           {`"${error.original}"`}
                         </AppText>
                       </View>
-                      
+
                       <View style={styles.recBetter}>
-                        <View style={[styles.recBadge, isRtl && styles.recBadgeRtl, { backgroundColor: "rgba(34, 197, 94, 0.1)" }]}>
-                          <AppText style={[styles.recBadgeText, isRtl && styles.rtlText, { color: "#10B981" }]}>{isKu ? "باشتر وایە" : "SUGGESTION"}</AppText>
+                        <View
+                          style={[
+                            styles.recBadge,
+                            isRtl && styles.recBadgeRtl,
+                            { backgroundColor: "rgba(34, 197, 94, 0.1)" },
+                          ]}
+                        >
+                          <AppText
+                            style={[
+                              styles.recBadgeText,
+                              isRtl && styles.rtlText,
+                              { color: "#10B981" },
+                            ]}
+                          >
+                            {isKu ? "باشتر وایە" : "SUGGESTION"}
+                          </AppText>
                         </View>
-                        <AppText style={[styles.recBetterText, isRtl && styles.rtlText]} forceLatinFont>
+                        <AppText
+                          style={[
+                            styles.recBetterText,
+                            isRtl && styles.rtlText,
+                          ]}
+                          forceLatinFont
+                        >
                           {error.corrected}
                         </AppText>
                       </View>
 
                       {error.explanation ? (
                         <View style={{ marginTop: 4 }}>
-                          <AppText style={[{ fontSize: 12, color: colors.mutedForeground, lineHeight: 18 }, isRtl && styles.rtlText]} forceLatinFont>
+                          <AppText
+                            style={[
+                              {
+                                fontSize: 12,
+                                color: colors.mutedForeground,
+                                lineHeight: 18,
+                              },
+                              isRtl && styles.rtlText,
+                            ]}
+                            forceLatinFont
+                          >
                             {error.explanation}
                           </AppText>
                         </View>
@@ -707,6 +1138,23 @@ const createStyles = (colors: any, isDark: boolean) =>
       color: "#4F46E5",
       textTransform: "uppercase",
       letterSpacing: 1.2,
+    },
+    errorWrap: {
+      alignItems: "center",
+      gap: 10,
+      marginTop: 8,
+    },
+    permissionSettingsButton: {
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: C.red,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+    },
+    permissionSettingsText: {
+      color: C.red,
+      fontSize: 13,
+      fontWeight: "700",
     },
     topControlRow: {
       flexDirection: "row",
@@ -802,7 +1250,7 @@ const createStyles = (colors: any, isDark: boolean) =>
       bottom: 0,
       left: 0,
       right: 0,
-      height: screenHeight * 0.55,
+      height: "55%",
       zIndex: 999,
     },
     sheetContainer: {

@@ -395,15 +395,20 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             ? L.red
             : L.blue;
 
-  const statusText = state === "processing"
-    ? t("lessons.voiceChecking")
-    : state === "listening"
-      ? t("lessons.voiceListeningSpeak")
-      : state === "success"
-        ? t("lessons.voiceCorrect")
-        : state === "fail"
-          ? t("lessons.voiceTryAgainStatus")
-          : t("lessons.voiceTapMicSpeak");
+  const captureError = useGeminiBackend
+    ? geminiCapture.error
+    : speech.error;
+  const statusText = captureError
+    ? captureError
+    : state === "processing"
+      ? t("lessons.voiceChecking")
+      : state === "listening"
+        ? t("lessons.voiceListeningSpeak")
+        : state === "success"
+          ? t("lessons.voiceCorrect")
+          : state === "fail"
+            ? t("lessons.voiceTryAgainStatus")
+            : t("lessons.voiceTapMicSpeak");
 
   const showTranscript =
     transcript.length > 0 &&

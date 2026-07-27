@@ -34,3 +34,19 @@ app-example
 /inappgame.riv
 /27975-52851-fully-interactive-learning-app-with-rive.riv
 /*.png
+
+# Repository tooling and generated previews are not part of the mobile app.
+/.git/
+/.agents/
+/agent/
+/.codex/
+/.codex-export-check/
+/.cursor/
+/.vscode/
+/.yarn/
+/videos/
+/tmp/
+/store-assets/
+/artifacts/
+/docs/
+/maestro/

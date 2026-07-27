@@ -15,14 +15,12 @@ import {
 } from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useTTS } from "../../hooks/use-tts";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
-import { useRouter } from "expo-router";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -55,7 +53,7 @@ type Scenario = {
   titleKu: string;
   subtitleKu: string;
   subtitle: string;
-  icon: HugeiconsIconData;
+  icon: any;
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
@@ -220,7 +218,7 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
     >
       {isAi && (
         <View style={[st.avatar, { backgroundColor: accent + "18" }]}>
-          <HugeiconsIcon icon={icon} size={16} color={accent} strokeWidth={2} />
+          <HugeiconsIcon icon={icon as any} size={16} color={accent} strokeWidth={2} />
         </View>
       )}
       <View
@@ -242,7 +240,7 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
 
 /* ─── Main Screen ─── */
 export function RolePlayScreen() {
-  const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
   const { colors, isDark } = useThemeColors();
@@ -250,6 +248,7 @@ export function RolePlayScreen() {
   const isRtl = isKu || locale === "ar";
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
+  const abortSpeech = speech.abort;
   const { speak: speakTts, stop: stopTts } = useTTS();
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
@@ -272,12 +271,12 @@ export function RolePlayScreen() {
   useEffect(() => { statusRef.current = status; }, [status]);
   useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
 
-  function clearListenTimeout() {
+  const clearListenTimeout = useCallback(() => {
     if (listenTimeoutRef.current) {
       clearTimeout(listenTimeoutRef.current);
       listenTimeoutRef.current = null;
     }
-  }
+  }, []);
 
   const stopSpeaking = useCallback(() => {
     void stopTts();
@@ -287,9 +286,9 @@ export function RolePlayScreen() {
     return () => {
       clearListenTimeout();
       stopSpeaking();
-      speech.abort();
+      abortSpeech();
     };
-  }, [speech, stopSpeaking]);
+  }, [abortSpeech, clearListenTimeout, stopSpeaking]);
 
   function stopListening() {
     clearListenTimeout();
@@ -386,12 +385,7 @@ export function RolePlayScreen() {
     }, 700);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startListening = useCallback(async () => {
-    if (!speech.available) {
-      setStatusNow("idle");
-      return;
-    }
-
+  const startListening = async () => {
     stopSpeaking();
     finalTranscriptHandledRef.current = false;
     setStatusNow("listening");
@@ -422,7 +416,7 @@ export function RolePlayScreen() {
         setStatusNow("idle");
       }
     }, 12000);
-  }, [handleUserResponse, setStatusNow, speech, stopSpeaking]);
+  };
 
   function startSession() {
     stopAll();
@@ -467,7 +461,9 @@ export function RolePlayScreen() {
   const Icon = activeScenario.icon;
 
   const micHint =
-    status === "listening"
+    speech.error
+      ? speech.error
+      : status === "listening"
       ? t("rolePlay.listening")
       : status === "thinking"
         ? t("rolePlay.thinking")
@@ -483,7 +479,7 @@ export function RolePlayScreen() {
 
         {/* Header */}
         <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-          <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
+          <HomeLiquidPill onPress={() => { stopAll(); safeBack(); }} size={44}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
           </HomeLiquidPill>
           <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
@@ -510,7 +506,7 @@ export function RolePlayScreen() {
                 <View style={[st.heroRingOuter, { borderColor: accent + "20" }]} />
                 <View style={[st.heroRingInner, { borderColor: accent + "35" }]} />
                 <View style={[st.heroIconCircle, { backgroundColor: accent + "14" }]}>
-                  <HugeiconsIcon icon={Icon} size={36} color={accent} strokeWidth={1.8} />
+                  <HugeiconsIcon icon={Icon as any} size={36} color={accent} strokeWidth={1.8} />
                 </View>
               </View>
               <AppText style={st.heroTitle} forceKurdishFont>
@@ -553,7 +549,7 @@ export function RolePlayScreen() {
                         ]}
                       >
                         <View style={[st.scenarioIconCircle, { backgroundColor: sc.accent + "14" }]}>
-                          <HugeiconsIcon icon={ScIcon} size={22} color={sc.accent} strokeWidth={2} />
+                          <HugeiconsIcon icon={ScIcon as any} size={22} color={sc.accent} strokeWidth={2} />
                         </View>
                         <View style={[st.scenarioTextCol, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
                           <AppText style={[st.scenarioTitle, sel && { color: sc.accent }]} forceKurdishFont>
@@ -603,14 +599,14 @@ export function RolePlayScreen() {
 
       {/* Session Header */}
       <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-        <HomeLiquidPill onPress={() => { stopAll(); router.back(); }} size={44}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
+        <HomeLiquidPill onPress={() => { stopAll(); safeBack(); }} size={44}>
+          <HugeiconsIcon icon={ArrowLeft01Icon as any} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
         </HomeLiquidPill>
 
         {/* Active scenario chip */}
         <PressableScale onPress={resetSession} scaleDown={0.95}>
           <View style={[st.sessionChip, { borderColor: accent + "30", flexDirection: isKu ? "row-reverse" : "row" }]}>
-            <HugeiconsIcon icon={Icon} size={16} color={accent} strokeWidth={2.5} />
+            <HugeiconsIcon icon={Icon as any} size={16} color={accent} strokeWidth={2.5} />
             <AppText style={[st.sessionChipText, { color: accent }]} forceLatinFont latinRole="bold">
               {activeScenario.title}
             </AppText>
@@ -618,7 +614,7 @@ export function RolePlayScreen() {
         </PressableScale>
 
         <HomeLiquidPill onPress={resetSession} size={44}>
-          <HugeiconsIcon icon={RotateLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} />
+          <HugeiconsIcon icon={RotateLeft01Icon as any} size={20} color={colors.foreground} strokeWidth={2.5} />
         </HomeLiquidPill>
       </View>
 
@@ -643,7 +639,7 @@ export function RolePlayScreen() {
               },
             ]}
           >
-            <HugeiconsIcon icon={Icon} size={40} color="#FFF" strokeWidth={1.8} />
+            <HugeiconsIcon icon={Icon as any} size={40} color="#FFF" strokeWidth={1.8} />
           </View>
         </View>
 

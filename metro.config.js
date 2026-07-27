@@ -46,7 +46,7 @@ config.resolver = {
   assetExts: [...resolver.assetExts.filter((ext) => ext !== "svg"), "riv"],
   sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
-    // Redirect lucide-react-native ESM files → single CJS barrel to avoid EMFILE (too many open files on Windows)
+    // Redirect lucide-react-native ESM files → single CJS barrel to avoid EMFILE on Windows
     if (
       moduleName === "lucide-react-native" ||
       moduleName.startsWith("lucide-react-native/")
@@ -66,12 +66,16 @@ config.resolver = {
       };
     }
     if (
-      moduleName === "@hugeicons/core-free-icons" ||
-      moduleName.startsWith("@hugeicons/core-free-icons/")
+      moduleName.includes("@expo/ui/swift-ui") ||
+      moduleName.includes("@expo/ui/src/swift-ui") ||
+      moduleName.includes("../src/swift-ui")
     ) {
       return {
         type: "sourceFile",
-        filePath: path.resolve(projectRoot, "node_modules/@hugeicons/core-free-icons/dist/cjs/index.js"),
+        filePath: path.resolve(
+          projectRoot,
+          "src/mocks/expo-ui-swift-ui.js",
+        ),
       };
     }
     if (

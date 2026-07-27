@@ -59,16 +59,31 @@ export function useLiveVoiceTutor() {
     gemini.stopAll();
   }, [gemini, openai]);
 
+  const pauseInteraction = useCallback(() => {
+    if (provider === "gemini") {
+      gemini.pauseInteraction();
+    } else {
+      openai.interruptAi();
+    }
+  }, [gemini, openai, provider]);
+
+  const resumeInteraction = useCallback(() => {
+    if (provider === "gemini") {
+      gemini.resumeInteraction();
+    } else if (openai.sessionActive && !openai.listening) {
+      openai.handleMicPress();
+    }
+  }, [gemini, openai, provider]);
+
   const active = provider === "openai" ? openai : gemini;
 
   return {
     ...active,
     provider,
     configured: openai.configured || gemini.configured,
-    phase: provider === "gemini" ? gemini.phase : "english" as const,
+    phase: provider === "gemini" ? gemini.phase : ("english" as const),
     messages: provider === "gemini" ? gemini.messages : [],
-    wordHighlight:
-      provider === "gemini" ? gemini.wordHighlight : null,
+    wordHighlight: provider === "gemini" ? gemini.wordHighlight : null,
     teachNote: provider === "gemini" ? gemini.teachNote : null,
     startSession,
     handleMicPress,
@@ -76,6 +91,9 @@ export function useLiveVoiceTutor() {
       provider === "gemini" ? gemini.signalReady : openai.signalReady,
     interruptAi:
       provider === "gemini" ? gemini.interruptAi : openai.interruptAi,
+    paused: provider === "gemini" ? gemini.paused : false,
+    pauseInteraction,
+    resumeInteraction,
     runAnalysis:
       provider === "gemini" ? gemini.runAnalysis : openai.runAnalysis,
     sendText: provider === "gemini" ? gemini.sendText : openai.sendText,

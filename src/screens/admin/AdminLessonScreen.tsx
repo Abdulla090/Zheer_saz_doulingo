@@ -9,6 +9,7 @@ import {
 } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -84,6 +85,7 @@ function AdminLessonEditor({
 }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const safeBack = useSafeBack("/admin");
   const updateLesson = useContentAdminStore((s) => s.updateLesson);
 
   const [draft, setDraft] = useState<LessonBank>(() => deepClone(initialLesson));
@@ -128,13 +130,13 @@ function AdminLessonEditor({
           onPress={() => {
             if (dirty) {
               Alert.alert("Unsaved changes", "Save before leaving?", [
-                { text: "Discard", style: "destructive", onPress: () => router.back() },
-                { text: "Save", onPress: () => { save(true); router.back(); } },
+                { text: "Discard", style: "destructive", onPress: safeBack },
+                { text: "Save", onPress: () => { save(true); safeBack(); } },
                 { text: "Cancel", style: "cancel" },
               ]);
               return;
             }
-            router.back();
+            safeBack();
           }}
         />
         <View style={styles.headerText}>

@@ -239,14 +239,14 @@ export function HomeLiquidCard({
   );
 }
 
-/** iOS-style primary CTA — solid fill + top specular sheen, spring press */
+/** Shared primary CTA — login-button surface with spring press feedback. */
 export function HomeLiquidButton({
   label,
   onPress,
   color = HomePalette.blue,
   style,
   flush = false,
-  variant = "liquid",
+  variant = "login",
 }: {
   label: string;
   onPress: () => void;
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     marginTop: 14,
-    height: 52,
+    height: PRIMARY_ACTION.height,
     borderRadius: Radius.lg,
     alignItems: "center",
     justifyContent: "center",
@@ -557,9 +557,9 @@ const styles = StyleSheet.create({
   },
   loginPrimaryBtn: {
     borderWidth: 0,
-    borderBottomWidth: 3,
+    borderBottomWidth: PRIMARY_ACTION.rimWidth,
     borderBottomColor: PRIMARY_ACTION.rim,
-    borderRadius: 14,
+    borderRadius: PRIMARY_ACTION.radius,
   },
   primarySheen: {
     position: "absolute",

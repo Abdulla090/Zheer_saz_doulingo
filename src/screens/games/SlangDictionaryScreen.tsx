@@ -3,7 +3,6 @@ import { AppText } from "../../components/ui/AppText";
 import {
   HomeLiquidCard,
   HomeMeshBackground,
-  HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import {
   SLANG_CATEGORIES,
@@ -14,19 +13,15 @@ import {
 import { useTTS } from "../../hooks/use-tts";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { useProgressStore } from "../../stores/useProgressStore";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { ArrowLeft01Icon, BookOpen01Icon, CheckmarkCircle02Icon, ChevronDownIcon, ChevronUpIcon, Search01Icon, SparklesIcon, Trophy, VolumeHighIcon, Cancel01Icon, CancelCircleIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { ArrowLeft01Icon, BookOpen01Icon, ChevronDownIcon, Search01Icon, VolumeHighIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
-import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import {
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -35,26 +30,22 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Premium styling overrides
 const ThemeColors = {
-  cardBg: "rgba(255, 255, 255, 0.85)",
-  accentBlue: "#0F172A",
-  darkNavy: "#0F172A",
-  slate: "#475569",
-  lightSlate: "#94A3B8",
-  successGreen: "#0F172A",
-  errorRed: "#64748B",
-  warningGold: "#334155",
-  quizBg: "#000000",
+  accentBlue: "#2563EB",
+  accentBlueDark: "#1D4ED8",
+  darkNavy: "#10213D",
+  slate: "#5B6B85",
+  lightSlate: "#8B98AD",
+  blueSoft: "rgba(37, 99, 235, 0.08)",
+  blueBorder: "rgba(37, 99, 235, 0.18)",
 };
 
-const getTypeBadgeStyle = (type: string) => {
-  return { backgroundColor: "rgba(15, 23, 42, 0.05)", borderColor: "rgba(15, 23, 42, 0.12)" };
-};
+const getTypeBadgeStyle = () => ({
+  backgroundColor: ThemeColors.blueSoft,
+  borderColor: ThemeColors.blueBorder,
+});
 
-const getTypeBadgeTextStyle = (type: string) => {
-  return { color: "#475569" };
-};
+const getTypeBadgeTextStyle = () => ({ color: ThemeColors.accentBlueDark });
 
 const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   categoriesList,
@@ -73,10 +64,10 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.chipsContainer, { paddingRight: isRtl ? 0 : 16, paddingLeft: isRtl ? 16 : 0, flexDirection: isRtl ? "row-reverse" : "row" }]}
+      contentContainerStyle={styles.chipsContainer}
       style={styles.chipsList}
     >
-      {(isRtl ? [...categoriesList].reverse() : categoriesList).map((item) => {
+      {categoriesList.map((item) => {
         const cat = SLANG_CATEGORIES[item];
         const labelText = locale === "ku" ? cat.ku : locale === "ar" ? cat.ar : cat.en;
         const isSelected = selectedCategory === item;
@@ -90,7 +81,15 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
               }}
               style={[styles.chip, isSelected && styles.chipSelected]}
             >
-              <AppText style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+              <AppText
+                style={[
+                  styles.chipText,
+                  { textAlign: isRtl ? "right" : "left" },
+                  isSelected && styles.chipTextSelected,
+                ]}
+                forceKurdishFont={locale === "ku"}
+                forceLatinFont={locale !== "ku"}
+              >
                 {labelText}
               </AppText>
             </PressableScale>
@@ -108,6 +107,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
   onToggleExpand,
   onSpeak,
   isKurdish,
+  isRtl,
   t,
   speaking,
   activeId,
@@ -119,6 +119,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
   onToggleExpand: (id: string) => void;
   onSpeak: (phrase: string, id: string) => void;
   isKurdish: boolean;
+  isRtl: boolean;
   t: any;
   speaking: boolean;
   activeId: string | null;
@@ -129,94 +130,117 @@ const SlangItemRow = React.memo(function SlangItemRow({
   const context = SLANG_CATEGORIES[item.context];
   const contextLabel = locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
   return (
-    <Animated.View layout={LinearTransition.duration(220)}>
+    <View>
       <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
-        <PressableScale onPress={() => onToggleExpand(item.id)} scaleDown={0.99}>
-          <View style={[styles.itemHeader, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-            <View style={[styles.phraseCol, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-              <View style={[styles.badgeRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-                <View style={[styles.typeBadge, getTypeBadgeStyle(item.type)]}>
-                  <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle(item.type)]} forceLatinFont>
+        <View style={styles.itemHeader}>
+          <PressableScale
+            onPress={() => onToggleExpand(item.id)}
+            scaleDown={0.99}
+            style={styles.expandTarget}
+            accessibilityRole="button"
+          >
+            <View style={[styles.phraseCol, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+              <View style={styles.badgeRow}>
+                <View style={[styles.typeBadge, getTypeBadgeStyle()]}>
+                  <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle()]} forceLatinFont>
                     {item.type}
                   </AppText>
                 </View>
                 <View style={styles.contextBadge}>
-                  <AppText style={styles.contextBadgeText} numberOfLines={1}>
+                  <AppText
+                    style={[styles.contextBadgeText, { textAlign: isRtl ? "right" : "left" }]}
+                    forceKurdishFont={isKurdish}
+                    forceLatinFont={!isKurdish}
+                    numberOfLines={1}
+                  >
                     {contextLabel}
                   </AppText>
                 </View>
               </View>
-              <AppText style={styles.slangPhrase} forceLatinFont>
+              <AppText style={[styles.slangPhrase, styles.ltrText]} forceLatinFont>
                 {item.phrase}
               </AppText>
-              <AppText style={styles.slangSubtitle} forceKurdishFont numberOfLines={1}>
+              <AppText style={[styles.slangSubtitle, styles.ltrText]} forceLatinFont numberOfLines={1}>
                 {item.pronunciation}
               </AppText>
             </View>
+          </PressableScale>
 
-            <View style={[styles.actionRow, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-              <PressableScale
-                onPress={() => onSpeak(item.phrase, item.id)}
-                style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
+          <View style={styles.actionRow}>
+            <PressableScale
+              onPress={() => onSpeak(item.phrase, item.id)}
+              style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
+              accessibilityRole="button"
+            >
+              <HugeiconsIcon
+                icon={VolumeHighIcon}
+                size={20}
+                color={isItemSpeaking ? "#FFFFFF" : colors.foreground}
+                strokeWidth={2.0}
+              />
+            </PressableScale>
+            <PressableScale
+              onPress={() => onToggleExpand(item.id)}
+              style={styles.expandButton}
+              scaleDown={0.92}
+              accessibilityRole="button"
+            >
+              <Animated.View
+                style={{
+                  transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
+                  transitionProperty: "transform",
+                  transitionDuration: 180,
+                }}
               >
-                <HugeiconsIcon
-                  icon={VolumeHighIcon}
-                  size={20}
-                  color={isItemSpeaking ? "#FFFFFF" : colors.foreground}
-                  strokeWidth={2.0}
-                />
-              </PressableScale>
-              {isExpanded ? (
-                <HugeiconsIcon icon={ChevronUpIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
-              ) : (
                 <HugeiconsIcon icon={ChevronDownIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
-              )}
-            </View>
+              </Animated.View>
+            </PressableScale>
           </View>
-        </PressableScale>
+        </View>
 
         {isExpanded && (
           <Animated.View
-            entering={FadeIn.duration(200)}
+            entering={FadeInDown.duration(220)}
+            exiting={FadeOutUp.duration(150)}
             style={styles.itemExpanded}
           >
             <View style={styles.divider} />
 
             <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} forceKurdishFont>
+              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
                 {isKurdish ? "خوێندنەوە" : "Pronunciation"}
               </AppText>
-              <AppText style={styles.detailValue} forceKurdishFont>
+              <AppText style={[styles.detailValue, styles.ltrText]} forceLatinFont>
                 {item.pronunciation}
               </AppText>
             </View>
 
             <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} forceKurdishFont>
+              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
                 {isKurdish ? "واتا" : "Meaning"}
               </AppText>
-              <AppText style={[styles.detailValue, styles.detailFigurative]} forceKurdishFont>
+              <AppText style={[styles.detailValue, styles.detailFigurative, styles.rtlText]} forceKurdishFont>
                 {item.kuMeaning}
               </AppText>
             </View>
 
             <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} forceKurdishFont>
+              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
                 {t("slang.example")}
               </AppText>
               <View style={styles.dialogueBox}>
                 {/* Dialogue Bubble A */}
-                <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                <View style={styles.dialogueLine}>
                   <View style={styles.dialogueMarkerA}>
                     <AppText style={styles.dialogueMarkerText} forceLatinFont>
                       A
                     </AppText>
                   </View>
-                  <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-                    <AppText style={styles.dialogueEn} forceLatinFont>
+                  <View style={styles.dialogueContent}>
+                    <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
                       {item.example.speakerA}
                     </AppText>
-                    <AppText style={styles.dialogueKu} forceKurdishFont>
+                    <AppText style={[styles.dialogueKu, styles.rtlText]} forceKurdishFont>
                       {item.example.kuA}
                     </AppText>
                   </View>
@@ -239,17 +263,17 @@ const SlangItemRow = React.memo(function SlangItemRow({
                 <View style={styles.divider} />
 
                 {/* Dialogue Bubble B */}
-                <View style={[styles.dialogueLine, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
+                <View style={styles.dialogueLine}>
                   <View style={styles.dialogueMarkerB}>
                     <AppText style={styles.dialogueMarkerText} forceLatinFont>
                       B
                     </AppText>
                   </View>
-                  <View style={[styles.dialogueContent, { alignItems: isKurdish ? "flex-end" : "flex-start" }]}>
-                    <AppText style={styles.dialogueEn} forceLatinFont>
+                  <View style={styles.dialogueContent}>
+                    <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
                       {item.example.speakerB}
                     </AppText>
-                    <AppText style={styles.dialogueKu} forceKurdishFont>
+                    <AppText style={[styles.dialogueKu, styles.rtlText]} forceKurdishFont>
                       {item.example.kuB}
                     </AppText>
                   </View>
@@ -273,38 +297,23 @@ const SlangItemRow = React.memo(function SlangItemRow({
           </Animated.View>
         )}
       </HomeLiquidCard>
-    </Animated.View>
+    </View>
   );
 });
 
 export function SlangDictionaryScreen() {
   const styles = useSlangStyles();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const safeBack = useSafeBack("/(tabs)/play");
   const { t, locale } = useI18n();
   const { speak, stop, speaking, activeId } = useTTS();
-  const awardXp = useProgressStore((s) => s.awardXp);
 
   const isKurdish = locale === "ku";
   const isRtl = isKurdish || locale === "ar";
 
-  // States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<SlangContextFilter>("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // Quiz Modal States
-  const [quizVisible, setQuizVisible] = useState(false);
-  const [quizQuestions, setQuizQuestions] = useState<{
-    slang: SlangItem;
-    choices: string[];
-    correctIndex: number;
-  }[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null);
-  const [isAnswerChecked, setIsAnswerChecked] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizCompleted, setQuizCompleted] = useState(false);
 
   // Select Slang of the Day (seeded by current day of the month)
   const slangOfTheDay = useMemo(() => {
@@ -335,8 +344,8 @@ export function SlangDictionaryScreen() {
 
   const handleBack = useCallback(() => {
     if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    safeBack();
+  }, [safeBack]);
 
   const handleSpeak = useCallback(
     (text: string, id: string) => {
@@ -355,90 +364,6 @@ export function SlangDictionaryScreen() {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
-  // Start Slang Matcher Mini-game
-  const startQuiz = useCallback(() => {
-    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Shuffle slang data and select 5 items
-    const shuffled = [...SLANG_DATA].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 5);
-
-    const questions = selected.map((item) => {
-      // Find 3 distractors from the remaining slang items
-      const distractors = SLANG_DATA.filter((s) => s.id !== item.id)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3)
-        .map((s) => s.kuMeaning);
-
-      // Combine correct answer and distractors, then shuffle
-      const choices = [item.kuMeaning, ...distractors].sort(() => 0.5 - Math.random());
-      const correctIndex = choices.indexOf(item.kuMeaning);
-
-      return {
-        slang: item,
-        choices,
-        correctIndex,
-      };
-    });
-
-    setQuizQuestions(questions);
-    setCurrentQuestionIndex(0);
-    setSelectedChoiceIndex(null);
-    setIsAnswerChecked(false);
-    setQuizScore(0);
-    setQuizCompleted(false);
-    setQuizVisible(true);
-  }, []);
-
-  const handleSelectChoice = useCallback((index: number) => {
-    if (isAnswerChecked) return;
-    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedChoiceIndex(index);
-  }, [isAnswerChecked]);
-
-  const handleCheckAnswer = useCallback(() => {
-    if (selectedChoiceIndex === null || isAnswerChecked) return;
-
-    const currentQuestion = quizQuestions[currentQuestionIndex];
-    const isCorrect = selectedChoiceIndex === currentQuestion.correctIndex;
-
-    if (Platform.OS !== "web") {
-      void Haptics.notificationAsync(
-        isCorrect
-          ? Haptics.NotificationFeedbackType.Success
-          : Haptics.NotificationFeedbackType.Error
-      );
-    }
-
-    if (isCorrect) {
-      setQuizScore((prev) => prev + 1);
-    }
-
-    setIsAnswerChecked(true);
-  }, [selectedChoiceIndex, isAnswerChecked, quizQuestions, currentQuestionIndex]);
-
-  const handleNextQuestion = useCallback(() => {
-    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    if (currentQuestionIndex < quizQuestions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-      setSelectedChoiceIndex(null);
-      setIsAnswerChecked(false);
-    } else {
-      setQuizCompleted(true);
-      if (Platform.OS !== "web") {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    }
-  }, [currentQuestionIndex, quizQuestions.length]);
-
-  const handleClaimXp = useCallback(() => {
-    // Award 10 XP
-    awardXp(10, "Slang Matcher Quiz");
-    if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setQuizVisible(false);
-  }, [awardXp]);
-
   const categoriesList = useMemo(
     () => Object.keys(SLANG_CATEGORIES) as SlangContextFilter[],
     [],
@@ -452,10 +377,17 @@ export function SlangDictionaryScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.darkNavy} strokeWidth={2.0} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.accentBlue} strokeWidth={2.1} />
           </View>
         </PressableScale>
-        <AppText style={styles.headerTitle} forceKurdishFont>
+        <AppText
+          style={[
+            styles.headerTitle,
+            { textAlign: isRtl ? "right" : "left", writingDirection: isRtl ? "rtl" : "ltr" },
+          ]}
+          forceKurdishFont={isKurdish}
+          forceLatinFont={!isKurdish}
+        >
           {t("slang.title")}
         </AppText>
         <View style={{ width: 40 }} />
@@ -472,6 +404,7 @@ export function SlangDictionaryScreen() {
             onToggleExpand={toggleExpand}
             onSpeak={handleSpeak}
             isKurdish={isKurdish}
+            isRtl={isRtl}
             t={t}
             speaking={speaking}
             activeId={activeId}
@@ -482,7 +415,7 @@ export function SlangDictionaryScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 80 },
+          { paddingBottom: insets.bottom + 28 },
         ]}
         ListHeaderComponent={
           <>
@@ -491,26 +424,30 @@ export function SlangDictionaryScreen() {
               style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
               contentStyle={styles.spotlightContent}
             >
-              <View style={{ flexDirection: isKurdish ? "row-reverse" : "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <View style={[styles.spotlightBadge, { flexDirection: isKurdish ? "row-reverse" : "row", alignSelf: isKurdish ? "flex-end" : "flex-start" }]}>
-                  <HugeiconsIcon icon={SparklesIcon} size={14} color="#000000" strokeWidth={2.0} />
-                  <AppText style={styles.spotlightBadgeText} forceKurdishFont>
+              <View style={styles.spotlightTopRow}>
+                <View style={styles.spotlightBadge}>
+                  <HugeiconsIcon icon={BookOpen01Icon} size={14} color={ThemeColors.accentBlueDark} strokeWidth={2.0} />
+                  <AppText
+                    style={styles.spotlightBadgeText}
+                    forceKurdishFont={isKurdish}
+                    forceLatinFont={!isKurdish}
+                  >
                     {t("slang.slangOfTheDay")}
                   </AppText>
                 </View>
-                <View style={[styles.typeBadge, getTypeBadgeStyle(slangOfTheDay.type), { backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }]}>
+                <View style={[styles.typeBadge, { backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }]}>
                   <AppText style={[styles.typeBadgeText, { color: "#FFFFFF" }]} forceLatinFont>
                     {slangOfTheDay.type}
                   </AppText>
                 </View>
               </View>
 
-              <View style={[styles.spotlightMain, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-                <View style={{ flex: 1, alignItems: isKurdish ? "flex-end" : "flex-start" }}>
-                  <AppText style={styles.spotlightPhrase} forceLatinFont>
+              <View style={styles.spotlightMain}>
+                <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
+                  <AppText style={[styles.spotlightPhrase, styles.ltrText]} forceLatinFont>
                     {slangOfTheDay.phrase}
                   </AppText>
-                  <AppText style={styles.spotlightTranslation} forceKurdishFont>
+                  <AppText style={[styles.spotlightTranslation, styles.ltrText]} forceLatinFont>
                     {slangOfTheDay.pronunciation}
                   </AppText>
                 </View>
@@ -530,20 +467,26 @@ export function SlangDictionaryScreen() {
                 </PressableScale>
               </View>
 
-              <AppText style={styles.spotlightDescription} forceKurdishFont>
+              <AppText style={[styles.spotlightDescription, styles.rtlText]} forceKurdishFont>
                 {slangOfTheDay.kuMeaning}
               </AppText>
             </HomeLiquidCard>
 
             {/* Search Bar */}
-            <View style={[styles.searchContainer, { flexDirection: isKurdish ? "row-reverse" : "row" }]}>
-              <HugeiconsIcon icon={Search01Icon} size={18} color={ThemeColors.lightSlate} style={[styles.searchIcon, { marginRight: isKurdish ? 0 : 8, marginLeft: isKurdish ? 8 : 0 }]} />
+            <View style={styles.searchContainer}>
+              <HugeiconsIcon icon={Search01Icon} size={18} color={ThemeColors.accentBlue} style={styles.searchIcon} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t("slang.searchPlaceholder")}
                 placeholderTextColor={ThemeColors.lightSlate}
-                style={[styles.searchInput, isKurdish && styles.searchInputRtl]}
+                style={[
+                  styles.searchInput,
+                  {
+                    textAlign: isRtl ? "right" : "left",
+                    writingDirection: isRtl ? "rtl" : "ltr",
+                  },
+                ]}
               />
               {searchQuery ? (
                 <PressableScale onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
@@ -564,205 +507,22 @@ export function SlangDictionaryScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <HugeiconsIcon icon={BookOpen01Icon} size={48} color={ThemeColors.lightSlate} strokeWidth={1.5} />
-            <AppText style={styles.emptyText} forceKurdishFont>
-              هیچ ئەنجامێک نەدۆزرایەوە
+            <AppText
+              style={[styles.emptyText, { writingDirection: isRtl ? "rtl" : "ltr" }]}
+              forceKurdishFont={isKurdish}
+              forceLatinFont={!isKurdish}
+            >
+              {isKurdish ? "هیچ ئەنجامێک نەدۆزرایەوە" : "No expressions found"}
             </AppText>
           </View>
         }
       />
-
-      {/* Floating Mini Game Banner */}
-      <View style={[styles.bottomFloatingPanel, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <PressableScale
-          onPress={startQuiz}
-          style={[styles.gameLaunchBtn, { flexDirection: isKurdish ? "row-reverse" : "row" }, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.25, offsetY: 6, blur: 16, elevation: 4 })]}
-        >
-          <HugeiconsIcon icon={Trophy} size={18} color="#FFFFFF" strokeWidth={2.0} style={{ marginRight: isKurdish ? 0 : 6, marginLeft: isKurdish ? 6 : 0 }} />
-          <AppText style={styles.gameLaunchBtnLabel} forceKurdishFont>
-            {t("slang.quizStart")}
-          </AppText>
-        </PressableScale>
-      </View>
-
-      {/* Slang Quiz Matcher Modal */}
-      <Modal visible={quizVisible} animationType="slide" transparent={false}>
-        <View style={styles.quizRoot}>
-          {/* Custom Mesh Background */}
-          <HomeMeshBackground />
-
-          <View style={[styles.quizHeader, { paddingTop: insets.top + 8 }]}>
-            <AppText style={styles.quizHeaderTitle} forceKurdishFont>
-              {t("slang.quizTitle")}
-            </AppText>
-            <PressableScale
-              onPress={() => setQuizVisible(false)}
-              style={styles.quizCloseBtn}
-            >
-              <HugeiconsIcon icon={Cancel01Icon} size={20} color={ThemeColors.slate} strokeWidth={2.0} />
-            </PressableScale>
-          </View>
-
-          {!quizCompleted ? (
-            <View style={styles.quizBody}>
-              {/* Question Progress bar */}
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarActive,
-                    { width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%` },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.quizQuestionCard}>
-                <AppText style={styles.quizQuestionNum} forceLatinFont>
-                  {`${currentQuestionIndex + 1} / ${quizQuestions.length}`}
-                </AppText>
-                <AppText style={styles.quizQuestionText} forceKurdishFont>
-                  واتای ئەم دەستەواژەیە چییە؟
-                </AppText>
-                <View style={styles.quizTargetContainer}>
-                  <AppText style={styles.quizTargetSlang} forceLatinFont>
-                    {quizQuestions[currentQuestionIndex]?.slang.phrase}
-                  </AppText>
-                  <PressableScale
-                    onPress={() =>
-                      handleSpeak(
-                        quizQuestions[currentQuestionIndex]?.slang.phrase,
-                        `quiz_${quizQuestions[currentQuestionIndex]?.slang.id}`
-                      )
-                    }
-                    style={styles.quizSpeakerBtn}
-                  >
-                    <HugeiconsIcon icon={VolumeHighIcon} size={18} color={ThemeColors.accentBlue} strokeWidth={2.0} />
-                  </PressableScale>
-                </View>
-              </View>
-
-              {/* Choices */}
-              <ScrollView style={styles.choicesList} showsVerticalScrollIndicator={false}>
-                {quizQuestions[currentQuestionIndex]?.choices.map((choice, index) => {
-                  const isSelected = selectedChoiceIndex === index;
-                  const isCorrectAnswer =
-                    index === quizQuestions[currentQuestionIndex].correctIndex;
-
-                  let cardStyle: any = styles.choiceCard;
-                  let textStyle: any = styles.choiceText;
-
-                  if (isSelected) {
-                    cardStyle = [styles.choiceCard, styles.choiceCardSelected];
-                    textStyle = [styles.choiceText, styles.choiceTextSelected];
-                  }
-
-                  if (isAnswerChecked) {
-                    if (isCorrectAnswer) {
-                      cardStyle = [styles.choiceCard, styles.choiceCardCorrect];
-                      textStyle = [styles.choiceText, styles.choiceTextCorrect];
-                    } else if (isSelected) {
-                      cardStyle = [styles.choiceCard, styles.choiceCardWrong];
-                      textStyle = [styles.choiceText, styles.choiceTextWrong];
-                    }
-                  }
-
-                  return (
-                    <PressableScale
-                      key={index}
-                      onPress={() => handleSelectChoice(index)}
-                      style={cardStyle}
-                      scaleDown={0.98}
-                    >
-                      <View style={styles.choiceInner}>
-                        <AppText style={textStyle} forceKurdishFont>
-                          {choice}
-                        </AppText>
-                        {isAnswerChecked && isCorrectAnswer && (
-                          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={18} color="#000000" strokeWidth={2.5} />
-                        )}
-                        {isAnswerChecked && isSelected && !isCorrectAnswer && (
-                          <HugeiconsIcon icon={CancelCircleIcon} size={18} color="#FFFFFF" strokeWidth={2.5} />
-                        )}
-                      </View>
-                    </PressableScale>
-                  );
-                })}
-              </ScrollView>
-
-              {/* Feedback Area */}
-              <View style={styles.feedbackArea}>
-                {!isAnswerChecked ? (
-                  <PressableScale
-                    onPress={handleCheckAnswer}
-                    style={[
-                      styles.checkBtn,
-                      selectedChoiceIndex === null && styles.checkBtnDisabled,
-                    ]}
-                    disabled={selectedChoiceIndex === null}
-                  >
-                    <AppText style={styles.checkBtnLabel} forceKurdishFont>
-                      پشکنین
-                    </AppText>
-                  </PressableScale>
-                ) : (
-                  <View style={styles.nextStepWrapper}>
-                    <View style={styles.resultNotification}>
-                      {selectedChoiceIndex ===
-                      quizQuestions[currentQuestionIndex].correctIndex ? (
-                        <AppText style={styles.resultTextCorrect} forceKurdishFont>
-                          {t("slang.quizCorrect")}
-                        </AppText>
-                      ) : (
-                        <AppText style={styles.resultTextWrong} forceKurdishFont>
-                          {t("slang.quizWrong")}
-                        </AppText>
-                      )}
-                    </View>
-                    <PressableScale onPress={handleNextQuestion} style={styles.nextBtn}>
-                      <AppText style={styles.nextBtnLabel} forceKurdishFont>
-                        بەردەوامبە
-                      </AppText>
-                    </PressableScale>
-                  </View>
-                )}
-              </View>
-            </View>
-          ) : (
-            // Quiz Complete Screen
-            <View style={styles.completionContainer}>
-              <View style={styles.trophyWrapper}>
-                <HugeiconsIcon icon={Trophy} size={80} color={ThemeColors.warningGold} strokeWidth={1.2} />
-              </View>
-
-              <AppText style={styles.completionTitle} forceKurdishFont>
-                {t("slang.quizComplete")}
-              </AppText>
-              <AppText style={styles.completionSub} forceKurdishFont>
-                {t("slang.quizCompleteSub")}
-              </AppText>
-
-              <View style={styles.scoreRow}>
-                <AppText style={styles.scoreLabel} forceKurdishFont>
-                  ئەنجام:
-                </AppText>
-                <AppText style={styles.scoreValue} forceLatinFont>
-                  {`${quizScore} / ${quizQuestions.length}`}
-                </AppText>
-              </View>
-
-              <PressableScale onPress={handleClaimXp} style={styles.claimXpBtn}>
-                <AppText style={styles.claimXpBtnLabel} forceKurdishFont>
-                  {t("slang.claimXp")}
-                </AppText>
-              </PressableScale>
-            </View>
-          )}
-        </View>
-      </Modal>
     </View>
   );
 }
 
 function useSlangStyles() {
-  const { colors, isDark } = useThemeColors();
+  const { colors } = useThemeColors();
 
   return useMemo(() => StyleSheet.create({
   root: {
@@ -787,25 +547,35 @@ function useSlangStyles() {
     backgroundColor: colors.muted,
   },
   headerTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: "800",
-    color: ThemeColors.darkNavy,
+    color: colors.foreground,
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
   },
   spotlightCard: {
-    backgroundColor: ThemeColors.darkNavy,
+    backgroundColor: ThemeColors.accentBlue,
     borderColor: "rgba(255, 255, 255, 0.15)",
-    borderWidth: 1.5,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderRadius: 22,
     marginBottom: 20,
     overflow: "hidden",
   },
   spotlightContent: {
     padding: 20,
-    backgroundColor: ThemeColors.darkNavy,
+    backgroundColor: ThemeColors.accentBlue,
+  },
+  spotlightTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
   },
   spotlightBadge: {
     flexDirection: "row",
@@ -860,31 +630,33 @@ function useSlangStyles() {
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: C.divider,
+    borderWidth: 1,
+    borderColor: ThemeColors.blueBorder,
     paddingHorizontal: 12,
     height: 48,
-    marginBottom: 14,
+    marginBottom: 12,
+    ...crossShadow({ color: ThemeColors.accentBlue, opacity: 0.06, offsetY: 3, blur: 10, elevation: 2 }),
   },
   searchIcon: {
-    marginRight: 8,
+    marginEnd: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: ThemeColors.darkNavy,
+    color: colors.foreground,
     fontWeight: "600",
     fontFamily: "DINNextRoundedMedium",
-    textAlign: "left",
     paddingVertical: 0,
   },
-  searchInputRtl: {
-    textAlign: "right",
-  },
   clearSearchBtn: {
-    padding: 4,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.muted,
+    alignItems: "center",
+    justifyContent: "center",
   },
   chipsList: {
     marginBottom: 16,
@@ -892,15 +664,15 @@ function useSlangStyles() {
   },
   chipsContainer: {
     gap: 8,
-    paddingRight: 16,
+    paddingEnd: 16,
   },
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 999,
     backgroundColor: colors.surfaceRaised,
     borderWidth: 1,
-    borderColor: C.divider,
+    borderColor: colors.border,
   },
   chipSelected: {
     backgroundColor: ThemeColors.accentBlue,
@@ -921,7 +693,7 @@ function useSlangStyles() {
     backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: C.divider,
+    borderColor: colors.border,
     marginBottom: 12,
     overflow: "hidden",
   },
@@ -940,7 +712,7 @@ function useSlangStyles() {
   slangPhrase: {
     fontSize: 19,
     fontWeight: "800",
-    color: ThemeColors.darkNavy,
+    color: colors.foreground,
     letterSpacing: -0.2,
   },
   slangSubtitle: {
@@ -954,6 +726,10 @@ function useSlangStyles() {
     alignItems: "center",
     gap: 6,
     marginBottom: 4,
+  },
+  expandTarget: {
+    flex: 1,
+    minWidth: 0,
   },
   typeBadge: {
     paddingHorizontal: 8,
@@ -972,10 +748,10 @@ function useSlangStyles() {
     maxWidth: 170,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "rgba(15, 23, 42, 0.035)",
+    borderRadius: 999,
+    backgroundColor: ThemeColors.blueSoft,
     borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.08)",
+    borderColor: ThemeColors.blueBorder,
   },
   contextBadgeText: {
     fontSize: 10,
@@ -987,11 +763,19 @@ function useSlangStyles() {
     alignItems: "center",
     gap: 12,
   },
+  expandButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.muted,
+  },
   speakerBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.muted,
+    backgroundColor: ThemeColors.blueSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1017,7 +801,7 @@ function useSlangStyles() {
   },
   detailValue: {
     fontSize: 14,
-    color: ThemeColors.darkNavy,
+    color: colors.foreground,
     fontWeight: "600",
   },
   detailFigurative: {
@@ -1042,7 +826,7 @@ function useSlangStyles() {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.08)",
+    backgroundColor: "rgba(37, 99, 235, 0.16)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -1051,7 +835,7 @@ function useSlangStyles() {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
+    backgroundColor: ThemeColors.blueSoft,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -1059,7 +843,7 @@ function useSlangStyles() {
   dialogueMarkerText: {
     fontSize: 11,
     fontWeight: "900",
-    color: ThemeColors.darkNavy,
+    color: ThemeColors.accentBlueDark,
   },
   dialogueContent: {
     flex: 1,
@@ -1068,7 +852,7 @@ function useSlangStyles() {
   dialogueEn: {
     fontSize: 14,
     fontWeight: "700",
-    color: ThemeColors.darkNavy,
+    color: colors.foreground,
     lineHeight: 18,
   },
   dialogueKu: {
@@ -1081,7 +865,7 @@ function useSlangStyles() {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: "rgba(0, 0, 0, 0.04)",
+    backgroundColor: ThemeColors.blueSoft,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -1097,264 +881,15 @@ function useSlangStyles() {
     color: ThemeColors.lightSlate,
     fontWeight: "600",
   },
-  bottomFloatingPanel: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: isDark ? "rgba(15, 23, 42, 0.96)" : "rgba(255, 255, 255, 0.94)",
-    borderTopWidth: 1,
-    borderColor: colors.border,
+  ltrText: {
+    alignSelf: "stretch",
+    textAlign: "left",
+    writingDirection: "ltr",
   },
-  gameLaunchBtn: {
-    backgroundColor: ThemeColors.accentBlue,
-    height: 52,
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gameLaunchBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-
-  // Quiz Modal Styles
-  quizRoot: {
-    flex: 1,
-    backgroundColor: "#0B0F19",
-  },
-  quizHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  quizHeaderTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  quizCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quizBody: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 3,
-    marginBottom: 20,
-  },
-  progressBarActive: {
-    height: "100%",
-    backgroundColor: ThemeColors.accentBlue,
-    borderRadius: 3,
-  },
-  quizQuestionCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 16,
-    padding: 20,
-    alignItems: "center",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  quizQuestionNum: {
-    color: ThemeColors.lightSlate,
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  quizQuestionText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  quizTargetContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  quizTargetSlang: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: -0.5,
-  },
-  quizSpeakerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  choicesList: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  choiceCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.07)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-  },
-  choiceCardSelected: {
-    borderColor: "#FFFFFF",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  choiceCardCorrect: {
-    borderColor: "#FFFFFF",
-    backgroundColor: "#FFFFFF",
-  },
-  choiceCardWrong: {
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  choiceInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  choiceText: {
-    fontSize: 15,
-    color: "#FFFFFF",
-    fontWeight: "600",
-    flex: 1,
+  rtlText: {
+    alignSelf: "stretch",
     textAlign: "right",
+    writingDirection: "rtl",
   },
-  choiceTextSelected: {
-    color: "#FFFFFF",
-  },
-  choiceTextCorrect: {
-    color: "#000000",
-  },
-  choiceTextWrong: {
-    color: "#FFFFFF",
-  },
-  feedbackArea: {
-    paddingBottom: 24,
-  },
-  checkBtn: {
-    backgroundColor: ThemeColors.accentBlue,
-    height: 52,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkBtnDisabled: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  checkBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  nextStepWrapper: {
-    gap: 12,
-  },
-  resultNotification: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-  },
-  resultTextCorrect: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: ThemeColors.successGreen,
-  },
-  resultTextWrong: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: ThemeColors.errorRed,
-  },
-  nextBtn: {
-    backgroundColor: ThemeColors.accentBlue,
-    height: 52,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  nextBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  completionContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    gap: 16,
-  },
-  trophyWrapper: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  completionTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  completionSub: {
-    fontSize: 15,
-    color: ThemeColors.lightSlate,
-    textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: 20,
-  },
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginVertical: 12,
-  },
-  scoreLabel: {
-    fontSize: 18,
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
-  scoreValue: {
-    fontSize: 22,
-    color: ThemeColors.warningGold,
-    fontWeight: "900",
-  },
-  claimXpBtn: {
-    backgroundColor: ThemeColors.warningGold,
-    height: 52,
-    borderRadius: 16,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
-  },
-  claimXpBtnLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  }), [colors, isDark]);
+  }), [colors]);
 }

@@ -5,7 +5,7 @@ import { getLegalDocument } from "../../content/legal";
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "../../constants/app-meta";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useI18n } from "../../hooks/useI18n";
-import { useRouter } from "expo-router";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import React from "react";
@@ -22,7 +22,7 @@ type Props = {
 };
 
 export function LegalDocumentScreen({ docId }: Props) {
-  const router = useRouter();
+  const safeBack = useSafeBack("/");
   const insets = useSafeAreaInsets();
   const { locale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
@@ -31,7 +31,7 @@ export function LegalDocumentScreen({ docId }: Props) {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={[styles.topBar, { flexDirection: "row" }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+        <Pressable onPress={safeBack} hitSlop={12} style={styles.back}>
           <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
             <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
           </View>

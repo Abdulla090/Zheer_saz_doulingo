@@ -11,10 +11,8 @@ import type {
   GuidebookLessonViewModel,
 } from "./guidebook-model";
 import type { GuidebookAccent } from "./guidebook-theme";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { HugeiconsIcon } from "@hugeicons/react-native/dist/cjs/index.js";
-// @ts-expect-error No type declarations for hugeicons cjs paths
-import { EyeIcon, EyeOffIcon, VolumeHighIcon } from "@hugeicons/core-free-icons/dist/cjs/index.js";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { EyeIcon, EyeOffIcon, VolumeHighIcon } from "@hugeicons/core-free-icons";
 
 type GuidebookStudyPanelProps = {
   lesson: GuidebookLessonViewModel;

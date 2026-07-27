@@ -6,7 +6,12 @@ import {
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PressableScale } from "../../components/animations";
@@ -65,7 +70,9 @@ export const LeaderboardScreen = () => {
       return;
     }
 
-    const { data, error } = await supabase.rpc("get_leaderboard", { p_limit: 50 });
+    const { data, error } = await supabase.rpc("get_leaderboard", {
+      p_limit: 50,
+    });
     if (error) {
       console.error("Failed to load leaderboard:", error.message);
       setEntries([]);
@@ -98,59 +105,87 @@ export const LeaderboardScreen = () => {
 
   const renderAvatar = (item: LeaderboardEntry) => {
     const isMe = item.userId === user?.id;
-    const uploadedUrl = isMe && localAvatarUrl ? localAvatarUrl : item.avatarUrl;
+    const uploadedUrl =
+      isMe && localAvatarUrl ? localAvatarUrl : item.avatarUrl;
     if (
       uploadedUrl &&
       /^(https?:|file:|content:|data:|blob:)/i.test(uploadedUrl) &&
       !/\.svg(?:[?#]|$)|\/premade\//i.test(uploadedUrl)
     ) {
-      return <Image source={{ uri: uploadedUrl }} contentFit="cover" style={styles.avatar} />;
+      return (
+        <Image
+          source={{ uri: uploadedUrl }}
+          contentFit="cover"
+          style={styles.avatar}
+        />
+      );
     }
 
     const mascot = getMascot(isMe ? localMascotId : item.selectedMascotId);
     return (
       <View style={styles.avatar}>
-        <Image source={mascot.source} contentFit="contain" style={styles.mascotImage} />
+        <Image
+          source={mascot.source}
+          contentFit="contain"
+          style={styles.mascotImage}
+        />
       </View>
     );
   };
 
-  const renderItem = ({ item }: LegendListRenderItemProps<LeaderboardEntry>) => {
+  const renderItem = ({
+    item,
+  }: LegendListRenderItemProps<LeaderboardEntry>) => {
     const isMe = item.userId === user?.id;
     const level = Math.max(1, Math.floor(item.xp / 120) + 1);
     return (
-      <PressableScale
-        onPress={() => hapticImpact()}
-        scaleDown={0.985}
-        style={[styles.row, isMe && styles.currentUserRow, isRtl && styles.rowRtl]}
-      >
-        <View style={[styles.rank, item.rank <= 3 && styles.topRank]}>
-          <AppText style={[styles.rankText, item.rank <= 3 && styles.topRankText]} forceLatinFont latinRole="bold">
-            {item.rank}
-          </AppText>
-        </View>
-        {renderAvatar(item)}
-        <View style={styles.nameColumn}>
-          <AppText
-            style={styles.name}
-            numberOfLines={1}
-            align="start"
-            languageCode={locale}
-            latinRole="bold"
-          >
-            {isMe && localUserName ? localUserName : item.name}
-          </AppText>
-          <AppText style={styles.level} forceLatinFont>
-            Level {level}
-          </AppText>
-        </View>
-        <View style={styles.xp}>
-          <HugeiconsIcon icon={ZapIcon} size={13} color="#F59E0B" strokeWidth={3} />
-          <AppText style={styles.xpText} forceLatinFont latinRole="bold">
-            {item.xp} XP
-          </AppText>
-        </View>
-      </PressableScale>
+      <View style={styles.rowSlot}>
+        <PressableScale
+          onPress={() => hapticImpact()}
+          scaleDown={0.985}
+          style={[
+            styles.row,
+            isMe && styles.currentUserRow,
+            isRtl && styles.rowRtl,
+          ]}
+        >
+          <View style={[styles.rank, item.rank <= 3 && styles.topRank]}>
+            <AppText
+              style={[styles.rankText, item.rank <= 3 && styles.topRankText]}
+              forceLatinFont
+              latinRole="bold"
+            >
+              {item.rank}
+            </AppText>
+          </View>
+          {renderAvatar(item)}
+          <View style={styles.nameColumn}>
+            <AppText
+              style={styles.name}
+              numberOfLines={1}
+              align="start"
+              languageCode={locale}
+              latinRole="bold"
+            >
+              {isMe && localUserName ? localUserName : item.name}
+            </AppText>
+            <AppText style={styles.level} forceLatinFont>
+              Level {level}
+            </AppText>
+          </View>
+          <View style={styles.xp}>
+            <AppText style={styles.xpText} forceLatinFont latinRole="bold">
+              {item.xp} XP
+            </AppText>
+            <HugeiconsIcon
+              icon={ZapIcon}
+              size={13}
+              color="#F59E0B"
+              strokeWidth={3}
+            />
+          </View>
+        </PressableScale>
+      </View>
     );
   };
 
@@ -167,16 +202,32 @@ export const LeaderboardScreen = () => {
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 8 }]}>
+      <View
+        style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 8 }]}
+      >
         <View style={[styles.titleRow, isRtl && styles.rowRtl]}>
           <View style={styles.trophy}>
-            <HugeiconsIcon icon={Trophy} size={22} color="#F59E0B" strokeWidth={2.4} />
+            <HugeiconsIcon
+              icon={Trophy}
+              size={22}
+              color="#F59E0B"
+              strokeWidth={2.4}
+            />
           </View>
-          <View>
-            <AppText style={styles.title} languageCode={locale} align="start" latinRole="bold">
+          <View style={styles.titleCopy}>
+            <AppText
+              style={styles.title}
+              languageCode={locale}
+              align="start"
+              latinRole="bold"
+            >
               {t("league.title")}
             </AppText>
-            <AppText style={styles.subtitle} languageCode={locale} align="start">
+            <AppText
+              style={styles.subtitle}
+              languageCode={locale}
+              align="start"
+            >
               Real learners ranked by total XP
             </AppText>
           </View>
@@ -194,7 +245,9 @@ export const LeaderboardScreen = () => {
           renderItem={renderItem}
           recycleItems
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           contentContainerStyle={{
             paddingTop: 14,
             paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
@@ -202,12 +255,26 @@ export const LeaderboardScreen = () => {
           ListEmptyComponent={
             <View style={styles.centerState}>
               <View style={styles.emptyIcon}>
-                <HugeiconsIcon icon={Trophy} size={30} color={colors.mutedForeground} strokeWidth={1.8} />
+                <HugeiconsIcon
+                  icon={Trophy}
+                  size={30}
+                  color={colors.mutedForeground}
+                  strokeWidth={1.8}
+                />
               </View>
-              <AppText style={styles.emptyTitle} languageCode={locale} align="center" latinRole="bold">
+              <AppText
+                style={styles.emptyTitle}
+                languageCode={locale}
+                align="center"
+                latinRole="bold"
+              >
                 {emptyTitle}
               </AppText>
-              <AppText style={styles.emptyBody} languageCode={locale} align="center">
+              <AppText
+                style={styles.emptyBody}
+                languageCode={locale}
+                align="center"
+              >
                 {emptyBody}
               </AppText>
             </View>
@@ -229,6 +296,7 @@ function createStyles(colors: any, isDark: boolean) {
       borderBottomColor: colors.border,
     },
     titleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    titleCopy: { flex: 1, minWidth: 0 },
     rowRtl: { flexDirection: "row-reverse" },
     trophy: {
       width: 44,
@@ -240,14 +308,18 @@ function createStyles(colors: any, isDark: boolean) {
     },
     title: { fontSize: 25, color: colors.foreground },
     subtitle: { marginTop: 2, fontSize: 12, color: colors.mutedForeground },
+    rowSlot: {
+      width: "100%",
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+    },
     row: {
+      width: "100%",
       minHeight: 72,
-      marginHorizontal: 16,
-      marginBottom: 9,
-      paddingHorizontal: 14,
+      paddingHorizontal: 12,
       flexDirection: "row",
       alignItems: "center",
-      gap: 11,
+      gap: 9,
       borderRadius: 18,
       borderWidth: 1,
       borderBottomWidth: 3,
@@ -280,7 +352,13 @@ function createStyles(colors: any, isDark: boolean) {
     nameColumn: { flex: 1, minWidth: 0 },
     name: { fontSize: 15, color: colors.foreground },
     level: { marginTop: 2, fontSize: 11, color: colors.mutedForeground },
-    xp: { flexDirection: "row", alignItems: "center", gap: 4 },
+    xp: {
+      flexShrink: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 3,
+    },
     xpText: { fontSize: 12, color: colors.foreground },
     centerState: {
       flex: 1,

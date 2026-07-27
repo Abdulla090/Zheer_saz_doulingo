@@ -8,6 +8,7 @@ import {
   useContentPackStore,
 } from "../stores/useContentPackStore";
 import { crossShadow } from "../utils/shadows";
+import { PRIMARY_ACTION } from "../constants/primary-action";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect } from "react";
 import {
@@ -191,10 +192,13 @@ export function ContentPackCard({ pack, onDownloadComplete }: Props) {
         >
           {(status === "not_downloaded" || status === "error") && (
             <LinearGradient
-              colors={status === "error" ? ["#EF4444", "#DC2626"] : [pack.accentColor, `${pack.accentColor}DD`]}
+              colors={status === "error" ? ["#EF4444", "#DC2626"] : [PRIMARY_ACTION.face, PRIMARY_ACTION.face]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.downloadBtn}
+              style={[
+                styles.downloadBtn,
+                status === "error" && styles.downloadBtnError,
+              ]}
             >
               {status === "error" ? null : <PackageIcon size={22} color="#FFF" />}
               <Text style={styles.downloadBtnText}>
@@ -309,12 +313,17 @@ const styles = StyleSheet.create({
     paddingBottom: 22,
   },
   downloadBtn: {
-    height: 52,
-    borderRadius: 16,
+    height: PRIMARY_ACTION.height,
+    borderRadius: PRIMARY_ACTION.radius,
+    borderBottomWidth: PRIMARY_ACTION.rimWidth,
+    borderBottomColor: PRIMARY_ACTION.rim,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+  },
+  downloadBtnError: {
+    borderBottomColor: "#B91C1C",
   },
   downloadBtnText: {
     fontSize: 16,

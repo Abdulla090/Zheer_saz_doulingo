@@ -71,6 +71,8 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const { t } = useI18n();
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
+  const abortSpeech = speech.abort;
+  const abortGeminiCapture = geminiCapture.abort;
   const useGeminiBackend = !speech.available && geminiCapture.available;
   const scrollY = useSharedValue(0);
 
@@ -84,10 +86,10 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
 
   useEffect(() => {
     return () => {
-      speech.abort();
-      geminiCapture.abort();
+      abortSpeech();
+      abortGeminiCapture();
     };
-  }, [speech, geminiCapture]);
+  }, [abortGeminiCapture, abortSpeech]);
 
   const handleStart = async () => {
     setState("listening");
@@ -221,8 +223,13 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
             ? L.red
             : L.blue;
   
+  const captureError = useGeminiBackend
+    ? geminiCapture.error
+    : speech.error;
   const statusText =
-    state === "processing"
+    captureError
+      ? captureError
+      : state === "processing"
       ? t("lessons.voiceProcessing")
       : state === "listening"
       ? t("lessons.listening")

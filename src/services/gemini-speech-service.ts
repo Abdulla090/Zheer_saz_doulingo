@@ -504,46 +504,45 @@ export type ParagraphSpeechEvaluation = {
   wordAnalysis: { word: string; correct: boolean }[];
 };
 
-const READING_BEGINNER_FALLBACKS = [
-  "The weather is beautiful and warm today. The yellow sun is shining, and small birds are singing near the garden. I walk to the quiet park with my friends after breakfast. We see colorful flowers, tall green trees, and children playing together. Later, we sit under a tree, drink cold water, and talk about our plans for the afternoon. It is a simple day, but it feels peaceful and happy.",
-  "My best friend lives near my house, and we often study English together. We read short stories, repeat useful sentences, and help each other when a word is difficult. Sometimes we make mistakes, but we do not stop. We laugh, try again, and slowly improve our speaking. Learning feels easier when someone kind practices with you every day.",
-  "In the morning, I prepare my school bag before I leave home. I put my notebook, pencil, phone, and water bottle inside. On the way, I meet my cousin at the bus stop. We talk about our favorite lessons and the games we want to play later. A good morning routine helps me feel ready for the whole day.",
-];
-
-const READING_HIGHER_FALLBACKS = [
-  "Learning a new language opens meaningful opportunities for personal growth and cultural understanding. It helps learners connect with people from different countries, follow international media, and express ideas with more confidence. The process requires patience because vocabulary, grammar, and pronunciation improve through steady repetition. Even ten minutes of focused speaking or reading every day can build a stronger habit and make English feel more natural over time.",
-  "Consistency is the foundation of mastering any complex intellectual skill. When learners dedicate focused time to reading aloud, they train their eyes, mouth, and memory to work together. This practice improves pronunciation, rhythm, and confidence under pressure. Distractions can slow progress, but a clear routine creates measurable improvement. The goal is not perfection in one attempt; it is becoming a little more fluent with each careful repetition.",
-  "Modern technology is changing the way students practice language skills. Smartphones, tablets, and artificial intelligence can provide quick access to lessons, pronunciation feedback, and realistic conversations. These tools are useful, but they cannot replace attention, curiosity, and active effort. A learner still needs to read carefully, listen closely, and speak often. The best results come when technology supports a strong personal routine instead of replacing it.",
-];
-
 export function countReadingWords(value: string): number {
   return value.trim().split(/\s+/).filter(Boolean).length;
 }
 
-export function normalizeReadingPracticeParagraphs(
+export function countReadingSentences(value: string): number {
+  return (value.match(/[^.!?\n]+[.!?]?/g) ?? [])
+    .map((sentence) => sentence.trim())
+    .filter(Boolean).length;
+}
+
+export function validateGeneratedReadingPracticeParagraphs(
   values: string[],
-  difficulty: ReadingDifficulty,
   paragraphCount: number,
   wordCountPerParagraph: number,
 ): string[] {
   const safeParagraphCount = Math.max(1, Math.min(3, Math.round(paragraphCount)));
-  const safeWordCount = Math.max(80, Math.min(220, Math.round(wordCountPerParagraph)));
-  const fallbackPool =
-    difficulty === "Beginner" ? READING_BEGINNER_FALLBACKS : READING_HIGHER_FALLBACKS;
+  const safeWordCount = Math.max(30, Math.min(220, Math.round(wordCountPerParagraph)));
 
-  const padParagraph = (value: string, index: number) => {
-    const parts = [value.replace(/\s+/g, " ").trim()].filter(Boolean);
-    let nextIndex = index;
-    while (countReadingWords(parts.join(" ")) < safeWordCount) {
-      parts.push(fallbackPool[nextIndex % fallbackPool.length]);
-      nextIndex += 1;
+  if (values.length < safeParagraphCount) {
+    throw new Error("Twino AI returned fewer passages than requested. Please generate again.");
+  }
+
+  return values.slice(0, safeParagraphCount).map((value) => {
+    const words = value.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+    const minimumWords = Math.max(20, Math.floor(safeWordCount * 0.7));
+
+    if (words.length < minimumWords) {
+      throw new Error("Twino AI returned an incomplete passage. Please generate again.");
     }
-    return parts.join(" ");
-  };
 
-  return Array.from({ length: safeParagraphCount }, (_, index) =>
-    padParagraph(values[index] ?? fallbackPool[index % fallbackPool.length], index),
-  );
+    const limitedWords = words.slice(0, Math.ceil(safeWordCount * 1.2));
+    const chunkSize = Math.ceil(limitedWords.length / 3);
+    return [0, 1, 2]
+      .map((chunk) =>
+        limitedWords.slice(chunk * chunkSize, (chunk + 1) * chunkSize).join(" "),
+      )
+      .filter(Boolean)
+      .join("\n");
+  });
 }
 
 export async function evaluateParagraphSpeechWithGemini(
@@ -557,6 +556,7 @@ export async function evaluateParagraphSpeechWithGemini(
 
   const normalizedMimeType = normalizeGeminiMimeType(mimeType);
   const targetText = targetParagraphs.join(" ");
+  const targetWords = targetText.split(/\s+/).filter(Boolean);
 
   const prompt = [
     "You evaluate English speaking practice for language learners.",
@@ -596,9 +596,9 @@ export async function evaluateParagraphSpeechWithGemini(
       ],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 2048,
+        maxOutputTokens: Math.max(2048, Math.min(8192, targetWords.length * 14)),
       },
-    }, API_TIMEOUT_MS * 2);
+    }, 90_000);
 
     let text =
       data.candidates?.[0]?.content?.parts
@@ -616,10 +616,25 @@ export async function evaluateParagraphSpeechWithGemini(
       text = text.replace(/^```/, "").replace(/```$/, "").trim();
     }
 
-    const evaluation = JSON.parse(text) as ParagraphSpeechEvaluation;
-    return evaluation;
+    const parsed = JSON.parse(text) as Partial<ParagraphSpeechEvaluation>;
+    const parsedWords = Array.isArray(parsed.wordAnalysis) ? parsed.wordAnalysis : [];
+    return {
+      transcript: typeof parsed.transcript === "string" ? parsed.transcript.trim() : "",
+      accuracyScore: Math.max(
+        0,
+        Math.min(100, Math.round(Number(parsed.accuracyScore) || 0)),
+      ),
+      wordAnalysis: targetWords.map((word, index) => ({
+        word: word.replace(/[^a-z0-9']/gi, ""),
+        correct: parsedWords[index]?.correct === true,
+      })),
+    };
   } catch (err: any) {
-    console.error("[evaluateParagraphSpeechWithGemini] Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    const isExpectedAuthError = message === "Sign in to use Twino's cloud AI features.";
+    if (!isExpectedAuthError) {
+      console.warn("[evaluateParagraphSpeechWithGemini] Failed:", err);
+    }
     throw new Error(err.message || "Failed to evaluate paragraph speech.");
   }
 }
@@ -630,53 +645,45 @@ export async function generateReadingPracticeParagraphs(
   wordCountPerParagraph: number = 80
 ): Promise<string[]> {
   const safeParagraphCount = Math.max(1, Math.min(3, Math.round(paragraphCount)));
-  const safeWordCount = Math.max(80, Math.min(220, Math.round(wordCountPerParagraph)));
+  const safeWordCount = Math.max(30, Math.min(220, Math.round(wordCountPerParagraph)));
   const maxOutputTokens = Math.round(
     Math.max(600, Math.min(2400, safeParagraphCount * safeWordCount * 1.8)),
   );
 
   const prompt = `Generate ${safeParagraphCount} English reading passage(s), ${difficulty} level, ~${safeWordCount} words each. Each passage must be split into exactly 3 short sub-paragraphs separated by \\n within the string. Topics: tech, nature, self-improvement, or stories. Reply ONLY with a JSON array of strings. No markdown. Example: ["First sub-paragraph here.\\nSecond sub-paragraph here.\\nThird sub-paragraph here."]`;
 
-  try {
-    const data = await requestGeminiGenerateContent(
-      {
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens,
-        },
+  const data = await requestGeminiGenerateContent(
+    {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens,
       },
-      45_000,
-      "gemini-3.1-flash-lite",
-    );
+    },
+    45_000,
+    "gemini-3.1-flash-lite",
+  );
 
-    const text = extractGeminiText(data);
-    const jsonText = extractJsonArray(text) || text.trim();
-    
-    try {
-      const parsed = JSON.parse(jsonText);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return normalizeReadingPracticeParagraphs(
-          parsed.map(String).filter(Boolean),
-          difficulty,
-          safeParagraphCount,
-          safeWordCount,
-        );
-      }
-    } catch {
-      // Fallback if it fails to parse
-    }
-
-    // Manual fallback: split by double newline
-    return normalizeReadingPracticeParagraphs(
-      text.split('\n\n').map(p => p.trim()).filter(Boolean),
-      difficulty,
-      safeParagraphCount,
-      safeWordCount,
-    );
-
-  } catch (err) {
-    console.error("[generateReadingPracticeParagraphs] Failed:", err);
-    return normalizeReadingPracticeParagraphs([], difficulty, safeParagraphCount, safeWordCount);
+  const text = extractGeminiText(data);
+  if (!text) {
+    throw new Error("Twino AI returned an empty passage. Please generate again.");
   }
+
+  const jsonText = extractJsonArray(text) || text.trim();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    throw new Error("Twino AI returned an invalid passage. Please generate again.");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Twino AI returned an invalid passage. Please generate again.");
+  }
+
+  return validateGeneratedReadingPracticeParagraphs(
+    parsed.filter((value): value is string => typeof value === "string"),
+    safeParagraphCount,
+    safeWordCount,
+  );
 }

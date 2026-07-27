@@ -5,7 +5,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "../../components/ui/AppText";
@@ -14,6 +14,7 @@ import { getGuidebook } from "../../data/guidebook-data";
 import { useI18n } from "../../hooks/useI18n";
 import { useTTS } from "../../hooks/use-tts";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { getGuidebookCopy } from "./guidebook-copy";
 import { GuidebookHeader } from "./GuidebookHeader";
@@ -40,7 +41,7 @@ export default function GuidebookScreen() {
     unit?: string | string[];
     mode?: string | string[];
   }>();
-  const router = useRouter();
+  const safeBack = useSafeBack("/path");
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { locale, isKu, isAr } = useI18n();
@@ -86,8 +87,8 @@ export default function GuidebookScreen() {
 
   const handleClose = useCallback(() => {
     void stop();
-    router.back();
-  }, [router, stop]);
+    safeBack();
+  }, [safeBack, stop]);
 
   const handleSelectLesson = useCallback(
     (index: number) => {
