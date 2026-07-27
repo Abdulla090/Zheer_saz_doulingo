@@ -1134,7 +1134,7 @@ function createStyles(colors: any, isDark: boolean) {
       fontVariant: ["tabular-nums"],
     },
     levelCaption: {
-      fontSize: 9,
+      fontSize: 11,
       color: panelMuted,
     },
     progressTrack: {
@@ -1180,7 +1180,7 @@ function createStyles(colors: any, isDark: boolean) {
       fontVariant: ["tabular-nums"],
     },
     statLabel: {
-      fontSize: 10,
+      fontSize: 11,
       color: panelMuted,
     },
     section: {
@@ -1247,7 +1247,7 @@ function createStyles(colors: any, isDark: boolean) {
       overflow: "hidden",
       backgroundColor: isDark ? "rgba(255,107,74,0.13)" : "#FFF1EC",
       color: colors.primary,
-      fontSize: 10,
+      fontSize: 11,
     },
     statusDot: {
       width: 8,

@@ -111,6 +111,7 @@ function SettingsSwitch({
     <Pressable
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
+      hitSlop={9}
       onPress={() => onValueChange(!value)}
       style={({ pressed }) => [
         stylesStatic.switchTrack,
@@ -843,9 +844,9 @@ const createStyles = (colors: any) =>
       marginBottom: 8,
     },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: colors.card,
       borderWidth: 1.5,
       borderColor: colors.cardBorder || "rgba(0, 0, 0, 0.05)",

@@ -568,7 +568,7 @@ function createStyles(colors: any, isDark: boolean) {
   label: {
     marginTop: 2,
     maxWidth: "100%",
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 13,
     fontWeight: "800",
     includeFontPadding: false,

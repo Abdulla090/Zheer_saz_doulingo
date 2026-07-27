@@ -532,7 +532,7 @@ const s = StyleSheet.create({
   },
   goalBig: { fontSize: 28, fontWeight: "900", color: C.textPrimary },
   goalSlash: { fontSize: 14, fontWeight: "700", color: C.textTertiary },
-  goalUnit: { fontSize: 10, fontWeight: "600", color: C.textSecondary },
+  goalUnit: { fontSize: 11, fontWeight: "600", color: C.textSecondary },
   goalRing: {
     width: 48,
     height: 48,
@@ -565,7 +565,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 2,
   },
   streakDay: { alignItems: "center", gap: 3 },
-  streakDayLabel: { fontSize: 9, fontWeight: "700", color: C.textTertiary },
+  streakDayLabel: { fontSize: 11, fontWeight: "700", color: C.textTertiary },
   streakInactive: {
     width: 18,
     height: 18,
@@ -610,7 +610,7 @@ const s = StyleSheet.create({
   },
   xpBarFill: { height: 6, borderRadius: 3, backgroundColor: "#3B82F6" },
   xpText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     color: C.textTertiary,
     textAlign: "right",
@@ -657,7 +657,7 @@ const s = StyleSheet.create({
     height: 6,
   },
   journeyBarFill: { height: 6, borderRadius: 99, backgroundColor: C.accent },
-  journeyPercent: { fontSize: 10, fontWeight: "700", color: "#334155" },
+  journeyPercent: { fontSize: 11, fontWeight: "700", color: "#334155" },
   journeyCta: {
     backgroundColor: C.accent,
     paddingVertical: 10,
@@ -712,7 +712,7 @@ const s = StyleSheet.create({
   },
   modeLabel: { fontWeight: "700", fontSize: 14, color: C.textPrimary },
   modeSub: {
-    fontSize: 10,
+    fontSize: 11,
     color: C.textSecondary,
     fontWeight: "500",
     lineHeight: 14,
@@ -741,9 +741,9 @@ const s = StyleSheet.create({
     borderColor: "#fff",
     zIndex: 10,
   },
-  badgePillText: { color: "#fff", fontSize: 8, fontWeight: "800" },
+  badgePillText: { color: "#fff", fontSize: 10, fontWeight: "800" },
   badgeLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "700",
     color: "#475569",
     textAlign: "center",

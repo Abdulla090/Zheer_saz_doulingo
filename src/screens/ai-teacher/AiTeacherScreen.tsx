@@ -957,9 +957,9 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     marginBottom: 18,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.warmBg,
     alignItems: "center",
     justifyContent: "center",
@@ -1266,7 +1266,7 @@ function createStyles(Colors: ReturnType<typeof createAiColors>) {
     marginBottom: 8,
   },
   overallBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.foreground,
     letterSpacing: 1.2,
   },

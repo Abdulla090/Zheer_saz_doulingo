@@ -119,6 +119,7 @@
     "example": "مثال واقعي",
     "playAudio": "تشغيل الصوت",
     "close": "إغلاق",
+    "noResults": "لم يتم العثور على تعبيرات",
     "categories": {
       "All": "الكل",
       "Casual": "دردشة عادية",
@@ -153,7 +154,14 @@
     "resetProgressHint": "يمسح نقاط الخبرة، السلسلة، وتقدم المسار على هذا الجهاز.",
     "resetConfirm": "إعادة تعيين",
     "nativeLanguage": "اللغة الأم",
-    "learningLanguage": "لغة التعلم"
+    "learningLanguage": "لغة التعلم",
+    "tutorVoice": "صوت مدرس الذكاء الاصطناعي",
+    "tutorVoiceHint": "اختر صوت مدرس الإنجليزية المباشر (مدعوم من Gemini Live).",
+    "tutorVoiceAoede": "Aoede (دافئ وواضح)",
+    "tutorVoicePuck": "Puck (نشيط وودود)",
+    "tutorVoiceCharon": "Charon (عميق وهادئ)",
+    "tutorVoiceFenrir": "Fenrir (عفوي وقوي)",
+    "tutorVoiceKore": "Kore (مشرق وحيوي)"
   },
   "aiTeacher": {
     "title": "مدرس الذكاء الاصطناعي",

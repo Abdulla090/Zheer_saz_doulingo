@@ -325,10 +325,10 @@ export function AiPodcastScreen() {
             <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
           </View>
         </PressableScale>
-        <AppText style={styles.headerTitle}>
+        <AppText style={styles.headerTitle} languageCode={isKu ? "ku" : "en"} align="center">
           {isKu ? "پۆدکاستەکان" : "Podcasts"}
         </AppText>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView
@@ -517,9 +517,9 @@ function createStyles(colors: any, isDark: boolean) {
     paddingBottom: 14,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.7)",
     alignItems: "center",
     justifyContent: "center",

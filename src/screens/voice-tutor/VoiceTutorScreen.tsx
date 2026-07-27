@@ -801,7 +801,7 @@ export function VoiceTutorScreen() {
                   </AppText>
                   <AppText
                     style={{
-                      fontSize: 9,
+                      fontSize: 11,
                       color: colors.mutedForeground,
                       fontWeight: "600",
                       textTransform: "uppercase",
@@ -1133,7 +1133,7 @@ const createStyles = (colors: any, isDark: boolean) =>
       marginBottom: 16,
     },
     swipeText: {
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: "800",
       color: "#4F46E5",
       textTransform: "uppercase",
@@ -1397,7 +1397,7 @@ const createStyles = (colors: any, isDark: boolean) =>
       elevation: 2,
     },
     metricLabel: {
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: "800",
       color: colors.mutedForeground,
       letterSpacing: 1.1,
@@ -1477,14 +1477,14 @@ const createStyles = (colors: any, isDark: boolean) =>
       borderTopRightRadius: 4,
     },
     userBubbleSender: {
-      fontSize: 8,
+      fontSize: 11,
       fontWeight: "800",
       color: "rgba(255, 255, 255, 0.7)",
       marginBottom: 4,
       letterSpacing: 0.8,
     },
     aiBubbleSender: {
-      fontSize: 8,
+      fontSize: 11,
       fontWeight: "800",
       color: colors.mutedForeground,
       marginBottom: 4,
@@ -1503,7 +1503,7 @@ const createStyles = (colors: any, isDark: boolean) =>
       fontFamily: "DINNextRoundedMedium",
     },
     bubbleTime: {
-      fontSize: 8,
+      fontSize: 11,
       color: isDark ? colors.mutedForeground : "rgba(0,0,0,0.25)",
       alignSelf: "flex-end",
       marginTop: 4,
@@ -1539,7 +1539,7 @@ const createStyles = (colors: any, isDark: boolean) =>
       alignSelf: "flex-end",
     },
     recBadgeText: {
-      fontSize: 9,
+      fontSize: 11,
       fontWeight: "800",
       letterSpacing: 0.8,
     },

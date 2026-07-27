@@ -119,6 +119,7 @@
     "example": "Real-world example",
     "playAudio": "Play audio",
     "close": "Close",
+    "noResults": "No expressions found",
     "categories": {
       "All": "All",
       "Casual": "Casual Chat",

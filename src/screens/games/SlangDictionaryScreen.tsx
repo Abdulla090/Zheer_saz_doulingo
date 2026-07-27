@@ -59,7 +59,6 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   locale: string;
 }) {
   const styles = useSlangStyles();
-  const isRtl = locale === "ku" || locale === "ar";
   return (
     <ScrollView
       horizontal
@@ -84,11 +83,10 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
               <AppText
                 style={[
                   styles.chipText,
-                  { textAlign: isRtl ? "right" : "left" },
                   isSelected && styles.chipTextSelected,
                 ]}
-                forceKurdishFont={locale === "ku"}
-                forceLatinFont={locale !== "ku"}
+                languageCode={locale}
+                align="center"
               >
                 {labelText}
               </AppText>
@@ -106,7 +104,6 @@ const SlangItemRow = React.memo(function SlangItemRow({
   isItemSpeaking,
   onToggleExpand,
   onSpeak,
-  isKurdish,
   isRtl,
   t,
   speaking,
@@ -118,7 +115,6 @@ const SlangItemRow = React.memo(function SlangItemRow({
   isItemSpeaking: boolean;
   onToggleExpand: (id: string) => void;
   onSpeak: (phrase: string, id: string) => void;
-  isKurdish: boolean;
   isRtl: boolean;
   t: any;
   speaking: boolean;
@@ -148,9 +144,9 @@ const SlangItemRow = React.memo(function SlangItemRow({
                 </View>
                 <View style={styles.contextBadge}>
                   <AppText
-                    style={[styles.contextBadgeText, { textAlign: isRtl ? "right" : "left" }]}
-                    forceKurdishFont={isKurdish}
-                    forceLatinFont={!isKurdish}
+                    style={styles.contextBadgeText}
+                    languageCode={locale}
+                    align="center"
                     numberOfLines={1}
                   >
                     {contextLabel}
@@ -171,6 +167,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
               onPress={() => onSpeak(item.phrase, item.id)}
               style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
               accessibilityRole="button"
+              accessibilityLabel={t("slang.playAudio")}
             >
               <HugeiconsIcon
                 icon={VolumeHighIcon}
@@ -184,6 +181,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
               style={styles.expandButton}
               scaleDown={0.92}
               accessibilityRole="button"
+              accessibilityLabel={isExpanded ? t("slang.close") : t("slang.example")}
             >
               <Animated.View
                 style={{
@@ -207,8 +205,8 @@ const SlangItemRow = React.memo(function SlangItemRow({
             <View style={styles.divider} />
 
             <View style={styles.detailRow}>
-              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
-                {isKurdish ? "خوێندنەوە" : "Pronunciation"}
+              <AppText style={styles.detailLabel} languageCode={locale} align="start">
+                {t("aiTeacher.criteria.pronunciation")}
               </AppText>
               <AppText style={[styles.detailValue, styles.ltrText]} forceLatinFont>
                 {item.pronunciation}
@@ -216,16 +214,16 @@ const SlangItemRow = React.memo(function SlangItemRow({
             </View>
 
             <View style={styles.detailRow}>
-              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
-                {isKurdish ? "واتا" : "Meaning"}
+              <AppText style={styles.detailLabel} languageCode={locale} align="start">
+                {t("slang.meaning")}
               </AppText>
-              <AppText style={[styles.detailValue, styles.detailFigurative, styles.rtlText]} forceKurdishFont>
+              <AppText style={[styles.detailValue, styles.detailFigurative]} languageCode="ku" align="start">
                 {item.kuMeaning}
               </AppText>
             </View>
 
             <View style={styles.detailRow}>
-              <AppText style={[styles.detailLabel, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKurdish} forceLatinFont={!isKurdish}>
+              <AppText style={styles.detailLabel} languageCode={locale} align="start">
                 {t("slang.example")}
               </AppText>
               <View style={styles.dialogueBox}>
@@ -240,7 +238,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
                       {item.example.speakerA}
                     </AppText>
-                    <AppText style={[styles.dialogueKu, styles.rtlText]} forceKurdishFont>
+                    <AppText style={styles.dialogueKu} languageCode="ku" align="start">
                       {item.example.kuA}
                     </AppText>
                   </View>
@@ -250,6 +248,9 @@ const SlangItemRow = React.memo(function SlangItemRow({
                       styles.miniSpeakerBtn,
                       speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
                     ]}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("slang.playAudio")}
                   >
                     <HugeiconsIcon
                       icon={VolumeHighIcon}
@@ -273,7 +274,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
                       {item.example.speakerB}
                     </AppText>
-                    <AppText style={[styles.dialogueKu, styles.rtlText]} forceKurdishFont>
+                    <AppText style={styles.dialogueKu} languageCode="ku" align="start">
                       {item.example.kuB}
                     </AppText>
                   </View>
@@ -283,6 +284,9 @@ const SlangItemRow = React.memo(function SlangItemRow({
                       styles.miniSpeakerBtn,
                       speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
                     ]}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("slang.playAudio")}
                   >
                     <HugeiconsIcon
                       icon={VolumeHighIcon}
@@ -308,8 +312,7 @@ export function SlangDictionaryScreen() {
   const { t, locale } = useI18n();
   const { speak, stop, speaking, activeId } = useTTS();
 
-  const isKurdish = locale === "ku";
-  const isRtl = isKurdish || locale === "ar";
+  const isRtl = locale === "ku" || locale === "ar";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<SlangContextFilter>("All");
@@ -381,16 +384,13 @@ export function SlangDictionaryScreen() {
           </View>
         </PressableScale>
         <AppText
-          style={[
-            styles.headerTitle,
-            { textAlign: isRtl ? "right" : "left", writingDirection: isRtl ? "rtl" : "ltr" },
-          ]}
-          forceKurdishFont={isKurdish}
-          forceLatinFont={!isKurdish}
+          style={styles.headerTitle}
+          languageCode={locale}
+          align="start"
         >
           {t("slang.title")}
         </AppText>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <FlashList
@@ -403,7 +403,6 @@ export function SlangDictionaryScreen() {
             isItemSpeaking={speaking && activeId === item.id}
             onToggleExpand={toggleExpand}
             onSpeak={handleSpeak}
-            isKurdish={isKurdish}
             isRtl={isRtl}
             t={t}
             speaking={speaking}
@@ -429,8 +428,8 @@ export function SlangDictionaryScreen() {
                   <HugeiconsIcon icon={BookOpen01Icon} size={14} color={ThemeColors.accentBlueDark} strokeWidth={2.0} />
                   <AppText
                     style={styles.spotlightBadgeText}
-                    forceKurdishFont={isKurdish}
-                    forceLatinFont={!isKurdish}
+                    languageCode={locale}
+                    align="center"
                   >
                     {t("slang.slangOfTheDay")}
                   </AppText>
@@ -467,7 +466,7 @@ export function SlangDictionaryScreen() {
                 </PressableScale>
               </View>
 
-              <AppText style={[styles.spotlightDescription, styles.rtlText]} forceKurdishFont>
+              <AppText style={styles.spotlightDescription} languageCode="ku" align="start">
                 {slangOfTheDay.kuMeaning}
               </AppText>
             </HomeLiquidCard>
@@ -489,7 +488,13 @@ export function SlangDictionaryScreen() {
                 ]}
               />
               {searchQuery ? (
-                <PressableScale onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
+                <PressableScale
+                  onPress={() => setSearchQuery("")}
+                  style={styles.clearSearchBtn}
+                  hitSlop={7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("slang.close")}
+                >
                   <HugeiconsIcon icon={Cancel01Icon} size={16} color={ThemeColors.slate} strokeWidth={2.0} />
                 </PressableScale>
               ) : null}
@@ -508,11 +513,11 @@ export function SlangDictionaryScreen() {
           <View style={styles.emptyState}>
             <HugeiconsIcon icon={BookOpen01Icon} size={48} color={ThemeColors.lightSlate} strokeWidth={1.5} />
             <AppText
-              style={[styles.emptyText, { writingDirection: isRtl ? "rtl" : "ltr" }]}
-              forceKurdishFont={isKurdish}
-              forceLatinFont={!isKurdish}
+              style={styles.emptyText}
+              languageCode={locale}
+              align="center"
             >
-              {isKurdish ? "هیچ ئەنجامێک نەدۆزرایەوە" : "No expressions found"}
+              {t("slang.noResults")}
             </AppText>
           </View>
         }
@@ -539,9 +544,9 @@ function useSlangStyles() {
     borderColor: colors.border,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.muted,
@@ -739,7 +744,7 @@ function useSlangStyles() {
     alignSelf: "flex-start",
   },
   typeBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -754,27 +759,27 @@ function useSlangStyles() {
     borderColor: ThemeColors.blueBorder,
   },
   contextBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     color: ThemeColors.slate,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   expandButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.muted,
   },
   speakerBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: ThemeColors.blueSoft,
     alignItems: "center",
     justifyContent: "center",
@@ -862,9 +867,9 @@ function useSlangStyles() {
     lineHeight: 18,
   },
   miniSpeakerBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: ThemeColors.blueSoft,
     alignItems: "center",
     justifyContent: "center",

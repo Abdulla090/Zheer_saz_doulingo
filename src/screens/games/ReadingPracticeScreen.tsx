@@ -1088,9 +1088,9 @@ function createStyles(colors: any, isDark: boolean) {
     gap: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
@@ -1457,7 +1457,7 @@ function createStyles(colors: any, isDark: boolean) {
     fontFamily: "DINNextRoundedBold",
   },
   metricLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "900",
     letterSpacing: 0.8,
     textTransform: "uppercase",

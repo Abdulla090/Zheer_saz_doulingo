@@ -37,8 +37,9 @@ export function LegalDocumentScreen({ docId }: Props) {
           </View>
         </Pressable>
         <AppText
-          style={[styles.title, { textAlign: isRtl ? "right" : "left", writingDirection: isRtl ? "rtl" : "ltr" }]}
-          forceKurdishFont={isKu}
+          style={styles.title}
+          languageCode={locale}
+          align="center"
           numberOfLines={2}
         >
           {doc.title}
@@ -53,21 +54,22 @@ export function LegalDocumentScreen({ docId }: Props) {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.updated}>
-          {isKu ? "دوایین نوێکردنەوە: " : "Last updated: "}
+        <AppText style={styles.updated} languageCode={locale} align="start">
+          {isKu ? "دوایین نوێکردنەوە: " : locale === "ar" ? "آخر تحديث: " : "Last updated: "}
           {doc.lastUpdated}
-        </Text>
+        </AppText>
 
         {doc.sections.map((section) => (
           <View key={section.title} style={styles.section}>
-            <AppText style={styles.sectionTitle} forceKurdishFont={isKu}>
+            <AppText style={styles.sectionTitle} languageCode={locale} align="start">
               {section.title}
             </AppText>
             {section.paragraphs.map((p, i) => (
               <AppText
                 key={`${section.title}-${i}`}
                 style={styles.paragraph}
-                forceKurdishFont={isKu}
+                languageCode={locale}
+                align="start"
               >
                 {p}
               </AppText>
@@ -118,13 +120,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E5E5",
   },
   back: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
   backSpacer: {
-    width: 40,
+    width: 44,
   },
   title: {
     flex: 1,

@@ -39,6 +39,7 @@ export type PressableScaleProps = {
   glassRadius?: number;
   accessibilityRole?: string;
   accessibilityLabel?: string;
+  hitSlop?: React.ComponentProps<typeof Pressable>["hitSlop"];
 };
 
 function fireHaptic(style: Haptics.ImpactFeedbackStyle) {
@@ -89,6 +90,7 @@ export function PressableScale({
   glassRadius = 16,
   accessibilityRole,
   accessibilityLabel,
+  hitSlop,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -125,6 +127,7 @@ export function PressableScale({
       disabled={disabled}
       accessibilityRole={accessibilityRole as any}
       accessibilityLabel={accessibilityLabel}
+      hitSlop={hitSlop}
       onPressIn={() => {
         onPressIn?.();
         if (reduceMotion) {

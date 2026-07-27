@@ -203,7 +203,7 @@ const PulseRing = React.memo(function PulseRing({ size, color, delay, status }: 
 });
 
 /* ─── Chat Bubble ─── */
-const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, isKu }: { sender: "user" | "ai"; text: string; accent: string; icon: HugeiconsIconData; isKu: boolean }) {
+const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, isRtl }: { sender: "user" | "ai"; text: string; accent: string; icon: HugeiconsIconData; isRtl: boolean }) {
   const isAi = sender === "ai";
   const st = useRolePlayStyles();
   return (
@@ -212,8 +212,8 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
       style={[
         st.bubbleRow,
         isAi
-          ? { flexDirection: isKu ? "row-reverse" : "row" }
-          : { flexDirection: isKu ? "row" : "row-reverse" },
+          ? { flexDirection: isRtl ? "row-reverse" : "row" }
+          : { flexDirection: isRtl ? "row" : "row-reverse" },
       ]}
     >
       {isAi && (
@@ -229,7 +229,7 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
             : [st.userBubble, { backgroundColor: accent + "12", borderColor: accent + "20" }],
         ]}
       >
-        <AppText style={[st.bubbleText, isKu && { textAlign: "right", writingDirection: "rtl" }]}>
+        <AppText style={st.bubbleText} languageCode="en" align="start" latinRole="medium">
           {text}
         </AppText>
       </View>
@@ -459,6 +459,9 @@ export function RolePlayScreen() {
   const sessionStarted = history.length > 0;
   const accent = activeScenario.accent;
   const Icon = activeScenario.icon;
+  const scenarioTitle = isKu ? activeScenario.titleKu : activeScenario.title;
+  const scenarioSubtitle = isKu ? activeScenario.subtitleKu : activeScenario.subtitle;
+  const scenarioLanguage = isKu ? "ku" : "en";
 
   const micHint =
     speech.error
@@ -485,8 +488,8 @@ export function RolePlayScreen() {
           <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={36} />
             <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
-              <AppText style={st.headerTitle} forceKurdishFont>{t("rolePlay.headerTitle")}</AppText>
-              <AppText style={st.headerSub} forceKurdishFont>{t("rolePlay.headerSub")}</AppText>
+              <AppText style={st.headerTitle} languageCode={locale} align="start">{t("rolePlay.headerTitle")}</AppText>
+              <AppText style={st.headerSub} languageCode={locale} align="start">{t("rolePlay.headerSub")}</AppText>
             </View>
           </View>
           <View style={{ width: 44 }} />
@@ -509,18 +512,18 @@ export function RolePlayScreen() {
                   <HugeiconsIcon icon={Icon as any} size={36} color={accent} strokeWidth={1.8} />
                 </View>
               </View>
-              <AppText style={st.heroTitle} forceKurdishFont>
-                {activeScenario.titleKu}
+              <AppText style={st.heroTitle} languageCode={scenarioLanguage} align="center">
+                {scenarioTitle}
               </AppText>
-              <AppText style={st.heroSubtitle} forceLatinFont latinRole="medium">
-                {activeScenario.subtitle}
+              <AppText style={st.heroSubtitle} languageCode={scenarioLanguage} align="center" latinRole="medium">
+                {scenarioSubtitle}
               </AppText>
             </HomeLiquidCard>
           </Animated.View>
 
           {/* Section label */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <AppText style={[st.sectionLabel, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
+            <AppText style={st.sectionLabel} languageCode={locale} align="start">
               {t("rolePlay.chooseScene")}
             </AppText>
           </Animated.View>
@@ -544,19 +547,19 @@ export function RolePlayScreen() {
                       <View
                         style={[
                           st.scenarioRow,
-                          { flexDirection: isKu ? "row-reverse" : "row" },
+                          { flexDirection: isRtl ? "row-reverse" : "row" },
                           sel && { backgroundColor: sc.accent + "08" },
                         ]}
                       >
                         <View style={[st.scenarioIconCircle, { backgroundColor: sc.accent + "14" }]}>
                           <HugeiconsIcon icon={ScIcon as any} size={22} color={sc.accent} strokeWidth={2} />
                         </View>
-                        <View style={[st.scenarioTextCol, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
-                          <AppText style={[st.scenarioTitle, sel && { color: sc.accent }]} forceKurdishFont>
-                            {sc.titleKu}
+                        <View style={[st.scenarioTextCol, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+                          <AppText style={[st.scenarioTitle, sel && { color: sc.accent }]} languageCode={isKu ? "ku" : "en"} align="start">
+                            {isKu ? sc.titleKu : sc.title}
                           </AppText>
-                          <AppText style={st.scenarioSubtitle} forceLatinFont latinRole="medium">
-                            {sc.title}
+                          <AppText style={st.scenarioSubtitle} languageCode={isKu ? "ku" : "en"} align="start" latinRole="medium">
+                            {isKu ? sc.subtitleKu : sc.subtitle}
                           </AppText>
                         </View>
                         {sel && (
@@ -575,7 +578,7 @@ export function RolePlayScreen() {
 
           {/* Disclaimer */}
           <Animated.View entering={FadeInDown.delay(350).duration(400)}>
-            <AppText style={[st.disclaimer, { textAlign: isKu ? "right" : "left" }]} forceKurdishFont>
+            <AppText style={st.disclaimer} languageCode={locale} align="start">
               {t("rolePlay.practiceDisclaimer")}
             </AppText>
           </Animated.View>
@@ -605,10 +608,10 @@ export function RolePlayScreen() {
 
         {/* Active scenario chip */}
         <PressableScale onPress={resetSession} scaleDown={0.95}>
-          <View style={[st.sessionChip, { borderColor: accent + "30", flexDirection: isKu ? "row-reverse" : "row" }]}>
+          <View style={[st.sessionChip, { borderColor: accent + "30", flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <HugeiconsIcon icon={Icon as any} size={16} color={accent} strokeWidth={2.5} />
-            <AppText style={[st.sessionChipText, { color: accent }]} forceLatinFont latinRole="bold">
-              {activeScenario.title}
+            <AppText style={[st.sessionChipText, { color: accent }]} languageCode={scenarioLanguage} latinRole="bold">
+              {scenarioTitle}
             </AppText>
           </View>
         </PressableScale>
@@ -644,14 +647,14 @@ export function RolePlayScreen() {
         </View>
 
         {/* Status label */}
-        <AppText style={[st.statusLabel, { color: accent }]} forceKurdishFont={isKu}>
+        <AppText style={[st.statusLabel, { color: accent }]} languageCode={locale} align="center">
           {status === "listening"
             ? t("rolePlay.listening")
             : status === "thinking"
               ? t("rolePlay.thinking")
               : status === "speaking"
-                ? (isKu ? "AI قسە دەکات..." : "AI is speaking...")
-                : (isKu ? "بۆ قسەکردن مایکەکە دابگرە" : "Tap mic to speak")}
+                ? t("rolePlay.interrupt")
+                : t("rolePlay.tapSpeak")}
         </AppText>
       </Animated.View>
 
@@ -669,7 +672,7 @@ export function RolePlayScreen() {
               text={msg.text}
               accent={accent}
               icon={Icon}
-              isKu={isKu}
+              isRtl={isRtl}
             />
           ))}
           {status === "thinking" && (
