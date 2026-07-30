@@ -13,6 +13,7 @@ import React, { useRef, useState } from "react";
 
 import { ScrollView, StyleSheet, View } from "react-native";
 import { AppText } from "../../../components/ui/AppText";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 
 
@@ -70,6 +71,7 @@ type Props = {
 export default function ConversationPickGame({ question, onAnswer, pathMode }: Props) {
 
   const { t } = useI18n();
+  const { colors } = useThemeColors();
 
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -159,6 +161,8 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
           label={t("lessons.situation")}
           forceKurdishFont
           contentLanguageCode={question.sourceLanguage}
+          speechText={question.theyAsk}
+          speechLanguageCode={question.targetLanguage ?? "en"}
           variant={pathMode === "kids" ? "kids" : "default"}
         >
 
@@ -206,7 +210,11 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
 
       <GameFooter>
-        <View style={[s.checkWrap, pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 }]}>
+        <View style={[
+          s.checkWrap,
+          { backgroundColor: colors.background, borderTopColor: colors.border },
+          pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 },
+        ]}>
           <LightCheckButton
             label={t("lessons.check")}
             onPress={check}

@@ -4,6 +4,16 @@
     "learningLanguage": "Idioma de aprendizaje"
   },
   "onboarding": {
+    "back": "Atrás",
+    "skip": "Omitir",
+    "getStarted": "Empezar a aprender",
+    "swipeHint": "Desliza para explorar · o toca Continuar",
+    "welcomeTitle": "Aprende idiomas de forma más inteligente",
+    "welcomeSubtitle": "Amplía tu vocabulario de forma natural con la práctica diaria.",
+    "practiceTitle": "Aprende hablando",
+    "practiceSubtitle": "Practica conversaciones reales y mejora tu pronunciación.",
+    "progressTitle": "Crea tu racha",
+    "progressSubtitle": "Sé constante y observa cómo crece tu progreso.",
     "stepLabel": "Paso {{step}}",
     "profileTitle": "Queremos conocerte",
     "profileSubtitle": "Personaliza tu experiencia de aprendizaje.",

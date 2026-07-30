@@ -7,6 +7,8 @@ import { View } from "react-native";
 import Animated, {
   cancelAnimation,
   Easing,
+  Extrapolation,
+  interpolate,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -50,11 +52,11 @@ export function CurrentLessonIcon({ size }: { size: number }) {
   useEffect(() => {
     progress.value = withRepeat(
       withTiming(1, {
-        duration: 1200,
-        easing: Easing.inOut(Easing.sin),
+        duration: 1650,
+        easing: Easing.linear,
       }),
       -1,
-      true,
+      false,
       undefined,
       ReduceMotion.Never,
     );
@@ -64,29 +66,90 @@ export function CurrentLessonIcon({ size }: { size: number }) {
 
   const animatedStyle = useAnimatedStyle(() => {
     const phase = progress.value;
+    const translateY = interpolate(
+      phase,
+      [0, 0.14, 0.48, 0.78, 1],
+      [0, 4, -8, 1, 0],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      phase,
+      [0, 0.14, 0.48, 0.78, 1],
+      [1, 0.94, 1.08, 0.99, 1],
+      Extrapolation.CLAMP,
+    );
+
     return {
       transform: [
-        { translateY: 3 - phase * 6 },
-        { rotate: `${-3 + phase * 6}deg` },
-        { scale: 1 + phase * 0.035 },
+        { translateY },
+        // A five-point star is visually identical after 72 degrees, so the
+        // loop closes cleanly without a visible rotation jump.
+        { rotate: `${phase * 72}deg` },
+        { scale },
+      ],
+    };
+  });
+
+  const shadowStyle = useAnimatedStyle(() => {
+    const lift = interpolate(
+      progress.value,
+      [0, 0.14, 0.48, 0.78, 1],
+      [1, 4, -2, 2, 1],
+      Extrapolation.CLAMP,
+    );
+    const shadowScale = interpolate(
+      progress.value,
+      [0, 0.14, 0.48, 0.78, 1],
+      [1, 0.88, 1.16, 0.96, 1],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity: interpolate(
+        progress.value,
+        [0, 0.14, 0.48, 1],
+        [0.28, 0.36, 0.13, 0.28],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        { translateY: lift + 3 },
+        { rotate: `${progress.value * 72}deg` },
+        { scale: shadowScale },
       ],
     };
   });
 
   return (
-    <Animated.View
-      renderToHardwareTextureAndroid
-      shouldRasterizeIOS
-      style={animatedStyle}
-    >
-      <HugeiconsIcon
-        icon={StarIcon}
-        color="#FFFFFF"
-        fill="#FFFFFF"
-        strokeWidth={2.4}
-        size={size}
-      />
-    </Animated.View>
+    <View style={{ width: size, height: size }}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
+          shadowStyle,
+        ]}
+      >
+        <HugeiconsIcon
+          icon={StarIcon}
+          color="rgba(15,23,42,0.18)"
+          fill="rgba(15,23,42,0.28)"
+          strokeWidth={2.4}
+          size={size}
+        />
+      </Animated.View>
+      <Animated.View
+        renderToHardwareTextureAndroid
+        shouldRasterizeIOS
+        style={animatedStyle}
+      >
+        <HugeiconsIcon
+          icon={StarIcon}
+          color="#FFFFFF"
+          fill="#FFFFFF"
+          strokeWidth={2.4}
+          size={size}
+        />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -110,7 +173,7 @@ export const SvgButton = React.memo(
     const pressProgress = useSharedValue(0);
 
     const depth = Math.max(7, Math.round(size * 0.12));
-    const buttonRadius = Math.round(size * 0.28);
+    const buttonRadius = Math.round(size * 0.4);
     const iconSize = Math.round(size * 0.42);
     const starSize = Math.round(size * 0.5);
     const resolvedIconColor =

@@ -23,6 +23,7 @@ interface SettingsState {
   userName: string;
   userAge: string;
   englishLevel: number;
+  learningGoal: string;
   tutorVoice: string;
   avatarUrl: string;
   selectedMascotId: MascotId;
@@ -42,6 +43,7 @@ interface SettingsState {
   setUserName: (name: string) => void;
   setUserAge: (age: string) => void;
   setEnglishLevel: (level: number) => void;
+  setLearningGoal: (goal: string) => void;
   setTutorVoice: (voice: string) => void;
   setAvatarUrl: (url: string) => void;
   setSelectedMascotId: (mascotId: MascotId) => void;
@@ -79,7 +81,8 @@ const initialSettings = (() => {
       targetLang: "en",
       userName: "",
       userAge: "",
-      englishLevel: 5,
+      englishLevel: 2,
+      learningGoal: "conversations",
       tutorVoice: "Aoede",
       avatarUrl: "",
       selectedMascotId: DEFAULT_MASCOT_ID,
@@ -106,7 +109,12 @@ const initialSettings = (() => {
       targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
       userName: typeof parsed.userName === "string" ? parsed.userName : "",
       userAge: typeof parsed.userAge === "string" ? parsed.userAge : "",
-      englishLevel: typeof parsed.englishLevel === "number" ? parsed.englishLevel : 5,
+      englishLevel:
+        typeof parsed.englishLevel === "number" && [2, 4, 6, 8, 10].includes(parsed.englishLevel)
+          ? parsed.englishLevel
+          : 2,
+      learningGoal:
+        typeof parsed.learningGoal === "string" ? parsed.learningGoal : "conversations",
       tutorVoice: typeof parsed.tutorVoice === "string" ? parsed.tutorVoice : "Aoede",
       avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : "",
       selectedMascotId: isMascotId(parsed.selectedMascotId)
@@ -129,7 +137,8 @@ const initialSettings = (() => {
       targetLang: "en",
       userName: "",
       userAge: "",
-      englishLevel: 5,
+      englishLevel: 2,
+      learningGoal: "conversations",
       tutorVoice: "Aoede",
       avatarUrl: "",
       selectedMascotId: DEFAULT_MASCOT_ID,
@@ -190,6 +199,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setEnglishLevel: (englishLevel) => {
     set({ englishLevel });
     persist({ englishLevel });
+  },
+
+  setLearningGoal: (learningGoal) => {
+    set({ learningGoal });
+    persist({ learningGoal });
   },
 
   setTutorVoice: (tutorVoice) => {

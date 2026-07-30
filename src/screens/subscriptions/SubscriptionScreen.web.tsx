@@ -1,5 +1,6 @@
 import {
   ArrowLeft02Icon,
+  ArrowRight02Icon,
   CheckmarkCircle02Icon,
   Wallet02Icon,
 } from "@hugeicons/core-free-icons";
@@ -281,11 +282,10 @@ export function SubscriptionScreen() {
             containerStyle={styles.backButtonContainer}
           >
             <HugeiconsIcon
-              icon={ArrowLeft02Icon}
+              icon={isRtl ? ArrowRight02Icon : ArrowLeft02Icon}
               size={18}
               color={colors.foreground}
               strokeWidth={2.4}
-              style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
             />
             <AppText
               style={styles.backText}
@@ -560,7 +560,7 @@ function createStyles(
     },
     backButtonContainer: { alignSelf: "auto" },
     backButton: {
-      minHeight: 42,
+      minHeight: 44,
       alignItems: "center",
       gap: 8,
       borderWidth: 1,

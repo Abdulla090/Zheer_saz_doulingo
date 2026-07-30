@@ -15,6 +15,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguage } from "../../../config/languages";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -103,6 +104,7 @@ const MatchChip = memo(function MatchChip({
 
 export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
+  const { colors } = useThemeColors();
   const isKids = pathMode === "kids";
   const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
   const left = useMemo(() =>
@@ -232,22 +234,23 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
               key={i}
               style={[
                 s.progressPip,
-                i < matchedCount && s.progressPipDone,
+                { backgroundColor: colors.muted },
+                i < matchedCount && [s.progressPipDone, { backgroundColor: colors.success }],
               ]}
             />
           ))}
         </View>
-        <AppText style={[s.progressLabel, { textAlign: isKu ? "left" : "right" }]}>
+        <AppText style={[s.progressLabel, { color: colors.mutedForeground, textAlign: isKu ? "left" : "right" }]}>
           {matchedCount}/{total}
         </AppText>
       </View>
 
       <View style={s.boardArea}>
         <View style={s.colLabels}>
-          <AppText languageCode={question.sourceLanguage} align="center" style={[LightType.label, s.colLabel]}>
+          <AppText languageCode={question.sourceLanguage} align="center" style={[LightType.label, s.colLabel, { color: colors.mutedForeground }]}>
             {getLanguage(question.sourceLanguage ?? "ku")?.nativeName ?? question.sourceLanguage}
           </AppText>
-          <AppText languageCode={question.targetLanguage} align="center" style={[LightType.label, s.colLabel]}>
+          <AppText languageCode={question.targetLanguage} align="center" style={[LightType.label, s.colLabel, { color: colors.mutedForeground }]}>
             {getLanguage(question.targetLanguage ?? "en")?.nativeName ?? question.targetLanguage}
           </AppText>
         </View>

@@ -26,6 +26,7 @@ import { useI18n } from "../../../hooks/useI18n";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
 import { useTTS } from "../../../hooks/use-tts";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import { matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import {
@@ -59,6 +60,7 @@ const BENIGN_SPEECH_ERRORS = new Set([
 ]);
 
 export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
+  const { colors } = useThemeColors();
   const { t, isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const { width, height } = useWindowDimensions();
@@ -427,13 +429,15 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         variant={pathMode === "kids" ? "kids" : "default"}
         layout={compactLayout ? "stacked" : "row"}
         contentLanguageCode={question.targetLanguage}
+        speechText={question.targetWord}
+        speechLanguageCode={question.targetLanguage ?? "en"}
         expanded
       >
         {question.targetWord}
       </LightQuestionPrompt>
 
       {question.imageRequire && (
-        <Animated.View entering={FadeInUp.duration(400).springify()} style={s.heroImageCard}>
+        <Animated.View entering={FadeInUp.duration(400).springify()} style={[s.heroImageCard, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}>
           <Image
             source={question.imageRequire}
             style={s.heroImage}
@@ -450,6 +454,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
             style={[
               s.hintButton,
               compactLayout && s.hintButtonCompact,
+              { backgroundColor: colors.muted, borderColor: colors.border },
               pathMode === "kids" && {
                 backgroundColor: "#FFF4ED",
                 borderColor: "rgba(255, 120, 30, 0.25)",
@@ -462,15 +467,15 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </Animated.View>
       ) : (
         <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
-          <AppText style={[s.targetLabel, { textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
+          <AppText style={[s.targetLabel, { color: colors.mutedForeground, textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
 
           <View style={s.targetRow}>
-            <AppText languageCode={question.targetLanguage} align="center" nativeAlign="start" fullWidth style={s.targetEn} latinRole="bold">
+            <AppText languageCode={question.targetLanguage} align="center" nativeAlign="start" fullWidth style={[s.targetEn, { color: colors.foreground }]} latinRole="bold">
               {question.targetWord}
             </AppText>
             <SpringPressable
               onPress={handleHearPhrase}
-              style={s.speakerBtn}
+              style={[s.speakerBtn, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
             >
               <SpeakerIcon size={20} />
             </SpringPressable>
@@ -495,7 +500,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </Animated.View>
 
         {showTranscript ? (
-          <AppText style={s.transcript} numberOfLines={2}>
+          <AppText style={[s.transcript, { color: colors.foreground }]} numberOfLines={2}>
             {transcript}
           </AppText>
         ) : null}
@@ -503,7 +508,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
       {state !== "success" ? (
         <GameFooter delay={120}>
-          <AppText style={[s.skipLink, { textAlign: rtl ? "right" : "center" }]} onPress={() => fireAnswer("skip")}>
+          <AppText style={[s.skipLink, { color: colors.mutedForeground, textAlign: rtl ? "right" : "center" }]} onPress={() => fireAnswer("skip")}>
             {t("lessons.dontKnow")}
           </AppText>
         </GameFooter>

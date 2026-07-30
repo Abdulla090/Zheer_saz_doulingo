@@ -9,6 +9,9 @@ import {
 describe("slang dictionary", () => {
   it("has unique stable ids and complete learning content", () => {
     expect(new Set(SLANG_DATA.map((item) => item.id)).size).toBe(SLANG_DATA.length);
+    expect(
+      new Set(SLANG_DATA.map((item) => item.phrase.trim().toLocaleLowerCase("en-US"))).size,
+    ).toBe(SLANG_DATA.length);
 
     for (const item of SLANG_DATA) {
       expect(item.phrase.trim()).not.toBe("");
@@ -34,7 +37,7 @@ describe("slang dictionary", () => {
 
   it("includes high-value restaurant, travel, daily-life, service, and health phrases", () => {
     const ids = new Set(SLANG_DATA.map((item) => item.id));
-    expect(ids.size).toBeGreaterThan(250);
+    expect(ids.size).toBeGreaterThan(300);
 
     for (const id of [
       "can_i_get",
@@ -47,6 +50,11 @@ describe("slang dictionary", () => {
       "sink_backed_up",
       "coming_down_with_something",
       "just_browsing",
+      "understood_the_assignment",
+      "personal_lore",
+      "aura_farming",
+      "read_the_room",
+      "out_of_the_blue",
     ]) {
       expect(ids.has(id)).toBe(true);
     }

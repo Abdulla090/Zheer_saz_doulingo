@@ -39,6 +39,7 @@ export type PressableScaleProps = {
   glassRadius?: number;
   accessibilityRole?: string;
   accessibilityLabel?: string;
+  accessibilityState?: React.ComponentProps<typeof Pressable>["accessibilityState"];
   hitSlop?: React.ComponentProps<typeof Pressable>["hitSlop"];
 };
 
@@ -90,6 +91,7 @@ export function PressableScale({
   glassRadius = 16,
   accessibilityRole,
   accessibilityLabel,
+  accessibilityState,
   hitSlop,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
@@ -127,6 +129,7 @@ export function PressableScale({
       disabled={disabled}
       accessibilityRole={accessibilityRole as any}
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState}
       hitSlop={hitSlop}
       onPressIn={() => {
         onPressIn?.();

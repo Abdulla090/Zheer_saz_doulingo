@@ -47,7 +47,7 @@ import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import type { AnswerTier } from "../../utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
-import { getCurrentLessonMeta, buildPathReturnRoute, buildLessonRouteForMode } from "../../utils/lesson-navigation";
+import { getCurrentLessonMeta, buildLessonRouteForMode } from "../../utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";

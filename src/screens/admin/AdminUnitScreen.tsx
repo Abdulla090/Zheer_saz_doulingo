@@ -4,12 +4,15 @@ import { AdminButton, AdminCard } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AdminUnitScreen() {
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const safeBack = useSafeBack("/admin");
@@ -166,8 +169,9 @@ export default function AdminUnitScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F4F7FF" },
+function createStyles(colors: any) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -175,12 +179,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  title: { fontSize: 20, fontWeight: "800", color: "#152238" },
+  title: { fontSize: 20, fontWeight: "800", color: colors.foreground },
   scroll: { padding: 16, paddingBottom: 48, gap: 8 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
-  meta: { fontSize: 15, color: "#334155", marginBottom: 6 },
-  counts: { fontSize: 12, color: "#64748B", marginBottom: 10 },
+  meta: { fontSize: 15, color: colors.foreground, marginBottom: 6 },
+  counts: { fontSize: 12, color: colors.mutedForeground, marginBottom: 10 },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
-});
+  });
+}

@@ -1,6 +1,7 @@
 import { AppText } from "../../../components/ui/AppText";
 import { HomeLiquidCard } from "../../../components/ui/ios-liquid-home";
 import { useI18n } from "../../../hooks/useI18n";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -12,23 +13,24 @@ type Props = {
 /** Header chip — current unit & lesson (1-based). */
 export function LessonUnitLessonChip({ unitNumber, lessonNumber }: Props) {
   const { t } = useI18n();
+  const { colors } = useThemeColors();
 
   return (
     <HomeLiquidCard contentStyle={styles.inner} radius={14}>
       <View accessibilityLabel={`Unit ${unitNumber}, lesson ${lessonNumber}`} style={{ alignItems: "center" }}>
-        <AppText style={styles.caption} latinRole="medium">
+        <AppText style={[styles.caption, { color: colors.mutedForeground }]} latinRole="medium">
           {t("path.unitShort")}
         </AppText>
-        <AppText style={styles.value} forceLatinFont latinRole="bold">
+        <AppText style={[styles.value, { color: colors.foreground }]} forceLatinFont latinRole="bold">
           {unitNumber}
         </AppText>
       </View>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
       <View style={{ alignItems: "center" }}>
-        <AppText style={styles.caption} latinRole="medium">
+        <AppText style={[styles.caption, { color: colors.mutedForeground }]} latinRole="medium">
           {t("path.lessonShort")}
         </AppText>
-        <AppText style={styles.value} forceLatinFont latinRole="bold">
+        <AppText style={[styles.value, { color: colors.foreground }]} forceLatinFont latinRole="bold">
           {lessonNumber}
         </AppText>
       </View>

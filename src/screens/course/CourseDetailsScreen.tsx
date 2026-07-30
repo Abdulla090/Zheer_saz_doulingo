@@ -31,8 +31,52 @@ export function CourseDetailsScreen() {
   const insets = useSafeAreaInsets();
   const locale = useLocaleStore((s) => s.locale);
   const isRTL = locale === "ku" || locale === "ar";
+  const isKu = locale === "ku";
   const { colors: Colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(Colors, isDark), [Colors, isDark]);
+  const copy = isKu
+    ? {
+        beginner: "سەرەتایی",
+        duration: "١٥ خولەک",
+        title: "داواکردنی قاوە",
+        progress: "پێشکەوتنی کۆرس",
+        progressDetail: "٣ لە ٥ وانە تەواو کراوە",
+        vocabulary: "وشە سەرەکییەکان",
+        vocabularyDetail: "فلاشکارت و ڕاهێنانی دەنگ",
+        phrases: "دەستەواژە باوەکان",
+        phrasesDetail: "ڕێزمان و پێکهاتەکان",
+        done: "تەواو",
+        livePractice: "ڕاهێنانی ڕاستەوخۆی AI",
+        livePracticeDetail: "ڕاهێنانی گفتوگۆ لەگەڵ مامۆستا",
+        now: "ئێستا",
+        review: "تاقیکردنەوەی پێداچوونەوە",
+        reviewDetail: "زانیارییەکانت تاقی بکەوە",
+        continue: "بەردەوام بە لە فێربوون",
+        tip: "ئامۆژگاری",
+        tipText:
+          "بۆ داواکردنی شتێک بە شێوەیەکی ڕێکوپێکتر، بەجێی «Quiero» بڵێ «Me gustaría».",
+      }
+    : {
+        beginner: "BEGINNER",
+        duration: "15 min duration",
+        title: "Ordering Coffee",
+        progress: "Course Progress",
+        progressDetail: "3 of 5 lessons completed",
+        vocabulary: "Essential Vocabulary",
+        vocabularyDetail: "Flashcards & Pronunciation",
+        phrases: "Common Phrases",
+        phrasesDetail: "Grammar structures",
+        done: "DONE",
+        livePractice: "Live AI Practice",
+        livePracticeDetail: "Roleplay with your tutor",
+        now: "NOW",
+        review: "Review Quiz",
+        reviewDetail: "Test your knowledge",
+        continue: "Continue Learning",
+        tip: "AI Tip",
+        tipText:
+          'Try using "Me gustaría" instead of "Quiero" to sound more polite when ordering.',
+      };
 
   const handleBack = () => {
     safeBack();
@@ -72,11 +116,11 @@ export function CourseDetailsScreen() {
           <View style={styles.bannerTextWrap}>
             <View style={styles.bannerTags}>
               <View style={styles.levelBadge}>
-                <AppText style={styles.levelText} forceLatinFont latinRole="bold">BEGINNER</AppText>
+                <AppText style={styles.levelText} languageCode={locale} latinRole="bold">{copy.beginner}</AppText>
               </View>
-              <AppText style={styles.durationText}>15 min duration</AppText>
+              <AppText style={styles.durationText} languageCode={locale}>{copy.duration}</AppText>
             </View>
-            <AppText style={styles.bannerTitle}>Ordering Coffee</AppText>
+            <AppText style={styles.bannerTitle} languageCode={locale}>{copy.title}</AppText>
           </View>
         </View>
 
@@ -85,8 +129,8 @@ export function CourseDetailsScreen() {
           <View style={styles.progressCard}>
             <View style={styles.progressHeader}>
               <View>
-                <AppText style={styles.progressTitle}>Course Progress</AppText>
-                <AppText style={styles.progressSub}>3 of 5 lessons completed</AppText>
+                <AppText style={styles.progressTitle} languageCode={locale}>{copy.progress}</AppText>
+                <AppText style={styles.progressSub} languageCode={locale}>{copy.progressDetail}</AppText>
               </View>
               <View style={styles.circularProgressWrap}>
                 <Svg width={48} height={48} style={{ transform: [{ rotate: "-90deg" }] }}>
@@ -121,10 +165,10 @@ export function CourseDetailsScreen() {
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} color={Colors.success} />
                 </View>
                 <View style={styles.lessonItemText}>
-                  <AppText style={styles.lessonItemTitle}>Essential Vocabulary</AppText>
-                  <AppText style={styles.lessonItemSub}>Flashcards & Pronunciation</AppText>
+                  <AppText style={styles.lessonItemTitle} languageCode={locale}>{copy.vocabulary}</AppText>
+                  <AppText style={styles.lessonItemSub} languageCode={locale}>{copy.vocabularyDetail}</AppText>
                 </View>
-                <AppText style={styles.statusDone}>DONE</AppText>
+                <AppText style={styles.statusDone} languageCode={locale}>{copy.done}</AppText>
               </View>
 
               {/* Completed Lesson 2 */}
@@ -133,10 +177,10 @@ export function CourseDetailsScreen() {
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} color={Colors.success} />
                 </View>
                 <View style={styles.lessonItemText}>
-                  <AppText style={styles.lessonItemTitle}>Common Phrases</AppText>
-                  <AppText style={styles.lessonItemSub}>Grammar structures</AppText>
+                  <AppText style={styles.lessonItemTitle} languageCode={locale}>{copy.phrases}</AppText>
+                  <AppText style={styles.lessonItemSub} languageCode={locale}>{copy.phrasesDetail}</AppText>
                 </View>
-                <AppText style={styles.statusDone}>DONE</AppText>
+                <AppText style={styles.statusDone} languageCode={locale}>{copy.done}</AppText>
               </View>
 
               {/* Active Lesson */}
@@ -149,10 +193,10 @@ export function CourseDetailsScreen() {
                    <HugeiconsIcon icon={PlayIcon} size={20} color="#FFFFFF" style={{ marginLeft: 2 }} />
                 </View>
                 <View style={styles.lessonItemText}>
-                  <AppText style={styles.activeItemTitle}>Live AI Practice</AppText>
-                  <AppText style={styles.activeItemSub}>Roleplay with your tutor</AppText>
+                  <AppText style={styles.activeItemTitle} languageCode={locale}>{copy.livePractice}</AppText>
+                  <AppText style={styles.activeItemSub} languageCode={locale}>{copy.livePracticeDetail}</AppText>
                 </View>
-                <AppText style={styles.statusNow}>NOW</AppText>
+                <AppText style={styles.statusNow} languageCode={locale}>{copy.now}</AppText>
               </TouchableOpacity>
 
               {/* Locked Lesson */}
@@ -161,8 +205,8 @@ export function CourseDetailsScreen() {
                    <HugeiconsIcon icon={LockIcon} size={18} color={Colors.mutedForeground} />
                 </View>
                 <View style={styles.lessonItemText}>
-                  <AppText style={styles.lessonItemTitle}>Review Quiz</AppText>
-                  <AppText style={styles.lessonItemSub}>Test your knowledge</AppText>
+                  <AppText style={styles.lessonItemTitle} languageCode={locale}>{copy.review}</AppText>
+                  <AppText style={styles.lessonItemSub} languageCode={locale}>{copy.reviewDetail}</AppText>
                 </View>
               </View>
             </View>
@@ -172,7 +216,7 @@ export function CourseDetailsScreen() {
               onPress={handleStartPractice}
               activeOpacity={0.8}
             >
-              <AppText style={styles.continueBtnText}>Continue Learning</AppText>
+              <AppText style={styles.continueBtnText} languageCode={locale}>{copy.continue}</AppText>
             </TouchableOpacity>
           </View>
 
@@ -180,10 +224,8 @@ export function CourseDetailsScreen() {
           <View style={styles.tipCard}>
             <HugeiconsIcon icon={InformationCircleIcon} size={24} color={Colors.secondary} />
             <View style={{ flex: 1 }}>
-              <AppText style={styles.tipTitle}>AI Tip</AppText>
-              <AppText style={styles.tipText}>
-                Try using {'"'}Me gustaría{'"'} instead of {'"'}Quiero{'"'} to sound more polite when ordering.
-              </AppText>
+              <AppText style={styles.tipTitle} languageCode={locale}>{copy.tip}</AppText>
+              <AppText style={styles.tipText} languageCode={locale}>{copy.tipText}</AppText>
             </View>
           </View>
         </View>
@@ -214,9 +256,9 @@ function createStyles(Colors: any, isDark: boolean) {
   backBtn: {
     position: "absolute",
     left: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",

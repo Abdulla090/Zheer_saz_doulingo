@@ -18,7 +18,6 @@ import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  I18nManager,
   Linking,
   Platform,
   ScrollView,
@@ -390,7 +389,10 @@ export default function ProfileScreen() {
 
   const handleDeviceUpload = async () => {
     try {
-      if (Platform.OS !== "web") {
+      // Android's system photo picker grants access only to the selected item;
+      // requesting broad media-library access is unnecessary. iOS still uses
+      // the explicit library permission flow for profile-photo editing.
+      if (Platform.OS === "ios") {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
           if (permission.canAskAgain === false) {
@@ -545,22 +547,40 @@ export default function ProfileScreen() {
       <View
         style={[
           styles.header,
-          isRtl && styles.headerRtl,
           { paddingTop: Math.max(insets.top, 20) },
         ]}
       >
-        <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
-          {copy.title}
-        </AppText>
-        <PressableScale
-          style={styles.settingsButton}
-          onPress={() => router.push("/settings")}
-          accessibilityRole="button"
-          accessibilityLabel={copy.settings}
-          scaleDown={0.94}
-        >
-          <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
-        </PressableScale>
+        {isRtl ? (
+          <>
+            <PressableScale
+              style={styles.settingsButton}
+              onPress={() => router.push("/settings")}
+              accessibilityRole="button"
+              accessibilityLabel={copy.settings}
+              scaleDown={0.94}
+            >
+              <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
+            </PressableScale>
+            <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
+              {copy.title}
+            </AppText>
+          </>
+        ) : (
+          <>
+            <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
+              {copy.title}
+            </AppText>
+            <PressableScale
+              style={styles.settingsButton}
+              onPress={() => router.push("/settings")}
+              accessibilityRole="button"
+              accessibilityLabel={copy.settings}
+              scaleDown={0.94}
+            >
+              <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
+            </PressableScale>
+          </>
+        )}
       </View>
 
       <ScrollView
@@ -573,7 +593,7 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {!user ? (
-          <View style={[styles.guestStrip, isRtl && styles.rowRtl]}>
+          <View style={styles.guestStrip}>
             <View style={styles.guestCopy}>
               <AppText style={styles.guestTitle} languageCode={locale} align="start" latinRole="bold">
                 {copy.guestTitle}
@@ -596,7 +616,7 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.identitySection, isRtl && styles.rowRtl]}>
+        <View style={styles.identitySection}>
           <TouchableOpacity
             activeOpacity={0.82}
             onPress={handleDeviceUpload}
@@ -612,7 +632,7 @@ export default function ProfileScreen() {
 
           <View style={styles.identityCopy}>
             {isEditingName ? (
-              <View style={[styles.nameEditRow, isRtl && styles.rowRtl]}>
+              <View style={styles.nameEditRow}>
                 <TextInput
                   value={nameInput}
                   onChangeText={setNameInput}
@@ -642,7 +662,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={[styles.nameRow, isRtl && styles.rowRtl]}>
+              <View style={styles.nameRow}>
                 <AppText style={styles.name} languageCode={locale} align="start" latinRole="bold">
                   {userName || copy.student}
                 </AppText>
@@ -665,7 +685,7 @@ export default function ProfileScreen() {
                 {user.email}
               </AppText>
             ) : null}
-            <View style={[styles.metadataRow, isRtl && styles.rowRtl]}>
+            <View style={styles.metadataRow}>
               <AppText style={styles.pathLabel} languageCode={locale} align="start" latinRole="bold">
                 {pathLabel}
               </AppText>
@@ -683,7 +703,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={[styles.photoActions, isRtl && styles.rowRtl]}>
+        <View style={styles.photoActions}>
           <PressableScale
             style={styles.photoAction}
             onPress={handleDeviceUpload}
@@ -712,7 +732,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.progressPanel}>
-          <View style={[styles.progressHeader, isRtl && styles.rowRtl]}>
+          <View style={styles.progressHeader}>
             <View style={styles.progressHeadingWrap}>
               <AppText style={styles.progressEyebrow} languageCode={locale} align="start" latinRole="bold">
                 {copy.progress}
@@ -738,7 +758,7 @@ export default function ProfileScreen() {
             {totalXp} / {nextLevelXp} XP
           </AppText>
 
-          <View style={[styles.statsRow, isRtl && styles.rowRtl]}>
+          <View style={styles.statsRow}>
             {[
               { value: streakDays, label: copy.streak },
               { value: totalXp, label: copy.totalXp },
@@ -766,7 +786,6 @@ export default function ProfileScreen() {
                 key={path.id}
                 style={[
                   styles.listRow,
-                  isRtl && styles.rowRtl,
                   index < paths.length - 1 && styles.rowDivider,
                 ]}
               >
@@ -806,7 +825,7 @@ export default function ProfileScreen() {
               return (
                 <View key={achievement.id} style={index < achievements.length - 1 && styles.rowDivider}>
                   <PressableScale
-                    style={[styles.listRow, isRtl && styles.rowRtl]}
+                    style={styles.listRow}
                     onPress={() => setSelectedAchievementId(selected ? null : achievement.id)}
                     accessibilityRole="button"
                     accessibilityLabel={achievement.title}
@@ -856,7 +875,7 @@ export default function ProfileScreen() {
             <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
               {copy.recentActivity}
             </AppText>
-            <View style={[styles.activityRow, isRtl && styles.rowRtl]}>
+            <View style={styles.activityRow}>
               <View style={styles.activityIcon}>
                 <HugeiconsIcon icon={BookOpen02Icon} size={20} color={colors.foreground} strokeWidth={2.2} />
               </View>
@@ -899,10 +918,8 @@ function createStyles(colors: any, isDark: boolean) {
       paddingBottom: 12,
       backgroundColor: colors.background,
     },
-    headerRtl: {
-      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
-    },
     headerTitle: {
+      flex: 1,
       fontSize: 28,
       lineHeight: 34,
       color: colors.foreground,
@@ -922,9 +939,6 @@ function createStyles(colors: any, isDark: boolean) {
       paddingHorizontal: 20,
       paddingTop: 8,
       gap: 28,
-    },
-    rowRtl: {
-      flexDirection: I18nManager.isRTL ? "row" : "row-reverse",
     },
     guestStrip: {
       flexDirection: "row",

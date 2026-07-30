@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { ONBOARDING_DESIGN } from "./onboarding-design";
 
 export function OnboardingProgressBar({
   total,
@@ -33,22 +34,23 @@ export function OnboardingProgressBar({
 
 const styles = StyleSheet.create({
   row: {
+    width: "100%",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 6,
-    height: 18,
+    gap: 12,
+    height: 10,
   },
   dot: {
-    height: 4,
+    flex: 1,
+    maxWidth: 54,
+    height: 6,
     borderRadius: 999,
   },
   dotIdle: {
-    width: 7,
-    backgroundColor: "#E4EAF4",
+    backgroundColor: "rgba(85,75,65,0.13)",
   },
   dotActive: {
-    width: 17,
-    backgroundColor: "#2C6DF4",
+    backgroundColor: ONBOARDING_DESIGN.orange,
   },
 });

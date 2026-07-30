@@ -1,5 +1,9 @@
 import { AppText } from "../components/ui/AppText";
 import { IOSPressable as TouchableOpacity } from "../components/ui/ios-pressable";
+import {
+  LoginPrimaryButton,
+  LoginPrimaryButtonLabel,
+} from "../components/ui/LoginPrimaryButton";
 import { TwinoBrandMark } from "../components/branding/twino-brand-mark";
 import { TwinoMascot } from "../components/mascot/TwinoMascot";
 import { PRIMARY_ACTION } from "../constants/primary-action";
@@ -9,6 +13,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowLeft02Icon,
+  ArrowRight02Icon,
   CheckmarkCircle02Icon,
   Cancel01Icon,
   AlertCircleIcon,
@@ -49,7 +54,6 @@ function getRecoveryRedirectUrl() {
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const safeBack = useSafeBack("/");
   const {
     redirect,
     mode: modeParam,
@@ -57,6 +61,9 @@ export default function AuthScreen() {
     redirect?: string;
     mode?: string;
   }>();
+  const safeBack = useSafeBack(
+    (typeof redirect === "string" && redirect ? redirect : "/more") as any,
+  );
   const { locale, isKu } = useI18n();
   const isRtl = isKu || locale === "ar";
   const { selectedFont } = useFontStore();
@@ -421,11 +428,10 @@ export default function AuthScreen() {
             accessibilityLabel={isKu ? "گەڕانەوە" : "Go back"}
           >
             <HugeiconsIcon
-              icon={ArrowLeft02Icon}
+              icon={isRtl ? ArrowRight02Icon : ArrowLeft02Icon}
               size={20}
               color={colors.foreground}
               strokeWidth={2.5}
-              style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
             />
           </TouchableOpacity>
 
@@ -692,8 +698,8 @@ export default function AuthScreen() {
                 )}
 
                 {!checkingRecovery ? (
-                  <TouchableOpacity
-                    style={[styles.primaryButton, loading && styles.buttonDisabled]}
+                  <LoginPrimaryButton
+                    style={styles.authPrimaryButton}
                     onPress={
                       isForgot
                         ? handleForgotPassword
@@ -702,16 +708,13 @@ export default function AuthScreen() {
                           : handleAuthSubmit
                     }
                     disabled={loading}
-                    accessibilityRole="button"
                   >
                     {loading ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <AppText
-                        style={styles.primaryButtonText}
+                      <LoginPrimaryButtonLabel
                         forceLatinFont={!isKu}
                         forceKurdishFont={isKu}
-                        latinRole="bold"
                       >
                         {isForgot
                           ? isKu
@@ -728,9 +731,9 @@ export default function AuthScreen() {
                               : isKu
                                 ? "چوونە ژوورەوە"
                                 : "Sign in"}
-                      </AppText>
+                      </LoginPrimaryButtonLabel>
                     )}
-                  </TouchableOpacity>
+                  </LoginPrimaryButton>
                 ) : null}
 
                 {isForgot ? (
@@ -750,8 +753,13 @@ export default function AuthScreen() {
                     onPress={() => router.push("/credits")}
                     accessibilityRole="link"
                   >
-                    <AppText style={styles.plansLinkText} forceLatinFont latinRole="bold">
-                      View TWINO credits
+                    <AppText
+                      style={styles.plansLinkText}
+                      forceKurdishFont={isKu}
+                      forceLatinFont={!isKu}
+                      latinRole="bold"
+                    >
+                      {isKu ? "کرێدیتی TWINO ببینە" : "View TWINO credits"}
                     </AppText>
                   </TouchableOpacity>
                 ) : null}
@@ -966,8 +974,8 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
     },
     backBtn: {
       position: "absolute",
-      width: 42,
-      height: 42,
+      width: 44,
+      height: 44,
       borderRadius: 13,
       backgroundColor: colors.surfaceRaised,
       justifyContent: "center",
@@ -1253,26 +1261,8 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
       color: "#168BD2",
       fontSize: 13,
     },
-    primaryButton: {
-      height: PRIMARY_ACTION.height,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: PRIMARY_ACTION.radius,
-      backgroundColor: PRIMARY_ACTION.face,
-      borderBottomWidth: PRIMARY_ACTION.rimWidth,
-      borderBottomColor: PRIMARY_ACTION.rim,
+    authPrimaryButton: {
       marginTop: 22,
-      ...Platform.select({
-        web: { cursor: "pointer" } as any,
-      }),
-    },
-    buttonDisabled: {
-      opacity: 0.65,
-    },
-    primaryButtonText: {
-      color: "#FFFFFF",
-      fontSize: 15,
-      letterSpacing: 0.1,
     },
     secondaryAction: {
       minHeight: 40,

@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   TextInput,
   useWindowDimensions,
@@ -20,15 +19,13 @@ import Animated, {
   FadeInRight,
   FadeOutLeft,
   LinearTransition,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
   Message01Icon,
   Airplane01Icon,
   BookOpen02Icon,
@@ -43,12 +40,17 @@ import { useProgressStore } from "../../stores/useProgressStore";
 import { getSkippedUnitsCount } from "../../data/normal-english";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { AppText } from "../../components/ui/AppText";
-import { PRIMARY_ACTION } from "../../constants/primary-action";
+import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
+import {
+  ONBOARDING_DESIGN,
+} from "./components/onboarding-design";
 
-type Step = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
+export type OnboardingSetupStep = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
 
 type Props = {
   onFinish: () => void;
+  onBackToIntro: () => void;
+  initialStep?: OnboardingSetupStep;
 };
 
 const ONBOARDING_COPY = {
@@ -66,6 +68,8 @@ const ONBOARDING_COPY = {
     start: "Let's Get Started",
     generatingTitle: "Generating your personalized path...",
     generatingSubtitle: "Building content tailored for your goals and level.",
+    back: "Back",
+    setupError: "We couldn't prepare your path. Check your choices and try again.",
   },
   ku: {
     step: (current: number) => `هەنگاوی ${current} لە 5`,
@@ -81,6 +85,8 @@ const ONBOARDING_COPY = {
     start: "دەست پێ بکە",
     generatingTitle: "ڕێڕەوی تایبەت بە تۆ دروست دەکرێت...",
     generatingSubtitle: "ناوەڕۆکێک دروست دەکەین کە گونجاوە لەگەڵ ئامانج و ئاستەکەت.",
+    back: "گەڕانەوە",
+    setupError: "نەتوانرا ڕێڕەوەکەت ئامادە بکرێت. هەڵبژاردنەکانت بپشکنە و دووبارە هەوڵ بدەرەوە.",
   },
   ar: {
     step: (current: number) => `الخطوة ${current} من 5`,
@@ -96,6 +102,8 @@ const ONBOARDING_COPY = {
     start: "ابدأ الآن",
     generatingTitle: "جارٍ إنشاء مسارك المخصص...",
     generatingSubtitle: "نُعِد محتوى يناسب أهدافك ومستواك.",
+    back: "رجوع",
+    setupError: "تعذر تجهيز مسارك. تحقق من اختياراتك وحاول مرة أخرى.",
   },
   es: {
     step: (current: number) => `PASO ${current} DE 5`,
@@ -111,6 +119,8 @@ const ONBOARDING_COPY = {
     start: "Empezar",
     generatingTitle: "Creando tu ruta personalizada...",
     generatingSubtitle: "Preparando contenido adaptado a tus objetivos y nivel.",
+    back: "Atrás",
+    setupError: "No pudimos preparar tu ruta. Revisa tus opciones e inténtalo de nuevo.",
   },
   ru: {
     step: (current: number) => `ШАГ ${current} ИЗ 5`,
@@ -126,6 +136,8 @@ const ONBOARDING_COPY = {
     start: "Начать",
     generatingTitle: "Создаём твой персональный путь...",
     generatingSubtitle: "Подбираем материалы под твои цели и уровень.",
+    back: "Назад",
+    setupError: "Не удалось подготовить маршрут. Проверь выбор и попробуй ещё раз.",
   },
 } as const;
 
@@ -133,37 +145,22 @@ const LANGUAGES = [
   {
     id: "ku",
     label: "Kurdish",
-    country: "Kurdistan",
-    code: "KU",
-    flag: require("../../../assets/images/flags/kurdistan.png"),
   },
   {
     id: "es",
     label: "Español",
-    country: "Spain",
-    code: "ES",
-    flag: require("../../../assets/images/flags/es.png"),
   },
   {
     id: "ru",
     label: "Русский",
-    country: "Russia",
-    code: "RU",
-    flag: require("../../../assets/images/flags/ru.png"),
   },
   {
     id: "ar",
     label: "العربية",
-    country: "Saudi Arabia",
-    code: "AR",
-    flag: require("../../../assets/images/flags/sa.png"),
   },
   {
     id: "en",
     label: "English",
-    country: "United States",
-    code: "EN",
-    flag: require("../../../assets/images/flags/us.png"),
   },
 ];
 
@@ -281,12 +278,24 @@ const GOAL_LABELS: Record<string, Record<string, string>> = {
   },
 };
 
-export function LanguageSelectionFlow({ onFinish }: Props) {
+export function LanguageSelectionFlow({
+  onFinish,
+  onBackToIntro,
+  initialStep = "nativeLanguage",
+}: Props) {
   const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
+  const isCompact = screenWidth < 390 || screenHeight < 760;
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(
+    () => createStyles(colors, isDark, isCompact),
+    [colors, isCompact, isDark],
+  );
+  const reduceMotion = useReducedMotion();
+  const contentLayout = Platform.OS === "web"
+    ? LinearTransition.duration(220)
+    : LinearTransition.springify();
 
   // Stores
   const setUserName = useSettingsStore((s) => s.setUserName);
@@ -298,15 +307,20 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
   const englishLevel = useSettingsStore((s) => s.englishLevel);
   const setEnglishLevel = useSettingsStore((s) => s.setEnglishLevel);
+  const learningGoal = useSettingsStore((s) => s.learningGoal);
+  const setLearningGoal = useSettingsStore((s) => s.setLearningGoal);
 
-  const [step, setStep] = useState<Step>("nativeLanguage");
+  const [step, setStep] = useState<OnboardingSetupStep>(initialStep);
   const [selectedNativeLang, setSelectedNativeLang] = useState<string>(storedNativeLang || "ku");
   const [selectedTargetLang, setSelectedTargetLang] = useState<string>(storedTargetLang || "en");
-  const [selectedLevel, setSelectedLevel] = useState<number>(englishLevel || 5);
-  const [selectedGoal, setSelectedGoal] = useState<string>("conversations");
+  const [selectedLevel, setSelectedLevel] = useState<number>(
+    LEVELS.some((level) => level.id === englishLevel) ? englishLevel : LEVELS[0].id,
+  );
+  const [selectedGoal, setSelectedGoal] = useState<string>(learningGoal || "conversations");
   const [name, setName] = useState(userName || "");
   const [age, setAge] = useState(userAge || "");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const isRtl = selectedNativeLang === "ku" || selectedNativeLang === "ar";
   const copy = ONBOARDING_COPY[selectedNativeLang as keyof typeof ONBOARDING_COPY] ?? ONBOARDING_COPY.en;
   const levelLabels = LEVEL_LABELS[selectedNativeLang] ?? LEVEL_LABELS.en;
@@ -349,8 +363,9 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
   const handleTargetLanguageContinue = useCallback(() => {
     hapticSelection();
+    setLanguagePair(selectedNativeLang, selectedTargetLang);
     setStep("profile");
-  }, []);
+  }, [selectedNativeLang, selectedTargetLang, setLanguagePair]);
 
   const handleNativeLanguageSelect = useCallback((langId: string) => {
     hapticSelection();
@@ -373,9 +388,10 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         return (
           <TouchableOpacity
             key={language.id}
+            testID={`onboarding-language-${language.id}`}
             accessibilityRole="radio"
-            accessibilityLabel={`${language.label}, ${language.country}`}
-            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={language.label}
+            accessibilityState={{ checked: isSelected }}
             style={[
               styles.languageRow,
               isRtl && styles.languageRowRtl,
@@ -384,22 +400,16 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             activeOpacity={0.82}
             onPress={() => onSelect(language.id)}
           >
-            <View style={styles.flagFrame}>
-              <Image
-                source={language.flag}
-                style={styles.flagImage}
-                contentFit="contain"
-                contentPosition="center"
-              />
-            </View>
-
-            <View style={[styles.languageCopy, isRtl && styles.languageCopyRtl]}>
-              <Text style={[styles.languageName, isRtl && styles.rtlText]}>
+            <View style={styles.languageCopy}>
+              <AppText
+                style={styles.languageName}
+                languageCode={language.id}
+                align="start"
+                fullWidth
+                numberOfLines={1}
+              >
                 {language.label}
-              </Text>
-              <Text style={[styles.languageCountry, isRtl && styles.rtlText]}>
-                {language.country}
-              </Text>
+              </AppText>
             </View>
 
             <View
@@ -427,12 +437,14 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
   const handleGoalContinue = useCallback(async () => {
     hapticSelection();
+    setSetupError(null);
     setStep("generating");
-    
+
     try {
-      // Simulate AI path organization delay (1.5 seconds)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+      // Give the preparation state one real render frame, then commit the
+      // selected curriculum and persisted preferences.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
       const skipCount = getSkippedUnitsCount(selectedLevel);
       const initialIndex = skipCount * 10;
       const langPair = `${selectedNativeLang}-${selectedTargetLang}`;
@@ -441,30 +453,40 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
       useProgressStore.getState().initializeNormalProgress(langPair, initialIndex);
       
       setEnglishLevel(selectedLevel);
+      setLearningGoal(selectedGoal);
       setLanguagePair(selectedNativeLang, selectedTargetLang);
       setPathMode("normal");
+      onFinish();
     } catch (err) {
-      console.warn("Failed to initialize path:", err);
+      if (__DEV__) console.warn("Failed to initialize path:", err);
+      setSetupError(copy.setupError);
+      setStep("goal");
+      if (Platform.OS !== "web") {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      }
     }
-    
-    onFinish();
   }, [
+    copy.setupError,
+    onFinish,
+    selectedGoal,
     selectedNativeLang,
     selectedTargetLang,
     selectedLevel,
     setLanguagePair,
+    setLearningGoal,
     setPathMode,
     setEnglishLevel,
-    onFinish,
   ]);
 
   const onBack = useCallback(() => {
     hapticSelection();
-    if (step === "goal") setStep("level");
+    if (step === "generating") setStep("goal");
+    else if (step === "goal") setStep("level");
     else if (step === "level") setStep("profile");
     else if (step === "profile") setStep("targetLanguage");
     else if (step === "targetLanguage") setStep("nativeLanguage");
-  }, [step]);
+    else onBackToIntro();
+  }, [onBackToIntro, step]);
 
   const stepIndex =
     step === "nativeLanguage"
@@ -498,7 +520,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   React.useEffect(() => {
     const targetIndex = stepIndex - 1;
     bgScrollX.value = withTiming(targetIndex * screenWidth, {
-      duration: 900,
+      duration: 460,
       easing: Easing.bezier(0.22, 1, 0.36, 1),
     });
   }, [stepIndex, screenWidth, bgScrollX]);
@@ -506,48 +528,18 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
   return (
     <View style={styles.root}>
       {!isDark && <OnboardingSkiaBg scrollX={bgScrollX} />}
+      <OnboardingTopBar
+        current={stepIndex + 3}
+        total={9}
+        locale={selectedNativeLang}
+        topInset={insets.top}
+        onBack={onBack}
+        backLabel={copy.back}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoider}
       >
-      {/* HEADER: Back Button & Step Indicators */}
-      <View
-        style={[
-          styles.header,
-          { paddingTop: Math.max(insets.top, 20), flexDirection: "row" },
-          isDesktopWeb && styles.desktopFrame,
-        ]}
-      >
-        <View style={[styles.headerLeft, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-          {step !== "nativeLanguage" ? (
-            <TouchableOpacity onPress={onBack} style={styles.backButton}>
-              <HugeiconsIcon
-                icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
-                size={22}
-                color={colors.foreground}
-                strokeWidth={2.5}
-              />
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 40 }} />
-          )}
-        </View>
-        <View style={styles.headerCenter}>
-          <View style={styles.stepIndicatorRow}>
-            {Array.from({ length: 5 }, (_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.stepLine,
-                  stepIndex >= index + 1 && styles.stepLineActive,
-                ]}
-              />
-            ))}
-          </View>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
-
       <ScrollView
         style={{ flex: 1 }}
         scrollEnabled={true}
@@ -563,15 +555,15 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 1: NATIVE LANGUAGE */}
         {step === "nativeLanguage" && (
           <Animated.View
-            entering={FadeInRight.springify().damping(20).stiffness(90)}
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
-            layout={LinearTransition.springify()}
+            layout={contentLayout}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
             <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
               {copy.step(1)}
             </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.nativeLanguageTitle}
             </AppText>
             {renderLanguageOptions(selectedNativeLang, handleNativeLanguageSelect)}
@@ -582,15 +574,15 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 2: TARGET LANGUAGE */}
         {step === "targetLanguage" && (
           <Animated.View 
-            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
-            layout={LinearTransition.springify()}
+            layout={contentLayout}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
             <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
               {copy.step(2)}
             </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.targetLanguageTitle}
             </AppText>
             {renderLanguageOptions(selectedTargetLang, handleTargetLanguageSelect)}
@@ -601,9 +593,9 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 3: PROFILE NAME & AGE */}
         {step === "profile" && (
           <Animated.View 
-            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
-            layout={LinearTransition.springify()}
+            layout={contentLayout}
             style={[
               styles.contentWrap,
               keyboardVisible && styles.contentWrapKeyboard,
@@ -612,7 +604,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
               {copy.step(3)}
             </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.profileTitle}
             </AppText>
             <AppText style={styles.subtitle} languageCode={selectedNativeLang} align="start" fullWidth>
@@ -624,6 +616,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
             <View style={styles.inputForm}>
               <View style={styles.inputBoxClean}>
                 <TextInput
+                  testID="onboarding-name"
                   style={[styles.textInputClean, textDirectionStyle, { outlineStyle: "none" } as any]}
                   value={name}
                   onChangeText={setName}
@@ -635,6 +628,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
 
               <View style={styles.inputBoxClean}>
                 <TextInput
+                  testID="onboarding-age"
                   style={[styles.textInputClean, textDirectionStyle, { outlineStyle: "none" } as any]}
                   value={age}
                   onChangeText={setAge}
@@ -652,15 +646,15 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 4: LEVEL SELECTION */}
         {step === "level" && (
           <Animated.View 
-            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
-            layout={LinearTransition.springify()}
+            layout={contentLayout}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
             <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
               {copy.step(4)}
             </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.levelTitle(LANGUAGES.find((l) => l.id === selectedTargetLang)?.label ?? "")}
             </AppText>
 
@@ -672,26 +666,31 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                 return (
                   <TouchableOpacity
                     key={lvl.id}
-                    style={[styles.gridCard, isSelected && styles.gridCardSelected]}
+                    testID={`onboarding-level-${lvl.id}`}
+                    accessibilityRole="radio"
+                    accessibilityLabel={levelLabels[lvl.id] ?? lvl.label}
+                    accessibilityState={{ checked: isSelected }}
+                    style={[
+                      styles.gridCard,
+                      isRtl && styles.selectionRowRtl,
+                      isSelected && styles.gridCardSelected,
+                    ]}
                     activeOpacity={0.8}
                     onPress={() => setSelectedLevel(lvl.id)}
                   >
-                    <View style={styles.gridCardTop}>
-                      <View style={[styles.gridIconWrap, { backgroundColor: "#EFF6FF" }]}>
-                        <HugeiconsIcon icon={lvl.icon} size={22} color="#2563EB" strokeWidth={2} />
-                      </View>
-                      <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
+                    <View style={[styles.gridIconWrap, { backgroundColor: "#EFF6FF" }]}>
+                      <HugeiconsIcon icon={lvl.icon} size={21} color="#2563EB" strokeWidth={2} />
                     </View>
                     <AppText
                       style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
                       languageCode={selectedNativeLang}
                       align="start"
-                      fullWidth
                     >
                       {levelLabels[lvl.id] ?? lvl.label}
                     </AppText>
+                    <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -703,15 +702,15 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 5: MAIN GOAL SELECTION */}
         {step === "goal" && (
           <Animated.View 
-            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
-            layout={LinearTransition.springify()}
+            layout={contentLayout}
             style={[styles.contentWrap, styles.choiceContentWrap]}
           >
             <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
               {copy.step(5)}
             </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="bold">
+            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.goalTitle}
             </AppText>
 
@@ -723,26 +722,31 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
                 return (
                   <TouchableOpacity
                     key={g.id}
-                    style={[styles.gridCard, isSelected && styles.gridCardSelected]}
+                    testID={`onboarding-goal-${g.id}`}
+                    accessibilityRole="radio"
+                    accessibilityLabel={goalLabels[g.id] ?? g.title}
+                    accessibilityState={{ checked: isSelected }}
+                    style={[
+                      styles.gridCard,
+                      isRtl && styles.selectionRowRtl,
+                      isSelected && styles.gridCardSelected,
+                    ]}
                     activeOpacity={0.8}
                     onPress={() => setSelectedGoal(g.id)}
                   >
-                    <View style={styles.gridCardTop}>
-                      <View style={[styles.gridIconWrap, { backgroundColor: g.bg }]}>
-                        <HugeiconsIcon icon={g.icon} size={22} color={g.color} strokeWidth={2.5} />
-                      </View>
-                      <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
+                    <View style={[styles.gridIconWrap, { backgroundColor: g.bg }]}>
+                      <HugeiconsIcon icon={g.icon} size={21} color={g.color} strokeWidth={2.5} />
                     </View>
                     <AppText
                       style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
                       languageCode={selectedNativeLang}
                       align="start"
-                      fullWidth
                     >
                       {goalLabels[g.id] ?? g.title}
                     </AppText>
+                    <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
+                      {isSelected && <View style={styles.radioInner} />}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -753,7 +757,7 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
         {/* STEP 5: GENERATING (LOADING) */}
         {step === "generating" && (
           <Animated.View 
-            entering={FadeInRight.springify().damping(20).stiffness(90)} 
+            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
             exiting={FadeOutLeft.duration(200)}
             style={[styles.contentWrap, { alignItems: "center", justifyContent: "center", paddingBottom: 100 }]}
           >
@@ -780,102 +784,46 @@ export function LanguageSelectionFlow({ onFinish }: Props) {
       </ScrollView>
 
       {step !== "generating" ? (
-        <View
-          style={[
-            styles.onboardingFooter,
-            { paddingBottom: Math.max(insets.bottom, 18) },
-            isDesktopWeb && styles.desktopFrame,
-          ]}
-        >
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityState={{ disabled: continueDisabled }}
-            style={[
-              styles.primaryButton,
-              isRtl && styles.primaryButtonRtl,
-              continueDisabled && styles.primaryButtonDisabled,
-            ]}
-            activeOpacity={0.85}
-            onPress={handleCurrentContinue}
-            disabled={continueDisabled}
-          >
-            <Text style={styles.primaryButtonText}>{continueLabel}</Text>
-            <HugeiconsIcon
-              icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
-              size={20}
-              color="#FFFFFF"
-              strokeWidth={2.5}
-            />
-          </TouchableOpacity>
-        </View>
+        <OnboardingFooter
+          label={continueLabel}
+          locale={selectedNativeLang}
+          bottomInset={insets.bottom}
+          onPress={handleCurrentContinue}
+          disabled={continueDisabled}
+          hint={setupError ?? undefined}
+          current={stepIndex + 3}
+          total={9}
+        />
       ) : null}
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isCompact: boolean) {
   return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: ONBOARDING_DESIGN.canvas,
   },
   keyboardAvoider: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerLeft: {
-    width: 40,
-    alignItems: "flex-start",
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  stepIndicatorRow: {
-    flexDirection: "row",
-    gap: 8,
-    width: 100,
-    justifyContent: "center",
-  },
-  stepLine: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-  },
-  stepLineActive: {
-    backgroundColor: isDark ? colors.primary : "#0F172A",
-  },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 14,
-    paddingBottom: 18,
+    paddingHorizontal: isCompact ? 18 : 24,
+    paddingTop: isCompact ? 8 : 16,
+    paddingBottom: isCompact ? 14 : 22,
   },
   contentWrap: {
     width: "100%",
     flexGrow: 1,
     flexShrink: 0,
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     alignItems: "stretch",
     position: "relative",
+    maxWidth: 640,
+    alignSelf: "center",
   },
   choiceContentWrap: {
     flexGrow: 0,
@@ -894,28 +842,28 @@ function createStyles(colors: any, isDark: boolean) {
     paddingBottom: 24,
   },
   stepNumLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.mutedForeground,
-    letterSpacing: 1.2,
-    marginBottom: 8,
+    fontSize: isCompact ? 13 : 15,
+    fontWeight: "600",
+    color: ONBOARDING_DESIGN.orange,
+    letterSpacing: 0.4,
+    marginBottom: isCompact ? 5 : 8,
     textAlign: "left",
   },
   title: {
-    fontSize: 24,
-    color: colors.foreground,
+    fontSize: isCompact ? 32 : 39,
+    color: ONBOARDING_DESIGN.ink,
     textAlign: "left",
-    fontFamily: "DINNextRoundedBold",
-    lineHeight: 29,
-    marginBottom: 8,
+    lineHeight: isCompact ? 39 : 46,
+    letterSpacing: isCompact ? -0.6 : -1,
+    marginBottom: isCompact ? 10 : 14,
     width: "100%",
   },
   subtitle: {
-    fontSize: 14,
-    color: colors.mutedForeground,
+    fontSize: isCompact ? 14 : 16,
+    color: ONBOARDING_DESIGN.mutedInk,
     textAlign: "left",
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: isCompact ? 20 : 23,
+    marginBottom: isCompact ? 14 : 20,
     width: "100%",
   },
 
@@ -954,122 +902,100 @@ function createStyles(colors: any, isDark: boolean) {
   // -- Form Fields --
   inputForm: {
     width: "100%",
-    gap: 16,
-    marginBottom: 32,
-    marginTop: 16,
+    gap: isCompact ? 10 : 14,
+    marginBottom: 24,
+    marginTop: isCompact ? 8 : 14,
   },
   inputBoxClean: {
     width: "100%",
-    paddingVertical: 4,
+    minHeight: isCompact ? 58 : 66,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: ONBOARDING_DESIGN.hairline,
+    backgroundColor: ONBOARDING_DESIGN.paperRaised,
+    justifyContent: "center",
   },
   textInputClean: {
     width: "100%",
-    fontSize: 32,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontSize: isCompact ? 18 : 21,
+    color: ONBOARDING_DESIGN.ink,
+    fontFamily: "DINNextRoundedMedium",
     textAlign: "left",
   },
 
   // -- Options List --
   gridList: {
     width: "100%",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 18,
+    gap: isCompact ? 8 : 10,
+    marginBottom: 12,
   },
   languageList: {
     width: "100%",
-    maxWidth: 720,
+    maxWidth: 640,
     alignSelf: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: isCompact ? 8 : 10,
     backgroundColor: "transparent",
     marginTop: 6,
     marginBottom: 4,
   },
   languageRow: {
-    width: "48%",
-    minHeight: 78,
+    width: "100%",
+    minHeight: isCompact ? 52 : 58,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: "transparent",
+    gap: 10,
+    paddingHorizontal: isCompact ? 14 : 16,
+    paddingVertical: 8,
+    borderRadius: 15,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: ONBOARDING_DESIGN.hairline,
+    backgroundColor: ONBOARDING_DESIGN.paperRaised,
   },
   languageRowRtl: {
     flexDirection: "row-reverse",
   },
   languageRowSelected: {
-    borderColor: isDark ? colors.primary : "#2563EB",
-    backgroundColor: isDark
-      ? "rgba(37, 99, 235, 0.16)"
-      : "rgba(37, 99, 235, 0.10)",
-  },
-  flagFrame: {
-    width: 50,
-    height: 34,
-    overflow: "hidden",
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: "transparent",
-  },
-  flagImage: {
-    width: "100%",
-    height: "100%",
+    borderColor: ONBOARDING_DESIGN.orange,
+    backgroundColor: "#FFF7ED",
   },
   languageCopy: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
-    alignItems: "flex-start",
-  },
-  languageCopyRtl: {
-    alignItems: "flex-end",
   },
   languageName: {
-    color: colors.foreground,
-    fontSize: 15,
-    lineHeight: 19,
+    color: ONBOARDING_DESIGN.ink,
+    fontSize: isCompact ? 16 : 17,
+    lineHeight: isCompact ? 21 : 23,
     fontFamily: "DINNextRoundedBold",
-  },
-  languageCountry: {
-    color: colors.mutedForeground,
-    fontSize: 12,
-    lineHeight: 16,
-    fontFamily: "DINNextRoundedMedium",
   },
   languageRadio: {
     flexShrink: 0,
     marginRight: 0,
   },
   gridCard: {
-    width: "48%",
-    aspectRatio: 1,
-    borderRadius: 18,
+    width: "100%",
+    minHeight: isCompact ? 58 : 66,
+    borderRadius: 16,
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.48)",
-    padding: 12,
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  gridCardSelected: {
-    borderColor: "rgba(15, 23, 42, 0.35)",
-    borderWidth: 2,
-    backgroundColor: colors.surfaceRaised,
-  },
-  gridCardTop: {
+    borderColor: ONBOARDING_DESIGN.hairline,
+    backgroundColor: ONBOARDING_DESIGN.paperRaised,
+    paddingHorizontal: isCompact ? 12 : 14,
+    paddingVertical: 8,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
+  },
+  gridCardSelected: {
+    borderColor: ONBOARDING_DESIGN.orange,
+    backgroundColor: "#FFF7ED",
+  },
+  selectionRowRtl: {
+    flexDirection: "row-reverse",
   },
   flagWrap: {
     width: 42,
@@ -1081,17 +1007,18 @@ function createStyles(colors: any, isDark: boolean) {
     overflow: "hidden",
   },
   gridIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: isCompact ? 38 : 42,
+    height: isCompact ? 38 : 42,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   gridCardTitle: {
-    fontSize: 15,
-    color: colors.foreground,
+    flex: 1,
+    fontSize: isCompact ? 14 : 15,
+    color: ONBOARDING_DESIGN.ink,
     fontFamily: "DINNextRoundedBold",
-    lineHeight: 18,
+    lineHeight: 20,
   },
   gridCardSub: {
     fontSize: 12,
@@ -1172,13 +1099,13 @@ function createStyles(colors: any, isDark: boolean) {
     marginRight: 0,
   },
   radioDotSelected: {
-    borderColor: isDark ? colors.primary : "#0F172A",
+    borderColor: ONBOARDING_DESIGN.orange,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: isDark ? colors.primary : "#0F172A",
+    backgroundColor: ONBOARDING_DESIGN.orange,
   },
   flagEmoji: {
     fontSize: 25,
@@ -1249,41 +1176,10 @@ function createStyles(colors: any, isDark: boolean) {
     color: colors.foreground,
   },
 
-  // -- Primary Action Button --
-  primaryButton: {
-    width: "100%",
-    backgroundColor: PRIMARY_ACTION.face,
-    height: PRIMARY_ACTION.height,
-    borderRadius: PRIMARY_ACTION.radius,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderBottomWidth: PRIMARY_ACTION.rimWidth,
-    borderBottomColor: PRIMARY_ACTION.rim,
-  },
-  primaryButtonRtl: {
-    flexDirection: "row-reverse",
-  },
-  onboardingFooter: {
-    width: "100%",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    backgroundColor: "transparent",
-  },
   desktopFrame: {
     width: "100%",
     maxWidth: 720,
     alignSelf: "center",
-  },
-  primaryButtonDisabled: {
-    backgroundColor: PRIMARY_ACTION.disabledFace,
-    borderBottomColor: PRIMARY_ACTION.disabledRim,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "DINNextRoundedBold",
   },
   });
 }

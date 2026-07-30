@@ -33,6 +33,8 @@ export type AppTextProps = TextProps & {
   nativeAlign?: LogicalAlignment;
   /** Stretch the text block so native alignment is deterministic. */
   fullWidth?: boolean;
+  /** Intentional display-face override. Omit for normal localized typography. */
+  fontFamilyOverride?: string;
 };
 
 /**
@@ -48,6 +50,7 @@ export function AppText({
   align,
   nativeAlign,
   fullWidth,
+  fontFamilyOverride,
   ...props
 }: AppTextProps) {
   const languageFont = useLanguageFont();
@@ -109,7 +112,10 @@ export function AppText({
     directionStyle,
   ]) as TextStyle;
   const { fontFamily: _ignoredFont, ...rest } = flattened;
-  const combinedStyle: TextStyle = { ...rest, fontFamily };
+  const combinedStyle: TextStyle = {
+    ...rest,
+    fontFamily: fontFamilyOverride ?? fontFamily,
+  };
 
   const webProps = Platform.OS === "web"
     ? ({ dir: direction, lang: effectiveLanguageCode } as Record<string, string>)

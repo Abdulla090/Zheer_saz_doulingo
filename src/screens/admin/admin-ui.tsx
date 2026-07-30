@@ -1,5 +1,6 @@
 import { AppText } from "../../components/ui/AppText";
-import React from "react";
+import { useThemeColors } from "../../hooks/useThemeColors";
+import React, { useMemo } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -19,6 +20,8 @@ export function AdminField({
   style,
   ...rest
 }: AdminFieldProps) {
+  const styles = useAdminStyles();
+  const { colors } = useThemeColors();
   return (
     <View style={styles.field}>
       <AppText style={styles.label} forceLatinFont={latin}>
@@ -26,7 +29,7 @@ export function AdminField({
       </AppText>
       <TextInput
         style={[styles.input, style]}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.mutedForeground}
         multiline={rest.multiline ?? label.length > 20}
         {...rest}
       />
@@ -47,6 +50,7 @@ export function AdminButton({
   variant = "primary",
   small,
 }: AdminButtonProps) {
+  const styles = useAdminStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -80,6 +84,7 @@ type AdminCardProps = {
 };
 
 export function AdminCard({ title, children, actions }: AdminCardProps) {
+  const styles = useAdminStyles();
   return (
     <View style={styles.card}>
       {(title || actions) && (
@@ -108,6 +113,7 @@ export function AdminSegment<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const styles = useAdminStyles();
   return (
     <View style={styles.segment}>
       {options.map((opt) => (
@@ -134,18 +140,24 @@ export function AdminSegment<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+function useAdminStyles() {
+  const { colors, isDark } = useThemeColors();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   field: { gap: 6, marginBottom: 12 },
-  label: { fontSize: 12, fontWeight: "700", color: "#64748B" },
+  label: { fontSize: 12, fontWeight: "700", color: colors.mutedForeground },
   input: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    color: "#0F172A",
-    backgroundColor: "#FFFFFF",
+    color: colors.foreground,
+    backgroundColor: colors.surface,
     minHeight: 44,
   },
   btn: {
@@ -158,23 +170,23 @@ const styles = StyleSheet.create({
   btnSmall: { paddingVertical: 8, paddingHorizontal: 12 },
   btnPrimary: { backgroundColor: "#2B59F3" },
   btnDanger: { backgroundColor: "#EF4444" },
-  btnGhost: { backgroundColor: "#F1F5F9" },
+  btnGhost: { backgroundColor: colors.muted },
   btnPressed: { opacity: 0.85 },
   btnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
   btnTextSmall: { fontSize: 12 },
-  btnGhostText: { color: "#334155" },
+  btnGhostText: { color: colors.foreground },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#E8EDFF",
+    borderColor: colors.border,
     shadowColor: "#2B59F3",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    elevation: isDark ? 0 : 2,
   },
   cardHeader: {
     flexDirection: "row",
@@ -183,10 +195,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
   },
-  cardTitle: { fontSize: 16, fontWeight: "800", color: "#152238", flex: 1 },
+  cardTitle: { fontSize: 16, fontWeight: "800", color: colors.foreground, flex: 1 },
   segment: {
     flexDirection: "row",
-    backgroundColor: "#E8EDFF",
+    backgroundColor: colors.muted,
     borderRadius: 12,
     padding: 4,
     gap: 4,
@@ -197,7 +209,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  segmentItemActive: { backgroundColor: "#FFFFFF" },
-  segmentText: { fontSize: 13, fontWeight: "700", color: "#64748B" },
+  segmentItemActive: { backgroundColor: colors.surfaceRaised },
+  segmentText: { fontSize: 13, fontWeight: "700", color: colors.mutedForeground },
   segmentTextActive: { color: "#2B59F3" },
-});
+  });
+}

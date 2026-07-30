@@ -1,40 +1,29 @@
-/* eslint-disable */
-import { PressableScale } from "../../components/animations";
-import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import {
-  AppSettingsIcon,
-} from "../../components/icons/AppHugeIcons";
-import { AppText } from "../../components/ui/AppText";
-import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import {
-  HomeMeshBackground,
-} from "../../components/ui/ios-liquid-home";
-import { TopScrollFade } from "../../components/ui/TopScrollFade";
-import {
-  APP_VERSION,
-  PRIVACY_POLICY_URL,
-  SUPPORT_EMAIL,
-} from "../../constants/app-meta";
-import { ENABLE_ADMIN } from "../../constants/feature-flags";
-import { tabBarScrollPadding } from "../../constants/layout";
-import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
-import { useI18n } from "../../hooks/useI18n";
-import { useThemeColors } from "../../hooks/useThemeColors";
-import { useSafeBack } from "../../hooks/use-safe-back";
-import type { AppLocale } from "../../i18n";
-import { useFontStore } from "../../stores/useFontStore";
-import { useOnboardingStore } from "../../stores/useOnboardingStore";
-import { useLocaleStore } from "../../stores/useLocaleStore";
-import { useProgressStore } from "../../stores/useProgressStore";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { SOURCE_LANGUAGES, TARGET_LANGUAGES } from "../../config/languages";
-import { confirmAction } from "../../utils/confirm-action";
-import { openHttpsUrl, openMailto } from "../../utils/safe-link";
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  Baby01Icon,
+  CheckmarkCircle02Icon,
+  ComputerIcon,
+  Delete02Icon,
+  LanguageSkillIcon,
+  Logout01Icon,
+  Mail01Icon,
+  Moon02Icon,
+  PaintBrush01Icon,
+  RefreshIcon,
+  RotateLeft01Icon,
+  Shield01Icon,
+  Sun03Icon,
+  TouchInteraction01Icon,
+  UserIcon,
+  VoiceIcon,
+  VolumeHighIcon,
+  Wrench01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import * as Font from "expo-font";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { useAuth } from "../../context/AuthContext";
-import * as Font from "expo-font";
-import { fontMap } from "../../fontMap";
 import {
   Alert,
   Platform,
@@ -43,16 +32,35 @@ import {
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type TextStyle,
 } from "react-native";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-  CheckmarkCircle02Icon,
-} from "@hugeicons/core-free-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
- 
+import { PressableScale } from "../../components/animations";
+import { AppText } from "../../components/ui/AppText";
+import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { SOURCE_LANGUAGES, TARGET_LANGUAGES } from "../../config/languages";
+import {
+  APP_VERSION,
+  PRIVACY_POLICY_URL,
+  SUPPORT_EMAIL,
+} from "../../constants/app-meta";
+import { ENABLE_ADMIN } from "../../constants/feature-flags";
+import { tabBarScrollPadding } from "../../constants/layout";
+import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
+import { useAuth } from "../../context/AuthContext";
+import { fontMap } from "../../fontMap";
+import { useI18n } from "../../hooks/useI18n";
+import { useSafeBack } from "../../hooks/use-safe-back";
+import { useThemeColors } from "../../hooks/useThemeColors";
+import { useFontStore } from "../../stores/useFontStore";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useOnboardingStore } from "../../stores/useOnboardingStore";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { confirmAction } from "../../utils/confirm-action";
+import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 
 const LEGAL_LINKS = [
   {
@@ -63,16 +71,116 @@ const LEGAL_LINKS = [
   { route: "/terms" as const, labelKey: "settings.termsOfUse" as const },
 ];
 
+type HugeIcon = React.ComponentProps<typeof HugeiconsIcon>["icon"];
+
+type SettingsLocale = "en" | "ku" | "ar";
+
+const COPY = {
+  en: {
+    subtitle: "Tune the app to the way you learn",
+    appearance: "Appearance",
+    appearanceHint: "Screen and color mode",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    languageRoute: "Language route",
+    languageHint: "Your language and the language you are learning",
+    source: "I speak",
+    target: "I am learning",
+    feel: "Feel and sound",
+    feelHint: "Physical feedback, audio, and the kids path",
+    kids: "Kids path in Arabic",
+    voice: "Tutor voice",
+    voiceHint: "Cycle through the available live tutor voices",
+    type: "Sorani type",
+    typeHint: "Preview each typeface before choosing it",
+    sample: "Learning a language",
+    previous: "Previous",
+    next: "Next",
+    details: "Help and information",
+    account: "Account and data",
+    admin: "Content administration",
+    privacyWeb: "Privacy policy on the web",
+    signOut: "Sign out",
+    deleteAccount: "Delete account",
+    deleting: "Deleting…",
+    signIn: "Sign in or create an account",
+    replay: "Replay the welcome flow",
+    reset: "Erase learning progress",
+  },
+  ku: {
+    subtitle: "شێوازی ئەپەکە بە دڵی خۆت ڕێک بخە",
+    appearance: "ڕووکار",
+    appearanceHint: "ڕووناکی و ڕەنگی شاشە",
+    light: "ڕووناک",
+    dark: "تاریک",
+    system: "سیستەم",
+    languageRoute: "ڕێڕەوی زمان",
+    languageHint: "زمانی دایک و ئەو زمانەی فێری دەبیت",
+    source: "زمانی من",
+    target: "فێری دەبم",
+    feel: "هەست و دەنگ",
+    feelHint: "لەرزین، دەنگ و ڕێڕەوی منداڵان",
+    kids: "ڕێڕەوی منداڵان بە عەرەبی",
+    voice: "دەنگی ڕاهێنەر",
+    voiceHint: "لە نێوان دەنگەکانی ڕاهێنەری ڕاستەوخۆدا بگۆڕە",
+    type: "شێوەنووسی سۆرانی",
+    typeHint: "پێش هەڵبژاردن، هەر فۆنتێک ببینە",
+    sample: "فێربوونی زمان",
+    previous: "پێشوو",
+    next: "دواتر",
+    details: "یارمەتی و زانیاری",
+    account: "ئەکاونت و داتا",
+    admin: "بەڕێوەبردنی ناوەڕۆک",
+    privacyWeb: "سیاسەتی تایبەتمەندی لە وێب",
+    signOut: "چوونەدەرەوە",
+    deleteAccount: "سڕینەوەی ئەکاونت",
+    deleting: "لە سڕینەوەدایە…",
+    signIn: "چوونەژوورەوە یان دروستکردنی ئەکاونت",
+    replay: "دووبارەکردنەوەی بەخێرهاتن",
+    reset: "سڕینەوەی پێشکەوتنی فێربوون",
+  },
+  ar: {
+    subtitle: "اضبط التطبيق بالطريقة التي تناسب تعلمك",
+    appearance: "المظهر",
+    appearanceHint: "إضاءة الشاشة ونمط الألوان",
+    light: "فاتح",
+    dark: "داكن",
+    system: "النظام",
+    languageRoute: "مسار اللغة",
+    languageHint: "لغتك واللغة التي تتعلمها",
+    source: "لغتي",
+    target: "أتعلم",
+    feel: "الإحساس والصوت",
+    feelHint: "الاهتزاز والصوت ومسار الأطفال",
+    kids: "مسار الأطفال بالعربية",
+    voice: "صوت المدرّب",
+    voiceHint: "تنقل بين أصوات المدرّب المباشر",
+    type: "خط السورانية",
+    typeHint: "عاين كل خط قبل اختياره",
+    sample: "تعلم اللغة",
+    previous: "السابق",
+    next: "التالي",
+    details: "المساعدة والمعلومات",
+    account: "الحساب والبيانات",
+    admin: "إدارة المحتوى",
+    privacyWeb: "سياسة الخصوصية على الويب",
+    signOut: "تسجيل الخروج",
+    deleteAccount: "حذف الحساب",
+    deleting: "جارٍ الحذف…",
+    signIn: "تسجيل الدخول أو إنشاء حساب",
+    replay: "إعادة شاشة الترحيب",
+    reset: "مسح تقدم التعلم",
+  },
+} as const;
+
+function resolveLocale(locale: string): SettingsLocale {
+  if (locale === "ku" || locale === "ar") return locale;
+  return "en";
+}
+
 const FontPreviewText = React.memo(
-  ({
-    font,
-    style,
-    children,
-  }: {
-    font: string;
-    style: any;
-    children: React.ReactNode;
-  }) => {
+  ({ font, style, children }: { font: string; style: StyleProp<TextStyle>; children: React.ReactNode }) => {
     const [loaded, setLoaded] = React.useState(false);
 
     React.useEffect(() => {
@@ -81,35 +189,32 @@ const FontPreviewText = React.memo(
         return;
       }
       const fontFile = fontMap[font as keyof typeof fontMap];
-      if (fontFile) {
-        Font.loadAsync({
-          [font]: fontFile,
-        })
-          .then(() => setLoaded(true))
-          .catch(() => {});
-      }
+      if (!fontFile) return;
+      Font.loadAsync({ [font]: fontFile })
+        .then(() => setLoaded(true))
+        .catch(() => {});
     }, [font]);
 
-    return (
-      <Text style={[style, loaded ? { fontFamily: font } : {}]}>
-        {children}
-      </Text>
-    );
+    return <Text style={[style, loaded ? { fontFamily: font } : null]}>{children}</Text>;
   },
 );
+FontPreviewText.displayName = "FontPreviewText";
 
 function SettingsSwitch({
   value,
   onValueChange,
   activeColor,
+  label,
 }: {
   value: boolean;
-  onValueChange: (val: boolean) => void;
+  onValueChange: (value: boolean) => void;
   activeColor: string;
+  label: string;
 }) {
   return (
     <Pressable
       accessibilityRole="switch"
+      accessibilityLabel={label}
       accessibilityState={{ checked: value }}
       hitSlop={9}
       onPress={() => onValueChange(!value)}
@@ -129,112 +234,312 @@ function SettingsSwitch({
   );
 }
 
-function SelectedMark({ color }: { color: string }) {
+function SectionHeading({
+  title,
+  hint,
+  locale,
+  styles,
+}: {
+  title: string;
+  hint?: string;
+  locale: string;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
-    <HugeiconsIcon
-      icon={CheckmarkCircle02Icon}
-      size={24}
-      color={color}
-      strokeWidth={2.4}
-    />
+    <View style={styles.sectionHeading}>
+      <View style={styles.sectionIndex} />
+      <View style={styles.sectionHeadingCopy}>
+        <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+          {title}
+        </AppText>
+        {hint ? (
+          <AppText style={styles.sectionHint} languageCode={locale} align="start">
+            {hint}
+          </AppText>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
-function RowChevron({ isRtl, color }: { isRtl: boolean; color: string }) {
+function ChoiceChip({
+  label,
+  selected,
+  onPress,
+  languageCode,
+  styles,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  languageCode: string;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
-    <HugeiconsIcon
-      icon={ArrowRight01Icon}
-      size={20}
-      color={color}
-      strokeWidth={2.3}
-      style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}
-    />
+    <PressableScale
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={label}
+      onPress={onPress}
+      scaleDown={0.96}
+      style={[styles.choiceChip, selected && styles.choiceChipSelected]}
+    >
+      {selected ? (
+        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} color="#FFFFFF" strokeWidth={2.4} />
+      ) : null}
+      <AppText
+        style={[styles.choiceChipText, selected && styles.choiceChipTextSelected]}
+        languageCode={languageCode}
+        align="center"
+        latinRole="bold"
+      >
+        {label}
+      </AppText>
+    </PressableScale>
   );
 }
 
-const stylesStatic = StyleSheet.create({
-  switchTrack: {
-    width: 44,
-    height: 26,
-    borderRadius: 999,
-    padding: 2,
-    justifyContent: "center",
-    flexShrink: 0,
-    ...Platform.select({
-      web: {
-        userSelect: "none",
-        cursor: "pointer",
-      },
-    }),
-  },
-  switchTrackOff: {
-    backgroundColor: "#E5E5EA",
-  },
-  switchPressed: {
-    opacity: 0.84,
-  },
-  switchThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#FFFFFF",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.16,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: "0px 1px 4px rgba(15, 23, 42, 0.2)",
-      },
-    }),
-  },
-  switchThumbOff: {
-    alignSelf: "flex-start",
-  },
-  switchThumbOn: {
-    alignSelf: "flex-end",
-  },
-});
+function ControlRow({
+  icon,
+  title,
+  subtitle,
+  control,
+  locale,
+  styles,
+  last,
+}: {
+  icon: HugeIcon;
+  title: string;
+  subtitle?: string;
+  control: React.ReactNode;
+  locale: string;
+  styles: ReturnType<typeof createStyles>;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.controlRow, !last && styles.rowDivider]}>
+      <View style={styles.rowIconBox}>
+        <HugeiconsIcon icon={icon} size={19} color={styles.iconColor.color} strokeWidth={2.1} />
+      </View>
+      <View style={styles.rowCopy}>
+        <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+          {title}
+        </AppText>
+        {subtitle ? (
+          <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
+            {subtitle}
+          </AppText>
+        ) : null}
+      </View>
+      {control}
+    </View>
+  );
+}
+
+function ActionRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  locale,
+  isRtl,
+  styles,
+  destructive,
+  last,
+}: {
+  icon: HugeIcon;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+  locale: string;
+  isRtl: boolean;
+  styles: ReturnType<typeof createStyles>;
+  destructive?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      scaleDown={0.985}
+      style={[styles.actionRow, !last && styles.rowDivider]}
+    >
+      <View style={[styles.rowIconBox, destructive && styles.rowIconDanger]}>
+        <HugeiconsIcon
+          icon={icon}
+          size={19}
+          color={destructive ? styles.dangerColor.color : styles.iconColor.color}
+          strokeWidth={2.1}
+        />
+      </View>
+      <View style={styles.rowCopy}>
+        <AppText
+          style={[styles.rowTitle, destructive && styles.dangerText]}
+          languageCode={locale}
+          align="start"
+          latinRole="bold"
+        >
+          {title}
+        </AppText>
+        {subtitle ? (
+          <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
+            {subtitle}
+          </AppText>
+        ) : null}
+      </View>
+      <HugeiconsIcon
+        icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+        size={18}
+        color={styles.mutedColor.color}
+        strokeWidth={2.2}
+      />
+    </PressableScale>
+  );
+}
+
+function CycleSelector({
+  title,
+  hint,
+  value,
+  countLabel,
+  sample,
+  onPrevious,
+  onNext,
+  copy,
+  locale,
+  icon,
+  styles,
+  font,
+}: {
+  title: string;
+  hint: string;
+  value: string;
+  countLabel: string;
+  sample?: string;
+  onPrevious: () => void;
+  onNext: () => void;
+  copy: (typeof COPY)[SettingsLocale];
+  locale: string;
+  icon: HugeIcon;
+  styles: ReturnType<typeof createStyles>;
+  font?: string;
+}) {
+  return (
+    <View style={styles.cycleBlock}>
+      <View style={styles.cycleHeader}>
+        <View style={styles.rowIconBox}>
+          <HugeiconsIcon icon={icon} size={19} color={styles.iconColor.color} strokeWidth={2.1} />
+        </View>
+        <View style={styles.rowCopy}>
+          <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+            {title}
+          </AppText>
+          <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
+            {hint}
+          </AppText>
+        </View>
+        <AppText style={styles.counter} languageCode="en" align="center" latinRole="bold">
+          {countLabel}
+        </AppText>
+      </View>
+
+      <View style={styles.cycleDeck}>
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={copy.previous}
+          onPress={onPrevious}
+          scaleDown={0.9}
+          style={styles.cycleArrow}
+        >
+          <HugeiconsIcon icon={ArrowLeft01Icon} size={19} color={styles.iconColor.color} strokeWidth={2.3} />
+        </PressableScale>
+        <View style={styles.cycleValue}>
+          {sample && font ? (
+            <FontPreviewText font={font} style={styles.fontSample}>
+              {sample}
+            </FontPreviewText>
+          ) : null}
+          <AppText
+            style={[styles.cycleValueText, sample && styles.cycleValueTextSmall]}
+            languageCode={locale}
+            align="center"
+            latinRole="bold"
+          >
+            {value}
+          </AppText>
+        </View>
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={copy.next}
+          onPress={onNext}
+          scaleDown={0.9}
+          style={styles.cycleArrow}
+        >
+          <HugeiconsIcon icon={ArrowRight01Icon} size={19} color={styles.iconColor.color} strokeWidth={2.3} />
+        </PressableScale>
+      </View>
+    </View>
+  );
+}
 
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const safeBack = useSafeBack("/(tabs)/more");
-  const { t, locale, setLocale, isKu } = useI18n();
-  const isRtl = isKu || locale === "ar";
+  const { t, locale } = useI18n();
+  const localeCode = resolveLocale(locale);
+  const copy = COPY[localeCode];
+  const isRtl = localeCode !== "en";
   const { user, signOut, deleteAccount } = useAuth();
   const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
-  const { selectedFont, setFont } = useFontStore();
-  const resetProgress = useProgressStore((s) => s.resetProgress);
-  const replayOnboarding = useOnboardingStore((s) => s.replayOnboarding);
-  const haptics = useSettingsStore((s) => s.hapticsEnabled);
-  const sounds = useSettingsStore((s) => s.soundsEnabled);
-  const targetLang = useLocaleStore((s) => s.selectedTargetLanguage);
-  const nativeLang = useLocaleStore((s) => s.selectedSourceLanguage);
-  const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
+  const selectedFont = useFontStore((state) => state.selectedFont);
+  const setFont = useFontStore((state) => state.setFont);
+  const resetProgress = useProgressStore((state) => state.resetProgress);
+  const replayOnboarding = useOnboardingStore((state) => state.replayOnboarding);
+  const haptics = useSettingsStore((state) => state.hapticsEnabled);
+  const sounds = useSettingsStore((state) => state.soundsEnabled);
+  const theme = useSettingsStore((state) => state.theme);
+  const tutorVoice = useSettingsStore((state) => state.tutorVoice);
+  const setHaptics = useSettingsStore((state) => state.setHapticsEnabled);
+  const setSounds = useSettingsStore((state) => state.setSoundsEnabled);
+  const setTheme = useSettingsStore((state) => state.setTheme);
+  const setTutorVoice = useSettingsStore((state) => state.setTutorVoice);
+  const targetLang = useLocaleStore((state) => state.selectedTargetLanguage);
+  const nativeLang = useLocaleStore((state) => state.selectedSourceLanguage);
+  const setLanguagePair = useLocaleStore((state) => state.setLanguagePair);
 
-  // Store the last selected non-Arabic learning language to restore when kids path Arabic is toggled off
-  const prevNonArTargetRef = React.useRef<string>(targetLang !== "ar" ? targetLang : "en");
+  const prevNonArTargetRef = React.useRef(targetLang !== "ar" ? targetLang : "en");
   React.useEffect(() => {
-    if (targetLang !== "ar") {
-      prevNonArTargetRef.current = targetLang;
-    }
+    if (targetLang !== "ar") prevNonArTargetRef.current = targetLang;
   }, [targetLang]);
-  
-  const theme = useSettingsStore((s) => s.theme);
-  const tutorVoice = useSettingsStore((s) => s.tutorVoice);
-  const setHaptics = useSettingsStore((s) => s.setHapticsEnabled);
-  const setSounds = useSettingsStore((s) => s.setSoundsEnabled);
-  const setTheme = useSettingsStore((s) => s.setTheme);
-  const setTutorVoice = useSettingsStore((s) => s.setTutorVoice);
+
+  const voiceOptions = useMemo(
+    () => [
+      { id: "Aoede", label: t("settings.tutorVoiceAoede") },
+      { id: "Puck", label: t("settings.tutorVoicePuck") },
+      { id: "Charon", label: t("settings.tutorVoiceCharon") },
+      { id: "Fenrir", label: t("settings.tutorVoiceFenrir") },
+      { id: "Kore", label: t("settings.tutorVoiceKore") },
+    ],
+    [t],
+  );
+
+  const selectedVoiceIndex = Math.max(0, voiceOptions.findIndex((option) => option.id === tutorVoice));
+  const selectedFontIndex = Math.max(0, ALL_RABAR_FONTS.indexOf(selectedFont));
+
+  const changeVoice = (delta: number) => {
+    const nextIndex = (selectedVoiceIndex + delta + voiceOptions.length) % voiceOptions.length;
+    setTutorVoice(voiceOptions[nextIndex].id);
+  };
+
+  const changeFont = (delta: number) => {
+    const nextIndex = (selectedFontIndex + delta + ALL_RABAR_FONTS.length) % ALL_RABAR_FONTS.length;
+    setFont(ALL_RABAR_FONTS[nextIndex]);
+  };
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -243,7 +548,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
       replayOnboarding,
       {
         confirmLabel: t("settings.replayOnboardingConfirm"),
-        cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+        cancelLabel: localeCode === "ku" ? "پاشگەزبوونەوە" : "Cancel",
       },
     );
   };
@@ -255,843 +560,886 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
       resetProgress,
       {
         confirmLabel: t("settings.resetConfirm"),
-        cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
+        cancelLabel: localeCode === "ku" ? "پاشگەزبوونەوە" : "Cancel",
         destructive: true,
       },
     );
   };
 
+  const confirmSignOut = () => {
+    confirmAction(
+      copy.signOut,
+      localeCode === "ku" ? "دڵنیای لە چوونەدەرەوە لە ئەکاونتەکەت؟" : "Are you sure you want to sign out?",
+      async () => {
+        try {
+          await signOut();
+          router.replace("/more");
+        } catch {
+          Alert.alert(
+            localeCode === "ku" ? "هەڵەیەک ڕوویدا" : "Could not sign out",
+            localeCode === "ku" ? "تکایە دووبارە هەوڵ بدەرەوە." : "Please try again.",
+          );
+        }
+      },
+      {
+        confirmLabel: copy.signOut,
+        cancelLabel: localeCode === "ku" ? "پاشگەزبوونەوە" : "Cancel",
+        destructive: true,
+      },
+    );
+  };
+
+  const confirmDeleteAccount = () => {
+    if (isDeletingAccount) return;
+    confirmAction(
+      copy.deleteAccount,
+      localeCode === "ku"
+        ? "هەموو زانیاری و پێشکەوتنە هاوکاتکراوەکانت بە هەمیشەیی دەسڕێتەوە. ئەم کردارە ناگەڕێتەوە."
+        : "This permanently deletes your account and synced learning progress. This cannot be undone.",
+      async () => {
+        setIsDeletingAccount(true);
+        try {
+          await deleteAccount();
+          router.replace("/more");
+        } catch {
+          Alert.alert(
+            localeCode === "ku" ? "ئەکاونتەکە نەسڕایەوە" : "Account not deleted",
+            localeCode === "ku"
+              ? "هیچ شتێک نەگۆڕاوە. پەیوەندیی ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە."
+              : "Nothing was changed. Check your connection and try again.",
+          );
+        } finally {
+          setIsDeletingAccount(false);
+        }
+      },
+      {
+        confirmLabel: copy.deleteAccount,
+        cancelLabel: localeCode === "ku" ? "پاشگەزبوونەوە" : "Cancel",
+        destructive: true,
+      },
+    );
+  };
+
+  const themeOptions = [
+    { id: "light", label: copy.light, icon: Sun03Icon },
+    { id: "dark", label: copy.dark, icon: Moon02Icon },
+    { id: "system", label: copy.system, icon: ComputerIcon },
+  ] as const;
+
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      {!isDark && <HomeMeshBackground />}
-      <GsapEnterBlock index={0}>
-        <View
-          style={[
-            styles.header,
-            { flexDirection: "row" },
+    <View style={styles.root}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 14) }]}>
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={isRtl ? "گەڕانەوە" : "Back"}
+          onPress={safeBack}
+          scaleDown={0.9}
+          style={styles.backButton}
+        >
+          <HugeiconsIcon
+            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+            size={22}
+            color={colors.foreground}
+            strokeWidth={2.5}
+          />
+        </PressableScale>
+        <View style={styles.headerCopy}>
+          <AppText style={styles.title} languageCode={locale} align="start" latinRole="bold">
+            {t("settings.title")}
+          </AppText>
+          <AppText style={styles.headerSubtitle} languageCode={locale} align="start">
+            {copy.subtitle}
+          </AppText>
+        </View>
+      </View>
+
+      <View style={styles.scrollFrame}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: tabBarScrollPadding(insets.bottom) + 24 },
           ]}
         >
-          <PressableScale
-            onPress={() => {
-              if (haptics) {
-                try {
-                  const { hapticSelection } = require("../../utils/haptics");
-                  hapticSelection();
-                } catch {}
-              }
-              safeBack();
-            }}
-            scaleDown={0.9}
-            style={styles.backButton}
-          >
-            <HugeiconsIcon
-              icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
-              size={22}
-              color={colors.foreground}
-              strokeWidth={2.5}
-            />
-          </PressableScale>
-
-          <AppSettingsIcon size={28} />
-          <View
-            style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}
-          >
-            <AppText style={styles.title} forceKurdishFont={isKu}>
-              {t("settings.title")}
-            </AppText>
-            <View style={styles.titleUnderline} />
+          <View style={styles.featurePanel}>
+            <View style={styles.featureHeader}>
+              <View style={styles.featureIcon}>
+                <HugeiconsIcon icon={PaintBrush01Icon} size={19} color={colors.onPrimary} strokeWidth={2.1} />
+              </View>
+              <View style={styles.featureCopy}>
+                <AppText style={styles.featureTitle} languageCode={locale} align="start" latinRole="bold">
+                  {copy.appearance}
+                </AppText>
+                <AppText style={styles.featureHint} languageCode={locale} align="start">
+                  {copy.appearanceHint}
+                </AppText>
+              </View>
+            </View>
+            <View style={styles.themeRail}>
+              {themeOptions.map((option) => {
+                const selected = theme === option.id;
+                return (
+                  <PressableScale
+                    key={option.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={option.label}
+                    onPress={() => setTheme(option.id)}
+                    scaleDown={0.94}
+                    style={[styles.themeOption, selected && styles.themeOptionSelected]}
+                  >
+                    <HugeiconsIcon
+                      icon={option.icon}
+                      size={18}
+                      color={selected ? colors.onPrimary : styles.featureMuted.color}
+                      strokeWidth={2.1}
+                    />
+                    <AppText
+                      style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}
+                      languageCode={locale}
+                      align="center"
+                      latinRole="bold"
+                    >
+                      {option.label}
+                    </AppText>
+                  </PressableScale>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      </GsapEnterBlock>
 
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: tabBarScrollPadding(insets.bottom),
-            gap: 2,
-          }}
-        >
-          <GsapEnterBlock index={1}>
-            <AppText style={styles.sectionLabel} forceKurdishFont={isKu}>
-              {isKu ? "ڕووکار (دەسکاریکردنی ڕەنگ)" : "Appearance"}
-            </AppText>
-            <View style={styles.card}>
-              {[
-                { id: "light", label: isKu ? "ڕووناکی" : "Light Mode" },
-                { id: "dark", label: isKu ? "تاریک" : "Dark Mode" },
-                { id: "system", label: isKu ? "سیستەم" : "System Default" },
-              ].map((opt, index) => {
-                const selected = theme === opt.id;
-                return (
-                  <PressableScale
-                    key={opt.id}
-                    onPress={() => setTheme(opt.id as any)}
-                    scaleDown={0.98}
-                    style={[
-                      styles.row,
-                      { flexDirection: isRtl ? "row-reverse" : "row" },
-                      index < 2 && styles.rowBorder,
-                    ]}
-                  >
-                    <AppText
-                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                      forceKurdishFont={isKu}
-                    >
-                      {opt.label}
-                    </AppText>
-                    {selected ? (
-                      <SelectedMark color={colors.secondary} />
-                    ) : (
-                      <View style={styles.radioEmpty} />
-                    )}
-                  </PressableScale>
-                );
-              })}
-            </View>
-          </GsapEnterBlock>
-
-          <GsapEnterBlock index={2}>
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {t("settings.nativeLanguage")}
-            </AppText>
-            <View style={styles.card}>
-              {SOURCE_LANGUAGES.map((lang, index) => {
-                const selected = nativeLang === lang.id;
-                return (
-                  <PressableScale
-                    key={lang.id}
-                    onPress={() => setLanguagePair(lang.id, targetLang)}
-                    scaleDown={0.98}
-                    style={[
-                      styles.row,
-                      { flexDirection: isRtl ? "row-reverse" : "row" },
-                      index < SOURCE_LANGUAGES.length - 1 && styles.rowBorder,
-                    ]}
-                  >
-                    <AppText
-                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                      forceKurdishFont={lang.rtl || isKu}
-                    >
-                      {lang.nativeName}
-                    </AppText>
-                    {selected ? (
-                      <SelectedMark color={colors.secondary} />
-                    ) : (
-                      <View style={styles.radioEmpty} />
-                    )}
-                  </PressableScale>
-                );
-              })}
-            </View>
-
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {t("settings.learningLanguage")}
-            </AppText>
-            <View style={styles.card}>
-              {TARGET_LANGUAGES.map((lang, index) => {
-                const selected = targetLang === lang.id;
-                return (
-                  <PressableScale
-                    key={lang.id}
-                    onPress={() => setLanguagePair(nativeLang, lang.id)}
-                    scaleDown={0.98}
-                    style={[
-                      styles.row,
-                      { flexDirection: isRtl ? "row-reverse" : "row" },
-                      index < TARGET_LANGUAGES.length - 1 && styles.rowBorder,
-                    ]}
-                  >
-                    <AppText
-                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                      forceKurdishFont={lang.rtl || isKu}
-                    >
-                      {lang.nativeName}
-                    </AppText>
-                    {selected ? (
-                      <SelectedMark color={colors.secondary} />
-                    ) : (
-                      <View style={styles.radioEmpty} />
-                    )}
-                  </PressableScale>
-                );
-              })}
-            </View>
-          </GsapEnterBlock>
-
-          <GsapEnterBlock index={3}>
-            <View style={styles.toggleCard}>
-              <View
-                style={[
-                  styles.toggleRow,
-                  { flexDirection: isRtl ? "row-reverse" : "row" },
-                ]}
-              >
-                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-                  {t("settings.haptics")}
+          <View style={styles.section}>
+            <SectionHeading
+              title={copy.languageRoute}
+              hint={copy.languageHint}
+              locale={locale}
+              styles={styles}
+            />
+            <View style={styles.routeSummary}>
+              <View style={styles.routeNode}>
+                <AppText style={styles.routeLabel} languageCode={locale} align="start">
+                  {copy.source}
                 </AppText>
-                <SettingsSwitch
-                  value={haptics}
-                  onValueChange={setHaptics}
-                  activeColor={colors.primary}
+                <AppText style={styles.routeValue} languageCode={nativeLang} align="start" latinRole="bold">
+                  {SOURCE_LANGUAGES.find((language) => language.id === nativeLang)?.nativeName ?? nativeLang}
+                </AppText>
+              </View>
+              <View style={styles.routeLine}>
+                <View style={styles.routeDot} />
+                <View style={styles.routeStroke} />
+                <HugeiconsIcon
+                  icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+                  size={17}
+                  color={colors.primary}
+                  strokeWidth={2.4}
                 />
               </View>
-              <View
-                style={[
-                  styles.toggleRow,
-                  styles.toggleRowLast,
-                  { flexDirection: isRtl ? "row-reverse" : "row" },
-                ]}
-              >
-                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-                  {t("settings.sounds")}
+              <View style={styles.routeNode}>
+                <AppText style={styles.routeLabel} languageCode={locale} align="start">
+                  {copy.target}
                 </AppText>
-                <SettingsSwitch
-                  value={sounds}
-                  onValueChange={setSounds}
-                  activeColor={colors.primary}
-                />
+                <AppText style={styles.routeValue} languageCode={targetLang} align="start" latinRole="bold">
+                  {TARGET_LANGUAGES.find((language) => language.id === targetLang)?.nativeName ?? targetLang}
+                </AppText>
               </View>
             </View>
 
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {isKu ? "ڕێڕەوی منداڵان" : "Kids Path Configuration"}
-            </AppText>
-            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-              {t("settings.kidsArabicHint")}
-            </AppText>
-            <View style={styles.toggleCard}>
-              <View
-                style={[
-                  styles.toggleRow,
-                  styles.toggleRowLast,
-                  { flexDirection: isRtl ? "row-reverse" : "row" },
-                ]}
-              >
-                <AppText style={styles.toggleLabel} forceKurdishFont={isKu}>
-                  {t("settings.kidsArabic")}
-                </AppText>
-                <SettingsSwitch
-                  value={targetLang === "ar"}
-                  onValueChange={(val: boolean) => {
-                    setLanguagePair(nativeLang, val ? "ar" : prevNonArTargetRef.current);
-                  }}
-                  activeColor={colors.primary}
-                />
+            <View style={styles.choiceGroup}>
+              <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                {copy.source}
+              </AppText>
+              <View style={styles.choiceWrap}>
+                {SOURCE_LANGUAGES.map((language) => (
+                  <ChoiceChip
+                    key={language.id}
+                    label={language.nativeName}
+                    selected={nativeLang === language.id}
+                    onPress={() => setLanguagePair(language.id, targetLang)}
+                    languageCode={language.id}
+                    styles={styles}
+                  />
+                ))}
               </View>
             </View>
 
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {t("settings.tutorVoice")}
-            </AppText>
-            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-              {t("settings.tutorVoiceHint")}
-            </AppText>
-            <View style={styles.card}>
-              {[
-                { id: "Aoede", labelKey: "settings.tutorVoiceAoede" },
-                { id: "Puck", labelKey: "settings.tutorVoicePuck" },
-                { id: "Charon", labelKey: "settings.tutorVoiceCharon" },
-                { id: "Fenrir", labelKey: "settings.tutorVoiceFenrir" },
-                { id: "Kore", labelKey: "settings.tutorVoiceKore" },
-              ].map((opt, index, arr) => {
-                const selected = tutorVoice === opt.id;
-                return (
-                  <PressableScale
-                    key={opt.id}
-                    onPress={() => {
-                      setTutorVoice(opt.id);
-                      if (haptics) {
-                        try {
-                          const { hapticImpact } = require("../../utils/haptics");
-                          hapticImpact();
-                        } catch {}
-                      }
+            <View style={styles.choiceGroup}>
+              <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                {copy.target}
+              </AppText>
+              <View style={styles.choiceWrap}>
+                {TARGET_LANGUAGES.map((language) => (
+                  <ChoiceChip
+                    key={language.id}
+                    label={language.nativeName}
+                    selected={targetLang === language.id}
+                    onPress={() => setLanguagePair(nativeLang, language.id)}
+                    languageCode={language.id}
+                    styles={styles}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeading title={copy.feel} hint={copy.feelHint} locale={locale} styles={styles} />
+            <View style={styles.controlGroup}>
+              <ControlRow
+                icon={TouchInteraction01Icon}
+                title={t("settings.haptics")}
+                locale={locale}
+                styles={styles}
+                control={
+                  <SettingsSwitch
+                    label={t("settings.haptics")}
+                    value={haptics}
+                    onValueChange={setHaptics}
+                    activeColor={colors.primary}
+                  />
+                }
+              />
+              <ControlRow
+                icon={VolumeHighIcon}
+                title={t("settings.sounds")}
+                locale={locale}
+                styles={styles}
+                control={
+                  <SettingsSwitch
+                    label={t("settings.sounds")}
+                    value={sounds}
+                    onValueChange={setSounds}
+                    activeColor={colors.primary}
+                  />
+                }
+              />
+              <ControlRow
+                icon={Baby01Icon}
+                title={copy.kids}
+                subtitle={t("settings.kidsArabicHint")}
+                locale={locale}
+                styles={styles}
+                last
+                control={
+                  <SettingsSwitch
+                    label={copy.kids}
+                    value={targetLang === "ar"}
+                    onValueChange={(value) => {
+                      setLanguagePair(nativeLang, value ? "ar" : prevNonArTargetRef.current);
                     }}
-                    scaleDown={0.98}
-                    style={[
-                      styles.row,
-                      { flexDirection: isRtl ? "row-reverse" : "row" },
-                      index < arr.length - 1 && styles.rowBorder,
-                    ]}
-                  >
-                    <AppText
-                      style={[styles.rowLabel, selected && styles.rowLabelOn]}
-                      forceKurdishFont={isKu}
-                    >
-                      {t(opt.labelKey as any)}
-                    </AppText>
-                    {selected ? (
-                      <SelectedMark color={colors.secondary} />
-                    ) : (
-                      <View style={styles.radioEmpty} />
-                    )}
-                  </PressableScale>
-                );
-              })}
+                    activeColor={colors.primary}
+                  />
+                }
+              />
             </View>
+          </View>
 
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {t("settings.fontSection")}
-            </AppText>
-            <AppText style={styles.sectionHint} forceKurdishFont={isKu}>
-              {t("settings.fontHint")}
-            </AppText>
+          <View style={styles.section}>
+            <CycleSelector
+              title={copy.voice}
+              hint={copy.voiceHint}
+              value={voiceOptions[selectedVoiceIndex].label}
+              countLabel={`${selectedVoiceIndex + 1}/${voiceOptions.length}`}
+              onPrevious={() => changeVoice(-1)}
+              onNext={() => changeVoice(1)}
+              copy={copy}
+              locale={locale}
+              icon={VoiceIcon}
+              styles={styles}
+            />
+            <View style={styles.cycleDivider} />
+            <CycleSelector
+              title={copy.type}
+              hint={copy.typeHint}
+              value={selectedFont.replace("Rabar_", "Rabar ")}
+              countLabel={`${selectedFontIndex + 1}/${ALL_RABAR_FONTS.length}`}
+              sample={copy.sample}
+              onPrevious={() => changeFont(-1)}
+              onNext={() => changeFont(1)}
+              copy={copy}
+              locale={locale}
+              icon={LanguageSkillIcon}
+              styles={styles}
+              font={selectedFont}
+            />
+          </View>
 
-            <View style={styles.card}>
-              {ALL_RABAR_FONTS.map((font, index) => {
-                const selected = selectedFont === font;
-                return (
-                  <PressableScale
-                    key={font}
-                    onPress={() => setFont(font)}
-                    scaleDown={0.98}
-                    style={[
-                      styles.fontRow,
-                      { flexDirection: isRtl ? "row-reverse" : "row" },
-                      index < ALL_RABAR_FONTS.length - 1 && styles.rowBorder,
-                      selected && styles.fontRowSelected,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.fontRowLeft,
-                        { flexDirection: isRtl ? "row-reverse" : "row" },
-                      ]}
-                    >
-                      {selected ? (
-                        <SelectedMark color={colors.secondary} />
-                      ) : (
-                        <View style={styles.radioEmpty} />
-                      )}
-                      <FontPreviewText
-                        font={font}
-                        style={[
-                          styles.fontPreview,
-                          selected && styles.fontPreviewOn,
-                        ]}
-                      >
-                        {t("settings.previewSample")}
-                      </FontPreviewText>
-                    </View>
-                    <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
-                  </PressableScale>
-                );
-              })}
-            </View>
-
-            {!isKidsMode && ENABLE_ADMIN ? (
-              <>
-                <AppText
-                  style={[styles.sectionLabel, styles.sectionSpaced]}
-                  forceLatinFont
-                >
-                  Content Admin
-                </AppText>
-                <AppText style={styles.sectionHint} forceLatinFont>
-                  Edit units, lessons, and game content without code.
-                </AppText>
-                <PressableScale
-                  onPress={() => router.push("/admin" as any)}
-                  scaleDown={0.98}
-                  style={[
-                    styles.supportRow,
-                    styles.card,
-                    {
-                      marginTop: 0,
-                      flexDirection: isRtl ? "row-reverse" : "row",
-                    },
-                  ]}
-                >
-                  <AppText style={styles.rowLabel} forceLatinFont>
-                    Open admin panel
-                  </AppText>
-                  <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
-                </PressableScale>
-              </>
-            ) : null}
-
-            <AppText
-              style={[styles.sectionLabel, styles.sectionSpaced]}
-              forceKurdishFont={isKu}
-            >
-              {t("settings.legalSection")}
-            </AppText>
-
-            {PRIVACY_POLICY_URL ? (
-              <PressableScale
-                onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
-                scaleDown={0.98}
-                style={[
-                  styles.supportRow,
-                  styles.card,
-                  { marginTop: 0, flexDirection: isRtl ? "row-reverse" : "row" },
-                ]}
-              >
-                <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-                  {isKu ? "سیاسەت (وێب)" : "Privacy (web)"}
-                </AppText>
-                <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
-              </PressableScale>
-            ) : null}
-
-            <View style={[styles.card, { marginTop: 16 }]}>
-              {LEGAL_LINKS.map((link, index) => (
-                <PressableScale
+          <View style={styles.section}>
+            <SectionHeading title={copy.details} locale={locale} styles={styles} />
+            <View style={styles.flatList}>
+              {!isKidsMode && ENABLE_ADMIN ? (
+                <ActionRow
+                  icon={Wrench01Icon}
+                  title={copy.admin}
+                  onPress={() => router.push("/admin" as never)}
+                  locale={locale}
+                  isRtl={isRtl}
+                  styles={styles}
+                />
+              ) : null}
+              {PRIVACY_POLICY_URL ? (
+                <ActionRow
+                  icon={Shield01Icon}
+                  title={copy.privacyWeb}
+                  onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
+                  locale={locale}
+                  isRtl={isRtl}
+                  styles={styles}
+                />
+              ) : null}
+              {LEGAL_LINKS.map((link) => (
+                <ActionRow
                   key={link.route}
+                  icon={Shield01Icon}
+                  title={t(link.labelKey)}
                   onPress={() => router.push(link.route)}
-                  scaleDown={0.98}
-                  style={[
-                    styles.row,
-                    { flexDirection: isRtl ? "row-reverse" : "row" },
-                    index < LEGAL_LINKS.length - 1 && styles.rowBorder,
-                  ]}
-                >
-                  <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-                    {t(link.labelKey)}
-                  </AppText>
-                  <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
-                </PressableScale>
+                  locale={locale}
+                  isRtl={isRtl}
+                  styles={styles}
+                />
               ))}
+              <ActionRow
+                icon={Mail01Icon}
+                title={t("settings.support")}
+                subtitle={SUPPORT_EMAIL}
+                onPress={() => void openMailto(SUPPORT_EMAIL)}
+                locale={locale}
+                isRtl={isRtl}
+                styles={styles}
+                last
+              />
             </View>
+          </View>
 
-            <PressableScale
-              onPress={() => void openMailto(SUPPORT_EMAIL)}
-              scaleDown={0.98}
-              style={[
-                styles.supportRow,
-                styles.card,
-                { flexDirection: isRtl ? "row-reverse" : "row" },
-              ]}
-            >
-              <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
-                <AppText style={styles.rowLabel} forceKurdishFont={isKu}>
-                  {t("settings.support")}
-                </AppText>
-                <Text
-                  style={[
-                    styles.supportEmail,
-                    { textAlign: isRtl ? "right" : "left" },
-                  ]}
-                >
-                  {SUPPORT_EMAIL}
-                </Text>
+          {!isKidsMode ? (
+            <View style={styles.section}>
+              <SectionHeading title={copy.account} locale={locale} styles={styles} />
+              <View style={styles.accountIdentity}>
+                <View style={styles.accountMark}>
+                  <HugeiconsIcon icon={UserIcon} size={20} color={colors.onPrimary} strokeWidth={2.1} />
+                </View>
+                <View style={styles.rowCopy}>
+                  <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                    {user?.email ?? copy.signIn}
+                  </AppText>
+                  <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
+                    {t("settings.version")} {APP_VERSION}
+                  </AppText>
+                </View>
               </View>
-              <RowChevron isRtl={isRtl} color={colors.mutedForeground} />
-            </PressableScale>
 
-            <Text style={styles.versionText}>
-              {t("settings.version")} {APP_VERSION}
-            </Text>
-
-            {!isKidsMode && (
-              <>
-                <AppText
-                  style={[styles.sectionLabel, styles.sectionSpaced]}
-                  forceKurdishFont={isKu}
+              {!user ? (
+                <PressableScale
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.signIn}
+                  onPress={() => router.push("/auth")}
+                  scaleDown={0.97}
+                  style={styles.primaryAction}
                 >
-                  {isKu ? "ئەکاونتەکەت" : "Your Account"}
-                </AppText>
+                  <AppText style={styles.primaryActionText} languageCode={locale} align="center" latinRole="bold">
+                    {copy.signIn}
+                  </AppText>
+                </PressableScale>
+              ) : null}
+
+              <View style={styles.flatList}>
                 {user ? (
                   <>
-                    <PressableScale
-                      onPress={() => {
-                        confirmAction(
-                          isKu ? "چوونەدەرەوە" : "Sign Out",
-                          isKu ? "دڵنیای لە چوونەدەرەوە لە ئەکاونتەکەت؟" : "Are you sure you want to sign out?",
-                          async () => {
-                            try {
-                              await signOut();
-                              router.replace("/more");
-                            } catch {
-                              Alert.alert(
-                                isKu ? "هەڵەیەک ڕوویدا" : "Could not sign out",
-                                isKu ? "تکایە دووبارە هەوڵ بدەرەوە." : "Please try again.",
-                              );
-                            }
-                          },
-                          {
-                            confirmLabel: isKu ? "بچۆ دەرەوە" : "Sign Out",
-                            cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
-                            destructive: true,
-                          },
-                        );
-                      }}
-                      scaleDown={0.98}
-                      style={[styles.signOutBtn, styles.card]}
-                    >
-                      <AppText style={styles.signOutLabel} forceKurdishFont={isKu}>
-                        {isKu ? "چوونەدەرەوە لە ئەکاونت" : "Sign Out"}
-                      </AppText>
-                    </PressableScale>
-
-                    <PressableScale
-                      onPress={() => {
-                        if (isDeletingAccount) return;
-                        confirmAction(
-                          isKu ? "سڕینەوەی ئەکاونت" : "Delete Account",
-                          isKu
-                            ? "هەموو زانیاری و پێشکەوتنە هاوکاتکراوەکانت بە هەمیشەیی دەسڕێتەوە. ئەم کردارە ناگەڕێتەوە."
-                            : "This permanently deletes your account and synced learning progress. This cannot be undone.",
-                          async () => {
-                            setIsDeletingAccount(true);
-                            try {
-                              await deleteAccount();
-                              router.replace("/more");
-                            } catch {
-                              Alert.alert(
-                                isKu ? "ئەکاونتەکە نەسڕایەوە" : "Account not deleted",
-                                isKu
-                                  ? "هیچ شتێک نەگۆڕاوە. تکایە پەیوەندیی ئینتەرنێت بپشکنە و دووبارە هەوڵ بدەرەوە."
-                                  : "Nothing was changed. Check your connection and try again.",
-                              );
-                            } finally {
-                              setIsDeletingAccount(false);
-                            }
-                          },
-                          {
-                            confirmLabel: isKu ? "بە هەمیشەیی بیسڕەوە" : "Delete Permanently",
-                            cancelLabel: isKu ? "پاشگەزبوونەوە" : "Cancel",
-                            destructive: true,
-                          },
-                        );
-                      }}
-                      scaleDown={0.98}
-                      style={[styles.deleteAccountBtn, styles.card]}
-                    >
-                      <AppText style={styles.deleteAccountLabel} forceKurdishFont={isKu}>
-                        {isDeletingAccount
-                          ? isKu ? "لە سڕینەوەدایە..." : "Deleting..."
-                          : isKu ? "سڕینەوەی ئەکاونت" : "Delete Account"}
-                      </AppText>
-                    </PressableScale>
+                    <ActionRow
+                      icon={Logout01Icon}
+                      title={copy.signOut}
+                      onPress={confirmSignOut}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                    />
+                    <ActionRow
+                      icon={Delete02Icon}
+                      title={isDeletingAccount ? copy.deleting : copy.deleteAccount}
+                      onPress={confirmDeleteAccount}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                      destructive
+                    />
                   </>
-                ) : (
-                  <PressableScale
-                    onPress={() => {
-                      router.push("/auth");
-                    }}
-                    scaleDown={0.98}
-                    style={[styles.signInBtn, styles.card]}
-                  >
-                    <AppText style={styles.signInLabel} forceKurdishFont={isKu}>
-                      {isKu ? "چوونەژوورەوە یان تۆماربوون" : "Sign In / Sign Up"}
-                    </AppText>
-                  </PressableScale>
-                )}
-
-                <PressableScale
+                ) : null}
+                <ActionRow
+                  icon={RefreshIcon}
+                  title={copy.replay}
                   onPress={confirmReplayOnboarding}
-                  scaleDown={0.98}
-                  style={[styles.replayBtn, styles.card]}
-                >
-                  <AppText style={styles.replayLabel} forceKurdishFont={isKu}>
-                    {t("settings.replayOnboarding")}
-                  </AppText>
-                </PressableScale>
-
-                <PressableScale
+                  locale={locale}
+                  isRtl={isRtl}
+                  styles={styles}
+                />
+                <ActionRow
+                  icon={RotateLeft01Icon}
+                  title={copy.reset}
                   onPress={confirmReset}
-                  scaleDown={0.98}
-                  style={[styles.resetBtn, styles.card]}
-                >
-                  <AppText style={styles.resetLabel} forceKurdishFont={isKu}>
-                    {t("settings.resetProgress")}
-                  </AppText>
-                </PressableScale>
-              </>
-            )}
-          </GsapEnterBlock>
-        </ScrollView>
+                  locale={locale}
+                  isRtl={isRtl}
+                  styles={styles}
+                  destructive
+                  last
+                />
+              </View>
+            </View>
+          ) : null}
 
-        {/* Blurred Gradient Overlay above Navbar */}
+          <View style={styles.footerRule} />
+          <AppText style={styles.footerText} languageCode="en" align="center" latinRole="bold">
+            TWINO · {APP_VERSION}
+          </AppText>
+        </ScrollView>
         <BottomScrollFade />
       </View>
     </View>
   );
 }
 
-const createStyles = (colors: any) =>
-  StyleSheet.create({
+const stylesStatic = StyleSheet.create({
+  switchTrack: {
+    width: 48,
+    height: 28,
+    borderRadius: 999,
+    justifyContent: "center",
+    flexShrink: 0,
+    ...Platform.select({
+      web: { userSelect: "none", cursor: "pointer" },
+    }),
+  },
+  switchTrackOff: {
+    backgroundColor: "#CBD5E1",
+  },
+  switchPressed: {
+    opacity: 0.8,
+  },
+  switchThumb: {
+    position: "absolute",
+    top: 3,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#0F172A",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.16,
+        shadowRadius: 2,
+      },
+      android: { elevation: 2 },
+      web: { boxShadow: "0 1px 4px rgba(15, 23, 42, 0.2)" },
+    }),
+  },
+  switchThumbOff: { left: 3 },
+  switchThumbOn: { left: 23 },
+});
+
+const createStyles = (colors: any, isDark: boolean) => {
+  const featureBackground = isDark ? colors.surfaceRaised : colors.foreground;
+  const raisedBackground = isDark ? colors.surface : colors.card;
+  const subtleBackground = isDark ? colors.muted : "#F4F6F8";
+
+  return StyleSheet.create({
     root: {
       flex: 1,
       backgroundColor: colors.background,
     },
+    scrollFrame: {
+      flex: 1,
+    },
     header: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 16,
+      gap: 14,
       paddingHorizontal: 20,
-      paddingTop: 14,
-      paddingBottom: 10,
-      backgroundColor: "transparent",
-      marginBottom: 8,
+      paddingBottom: 18,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.background,
     },
     backButton: {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: colors.card,
-      borderWidth: 1.5,
-      borderColor: colors.cardBorder || "rgba(0, 0, 0, 0.05)",
       alignItems: "center",
       justifyContent: "center",
-      ...Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 4,
-        },
-        android: {
-          elevation: 2,
-        },
-        web: {
-          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.04)",
-        },
-      }),
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: raisedBackground,
+    },
+    headerCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
     },
     title: {
-      fontSize: 30,
-      fontWeight: "800",
+      fontSize: 28,
+      lineHeight: 34,
       color: colors.foreground,
-      letterSpacing: -0.8,
-      fontFamily: "DINNextRoundedBold",
+      letterSpacing: -0.5,
     },
-    titleUnderline: {
-      width: 34,
-      height: 4,
-      borderRadius: 999,
-      backgroundColor: colors.primary,
-      marginTop: 6,
-    },
-    sectionLabel: {
+    headerSubtitle: {
       fontSize: 12,
-      fontWeight: "800",
+      lineHeight: 18,
       color: colors.mutedForeground,
-      fontFamily: "DINNextRoundedBold",
-      marginBottom: 8,
-      textTransform: "uppercase",
-      letterSpacing: 1,
     },
-    sectionSpaced: {
-      marginTop: 18,
+    content: {
+      width: "100%",
+      maxWidth: 760,
+      alignSelf: "center",
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      gap: 34,
     },
-    sectionHint: {
-      fontSize: 13,
-      color: colors.mutedForeground,
-      marginBottom: 8,
-      marginTop: -4,
+    featurePanel: {
+      padding: 18,
+      gap: 18,
+      borderRadius: 26,
+      borderCurve: "continuous",
+      backgroundColor: featureBackground,
+      ...Platform.select({
+        web: { boxShadow: isDark ? "none" : "0 16px 40px rgba(15, 23, 42, 0.12)" },
+        ios: {
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: isDark ? 0 : 0.12,
+          shadowRadius: 24,
+        },
+        android: { elevation: isDark ? 0 : 4 },
+      }),
     },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      overflow: "hidden",
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 15,
-      paddingHorizontal: 16,
-    },
-    rowBorder: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
-    },
-    rowLabel: {
-      fontSize: 17,
-      fontWeight: "600",
-      color: colors.foreground,
-      fontFamily: "DINNextRoundedMedium",
-    },
-    rowLabelOn: {
-      color: colors.secondary,
-      fontFamily: "DINNextRoundedBold",
-    },
-    radioEmpty: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      borderWidth: 2,
-      borderColor: colors.border,
-    },
-    toggleCard: {
-      marginTop: 16,
-      backgroundColor: colors.card,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: colors.cardBorder,
-      paddingHorizontal: 16,
-    },
-    toggleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 14,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
-    },
-    toggleRowLast: {
-      borderBottomWidth: 0,
-    },
-    toggleLabel: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: colors.foreground,
-      fontFamily: "DINNextRoundedMedium",
-    },
-    fontRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 14,
-      paddingHorizontal: 14,
-    },
-    fontRowSelected: {
-      backgroundColor: colors.muted,
-    },
-    fontRowLeft: {
+    featureHeader: {
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
+    },
+    featureIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(255,255,255,0.1)",
+    },
+    featureCopy: {
       flex: 1,
+      minWidth: 0,
+      gap: 1,
     },
-    fontPreview: {
-      fontSize: 20,
+    featureTitle: {
+      color: colors.onPrimary,
+      fontSize: 18,
+      lineHeight: 24,
+    },
+    featureHint: {
+      color: isDark ? colors.mutedForeground : "rgba(255,255,255,0.62)",
+      fontSize: 12,
+      lineHeight: 17,
+    },
+    featureMuted: {
+      color: isDark ? colors.mutedForeground : "rgba(255,255,255,0.62)",
+    },
+    themeRail: {
+      flexDirection: "row",
+      gap: 7,
+      padding: 5,
+      borderRadius: 18,
+      borderCurve: "continuous",
+      backgroundColor: "rgba(255,255,255,0.08)",
+    },
+    themeOption: {
+      flex: 1,
+      minHeight: 52,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+    },
+    themeOptionSelected: {
+      backgroundColor: colors.primary,
+    },
+    themeOptionText: {
+      color: isDark ? colors.mutedForeground : "rgba(255,255,255,0.62)",
+      fontSize: 11,
+    },
+    themeOptionTextSelected: {
+      color: colors.onPrimary,
+    },
+    section: {
+      gap: 14,
+    },
+    sectionHeading: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 11,
+    },
+    sectionIndex: {
+      width: 3,
+      minHeight: 38,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+    },
+    sectionHeadingCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      lineHeight: 24,
       color: colors.foreground,
-      textAlign: "right",
-      writingDirection: "rtl",
-      flexShrink: 1,
     },
-    fontPreviewOn: {
-      color: colors.secondary,
+    sectionHint: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.mutedForeground,
     },
-    supportRow: {
+    routeSummary: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
       paddingVertical: 14,
-      paddingHorizontal: 16,
-      marginTop: 16,
-    },
-    supportEmail: {
-      fontSize: 14,
-      color: colors.secondary,
-      marginTop: 4,
-      fontFamily: "DINNextRoundedMedium",
-    },
-    versionText: {
-      fontSize: 13,
-      color: colors.mutedForeground,
-      textAlign: "center",
-      marginTop: 12,
-      fontFamily: "DINNextRoundedMedium",
-    },
-    replayBtn: {
-      marginTop: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      alignItems: "center",
-    },
-    replayLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: colors.secondary,
-      fontFamily: "DINNextRoundedBold",
-    },
-    resetBtn: {
-      marginTop: 10,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      alignItems: "center",
-    },
-    resetLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: colors.error,
-      fontFamily: "DINNextRoundedBold",
-    },
-    signOutBtn: {
-      marginTop: 10,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      alignItems: "center",
-      backgroundColor: colors.card,
-    },
-    signOutLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: colors.error,
-      fontFamily: "DINNextRoundedBold",
-    },
-    deleteAccountBtn: {
-      marginTop: 10,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.error,
-      backgroundColor: "transparent",
-    },
-    deleteAccountLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: colors.error,
-      fontFamily: "DINNextRoundedBold",
-    },
-    signInBtn: {
-      marginTop: 10,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      alignItems: "center",
-      backgroundColor: colors.secondary,
-    },
-    signInLabel: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: "#FFFFFF",
-      fontFamily: "DINNextRoundedBold",
-    },
-    inputField: {
-      height: 48,
-      borderWidth: 1,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
       borderColor: colors.border,
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      fontSize: 16,
-      color: colors.foreground,
-      backgroundColor: colors.card,
     },
-    saveBtn: {
-      backgroundColor: colors.secondary,
-      borderRadius: 14,
-      paddingVertical: 12,
+    routeNode: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    routeLabel: {
+      color: colors.mutedForeground,
+      fontSize: 11,
+    },
+    routeValue: {
+      color: colors.foreground,
+      fontSize: 17,
+      lineHeight: 23,
+    },
+    routeLine: {
+      width: 76,
+      flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
     },
-    saveBtnText: {
-      color: "#FFF",
-      fontWeight: "700",
-      fontSize: 16,
-      fontFamily: "DINNextRoundedBold",
+    routeDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    routeStroke: {
+      width: 34,
+      height: 1,
+      backgroundColor: colors.primary,
+    },
+    choiceGroup: {
+      gap: 8,
+    },
+    choiceLabel: {
+      color: colors.mutedForeground,
+      fontSize: 11,
+    },
+    choiceWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    choiceChip: {
+      minHeight: 44,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      borderCurve: "continuous",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      backgroundColor: subtleBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    choiceChipSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primary,
+    },
+    choiceChipText: {
+      color: colors.foreground,
+      fontSize: 13,
+    },
+    choiceChipTextSelected: {
+      color: colors.onPrimary,
+    },
+    controlGroup: {
+      overflow: "hidden",
+      borderRadius: 20,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: raisedBackground,
+    },
+    controlRow: {
+      minHeight: 66,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    rowIconBox: {
+      width: 38,
+      height: 38,
+      flexShrink: 0,
+      borderRadius: 13,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: subtleBackground,
+    },
+    rowIconDanger: {
+      backgroundColor: isDark ? "rgba(239,68,68,0.12)" : "#FEF2F2",
+    },
+    rowCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    rowTitle: {
+      color: colors.foreground,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    rowSubtitle: {
+      color: colors.mutedForeground,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+    iconColor: { color: colors.foreground },
+    mutedColor: { color: colors.mutedForeground },
+    dangerColor: { color: colors.error },
+    dangerText: { color: colors.error },
+    cycleBlock: {
+      gap: 12,
+    },
+    cycleHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    counter: {
+      minWidth: 40,
+      color: colors.mutedForeground,
+      fontSize: 11,
+      fontVariant: ["tabular-nums"],
+    },
+    cycleDeck: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    cycleArrow: {
+      width: 44,
+      height: 44,
+      flexShrink: 0,
+      borderRadius: 15,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: subtleBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cycleValue: {
+      flex: 1,
+      minWidth: 0,
+      minHeight: 72,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 18,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 2,
+      backgroundColor: subtleBackground,
+    },
+    cycleValueText: {
+      color: colors.foreground,
+      fontSize: 15,
+      lineHeight: 21,
+    },
+    cycleValueTextSmall: {
+      color: colors.mutedForeground,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    fontSample: {
+      color: colors.foreground,
+      fontSize: 21,
+      lineHeight: 29,
+      textAlign: "center",
+      writingDirection: "rtl",
+    },
+    cycleDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    flatList: {
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    actionRow: {
+      minHeight: 64,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingVertical: 11,
+    },
+    accountIdentity: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingBottom: 4,
+    },
+    accountMark: {
+      width: 42,
+      height: 42,
+      borderRadius: 15,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.foreground,
+    },
+    primaryAction: {
+      minHeight: 50,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 18,
+      borderRadius: 16,
+      borderCurve: "continuous",
+      backgroundColor: colors.primary,
+    },
+    primaryActionText: {
+      color: colors.onPrimary,
+      fontSize: 14,
+    },
+    footerRule: {
+      width: 36,
+      height: 3,
+      alignSelf: "center",
+      borderRadius: 999,
+      backgroundColor: colors.border,
+    },
+    footerText: {
+      color: colors.mutedForeground,
+      fontSize: 10,
+      letterSpacing: 1.2,
     },
   });
+};

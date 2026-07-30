@@ -9,7 +9,6 @@ import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
 import {
   HomeLiquidButton,
   HomeLiquidCard,
-  HomeLiquidPill,
   HomeMeshBackground,
   HomeType,
 } from "../../components/ui/ios-liquid-home";
@@ -20,7 +19,7 @@ import { useTTS } from "../../hooks/use-tts";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -482,9 +481,9 @@ export function RolePlayScreen() {
 
         {/* Header */}
         <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-          <HomeLiquidPill onPress={() => { stopAll(); safeBack(); }} size={44}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
-          </HomeLiquidPill>
+          <PressableScale onPress={() => { stopAll(); safeBack(); }} style={st.headerButton} scaleDown={0.94}>
+            <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} />
+          </PressableScale>
           <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
             <RolePlayGameIcon size={36} />
             <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
@@ -602,9 +601,9 @@ export function RolePlayScreen() {
 
       {/* Session Header */}
       <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-        <HomeLiquidPill onPress={() => { stopAll(); safeBack(); }} size={44}>
-          <HugeiconsIcon icon={ArrowLeft01Icon as any} size={20} color={colors.foreground} strokeWidth={2.5} style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }} />
-        </HomeLiquidPill>
+        <PressableScale onPress={() => { stopAll(); safeBack(); }} style={st.headerButton} scaleDown={0.94}>
+          <HugeiconsIcon icon={(isRtl ? ArrowRight01Icon : ArrowLeft01Icon) as any} size={20} color={colors.foreground} strokeWidth={2.5} />
+        </PressableScale>
 
         {/* Active scenario chip */}
         <PressableScale onPress={resetSession} scaleDown={0.95}>
@@ -616,9 +615,9 @@ export function RolePlayScreen() {
           </View>
         </PressableScale>
 
-        <HomeLiquidPill onPress={resetSession} size={44}>
+        <PressableScale onPress={resetSession} style={st.headerButton} scaleDown={0.94}>
           <HugeiconsIcon icon={RotateLeft01Icon as any} size={20} color={colors.foreground} strokeWidth={2.5} />
-        </HomeLiquidPill>
+        </PressableScale>
       </View>
 
       {/* Animated Voice Orb */}
@@ -717,6 +716,16 @@ function createStyles(colors: any, isDark: boolean) {
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 10,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   headerCenter: {
     flexDirection: "row",

@@ -1,11 +1,4 @@
-import {
-  AppAwardIcon,
-  AppBookIcon,
-  AppFireIcon,
-  AppTargetIcon,
-} from "../../../components/icons/AppHugeIcons";
 import { AppText } from "../../../components/ui/AppText";
-import { TwinoBrandMark } from "../../../components/branding/twino-brand-mark";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
@@ -21,8 +14,6 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Wallet02Icon } from "@hugeicons/core-free-icons";
 import { router } from "expo-router";
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
@@ -31,8 +22,8 @@ import { useCreditBalance } from "../../../hooks/useCreditBalance";
 type StatItem = {
   key: string;
   label: string;
+  shortLabel: string;
   value: string;
-  icon: React.ReactNode;
 };
 
 export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
@@ -48,7 +39,6 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const isRtl = isKu || isAr;
   const mobileWeb = Platform.OS === "web" && width < 768;
   const compact = width < 370 || mobileWeb;
-  const iconSize = mobileWeb ? 22 : compact ? 26 : 29;
 
   const completedLessons =
     pathMode === "normal"
@@ -62,37 +52,29 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
       {
         key: "xp",
         label: t("games.xpEarned"),
+        shortLabel: "XP",
         value: totalXp.toLocaleString(),
-        icon: (
-          <AppAwardIcon size={iconSize} duotone={false} strokeWidth={2.65} />
-        ),
       },
       {
         key: "streak",
         label: t("games.dayStreak"),
+        shortLabel: isKu ? "ڕۆژ" : isAr ? "يوم" : "Streak",
         value: streakDays.toLocaleString(),
-        icon: (
-          <AppFireIcon size={iconSize} duotone={false} strokeWidth={2.65} />
-        ),
       },
       {
         key: "goal",
         label: t("home.dailyGoal"),
+        shortLabel: isKu ? "ئامانج" : isAr ? "هدف" : "Goal",
         value: `${dailyXp}/${dailyGoalXp}`,
-        icon: (
-          <AppTargetIcon size={iconSize} duotone={false} strokeWidth={2.65} />
-        ),
       },
       {
         key: "lessons",
         label: t("home.lessonsComplete"),
+        shortLabel: isKu ? "وانە" : isAr ? "درس" : "Lessons",
         value: completedLessons.toLocaleString(),
-        icon: (
-          <AppBookIcon size={iconSize} duotone={false} strokeWidth={2.65} />
-        ),
       },
     ],
-    [completedLessons, dailyGoalXp, dailyXp, iconSize, streakDays, t, totalXp],
+    [completedLessons, dailyGoalXp, dailyXp, isAr, isKu, streakDays, t, totalXp],
   );
 
   const styles = useMemo(
@@ -112,33 +94,34 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
           { flexDirection: isRtl ? "row-reverse" : "row" },
         ]}
       >
-        <TwinoBrandMark size={34} showName nameSize={20} style={styles.brand} />
+        <AppText style={styles.brand} forceLatinFont latinRole="bold" numberOfLines={1}>
+          twino
+        </AppText>
         <Pressable
           onPress={() => router.push("/subscription")}
           accessibilityRole="button"
           accessibilityLabel={
             creditBalance === null
-              ? "View TWINO credit packs"
-              : `TWINO credits: ${creditBalance}. View credit packs`
+              ? isKu
+                ? "پاکەتەکانی کرێدیتی TWINO ببینە"
+                : "View TWINO credit packs"
+              : isKu
+                ? `کرێدیتی TWINO: ${creditBalance}. پاکەتەکان ببینە`
+                : `TWINO credits: ${creditBalance}. View credit packs`
           }
           style={({ pressed }) => [
             styles.creditBadge,
             pressed && styles.creditBadgePressed,
           ]}
         >
-          <HugeiconsIcon
-            icon={Wallet02Icon}
-            size={17}
-            color="#168BD2"
-            strokeWidth={2.5}
-          />
           <AppText
             style={styles.creditValue}
-            forceLatinFont
+            forceKurdishFont={isKu}
+            forceLatinFont={!isKu}
             latinRole="bold"
             numberOfLines={1}
           >
-            Packs
+            {isKu ? "پاکەتەکان" : "Packs"}
           </AppText>
         </Pressable>
       </View>
@@ -156,16 +139,16 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
             ]}
             accessibilityLabel={`${item.label}: ${item.value}`}
           >
-            {item.icon}
             <AppText
               style={styles.value}
-              forceLatinFont
+              forceKurdishFont={isKu}
+              forceLatinFont={!isRtl}
               latinRole="bold"
               numberOfLines={1}
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
+              minimumFontScale={0.68}
             >
-              {item.value}
+              {`${item.shortLabel} ${item.value}`}
             </AppText>
           </View>
         ))}
@@ -195,13 +178,17 @@ function createStyles(
     },
     brand: {
       flexShrink: 1,
+      color: colors.foreground,
+      fontSize: 22,
+      lineHeight: 28,
+      fontWeight: "900",
+      letterSpacing: -0.7,
     },
     creditBadge: {
       minHeight: 34,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 6,
       borderWidth: 1,
       borderColor: isDark ? "rgba(69,180,240,0.3)" : "#CDEBFA",
       borderRadius: 11,
@@ -233,7 +220,7 @@ function createStyles(
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: mobileWeb ? 2 : compact ? 3 : 5,
+      gap: 0,
       paddingHorizontal: compact ? 2 : 6,
     },
     divider: {
@@ -249,7 +236,7 @@ function createStyles(
       minWidth: 0,
       flexShrink: 1,
       color: colors.foreground,
-      fontSize: mobileWeb ? 12 : compact ? 13 : 14,
+      fontSize: mobileWeb ? 11 : compact ? 11.5 : 12.5,
       lineHeight: mobileWeb ? 16 : 18,
       fontWeight: "800",
       fontVariant: ["tabular-nums"],

@@ -20,6 +20,7 @@ import {
 } from "../data/voice-tutor-types";
 import { WORD_BANKS } from "../data/voice-tutor-word-banks";
 import { computeSessionAnalysis } from "../services/voice-tutor-analysis-engine";
+import { mergeStreamingTranscript } from "../utils/streaming-transcript";
 
 export type LiveTutorStatus =
   | "idle"
@@ -214,15 +215,11 @@ export function useGeminiLiveTutor() {
   }, []);
 
   const appendAiText = useCallback((text: string) => {
-    const next = text.trimStart();
-    if (!next) return;
-
     const current = aiTurnTextRef.current;
-    if (next === current || current.endsWith(next)) {
-      return;
-    }
+    const merged = mergeStreamingTranscript(current, text);
+    if (merged === current) return;
 
-    aiTurnTextRef.current = next.startsWith(current) ? next : current + next;
+    aiTurnTextRef.current = merged;
     if (transcriptFlushRef.current) {
       clearTimeout(transcriptFlushRef.current);
     }

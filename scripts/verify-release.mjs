@@ -140,7 +140,13 @@ if (appJson.expo?.plugins) {
 }
 
 const androidPermissions = appJson.expo?.android?.permissions ?? [];
+const androidBlockedPermissions = appJson.expo?.android?.blockedPermissions ?? [];
 for (const unnecessaryPermission of [
+  "android.permission.READ_EXTERNAL_STORAGE",
+  "android.permission.READ_MEDIA_IMAGES",
+  "android.permission.READ_MEDIA_VIDEO",
+  "android.permission.READ_MEDIA_AUDIO",
+  "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
   "android.permission.WRITE_EXTERNAL_STORAGE",
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.FOREGROUND_SERVICE",
@@ -148,6 +154,9 @@ for (const unnecessaryPermission of [
 ]) {
   if (androidPermissions.includes(unnecessaryPermission)) {
     fail(`Unnecessary Android permission declared: ${unnecessaryPermission}`);
+  }
+  if (!androidBlockedPermissions.includes(unnecessaryPermission)) {
+    fail(`Unnecessary Android permission must be blocked: ${unnecessaryPermission}`);
   }
 }
 if (
@@ -157,6 +166,26 @@ if (
   fail("Speaking practice Android audio permissions are incomplete");
 } else {
   ok("Android permissions are limited to speaking-practice audio");
+}
+
+const profileScreen = read("src/screens/profile/ProfileScreen.tsx");
+if (!profileScreen.includes('Platform.OS === "ios"')) {
+  fail("Profile photo picker must avoid broad Android media-library permission requests");
+} else {
+  ok("Profile photo picker uses Android scoped system selection");
+}
+
+const onboardingStore = read("src/stores/useOnboardingStore.ts");
+const onboardingFlow = read("src/screens/onboarding/OnboardingFlow.tsx");
+if (!onboardingStore.includes('savedOnboardingValue === "true"')) {
+  fail("First native install must not skip onboarding when the completion key is missing");
+} else {
+  ok("First install requires an explicit onboarding completion marker");
+}
+for (const scene of ["welcome", "practice", "progress"]) {
+  if (!onboardingFlow.includes(`"${scene}"`)) {
+    fail(`Onboarding flow is missing the ${scene} hero scene`);
+  }
 }
 
 const audioPlugin = appJson.expo?.plugins?.find(
@@ -359,7 +388,8 @@ const deleteAccountConfig = supabaseConfig.match(
 )?.[1] ?? "";
 if (
   !authContext.includes('functions.invoke("delete-account")') ||
-  !settingsScreen.includes("Delete Account") ||
+  !settingsScreen.includes("await deleteAccount()") ||
+  !settingsScreen.includes("onPress={confirmDeleteAccount}") ||
   !deleteAccountFunction.includes('withSupabase(\n  { auth: "user" }') ||
   !deleteAccountFunction.includes("ctx.userClaims?.id") ||
   !deleteAccountFunction.includes('storage.from("avatars")') ||
@@ -370,7 +400,6 @@ if (
   ok("In-app account deletion uses the verified caller identity");
 }
 
-const profileScreen = read("src/screens/profile/ProfileScreen.tsx");
 if (
   !profileScreen.includes("MAX_AVATAR_BYTES") ||
   !profileScreen.includes('const filePath = `${user.id}/avatar`') ||

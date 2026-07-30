@@ -1,21 +1,39 @@
 ---
-# Automate the 5 welcome slide screens by clicking the Next / Get Started buttons
+# Intro story: three slides, then the six-step learner setup.
 - tapOn:
-    accessibilityLabel: "Next"
+    id: "onboarding-continue"
 - tapOn:
-    accessibilityLabel: "Next"
+    id: "onboarding-continue"
 - tapOn:
-    accessibilityLabel: "Next"
-- tapOn:
-    accessibilityLabel: "Next"
-- tapOn:
-    accessibilityLabel: "Get Started"
+    id: "onboarding-continue"
 
-# Select Native Language
-- tapOn: "Kurdish (Sorani)"
+- tapOn:
+    id: "onboarding-language-ku"
+- tapOn:
+    id: "onboarding-continue"
 
-# Select Target Language
-- tapOn: "English"
+- tapOn:
+    id: "onboarding-language-en"
+- tapOn:
+    id: "onboarding-continue"
 
-# Complete onboarding
-- tapOn: "Start learning"
+- tapOn:
+    id: "onboarding-name"
+- inputText: "Test User"
+- tapOn:
+    id: "onboarding-continue"
+
+- tapOn:
+    id: "onboarding-level-2"
+- tapOn:
+    id: "onboarding-continue"
+
+- tapOn:
+    id: "onboarding-goal-conversations"
+- tapOn:
+    id: "onboarding-continue"
+
+- tapOn:
+    id: "onboarding-mascot-pingo"
+- tapOn:
+    id: "onboarding-finish"

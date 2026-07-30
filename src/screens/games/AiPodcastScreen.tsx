@@ -7,7 +7,7 @@ import { crossShadow } from "../../utils/shadows";
 import { canStartPodcastPlayback } from "../../utils/podcast-playback";
 import * as Haptics from "expo-haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon, VolumeMuteIcon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon, PlayIcon, PauseIcon, BackwardIcon, ForwardIcon, VolumeHighIcon, VolumeMuteIcon } from "@hugeicons/core-free-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Platform,
@@ -321,9 +321,12 @@ export function AiPodcastScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16, flexDirection: "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
-          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="#0F1A30" />
-          </View>
+          <HugeiconsIcon
+            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+            size={22}
+            color={colors.foreground}
+            strokeWidth={2.4}
+          />
         </PressableScale>
         <AppText style={styles.headerTitle} languageCode={isKu ? "ku" : "en"} align="center">
           {isKu ? "پۆدکاستەکان" : "Podcasts"}

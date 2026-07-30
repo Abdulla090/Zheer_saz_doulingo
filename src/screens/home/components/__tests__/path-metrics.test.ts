@@ -5,31 +5,31 @@ import { getPathMetrics } from "../path-metrics";
 describe("path node metrics", () => {
   it("uses smaller nodes and rows on compact web layouts", () => {
     expect(getPathMetrics("street", true)).toEqual({
-      lessonButtonSize: 56,
-      slotHeight: 78,
+      lessonButtonSize: 46,
+      slotHeight: 74,
     });
     expect(getPathMetrics("normal", true)).toEqual({
-      lessonButtonSize: 60,
-      slotHeight: 82,
+      lessonButtonSize: 50,
+      slotHeight: 78,
     });
     expect(getPathMetrics("kids", true)).toEqual({
-      lessonButtonSize: 58,
-      slotHeight: 80,
+      lessonButtonSize: 48,
+      slotHeight: 76,
     });
   });
 
   it("uses slightly smaller native and desktop metrics", () => {
     expect(getPathMetrics("street")).toEqual({
-      lessonButtonSize: 70,
-      slotHeight: 98,
+      lessonButtonSize: 54,
+      slotHeight: 88,
     });
     expect(getPathMetrics("normal")).toEqual({
-      lessonButtonSize: 76,
-      slotHeight: 104,
+      lessonButtonSize: 58,
+      slotHeight: 92,
     });
     expect(getPathMetrics("kids")).toEqual({
-      lessonButtonSize: 72,
-      slotHeight: 100,
+      lessonButtonSize: 56,
+      slotHeight: 90,
     });
   });
 });

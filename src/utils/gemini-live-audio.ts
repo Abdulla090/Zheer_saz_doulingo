@@ -286,14 +286,31 @@ export class LivePcmPlayer {
 
       if (existingPlaylist) {
         const appendedIndex = playlist.trackCount;
-        const queueWasActive =
-          playlist.playing || playlist.isBuffering || this.paused;
+        const previousStatus = this.lastStatus;
+        const previousTrackReallyFinished =
+          previousStatus?.isLoaded === true &&
+          previousStatus?.playing !== true &&
+          previousStatus?.isBuffering !== true &&
+          previousStatus?.trackCount === appendedIndex &&
+          previousStatus?.currentIndex >= appendedIndex - 1 &&
+          (previousStatus?.didJustFinish === true ||
+            (previousStatus?.duration > 0 &&
+              previousStatus.currentTime >= previousStatus.duration - 0.03));
         // The native Android bridge expects the record form even though the
         // public AudioSource type also permits a bare string.
         playlist.add({ uri });
-        if (!queueWasActive) {
+
+        // A non-playing playlist is not necessarily finished: while the first
+        // source is loading, or during a native transition between sources,
+        // skipTo() would discard valid speech at the start/end of the turn.
+        // Only advance explicitly when the last known source truly completed.
+        if (previousTrackReallyFinished) {
           playlist.skipTo(appendedIndex);
         }
+
+        // The old status describes a shorter playlist and must never be used
+        // to declare this newly-extended queue drained.
+        this.lastStatus = null;
       }
       this.requestPlayback();
     } catch (error) {
@@ -303,6 +320,10 @@ export class LivePcmPlayer {
 
   private markQueueActive() {
     this.queueDrained = false;
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     if (!this.playing) {
       this.playing = true;
       this.onPlayingStateChange?.(true);
@@ -348,6 +369,9 @@ export class LivePcmPlayer {
     }
 
     const currentStatus = status ?? this.lastStatus;
+    if (!currentStatus || currentStatus.trackCount !== playlist.trackCount) {
+      return;
+    }
     const isLastTrack =
       currentStatus?.trackCount > 0 &&
       currentStatus.currentIndex >= currentStatus.trackCount - 1;

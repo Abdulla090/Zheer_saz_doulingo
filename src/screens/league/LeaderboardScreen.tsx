@@ -169,8 +169,13 @@ export const LeaderboardScreen = () => {
             >
               {isMe && localUserName ? localUserName : item.name}
             </AppText>
-            <AppText style={styles.level} forceLatinFont>
-              Level {level}
+            <AppText
+              style={styles.level}
+              languageCode={locale}
+              forceKurdishFont={isKu}
+              forceLatinFont={!isKu}
+            >
+              {isKu ? `ئاست ${level}` : `Level ${level}`}
             </AppText>
           </View>
           <View style={styles.xp}>
@@ -189,16 +194,31 @@ export const LeaderboardScreen = () => {
     );
   };
 
+  const subtitle = isKu
+    ? "فێرخوازە ڕاستەقینەکان بە کۆی XP ڕیزبەندی کراون"
+    : "Real learners ranked by total XP";
   const emptyTitle = loadFailed
-    ? "Leaderboard unavailable"
+    ? isKu
+      ? "پلەبەندی بەردەست نییە"
+      : "Leaderboard unavailable"
     : user
-      ? "Be the first learner here"
-      : "Sign in to join the leaderboard";
+      ? isKu
+        ? "یەکەم فێرخواز بە"
+        : "Be the first learner here"
+      : isKu
+        ? "بچۆ ژوورەوە بۆ بەشداریکردن لە پلەبەندی"
+        : "Sign in to join the leaderboard";
   const emptyBody = loadFailed
-    ? "Pull down to try again."
+    ? isKu
+      ? "بۆ هەوڵدانەوە ڕابکێشە."
+      : "Pull down to try again."
     : user
-      ? "Complete a lesson to earn XP and start the ranking."
-      : "Your real XP and profile pet will appear after you sign in.";
+      ? isKu
+        ? "وانەیەک تەواو بکە بۆ بەدەستهێنانی XP و دەستپێکردنی پلەبەندی."
+        : "Complete a lesson to earn XP and start the ranking."
+      : isKu
+        ? "دوای چوونەژوورەوە XP و ئاژەڵەکەی پرۆفایلەکەت دەردەکەون."
+        : "Your real XP and profile pet will appear after you sign in.";
 
   return (
     <View style={styles.root}>
@@ -228,7 +248,7 @@ export const LeaderboardScreen = () => {
               languageCode={locale}
               align="start"
             >
-              Real learners ranked by total XP
+              {subtitle}
             </AppText>
           </View>
         </View>

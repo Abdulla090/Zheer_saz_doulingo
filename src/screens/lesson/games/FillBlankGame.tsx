@@ -16,6 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { AppText } from "../../../components/ui/AppText";
 import { DirectionalView } from "../../../components/ui/Directional";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -86,6 +87,7 @@ type Props = {
 
 export default function FillBlankGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
   const { t } = useI18n();
+  const { colors, isDark } = useThemeColors();
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -217,7 +219,9 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         : L.red
       : selected || flySession
         ? L.blue
-        : L.slotDash;
+        : isDark
+          ? colors.border
+          : L.slotDash;
 
   const kidsBadgeText = pathMode === "kids" && questionIndex !== undefined && totalQuestions !== undefined
     ? `EXERCISE ${questionIndex + 1} OF ${totalQuestions}`
@@ -246,6 +250,8 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         label={t("lessons.questionLabel")}
         forceKurdishFont
         contentLanguageCode={question.sourceLanguage}
+        speechText={`${question.sentenceParts[0] ?? ""} ${question.correctAnswer} ${question.sentenceParts[1] ?? ""}`}
+        speechLanguageCode={question.targetLanguage ?? "en"}
         variant={pathMode === "kids" ? "kids" : "default"}
       >
         {question.kurdishHint}
@@ -256,7 +262,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
           <Animated.View layout={layoutSmooth} style={s.sentenceRow}>
             <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.sentenceLeadRow}>
               {question.sentenceParts[0] ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={s.sentenceText}>
+                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, { color: colors.foreground }]}>
                   {question.sentenceParts[0].trimEnd()}{" "}
                 </AppText>
               ) : null}
@@ -288,13 +294,25 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                     />
                   </Animated.View>
                 ) : (
-                  <View style={[s.emptySlot, { borderColor: blankBorder }]}>
-                    <AppText languageCode={question.targetLanguage} align="center" style={s.blankPlaceholder}>____</AppText>
+                  <View style={[
+                    s.emptySlot,
+                    {
+                      borderColor: blankBorder,
+                      backgroundColor: isDark ? colors.muted : L.bgSoft,
+                    },
+                  ]}>
+                    <AppText
+                      languageCode={question.targetLanguage}
+                      align="center"
+                      style={[s.blankPlaceholder, { color: colors.mutedForeground }]}
+                    >
+                      ____
+                    </AppText>
                   </View>
                 )}
               </Animated.View>
               {question.sentenceParts[1] ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText]}>
+                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText, { color: colors.foreground }]}>
                   {question.sentenceParts[1].trimStart()}
                 </AppText>
               ) : null}

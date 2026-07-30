@@ -13,6 +13,7 @@ import { LightGameHeading, LightCheckButton } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
 import { useI18n } from "../../../hooks/useI18n";
 import { ltrText } from "./game-text";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 type Props = {
   question: ParagraphSpeechQuestion;
@@ -68,6 +69,7 @@ function evaluateSpeechLocally(transcript: string, paragraphs: string[]): Paragr
 }
 
 export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
+  const { colors, isDark } = useThemeColors();
   const { t } = useI18n();
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
@@ -186,7 +188,12 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const renderText = () => {
     if (!evaluation) {
       return (
-        <AppText languageCode={question.targetLanguage} align="start" fullWidth style={styles.paragraphText}>
+        <AppText
+          languageCode={question.targetLanguage}
+          align="start"
+          fullWidth
+          style={[styles.paragraphText, { color: colors.foreground }]}
+        >
           {fullText}
         </AppText>
       );
@@ -257,7 +264,7 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
       </GameHeader>
 
       <View 
-        style={styles.teleprompterContainer}
+        style={[styles.teleprompterContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}
         onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
       >
         {state === "listening" ? (
@@ -273,8 +280,14 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
             {containerContent}
           </ScrollView>
         )}
-        <View style={styles.gradientOverlayTop} pointerEvents="none" />
-        <View style={styles.gradientOverlayBottom} pointerEvents="none" />
+        <View
+          style={[styles.gradientOverlayTop, { backgroundColor: isDark ? "rgba(22,32,51,0.86)" : "rgba(248,250,252,0.8)" }]}
+          pointerEvents="none"
+        />
+        <View
+          style={[styles.gradientOverlayBottom, { backgroundColor: isDark ? "rgba(22,32,51,0.86)" : "rgba(248,250,252,0.8)" }]}
+          pointerEvents="none"
+        />
       </View>
 
       <View style={styles.micStage}>
@@ -301,7 +314,7 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
         </GameFooter>
       ) : (
         <GameFooter delay={120}>
-          <AppText style={styles.skipLink} onPress={() => onAnswer("skip")}>
+          <AppText style={[styles.skipLink, { color: colors.mutedForeground }]} onPress={() => onAnswer("skip")}>
             {t("lessons.skipForNow")}
           </AppText>
         </GameFooter>

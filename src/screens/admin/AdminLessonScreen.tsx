@@ -10,6 +10,7 @@ import {
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -45,6 +46,7 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 export default function AdminLessonScreen() {
+  const styles = useAdminLessonStyles();
   const params = useLocalSearchParams<{ mode?: string; unit?: string; lesson?: string }>();
   const mode = (params.mode === "normal" ? "normal" : "street") as LessonPathMode;
   const unitIndex = Math.max(0, Number(params.unit ?? 0));
@@ -83,6 +85,7 @@ function AdminLessonEditor({
   lessonIndex: number;
   initialLesson: LessonBank;
 }) {
+  const styles = useAdminLessonStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const safeBack = useSafeBack("/admin");
@@ -324,6 +327,7 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1): T[] {
 }
 
 function WordEditor({ lesson, setLesson, showPreview }: EditorProps) {
+  const styles = useAdminLessonStyles();
   return (
     <>
       <AdminButton
@@ -416,6 +420,7 @@ function WordEditor({ lesson, setLesson, showPreview }: EditorProps) {
 }
 
 function VoiceEditor({ lesson, setLesson, showPreview }: EditorProps) {
+  const styles = useAdminLessonStyles();
   return (
     <>
       <AdminButton
@@ -521,6 +526,7 @@ function VoiceEditor({ lesson, setLesson, showPreview }: EditorProps) {
 }
 
 function SentenceEditor({ lesson, setLesson, showPreview }: EditorProps) {
+  const styles = useAdminLessonStyles();
   return (
     <>
       <AdminButton
@@ -624,6 +630,7 @@ function SentenceEditor({ lesson, setLesson, showPreview }: EditorProps) {
 }
 
 function FillBlankEditor({ lesson, setLesson, showPreview }: EditorProps) {
+  const styles = useAdminLessonStyles();
   return (
     <>
       <AdminButton
@@ -778,6 +785,7 @@ function FillBlankEditor({ lesson, setLesson, showPreview }: EditorProps) {
 }
 
 function ConversationEditor({ lesson, setLesson, showPreview }: EditorProps) {
+  const styles = useAdminLessonStyles();
   return (
     <>
       <AppText style={styles.hint} forceLatinFont>
@@ -893,8 +901,14 @@ function ConversationEditor({ lesson, setLesson, showPreview }: EditorProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F4F7FF" },
+function useAdminLessonStyles() {
+  const { colors } = useThemeColors();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors: any) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -903,28 +917,29 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerText: { flex: 1 },
-  title: { fontSize: 17, fontWeight: "800", color: "#152238" },
+  title: { fontSize: 17, fontWeight: "800", color: colors.foreground },
   dirty: { fontSize: 11, color: "#F59E0B", fontWeight: "700" },
   tabBar: { maxHeight: 48, marginBottom: 4 },
   tabBarContent: { paddingHorizontal: 12, gap: 6, alignItems: "center" },
   scroll: { padding: 16, paddingBottom: 48 },
   previewRow: {
     borderBottomWidth: 1,
-    borderBottomColor: "#E8EDFF",
+    borderBottomColor: colors.border,
     paddingVertical: 10,
     gap: 4,
   },
   previewHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   previewText: { flex: 1 },
   previewType: { fontWeight: "800", color: "#2B59F3", fontSize: 13 },
-  previewDetail: { color: "#64748B", fontSize: 12 },
-  hint: { fontSize: 12, color: "#64748B", marginBottom: 12 },
+  previewDetail: { color: colors.mutedForeground, fontSize: 12 },
+  hint: { fontSize: 12, color: colors.mutedForeground, marginBottom: 12 },
   inlinePreviewText: {
     fontSize: 14,
-    color: "#152238",
+    color: colors.foreground,
     lineHeight: 22,
     marginBottom: 8,
   },
   itemActions: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
-});
+  });
+}

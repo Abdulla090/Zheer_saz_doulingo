@@ -4,6 +4,7 @@ import { AppText } from "../../../components/ui/AppText";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import type { SelectedPathLesson } from "../../../hooks/use-path-lesson-selection";
 import { useI18n } from "../../../hooks/useI18n";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -52,6 +53,7 @@ export function PathLessonPopup({
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
+  const { colors: themeColors, isDark } = useThemeColors();
   const [popupHeight, setPopupHeight] = useState(195);
 
   if (!selection) return null;
@@ -61,9 +63,17 @@ export function PathLessonPopup({
   const isRtl = isKu || isAr;
   const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;
-  const colors = SVG_BUTTON_COLOR_SETS[popupVariant(selection)];
-  const popupFace = isLocked ? LOCKED_POPUP_FACE : colors.face;
-  const popupRim = isLocked ? LOCKED_POPUP_RIM : colors.rim;
+  const variantColors = SVG_BUTTON_COLOR_SETS[popupVariant(selection)];
+  const popupFace = isLocked
+    ? isDark
+      ? LOCKED_POPUP_FACE
+      : "#E2E8F0"
+    : themeColors.surfaceRaised;
+  const popupRim = isLocked
+    ? isDark
+      ? LOCKED_POPUP_RIM
+      : "#94A3B8"
+    : variantColors.rim;
   const isDesktopWeb =
     Platform.OS === "web" && isDesktopWebWidth(windowWidth);
   const fallbackViewportWidth = isDesktopWeb
@@ -147,7 +157,7 @@ export function PathLessonPopup({
             width: popupWidth,
             left: popupLeft,
             backgroundColor: popupFace,
-            borderColor: isLocked ? "#64748B" : "rgba(255,255,255,0.28)",
+            borderColor: isLocked ? themeColors.border : `${variantColors.face}80`,
             borderBottomColor: popupRim,
           },
           popupTop != null
@@ -162,7 +172,10 @@ export function PathLessonPopup({
             style={[
               placeAbove ? styles.caretBottom : styles.caretTop,
               {
-                left: caretLeft,
+                // Keep this in physical screen coordinates. On native RTL,
+                // React Native can swap an absolute `left` value a second time,
+                // which points at the English-side node instead of the tapped one.
+                transform: [{ translateX: caretLeft }],
                 [placeAbove ? "borderTopColor" : "borderBottomColor"]: popupFace,
               },
             ]}
@@ -183,28 +196,34 @@ export function PathLessonPopup({
             <AppText
               style={[
                 styles.title,
-                isLocked && styles.lockedTitle,
                 {
+                  color: themeColors.foreground,
                   textAlign: isRtl ? "right" : "left",
                   writingDirection: isRtl ? "rtl" : "ltr",
                 },
               ]}
               forceKurdishFont={isKu}
               forceLatinFont={!isKu}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
             >
               {sectionTitle || `${t("path.unitShort")} ${unitNumber}`}
             </AppText>
             <AppText
               style={[
                 styles.meta,
-                isLocked && styles.lockedMeta,
                 {
+                  color: themeColors.mutedForeground,
                   textAlign: isRtl ? "right" : "left",
                   writingDirection: isRtl ? "rtl" : "ltr",
                 },
               ]}
               forceKurdishFont={isKu}
               forceLatinFont={!isKu}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.82}
             >
               {`${t("path.unitShort")} ${unitNumber}  ·  ${t("path.lessonShort")} ${lessonNumber}`}
             </AppText>
@@ -214,12 +233,12 @@ export function PathLessonPopup({
             accessibilityRole="button"
             accessibilityLabel={t("slang.close")}
             hitSlop={10}
-            style={styles.closeButton}
+            style={[styles.closeButton, { backgroundColor: themeColors.muted }]}
           >
             <HugeiconsIcon
               icon={Cancel01Icon}
               size={19}
-              color="#FFFFFF"
+              color={themeColors.foreground}
               strokeWidth={2.4}
             />
           </Pressable>
@@ -277,6 +296,7 @@ const styles = StyleSheet.create({
   },
   caretTop: {
     position: "absolute",
+    left: 0,
     top: -10,
     width: 0,
     height: 0,
@@ -288,6 +308,7 @@ const styles = StyleSheet.create({
   },
   caretBottom: {
     position: "absolute",
+    left: 0,
     bottom: -10,
     width: 0,
     height: 0,
@@ -308,23 +329,15 @@ const styles = StyleSheet.create({
   },
   title: {
     width: "100%",
-    color: "#FFFFFF",
     fontSize: 19,
     lineHeight: 24,
     fontWeight: "800",
   },
   meta: {
     width: "100%",
-    color: "rgba(255,255,255,0.78)",
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "700",
-  },
-  lockedTitle: {
-    color: "#FFFFFF",
-  },
-  lockedMeta: {
-    color: "#E2E8F0",
   },
   closeButton: {
     width: 38,

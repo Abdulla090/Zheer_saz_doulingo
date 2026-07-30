@@ -235,14 +235,20 @@ export function NormalEnglishPathScreen({
               fontSize: 16,
               fontFamily: "DINNextRoundedBold",
             }}
-            forceLatinFont
+            languageCode={locale}
+            forceKurdishFont={locale === "ku"}
+            forceLatinFont={locale !== "ku" && locale !== "ar"}
           >
-            See More Units
+            {locale === "ku"
+              ? "یەکەی زیاتر ببینە"
+              : locale === "ar"
+                ? "عرض وحدات إضافية"
+                : "See More Units"}
           </AppText>
         </PressableScale>
       </View>
     );
-  }, [hasMore]);
+  }, [hasMore, locale]);
 
   usePathScrollAfterLesson("normal", localizedSections, listRef);
 

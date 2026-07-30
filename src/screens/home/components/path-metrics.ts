@@ -1,11 +1,11 @@
 import type { LessonPathMode } from "../../../data/lesson-content";
 
-const STREET_LESSON_BUTTON_SIZE = 70;
-const NORMAL_LESSON_BUTTON_SIZE = 76;
-const KIDS_LESSON_BUTTON_SIZE = 72;
-const ITEM_SLOT_HEIGHT = 98;
-const NORMAL_ITEM_SLOT_HEIGHT = 104;
-const KIDS_ITEM_SLOT_HEIGHT = 100;
+const STREET_LESSON_BUTTON_SIZE = 54;
+const NORMAL_LESSON_BUTTON_SIZE = 58;
+const KIDS_LESSON_BUTTON_SIZE = 56;
+const ITEM_SLOT_HEIGHT = 88;
+const NORMAL_ITEM_SLOT_HEIGHT = 92;
+const KIDS_ITEM_SLOT_HEIGHT = 90;
 
 export function getPathMetrics(
   pathMode: LessonPathMode,
@@ -16,8 +16,8 @@ export function getPathMetrics(
 
   if (compactWeb) {
     return {
-      lessonButtonSize: isKids ? 58 : isNormal ? 60 : 56,
-      slotHeight: isKids ? 80 : isNormal ? 82 : 78,
+      lessonButtonSize: isKids ? 48 : isNormal ? 50 : 46,
+      slotHeight: isKids ? 76 : isNormal ? 78 : 74,
     };
   }
 

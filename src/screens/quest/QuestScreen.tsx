@@ -4,7 +4,7 @@ import { SvgAppButton } from "../../components/shared/svg-app-button";
 import { ChestUnlockedV2 } from "../../constants/icons";
 import { Image } from "expo-image";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon, Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { AnimatedCard } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
@@ -14,6 +14,8 @@ import React, { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hapticImpact } from "../../utils/haptics";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { IOSPressable } from "../../components/ui/ios-pressable";
+import { useSafeBack } from "../../hooks/use-safe-back";
 
 const TRACK_COLOR = "#E2E8F0";
 const HERO_FILL_COLOR = "#0F172A";
@@ -105,7 +107,7 @@ const QuestActionButton = ({
     rightRadius={14}
     contentContainerStyle={styles.actionBtnContent}
     width={width}
-    height={40}
+    height={44}
   >
     {leftNode}
     <AppText style={styles.actionBtnLabel}>{label}</AppText>
@@ -148,6 +150,7 @@ const QuestScreen = () => {
   const { isDark } = useThemeColors();
   const styles = useQuestStyles();
   const { t, isKu } = useI18n();
+  const safeBack = useSafeBack("/");
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const goalBarWidth = windowWidth - 128;
@@ -174,8 +177,26 @@ const QuestScreen = () => {
     <View style={styles.root}>
       {!isDark && <HomeMeshBackground />}
 
-      <SafeContainer style={[styles.safeHeader, { paddingTop: insets.top + 8 }]}>
-        <View style={[styles.headerRow, { flexDirection: isKu ? "row-reverse" : "row" }]}>
+      <SafeContainer style={[styles.safeHeader, { paddingTop: insets.top + 60 }]}>
+        <IOSPressable
+          accessibilityRole="button"
+          accessibilityLabel={isKu ? "گەڕانەوە" : "Go back"}
+          onPress={safeBack}
+          hitSlop={8}
+          style={[
+            styles.backButton,
+            { top: insets.top + 8 },
+            isKu ? styles.backButtonRtl : styles.backButtonLtr,
+          ]}
+        >
+          <HugeiconsIcon
+            icon={isKu ? ArrowRight01Icon : ArrowLeft01Icon}
+            size={22}
+            color="#FFFFFF"
+            strokeWidth={2.5}
+          />
+        </IOSPressable>
+        <View style={styles.headerRow}>
           <View style={[styles.headerTexts, { alignItems: isKu ? "flex-end" : "flex-start" }]}>
             <AppText style={styles.headerTitle} forceKurdishFont={isKu}>
               {questTitle}
@@ -344,6 +365,20 @@ function createStyles(colors: any, isDark: boolean) {
     borderBottomRightRadius: 28,
     paddingBottom: 24,
   },
+  backButton: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+    zIndex: 2,
+  },
+  backButtonRtl: { right: 20 },
+  backButtonLtr: { left: 20 },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",

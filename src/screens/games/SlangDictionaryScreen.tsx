@@ -17,7 +17,7 @@ import { useSafeBack } from "../../hooks/use-safe-back";
 import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, BookOpen01Icon, ChevronDownIcon, Search01Icon, VolumeHighIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, ArrowRight01Icon, BookOpen01Icon, ChevronDownIcon, Search01Icon, VolumeHighIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
@@ -29,23 +29,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const ThemeColors = {
-  accentBlue: "#2563EB",
-  accentBlueDark: "#1D4ED8",
-  darkNavy: "#10213D",
-  slate: "#5B6B85",
-  lightSlate: "#8B98AD",
-  blueSoft: "rgba(37, 99, 235, 0.08)",
-  blueBorder: "rgba(37, 99, 235, 0.18)",
-};
-
-const getTypeBadgeStyle = () => ({
-  backgroundColor: ThemeColors.blueSoft,
-  borderColor: ThemeColors.blueBorder,
-});
-
-const getTypeBadgeTextStyle = () => ({ color: ThemeColors.accentBlueDark });
 
 const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   categoriesList,
@@ -121,79 +104,96 @@ const SlangItemRow = React.memo(function SlangItemRow({
   activeId: string | null;
   locale: string;
 }) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const styles = useSlangStyles();
   const context = SLANG_CATEGORIES[item.context];
   const contextLabel = locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
+  const accentIconColor = isDark ? "#FF9E59" : "#EA580C";
   return (
     <View>
       <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
         <View style={styles.itemHeader}>
+          <View style={styles.itemHeaderTopRow}>
+            <View style={styles.badgeRow}>
+              <View style={styles.typeBadge}>
+                <AppText style={styles.typeBadgeText} forceLatinFont>
+                  {item.type}
+                </AppText>
+              </View>
+              <View style={styles.contextBadge}>
+                <AppText
+                  style={styles.contextBadgeText}
+                  languageCode={locale}
+                  align="center"
+                  numberOfLines={1}
+                >
+                  {contextLabel}
+                </AppText>
+              </View>
+            </View>
+
+            <View style={styles.actionRow}>
+              <PressableScale
+                onPress={() => onSpeak(item.phrase, item.id)}
+                style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
+                accessibilityRole="button"
+                accessibilityLabel={t("slang.playAudio")}
+              >
+                <HugeiconsIcon
+                  icon={VolumeHighIcon}
+                  size={20}
+                  color={isItemSpeaking ? "#FFFFFF" : accentIconColor}
+                  strokeWidth={2.0}
+                />
+              </PressableScale>
+              <PressableScale
+                onPress={() => onToggleExpand(item.id)}
+                style={styles.expandButton}
+                scaleDown={0.92}
+                accessibilityRole="button"
+                accessibilityLabel={isExpanded ? t("slang.close") : t("slang.example")}
+              >
+                <Animated.View
+                  style={{
+                    transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
+                    transitionProperty: "transform",
+                    transitionDuration: 180,
+                  }}
+                >
+                  <HugeiconsIcon icon={ChevronDownIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
+                </Animated.View>
+              </PressableScale>
+            </View>
+          </View>
+
           <PressableScale
             onPress={() => onToggleExpand(item.id)}
             scaleDown={0.99}
             style={styles.expandTarget}
             accessibilityRole="button"
           >
-            <View style={[styles.phraseCol, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-              <View style={styles.badgeRow}>
-                <View style={[styles.typeBadge, getTypeBadgeStyle()]}>
-                  <AppText style={[styles.typeBadgeText, getTypeBadgeTextStyle()]} forceLatinFont>
-                    {item.type}
-                  </AppText>
-                </View>
-                <View style={styles.contextBadge}>
-                  <AppText
-                    style={styles.contextBadgeText}
-                    languageCode={locale}
-                    align="center"
-                    numberOfLines={1}
-                  >
-                    {contextLabel}
-                  </AppText>
-                </View>
-              </View>
-              <AppText style={[styles.slangPhrase, styles.ltrText]} forceLatinFont>
+            <View style={[styles.phraseCol, isRtl && styles.phraseColRtl]}>
+              <AppText
+                style={[styles.slangPhrase, styles.ltrText]}
+                languageCode="en"
+                align="start"
+                nativeAlign={isRtl ? "end" : "start"}
+                fullWidth
+                forceLatinFont
+              >
                 {item.phrase}
               </AppText>
-              <AppText style={[styles.slangSubtitle, styles.ltrText]} forceLatinFont numberOfLines={1}>
+              <AppText
+                style={styles.slangSubtitle}
+                languageCode="ku"
+                align="start"
+                nativeAlign={isRtl ? "start" : "end"}
+                numberOfLines={1}
+              >
                 {item.pronunciation}
               </AppText>
             </View>
           </PressableScale>
-
-          <View style={styles.actionRow}>
-            <PressableScale
-              onPress={() => onSpeak(item.phrase, item.id)}
-              style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
-              accessibilityRole="button"
-              accessibilityLabel={t("slang.playAudio")}
-            >
-              <HugeiconsIcon
-                icon={VolumeHighIcon}
-                size={20}
-                color={isItemSpeaking ? "#FFFFFF" : colors.foreground}
-                strokeWidth={2.0}
-              />
-            </PressableScale>
-            <PressableScale
-              onPress={() => onToggleExpand(item.id)}
-              style={styles.expandButton}
-              scaleDown={0.92}
-              accessibilityRole="button"
-              accessibilityLabel={isExpanded ? t("slang.close") : t("slang.example")}
-            >
-              <Animated.View
-                style={{
-                  transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
-                  transitionProperty: "transform",
-                  transitionDuration: 180,
-                }}
-              >
-                <HugeiconsIcon icon={ChevronDownIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
-              </Animated.View>
-            </PressableScale>
-          </View>
         </View>
 
         {isExpanded && (
@@ -208,7 +208,12 @@ const SlangItemRow = React.memo(function SlangItemRow({
               <AppText style={styles.detailLabel} languageCode={locale} align="start">
                 {t("aiTeacher.criteria.pronunciation")}
               </AppText>
-              <AppText style={[styles.detailValue, styles.ltrText]} forceLatinFont>
+              <AppText
+                style={[styles.detailValue, styles.rtlText]}
+                languageCode="ku"
+                align="start"
+                nativeAlign={isRtl ? "start" : "end"}
+              >
                 {item.pronunciation}
               </AppText>
             </View>
@@ -217,7 +222,12 @@ const SlangItemRow = React.memo(function SlangItemRow({
               <AppText style={styles.detailLabel} languageCode={locale} align="start">
                 {t("slang.meaning")}
               </AppText>
-              <AppText style={[styles.detailValue, styles.detailFigurative]} languageCode="ku" align="start">
+              <AppText
+                style={[styles.detailValue, styles.detailFigurative]}
+                languageCode="ku"
+                align="start"
+                nativeAlign={isRtl ? "start" : "end"}
+              >
                 {item.kuMeaning}
               </AppText>
             </View>
@@ -235,10 +245,20 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     </AppText>
                   </View>
                   <View style={styles.dialogueContent}>
-                    <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
+                    <AppText
+                      style={[styles.dialogueEn, styles.ltrText]}
+                      languageCode="en"
+                      align="start"
+                      nativeAlign={isRtl ? "end" : "start"}
+                    >
                       {item.example.speakerA}
                     </AppText>
-                    <AppText style={styles.dialogueKu} languageCode="ku" align="start">
+                    <AppText
+                      style={[styles.dialogueKu, styles.rtlText]}
+                      languageCode="ku"
+                      align="start"
+                      nativeAlign={isRtl ? "start" : "end"}
+                    >
                       {item.example.kuA}
                     </AppText>
                   </View>
@@ -255,7 +275,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     <HugeiconsIcon
                       icon={VolumeHighIcon}
                       size={14}
-                      color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : ThemeColors.slate}
+                      color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : accentIconColor}
                       strokeWidth={2.0}
                     />
                   </PressableScale>
@@ -271,10 +291,20 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     </AppText>
                   </View>
                   <View style={styles.dialogueContent}>
-                    <AppText style={[styles.dialogueEn, styles.ltrText]} forceLatinFont>
+                    <AppText
+                      style={[styles.dialogueEn, styles.ltrText]}
+                      languageCode="en"
+                      align="start"
+                      nativeAlign={isRtl ? "end" : "start"}
+                    >
                       {item.example.speakerB}
                     </AppText>
-                    <AppText style={styles.dialogueKu} languageCode="ku" align="start">
+                    <AppText
+                      style={[styles.dialogueKu, styles.rtlText]}
+                      languageCode="ku"
+                      align="start"
+                      nativeAlign={isRtl ? "start" : "end"}
+                    >
                       {item.example.kuB}
                     </AppText>
                   </View>
@@ -291,7 +321,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
                     <HugeiconsIcon
                       icon={VolumeHighIcon}
                       size={14}
-                      color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : ThemeColors.slate}
+                      color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : accentIconColor}
                       strokeWidth={2.0}
                     />
                   </PressableScale>
@@ -310,6 +340,7 @@ export function SlangDictionaryScreen() {
   const insets = useSafeAreaInsets();
   const safeBack = useSafeBack("/(tabs)/play");
   const { t, locale } = useI18n();
+  const { isDark } = useThemeColors();
   const { speak, stop, speaking, activeId } = useTTS();
 
   const isRtl = locale === "ku" || locale === "ar";
@@ -372,16 +403,22 @@ export function SlangDictionaryScreen() {
     [],
   );
 
+  const headerIconColor = isDark ? "#FF9E59" : "#FF6B00";
+  const spotlightBadgeIconColor = isDark ? "#FFFFFF" : "#7C2D12";
+
   return (
     <View style={styles.root}>
-      <HomeMeshBackground />
+      {!isDark && <HomeMeshBackground />}
 
       {/* Screen Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
         <PressableScale onPress={handleBack} style={styles.backBtn}>
-          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color={ThemeColors.accentBlue} strokeWidth={2.1} />
-          </View>
+          <HugeiconsIcon
+            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+            size={22}
+            color={headerIconColor}
+            strokeWidth={2.2}
+          />
         </PressableScale>
         <AppText
           style={styles.headerTitle}
@@ -420,12 +457,12 @@ export function SlangDictionaryScreen() {
           <>
             {/* Slang of the Day Spotlight */}
             <HomeLiquidCard
-              style={[styles.spotlightCard, crossShadow({ color: ThemeColors.accentBlue, opacity: 0.12, offsetY: 10, blur: 24, elevation: 6 })]}
+              style={[styles.spotlightCard, crossShadow({ color: "#FF6B00", opacity: isDark ? 0.25 : 0.16, offsetY: 10, blur: 24, elevation: 6 })]}
               contentStyle={styles.spotlightContent}
             >
               <View style={styles.spotlightTopRow}>
                 <View style={styles.spotlightBadge}>
-                  <HugeiconsIcon icon={BookOpen01Icon} size={14} color={ThemeColors.accentBlueDark} strokeWidth={2.0} />
+                  <HugeiconsIcon icon={BookOpen01Icon} size={14} color={spotlightBadgeIconColor} strokeWidth={2.0} />
                   <AppText
                     style={styles.spotlightBadgeText}
                     languageCode={locale}
@@ -434,7 +471,7 @@ export function SlangDictionaryScreen() {
                     {t("slang.slangOfTheDay")}
                   </AppText>
                 </View>
-                <View style={[styles.typeBadge, { backgroundColor: "rgba(255,255,255,0.15)", borderColor: "rgba(255,255,255,0.3)" }]}>
+                <View style={[styles.typeBadge, { backgroundColor: "rgba(255,255,255,0.22)", borderColor: "rgba(255,255,255,0.4)" }]}>
                   <AppText style={[styles.typeBadgeText, { color: "#FFFFFF" }]} forceLatinFont>
                     {slangOfTheDay.type}
                   </AppText>
@@ -473,12 +510,12 @@ export function SlangDictionaryScreen() {
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>
-              <HugeiconsIcon icon={Search01Icon} size={18} color={ThemeColors.accentBlue} style={styles.searchIcon} />
+              <HugeiconsIcon icon={Search01Icon} size={18} color={headerIconColor} style={styles.searchIcon} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder={t("slang.searchPlaceholder")}
-                placeholderTextColor={ThemeColors.lightSlate}
+                placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
                 style={[
                   styles.searchInput,
                   {
@@ -495,12 +532,12 @@ export function SlangDictionaryScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t("slang.close")}
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} color={ThemeColors.slate} strokeWidth={2.0} />
+                  <HugeiconsIcon icon={Cancel01Icon} size={16} color={isDark ? "#94A3B8" : "#64748B"} strokeWidth={2.0} />
                 </PressableScale>
               ) : null}
             </View>
 
-            {/* Category Filters — small set; avoid nested FlashList */}
+            {/* Category Filters */}
             <SlangCategoryHeader
               categoriesList={categoriesList}
               selectedCategory={selectedCategory}
@@ -511,7 +548,7 @@ export function SlangDictionaryScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <HugeiconsIcon icon={BookOpen01Icon} size={48} color={ThemeColors.lightSlate} strokeWidth={1.5} />
+            <HugeiconsIcon icon={BookOpen01Icon} size={48} color={isDark ? "#94A3B8" : "#64748B"} strokeWidth={1.5} />
             <AppText
               style={styles.emptyText}
               languageCode={locale}
@@ -527,7 +564,7 @@ export function SlangDictionaryScreen() {
 }
 
 function useSlangStyles() {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
 
   return useMemo(() => StyleSheet.create({
   root: {
@@ -565,8 +602,8 @@ function useSlangStyles() {
     alignSelf: "center",
   },
   spotlightCard: {
-    backgroundColor: ThemeColors.accentBlue,
-    borderColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: isDark ? "#D97706" : "#FF6B00",
+    borderColor: "rgba(255, 255, 255, 0.25)",
     borderWidth: 1,
     borderRadius: 22,
     marginBottom: 20,
@@ -574,7 +611,7 @@ function useSlangStyles() {
   },
   spotlightContent: {
     padding: 20,
-    backgroundColor: ThemeColors.accentBlue,
+    backgroundColor: isDark ? "#D97706" : "#FF6B00",
   },
   spotlightTopRow: {
     flexDirection: "row",
@@ -585,7 +622,7 @@ function useSlangStyles() {
   spotlightBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: isDark ? "rgba(0, 0, 0, 0.35)" : "#FFFFFF",
     alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -594,9 +631,9 @@ function useSlangStyles() {
     marginBottom: 14,
   },
   spotlightBadgeText: {
-    color: "#000000",
+    color: isDark ? "#FFFFFF" : "#7C2D12",
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "900",
     letterSpacing: 0.5,
   },
   spotlightMain: {
@@ -613,24 +650,26 @@ function useSlangStyles() {
   },
   spotlightTranslation: {
     fontSize: 16,
-    color: "rgba(255, 255, 255, 0.65)",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "700",
     marginTop: 2,
+    opacity: 0.95,
   },
   spotlightSpeakBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
   spotlightDescription: {
-    color: "rgba(255, 255, 255, 0.8)",
+    color: "#FFFFFF",
     fontSize: 14,
     lineHeight: 22,
-    fontWeight: "500",
+    fontWeight: "600",
     marginTop: 4,
+    opacity: 0.95,
   },
   searchContainer: {
     flexDirection: "row",
@@ -638,11 +677,11 @@ function useSlangStyles() {
     backgroundColor: colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: ThemeColors.blueBorder,
+    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
     paddingHorizontal: 12,
     height: 48,
     marginBottom: 12,
-    ...crossShadow({ color: ThemeColors.accentBlue, opacity: 0.06, offsetY: 3, blur: 10, elevation: 2 }),
+    ...crossShadow({ color: "#FF6B00", opacity: isDark ? 0.15 : 0.08, offsetY: 3, blur: 10, elevation: 2 }),
   },
   searchIcon: {
     marginEnd: 8,
@@ -680,19 +719,16 @@ function useSlangStyles() {
     borderColor: colors.border,
   },
   chipSelected: {
-    backgroundColor: ThemeColors.accentBlue,
-    borderColor: ThemeColors.accentBlue,
+    backgroundColor: "#FF6B00",
+    borderColor: "#FF6B00",
   },
   chipText: {
     fontSize: 13,
     fontWeight: "700",
-    color: ThemeColors.slate,
+    color: colors.mutedForeground,
   },
   chipTextSelected: {
     color: "#FFFFFF",
-  },
-  slangList: {
-    gap: 12,
   },
   cardShell: {
     backgroundColor: colors.surface,
@@ -706,13 +742,21 @@ function useSlangStyles() {
     padding: 16,
   },
   itemHeader: {
+    gap: 8,
+  },
+  itemHeaderTopRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    gap: 10,
   },
   phraseCol: {
-    flex: 1,
+    width: "100%",
+    alignItems: "flex-start",
     gap: 2,
+  },
+  phraseColRtl: {
+    paddingLeft: 52,
   },
   slangPhrase: {
     fontSize: 19,
@@ -722,18 +766,18 @@ function useSlangStyles() {
   },
   slangSubtitle: {
     fontSize: 14,
-    color: ThemeColors.slate,
-    fontWeight: "500",
+    color: colors.mutedForeground,
+    fontWeight: "600",
   },
   badgeRow: {
+    flex: 1,
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     gap: 6,
-    marginBottom: 4,
   },
   expandTarget: {
-    flex: 1,
+    width: "100%",
     minWidth: 0,
   },
   typeBadge: {
@@ -741,11 +785,14 @@ function useSlangStyles() {
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
+    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
     alignSelf: "flex-start",
   },
   typeBadgeText: {
     fontSize: 11,
     fontWeight: "800",
+    color: isDark ? "#FF9E59" : "#C2410C",
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
@@ -754,14 +801,14 @@ function useSlangStyles() {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: ThemeColors.blueSoft,
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
     borderWidth: 1,
-    borderColor: ThemeColors.blueBorder,
+    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
   },
   contextBadgeText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: ThemeColors.slate,
+    fontWeight: "800",
+    color: isDark ? "#FF9E59" : "#C2410C",
   },
   actionRow: {
     flexDirection: "row",
@@ -780,12 +827,12 @@ function useSlangStyles() {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: ThemeColors.blueSoft,
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
   speakerBtnSpeaking: {
-    backgroundColor: ThemeColors.accentBlue,
+    backgroundColor: "#FF6B00",
   },
   itemExpanded: {
     marginTop: 14,
@@ -801,7 +848,7 @@ function useSlangStyles() {
   detailLabel: {
     fontSize: 12,
     fontWeight: "800",
-    color: ThemeColors.lightSlate,
+    color: colors.mutedForeground,
     letterSpacing: 0.5,
   },
   detailValue: {
@@ -810,11 +857,12 @@ function useSlangStyles() {
     fontWeight: "600",
   },
   detailFigurative: {
-    color: ThemeColors.accentBlue,
+    color: isDark ? "#FF9E59" : "#EA580C",
     fontSize: 15,
+    fontWeight: "700",
   },
   dialogueBox: {
-    backgroundColor: colors.muted,
+    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
@@ -831,7 +879,7 @@ function useSlangStyles() {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "rgba(37, 99, 235, 0.16)",
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.25)" : "rgba(255, 107, 0, 0.14)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -840,7 +888,7 @@ function useSlangStyles() {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: ThemeColors.blueSoft,
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.25)" : "rgba(255, 107, 0, 0.14)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
@@ -848,7 +896,7 @@ function useSlangStyles() {
   dialogueMarkerText: {
     fontSize: 11,
     fontWeight: "900",
-    color: ThemeColors.accentBlueDark,
+    color: isDark ? "#FF9E59" : "#C2410C",
   },
   dialogueContent: {
     flex: 1,
@@ -862,15 +910,15 @@ function useSlangStyles() {
   },
   dialogueKu: {
     fontSize: 13,
-    color: ThemeColors.slate,
-    fontWeight: "500",
+    color: isDark ? "#CBD5E1" : "#334155",
+    fontWeight: "600",
     lineHeight: 18,
   },
   miniSpeakerBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: ThemeColors.blueSoft,
+    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -883,7 +931,7 @@ function useSlangStyles() {
   },
   emptyText: {
     fontSize: 15,
-    color: ThemeColors.lightSlate,
+    color: colors.mutedForeground,
     fontWeight: "600",
   },
   ltrText: {
@@ -896,5 +944,5 @@ function useSlangStyles() {
     textAlign: "right",
     writingDirection: "rtl",
   },
-  }), [colors]);
+  }), [colors, isDark]);
 }

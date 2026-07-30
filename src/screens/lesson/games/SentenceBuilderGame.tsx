@@ -9,6 +9,7 @@ import { tileFlyTiming } from "../../../components/animations/motion";
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -116,6 +117,7 @@ function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlyS
 
 export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
+  const { colors, isDark } = useThemeColors();
   const { width } = useWindowDimensions();
   const compact = width < 390;
   const targetDirection = getLanguageDirection(question.targetLanguage);
@@ -337,6 +339,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               label={t("lessons.questionLabel")}
               forceKurdishFont
               contentLanguageCode={question.sourceLanguage}
+              speechText={question.correctWords.join(" ")}
+              speechLanguageCode={question.targetLanguage ?? "en"}
               variant={pathMode === "kids" ? "kids" : "default"}
             >
               {question.kurdishSentence}
@@ -388,8 +392,20 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                             />
                           </Animated.View>
                         ) : (
-                          <View style={s.emptySlot}>
-                            <AppText style={s.slotNumber} forceLatinFont latinRole="bold">
+                          <View
+                            style={[
+                              s.emptySlot,
+                              isDark && {
+                                backgroundColor: colors.muted,
+                                borderColor: colors.border,
+                              },
+                            ]}
+                          >
+                            <AppText
+                              style={[s.slotNumber, isDark && { color: colors.mutedForeground }]}
+                              forceLatinFont
+                              latinRole="bold"
+                            >
                               {i + 1}
                             </AppText>
                           </View>
@@ -427,7 +443,15 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                       collapsable={false}
                       style={s.bankCell}
                     >
-                      <View style={s.bankPlaceholder} />
+                      <View
+                        style={[
+                          s.bankPlaceholder,
+                          isDark && {
+                            backgroundColor: colors.muted,
+                            borderColor: colors.border,
+                          },
+                        ]}
+                      />
                       <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
                         <LightWordTile
                           label={w}
@@ -465,7 +489,13 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       </View>
 
       <GameFooter delay={200}>
-        <View style={[s.footerWrap, pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 }]}>
+        <View
+          style={[
+            s.footerWrap,
+            { backgroundColor: colors.background, borderTopColor: colors.border },
+            pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 },
+          ]}
+        >
           <LightCheckButton
             label={t("lessons.check")}
             onPress={check}

@@ -1,6 +1,5 @@
 import { appStorage } from "../lib/app-storage";
 import { router } from "expo-router";
-import { Platform } from "react-native";
 import { create } from "zustand";
 
 const STORAGE_KEY = "twino.onboarding.completed";
@@ -16,10 +15,9 @@ interface OnboardingState {
 }
 
 const savedOnboardingValue = appStorage.getItemSync(STORAGE_KEY);
-const savedOnboarding =
-  Platform.OS === "web"
-    ? savedOnboardingValue === "true"
-    : savedOnboardingValue !== "false";
+// A missing key is a true first run on every platform. Only an explicit
+// completion marker may bypass onboarding.
+const savedOnboarding = savedOnboardingValue === "true";
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ready: true,

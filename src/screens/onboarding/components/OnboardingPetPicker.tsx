@@ -3,7 +3,6 @@ import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -14,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { AppText } from "../../../components/ui/AppText";
 import { getMascotExpressionSource } from "../../../constants/mascot-expressions";
-import { PRIMARY_ACTION } from "../../../constants/primary-action";
 import {
   getMascotDisplayName,
   MASCOTS,
@@ -24,9 +22,15 @@ import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { hapticSelection } from "../../../utils/haptics";
+import { OnboardingFooter, OnboardingTopBar } from "./OnboardingChrome";
+import {
+  ONBOARDING_DESIGN,
+  ONBOARDING_PAPER_SHADOW,
+} from "./onboarding-design";
 
 type Props = {
   onFinish: () => void;
+  onBack: () => void;
 };
 
 const PET_COPY = {
@@ -37,6 +41,7 @@ const PET_COPY = {
     featured: "Twino originals",
     more: "More friendly faces",
     selected: "Selected",
+    back: "Back",
     continueWith: (name: string) => `Continue with ${name}`,
   },
   ku: {
@@ -46,6 +51,7 @@ const PET_COPY = {
     featured: "هاوڕێ سەرەکییەکانی Twino",
     more: "هاوڕێ نوێکان",
     selected: "هەڵبژێردرا",
+    back: "گەڕانەوە",
     continueWith: (name: string) => `لەگەڵ ${name} بەردەوام بە`,
   },
   ar: {
@@ -55,6 +61,7 @@ const PET_COPY = {
     featured: "رفيقا Twino الأصليان",
     more: "وجوه ودودة أخرى",
     selected: "تم الاختيار",
+    back: "رجوع",
     continueWith: (name: string) => `تابع مع ${name}`,
   },
   es: {
@@ -64,6 +71,7 @@ const PET_COPY = {
     featured: "Los originales de Twino",
     more: "Más caras amigables",
     selected: "Seleccionado",
+    back: "Atrás",
     continueWith: (name: string) => `Continuar con ${name}`,
   },
   ru: {
@@ -73,13 +81,14 @@ const PET_COPY = {
     featured: "Оригинальные герои Twino",
     more: "Другие друзья",
     selected: "Выбрано",
+    back: "Назад",
     continueWith: (name: string) => `Продолжить с ${name}`,
   },
 } as const;
 
-export function OnboardingPetPicker({ onFinish }: Props) {
+export function OnboardingPetPicker({ onFinish, onBack }: Props) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const locale = useLocaleStore((state) => state.selectedUiLanguage);
   const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const setSelectedMascotId = useSettingsStore((state) => state.setSelectedMascotId);
@@ -87,15 +96,16 @@ export function OnboardingPetPicker({ onFinish }: Props) {
 
   const copy = PET_COPY[locale as keyof typeof PET_COPY] ?? PET_COPY.en;
   const isRtl = locale === "ku" || locale === "ar";
-  const contentWidth = Math.min(width - 32, 640);
-  const gridColumns = width >= 600 ? 4 : 3;
+  const isCompact = width < 390 || height < 760;
+  const contentWidth = Math.min(width - (isCompact ? 28 : 32), 640);
+  const gridColumns = width >= 600 ? 4 : width < 350 ? 2 : 3;
   const gap = 10;
   const gridItemWidth = (contentWidth - gap * (gridColumns - 1)) / gridColumns;
   const featuredItemWidth = (contentWidth - gap) / 2;
 
   const styles = useMemo(
-    () => createStyles(colors, isDark, isRtl),
-    [colors, isDark, isRtl],
+    () => createStyles(colors, isDark, isRtl, isCompact),
+    [colors, isCompact, isDark, isRtl],
   );
   const selectedMascot = MASCOTS.find((mascot) => mascot.id === selectedMascotId) ?? MASCOTS[0];
   const selectedMascotName = getMascotDisplayName(selectedMascot, locale);
@@ -118,9 +128,10 @@ export function OnboardingPetPicker({ onFinish }: Props) {
     return (
       <IOSPressable
         key={mascot.id}
+        testID={`onboarding-mascot-${mascot.id}`}
         accessibilityRole="radio"
         accessibilityLabel={`${mascotName}. ${selected ? copy.selected : ""}`}
-        accessibilityState={{ selected }}
+        accessibilityState={{ checked: selected }}
         onPress={() => chooseMascot(mascot.id)}
         pressScale={0.97}
         style={[
@@ -139,7 +150,7 @@ export function OnboardingPetPicker({ onFinish }: Props) {
         </View>
         <AppText
           style={[styles.petName, selected && styles.petNameSelected]}
-          forceLatinFont
+          languageCode={locale}
           latinRole="bold"
           numberOfLines={2}
           align="center"
@@ -162,12 +173,20 @@ export function OnboardingPetPicker({ onFinish }: Props) {
 
   return (
     <View style={styles.root}>
+      <OnboardingTopBar
+        current={9}
+        total={9}
+        locale={locale}
+        topInset={insets.top}
+        onBack={onBack}
+        backLabel={copy.back}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + 20, paddingBottom: 28 },
+          { paddingTop: 12, paddingBottom: 28 },
         ]}
       >
         <View style={[styles.header, { width: contentWidth }]}>
@@ -178,7 +197,8 @@ export function OnboardingPetPicker({ onFinish }: Props) {
             style={styles.title}
             languageCode={locale}
             align="center"
-            latinRole="bold"
+            latinRole="regular"
+            fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}
           >
             {copy.title}
           </AppText>
@@ -210,42 +230,34 @@ export function OnboardingPetPicker({ onFinish }: Props) {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          { paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 18 : 14) },
-        ]}
-      >
-        <IOSPressable
-          accessibilityRole="button"
-          accessibilityLabel={copy.continueWith(selectedMascotName)}
-          onPress={onFinish}
-          style={[styles.continueButton, { width: contentWidth }]}
-        >
-          <AppText
-            style={styles.continueButtonText}
-            languageCode={locale}
-            align="center"
-            latinRole="bold"
-          >
-            {copy.continueWith(selectedMascotName)}
-          </AppText>
-        </IOSPressable>
-      </View>
+      <OnboardingFooter
+        label={copy.continueWith(selectedMascotName)}
+        locale={locale}
+        bottomInset={insets.bottom}
+        onPress={onFinish}
+        testID="onboarding-finish"
+        current={9}
+        total={9}
+      />
     </View>
   );
 }
 
-const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
+const createStyles = (
+  colors: any,
+  isDark: boolean,
+  isRtl: boolean,
+  isCompact: boolean,
+) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: ONBOARDING_DESIGN.canvas,
     },
     scrollContent: {
       alignItems: "center",
-      paddingHorizontal: 16,
-      gap: 28,
+      paddingHorizontal: isCompact ? 14 : 16,
+      gap: isCompact ? 18 : 28,
     },
     header: {
       alignItems: "center",
@@ -253,29 +265,30 @@ const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
       paddingHorizontal: 10,
     },
     eyebrow: {
-      color: colors.primary,
+      color: ONBOARDING_DESIGN.orange,
       fontSize: 13,
       lineHeight: 18,
       fontWeight: "800",
       letterSpacing: isRtl ? 0 : 1.1,
     },
     title: {
-      color: colors.foreground,
-      fontSize: 34,
-      lineHeight: 40,
-      fontWeight: "900",
+      color: ONBOARDING_DESIGN.ink,
+      fontSize: isCompact ? 32 : 42,
+      lineHeight: isCompact ? 39 : 49,
+      fontWeight: "500",
+      letterSpacing: -1.1,
     },
     subtitle: {
-      color: colors.mutedForeground,
-      fontSize: 16,
-      lineHeight: 23,
+      color: ONBOARDING_DESIGN.mutedInk,
+      fontSize: isCompact ? 14 : 16,
+      lineHeight: isCompact ? 20 : 23,
       maxWidth: 440,
     },
     section: {
       gap: 12,
     },
     sectionTitle: {
-      color: colors.foreground,
+      color: ONBOARDING_DESIGN.ink,
       fontSize: 17,
       lineHeight: 22,
       fontWeight: "800",
@@ -292,34 +305,36 @@ const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
       padding: 6,
       paddingBottom: 10,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: ONBOARDING_DESIGN.hairline,
       borderRadius: 22,
-      backgroundColor: isDark ? colors.surface : colors.background,
-      minHeight: 132,
+      borderCurve: "continuous",
+      backgroundColor: ONBOARDING_DESIGN.paperRaised,
+      minHeight: isCompact ? 112 : 132,
+      ...(ONBOARDING_PAPER_SHADOW as any),
     },
     petOptionSelected: {
       borderWidth: 3,
-      borderColor: colors.primary,
+      borderColor: ONBOARDING_DESIGN.orange,
       padding: 4,
       paddingBottom: 8,
-      backgroundColor: isDark ? colors.surfaceRaised : "#FFF6F2",
+      backgroundColor: "#FFF7ED",
     },
     petImageFrame: {
       width: "100%",
       aspectRatio: 1,
       overflow: "hidden",
       borderRadius: 17,
-      backgroundColor: colors.muted,
+      backgroundColor: "#F2ECE3",
     },
     petImageFrameSelected: {
-      backgroundColor: isDark ? colors.surface : "#FFFFFF",
+      backgroundColor: ONBOARDING_DESIGN.paper,
     },
     petImage: {
       width: "100%",
       height: "100%",
     },
     petName: {
-      color: colors.mutedForeground,
+      color: ONBOARDING_DESIGN.mutedInk,
       fontSize: 13,
       lineHeight: 16,
       fontWeight: "700",
@@ -327,7 +342,7 @@ const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
       paddingHorizontal: 2,
     },
     petNameSelected: {
-      color: colors.foreground,
+      color: ONBOARDING_DESIGN.ink,
     },
     checkmark: {
       position: "absolute",
@@ -338,32 +353,8 @@ const createStyles = (colors: any, isDark: boolean, isRtl: boolean) =>
       borderRadius: 15,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.primary,
+      backgroundColor: ONBOARDING_DESIGN.orange,
       borderWidth: 2,
-      borderColor: colors.background,
-    },
-    footer: {
-      alignItems: "center",
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-    },
-    continueButton: {
-      height: PRIMARY_ACTION.height,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: PRIMARY_ACTION.radius,
-      backgroundColor: PRIMARY_ACTION.face,
-      borderBottomWidth: PRIMARY_ACTION.rimWidth,
-      borderBottomColor: PRIMARY_ACTION.rim,
-      paddingHorizontal: 22,
-    },
-    continueButtonText: {
-      color: "#FFFFFF",
-      fontSize: 17,
-      lineHeight: 22,
-      fontWeight: "800",
+      borderColor: ONBOARDING_DESIGN.paperRaised,
     },
   });

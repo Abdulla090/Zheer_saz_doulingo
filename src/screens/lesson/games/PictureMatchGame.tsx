@@ -31,6 +31,7 @@ import {
 } from "./lesson-light-primitives";
 import { GameHeader, GameRoot } from "./GameAnimatedShell";
 import { crossShadow } from "../../../utils/shadows";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 type Props = {
   question: ImagePairMatchQuestion;
@@ -62,6 +63,7 @@ const ImageTile = memo(function ImageTile({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const { colors } = useThemeColors();
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
 
@@ -81,9 +83,9 @@ const ImageTile = memo(function ImageTile({
       case "wrong":
         return { backgroundColor: "#FEF2F2", borderColor: "#EF4444", borderBottomColor: "#B91C1C" };
       default:
-        return { backgroundColor: "#FFFFFF", borderColor: "#E5E7EB", borderBottomColor: "#D1D5DB" };
+        return { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderBottomColor: colors.muted };
     }
-  }, [state]);
+  }, [colors, state]);
 
   return (
     <Animated.View style={[animScale, s.chipWrap]}>

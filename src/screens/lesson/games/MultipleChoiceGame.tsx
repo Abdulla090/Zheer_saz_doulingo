@@ -98,6 +98,8 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
           label={t("lessons.questionLabel")}
           forceKurdishFont={isKuPrompt}
           contentLanguageCode={question.promptLang || question.sourceLanguage}
+          speechText={question.correctAnswer}
+          speechLanguageCode={question.targetLanguage ?? "en"}
           variant={pathMode === "kids" ? "kids" : "default"}
         >
           {question.prompt}

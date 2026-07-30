@@ -42,7 +42,7 @@ import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
-import { Colors } from "../../constants/theme";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { PRIMARY_ACTION } from "../../constants/primary-action";
 import {
   generateReadingPracticeParagraphs,
@@ -271,8 +271,7 @@ export default function ReadingPracticeScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const { width, height } = useWindowDimensions();
   const { locale, isKu, isAr } = useI18n();
-  const colors = Colors.light;
-  const isDark = false;
+  const { colors, isDark } = useThemeColors();
   const styles = useReadingStyles();
   const isRtl = isKu || isAr;
   const setupCopy = isKu ? SETUP_COPY.ku : isAr ? SETUP_COPY.ar : SETUP_COPY.en;
@@ -1066,17 +1065,18 @@ export default function ReadingPracticeScreen() {
 }
 
 function useReadingStyles() {
-  return useMemo(() => createStyles(Colors.light, false), []);
+  const { colors, isDark } = useThemeColors();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 }
 
 function createStyles(colors: any, isDark: boolean) {
   return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F6F8FC",
+    backgroundColor: colors.background,
   },
   setupRoot: {
-    backgroundColor: "#F8F9FB",
+    backgroundColor: colors.background,
   },
   header: {
     width: "100%",
@@ -1133,9 +1133,9 @@ function createStyles(colors: any, isDark: boolean) {
     gap: 16,
     borderRadius: 20,
     borderCurve: "continuous",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ECEEF2",
+    borderColor: colors.border,
   },
   settingsGroup: {
     gap: 8,
@@ -1161,13 +1161,13 @@ function createStyles(colors: any, isDark: boolean) {
     padding: 4,
     borderRadius: 14,
     borderCurve: "continuous",
-    backgroundColor: "#F1F3F6",
+    backgroundColor: colors.muted,
   },
   rowReverse: {
     flexDirection: "row-reverse",
   },
   optionChip: {
-    minHeight: 40,
+    minHeight: 44,
     minWidth: 0,
     paddingHorizontal: 8,
     paddingVertical: 8,
@@ -1182,8 +1182,10 @@ function createStyles(colors: any, isDark: boolean) {
     flexBasis: 0,
   },
   optionChipActive: {
-    backgroundColor: "#FFFFFF",
-    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
+    backgroundColor: colors.surfaceRaised,
+    boxShadow: isDark
+      ? "0 1px 3px rgba(0, 0, 0, 0.28)"
+      : "0 1px 3px rgba(15, 23, 42, 0.12)",
   },
   optionChipText: {
     fontSize: 12,
@@ -1198,7 +1200,7 @@ function createStyles(colors: any, isDark: boolean) {
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#E8EDF5",
+    backgroundColor: colors.border,
   },
   templateGrid: {
     flexDirection: "row",
@@ -1213,7 +1215,7 @@ function createStyles(colors: any, isDark: boolean) {
     borderRadius: 18,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
+    borderColor: colors.border,
     justifyContent: "space-between",
   },
   templateCardActive: {
@@ -1268,7 +1270,7 @@ function createStyles(colors: any, isDark: boolean) {
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "rgba(248,250,252,0.86)",
+    backgroundColor: isDark ? "rgba(15,23,42,0.9)" : "rgba(248,250,252,0.86)",
     alignItems: "center",
     justifyContent: "center",
     gap: 14,
@@ -1308,7 +1310,7 @@ function createStyles(colors: any, isDark: boolean) {
     borderRadius: 999,
     backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.06)",
+    borderColor: colors.border,
   },
   stageStatText: {
     fontSize: 12,
@@ -1327,7 +1329,7 @@ function createStyles(colors: any, isDark: boolean) {
     overflow: "hidden",
     backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.72)",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.06)",
+    borderColor: colors.border,
   },
   teleprompterPreview: {
     minHeight: 0,
@@ -1398,7 +1400,7 @@ function createStyles(colors: any, isDark: boolean) {
     borderRadius: 26,
     backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.9)",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
+    borderColor: colors.border,
     gap: 14,
   },
   scoreHeader: {
@@ -1589,7 +1591,7 @@ function createStyles(colors: any, isDark: boolean) {
     alignItems: "center",
     backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
     borderWidth: 1,
-    borderColor: "rgba(15,23,42,0.08)",
+    borderColor: colors.border,
   },
   secondaryButtonText: {
     fontSize: 12,

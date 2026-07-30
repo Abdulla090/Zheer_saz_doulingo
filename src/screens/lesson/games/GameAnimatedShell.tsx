@@ -1,6 +1,7 @@
 import React from "react";
-import { StyleProp, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import {
   enterCard,
   enterFooter,
@@ -48,9 +49,20 @@ export function GameOption({ index, children, baseDelay = 120 }: Props & { index
   );
 }
 
-export function GameFooter({ children, delay = 280 }: Props & { delay?: number }) {
+export function GameFooter({ children, delay = 280, style }: Props & { delay?: number }) {
+  const { colors } = useThemeColors();
   return (
-    <Animated.View entering={enterFooter(delay)}>
+    <Animated.View
+      entering={enterFooter(delay)}
+      style={[
+        {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+        },
+        style,
+      ]}
+    >
       {children}
     </Animated.View>
   );

@@ -23,6 +23,7 @@ import {
 } from "./lesson-light-primitives";
 import { crossShadow } from "../../../utils/shadows";
 import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 type Props = {
   question: ImageMultipleChoiceQuestion;
@@ -50,6 +51,7 @@ export default function ImageMultipleChoiceGame({
   questionIndex,
   totalQuestions,
 }: Props) {
+  const { colors } = useThemeColors();
   const { t } = useI18n();
   const { speak } = useTTS();
   const [selected, setSelected] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export default function ImageMultipleChoiceGame({
 
         <Animated.View
           entering={FadeInUp.duration(400).springify()}
-          style={[s.imageCard, crossShadow({
+          style={[s.imageCard, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }, crossShadow({
             color: "#1A2B48",
             offsetY: 10,
             blur: 24,
@@ -158,7 +160,7 @@ export default function ImageMultipleChoiceGame({
                   state={tileState}
                   onPress={() => pick(opt)}
                   disabled={revealed}
-                  isKids
+                  isKids={pathMode === "kids"}
                   fontSize={18}
                   centerLabel
                   fitLabel

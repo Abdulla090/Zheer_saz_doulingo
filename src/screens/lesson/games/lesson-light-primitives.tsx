@@ -6,7 +6,6 @@
 import {
   HomeLiquidButton,
   HomeLiquidCard,
-  HomeLiquidPill,
   HomeMeshBackground,
 } from "../../../components/ui/ios-liquid-home";
 import { useI18n } from "../../../hooks/useI18n";
@@ -65,6 +64,7 @@ export function LightGameHeading({
   subtitle?: string;
   badge?: string;
 }) {
+  const lh = useLessonStyles();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
@@ -105,6 +105,7 @@ export function LightPromptCard({
   sourceLanguage?: string;
   targetLanguage?: string;
 }) {
+  const lh = useLessonStyles();
   const isKids = variant === "kids";
   const storedSourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
   const storedTargetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
@@ -188,6 +189,7 @@ export function LightSurfaceCard({
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
 }) {
+  const lh = useLessonStyles();
   return (
     <HomeLiquidCard style={style} contentStyle={[lh.surfaceCardInner, contentStyle]} radius={22}>
       {children}
@@ -205,6 +207,7 @@ export function LightDialogueCard({
   children: string;
   contentLanguageCode?: string;
 }) {
+  const lh = useLessonStyles();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
@@ -250,6 +253,7 @@ export function LightDialogueCard({
 }
 
 function DialogueQuoteIcon() {
+  const lh = useLessonStyles();
   return (
     <View style={lh.dialogueQuoteWrap}>
       <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
@@ -271,6 +275,8 @@ export function LightQuestionPrompt({
   layout = "row",
   expanded = false,
   contentLanguageCode,
+  speechText,
+  speechLanguageCode,
 }: {
   children: string;
   label: string;
@@ -279,14 +285,19 @@ export function LightQuestionPrompt({
   layout?: "row" | "stacked";
   expanded?: boolean;
   contentLanguageCode?: string;
+  /** Text spoken by the audio button; may differ from the displayed source-language hint. */
+  speechText?: string;
+  /** Language used for TTS voice selection. */
+  speechLanguageCode?: string;
 }) {
+  const lh = useLessonStyles();
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKids = variant === "kids" || rawMode === "kids";
   const { width, height } = useWindowDimensions();
 
   const { speak } = useTTS();
-  const { isKu, isAr } = useI18n();
+  const { t, isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
   const sourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
@@ -344,7 +355,12 @@ export function LightQuestionPrompt({
   }));
 
   const handleSpeak = () => {
-    speak(children, languageCode);
+    speak(
+      speechText ?? children,
+      speechLanguageCode ?? languageCode,
+      undefined,
+      { provider: "device" },
+    );
   };
 
   const pose = React.useMemo<TwinoPose>(() => {
@@ -409,7 +425,12 @@ export function LightQuestionPrompt({
                 {children}
               </AppText>
             </View>
-            <Pressable onPress={handleSpeak} style={lh.kidsBubbleSpeaker}>
+            <Pressable
+              onPress={handleSpeak}
+              accessibilityRole="button"
+              accessibilityLabel={`${t("lessons.listenLabel")}: ${speechText ?? children}`}
+              style={lh.kidsBubbleSpeaker}
+            >
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a4 4 0 010 7"
@@ -475,7 +496,12 @@ export function LightQuestionPrompt({
             </AppText>
           </View>
 
-          <TouchableOpacity onPress={handleSpeak} style={lh.normalBubbleSpeaker}>
+          <TouchableOpacity
+            onPress={handleSpeak}
+            accessibilityRole="button"
+            accessibilityLabel={`${t("lessons.listenLabel")}: ${speechText ?? children}`}
+            style={lh.normalBubbleSpeaker}
+          >
             <HugeiconsIcon icon={VolumeHighIcon} size={18} color="#2B59F3" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
@@ -486,6 +512,7 @@ export function LightQuestionPrompt({
 
 /** Mesh backdrop for lesson + path screens */
 export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) {
+  const lh = useLessonStyles();
   const { colors, isDark } = useThemeColors();
   return (
     <View style={[lh.backdrop, { backgroundColor: colors.background }]}>
@@ -496,6 +523,7 @@ export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) 
 }
 
 export function KidsBottomScene() {
+  const lh = useLessonStyles();
   return (
     <View style={lh.hillsContainer} pointerEvents="none">
       <Svg height={160} width="100%" viewBox="0 0 375 160" preserveAspectRatio="none">
@@ -572,6 +600,7 @@ export function KidsCloudsBackground() {
 }
 
 export function KidsLessonBackdrop({ children }: { children: React.ReactNode }) {
+  const lh = useLessonStyles();
   return (
     <View style={lh.backdrop}>
       <LinearGradient
@@ -607,6 +636,7 @@ export function LightOptionRow({
   isKids?: boolean;
   languageCode?: string;
 }) {
+  const lh = useLessonStyles();
   return (
     <View style={lh.optionRowWrap}>
       <LightWordTile
@@ -686,6 +716,7 @@ export function LightWordTile({
   style?: StyleProp<ViewStyle>;
   languageCode?: string;
 }) {
+  const lh = useLessonStyles();
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKidsRoute = rawMode === "kids" || isKids;
@@ -719,17 +750,24 @@ export function LightWordTile({
 
   const colorMap = React.useMemo(() => {
     const dividerColor = colors.border;
+    const darkState = {
+      selected: "rgba(59, 130, 246, 0.28)",
+      correct: "rgba(16, 185, 129, 0.24)",
+      wrong: "rgba(239, 68, 68, 0.24)",
+      good: "rgba(59, 130, 246, 0.22)",
+      bad: "rgba(245, 158, 11, 0.22)",
+    };
     return {
       bg: [
         isDark && !isKidsRoute ? colors.surfaceRaised : "#FFFFFF", // idle
         isDark && !isKidsRoute ? colors.surface : "#F8FAFC", // pending
-        isKidsRoute ? "#7DD3FC" : "#E8EFFF", // selected
-        isKidsRoute ? "#BBF7D0" : "#E7F9E0", // correct — vivid green (~85%+ contrast)
-        isKidsRoute ? "#FEF2F2" : "#FFE8E8", // wrong
-        TIER_COLORS.great.bg,
-        TIER_COLORS.good.bg,
-        TIER_COLORS.bad.bg,
-        TIER_COLORS.terrible.bg,
+        isKidsRoute ? "#7DD3FC" : isDark ? darkState.selected : "#E8EFFF", // selected
+        isKidsRoute ? "#BBF7D0" : isDark ? darkState.correct : "#E7F9E0", // correct
+        isKidsRoute ? "#FEF2F2" : isDark ? darkState.wrong : "#FFE8E8", // wrong
+        isDark && !isKidsRoute ? darkState.correct : TIER_COLORS.great.bg,
+        isDark && !isKidsRoute ? darkState.good : TIER_COLORS.good.bg,
+        isDark && !isKidsRoute ? darkState.bad : TIER_COLORS.bad.bg,
+        isDark && !isKidsRoute ? darkState.wrong : TIER_COLORS.terrible.bg,
         "rgba(255, 255, 255, 0)", // ghost
       ],
       border: [
@@ -745,7 +783,26 @@ export function LightWordTile({
         L.slotDash, // ghost
       ]
     };
-  }, [isKidsRoute]);
+  }, [colors, isDark, isKidsRoute]);
+
+  const themedLabelColor = React.useMemo(() => {
+    if (isKidsRoute || !isDark) return undefined;
+    switch (state) {
+      case "selected":
+      case "good":
+        return "#DBEAFE";
+      case "correct":
+      case "great":
+        return "#A7F3D0";
+      case "wrong":
+      case "terrible":
+        return "#FECACA";
+      case "bad":
+        return "#FDE68A";
+      default:
+        return colors.foreground;
+    }
+  }, [colors.foreground, isDark, isKidsRoute, state]);
 
   const isPressedOrSelected = state === "selected" || state === "correct" || state === "wrong";
   const animScale = useAnimatedStyle(() => ({
@@ -888,15 +945,17 @@ export function LightWordTile({
             {
               zIndex: 1,
               color:
-                isKidsRoute && state === "correct"
-                  ? "#14532D"
-                  : isKidsRoute && state === "wrong"
-                    ? "#B91C1C"
-                    : isKidsRoute && state === "selected"
-                      ? "#0284C7"
-                      : state === "selected"
-                        ? L.blue
-                        : (isKidsRoute ? L.navy : colors.foreground),
+                !isKidsRoute && themedLabelColor
+                  ? themedLabelColor
+                  : isKidsRoute && state === "correct"
+                    ? "#14532D"
+                    : isKidsRoute && state === "wrong"
+                      ? "#B91C1C"
+                      : isKidsRoute && state === "selected"
+                        ? "#0284C7"
+                        : state === "selected"
+                          ? L.blue
+                          : (isKidsRoute ? L.navy : colors.foreground),
             },
             isKidsRoute && { fontFamily: "DINNextRoundedBold", fontSize: fontSize ?? 16 },
             fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: fontSize + 8 },
@@ -947,6 +1006,7 @@ export function LightAnswerSlots({
   count: number;
   filled: number;
 }) {
+  const lh = useLessonStyles();
   return (
     <View style={lh.slotsRow}>
       {Array.from({ length: count }).map((_, i) => (
@@ -985,6 +1045,7 @@ export function LightHintButton({
   label?: string;
   showBulb?: boolean;
 }) {
+  const lh = useLessonStyles();
   return (
     <Pressable onPress={onPress}>
       <HomeLiquidCard contentStyle={lh.hintBtn} radius={LightRadius.btn}>
@@ -1008,6 +1069,7 @@ export function LightCheckButton({
   color?: string;
   variant?: "default" | "kids";
 }) {
+  const lh = useLessonStyles();
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKids = variant === "kids" || rawMode === "kids";
@@ -1043,7 +1105,7 @@ export function LightCheckButton({
   if (disabled) {
     return (
       <View style={lh.checkBtnDisabled}>
-        <AppText style={[lh.checkLabel, { color: L.grayLight }]} forceKurdishFont>{label}</AppText>
+        <AppText style={[lh.checkLabel, lh.checkLabelDisabled]} forceKurdishFont>{label}</AppText>
       </View>
     );
   }
@@ -1081,6 +1143,7 @@ export function LightMatchRow({
   leftLanguageCode?: string;
   rightLanguageCode?: string;
 }) {
+  const lh = useLessonStyles();
   return (
     <View style={lh.matchRow}>
       <View style={lh.matchSide}>
@@ -1165,6 +1228,7 @@ export function LessonLightHeader({
   lessonNumber: number;
   variant?: "default" | "kids";
 }) {
+  const lh = useLessonStyles();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const isKids = variant === "kids";
@@ -1209,11 +1273,15 @@ export function LessonLightHeader({
 
   return (
     <View style={lh.lessonHeader}>
-      <HomeLiquidPill onPress={onBack} size={44}>
+      <Pressable
+        onPress={onBack}
+        hitSlop={8}
+        style={({ pressed }) => [lh.lessonHeaderButton, pressed && lh.lessonHeaderButtonPressed]}
+      >
         <View style={{ transform: [{ scaleX: rtl ? -1 : 1 }] }}>
           <BackChevron color={colors.foreground} />
         </View>
-      </HomeLiquidPill>
+      </Pressable>
       <LessonUnitLessonChip
         unitNumber={unitNumber}
         lessonNumber={lessonNumber}
@@ -1251,6 +1319,7 @@ export function LessonLiquidFeedback({
   onContinue: () => void;
   variant?: "default" | "kids";
 }) {
+  const lh = useLessonStyles();
   const { t, isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const isKids = variant === "kids";
@@ -1395,7 +1464,16 @@ export function SpringPressable({
   );
 }
 
-const lh = StyleSheet.create({
+function useLessonStyles() {
+  const { colors, isDark } = useThemeColors();
+  return React.useMemo(() => createLessonStyles(colors, isDark), [colors, isDark]);
+}
+
+function createLessonStyles(
+  colors: ReturnType<typeof useThemeColors>["colors"],
+  isDark: boolean,
+) {
+  return StyleSheet.create({
   lessonHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1403,6 +1481,20 @@ const lh = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
     gap: 12,
+  },
+  lessonHeaderButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceRaised,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lessonHeaderButtonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.96 }],
   },
   backdrop: { flex: 1 },
   backdropContent: { flex: 1 },
@@ -1414,7 +1506,7 @@ const lh = StyleSheet.create({
   progressTrack: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: L.track,
+    backgroundColor: isDark ? colors.muted : L.track,
     overflow: "hidden",
   },
   progressFill: {
@@ -1459,11 +1551,11 @@ const lh = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: L.cardTintBorder,
+    borderColor: colors.border,
   },
   promptTextCol: { flex: 1, gap: 4 },
   surfaceCardInner: {
@@ -1476,7 +1568,7 @@ const lh = StyleSheet.create({
   dialogueBubble: {
     borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: "#D4C4F5",
+    borderColor: isDark ? colors.border : "#D4C4F5",
     overflow: "visible",
     ...crossShadow({
       color: "#6B4FD4",
@@ -1503,7 +1595,7 @@ const lh = StyleSheet.create({
     borderTopWidth: 11,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#E8DEFF",
+    borderTopColor: isDark ? colors.surfaceRaised : "#E8DEFF",
   },
   dialogueContent: {
     gap: 10,
@@ -1662,9 +1754,12 @@ const lh = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: PRIMARY_ACTION.disabledFace,
+    backgroundColor: isDark ? colors.muted : PRIMARY_ACTION.disabledFace,
     borderBottomWidth: 3,
-    borderBottomColor: PRIMARY_ACTION.disabledRim,
+    borderBottomColor: isDark ? colors.border : PRIMARY_ACTION.disabledRim,
+  },
+  checkLabelDisabled: {
+    color: isDark ? colors.mutedForeground : L.grayLight,
   },
   feedbackInner: {
     paddingTop: 20,
@@ -1690,7 +1785,7 @@ const lh = StyleSheet.create({
   feedbackSub: {
     fontSize: 15,
     fontWeight: "600",
-    color: L.gray,
+    color: colors.mutedForeground,
     lineHeight: 22,
     fontFamily: "DINNextRoundedMedium",
   },
@@ -1758,13 +1853,13 @@ const lh = StyleSheet.create({
     borderRadius: LightRadius.tile,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: L.slotDash,
-    backgroundColor: L.bgSoft,
+    borderColor: isDark ? colors.border : L.slotDash,
+    backgroundColor: isDark ? colors.muted : L.bgSoft,
   },
   slotFilled: {
     borderStyle: "solid",
     borderColor: L.blue,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? "rgba(59,130,246,0.18)" : "#EEF2FF",
   },
   hintBtn: {
     flexDirection: "row",
@@ -2024,7 +2119,7 @@ const lh = StyleSheet.create({
   kidsBubble: {
     flex: 1,
     marginLeft: 4,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 18,
     borderWidth: 2,
     borderColor: "#E9D5FF",
@@ -2100,10 +2195,10 @@ const lh = StyleSheet.create({
     marginLeft: -7,
     width: 14,
     height: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
-    borderColor: "#E9D5FF",
+    borderColor: isDark ? colors.border : "#E9D5FF",
     transform: [{ rotate: "135deg" }],
     zIndex: 2,
   },
@@ -2201,12 +2296,12 @@ const lh = StyleSheet.create({
   normalBubble: {
     flex: 1,
     marginLeft: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
     borderBottomWidth: 3.5,
-    borderBottomColor: "#CBD5E1",
+    borderBottomColor: isDark ? colors.muted : "#CBD5E1",
     paddingVertical: 14,
     paddingHorizontal: 16,
     minHeight: 76,
@@ -2236,10 +2331,10 @@ const lh = StyleSheet.create({
     marginTop: -7,
     width: 14,
     height: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderLeftWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     transform: [{ rotate: "45deg" }],
     zIndex: 2,
   },
@@ -2250,24 +2345,24 @@ const lh = StyleSheet.create({
     marginLeft: -7,
     width: 14,
     height: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surfaceRaised,
     borderLeftWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     transform: [{ rotate: "135deg" }],
     zIndex: 2,
   },
   normalBubbleLabel: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#94A3B8",
+    color: colors.mutedForeground,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   normalBubbleText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E293B",
+    color: colors.foreground,
     lineHeight: 22,
     flexShrink: 1,
   },
@@ -2283,11 +2378,11 @@ const lh = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: isDark ? colors.muted : "#EEF2FF",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E0E7FF",
+    borderColor: colors.border,
   },
   trayHandle: {
     width: 44,
@@ -2298,4 +2393,5 @@ const lh = StyleSheet.create({
     marginTop: 6,
     marginBottom: 10,
   },
-});
+  });
+}

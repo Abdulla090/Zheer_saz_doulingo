@@ -36,6 +36,7 @@ import { crossShadow } from "../utils/shadows";
 import { AppText } from "./ui/AppText";
 import { useThemeColors } from "../hooks/useThemeColors";
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useReducedMotion,
@@ -43,11 +44,11 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { springMotion } from "../utils/motion-spring";
 import { orderTabsForDirection } from "../utils/tab-order";
 
 const MAX_BAR_WIDTH = 460;
 const BAR_PADDING = 6;
+const INDICATOR_MOVE_DURATION = 240;
 
 type TabRoute = "index" | "play" | "dashboard" | typeof TAB_FAB_ROUTE;
 
@@ -127,14 +128,24 @@ function TabButton({
   }));
 
   const handlePressIn = () => {
+    cancelAnimation(pressScale);
     pressScale.value = reducedMotion
       ? 1
-      : springMotion(0.96, { damping: 24, stiffness: 360 });
+      : withTiming(0.965, {
+          duration: 90,
+          easing: Easing.out(Easing.quad),
+        });
     onPressIn();
   };
 
   const handlePressOut = () => {
-    pressScale.value = reducedMotion ? 1 : springMotion(1, { damping: 20, stiffness: 320 });
+    cancelAnimation(pressScale);
+    pressScale.value = reducedMotion
+      ? 1
+      : withTiming(1, {
+          duration: 140,
+          easing: Easing.out(Easing.cubic),
+        });
   };
 
   return (
@@ -142,7 +153,6 @@ function TabButton({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      android_ripple={{ color: "rgba(255,255,255,0.18)", borderless: false }}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={label}
@@ -222,6 +232,7 @@ export function CustomTabBar({
   const indicatorScaleX = useSharedValue(1);
   const indicatorScaleY = useSharedValue(1);
   const hasPositionedIndicator = useRef(false);
+  const previousActiveItemIndex = useRef(activeItemIndex);
   const reducedMotion = useReducedMotion();
 
   const indicatorTarget = useCallback(
@@ -231,16 +242,42 @@ export function CustomTabBar({
 
   useEffect(() => {
     const target = indicatorTarget(activeItemIndex);
+    cancelAnimation(indicatorX);
+    cancelAnimation(indicatorScaleX);
+    cancelAnimation(indicatorScaleY);
     if (!hasPositionedIndicator.current || reducedMotion) {
       indicatorX.value = target;
+      indicatorScaleX.value = 1;
+      indicatorScaleY.value = 1;
       hasPositionedIndicator.current = true;
+      previousActiveItemIndex.current = activeItemIndex;
       return;
     }
+
+    const changedTab = previousActiveItemIndex.current !== activeItemIndex;
+    previousActiveItemIndex.current = activeItemIndex;
     indicatorX.value = withTiming(target, {
-      duration: 180,
-      easing: Easing.out(Easing.cubic),
+      duration: INDICATOR_MOVE_DURATION,
+      easing: Easing.bezier(0.2, 0.82, 0.2, 1),
     });
-  }, [activeItemIndex, indicatorTarget, indicatorX, reducedMotion]);
+    if (changedTab) {
+      indicatorScaleX.value = withSequence(
+        withTiming(1.14, { duration: 105, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 150, easing: Easing.out(Easing.cubic) }),
+      );
+      indicatorScaleY.value = withSequence(
+        withTiming(0.94, { duration: 95, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 160, easing: Easing.out(Easing.cubic) }),
+      );
+    }
+  }, [
+    activeItemIndex,
+    indicatorScaleX,
+    indicatorScaleY,
+    indicatorTarget,
+    indicatorX,
+    reducedMotion,
+  ]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
@@ -252,13 +289,15 @@ export function CustomTabBar({
 
   const energizeIndicator = () => {
     if (reducedMotion) return;
+    cancelAnimation(indicatorScaleX);
+    cancelAnimation(indicatorScaleY);
     indicatorScaleX.value = withSequence(
-      withTiming(1.035, { duration: 55 }),
-      withTiming(1, { duration: 105, easing: Easing.out(Easing.cubic) }),
+      withTiming(1.045, { duration: 70, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 135, easing: Easing.out(Easing.cubic) }),
     );
     indicatorScaleY.value = withSequence(
-      withTiming(0.985, { duration: 55 }),
-      withTiming(1, { duration: 105, easing: Easing.out(Easing.cubic) }),
+      withTiming(0.975, { duration: 70, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 135, easing: Easing.out(Easing.cubic) }),
     );
   };
 
@@ -294,11 +333,11 @@ export function CustomTabBar({
             {
               width: slotWidth - 6,
               backgroundColor: isDark
-                ? "rgba(255,255,255,0.13)"
-                : "rgba(255,255,255,0.68)",
+                ? "rgba(255,255,255,0.105)"
+                : "rgba(255,255,255,0.5)",
               borderColor: isDark
-                ? "rgba(2,6,23,0.58)"
-                : "rgba(51,65,85,0.3)",
+                ? "rgba(255,255,255,0.2)"
+                : "rgba(255,255,255,0.74)",
             },
             indicatorStyle,
           ]}
@@ -306,12 +345,34 @@ export function CustomTabBar({
           <LinearGradient
             colors={
               isDark
-                ? ["rgba(255,255,255,0.15)", "rgba(255,255,255,0.03)"]
-                : ["rgba(255,255,255,0.92)", "rgba(226,232,240,0.32)"]
+                ? ["rgba(255,255,255,0.13)", "rgba(255,255,255,0.015)", "rgba(255,255,255,0.1)"]
+                : ["rgba(255,255,255,0.78)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.62)"]
             }
+            locations={[0, 0.52, 1]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.activeLensRefraction}
+          />
+          <LinearGradient
+            colors={
+              isDark
+                ? ["rgba(255,255,255,0.22)", "rgba(255,255,255,0.045)", "rgba(2,6,23,0.12)"]
+                : ["rgba(255,255,255,0.94)", "rgba(255,255,255,0.28)", "rgba(100,116,139,0.12)"]
+            }
+            locations={[0, 0.48, 1]}
             style={styles.activeLensSheen}
           />
-          <View pointerEvents="none" style={styles.activeLensInnerRim} />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.activeLensInnerRim,
+              {
+                borderColor: isDark
+                  ? "rgba(255,255,255,0.28)"
+                  : "rgba(255,255,255,0.82)",
+              },
+            ]}
+          />
         </Animated.View>
       ) : null}
       {Platform.OS === "android" ? (
@@ -363,16 +424,7 @@ export function CustomTabBar({
               isRtl={isRtl}
               icon={item.renderIcon(isFocused, iconSize, colors.foreground, colors.mutedForeground)}
               onPressIn={() => {
-                const index = visualItems.findIndex(
-                  (candidate) => candidate.route === item.route,
-                );
-                indicatorX.value = reducedMotion
-                  ? indicatorTarget(index)
-                  : withTiming(indicatorTarget(index), {
-                      duration: 180,
-                      easing: Easing.out(Easing.cubic),
-                    });
-                energizeIndicator();
+                if (isFocused) energizeIndicator();
                 router.prefetch(item.href);
               }}
               onPress={onPress}
@@ -389,8 +441,8 @@ export function CustomTabBar({
           <BlurView
             blurTarget={blurTarget}
             blurMethod="dimezisBlurViewSdk31Plus"
-            blurReductionFactor={2.6}
-            intensity={82}
+            blurReductionFactor={2.15}
+            intensity={92}
             tint={isDark ? "dark" : "extraLight"}
             style={styles.androidBlur}
           />
@@ -401,8 +453,8 @@ export function CustomTabBar({
               styles.androidFrost,
               {
                 backgroundColor: isDark
-                  ? "rgba(15,23,42,0.52)"
-                  : "rgba(241,245,249,0.5)",
+                  ? "rgba(15,23,42,0.34)"
+                  : "rgba(241,245,249,0.34)",
               },
             ]}
           />
@@ -410,7 +462,19 @@ export function CustomTabBar({
             pointerEvents="none"
             colors={
               isDark
-                ? ["rgba(255,255,255,0.28)", "rgba(255,255,255,0.05)", "rgba(255,255,255,0)"]
+                ? ["rgba(125,211,252,0.08)", "rgba(255,255,255,0.025)", "rgba(196,181,253,0.055)"]
+                : ["rgba(186,230,253,0.16)", "rgba(255,255,255,0.04)", "rgba(221,214,254,0.13)"]
+            }
+            locations={[0, 0.5, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.androidAmbientLight}
+          />
+          <LinearGradient
+            pointerEvents="none"
+            colors={
+              isDark
+                ? ["rgba(255,255,255,0.34)", "rgba(255,255,255,0.065)", "rgba(255,255,255,0)"]
                 : ["rgba(255,255,255,0.98)", "rgba(255,255,255,0.3)", "rgba(255,255,255,0)"]
             }
             locations={[0, 0.32, 1]}
@@ -488,6 +552,10 @@ function createStyles(colors: any, isDark: boolean) {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },
+  androidAmbientLight: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 30,
+  },
   androidDarkRim: {
     borderRadius: 30,
     borderWidth: StyleSheet.hairlineWidth,
@@ -533,6 +601,10 @@ function createStyles(colors: any, isDark: boolean) {
     ...StyleSheet.absoluteFill,
     borderRadius: 23,
   },
+  activeLensRefraction: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 23,
+  },
   activeLensInnerRim: {
     ...StyleSheet.absoluteFill,
     top: 1,
@@ -541,7 +613,6 @@ function createStyles(colors: any, isDark: boolean) {
     bottom: 1,
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.76)",
   },
   tabButton: {
     flex: 1,

@@ -6,9 +6,10 @@ import { PRIVACY_POLICY_URL, SUPPORT_EMAIL } from "../../constants/app-meta";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 import { useI18n } from "../../hooks/useI18n";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import React from "react";
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import React, { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -25,16 +26,21 @@ export function LegalDocumentScreen({ docId }: Props) {
   const safeBack = useSafeBack("/");
   const insets = useSafeAreaInsets();
   const { locale, isKu } = useI18n();
+  const { colors, isDark } = useThemeColors();
   const isRtl = isKu || locale === "ar";
   const doc = getLegalDocument(docId, locale);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={[styles.topBar, { flexDirection: "row" }]}>
         <Pressable onPress={safeBack} hitSlop={12} style={styles.back}>
-          <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={22} color="#1A2B48" strokeWidth={2.5} />
-          </View>
+          <HugeiconsIcon
+            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+            size={22}
+            color={colors.foreground}
+            strokeWidth={2.5}
+          />
         </Pressable>
         <AppText
           style={styles.title}
@@ -105,19 +111,20 @@ export function LegalDocumentScreen({ docId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: any, isDark: boolean) {
+  return StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F7F7F7",
+    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: colors.border,
   },
   back: {
     width: 44,
@@ -132,13 +139,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: colors.foreground,
     textAlign: "center",
     fontFamily: "DINNextRoundedBold",
   },
   updated: {
     fontSize: 13,
-    color: "#777",
+    color: colors.mutedForeground,
     marginTop: 16,
     marginBottom: 8,
     fontFamily: "DINNextRoundedMedium",
@@ -149,36 +156,37 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#1A2B48",
+    color: colors.foreground,
     marginBottom: 8,
     fontFamily: "DINNextRoundedBold",
   },
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#4B4B4B",
+    color: colors.mutedForeground,
     marginBottom: 10,
     fontFamily: "DINNextRoundedMedium",
   },
   supportBox: {
     marginTop: 28,
     padding: 16,
-    backgroundColor: "#E5F7FF",
+    backgroundColor: isDark ? colors.surfaceRaised : "#E5F7FF",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#B8E4FF",
+    borderColor: isDark ? colors.border : "#B8E4FF",
   },
   supportLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#1CB0F6",
+    color: colors.secondary,
     fontFamily: "DINNextRoundedBold",
   },
   supportEmail: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1A2B48",
+    color: colors.foreground,
     marginTop: 4,
     fontFamily: "DINNextRoundedMedium",
   },
-});
+  });
+}

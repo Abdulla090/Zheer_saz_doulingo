@@ -5,9 +5,10 @@ import { AdminButton, AdminCard, AdminSegment } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { downloadTextFile } from "../../utils/admin-export";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -19,6 +20,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AdminHomeScreen() {
+  const { colors } = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const safeBack = useSafeBack("/(tabs)/more");
@@ -204,8 +207,9 @@ export default function AdminHomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F4F7FF" },
+function createStyles(colors: any) {
+  return StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -213,7 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  title: { fontSize: 22, fontWeight: "800", color: "#152238" },
+  title: { fontSize: 22, fontWeight: "800", color: colors.foreground },
   scroll: { padding: 16, paddingBottom: 48, gap: 12 },
   statusRow: {
     flexDirection: "row",
@@ -221,21 +225,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  status: { fontSize: 13, color: "#64748B", flex: 1 },
+  status: { fontSize: 13, color: colors.mutedForeground, flex: 1 },
   count: { fontSize: 13, fontWeight: "700", color: "#2B59F3" },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   importInput: {
     minHeight: 160,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     fontSize: 13,
     fontFamily: Platform.OS === "web" ? "monospace" : undefined,
     marginBottom: 12,
-    backgroundColor: "#FAFCFF",
+    color: colors.foreground,
+    backgroundColor: colors.surface,
   },
-  meta: { fontSize: 13, color: "#64748B", marginBottom: 6 },
-  preview: { fontSize: 12, color: "#94A3B8", lineHeight: 18 },
-});
+  meta: { fontSize: 13, color: colors.mutedForeground, marginBottom: 6 },
+  preview: { fontSize: 12, color: colors.mutedForeground, lineHeight: 18 },
+  });
+}

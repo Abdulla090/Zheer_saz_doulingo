@@ -33,6 +33,7 @@ import { LightGameHeading } from "./lesson-light-primitives";
 import { L, LightMotion } from "./lesson-light-design";
 import { crossShadow } from "../../../utils/shadows";
 import { AppText } from "../../../components/ui/AppText";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 import { getLanguageDirection } from "../../../i18n/direction";
 
 type Props = {
@@ -75,6 +76,7 @@ const MemoryCard = memo(function MemoryCard({
   isWrong: boolean;
   languageCode?: string;
 }) {
+  const { colors, isDark } = useThemeColors();
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
   const shakeX = useSharedValue(0);
@@ -169,8 +171,19 @@ const MemoryCard = memo(function MemoryCard({
         style={[
           s.cardBase,
           s.cardBack,
-          card.isMatched && s.cardMatched,
-          isWrong && s.cardWrong,
+          { backgroundColor: colors.surfaceRaised, borderColor: colors.border, borderBottomColor: colors.muted },
+          card.isMatched && {
+            backgroundColor: colors.successBg,
+            borderColor: colors.success,
+            borderBottomColor: colors.success,
+            borderBottomWidth: 4,
+          },
+          isWrong && {
+            backgroundColor: "rgba(239, 68, 68, 0.22)",
+            borderColor: colors.error,
+            borderBottomColor: colors.error,
+            borderBottomWidth: 4,
+          },
           backAnimatedStyle,
           crossShadow({
             color: card.isMatched ? "#15803D" : "#1A2B48",
@@ -193,7 +206,16 @@ const MemoryCard = memo(function MemoryCard({
             align="center"
             nativeAlign="start"
             fullWidth
-            style={s.cardText}
+            style={[
+              s.cardText,
+              {
+                color: card.isMatched
+                  ? isDark ? "#A7F3D0" : "#14532D"
+                  : isWrong
+                    ? isDark ? "#FECACA" : "#B91C1C"
+                    : colors.foreground,
+              },
+            ]}
             latinRole="bold"
             numberOfLines={3}
             adjustsFontSizeToFit

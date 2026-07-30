@@ -112,7 +112,11 @@ export function DesktopWebSidebar() {
       <View style={styles.nav}>
         {ITEMS.map((item) => {
           const active = item.isActive(pathname);
-          const label = item.labelKey ? t(item.labelKey) : item.label ?? "";
+          const label = item.labelKey
+            ? t(item.labelKey)
+            : item.href === "/credits" && isKu
+              ? "کرێدیتی TWINO"
+              : item.label ?? "";
 
           return (
             <Pressable
@@ -160,8 +164,12 @@ export function DesktopWebSidebar() {
         <AppText style={styles.footerTitle} forceLatinFont latinRole="bold">
           TWINO
         </AppText>
-        <AppText style={styles.footerText} forceLatinFont>
-          Learn English every day
+        <AppText
+          style={styles.footerText}
+          forceKurdishFont={isKu}
+          forceLatinFont={!isKu}
+        >
+          {isKu ? "هەموو ڕۆژێک ئینگلیزی فێربە" : "Learn English every day"}
         </AppText>
       </View>
     </View>

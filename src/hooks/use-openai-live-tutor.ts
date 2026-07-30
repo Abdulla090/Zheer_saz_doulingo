@@ -15,6 +15,7 @@ import {
 import { WORD_BANKS } from "../data/voice-tutor-word-banks";
 import { computeSessionAnalysis } from "../services/voice-tutor-analysis-engine";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { mergeStreamingTranscript } from "../utils/streaming-transcript";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type OpenAILiveTutorStatus =
@@ -153,7 +154,9 @@ export function useOpenAILiveTutor() {
   const appendTranscript = useCallback((delta: string) => {
     if (!delta) return;
     const current = aiTextRef.current;
-    aiTextRef.current = delta.startsWith(current) ? delta : current + delta;
+    const merged = mergeStreamingTranscript(current, delta);
+    if (merged === current) return;
+    aiTextRef.current = merged;
 
     if (transcriptFlushRef.current) clearTimeout(transcriptFlushRef.current);
     transcriptFlushRef.current = setTimeout(() => {
@@ -288,6 +291,7 @@ export function useOpenAILiveTutor() {
         },
         onTurnComplete: () => {
           if (!isCurrent()) return;
+          void playerRef.current?.finishTurn();
           const completed = aiTextRef.current.trim();
           aiTextRef.current = "";
           if (completed) {

@@ -163,4 +163,56 @@ describe("LivePcmPlayer turn draining", () => {
     expect(states).toEqual([true, false]);
     player.destroy();
   });
+
+  it("does not skip the opening source while the playlist is still loading", async () => {
+    const player = new LivePcmPlayer();
+    mockPlaylist.isLoaded = false;
+
+    player.enqueueBase64Pcm("AAAA");
+    jest.advanceTimersByTime(30);
+    await flushPromises();
+
+    player.enqueueBase64Pcm("AAAA");
+    await player.finishTurn();
+
+    expect(mockPlaylist.trackCount).toBe(2);
+    expect(mockPlaylist.skipTo).not.toHaveBeenCalled();
+    player.destroy();
+  });
+
+  it("invalidates a completed-track status when a final source is appended", async () => {
+    const states: boolean[] = [];
+    const player = new LivePcmPlayer((isPlaying) => states.push(isPlaying));
+
+    player.enqueueBase64Pcm("AAAA");
+    jest.advanceTimersByTime(30);
+    await flushPromises();
+    emitStatus({
+      playing: false,
+      didJustFinish: true,
+      currentIndex: 0,
+      trackCount: 1,
+      currentTime: 1,
+      duration: 1,
+    });
+
+    player.enqueueBase64Pcm("AAAA");
+    await player.finishTurn();
+    jest.advanceTimersByTime(150);
+
+    expect(mockPlaylist.skipTo).toHaveBeenCalledWith(1);
+    expect(states).toEqual([true]);
+
+    emitStatus({
+      playing: false,
+      didJustFinish: true,
+      currentIndex: 1,
+      trackCount: 2,
+      currentTime: 1,
+      duration: 1,
+    });
+    jest.advanceTimersByTime(100);
+    expect(states).toEqual([true, false]);
+    player.destroy();
+  });
 });
