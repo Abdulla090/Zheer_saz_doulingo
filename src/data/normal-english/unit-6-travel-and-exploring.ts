@@ -1,6 +1,6 @@
 import { UnitBank } from "../types";
 
-// ── Unit 5: Travel & Exploring the World — 10 unique lessons ──────────
+// ── Visible Unit 9: Travel & Exploring — 10 unique lessons ───────────────────
 // Advanced travel vocabulary for navigating airports, cities, emergencies, and new cultures.
 
 const normalUnit05: UnitBank = [
@@ -20,7 +20,7 @@ const normalUnit05: UnitBank = [
       { prompt: "ئاماژەدان بە کاتی گەڕانەوە", target: "I have a return ticket for the 15th of next month.", targetKurdish: "بلیتی گەڕانەوەم هەیە بۆ ڕۆژی ١٥ی مانگی داهاتوو.", promptAr: "الإشارة إلى وقت العودة", targetArabic: "لدي تذكرة عودة ليوم الخامس عشر من الشهر القادم." },
     ],
     sentences: [
-      { english: ["Do", "you", "have", "anything", "to", "declare", "at", "customs"], kurdish: "ئایا هیچ شتێکت پێیە کە پێویست بکات ��ە گومرگ ئاشکرای بکەیت؟", arabic: "هل لديك أي شيء للتصريح عنه في الجمارك؟" },
+      { english: ["Do", "you", "have", "anything", "to", "declare", "at", "customs"], kurdish: "ئایا هیچ شتێکت پێیە کە پێویست بکات لە گومرگ ئاشکرای بکەیت؟", arabic: "هل لديك أي شيء للتصريح عنه في الجمارك؟" },
       { english: ["My", "duration", "of", "stay", "will", "be", "two", "weeks"], kurdish: "ماوەی مانەوەکەم دوو هەفتە دەبێت", arabic: "مدة إقامتي ستكون أسبوعين" },
     ],
     fillBlanks: [
@@ -28,7 +28,7 @@ const normalUnit05: UnitBank = [
       { parts: ["I need to catch my", "flight to London at gate 4."], hint: "پێویستە بگەڕێمەوە بە گەشتی ترانزێتەکەم (گۆڕینی فڕۆکەکەم) بۆ لەندەن لە دەروازەی ٤.", answer: "connecting", wrongs: ["second", "next", "moving"], arabicHint: "أحتاج إلى اللحاق برحلة الربط الخاصة بي إلى لندن عند البوابة 4.", arabicParts: ["أحتاج إلى اللحاق برحلة","الخاصة بي إلى لندن عند البوابة 4."], arabicAnswer: "الربط", arabicWrongs: ["الثانية","التالية","المتحركة"] },
     ],
     conversations: [
-      { situation: "لە بەردەم ئەفسەری پاسپۆرت", theyAsk: "Welcome. May I see your passport? What is the purpose of your visit?", correct: "Here is my passport. The purpose of my visit is tourism. My duration of stay is exactly two weeks.", wrong1: "I come to see things. Two weeks.", wrong2: "Passport here. I am tourist.", wrong3: "I visit for holiday.", explanation: "'Purpose of your visit' و 'duration of stay' پرسیارە فەرمییەکانی هەموو فڕۆکەخانەیەکن", situationAr: "أمام ضابط الجوازات", explanationAr: "'الغرض من زيارتك' و 'مدة الإقامة' هي أسئلة رسمية في جميع المطارات" },
+      { situation: "لە بەردەم ئەفسەری پاسپۆرت", theyAsk: "Welcome. May I see your passport? What is the purpose of your visit?", correct: "Here is my passport. The purpose of my visit is tourism. My duration of stay is exactly two weeks.", wrong1: "I'm here on vacation for two weeks.", wrong2: "I'm visiting the country as a tourist.", wrong3: "I'll be staying for exactly two weeks.", explanation: "'Purpose of your visit' و 'duration of stay' پرسیارە فەرمییەکانی هەموو فڕۆکەخانەیەکن", situationAr: "أمام ضابط الجوازات", explanationAr: "'الغرض من زيارتك' و 'مدة الإقامة' هي أسئلة رسمية في جميع المطارات" },
     ],
   },
 
@@ -43,7 +43,7 @@ const normalUnit05: UnitBank = [
       { english: "Manual or automatic",  kurdish: "گێڕی عادی یان ئۆتۆماتیک", arabic: "يدوي أو أوتوماتيكي" },
     ],
     voices: [
-      { prompt: "پرسیارکردن دەربار��ی دڵنیایی", target: "I would like to add full coverage insurance to my rental.", targetKurdish: "حەز دەکەم دڵنیایی گشتگیر (تەئمینی فول) زیاد بکەم بۆ کرێی ئۆتۆمبێلەکەم.", promptAr: "السؤال عن التأمين", targetArabic: "أود إضافة تأمين شامل على سيارتي المستأجرة." },
+      { prompt: "پرسیارکردن دەربارەی دڵنیایی", target: "I would like to add full coverage insurance to my rental.", targetKurdish: "حەز دەکەم دڵنیایی گشتگیر (تەئمینی فول) زیاد بکەم بۆ کرێی ئۆتۆمبێلەکەم.", promptAr: "السؤال عن التأمين", targetArabic: "أود إضافة تأمين شامل على سيارتي المستأجرة." },
       { prompt: "شوێنی دانانەوەی ئۆتۆمبێل", target: "Can I choose a different drop-off location?", targetKurdish: "دەتوانم شوێنێکی جیاواز هەڵبژێرم بۆ ڕادەستکردنەوەی ئۆتۆمبێلەکە؟", promptAr: "مكان تسليم السيارة", targetArabic: "هل يمكنني اختيار موقع تسليم مختلف؟" },
     ],
     sentences: [
@@ -55,7 +55,7 @@ const normalUnit05: UnitBank = [
       { parts: ["Make sure you have full", "insurance just in case."], hint: "دڵنیابەرەوە کە دڵنیایی گشتگیرت (فول تەئمین) هەیە نەوەک شتێک ڕووبدات.", answer: "coverage", wrongs: ["cover", "money", "paper"], arabicHint: "تأكد من أن لديك تأمين تغطية شاملة تحسباً لأي طارئ.", arabicParts: ["تأكد من أن لديك تأمين","شاملة تحسباً لأي طارئ."], arabicAnswer: "تغطية", arabicWrongs: ["غطاء","مال","ورق"] },
     ],
     conversations: [
-      { situation: "لە کۆمپانیای کرێدانی ئۆتۆمبێل", theyAsk: "We have an SUV available. Would you like basic or full insurance?", correct: "I'll take the full coverage insurance, please. Also, does the rental include unlimited mileage?", wrong1: "Give me good insurance and free drive.", wrong2: "I want full protect and no kilometer limit.", wrong3: "Yes full insurance. Unlimited distance?", explanation: "کۆمپانیاکانی کرێدانی ئۆتۆمبێل زاراوەی وەک 'Coverage' (دڵنیایی) و 'Mileage' (دووری) بەکاردەهێنن", situationAr: "في شركة تأجير السيارات", explanationAr: "تستخدم شركات تأجير السيارات مصطلحات مثل 'التغطية' (التأمين) و 'عدد الأميال' (المسافة)" },
+      { situation: "لە کۆمپانیای کرێدانی ئۆتۆمبێل", theyAsk: "We have an SUV available. Would you like basic or full insurance?", correct: "I'll take the full coverage insurance, please. Also, does the rental include unlimited mileage?", wrong1: "I'd prefer the full insurance option.", wrong2: "Does the full coverage include damage to the vehicle?", wrong3: "Is there a mileage limit on the rental?", explanation: "کۆمپانیاکانی کرێدانی ئۆتۆمبێل زاراوەی وەک 'Coverage' (دڵنیایی) و 'Mileage' (دووری) بەکاردەهێنن", situationAr: "في شركة تأجير السيارات", explanationAr: "تستخدم شركات تأجير السيارات مصطلحات مثل 'التغطية' (التأمين) و 'عدد الأميال' (المسافة)" },
     ],
   },
 
@@ -82,7 +82,7 @@ const normalUnit05: UnitBank = [
       { parts: ["A one-way ticket is $5, and a", "trip is $9."], hint: "بلیتی یەک ئاراستە ٥ دۆلارە، و بلیتی چوون و هاتنەوە ٩ دۆلارە.", answer: "round", wrongs: ["two", "both", "full"], arabicHint: "تذكرة الذهاب فقط بـ 5 دولارات، وتذكرة الذهاب والعودة بـ 9 دولارات.", arabicParts: ["تذكرة الذهاب فقط بـ 5 دولارات، وتذكرة الذهاب و","بـ 9 دولارات."], arabicAnswer: "العودة", arabicWrongs: ["اثنين","كلاهما","الكاملة"] },
     ],
     conversations: [
-      { situation: "پرسیارکردن لە کارمەندێکی میترۆ", theyAsk: "Can I help you find your train?", correct: "Yes, please. Which line goes to the museum? And do I need to transfer at the next stop?", wrong1: "Where is museum train? Do I change?", wrong2: "I want museum. Tell me train.", wrong3: "Which subway to museum?", explanation: "'Which line goes to' و 'Transfer' دوو وشەی سەرەکین لە سیستەمی گواستنەوەی وڵاتاندا", situationAr: "السؤال من موظف المترو", explanationAr: "'أي خط يذهب إلى' و 'غيّر' كلمتان أساسيتان في أنظمة النقل في البلدان" },
+      { situation: "پرسیارکردن لە کارمەندێکی میترۆ", theyAsk: "Can I help you find your train?", correct: "Yes, please. Which line goes to the museum? And do I need to transfer at the next stop?", wrong1: "Yes, which train should I take to the museum?", wrong2: "Could you tell me whether I need to change trains?", wrong3: "Which subway line stops near the museum?", explanation: "'Which line goes to' و 'Transfer' دوو وشەی سەرەکین لە سیستەمی گواستنەوەی وڵاتاندا", situationAr: "السؤال من موظف المترو", explanationAr: "'أي خط يذهب إلى' و 'غيّر' كلمتان أساسيتان في أنظمة النقل في البلدان" },
     ],
   },
 
@@ -98,7 +98,7 @@ const normalUnit05: UnitBank = [
     ],
     voices: [
       { prompt: "ڕاپۆرتکردنی ونبوون", target: "My luggage hasn't arrived yet. Where can I file a report?", targetKurdish: "جانتاکانم هێشتا نەگەیشتوون. لە کوێ دەتوانم ڕاپۆرت بکەم؟", promptAr: "الإبلاغ عن الفقدان", targetArabic: "أمتعتي لم تصل بعد. أين يمكنني تقديم بلاغ؟" },
-      { prompt: "داوای گەیاندن", target: "When it is found, can you deliver it to my hotel?", targetKurdish: "کاتێک دۆزرایەوە، دەتوانن بیگەیەنن بۆ هۆتێلەکەم؟", promptAr: "طلب التوصيل", targetArabic: "عندما يتم العثور عليها، هل يم��نك توصيلها إلى فندقي؟" },
+      { prompt: "داوای گەیاندن", target: "When it is found, can you deliver it to my hotel?", targetKurdish: "کاتێک دۆزرایەوە، دەتوانن بیگەیەنن بۆ هۆتێلەکەم؟", promptAr: "طلب التوصيل", targetArabic: "عندما يتم العثور عليها، هل يمكنك توصيلها إلى فندقي؟" },
     ],
     sentences: [
       { english: ["Here", "is", "my", "luggage", "tag", "and", "boarding", "pass"], kurdish: "فەرموو ئەمە تاگی جانتاکەم و بلیتی فڕۆکەکەمە", arabic: "تفضل، هذه بطاقة أمتعتي وبطاقة صعود الطائرة" },
@@ -109,7 +109,7 @@ const normalUnit05: UnitBank = [
       { parts: ["Please check my luggage", "number."], hint: "تکایە ژمارەی تاگی جانتاکەم بپشکنە.", answer: "tag", wrongs: ["sticker", "paper", "mark"], arabicHint: "يرجى التحقق من رقم بطاقة أمتعتي.", arabicParts: ["يرجى التحقق من رقم","أمتعتي."], arabicAnswer: "بطاقة", arabicWrongs: ["ملصق","ورقة","علامة"] },
     ],
     conversations: [
-      { situation: "لە بەشی جانتا ونبووەکانی فڕۆکەخانە", theyAsk: "I'm sorry your bag isn't on the belt. Do you have your receipt?", correct: "Yes, here is my luggage tag. My luggage hasn't arrived. I need to file a missing baggage report and have it delivered to my hotel.", wrong1: "Bag is lost. Bring to hotel.", wrong2: "I no have bag. Where is it?", wrong3: "Find my bag. Here is sticker.", explanation: "'File a report' و پێدانی 'Luggage tag' پرۆسەی ڕەسمی فڕۆکەخانەکانە", situationAr: "في قسم الأمتعة المفقودة بالمطار", explanationAr: "'تقديم بلاغ' و إعطاء 'بطاقة الأمتعة' هي إجراءات رسمية في المطارات" },
+      { situation: "لە بەشی جانتا ونبووەکانی فڕۆکەخانە", theyAsk: "I'm sorry your bag isn't on the belt. Do you have your receipt?", correct: "Yes, here is my luggage tag. My luggage hasn't arrived. I need to file a missing baggage report and have it delivered to my hotel.", wrong1: "Yes, here's the luggage tag for my missing bag.", wrong2: "My suitcase never arrived at baggage claim.", wrong3: "Could you help me report the bag as missing?", explanation: "'File a report' و پێدانی 'Luggage tag' پرۆسەی ڕەسمی فڕۆکەخانەکانە", situationAr: "في قسم الأمتعة المفقودة بالمطار", explanationAr: "'تقديم بلاغ' و إعطاء 'بطاقة الأمتعة' هي إجراءات رسمية في المطارات" },
     ],
   },
 
@@ -120,7 +120,7 @@ const normalUnit05: UnitBank = [
       { english: "Self check-in instructions", kurdish: "ڕێنماییەکانی وەرگرتنی ماڵ (بەبێ بینینی خاوەن ماڵ)", arabic: "تعليمات تسجيل الدخول الذاتي" },
       { english: "Lockbox code",         kurdish: "کۆدی سندووقی قفڵەکە (بۆ دەرکردنی کلیل)", arabic: "رمز صندوق المفاتيح" },
       { english: "House rules",          kurdish: "یاساکانی ماڵەکە", arabic: "قواعد المنزل" },
-      { english: "Wi-Fi password",       kurdish: "وشەی نهێن�� وایفای", arabic: "كلمة مرور الواي فاي" },
+      { english: "Wi-Fi password",       kurdish: "وشەی نهێنی وایفای", arabic: "كلمة مرور الواي فاي" },
       { english: "Leave a review",       kurdish: "جێهێشتنی هەڵسەنگاندن / کۆمێنت", arabic: "ترك تقييم" },
     ],
     voices: [
@@ -136,7 +136,7 @@ const normalUnit05: UnitBank = [
       { parts: ["I couldn't open the door. What is the", "code again?"], hint: "نەمتوانی دەرگاکە بکەمەوە. کۆدی سندووقی قفڵەکە چی بوو؟", answer: "lockbox", wrongs: ["key", "safe", "door"], arabicHint: "لم أستطع فتح الباب. ما هو رمز صندوق المفاتيح مرة أخرى؟", arabicParts: ["لم أستطع فتح الباب. ما هو رمز","مرة أخرى؟"], arabicAnswer: "صندوق المفاتيح", arabicWrongs: ["المفتاح","الخزنة","الباب"] },
     ],
     conversations: [
-      { situation: "نامە ناردن بۆ خاوەن ماڵی کرێی گەشتیاری", theyAsk: "Hi! You'll be arriving today. Let me know if you need anything.", correct: "Hi! I just arrived. The lockbox code isn't working. Could you resend the self check-in instructions?", wrong1: "Door is closed. I need code.", wrong2: "How I open the box?", wrong3: "I am here. Box is broken.", explanation: "'Self check-in' و 'Lockbox' زاراوەی تایبەتی خزمەتگوزارییەکانی وەک Airbnbـن", situationAr: "إرسال رسالة إلى صاحب مكان الإقامة السياحي", explanationAr: "'تس��يل الدخول الذاتي' و 'صندوق المفاتيح' هي مصطلحات خاصة بخدمات مثل Airbnb" },
+      { situation: "نامە ناردن بۆ خاوەن ماڵی کرێی گەشتیاری", theyAsk: "Hi! You'll be arriving today. Let me know if you need anything.", correct: "Hi! I just arrived. The lockbox code isn't working. Could you resend the self check-in instructions?", wrong1: "Hi, I'm here, but I can't get inside.", wrong2: "Could you tell me how to open the lockbox?", wrong3: "I arrived, and the key box seems to be broken.", explanation: "'Self check-in' و 'lockbox' زاراوەی تایبەتی خزمەتگوزارییەکانی وەک Airbnbـن", situationAr: "إرسال رسالة إلى صاحب مكان الإقامة السياحي", explanationAr: "'تسجيل الدخول الذاتي' و 'صندوق المفاتيح' هما مصطلحان شائعان في خدمات مثل Airbnb" },
     ],
   },
 
@@ -151,7 +151,7 @@ const normalUnit05: UnitBank = [
       { english: "Food poisoning",       kurdish: "ژەهراویبوونی خۆراک", arabic: "تسمم غذائي" },
     ],
     voices: [
-      { prompt: "داوای یارمەتی خێرا", target: "Please call an ambulance, it's an emergency!", targetKurdish: "تکایە تەلەفۆن بۆ ئەمبولانس بکەن، ئەمە حاڵە��ێکی لەناکاوە!", promptAr: "طلب مساعدة سريعة", targetArabic: "الرجاء الاتصال بسيارة إسعاف، إنها حالة طارئة!" },
+      { prompt: "داوای یارمەتی خێرا", target: "Please call an ambulance, it's an emergency!", targetKurdish: "تکایە تەلەفۆن بۆ ئەمبولانس بکەن، ئەمە حاڵەتێکی لەناکاوە!", promptAr: "طلب مساعدة سريعة", targetArabic: "الرجاء الاتصال بسيارة إسعاف، إنها حالة طارئة!" },
       { prompt: "باسکردنی کێشەی تەندروستی", target: "I think I have severe food poisoning.", targetKurdish: "پێم وایە ژەهراویبوونی خۆراکیی زۆر سەختم هەیە.", promptAr: "وصف المشكلة الصحية", targetArabic: "أعتقد أن لدي تسمم غذائي حاد." },
     ],
     sentences: [
@@ -163,7 +163,7 @@ const normalUnit05: UnitBank = [
       { parts: ["Make sure to buy", "insurance before you fly."], hint: "دڵنیابەرەوە لە کڕینی دڵنیایی گەشت پێش ئەوەی گەشت بکەیت.", answer: "travel", wrongs: ["flight", "ticket", "health"], arabicHint: "تأكد من شراء تأمين السفر قبل أن تسافر.", arabicParts: ["تأكد من شراء تأمين","قبل أن تسافر."], arabicAnswer: "السفر", arabicWrongs: ["الرحلة","التذكرة","الصحة"] },
     ],
     conversations: [
-      { situation: "لە دەرمانخانەیەک لە دەرەوەی وڵات", theyAsk: "Are you okay? Do you need a doctor?", correct: "I think I'm having an allergic reaction to something I ate. Do you have any medicine, or do I need a prescription?", wrong1: "I sick from food. Give pill.", wrong2: "My body red. Medicine please.", wrong3: "I have allergy. I need drugs.", explanation: "لە دەرەوەی وڵات جیاوازی زۆر هەیە لە نێوان دەرمانی ئاسایی و دەرمانی 'prescription' (کە تەنها بە وەرەقەی دکتۆر دەدرێت)", situationAr: "في صيدلية خارج البلاد", explanationAr: "في الخارج، هناك فرق كبير بين الأدوية العادية والأدوية التي تحتاج إلى 'وصفة طبية' (التي تُعطى فقط بوصفة من الطبيب)" },
+      { situation: "لە دەرمانخانەیەک لە دەرەوەی وڵات", theyAsk: "Are you okay? Do you need a doctor?", correct: "I think I'm having an allergic reaction to something I ate. Do you have any medicine, or do I need a prescription?", wrong1: "I think something I ate caused an allergic reaction.", wrong2: "I have a rash and need something for the allergy.", wrong3: "Can you tell me whether I need to see a doctor?", explanation: "لە دەرەوەی وڵات جیاوازی زۆر هەیە لە نێوان دەرمانی ئاسایی و دەرمانی 'prescription' (کە تەنها بە وەرەقەی دکتۆر دەدرێت)", situationAr: "في صيدلية خارج البلاد", explanationAr: "في الخارج، هناك فرق كبير بين الأدوية العادية والأدوية التي تحتاج إلى 'وصفة طبية' (التي تُعطى فقط بوصفة من الطبيب)" },
     ],
   },
 
@@ -190,7 +190,7 @@ const normalUnit05: UnitBank = [
       { parts: ["$100 is a total", ". I saw it for $20 somewhere else."], hint: "١٠٠ دۆلار بەتەواوی فێڵلێکردنە (گرانە). لە شوێنێکی تر بە ٢٠ دۆلار بینیم.", answer: "rip-off", wrongs: ["scam", "bad", "fake"], arabicHint: "100 دولار هو احتيال تام. رأيته بـ 20 دولاراً في مكان آخر.", arabicParts: ["100 دولار هو","تام. رأيته بـ 20 دولاراً في مكان آخر."], arabicAnswer: "احتيال", arabicWrongs: ["نصب","سيء","مزيف"] },
     ],
     conversations: [
-      { situation: "لە بازاڕێکی میللیدایت و دەتەوێت دیارییەک بکڕیت", theyAsk: "For you my friend, a special price: $50.", correct: "That's a bit steep for a small souvenir. What's your best price? I'll give you $30.", wrong1: "Too much money. I give 30.", wrong2: "Make it cheap. 50 is bad.", wrong3: "I want 30. 50 is rip-off.", explanation: "'That's a bit steep' و 'What's your best price' شێوازێکی زۆر باو و ڕێزدارانەن بۆ مامەڵەکردن و کەمکردنەوەی نرخ", situationAr: "أنت في سوق شعبي وتريد شراء هدية تذكارية", explanationAr: "'هذا باهظ الثمن قليلاً' و 'ما هو أفضل سعر لديك' هي طرق شائعة ومحترمة للمساومة وتخفيض السعر" },
+      { situation: "لە بازاڕێکی میللیدایت و دەتەوێت دیارییەک بکڕیت", theyAsk: "For you my friend, a special price: $50.", correct: "That's a bit steep for a small souvenir. What's your best price? I'll give you $30.", wrong1: "Fifty is more than I was hoping to spend.", wrong2: "Would you consider taking thirty dollars?", wrong3: "Is there any room to lower the price?", explanation: "'That's a bit steep' و 'What's your best price' شێوازێکی زۆر باو و ڕێزدارانەن بۆ مامەڵەکردن و کەمکردنەوەی نرخ", situationAr: "أنت في سوق شعبي وتريد شراء هدية تذكارية", explanationAr: "'هذا باهظ الثمن قليلاً' و 'ما هو أفضل سعر لديك' هي طرق شائعة ومحترمة للمساومة وتخفيض السعر" },
     ],
   },
 
@@ -217,7 +217,7 @@ const normalUnit05: UnitBank = [
       { parts: ["The", "point for the bus is next to the fountain."], hint: "خاڵی کۆبوونەوە بۆ پاسەکە لە تەنیشت نافوورەکەیە.", answer: "meeting", wrongs: ["start", "see", "wait"], arabicHint: "نقطة التجمع للحافلة بجوار النافورة.", arabicParts: ["نقطة","للحافلة بجوار النافورة."], arabicAnswer: "التجمع", arabicWrongs: ["البداية","الرؤية","الانتظار"] },
     ],
     conversations: [
-      { situation: "قسەکردن لەگەڵ ڕێبەری گەشتەکەت", theyAsk: "We will go inside the castle now. Does everyone have their tickets?", correct: "I have my ticket, but I wanted to ask: is the admission fee included, and do we skip the line?", wrong1: "Do we wait in line? Is money paid?", wrong2: "I have ticket. I go in now?", wrong3: "Ticket here. No line?", explanation: "'Skip the line' خزمەتگوزارییەکی زۆر باوە لە ئەوروپا کە بە پارەی زیاتر سەرە نادەگریت", situationAr: "التحدث مع مرشدك السياحي", explanationAr: "'ت��اوز الطابور' هي خدمة شائعة جداً في أوروبا حيث لا تنتظر في الطابور مقابل مبلغ إضافي" },
+      { situation: "قسەکردن لەگەڵ ڕێبەری گەشتەکەت", theyAsk: "We will go inside the castle now. Does everyone have their tickets?", correct: "I have my ticket, but I wanted to ask: is the admission fee included, and do we skip the line?", wrong1: "I have my ticket. Do we need to wait in the regular line?", wrong2: "Does this ticket include the castle entrance?", wrong3: "Where should I show my ticket?", explanation: "'Skip the line' خزمەتگوزارییەکی زۆر باوە لە ئەوروپا کە بە پارەی زیاتر سەرە نادەگریت", situationAr: "التحدث مع مرشدك السياحي", explanationAr: "'تجاوز الطابور' خدمة شائعة جداً في أوروبا تتيح لك تجنب الانتظار مقابل مبلغ إضافي" },
     ],
   },
 
@@ -244,13 +244,14 @@ const normalUnit05: UnitBank = [
       { parts: ["I want this sandwich", "go, please."], hint: "ئەم لەفەیەم بۆ بردنەوە دەوێت تکایە.", answer: "to", wrongs: ["for", "away", "take"], arabicHint: "أريد هذه الشطيرة سفري، من فضلك.", arabicParts: ["أريد هذه الشطيرة","، من فضلك."], arabicAnswer: "سفري", arabicWrongs: ["لأجل","بعيداً","أخذ"] },
     ],
     conversations: [
-      { situation: "لەلای عەرەبانەیەکی خواردن لە بانکوک یان مەکسیک", theyAsk: "Hi! What can I get for you today?", correct: "I'd like to try the local specialty, but is it spicy? If so, can you make it mild? And I'll take it to go.", wrong1: "Give me good food. No chili.", wrong2: "I want best food. Make it takeaway.", wrong3: "What is local food? I take away.", explanation: "لە ئەمریکا دەڵێن 'to go'، لە بەریتانیا دەڵێن 'takeaway' بۆ خواردنێک کە لەگەڵ خۆت دەیبەیت", situationAr: "عند عربة طعام في بانكوك أو المكسيك", explanationAr: "في أمريكا يقولون 'to go'، وفي بريطانيا يقولون 'takeaway' للطعام الذي تأخذه معك" },
+      { situation: "لەلای عەرەبانەیەکی خواردن لە بانکوک یان مەکسیک", theyAsk: "Hi! What can I get for you today?", correct: "I'd like to try the local specialty, but is it spicy? If so, can you make it mild? And I'll take it to go.", wrong1: "What local dish would you recommend?",
+        wrong2: "I'd like something mild to take away.", wrong3: "Could you make the specialty without much chili?", explanation: "لە ئەمریکا دەڵێن 'to go'، لە بەریتانیا دەڵێن 'takeaway' بۆ خواردنێک کە لەگەڵ خۆت دەیبەیت", situationAr: "عند عربة طعام في بانكوك أو المكسيك", explanationAr: "في أمريكا يقولون 'to go'، وفي بريطانيا يقولون 'takeaway' للطعام الذي تأخذه معك" },
     ],
   },
 
   // Lesson 9: Meeting Other Travelers
   {
-    topic: "Meeting Other Travelers", topicKu: "یەکترناسینی گەشتیارانی تر (لە هۆستێ�� و گەشتەکان)", topicAr: "التعرف على مسافرين آخرين",
+    topic: "Meeting Other Travelers", topicKu: "یەکترناسینی گەشتیارانی تر (لە هۆستێل و گەشتەکان)", topicAr: "التعرف على مسافرين آخرين",
     words: [
       { english: "Where are you heading next", kurdish: "دواتر بەرەو کوێ دەڕۆیت؟ (وێستگەی داهاتووت کوێیە)", arabic: "إلى أين تتجه بعد ذلك؟" },
       { english: "How long have you been traveling", kurdish: "چەندە گەشت دەکەیت؟ (ماوەی چەندە لە گەشتدایت)", arabic: "منذ متى وأنت تسافر؟" },
@@ -259,7 +260,7 @@ const normalUnit05: UnitBank = [
       { english: "Keep in touch",        kurdish: "لە پەیوەندیدا دەبین (مانەوەی پەیوەندی)", arabic: "ابق على اتصال" },
     ],
     voices: [
-      { prompt: "پرسیارکردن لە بەرنامەی داهاتوو", target: "Where are you heading next on your trip?", targetKurdish: "دواتر بەرەو کوێ دەڕۆیت لە گەشتەکەتدا؟", promptAr: "السؤال عن الخطط المستقبلية", targetArabic: "إلى أين تتجه بعد ذ��ك في رحلتك؟" },
+      { prompt: "پرسیارکردن لە بەرنامەی داهاتوو", target: "Where are you heading next on your trip?", targetKurdish: "دواتر بەرەو کوێ دەڕۆیت لە گەشتەکەتدا؟", promptAr: "السؤال عن الخطط المستقبلية", targetArabic: "إلى أين تتجه بعد ذلك في رحلتك؟" },
       { prompt: "خواحافیزی کردن لە هاوڕێی نوێ", target: "It was great meeting you. Let's keep in touch!", targetKurdish: "بینینت زۆر خۆش بوو. با لە پەیوەندیدا بین!", promptAr: "توديع صديق جديد", targetArabic: "كان من الرائع مقابلتك. لنبق على اتصال!" },
     ],
     sentences: [
@@ -271,7 +272,7 @@ const normalUnit05: UnitBank = [
       { parts: ["I hope we cross paths again. Let's keep in", "."], hint: "هیوادارم دووبارە یەکتر ببینینەوە. با لە پەیوەندیدا بین.", answer: "touch", wrongs: ["contact", "talk", "message"], arabicHint: "آمل أن نلتقي مرة أخرى. لنبق على تواصل.", arabicParts: ["آمل أن نلتقي مرة أخرى. لنبق على","."], arabicAnswer: "تواصل", arabicWrongs: ["اتصال","حديث","رسالة"] },
     ],
     conversations: [
-      { situation: "قسەکردن لەگەڵ گەشتیارێکی تر لە هۆتێلەکە", theyAsk: "I just got here yesterday. I've been traveling for a month.", correct: "Wow, a whole month! I'm a solo traveler too. Where are you heading next? Do you have any recommendations for this city?", wrong1: "You travel long. Where you go?", wrong2: "I am alone. Tell me good places.", wrong3: "Where to next? Give me tips.", explanation: "'Where are you heading next' باوترین پرسیاری نێوان گەشتیارانە", situationAr: "التحدث مع مسافر آخر في الفندق", explanationAr: "'إلى أين تتجه بعد ذلك' هو السؤال الأكثر شيوعاً بين المسافرين" },
+      { situation: "قسەکردن لەگەڵ گەشتیارێکی تر لە هۆتێلەکە", theyAsk: "I just got here yesterday. I've been traveling for a month.", correct: "Wow, a whole month! I'm a solo traveler too. Where are you heading next? Do you have any recommendations for this city?", wrong1: "A month is a long trip. Where are you going next?", wrong2: "I'm traveling alone too. Any favorite places so far?", wrong3: "Do you have any tips for someone new to the city?", explanation: "'Where are you heading next' باوترین پرسیاری نێوان گەشتیارانە", situationAr: "التحدث مع مسافر آخر في الفندق", explanationAr: "'إلى أين تتجه بعد ذلك' هو السؤال الأكثر شيوعاً بين المسافرين" },
     ],
   },
 

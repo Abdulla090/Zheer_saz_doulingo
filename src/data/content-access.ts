@@ -1,6 +1,5 @@
 import { getUnitsFromCacheOrBundle } from "../services/curriculum-loader";
 import type { LessonBank, LessonPathMode, UnitBank } from "./types";
-import { getBundledUnits } from "./content-registry";
 import { useContentAdminStore } from "../stores/useContentAdminStore";
 import { useContentPackStore } from "../stores/useContentPackStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
@@ -16,13 +15,21 @@ export function getUnitsForPath(mode: LessonPathMode): UnitBank[] {
   const override = useContentAdminStore.getState().overrides[mode];
   const baseUnits = override || getUnitsFromCacheOrBundle(mode);
 
-  if (mode === "normal" && baseUnits === getBundledUnits("normal")) {
+  if (mode === "normal") {
     const level = useSettingsStore.getState().englishLevel || 5;
     const skipCount = getSkippedUnitsCount(level);
     return baseUnits.slice(skipCount);
   }
 
   return baseUnits;
+}
+
+/** Full, unsliced path for curriculum administration and publishing. */
+export function getAllUnitsForPath(mode: LessonPathMode): UnitBank[] {
+  return (
+    useContentAdminStore.getState().overrides[mode] ??
+    getUnitsFromCacheOrBundle(mode)
+  );
 }
 
 export function getLessonBank(

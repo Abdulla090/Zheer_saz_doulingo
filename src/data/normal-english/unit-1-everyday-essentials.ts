@@ -1,6 +1,6 @@
 import { UnitBank } from "../types";
 
-// ── Unit 0: Everyday Essentials — 10 unique lessons ──────────────────────────
+// ── Visible Unit 5: Everyday Essentials — 10 unique lessons ──────────────────
 // Practical English for non-native speakers: the real-life language you actually need.
 
 const normalUnit00: UnitBank = [
@@ -34,7 +34,7 @@ const normalUnit00: UnitBank = [
 
   // Lesson 1: Apologizing & Making Excuses
   {
-    topic: "Apologizing", topicKu: "داوای لێبوردن کردن", topicAr: "الاعتذا��",
+    topic: "Apologizing", topicKu: "داوای لێبوردن کردن", topicAr: "الاعتذار",
     words: [
       { english: "I sincerely apologize",  kurdish: "لە ناخەوە داوای لێبوردن دەکەم", arabic: "أعتذر بصدق" },
       { english: "I take full responsibility", kurdish: "بەرپرسیارێتی تەواو لە ئەستۆ دەگرم", arabic: "أتحمل المسؤولية كاملة" },
@@ -55,7 +55,7 @@ const normalUnit00: UnitBank = [
       { parts: ["My", "— I completely forgot the meeting."], hint: "هەڵەی من بوو — تەواو کۆبوونەوەکەم لەبیر چوو.", answer: "mistake", wrongs: ["bad", "fault", "error"], arabicHint: "خطئي — لقد نسيت الاجتماع تماما.", arabicParts: ["", "— لقد نسيت الاجتماع تماما."], arabicAnswer: "خطئي", arabicWrongs: ["سيء", "ذنب", "خطأ"] },
     ],
     conversations: [
-      { situation: "دواکەوتنی پڕۆژەیەک", theyAsk: "Why is the project late?", correct: "I sincerely apologize. I should have communicated the delay earlier — it won't happen again.", wrong1: "Sorry the project is late.", wrong2: "I am apologizing for being late.", wrong3: "It is late because of problems.", explanation: "'I sincerely apologize... it won't happen again' — قبووڵکردنی بەرپرسیارێتییە بەشێوەیەکی پیشەیی", situationAr: "تأخر مشروع", explanationAr: "'I sincerely apologize... it won't happen again' — قبول المسؤولية بطريقة احترافية", theyAskAr: "لماذا المشروع متأخر؟", correctAr: "أعتذر بصدق. كان ينبغي عليّ الإبلاغ عن التأخير في وقت سابق — لن يتكرر ذلك مرة أخرى.", wrong1Ar: "آسف أن المشروع متأخر.", wrong2Ar: "أنا أعتذر عن التأخير.", wrong3Ar: "إنه متأخر بسبب مشاكل." },
+      { situation: "دواکەوتنی پڕۆژەیەک", theyAsk: "Why is the project late?", correct: "I sincerely apologize. I should have communicated the delay earlier — it won't happen again.", wrong1: "I'm sorry the project is late.", wrong2: "I apologize for not communicating sooner.", wrong3: "We ran into several unexpected problems.", explanation: "'I sincerely apologize... it won't happen again' — قبووڵکردنی بەرپرسیارێتییە بەشێوەیەکی پیشەیی", situationAr: "تأخر مشروع", explanationAr: "'I sincerely apologize... it won't happen again' — قبول المسؤولية بطريقة احترافية", theyAskAr: "لماذا المشروع متأخر؟", correctAr: "أعتذر بصدق. كان ينبغي عليّ الإبلاغ عن التأخير في وقت سابق — لن يتكرر ذلك مرة أخرى.", wrong1Ar: "آسف أن المشروع متأخر.", wrong2Ar: "أنا أعتذر عن التأخير.", wrong3Ar: "إنه متأخر بسبب مشاكل." },
     ],
   },
 
@@ -78,11 +78,11 @@ const normalUnit00: UnitBank = [
       { english: ["From", "my", "perspective", "we", "need", "more", "time"], kurdish: "لە ڕوانگەی منەوە پێویستمان بە کاتی زیاترە", arabic: "من وجهة نظري، نحتاج إلى المزيد من الوقت" },
     ],
     fillBlanks: [
-      { parts: ["In my", ", the second option is stronger."], hint: "بە بڕوای من، هەڵبژاردەی دووەم بەهێزترە.", answer: "view", wrongs: ["mind", "head", "opinion"] },
-      { parts: ["I strongly", "that teamwork is essential."], hint: "بە توندی باوەڕ�� وایە کە کارکردن بەیەکەوە زۆر گرنگە.", answer: "believe", wrongs: ["think", "feel", "say"] },
+      { parts: ["In my", ", the second option is stronger."], hint: "بە بڕوای من، هەڵبژاردەی دووەم بەهێزترە.", answer: "view", wrongs: ["mind", "head", "opinion"], arabicHint: "في رأيي، الخيار الثاني أقوى." },
+      { parts: ["I strongly", "that teamwork is essential."], hint: "بە توندی باوەڕم وایە کە کارکردن بەیەکەوە زۆر گرنگە.", answer: "believe", wrongs: ["think", "feel", "say"], arabicHint: "أؤمن بشدة بأن العمل الجماعي ضروري." },
     ],
     conversations: [
-      { situation: "کۆبوونەوەی تیم", theyAsk: "What do you think we should do?", correct: "From my perspective, we should gather more data before deciding. Based on my experience, rushing leads to mistakes.", wrong1: "I think we need more data.", wrong2: "We should not rush I think.", wrong3: "My opinion is we need data first.", explanation: "'From my perspective... Based on my experience' — دوو دەربڕینی جوانن بۆ دەربڕینی بۆچوون", situationAr: "اجتماع الفريق", explanationAr: "'From my perspective... Based on my experience' — تعبيران ممتازان للتعبير عن الرأي" },
+      { situation: "کۆبوونەوەی تیم", theyAsk: "What do you think we should do?", correct: "From my perspective, we should gather more data before deciding. Based on my experience, rushing leads to mistakes.", wrong1: "I think we need more data.", wrong2: "I don't think we should rush this decision.", wrong3: "In my opinion, we need the data first.", explanation: "'From my perspective... Based on my experience' — دوو دەربڕینی جوانن بۆ دەربڕینی بۆچوون", situationAr: "اجتماع الفريق", explanationAr: "'From my perspective... Based on my experience' — تعبيران ممتازان للتعبير عن الرأي" },
     ],
   },
 
@@ -105,11 +105,11 @@ const normalUnit00: UnitBank = [
       { english: ["If", "I", "understand", "correctly", "you", "want", "changes"], kurdish: "ئەگەر باش تێگەیشتبم، دەتەوێت گۆڕانکاری بکرێت", arabic: "إذا فهمت بشكل صحيح، فأنت تريد تغييرات" },
     ],
     fillBlanks: [
-      { parts: ["Could you", "on that last point?"], hint: "دەتوانیت ئەو خاڵەی کۆتایی زیاتر ڕوون بکەیتەوە؟", answer: "elaborate", wrongs: ["explain", "expand", "repeat"] },
-      { parts: ["Just to", "— we meet at 3pm, right?"], hint: "تەنها بۆ دڵنیابوون — کاتژمێر ٣ کۆدەبینەوە، ڕاستە؟", answer: "confirm", wrongs: ["check", "verify", "know"] },
+      { parts: ["Could you", "on that last point?"], hint: "دەتوانیت ئەو خاڵەی کۆتایی زیاتر ڕوون بکەیتەوە؟", answer: "elaborate", wrongs: ["explain", "expand", "repeat"], arabicHint: "هل يمكنك التوسع في شرح تلك النقطة الأخيرة؟" },
+      { parts: ["Just to", "— we meet at 3pm, right?"], hint: "تەنها بۆ دڵنیابوون — کاتژمێر ٣ کۆدەبینەوە، ڕاستە؟", answer: "confirm", wrongs: ["check", "verify", "know"], arabicHint: "فقط للتأكيد — نلتقي الساعة الثالثة، صحيح؟" },
     ],
     conversations: [
-      { situation: "دوای پێشکەشکردنێک", theyAsk: "Any questions about what I just said?", correct: "Yes — could you clarify what you mean by 'flexible timeline'? If I understand correctly, the dates can change?", wrong1: "What is flexible timeline?", wrong2: "I don't understand flexible timeline.", wrong3: "Can you explain the timeline?", explanation: "'Could you clarify... If I understand correctly' — باشترین ڕێگەن بۆ پرسیارکردن بەبێ ئەوەی بەرامبەر بێزار بکەیت", situationAr: "بعد عرض تقديمي", explanationAr: "'Could you clarify... If I understand correctly' — أفضل الطرق لطرح الأسئلة دون إزعاج الطرف الآخر" },
+      { situation: "دوای پێشکەشکردنێک", theyAsk: "Any questions about what I just said?", correct: "Yes — could you clarify what you mean by 'flexible timeline'? If I understand correctly, the dates can change?", wrong1: "What does 'flexible timeline' mean?", wrong2: "I don't understand what you mean by a flexible timeline.", wrong3: "Can you explain the timeline?", explanation: "'Could you clarify... If I understand correctly' — باشترین ڕێگەن بۆ پرسیارکردن بەبێ ئەوەی بەرامبەر بێزار بکەیت", situationAr: "بعد عرض تقديمي", explanationAr: "'Could you clarify... If I understand correctly' — أفضل الطرق لطرح الأسئلة دون إزعاج الطرف الآخر" },
     ],
   },
 
@@ -124,7 +124,7 @@ const normalUnit00: UnitBank = [
       { english: "My goal is to",        kurdish: "ئامانجم ئەوەیە کە", arabic: "هدفي هو أن" },
     ],
     voices: [
-      { prompt: "ئامانجەکەت باس بکە", target: "My goal is to improve my English within six months.", targetKurdish: "ئامانجم ئەوەیە کە ئینگلیزییەکەم لە ماوەی شەش مانگدا باشتر بکەم.", promptAr: "تحدث عن هدفك", targetArabic: "هدفي هو تحسين لغتي الإنجليزية في ��ضون ستة أشهر." },
+      { prompt: "ئامانجەکەت باس بکە", target: "My goal is to improve my English within six months.", targetKurdish: "ئامانجم ئەوەیە کە ئینگلیزییەکەم لە ماوەی شەش مانگدا باشتر بکەم.", promptAr: "تحدث عن هدفك", targetArabic: "هدفي هو تحسين لغتي الإنجليزية في غضون ستة أشهر." },
       { prompt: "پلانی داهاتوو", target: "I'm planning to apply for a new position next year.", targetKurdish: "پلانم هەیە ساڵی داهاتوو پێشکەشی بکەم بۆ پۆستێکی نوێ.", promptAr: "خطة مستقبلية", targetArabic: "أخطط للتقدم لوظيفة جديدة العام المقبل." },
     ],
     sentences: [
@@ -132,8 +132,8 @@ const normalUnit00: UnitBank = [
       { english: ["In", "the", "long", "run", "I", "want", "to", "lead", "a", "team"], kurdish: "لە درێژخایەندا دەمەوێت ببمە سەرپەرشتیاری تیمێک", arabic: "على المدى الطويل، أرغب في قيادة فريق" },
     ],
     fillBlanks: [
-      { parts: ["My", "is to become fluent in two years."], hint: "ئامانجم ئەوەیە کە لە ماوەی دوو ساڵدا پاراو بم لە زمانەکە.", answer: "goal", wrongs: ["plan", "hope", "dream"] },
-      { parts: ["I'm hoping", "finish this course by summer."], hint: "هیوادارم تا هاوین ئەم کۆرسە تەواو بکەم.", answer: "to", wrongs: ["for", "of", "about"] },
+      { parts: ["My", "is to become fluent in two years."], hint: "ئامانجم ئەوەیە کە لە ماوەی دوو ساڵدا پاراو بم لە زمانەکە.", answer: "goal", wrongs: ["plan", "hope", "dream"], arabicHint: "هدفي هو أن أتحدث بطلاقة خلال عامين." },
+      { parts: ["I'm hoping", "finish this course by summer."], hint: "هیوادارم تا هاوین ئەم کۆرسە تەواو بکەم.", answer: "to", wrongs: ["for", "of", "about"], arabicHint: "آمل أن أنهي هذه الدورة بحلول الصيف." },
     ],
     conversations: [
       { situation: "چاوپێکەوتنی کار", theyAsk: "Where do you see yourself in five years?", correct: "In the long run, my goal is to lead a team. I'm planning to develop my leadership skills over the next two years.", wrong1: "I want to be a leader in 5 years.", wrong2: "My plan is to get promoted.", wrong3: "I hope to be successful in 5 years.", explanation: "'In the long run... I'm planning to' — وەڵامێکی زۆر گونجاو و پیشەییە بۆ ئەم پرسیارە", situationAr: "مقابلة عمل", explanationAr: "'In the long run... I'm planning to' — إجابة مناسبة واحترافية جداً لهذا السؤال" },
@@ -156,11 +156,11 @@ const normalUnit00: UnitBank = [
     ],
     sentences: [
       { english: ["The", "main", "challenge", "is", "lack", "of", "communication"], kurdish: "گەورەترین ئاستەنگ نەبوونی پەیوەندییە", arabic: "التحدي الرئيسي هو نقص التواصل" },
-      { english: ["We're", "facing", "a", "technical", "issue", "right", "now"], kurdish: "ئێستا ڕووبەڕووی کێشەیەکی تەکنیکی بووینەتەو��", arabic: "نحن نواجه مشكلة فنية الآن" },
+      { english: ["We're", "facing", "a", "technical", "issue", "right", "now"], kurdish: "ئێستا ڕووبەڕووی کێشەیەکی تەکنیکی بووینەتەوە", arabic: "نحن نواجه مشكلة فنية الآن" },
     ],
     fillBlanks: [
-      { parts: ["The", "is that we're understaffed right now."], hint: "کێشەکە ئەوەیە کە ئێستا کارمەندمان کەمە.", answer: "issue", wrongs: ["problem", "thing", "matter"] },
-      { parts: ["This is", "our ability to deliver on time."], hint: "ئەمە کاریگەری دەکاتە سەر توانامان بۆ گەیاندن لە کاتی خۆیدا.", answer: "affecting", wrongs: ["causing", "changing", "hurting"] },
+      { parts: ["The", "is that we're understaffed right now."], hint: "کێشەکە ئەوەیە کە ئێستا کارمەندمان کەمە.", answer: "issue", wrongs: ["problem", "thing", "matter"], arabicHint: "المشكلة هي أن عدد الموظفين غير كافٍ حالياً." },
+      { parts: ["This is", "our ability to deliver on time."], hint: "ئەمە کاریگەری دەکاتە سەر توانامان بۆ گەیاندن لە کاتی خۆیدا.", answer: "affecting", wrongs: ["causing", "changing", "hurting"], arabicHint: "هذا يؤثر في قدرتنا على التسليم في الموعد." },
     ],
     conversations: [
       { situation: "ڕاپۆرتدانی کێشەیەک بۆ بەڕێوەبەر", theyAsk: "What seems to be the problem?", correct: "The main challenge is a lack of clear communication between teams. This is causing delays and affecting our deadlines.", wrong1: "Teams are not communicating well.", wrong2: "There are communication problems causing delays.", wrong3: "The problem is teams don't talk enough.", explanation: "'The main challenge... This is causing... affecting' — شێوازێکی زۆر باو و پیشەییە بۆ باسکردنی کێشەکان", situationAr: "الإبلاغ عن مشكلة للمدير", explanationAr: "'The main challenge... This is causing... affecting' — طريقة شائعة واحترافية جداً لوصف المشاكل" },
@@ -186,8 +186,8 @@ const normalUnit00: UnitBank = [
       { english: ["Going", "forward", "try", "to", "be", "more", "concise"], kurdish: "لە داهاتوودا هەوڵبدە پوختتر بیت", arabic: "للمضي قدماً، حاول أن تكون أكثر إيجازاً" },
     ],
     fillBlanks: [
-      { parts: ["I'd", "starting with the conclusion next time."], hint: "پێشنیار دەکەم جاری داهاتوو بە دەرەنجامەکە دەست پێ بکەیت.", answer: "suggest", wrongs: ["recommend", "advise", "think"] },
-      { parts: ["That", ", the core idea was very strong."], hint: "لەگەڵ ئەوەشدا، بیرۆکە سەرەکییەکە زۆر بەهێز بوو.", answer: "said", wrongs: ["done", "being", "noted"] },
+      { parts: ["I'd", "starting with the conclusion next time."], hint: "پێشنیار دەکەم جاری داهاتوو بە دەرەنجامەکە دەست پێ بکەیت.", answer: "suggest", wrongs: ["recommend", "advise", "think"], arabicHint: "أقترح أن تبدأ بالخلاصة في المرة المقبلة." },
+      { parts: ["That", ", the core idea was very strong."], hint: "لەگەڵ ئەوەشدا، بیرۆکە سەرەکییەکە زۆر بەهێز بوو.", answer: "said", wrongs: ["done", "being", "noted"], arabicHint: "مع ذلك، كانت الفكرة الأساسية قوية جداً." },
     ],
     conversations: [
       { situation: "دوای پێشکەشکردنی هاوکارێک", theyAsk: "What did you think of my presentation?", correct: "Well done on the research — it was thorough. That said, I'd suggest making the slides less text-heavy going forward.", wrong1: "It was good but too much text.", wrong2: "Your slides had too many words.", wrong3: "Good research but slides need work.", explanation: "'Well done on... That said... I'd suggest...' — ئەمە پێی دەوترێت (ساندویچی فیدباک) کە زۆر پیشەییە", situationAr: "بعد عرض تقديمي لزميل", explanationAr: "'Well done on... That said... I'd suggest...' — هذا ما يسمى (ساندويتش التغذية الراجعة) وهو احترافي جداً" },
@@ -200,7 +200,7 @@ const normalUnit00: UnitBank = [
     words: [
       { english: "As of",               kurdish: "تاکو ئێستا / هەر لە", arabic: "اعتباراً من / حتى الآن" },
       { english: "Approximately",       kurdish: "نزیکەی", arabic: "تقريباً" },
-      { english: "By the end of",       kurdish: "تاوەکو کۆت��یی", arabic: "بحلول نهاية" },
+      { english: "By the end of",       kurdish: "تاوەکو کۆتایی", arabic: "بحلول نهاية" },
       { english: "Quarter",             kurdish: "چارەک", arabic: "ربع" },
       { english: "Ahead of schedule",   kurdish: "پێش وادەی دیاریکراو", arabic: "قبل الموعد المحدد" },
     ],
@@ -213,8 +213,8 @@ const normalUnit00: UnitBank = [
       { english: ["Approximately", "half", "of", "the", "work", "is", "done"], kurdish: "نزیکەی نیوەی کارەکە تەواو بووە", arabic: "تم إنجاز حوالي نصف العمل" },
     ],
     fillBlanks: [
-      { parts: ["As of", ", the budget sits at $50,000."], hint: "تاکو ئەمڕۆ، بودجەکە ٥٠،٠٠٠ دۆلارە.", answer: "today", wrongs: ["now", "this moment", "yet"] },
-      { parts: ["We finished", "of schedule — two days early."], hint: "پێش وادەی دیاریکراو تەواومان کرد — دوو ڕۆژ زووتر.", answer: "ahead", wrongs: ["before", "early", "under"] },
+      { parts: ["As of", ", the budget sits at $50,000."], hint: "تاکو ئەمڕۆ، بودجەکە ٥٠،٠٠٠ دۆلارە.", answer: "today", wrongs: ["now", "this moment", "yet"], arabicHint: "اعتباراً من اليوم، تبلغ الميزانية 50,000 دولار." },
+      { parts: ["We finished", "of schedule — two days early."], hint: "پێش وادەی دیاریکراو تەواومان کرد — دوو ڕۆژ زووتر.", answer: "ahead", wrongs: ["before", "early", "under"], arabicHint: "أنهينا العمل قبل الموعد المحدد بيومين." },
     ],
     conversations: [
       { situation: "نیشاندانی بەرەوپێشچوونی کار", theyAsk: "Where are we on the project?", correct: "As of today, we've completed approximately 60% of the work. We're actually ahead of schedule and expect to finish by the end of Q3.", wrong1: "We finished 60% of the project.", wrong2: "We are on track and ahead of time.", wrong3: "About 60% is done and we're early.", explanation: "'As of today... approximately... ahead of schedule' — شێوازێکی زۆر ڕێک و پێشەییە بۆ ڕاپۆرتدانی کار", situationAr: "عرض تقدم العمل", explanationAr: "'As of today... approximately... ahead of schedule' — طريقة منظمة واحترافية جداً للإبلاغ عن العمل" },
@@ -240,11 +240,11 @@ const normalUnit00: UnitBank = [
       { english: ["Why", "did", "you", "leave", "me", "on", "read"], kurdish: "بۆچی نامەکەت سین کرد و وەڵامت نەدامەوە؟", arabic: "لماذا قرأت رسالتي ولم ترد؟" },
     ],
     fillBlanks: [
-      { parts: ["Drop me a", "when you get home safely."], hint: "کاتێک گەیشتیتەوە ماڵەوە بە سەلامەتی نامەیەکم بۆ بنێرە.", answer: "message", wrongs: ["text", "letter", "call"] },
-      { parts: ["My battery is", ", I have to go."], hint: "شەحنی مۆبایلەک��م خەریکە دادەبەزێت، دەبێت بڕۆم.", answer: "dying", wrongs: ["dead", "low", "ending"] },
+      { parts: ["Drop me a", "when you get home safely."], hint: "کاتێک گەیشتیتەوە ماڵەوە بە سەلامەتی نامەیەکم بۆ بنێرە.", answer: "message", wrongs: ["text", "letter", "call"], arabicHint: "أرسل لي رسالة عندما تصل إلى المنزل بسلام." },
+      { parts: ["My battery is", ", I have to go."], hint: "شەحنی مۆبایلەکەم خەریکە دادەبەزێت، دەبێت بڕۆم.", answer: "dying", wrongs: ["dead", "low", "ending"], arabicHint: "بطاريتي توشك على النفاد، يجب أن أذهب." },
     ],
     conversations: [
-      { situation: "قسەکردن لەگەڵ هاوڕێیەک کە کاتی نییە ئێستا قسە بکات", theyAsk: "I'm a bit busy right now, can we talk later?", correct: "Sure! Drop me a message or give me a ring when you're free. I'll text you the details in the meantime.", wrong1: "Talk to me now.", wrong2: "Call me fast.", wrong3: "Don't leave me on read.", explanation: "'Drop me a message' و 'Give me a ring' زۆر زۆر باون لە زمانی ڕۆژانەی ئینگلیزیدا", situationAr: "التحدث مع صديق ليس لديه وقت للتحدث الآن", explanationAr: "'Drop me a message' و 'Give me a ring' شائعتان جداً في اللغة الإنجليزية اليومية" },
+      { situation: "قسەکردن لەگەڵ هاوڕێیەک کە کاتی نییە ئێستا قسە بکات", theyAsk: "I'm a bit busy right now, can we talk later?", correct: "Sure! Drop me a message or give me a ring when you're free. I'll text you the details in the meantime.", wrong1: "Sure, call me when you have time.", wrong2: "No problem—we can talk later.", wrong3: "Text me when you're free.", explanation: "'Drop me a message' و 'Give me a ring' زۆر زۆر باون لە زمانی ڕۆژانەی ئینگلیزیدا", situationAr: "التحدث مع صديق ليس لديه وقت للتحدث الآن", explanationAr: "'Drop me a message' و 'Give me a ring' شائعتان جداً في اللغة الإنجليزية اليومية" },
     ],
   },
 
@@ -267,8 +267,8 @@ const normalUnit00: UnitBank = [
       { english: ["Let's", "find", "a", "solution", "that", "works", "for", "both"], kurdish: "با چارەسەرێک بدۆزینەوە کە بۆ هەردووکمان گونجاو بێت", arabic: "دعنا نجد حلاً يناسب الطرفين" },
     ],
     fillBlanks: [
-      { parts: ["I see your point;", ", the budget is a real constraint."], hint: "تێدەگەم مەبەستت چییە؛ بەڵام، بودجەکە ئاستەنگێکی ڕاستەقینەیە.", answer: "however", wrongs: ["but", "yet", "though"] },
-      { parts: ["With all due", ", I think we need a different approach."], hint: "لەگەڵ هەموو ڕێزێکدا، پێم وایە پێویست��ان بە ڕێگەیەکی جیاوازە.", answer: "respect", wrongs: ["care", "regards", "consideration"] },
+      { parts: ["I see your point;", ", the budget is a real constraint."], hint: "تێدەگەم مەبەستت چییە؛ بەڵام، بودجەکە ئاستەنگێکی ڕاستەقینەیە.", answer: "however", wrongs: ["but", "yet", "though"], arabicHint: "أتفهم وجهة نظرك؛ لكن الميزانية قيد حقيقي." },
+      { parts: ["With all due", ", I think we need a different approach."], hint: "لەگەڵ هەموو ڕێزێکدا، پێم وایە پێویستمان بە ڕێگەیەکی جیاوازە.", answer: "respect", wrongs: ["care", "regards", "consideration"], arabicHint: "مع كامل الاحترام، أعتقد أننا نحتاج إلى نهج مختلف." },
     ],
     conversations: [
       { situation: "جیاوازیی بۆچوون لە کۆبوونەوەیەکدا", theyAsk: "I think we should cut the marketing budget completely.", correct: "I see your point, however, I respectfully disagree. With all due respect, cutting it completely could harm our brand. Perhaps we could compromise and reduce it instead?", wrong1: "I don't think we should cut the budget.", wrong2: "That's not a good idea, marketing is important.", wrong3: "I disagree because marketing is necessary.", explanation: "'I see your point, however... respectfully disagree... could we compromise' — شێوازێکی زۆر نموونەییە بۆ مامەڵەکردن لەگەڵ جیاوازیی بۆچوون", situationAr: "خلاف في الرأي في اجتماع", explanationAr: "'I see your point, however... respectfully disagree... could we compromise' — طريقة نموذجية جداً للتعامل مع الخلافات في الرأي" },

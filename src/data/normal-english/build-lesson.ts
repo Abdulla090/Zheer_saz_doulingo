@@ -26,6 +26,10 @@ function splitSentence(en: string): string[] {
   return en.replace(/[.!?]+$/g, "").split(/\s+/).filter(Boolean);
 }
 
+function cleanFillToken(token: string): string {
+  return token.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g, "");
+}
+
 function defaultSpeaks(phrases: Phrase[]): Speak[] {
   return phrases.slice(0, 3).map((p) => ({
     prompt: `ئەم ڕستەیە بە ئینگلیزی بڵێ:`,
@@ -44,12 +48,29 @@ function defaultSentences(phrases: Phrase[]): Sentence[] {
 }
 
 function defaultFills(phrases: Phrase[]): Fill[] {
+  const tokenizedPhrases = phrases.map((phrase) => splitSentence(phrase.en));
+
   return phrases.slice(0, 2).map((p) => {
     const words = splitSentence(p.en);
-    const answer = words[Math.min(2, words.length - 1)] ?? words[0];
-    const wrongs: [string, string, string] = ["maybe", "just", "really"];
+    const answerIndex = Math.min(2, words.length - 1);
+    const answer = cleanFillToken(words[answerIndex] ?? words[0]);
+    const candidates = [
+      ...tokenizedPhrases.map((tokens) => cleanFillToken(tokens[answerIndex] ?? "")),
+      ...tokenizedPhrases.flatMap((tokens) => tokens.slice(1).map(cleanFillToken)),
+      "usually",
+      "already",
+      "instead",
+    ];
+    const seen = new Set([answer.toLowerCase()]);
+    const alternatives = candidates.filter((candidate) => {
+      const key = candidate.toLowerCase();
+      if (!candidate || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const wrongs = alternatives.slice(0, 3) as [string, string, string];
     return {
-      parts: [words.slice(0, words.indexOf(answer)).join(" ") + " ", words.slice(words.indexOf(answer) + 1).join(" ")],
+      parts: [words.slice(0, answerIndex).join(" ") + " ", words.slice(answerIndex + 1).join(" ")],
       hint: p.ku,
       answer,
       wrongs,

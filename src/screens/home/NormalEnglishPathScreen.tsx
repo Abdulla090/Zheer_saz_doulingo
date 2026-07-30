@@ -23,6 +23,8 @@ import {
 } from "../../data/normal-english";
 import { ListFooter } from "./components/list-footer";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { getLanguage } from "../../config/languages";
 import {
   getPathUnitTitle,
   localizePathSections,
@@ -126,6 +128,7 @@ export function NormalEnglishPathScreen({
 
   const { normalNextLessonPathIndex } = useCurrentProgress();
   const englishLevel = useSettingsStore((s) => s.englishLevel);
+  const targetLanguage = useLocaleStore((s) => s.selectedTargetLanguage);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] =
     useState<SectionTheme>("blue");
@@ -348,6 +351,26 @@ export function NormalEnglishPathScreen({
     }
   }).current;
 
+  if (localizedSections.length === 0) {
+    const targetName = getLanguage(targetLanguage)?.nativeName ?? targetLanguage;
+    const emptyCopy = locale === "ku"
+      ? { title: `${targetName} بۆ فێربوون ئامادە نییە`, body: "پاکێجی وانەی تەواو هێشتا بڵاونەکراوەتەوە. لە ڕێکخستنەکاندا زمانێکی تر هەڵبژێرە." }
+      : locale === "ar"
+        ? { title: `دورة ${targetName} غير جاهزة بعد`, body: "لم تُنشر حزمة الدروس الكاملة بعد. اختر لغة أخرى من الإعدادات." }
+        : { title: `${targetName} course is not ready yet`, body: "The complete lesson pack has not been published yet. Choose another target in Settings." };
+
+    return (
+      <View style={[darkStyles.emptyState, { backgroundColor: colors.background }]}>
+        <AppText style={darkStyles.emptyTitle} languageCode={locale} align="center">
+          {emptyCopy.title}
+        </AppText>
+        <AppText style={darkStyles.emptyBody} languageCode={locale} align="center">
+          {emptyCopy.body}
+        </AppText>
+      </View>
+    );
+  }
+
   return (
     <View
       ref={overlayRootRef}
@@ -428,6 +451,15 @@ const darkStyles = StyleSheet.create({
   },
   list: { flex: 1, backgroundColor: "transparent" },
   listContent: { backgroundColor: "transparent", paddingTop: 4 },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    gap: 10,
+  },
+  emptyTitle: { fontSize: 20, lineHeight: 28, color: "#F8FAFC" },
+  emptyBody: { fontSize: 14, lineHeight: 22, color: "#CBD5E1" },
   sectionHeader: {
     height: 48,
     flexDirection: "row",

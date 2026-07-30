@@ -1,7 +1,6 @@
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  Baby01Icon,
   CheckmarkCircle02Icon,
   ComputerIcon,
   Delete02Icon,
@@ -31,6 +30,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   type StyleProp,
   type TextStyle,
@@ -40,7 +40,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import { SOURCE_LANGUAGES, TARGET_LANGUAGES } from "../../config/languages";
+import {
+  SOURCE_LANGUAGES,
+  TARGET_LANGUAGES,
+  TARGET_LANGUAGE_CATALOG,
+  UI_LANGUAGES,
+  getTargetLanguagesForSource,
+} from "../../config/languages";
 import {
   APP_VERSION,
   PRIVACY_POLICY_URL,
@@ -85,11 +91,14 @@ const COPY = {
     system: "System",
     languageRoute: "Language route",
     languageHint: "Your language and the language you are learning",
+    interfaceLanguage: "App language",
+    preview: "Preview",
+    notReadyTitle: "Course not published yet",
+    notReadyBody: "This target is available for preview, but its complete lesson pack has not been published yet.",
     source: "I speak",
     target: "I am learning",
     feel: "Feel and sound",
-    feelHint: "Physical feedback, audio, and the kids path",
-    kids: "Kids path in Arabic",
+    feelHint: "Physical feedback and audio",
     voice: "Tutor voice",
     voiceHint: "Cycle through the available live tutor voices",
     type: "Sorani type",
@@ -117,11 +126,14 @@ const COPY = {
     system: "سیستەم",
     languageRoute: "ڕێڕەوی زمان",
     languageHint: "زمانی دایک و ئەو زمانەی فێری دەبیت",
+    interfaceLanguage: "زمانی ئەپ",
+    preview: "پێشبینین",
+    notReadyTitle: "کۆرسەکە هێشتا بڵاونەکراوەتەوە",
+    notReadyBody: "ئەم زمانە بۆ پێشبینین بەردەستە، بەڵام پاکێجی تەواوی وانەکان هێشتا بڵاونەکراوەتەوە.",
     source: "زمانی من",
     target: "فێری دەبم",
     feel: "هەست و دەنگ",
-    feelHint: "لەرزین، دەنگ و ڕێڕەوی منداڵان",
-    kids: "ڕێڕەوی منداڵان بە عەرەبی",
+    feelHint: "لەرزین و دەنگ",
     voice: "دەنگی ڕاهێنەر",
     voiceHint: "لە نێوان دەنگەکانی ڕاهێنەری ڕاستەوخۆدا بگۆڕە",
     type: "شێوەنووسی سۆرانی",
@@ -149,11 +161,14 @@ const COPY = {
     system: "النظام",
     languageRoute: "مسار اللغة",
     languageHint: "لغتك واللغة التي تتعلمها",
+    interfaceLanguage: "لغة التطبيق",
+    preview: "معاينة",
+    notReadyTitle: "الدورة غير منشورة بعد",
+    notReadyBody: "هذه اللغة متاحة للمعاينة، لكن حزمة الدروس الكاملة لم تُنشر بعد.",
     source: "لغتي",
     target: "أتعلم",
     feel: "الإحساس والصوت",
-    feelHint: "الاهتزاز والصوت ومسار الأطفال",
-    kids: "مسار الأطفال بالعربية",
+    feelHint: "الاهتزاز والصوت",
     voice: "صوت المدرّب",
     voiceHint: "تنقل بين أصوات المدرّب المباشر",
     type: "خط السورانية",
@@ -268,21 +283,31 @@ function ChoiceChip({
   onPress,
   languageCode,
   styles,
+  disabled = false,
+  statusLabel,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   languageCode: string;
   styles: ReturnType<typeof createStyles>;
+  disabled?: boolean;
+  statusLabel?: string;
 }) {
   return (
     <PressableScale
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      accessibilityLabel={label}
+      accessibilityState={{ checked: selected, disabled }}
+      accessibilityLabel={statusLabel ? `${label}, ${statusLabel}` : label}
       onPress={onPress}
+      disabled={disabled}
       scaleDown={0.96}
-      style={[styles.choiceChip, selected && styles.choiceChipSelected]}
+      style={[
+        styles.choiceChip,
+        selected && styles.choiceChipSelected,
+        disabled && styles.choiceChipDisabled,
+        statusLabel && styles.choiceChipWithStatus,
+      ]}
     >
       {selected ? (
         <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} color="#FFFFFF" strokeWidth={2.4} />
@@ -295,6 +320,11 @@ function ChoiceChip({
       >
         {label}
       </AppText>
+      {statusLabel ? (
+        <AppText style={styles.choiceChipStatus} languageCode={languageCode} align="center">
+          {statusLabel}
+        </AppText>
+      ) : null}
     </PressableScale>
   );
 }
@@ -485,6 +515,7 @@ function CycleSelector({
 
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const router = useRouter();
   const safeBack = useSafeBack("/(tabs)/more");
   const { t, locale } = useI18n();
@@ -494,7 +525,8 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const { user, signOut, deleteAccount } = useAuth();
   const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const isCompact = width < 480;
+  const styles = useMemo(() => createStyles(colors, isDark, isCompact), [colors, isDark, isCompact]);
 
   const selectedFont = useFontStore((state) => state.selectedFont);
   const setFont = useFontStore((state) => state.setFont);
@@ -510,12 +542,9 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const setTutorVoice = useSettingsStore((state) => state.setTutorVoice);
   const targetLang = useLocaleStore((state) => state.selectedTargetLanguage);
   const nativeLang = useLocaleStore((state) => state.selectedSourceLanguage);
+  const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
+  const setUiLanguage = useLocaleStore((state) => state.setUiLanguage);
   const setLanguagePair = useLocaleStore((state) => state.setLanguagePair);
-
-  const prevNonArTargetRef = React.useRef(targetLang !== "ar" ? targetLang : "en");
-  React.useEffect(() => {
-    if (targetLang !== "ar") prevNonArTargetRef.current = targetLang;
-  }, [targetLang]);
 
   const voiceOptions = useMemo(
     () => [
@@ -745,39 +774,77 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
               </View>
             </View>
 
-            <View style={styles.choiceGroup}>
-              <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
-                {copy.source}
-              </AppText>
-              <View style={styles.choiceWrap}>
-                {SOURCE_LANGUAGES.map((language) => (
-                  <ChoiceChip
-                    key={language.id}
-                    label={language.nativeName}
-                    selected={nativeLang === language.id}
-                    onPress={() => setLanguagePair(language.id, targetLang)}
-                    languageCode={language.id}
-                    styles={styles}
-                  />
-                ))}
+            <View style={styles.languageControls}>
+              <View style={styles.choiceGroup}>
+                <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                  {copy.interfaceLanguage}
+                </AppText>
+                <View style={styles.choiceWrap}>
+                  {UI_LANGUAGES.map((language) => (
+                    <ChoiceChip
+                      key={language.id}
+                      label={language.nativeName}
+                      selected={uiLanguage === language.id}
+                      onPress={() => setUiLanguage(language.id)}
+                      languageCode={language.id}
+                      styles={styles}
+                    />
+                  ))}
+                </View>
               </View>
-            </View>
 
-            <View style={styles.choiceGroup}>
-              <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
-                {copy.target}
-              </AppText>
-              <View style={styles.choiceWrap}>
-                {TARGET_LANGUAGES.map((language) => (
-                  <ChoiceChip
-                    key={language.id}
-                    label={language.nativeName}
-                    selected={targetLang === language.id}
-                    onPress={() => setLanguagePair(nativeLang, language.id)}
-                    languageCode={language.id}
-                    styles={styles}
-                  />
-                ))}
+              <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
+                <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                  {copy.source}
+                </AppText>
+                <View style={styles.choiceWrap}>
+                  {SOURCE_LANGUAGES.map((language) => (
+                    <ChoiceChip
+                      key={language.id}
+                      label={language.nativeName}
+                      selected={nativeLang === language.id}
+                      onPress={() => {
+                        const nextTarget = getTargetLanguagesForSource(language.id).some(
+                          (target) => target.id === targetLang,
+                        )
+                          ? targetLang
+                          : getTargetLanguagesForSource(language.id)[0]?.id;
+                        if (nextTarget) setLanguagePair(language.id, nextTarget);
+                      }}
+                      languageCode={language.id}
+                      styles={styles}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
+                <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                  {copy.target}
+                </AppText>
+                <View style={styles.choiceWrap}>
+                  {TARGET_LANGUAGE_CATALOG.map((language) => {
+                    const selectable = language.supportedAsTarget;
+                    return (
+                      <ChoiceChip
+                        key={language.id}
+                        label={language.nativeName}
+                        selected={targetLang === language.id}
+                        onPress={() => {
+                          if (!selectable) {
+                            Alert.alert(copy.notReadyTitle, copy.notReadyBody);
+                            return;
+                          }
+                          setLanguagePair(nativeLang, language.id);
+                        }}
+                        languageCode={language.id}
+                        styles={styles}
+                        disabled={false}
+                        statusLabel={language.curriculumReady ? undefined : copy.preview}
+                      />
+                    );
+                  })}
+                </View>
               </View>
             </View>
           </View>
@@ -809,24 +876,6 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                     label={t("settings.sounds")}
                     value={sounds}
                     onValueChange={setSounds}
-                    activeColor={colors.primary}
-                  />
-                }
-              />
-              <ControlRow
-                icon={Baby01Icon}
-                title={copy.kids}
-                subtitle={t("settings.kidsArabicHint")}
-                locale={locale}
-                styles={styles}
-                last
-                control={
-                  <SettingsSwitch
-                    label={copy.kids}
-                    value={targetLang === "ar"}
-                    onValueChange={(value) => {
-                      setLanguagePair(nativeLang, value ? "ar" : prevNonArTargetRef.current);
-                    }}
                     activeColor={colors.primary}
                   />
                 }
@@ -1036,7 +1085,7 @@ const stylesStatic = StyleSheet.create({
   switchThumbOn: { left: 23 },
 });
 
-const createStyles = (colors: any, isDark: boolean) => {
+const createStyles = (colors: any, isDark: boolean, isCompact: boolean) => {
   const featureBackground = isDark ? colors.surfaceRaised : colors.foreground;
   const raisedBackground = isDark ? colors.surface : colors.card;
   const subtleBackground = isDark ? colors.muted : "#F4F6F8";
@@ -1220,7 +1269,7 @@ const createStyles = (colors: any, isDark: boolean) => {
       lineHeight: 23,
     },
     routeLine: {
-      width: 76,
+      width: isCompact ? 48 : 76,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -1232,12 +1281,26 @@ const createStyles = (colors: any, isDark: boolean) => {
       backgroundColor: colors.primary,
     },
     routeStroke: {
-      width: 34,
+      width: isCompact ? 18 : 34,
       height: 1,
       backgroundColor: colors.primary,
     },
+    languageControls: {
+      overflow: "hidden",
+      borderRadius: 20,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: raisedBackground,
+    },
     choiceGroup: {
       gap: 8,
+      paddingHorizontal: isCompact ? 10 : 14,
+      paddingVertical: 12,
+    },
+    choiceGroupDivider: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
     },
     choiceLabel: {
       color: colors.mutedForeground,
@@ -1245,12 +1308,14 @@ const createStyles = (colors: any, isDark: boolean) => {
     },
     choiceWrap: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 8,
+      flexWrap: "nowrap",
+      gap: isCompact ? 6 : 8,
     },
     choiceChip: {
+      flex: 1,
+      minWidth: 0,
       minHeight: 44,
-      paddingHorizontal: 14,
+      paddingHorizontal: isCompact ? 6 : 14,
       borderRadius: 14,
       borderCurve: "continuous",
       flexDirection: "row",
@@ -1265,12 +1330,25 @@ const createStyles = (colors: any, isDark: boolean) => {
       borderColor: colors.primary,
       backgroundColor: colors.primary,
     },
+    choiceChipDisabled: {
+      opacity: 0.58,
+    },
+    choiceChipWithStatus: {
+      minHeight: 52,
+      flexDirection: "column",
+      gap: 1,
+    },
     choiceChipText: {
       color: colors.foreground,
       fontSize: 13,
     },
     choiceChipTextSelected: {
       color: colors.onPrimary,
+    },
+    choiceChipStatus: {
+      color: colors.mutedForeground,
+      fontSize: 9,
+      lineHeight: 11,
     },
     controlGroup: {
       overflow: "hidden",

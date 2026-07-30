@@ -1,4 +1,4 @@
-import { getUnitsForPath } from "../../data/content-access";
+import { getAllUnitsForPath } from "../../data/content-access";
 import type { LessonPathMode } from "../../data/types";
 import { AdminButton, AdminCard } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
@@ -29,7 +29,7 @@ export default function AdminUnitScreen() {
   const duplicateUnit = useContentAdminStore((s) => s.duplicateUnit);
   void pathOverride;
 
-  const unit = getUnitsForPath(mode)[unitIndex];
+  const unit = getAllUnitsForPath(mode)[unitIndex];
 
   if (!unit) {
     return (

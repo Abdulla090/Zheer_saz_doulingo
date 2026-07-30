@@ -1,5 +1,5 @@
 import { previewLessonQuestions } from "../../data/lesson-content";
-import { getUnitsForPath } from "../../data/content-access";
+import { getAllUnitsForPath } from "../../data/content-access";
 import type { LessonBank, LessonPathMode } from "../../data/types";
 import { deepClone } from "../../utils/deep-clone";
 import {
@@ -53,7 +53,7 @@ export default function AdminLessonScreen() {
   const lessonIndex = Math.max(0, Number(params.lesson ?? 0));
   const pathOverride = useContentAdminStore((s) => s.overrides[mode]);
 
-  const sourceLesson = getUnitsForPath(mode)[unitIndex]?.[lessonIndex];
+  const sourceLesson = getAllUnitsForPath(mode)[unitIndex]?.[lessonIndex];
 
   if (!sourceLesson) {
     return (

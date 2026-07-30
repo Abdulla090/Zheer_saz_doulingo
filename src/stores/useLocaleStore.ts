@@ -3,6 +3,7 @@ import { Alert, DevSettings, I18nManager, Platform } from "react-native";
 import { create } from "zustand";
 import * as Updates from "expo-updates";
 import { getLanguageDirection } from "../i18n/direction";
+import { isSupportedLanguagePair } from "../config/languages";
 
 const UI_LANG_KEY = "twino.app.uiLanguage";
 const SOURCE_LANG_KEY = "twino.app.sourceLanguage";
@@ -19,8 +20,10 @@ interface LocaleState {
   setLanguagePair: (source: string, target: string) => void;
 }
 
-const defaultSource = appStorage.getItemSync(SOURCE_LANG_KEY) || "ku";
-const defaultTarget = appStorage.getItemSync(TARGET_LANG_KEY) || "en";
+const savedSource = appStorage.getItemSync(SOURCE_LANG_KEY) || "ku";
+const savedTarget = appStorage.getItemSync(TARGET_LANG_KEY) || "en";
+const defaultSource = isSupportedLanguagePair(savedSource, savedTarget) ? savedSource : "ku";
+const defaultTarget = isSupportedLanguagePair(savedSource, savedTarget) ? savedTarget : "en";
 const defaultUi = appStorage.getItemSync(UI_LANG_KEY) || defaultSource;
 
 let rtlReloadPending = false;
@@ -73,6 +76,7 @@ export const useLocaleStore = create<LocaleState>((set) => ({
     applyUiLanguageDirection(languageCode);
   },
   setLanguagePair: (source, target) => {
+    if (!isSupportedLanguagePair(source, target)) return;
     // The current product chooses its UI language alongside the learner's source
     // language, but the three values remain distinct in state and rendering APIs.
     appStorage.setItemSync(UI_LANG_KEY, source);

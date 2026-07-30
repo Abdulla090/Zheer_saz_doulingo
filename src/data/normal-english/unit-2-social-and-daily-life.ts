@@ -1,6 +1,6 @@
 import { UnitBank } from "../types";
 
-// ── Unit 1: Everyday Social & Practical English — 10 unique lessons ──────────
+// ── Visible Unit 6: Social & Practical English — 10 unique lessons ────────────
 // Practical English for Kurdish speakers: Real-life scenarios, social interactions, and practical daily tasks.
 
 const normalUnit01: UnitBank = [
@@ -28,7 +28,7 @@ const normalUnit01: UnitBank = [
       { parts: ["Let's catch", "over coffee next week."], hint: "با هەفتەی داهاتوو لەسەر قاوەیەک یەکتر ببینینەوە و قسە بکەین.", answer: "up", wrongs: ["out", "in", "on"], arabicHint: "دعنا نلتقي ونتحدث على القهوة الأسبوع المقبل.", arabicParts: ["دعنا","ونتحدث على القهوة الأسبوع المقبل."], arabicAnswer: "نلتقي", arabicWrongs: ["نخرج","ندخل","نذهب"] },
     ],
     conversations: [
-      { situation: "لە مۆڵێکدا بە ڕێکەوت هاوڕێیەکی کۆن دەبینیت", theyAsk: "Hey! I haven't seen you in months. How are you?", correct: "I've been great, thanks! What have you been up to these days?", wrong1: "I am fine.", wrong2: "I do nothing.", wrong3: "What are you doing now?", explanation: "'How have you been' و 'What have you been up to' ڕێگەیەکی زۆر سروشتی و باوە بۆ هەوا��پرسین لە کەسێک کە ماوەیەکە نەتبینیوە", situationAr: "تقابل صديقاً قديماً بالصدفة في مركز تجاري", explanationAr: "'How have you been' و 'What have you been up to' هي طرق طبيعية وشائعة جداً للسؤال عن أحوال شخص لم تره منذ فترة." },
+      { situation: "لە مۆڵێکدا بە ڕێکەوت هاوڕێیەکی کۆن دەبینیت", theyAsk: "Hey! I haven't seen you in months. How are you?", correct: "I've been great, thanks! What have you been up to these days?", wrong1: "I've been doing well, thanks.", wrong2: "Nothing much—how about you?", wrong3: "I'm good. What are you doing today?", explanation: "'How have you been' و 'What have you been up to' ڕێگەیەکی زۆر سروشتی و باوە بۆ هەواڵپرسین لە کەسێک کە ماوەیەکە نەتبینیوە", situationAr: "تقابل صديقاً قديماً بالصدفة في مركز تجاري", explanationAr: "'How have you been' و 'What have you been up to' هي طرق طبيعية وشائعة جداً للسؤال عن أحوال شخص لم تره منذ فترة." },
     ],
   },
 
@@ -51,11 +51,11 @@ const normalUnit01: UnitBank = [
       { english: ["That", "sounds", "like", "a", "plan", "see", "you", "then"], kurdish: "بیرۆکەیەکی زۆر باشە، کەواتە دەتبینم", arabic: "تبدو كخطة جيدة، أراك إذاً" },
     ],
     fillBlanks: [
-      { parts: ["Are you", "on Friday evening?"], hint: "ئێوارەی هەینی ک��تت هەیە؟", answer: "free", wrongs: ["empty", "available", "good"], arabicHint: "هل أنت متفرغ مساء الجمعة؟", arabicParts: ["هل أنت","مساء الجمعة؟"], arabicAnswer: "متفرغ", arabicWrongs: ["فارغ","متاح","جيد"] },
+      { parts: ["Are you", "on Friday evening?"], hint: "ئێوارەی هەینی کاتت هەیە؟", answer: "free", wrongs: ["empty", "available", "good"], arabicHint: "هل أنت متفرغ مساء الجمعة؟", arabicParts: ["هل أنت","مساء الجمعة؟"], arabicAnswer: "متفرغ", arabicWrongs: ["فارغ","متاح","جيد"] },
       { parts: ["I'd love to, but I'm", "up with work."], hint: "حەزم دەکرد بێم، بەڵام دەستم گیراوە بە کارەوە.", answer: "tied", wrongs: ["busy", "stuck", "held"], arabicHint: "أود ذلك، لكني مشغول جداً بالعمل.", arabicParts: ["أود ذلك، لكني","جداً بالعمل."], arabicAnswer: "مشغول", arabicWrongs: ["عالق","مرتبط","محتجز"] },
     ],
     conversations: [
-      { situation: "دەتەوێت لەگەڵ هاوکارێکت بچیتە دەرەوە بۆ نانخواردن", theyAsk: "I'm getting hungry. Should we go eat?", correct: "Yeah, do you want to grab lunch at the new cafe? Does 1 PM work for you?", wrong1: "Yes, we eat lunch.", wrong2: "I want food at 1 PM.", wrong3: "We go cafe now.", explanation: "دەستەواژەی 'grab lunch/coffee' زۆر باوە لە ئینگلیزی ئاخاوتندا بۆ چوونە دەرەوەیەکی خێرا", situationAr: "تريد الخروج لتناول الغداء مع زميل لك", explanationAr: "عبارة 'grab lunch/coffee' شائعة جداً في اللغة الإنجليزية المحكية للخروج السريع." },
+      { situation: "دەتەوێت لەگەڵ هاوکارێکت بچیتە دەرەوە بۆ نانخواردن", theyAsk: "I'm getting hungry. Should we go eat?", correct: "Yeah, do you want to grab lunch at the new cafe? Does 1 PM work for you?", wrong1: "Sure, we could get lunch.", wrong2: "I'd like to eat around one.", wrong3: "Do you want to go to the cafe now?", explanation: "دەستەواژەی 'grab lunch/coffee' زۆر باوە لە ئینگلیزی ئاخاوتندا بۆ چوونە دەرەوەیەکی خێرا", situationAr: "تريد الخروج لتناول الغداء مع زميل لك", explanationAr: "عبارة 'grab lunch/coffee' شائعة جداً في اللغة الإنجليزية المحكية للخروج السريع." },
     ],
   },
 
@@ -71,7 +71,7 @@ const normalUnit01: UnitBank = [
     ],
     voices: [
       { prompt: "داواکردنی خواردن بە شێوازێکی جوان", target: "I would like the grilled chicken with salad on the side, please.", targetKurdish: "تکایە، حەزم لە مریشکی برژاوەیە لەگەڵ زەڵاتە لە تەنیشتییەوە.", promptAr: "طلب الطعام بطريقة مهذبة", targetArabic: "أود الدجاج المشوي مع السلطة على الجانب، من فضلك." },
-      { prompt: "داواکردنی پسووڵەی پارە", target: "Could we get the bill, please? We're ready to pay.", targetKurdish: "تکایە، دەکرێت پسووڵەکەمان ��ۆ بێنیت؟ ئامادەین بۆ پارەدان.", promptAr: "طلب فاتورة الدفع", targetArabic: "هل يمكننا الحصول على الفاتورة، من فضلك؟ نحن جاهزون للدفع." },
+      { prompt: "داواکردنی پسووڵەی پارە", target: "Could we get the bill, please? We're ready to pay.", targetKurdish: "تکایە، دەکرێت پسووڵەکەمان بۆ بێنیت؟ ئامادەین بۆ پارەدان.", promptAr: "طلب فاتورة الدفع", targetArabic: "هل يمكننا الحصول على الفاتورة، من فضلك؟ نحن جاهزون للدفع." },
     ],
     sentences: [
       { english: ["Could", "I", "have", "the", "bill", "please"], kurdish: "دەکرێت پسووڵەکە بێنیت تکایە؟", arabic: "هل يمكنني الحصول على الفاتورة من فضلك؟" },
@@ -82,7 +82,7 @@ const normalUnit01: UnitBank = [
       { parts: ["Could we get some fries on the", "?"], hint: "دەکرێت کەمێک پەتاتەی سوورکراوە وەک خواردنی لاوەکی بێنین؟", answer: "side", wrongs: ["next", "plate", "part"], arabicHint: "هل يمكننا الحصول على بعض البطاطس المقلية كطبق جانبي؟", arabicParts: ["هل يمكننا الحصول على بعض البطاطس المقلية كطبق","؟"], arabicAnswer: "جانبي", arabicWrongs: ["إضافي","صحن","جزء"] },
     ],
     conversations: [
-      { situation: "نانخواردنەکەتان تەواو بووە و دەتەوێت بڕۆیت", theyAsk: "Can I get you anything else for dessert?", correct: "No, thank you. Could I have the bill, please?", wrong1: "Give me the check.", wrong2: "I want to pay now.", wrong3: "Bring the money paper.", explanation: "'Could I have the bill, please?' باوترین و بەئەدەبترین ڕێگەیە بۆ داواکردنی حسابی چێشتخانە", situationAr: "لقد انتهيت من تناول الطعام وتريد المغادرة", explanationAr: "'Could I have the bill, please?' هي الطريقة الأكثر شيوعاً وتهذيباً لطلب فاتورة المطعم." },
+      { situation: "نانخواردنەکەتان تەواو بووە و دەتەوێت بڕۆیت", theyAsk: "Can I get you anything else for dessert?", correct: "No, thank you. Could I have the bill, please?", wrong1: "No, thanks. We're ready to pay.", wrong2: "Nothing else, thank you.", wrong3: "Could you bring the check when you have a moment?", explanation: "'Could I have the bill, please?' باوترین و بەئەدەبترین ڕێگەیە بۆ داواکردنی حسابی چێشتخانە", situationAr: "لقد انتهيت من تناول الطعام وتريد المغادرة", explanationAr: "'Could I have the bill, please?' هي الطريقة الأكثر شيوعاً وتهذيباً لطلب فاتورة المطعم." },
     ],
   },
 
@@ -102,14 +102,14 @@ const normalUnit01: UnitBank = [
     ],
     sentences: [
       { english: ["Do", "you", "have", "this", "in", "a", "medium"], kurdish: "ئەمەتان هەیە بە قەبارەی مامناوەند (میدیەم)؟", arabic: "هل لديكم هذا بحجم متوسط؟" },
-      { english: ["Where", "is", "the", "fitting", "room", "please"], kurdish: "تکا��ە ژووری خۆگۆڕین لە کوێیە؟", arabic: "أين غرفة القياس من فضلك؟" },
+      { english: ["Where", "is", "the", "fitting", "room", "please"], kurdish: "تکایە ژووری خۆگۆڕین لە کوێیە؟", arabic: "أين غرفة القياس من فضلك؟" },
     ],
     fillBlanks: [
       { parts: ["I'm just", ", thank you."], hint: "تەنها سەیر دەکەم، سوپاس.", answer: "browsing", wrongs: ["looking", "seeing", "watching"], arabicHint: "أنا فقط أتصفح، شكراً لك.", arabicParts: ["أنا فقط","، شكراً لك."], arabicAnswer: "أتصفح", arabicWrongs: ["أنظر","أرى","أشاهد"] },
       { parts: ["Is that your", "price?"], hint: "ئەوە باشترین نرختە؟ (بۆ مامەڵەکردن)", answer: "best", wrongs: ["last", "final", "good"], arabicHint: "هل هذا أفضل سعر لديك؟", arabicParts: ["هل هذا","سعر لديك؟"], arabicAnswer: "أفضل", arabicWrongs: ["آخر","نهائي","جيد"] },
     ],
     conversations: [
-      { situation: "جلێک تاقی دەکەیتەوە بەڵام نرخەکەی گرانە", theyAsk: "How did the jacket fit? It looks great on you.", correct: "It fits perfectly, but it's a bit out of my budget. Do you offer any discounts?", wrong1: "It's too expensive, lower the price.", wrong2: "I don't have money for this.", wrong3: "Make it cheaper for me.", explanation: "'A bit out of my budget' ڕێگەیەکی زۆر جوانە بۆ گوتنی ئەوەی کە شتێک گرانە بەبێ ئەوەی ڕاستەوخۆ بڵێیت گرانە", situationAr: "تجرب ملابس ولكن سعرها باهظ", explanationAr: "'A bit out of my budget' هي طريقة مهذبة جداً لقول أن شيئاً ما غالٍ دون قوله مباشرة." },
+      { situation: "جلێک تاقی دەکەیتەوە بەڵام نرخەکەی گرانە", theyAsk: "How did the jacket fit? It looks great on you.", correct: "It fits perfectly, but it's a bit out of my budget. Do you offer any discounts?", wrong1: "It fits well, but it's more than I wanted to spend.", wrong2: "I like it, but the price is a little high for me.", wrong3: "Do you have a less expensive option?", explanation: "'A bit out of my budget' ڕێگەیەکی زۆر جوانە بۆ گوتنی ئەوەی کە شتێک گرانە بەبێ ئەوەی ڕاستەوخۆ بڵێیت گرانە", situationAr: "تجرب ملابس ولكن سعرها باهظ", explanationAr: "'A bit out of my budget' هي طريقة مهذبة جداً لقول أن شيئاً ما غالٍ دون قوله مباشرة." },
     ],
   },
 
@@ -136,7 +136,7 @@ const normalUnit01: UnitBank = [
       { parts: ["Don't worry, it's right around the", "."], hint: "خەمت نەبێت، ڕێک لەو سووچەیە (زۆر نزیکە).", answer: "corner", wrongs: ["street", "way", "block"], arabicHint: "لا تقلق، إنه بالضبط عند الزاوية.", arabicParts: ["لا تقلق، إنه بالضبط عند","."], arabicAnswer: "الزاوية", arabicWrongs: ["الشارع","الطريق","المبنى"] },
     ],
     conversations: [
-      { situation: "لە شارێکی نوێیت و بەدوای میوانخانەکەدا دەگەڕێیت", theyAsk: "You look lost. Can I help you find something?", correct: "Yes, please. I'm looking for the Grand Hotel. Is it within walking distance?", wrong1: "Where is Grand Hotel?", wrong2: "I want to go to Grand Hotel now.", wrong3: "Point me to the hotel.", explanation: "'Is it within walking distance?' پرسیارێکی زۆر باوە بۆ زانینی ئەوەی ئایا پێویست بە تەکسی دەکات یان نا", situationAr: "أنت في مدينة جديدة وتبحث عن الفندق", explanationAr: "'Is it within walking distance?' هو سؤال شائع جداً لمعرفة ما إذا كنت بحاجة إلى سيارة أجرة أم لا." },
+      { situation: "لە شارێکی نوێیت و بەدوای میوانخانەکەدا دەگەڕێیت", theyAsk: "You look lost. Can I help you find something?", correct: "Yes, please. I'm looking for the Grand Hotel. Is it within walking distance?", wrong1: "Yes, could you tell me where the Grand Hotel is?", wrong2: "I'm trying to get to the Grand Hotel.", wrong3: "Could you point me toward the hotel?", explanation: "'Is it within walking distance?' پرسیارێکی زۆر باوە بۆ زانینی ئەوەی ئایا پێویست بە تەکسی دەکات یان نا", situationAr: "أنت في مدينة جديدة وتبحث عن الفندق", explanationAr: "'Is it within walking distance?' هو سؤال شائع جداً لمعرفة ما إذا كنت بحاجة إلى سيارة أجرة أم لا." },
     ],
   },
 
@@ -163,7 +163,7 @@ const normalUnit01: UnitBank = [
       { parts: ["I need to drop off this", "at the pharmacy."], hint: "پێویستە ئەم ڕەچەتەیە ببەمە دەرمانخانەکە.", answer: "prescription", wrongs: ["paper", "medicine", "note"], arabicHint: "أحتاج إلى تسليم هذه الوصفة الطبية في الصيدلية.", arabicParts: ["أحتاج إلى تسليم هذه","في الصيدلية."], arabicAnswer: "الوصفة الطبية", arabicWrongs: ["الورقة","الدواء","الملاحظة"] },
     ],
     conversations: [
-      { situation: "تەلەفۆن بۆ نۆرینگەی پزیشک دەکەیت", theyAsk: "City Clinic, how can I help you?", correct: "Hi, I'm not feeling well and I've had a sore throat for days. I'd like to make an appointment, please.", wrong1: "I am sick. I want doctor.", wrong2: "Give me a time to see the doctor.", wrong3: "My throat hurts.", explanation: "'I'd like to make an appointment' باشترین شێوازە. لە ئینگلیزیدا وشەی 'appointment' بەکاردێت بۆ دانانی کات لای پزیشک، نەک 'meeting' یان 'time'", situationAr: "تتصل بعيادة الطبيب", explanationAr: "'I'd like to make an appointment' هي أفضل طريقة. في اللغة الإنجليزية، تُستخدم كلمة 'appointment' لتحديد موعد مع الطبيب، وليس 'meeting' أو 'time'." },
+      { situation: "تەلەفۆن بۆ نۆرینگەی پزیشک دەکەیت", theyAsk: "City Clinic, how can I help you?", correct: "Hi, I'm not feeling well and I've had a sore throat for days. I'd like to make an appointment, please.", wrong1: "Hi, I'd like to schedule a doctor's appointment.", wrong2: "I've had a sore throat and don't feel well.", wrong3: "Do you have any appointments available today?", explanation: "'I'd like to make an appointment' باشترین شێوازە. لە ئینگلیزیدا وشەی 'appointment' بەکاردێت بۆ دانانی کات لای پزیشک، نەک 'meeting' یان 'time'", situationAr: "تتصل بعيادة الطبيب", explanationAr: "'I'd like to make an appointment' هي أفضل طريقة. في اللغة الإنجليزية، تُستخدم كلمة 'appointment' لتحديد موعد مع الطبيب، وليس 'meeting' أو 'time'." },
     ],
   },
 
@@ -174,7 +174,7 @@ const normalUnit01: UnitBank = [
       { english: "I'm absolutely thrilled", kurdish: "زۆر زۆر دڵخۆشم / بەپەرۆشم", arabic: "أنا سعيد للغاية / متحمس جداً" },
       { english: "I'm so sorry to hear that", kurdish: "زۆر خەفەتم خوارد کە ئەوەم بیست", arabic: "يؤسفني جداً سماع ذلك" },
       { english: "It's so frustrating",   kurdish: "ئەمە زۆر بێزارکەرە (کاتێک شتێک بە دڵی تۆ ناڕوات)", arabic: "هذا محبط جداً (عندما لا تسير الأمور كما تريد)" },
-      { english: "That's such a relief",  kurdish: "ئ��وە جێگەی دڵنەواییە (سووکنایی)", arabic: "هذا مريح جداً (شعور بالارتياح)" },
+      { english: "That's such a relief",  kurdish: "ئەوە جێگەی دڵنەواییە (سووکنایی)", arabic: "هذا مريح جداً (شعور بالارتياح)" },
       { english: "I can't believe it",    kurdish: "بڕوا ناکەم (لە سەرسووڕماندا)", arabic: "لا أصدق ذلك (في حالة دهشة)" },
     ],
     voices: [
@@ -190,7 +190,7 @@ const normalUnit01: UnitBank = [
       { parts: ["That's such a", "— I thought I lost my wallet."], hint: "ئەوە جێگەی سووکناییە — پێم وابوو جزدانەکەم ون کردووە.", answer: "relief", wrongs: ["good thing", "luck", "break"], arabicHint: "هذا مريح جداً — اعتقدت أنني فقدت محفظتي.", arabicParts: ["هذا","جداً — اعتقدت أنني فقدت محفظتي."], arabicAnswer: "مريح", arabicWrongs: ["شيء جيد","حظ","راحة"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەکەت پێت دەڵێت کە تاقیکردنەوەیەکی قورسی دەرچووە", theyAsk: "I finally passed my driving test! I was so stressed.", correct: "That's such a relief! I'm absolutely thrilled for you.", wrong1: "Good for you.", wrong2: "I am happy.", wrong3: "Nice to hear.", explanation: "'That's such a relief' و 'absolutely thrilled' کاردانەوەی زۆر سروشتی و بەهێزن لە ئینگلیزیدا لەبری تەنها وتنێکی سادەی 'I am happy'", situationAr: "يخبرك صديقك أنه اجتاز اختباراً صعباً", explanationAr: "'That's such a relief' و 'absolutely thrilled' هما ردود فعل طبيعية وقوية جداً في اللغة الإنجليزية بدلاً من مجرد قول 'I am happy' بسيط." },
+      { situation: "هاوڕێیەکەت پێت دەڵێت کە تاقیکردنەوەیەکی قورسی دەرچووە", theyAsk: "I finally passed my driving test! I was so stressed.", correct: "That's such a relief! I'm absolutely thrilled for you.", wrong1: "That's great news—congratulations!", wrong2: "I'm really happy for you.", wrong3: "You must be so relieved.", explanation: "'That's such a relief' و 'absolutely thrilled' کاردانەوەی زۆر سروشتی و بەهێزن لە ئینگلیزیدا لەبری تەنها وتنێکی سادەی 'I am happy'", situationAr: "يخبرك صديقك أنه اجتاز اختباراً صعباً", explanationAr: "'That's such a relief' و 'absolutely thrilled' هما ردود فعل طبيعية وقوية جداً في اللغة الإنجليزية بدلاً من مجرد قول 'I am happy' بسيط." },
     ],
   },
 
@@ -217,7 +217,7 @@ const normalUnit01: UnitBank = [
       { parts: ["Is this your only", "bag?"], hint: "ئایا ئەمە تەنها جانتای دەستتە؟", answer: "carry-on", wrongs: ["hand", "small", "flight"], arabicHint: "هل هذه حقيبة يدك الوحيدة؟", arabicParts: ["هل هذه","الوحيدة؟"], arabicAnswer: "حقيبة يدك", arabicWrongs: ["حقيبة صغيرة","حقيبة طيران","حقيبة"] },
     ],
     conversations: [
-      { situation: "لە مێزی پشکنین (Check-in) لە فڕۆکەخانە", theyAsk: "Can I see your passport and ticket, please? Are you checking any bags?", correct: "Here is my passport. Yes, I have one suitcase to check in, and this is my carry-on.", wrong1: "Here. I have big bag and small bag.", wrong2: "This is passport. Take my bag.", wrong3: "I have luggage for plane.", explanation: "وشەکانی 'suitcase', 'check in', و 'carry-on' وشەی بنەڕەتی و دروستن بۆ مامەڵەکردن لە فڕۆکەخانە", situationAr: "في مكتب تسجيل الدخول في المطار", explanationAr: "كلمات 'suitcase', 'check in', و 'carry-on' هي كلمات أساسية وصحيحة للتعامل في المطار." },
+      { situation: "لە مێزی پشکنین (Check-in) لە فڕۆکەخانە", theyAsk: "Can I see your passport and ticket, please? Are you checking any bags?", correct: "Here is my passport. Yes, I have one suitcase to check in, and this is my carry-on.", wrong1: "Of course. I have one large bag and one small bag.", wrong2: "Here's my passport. I'd like to check this suitcase.", wrong3: "Yes, I'm checking one bag today.", explanation: "وشەکانی 'suitcase', 'check in', و 'carry-on' وشەی بنەڕەتی و دروستن بۆ مامەڵەکردن لە فڕۆکەخانە", situationAr: "في مكتب تسجيل الدخول في المطار", explanationAr: "كلمات 'suitcase', 'check in', و 'carry-on' هي كلمات أساسية وصحيحة للتعامل في المطار." },
     ],
   },
 
@@ -244,7 +244,7 @@ const normalUnit01: UnitBank = [
       { parts: ["Is breakfast", "?"], hint: "ئایا نانی بەیانی لەگەڵدایە؟", answer: "included", wrongs: ["with", "there", "free"], arabicHint: "هل الإفطار مشمول؟", arabicParts: ["هل الإفطار","؟"], arabicAnswer: "مشمول", arabicWrongs: ["مع","هناك","مجاني"] },
     ],
     conversations: [
-      { situation: "گەیشتن بە هۆتێل و وەرگرتنی ژوور", theyAsk: "Welcome to the Grand Hotel. How can I help you?", correct: "Hello, I have a reservation for three nights under the name Ahmed. Is breakfast included?", wrong1: "I booked room. Name Ahmed.", wrong2: "I want my room.", wrong3: "Give me key, I have room.", explanation: "'I have a reservation under the name...' ڕستەیەکی زۆر ستاندارد و فەرمییە بۆ وەرگرتنی ژووری هۆتێ��", situationAr: "الوصول إلى الفندق وتسجيل الدخول", explanationAr: "'I have a reservation under the name...' هي جملة قياسية ورسمية جداً لتسجيل الدخول في الفندق." },
+      { situation: "گەیشتن بە هۆتێل و وەرگرتنی ژوور", theyAsk: "Welcome to the Grand Hotel. How can I help you?", correct: "Hello, I have a reservation for three nights under the name Ahmed. Is breakfast included?", wrong1: "Hi, I booked a room for three nights.", wrong2: "Hello, I'm here to check in.", wrong3: "I have a reservation under Ahmed.", explanation: "'I have a reservation under the name...' ڕستەیەکی زۆر ستاندارد و فەرمییە بۆ وەرگرتنی ژووری هۆتێل", situationAr: "الوصول إلى الفندق وتسجيل الدخول", explanationAr: "'I have a reservation under the name...' هي جملة قياسية ورسمية جداً لتسجيل الدخول في الفندق." },
     ],
   },
 
@@ -259,7 +259,7 @@ const normalUnit01: UnitBank = [
       { english: "Paper or plastic",     kurdish: "کیسی کاغەز یان پلاستیک؟", arabic: "كيس ورقي أم بلاستيكي؟" },
     ],
     voices: [
-      { prompt: "پرسیارکردن لە شوێنی شتێک", target: "Excuse me, which aisle is the milk in?", targetKurdish: "ببوورە، شیر ��ە کام ڕاڕەودایە؟", promptAr: "السؤال عن مكان شيء ما", targetArabic: "عفواً، في أي ممر يوجد الحليب؟" },
+      { prompt: "پرسیارکردن لە شوێنی شتێک", target: "Excuse me, which aisle is the milk in?", targetKurdish: "ببوورە، شیر لە کام ڕاڕەودایە؟", promptAr: "السؤال عن مكان شيء ما", targetArabic: "عفواً، في أي ممر يوجد الحليب؟" },
       { prompt: "پرسیارکردن لە نرخ", target: "Is this item on sale? I saw a sign outside.", targetKurdish: "ئایا داشکاندن بۆ ئەمە کراوە؟ لە دەرەوە تابلۆیەکم بینی.", promptAr: "السؤال عن السعر", targetArabic: "هل هذا المنتج معروض للبيع؟ رأيت لافتة في الخارج." },
     ],
     sentences: [
@@ -271,7 +271,7 @@ const normalUnit01: UnitBank = [
       { parts: ["I need a shopping", "because I'm buying a lot."], hint: "پێویستم بە عەرەبانەیەکی بازاڕکردنە چونکە شتی زۆر دەکڕم.", answer: "cart", wrongs: ["bag", "box", "car"], arabicHint: "أحتاج إلى عربة تسوق لأنني أشتري الكثير.", arabicParts: ["أحتاج إلى","تسوق لأنني أشتري الكثير."], arabicAnswer: "عربة", arabicWrongs: ["حقيبة","صندوق","سيارة"] },
     ],
     conversations: [
-      { situation: "لە سوپەرمارکێت بەدوای شتێکدا دەگەڕێیت", theyAsk: "Do you need help finding anything?", correct: "Yes, please. Which aisle is the milk in? Also, are these apples on sale?", wrong1: "Where is milk? Is apple cheap?", wrong2: "I want milk. Sale for apple?", wrong3: "Which path for milk? Apple discount?", explanation: "وشەی 'aisle' (ڕاڕەو) زۆر گرنگە لە سوپەرمارکێتدا و پیتی (s) تێیدا ناخوێندرێتەوە", situationAr: "تبحث عن شيء ما في السوبر ماركت", explanationAr: "كلمة 'aisle' (ممر) مهمة جداً في السوبر ماركت وحرف (s) فيها لا يُنطق." },
+      { situation: "لە سوپەرمارکێت بەدوای شتێکدا دەگەڕێیت", theyAsk: "Do you need help finding anything?", correct: "Yes, please. Which aisle is the milk in? Also, are these apples on sale?", wrong1: "Yes, I'm looking for the milk.", wrong2: "Could you show me where the dairy section is?", wrong3: "Are these apples discounted today?", explanation: "وشەی 'aisle' (ڕاڕەو) زۆر گرنگە لە سوپەرمارکێتدا و پیتی (s) تێیدا ناخوێندرێتەوە", situationAr: "تبحث عن شيء ما في السوبر ماركت", explanationAr: "كلمة 'aisle' (ممر) مهمة جداً في السوبر ماركت وحرف (s) فيها لا يُنطق." },
     ],
   },
 

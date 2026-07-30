@@ -37,7 +37,7 @@ describe("normal English lesson difficulty", () => {
     });
   });
 
-  it("rises lesson by lesson across the first five units only", () => {
+  it("rises continuously through all eighteen units", () => {
     expect(getNormalLessonDifficulty(0, 0)).toMatchObject({
       step: 0,
       closeDistractorCount: 1,
@@ -45,21 +45,37 @@ describe("normal English lesson difficulty", () => {
       pairCount: 3,
       readingSentenceCount: 2,
     });
-    expect(getNormalLessonDifficulty(0, 3)?.closeDistractorCount).toBe(2);
+    expect(getNormalLessonDifficulty(0, 4)?.closeDistractorCount).toBe(1);
+    expect(getNormalLessonDifficulty(0, 5)?.closeDistractorCount).toBe(2);
     expect(getNormalLessonDifficulty(2, 5)).toMatchObject({
       step: 25,
-      closeDistractorCount: 3,
+      closeDistractorCount: 2,
       sentenceExtraCount: 2,
       pairCount: 4,
     });
     expect(getNormalLessonDifficulty(4, 9)).toMatchObject({
       step: 49,
+      closeDistractorCount: 2,
+      sentenceExtraCount: 2,
+      pairCount: 4,
+      readingSentenceCount: 2,
+    });
+    expect(getNormalLessonDifficulty(5, 0)).toMatchObject({
+      step: 50,
+      closeDistractorCount: 3,
+      sentenceExtraCount: 2,
+      pairCount: 4,
+      readingSentenceCount: 3,
+    });
+    expect(getNormalLessonDifficulty(17, 9)).toMatchObject({
+      step: 179,
+      progress: 1,
       closeDistractorCount: 3,
       sentenceExtraCount: 4,
       pairCount: 4,
       readingSentenceCount: 4,
     });
-    expect(getNormalLessonDifficulty(5, 0)).toBeNull();
+    expect(getNormalLessonDifficulty(18, 0)).toBeNull();
   });
 
   it("creates close grammar mistakes instead of obviously unrelated sentences", () => {
@@ -68,8 +84,8 @@ describe("normal English lesson difficulty", () => {
     expect(misses).toEqual(expect.arrayContaining(["I is fine", "I are fine"]));
   });
 
-  it("keeps every choice game valid throughout all 50 revised lessons", () => {
-    for (let unitIndex = 0; unitIndex < 5; unitIndex += 1) {
+  it("keeps every choice game valid throughout all 180 lessons", () => {
+    for (let unitIndex = 0; unitIndex < 18; unitIndex += 1) {
       for (let lessonIndex = 0; lessonIndex < 10; lessonIndex += 1) {
         const questions = getLessonQuestions(unitIndex, lessonIndex, "normal");
 
@@ -101,7 +117,7 @@ describe("normal English lesson difficulty", () => {
   it("adds challenge to each game family as lessons advance", () => {
     const first = getLessonQuestions(0, 0, "normal");
     const middle = getLessonQuestions(2, 5, "normal");
-    const last = getLessonQuestions(4, 9, "normal");
+    const last = getLessonQuestions(17, 9, "normal");
 
     const firstPair = first.find((question) => question.type === "pair_match");
     const lastPair = last.find((question) => question.type === "pair_match");

@@ -1,9 +1,12 @@
-import { getUnitsForPath } from "../../data/content-access";
+import { getAllUnitsForPath } from "../../data/content-access";
+import { LANGUAGES } from "../../config/languages";
+import { useAuth } from "../../context/AuthContext";
 import { getPathUnitTitle } from "../../data/path-unit-titles";
 import type { LessonPathMode } from "../../data/types";
 import { AdminButton, AdminCard, AdminSegment } from "./admin-ui";
 import { AppText } from "../../components/ui/AppText";
 import { useContentAdminStore } from "../../stores/useContentAdminStore";
+import { publishCurriculumPack } from "../../services/curriculum-loader";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { downloadTextFile } from "../../utils/admin-export";
@@ -25,7 +28,10 @@ export default function AdminHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const safeBack = useSafeBack("/(tabs)/more");
+  const { user } = useAuth();
   const [mode, setMode] = useState<LessonPathMode>("street");
+  const [sourceLanguage, setSourceLanguage] = useState("ku");
+  const [publishing, setPublishing] = useState(false);
   const [importText, setImportText] = useState("");
   const [showImport, setShowImport] = useState(false);
 
@@ -39,7 +45,27 @@ export default function AdminHomeScreen() {
   const importJson = useContentAdminStore((s) => s.importJson);
   const ensureEditable = useContentAdminStore((s) => s.ensureEditable);
 
-  const units = getUnitsForPath(mode);
+  const units = getAllUnitsForPath(mode);
+  const isCurriculumAdmin = user?.app_metadata?.curriculum_admin === true;
+
+  const handlePublish = async () => {
+    if (!user || !isCurriculumAdmin || publishing) return;
+    setPublishing(true);
+    const result = await publishCurriculumPack(
+      mode,
+      sourceLanguage,
+      "en",
+      pathOverride ?? units,
+      user.id,
+    );
+    setPublishing(false);
+    Alert.alert(
+      result.ok ? "Published" : "Publish failed",
+      result.ok
+        ? `${mode} content is now published for ${sourceLanguage} → English.`
+        : result.error,
+    );
+  };
 
   const confirmReset = () => {
     Alert.alert(
@@ -101,6 +127,25 @@ export default function AdminHomeScreen() {
             { id: "normal", label: "Normal" },
           ]}
         />
+
+        {isCurriculumAdmin ? (
+          <AdminCard title="Database publishing">
+            <AppText style={styles.meta} forceLatinFont>
+              Publish the complete editor snapshot for one source language. Learners keep the last valid pack offline.
+            </AppText>
+            <AdminSegment
+              value={sourceLanguage}
+              onChange={setSourceLanguage}
+              options={Object.values(LANGUAGES)
+                .filter((language) => language.id !== "en")
+                .map((language) => ({ id: language.id, label: language.nativeName }))}
+            />
+            <AdminButton
+              label={publishing ? "Publishing…" : "Publish to database"}
+              onPress={() => void handlePublish()}
+            />
+          </AdminCard>
+        ) : null}
 
         <View style={styles.statusRow}>
           <AppText style={styles.status} forceLatinFont>

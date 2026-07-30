@@ -1,6 +1,9 @@
 import type { AnswerTier } from "../../utils/answer-tier";
 
-export const NORMAL_DIFFICULTY_UNIT_COUNT = 5;
+// The complete 18-unit course is one continuous A1-C1 progression. Every
+// lesson must pass through the same difficulty system so later units never
+// fall back to unranked authored choices.
+export const NORMAL_DIFFICULTY_UNIT_COUNT = 18;
 
 export type NormalLessonDifficulty = {
   step: number;
@@ -11,7 +14,7 @@ export type NormalLessonDifficulty = {
   readingSentenceCount: 2 | 3 | 4;
 };
 
-/** Difficulty rises across the first 50 lessons, not merely by game type. */
+/** Difficulty rises across all 180 lessons, not merely by game type. */
 export function getNormalLessonDifficulty(
   unitIndex: number,
   lessonIndex: number,
@@ -25,10 +28,10 @@ export function getNormalLessonDifficulty(
   return {
     step,
     progress,
-    closeDistractorCount: step < 3 ? 1 : step < 25 ? 2 : 3,
-    sentenceExtraCount: step < 13 ? 1 : step < 26 ? 2 : step < 39 ? 3 : 4,
-    pairCount: step < 5 ? 3 : 4,
-    readingSentenceCount: step < 30 ? 2 : step < 40 ? 3 : 4,
+    closeDistractorCount: step < 5 ? 1 : step < 50 ? 2 : 3,
+    sentenceExtraCount: step < 20 ? 1 : step < 60 ? 2 : step < 110 ? 3 : 4,
+    pairCount: step < 10 ? 3 : 4,
+    readingSentenceCount: step < 50 ? 2 : step < 100 ? 3 : 4,
   };
 }
 
@@ -257,6 +260,40 @@ function incompleteConversationVariants(correct: string): string[] {
   return uniqueCandidates(variants, correct);
 }
 
+function contrastingConversationVariants(correct: string): string[] {
+  const replacements: [RegExp, string][] = [
+    [/\bcan't\b/i, "can"],
+    [/\bcan\b/i, "can't"],
+    [/\bshouldn't\b/i, "should"],
+    [/\bshould\b/i, "shouldn't"],
+    [/\bwouldn't\b/i, "would"],
+    [/\bwould\b/i, "wouldn't"],
+    [/\bwon't\b/i, "will"],
+    [/\bwill\b/i, "won't"],
+    [/\bdon't\b/i, "do"],
+    [/\bdo\b/i, "don't"],
+    [/\bisn't\b/i, "is"],
+    [/\bis\b/i, "isn't"],
+    [/\baren't\b/i, "are"],
+    [/\bare\b/i, "aren't"],
+  ];
+  const variants: string[] = [];
+
+  for (const [pattern, replacement] of replacements) {
+    if (!pattern.test(correct)) continue;
+    variants.push(correct.replace(pattern, (match) => preserveCase(match, replacement)));
+    break;
+  }
+
+  const quoted = correct.replace(/[.!?]+$/, "");
+  if (normalizedTokens(quoted).length >= 4) {
+    variants.push(`Do you mean, “${quoted}”?`);
+  }
+
+  variants.push("I'm not sure yet. Could we come back to that?");
+  return uniqueCandidates(variants, correct);
+}
+
 export function buildProgressiveConversationChoices(
   entry: {
     correct: string;
@@ -266,10 +303,13 @@ export function buildProgressiveConversationChoices(
   },
   closeCount: number,
 ): { options: string[]; optionTiers: Record<string, AnswerTier> } {
-  const nearMisses = incompleteConversationVariants(entry.correct).slice(
-    0,
-    Math.min(2, closeCount),
-  );
+  const nearMisses = uniqueCandidates(
+    [
+      ...incompleteConversationVariants(entry.correct),
+      ...contrastingConversationVariants(entry.correct),
+    ],
+    entry.correct,
+  ).slice(0, closeCount);
   const candidates = uniqueCandidates(
     [...nearMisses, entry.wrong1, entry.wrong2, entry.wrong3],
     entry.correct,

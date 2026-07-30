@@ -39,6 +39,12 @@ import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { getSkippedUnitsCount } from "../../data/normal-english";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import {
+  LANGUAGES as LANGUAGE_CATALOG,
+  SOURCE_LANGUAGES,
+  getTargetLanguagesForSource,
+  type LanguageDefinition,
+} from "../../config/languages";
 import { AppText } from "../../components/ui/AppText";
 import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
 import {
@@ -140,29 +146,6 @@ const ONBOARDING_COPY = {
     setupError: "Не удалось подготовить маршрут. Проверь выбор и попробуй ещё раз.",
   },
 } as const;
-
-const LANGUAGES = [
-  {
-    id: "ku",
-    label: "Kurdish",
-  },
-  {
-    id: "es",
-    label: "Español",
-  },
-  {
-    id: "ru",
-    label: "Русский",
-  },
-  {
-    id: "ar",
-    label: "العربية",
-  },
-  {
-    id: "en",
-    label: "English",
-  },
-];
 
 const GOALS = [
   {
@@ -355,7 +338,7 @@ export function LanguageSelectionFlow({
   const handleNativeLanguageContinue = useCallback(() => {
     hapticSelection();
     if (selectedTargetLang === selectedNativeLang) {
-      const fallbackTarget = selectedNativeLang === "en" ? "ku" : "en";
+      const fallbackTarget = getTargetLanguagesForSource(selectedNativeLang)[0]?.id ?? "en";
       setSelectedTargetLang(fallbackTarget);
     }
     setStep("targetLanguage");
@@ -378,11 +361,12 @@ export function LanguageSelectionFlow({
   }, []);
 
   const renderLanguageOptions = (
+    languages: LanguageDefinition[],
     selectedLanguage: string,
     onSelect: (langId: string) => void,
   ) => (
     <View style={styles.languageList} accessibilityRole="radiogroup">
-      {LANGUAGES.map((language) => {
+      {languages.map((language) => {
         const isSelected = selectedLanguage === language.id;
 
         return (
@@ -390,7 +374,7 @@ export function LanguageSelectionFlow({
             key={language.id}
             testID={`onboarding-language-${language.id}`}
             accessibilityRole="radio"
-            accessibilityLabel={language.label}
+            accessibilityLabel={language.name}
             accessibilityState={{ checked: isSelected }}
             style={[
               styles.languageRow,
@@ -408,7 +392,7 @@ export function LanguageSelectionFlow({
                 fullWidth
                 numberOfLines={1}
               >
-                {language.label}
+                {language.nativeName}
               </AppText>
             </View>
 
@@ -566,7 +550,7 @@ export function LanguageSelectionFlow({
             <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.nativeLanguageTitle}
             </AppText>
-            {renderLanguageOptions(selectedNativeLang, handleNativeLanguageSelect)}
+            {renderLanguageOptions(SOURCE_LANGUAGES, selectedNativeLang, handleNativeLanguageSelect)}
 
           </Animated.View>
         )}
@@ -585,7 +569,11 @@ export function LanguageSelectionFlow({
             <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
               {copy.targetLanguageTitle}
             </AppText>
-            {renderLanguageOptions(selectedTargetLang, handleTargetLanguageSelect)}
+            {renderLanguageOptions(
+              getTargetLanguagesForSource(selectedNativeLang),
+              selectedTargetLang,
+              handleTargetLanguageSelect,
+            )}
 
           </Animated.View>
         )}
@@ -655,7 +643,7 @@ export function LanguageSelectionFlow({
               {copy.step(4)}
             </AppText>
             <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.levelTitle(LANGUAGES.find((l) => l.id === selectedTargetLang)?.label ?? "")}
+              {copy.levelTitle(LANGUAGE_CATALOG[selectedTargetLang]?.nativeName ?? "")}
             </AppText>
 
 
