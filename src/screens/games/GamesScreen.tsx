@@ -1,82 +1,69 @@
-import { PremiumPressable } from "../../components/PremiumPressable";
-import { crossShadow } from "../../utils/shadows";
-import React, { useMemo } from "react";
-import { Platform, StyleSheet, View, ScrollView, useWindowDimensions } from "react-native";
-import { Image } from "expo-image";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   FireIcon,
 } from "@hugeicons/core-free-icons";
-import Svg, { Circle } from "react-native-svg";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useRouter } from "expo-router";
+import { Image } from "expo-image";
+import React, { useMemo } from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Circle } from "react-native-svg";
 
-import { AppText } from "../../components/ui/AppText";
 import { CreditPacksButton } from "../../components/CreditPacksButton";
-import { getMascotExpressionSource } from "../../constants/mascot-expressions";
-import { getMascot, getMascotDisplayName } from "../../constants/mascots";
+import { PremiumPressable } from "../../components/PremiumPressable";
+import { AppText } from "../../components/ui/AppText";
+import { getMascot } from "../../constants/mascots";
 import { Colors } from "../../constants/theme";
 import { isDesktopWebWidth } from "../../constants/web-layout";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { crossShadow } from "../../utils/shadows";
 
 const GAMES = [
   {
     key: "voice-tutor",
     titleKey: "games.voiceTutorTitle",
     subKey: "games.voiceTutorSub",
-    tileBackground: "#DDE9F8",
-    accentColor: "#3B82F6",
-    image: require("../../../assets/images/games/ui/voice-tutor.png"),
     href: "/voice-tutor" as const,
   },
   {
     key: "reading-practice",
     titleKey: "games.paragraphSpeechTitle",
     subKey: "games.paragraphSpeechSub",
-    tileBackground: "#EEE8DA",
-    accentColor: "#FF9D32",
-    image: require("../../../assets/images/games/ui/reading-practice.png"),
     href: "/reading-practice" as const,
   },
   {
     key: "podcast",
     titleKey: "games.podcastTitle",
     subKey: "games.podcastSub",
-    tileBackground: "#DCEFED",
-    accentColor: "#22BFAE",
-    image: require("../../../assets/images/games/ui/podcast.png"),
     href: "/podcast" as const,
   },
   {
     key: "slang",
     titleKey: "games.slangTitle",
     subKey: "games.slangSub",
-    tileBackground: "#FFF2E8",
-    accentColor: "#FF6B00",
-    image: require("../../../assets/images/games/ui/slang-dictionary.png"),
     href: "/slang" as const,
   },
   {
     key: "roleplay",
     titleKey: "games.rolePlayTitle",
     subKey: "games.rolePlaySub",
-    tileBackground: "#E7E0F4",
-    accentColor: "#8061F2",
-    image: require("../../../assets/images/games/ui/roleplay.png"),
     href: "/roleplay" as const,
   },
   {
     key: "ai-teacher",
     titleKey: "games.teacherTitle",
     subKey: "games.teacherSub",
-    tileBackground: "#DCECF8",
-    accentColor: "#3487EE",
-    image: require("../../../assets/images/games/ui/ai-teacher.png"),
     href: "/ai-teacher" as const,
   },
 ] as const;
@@ -130,13 +117,27 @@ function ProgressRing({
       </Svg>
       <View style={styles.ringCopy}>
         <AppText
-          style={[styles.ringLabel, compact && styles.ringLabelCompact, { color: foregroundColor }]}
+          style={[
+            styles.ringLabel,
+            compact && styles.ringLabelCompact,
+            { color: foregroundColor },
+          ]}
           languageCode={languageCode}
           latinRole="bold"
         >
           {label}
         </AppText>
-        <AppText style={[styles.ringValue, compact && styles.ringValueCompact, { color: foregroundColor }]} forceLatinFont latinRole="bold">{level}</AppText>
+        <AppText
+          style={[
+            styles.ringValue,
+            compact && styles.ringValueCompact,
+            { color: foregroundColor },
+          ]}
+          forceLatinFont
+          latinRole="bold"
+        >
+          {level}
+        </AppText>
       </View>
     </View>
   );
@@ -147,15 +148,13 @@ export function GamesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { t, locale, isKu } = useI18n();
-  const { colors, isDark } = useThemeColors();
+  const { colors } = useThemeColors();
   const { streakDays, totalXp } = useProgressStore();
   const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const isRtl = isKu || locale === "ar";
   const compact = width < 600;
-  const isDesktopWeb =
-    Platform.OS === "web" && isDesktopWebWidth(width);
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
   const selectedMascot = getMascot(selectedMascotId);
-  const selectedMascotName = getMascotDisplayName(selectedMascot, locale);
   const progressPalette = selectedMascot.progressPalette;
 
   const level = Math.max(1, Math.floor((totalXp || 0) / 300) + 1);
@@ -163,61 +162,64 @@ export function GamesScreen() {
   const levelProgress = levelXp / 300;
 
   const stylesForScreen = useMemo(
-    () => createStyles(compact, colors, isDark, isDesktopWeb),
-    [colors, compact, isDark, isDesktopWeb],
+    () => createStyles(compact, colors, isDesktopWeb),
+    [colors, compact, isDesktopWeb],
   );
 
   return (
     <View
-      {...(Platform.OS === "web" ? ({ dir: "ltr" } as any) : {})}
+      {...(Platform.OS === "web" ? ({ dir: "ltr" } as Record<string, string>) : {})}
       style={[
         stylesForScreen.root,
         Platform.OS !== "web" && ({ direction: "ltr" } as const),
       ]}
     >
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           stylesForScreen.scrollContent,
           {
-            paddingTop:
-              insets.top + (isDesktopWeb ? 24 : compact ? 6 : 12),
-            paddingBottom:
-              insets.bottom + (isDesktopWeb ? 48 : 112),
+            paddingTop: insets.top + (isDesktopWeb ? 20 : compact ? 6 : 12),
+            paddingBottom: insets.bottom + (isDesktopWeb ? 48 : 112),
           },
         ]}
       >
-          <View style={stylesForScreen.content}>
-           <View style={stylesForScreen.hero}>
-             <View style={[stylesForScreen.heroCopy, isRtl && stylesForScreen.heroCopyRtl]}>
+        <View style={stylesForScreen.content}>
+          <View
+            style={[
+              stylesForScreen.screenHeader,
+              isRtl && stylesForScreen.rowReverse,
+            ]}
+          >
+            <View
+              style={[
+                stylesForScreen.headerCopy,
+                isRtl && stylesForScreen.headerCopyRtl,
+              ]}
+            >
               <AppText
-                style={[stylesForScreen.heroTitle, isRtl && stylesForScreen.heroTitleRtl]}
+                style={stylesForScreen.headerTitle}
+                languageCode={locale}
+                align="start"
                 forceKurdishFont={isRtl}
+                fullWidth
               >
                 {t("games.screenTitle")}
               </AppText>
-              <CreditPacksButton
+              <View
                 style={[
-                  stylesForScreen.heroPacksButton,
-                  isRtl && stylesForScreen.heroPacksButtonRtl,
+                  stylesForScreen.headerRule,
+                  { backgroundColor: colors.primary },
                 ]}
               />
             </View>
-            <Image
-              source={getMascotExpressionSource(selectedMascot.id, "happy")}
-              accessibilityLabel={
-                locale === "ku"
-                  ? `ماسکۆتی ${selectedMascotName}`
-                  : `${selectedMascotName} mascot`
-              }
-              style={[
-                stylesForScreen.heroMascot,
-                isRtl && stylesForScreen.heroMascotRtl,
-              ]}
-              contentFit="contain"
+            <CreditPacksButton
+              style={isRtl && stylesForScreen.headerPacksButtonRtl}
             />
           </View>
 
+          {/* The user's top XP/level widget is intentionally preserved. */}
           <View
             style={[
               stylesForScreen.progressBanner,
@@ -242,15 +244,26 @@ export function GamesScreen() {
               foregroundColor={progressPalette.foreground}
               trackColor={progressPalette.ringTrack}
             />
-             <View style={[stylesForScreen.progressCopy, isRtl && stylesForScreen.progressCopyRtl]}>
+            <View
+              style={[
+                stylesForScreen.progressCopy,
+                isRtl && stylesForScreen.progressCopyRtl,
+              ]}
+            >
               <AppText
-                style={[stylesForScreen.progressEyebrow, { color: progressPalette.secondaryText }]}
+                style={[
+                  stylesForScreen.progressEyebrow,
+                  { color: progressPalette.secondaryText },
+                ]}
                 forceKurdishFont={isRtl}
               >
                 {t("games.xpProgress")}
               </AppText>
               <AppText
-                style={[stylesForScreen.progressValue, { color: progressPalette.foreground }]}
+                style={[
+                  stylesForScreen.progressValue,
+                  { color: progressPalette.foreground },
+                ]}
                 forceLatinFont
                 latinRole="bold"
               >
@@ -286,106 +299,204 @@ export function GamesScreen() {
             </View>
             <Image
               source={require("../../../assets/images/games/ui/chest.png")}
-               style={[stylesForScreen.chestImage, isRtl && stylesForScreen.chestImageRtl]}
+              style={[
+                stylesForScreen.chestImage,
+                isRtl && stylesForScreen.chestImageRtl,
+              ]}
               contentFit="contain"
             />
           </View>
 
-          <View style={[stylesForScreen.sectionHeader, isRtl && stylesForScreen.rowReverse]}>
-            <AppText style={stylesForScreen.sectionTitle} forceKurdishFont={isRtl}>{t("games.sectionExperiences")}</AppText>
-            <AppText style={stylesForScreen.seeAll} forceKurdishFont={isRtl} onPress={() => router.push("/path")}>
-              {t("games.seeAll")} <AppText style={stylesForScreen.seeAllArrow} forceLatinFont>›</AppText>
-            </AppText>
-          </View>
+          <AppText
+            style={stylesForScreen.sectionTitle}
+            languageCode={locale}
+            align="start"
+            forceKurdishFont={isRtl}
+            fullWidth
+          >
+            {t("games.sectionExperiences")}
+          </AppText>
 
-          <View style={[stylesForScreen.gameGrid, isRtl && stylesForScreen.gameGridRtl]}>
-            {GAMES.map((game) => (
-              <PremiumPressable
-                key={game.key}
-                onPress={() => router.push(game.href as any)}
-                containerStyle={stylesForScreen.gameTileContainer}
-                style={[
-                  stylesForScreen.gameTile,
-                  { backgroundColor: isDark ? colors.surfaceRaised : game.tileBackground },
-                  isRtl && stylesForScreen.gameTileRtl,
-                ]}
-                pressScale={0.96}
-              >
-                <Image
-                  source={game.image}
-                  style={stylesForScreen.tileImage}
-                  contentFit="contain"
-                />
-                <View style={[
-                  stylesForScreen.tileCopy,
-                  isRtl && stylesForScreen.tileCopyRtl,
-                ]}>
-                  <AppText
-                    style={stylesForScreen.tileTitle}
-                    forceKurdishFont={isRtl}
-                    languageCode={locale}
-                    align="start"
-                    nativeAlign={Platform.OS === "android" && isRtl ? "end" : "start"}
-                    fullWidth
-                    numberOfLines={game.key === "voice-tutor" ? 2 : 1}
-                    adjustsFontSizeToFit={game.key !== "voice-tutor"}
-                    minimumFontScale={0.72}
+          <View
+            style={[
+              stylesForScreen.gameList,
+              isDesktopWeb && stylesForScreen.gameListDesktop,
+              isRtl && isDesktopWeb && stylesForScreen.gameListDesktopRtl,
+            ]}
+          >
+            {GAMES.map((game, index) => {
+              const isLastRow = isDesktopWeb
+                ? index >= GAMES.length - 2
+                : index === GAMES.length - 1;
+
+              return (
+                <PremiumPressable
+                  key={game.key}
+                  onPress={() => router.push(game.href as never)}
+                  containerStyle={stylesForScreen.gameRowContainer}
+                  style={[
+                    stylesForScreen.gameRow,
+                    isRtl && stylesForScreen.rowReverse,
+                    {
+                      borderBottomColor: colors.border,
+                      borderBottomWidth: isLastRow
+                        ? 0
+                        : StyleSheet.hairlineWidth,
+                    },
+                  ]}
+                  pressScale={0.98}
+                >
+                  <View
+                    style={[
+                      stylesForScreen.gameIndex,
+                      { backgroundColor: colors.muted },
+                    ]}
                   >
-                    {game.key === "voice-tutor" && isKu
-                      ? t(game.titleKey).replace(/\s+(\S+)$/, "\n$1")
-                      : t(game.titleKey)}
-                  </AppText>
-                  {isDesktopWeb ? (
                     <AppText
                       style={[
-                        stylesForScreen.tileSubtitle,
-                        isRtl && stylesForScreen.tileSubtitleRtl,
+                        stylesForScreen.gameIndexText,
+                        { color: colors.mutedForeground },
                       ]}
+                      forceLatinFont
+                      latinRole="bold"
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </AppText>
+                  </View>
+
+                  <View
+                    style={[
+                      stylesForScreen.tileCopy,
+                      isRtl && stylesForScreen.tileCopyRtl,
+                    ]}
+                  >
+                    <AppText
+                      style={stylesForScreen.tileTitle}
+                      languageCode={locale}
+                      align="start"
+                      nativeAlign={
+                        Platform.OS === "android" && isRtl ? "end" : "start"
+                      }
                       forceKurdishFont={isRtl}
+                      fullWidth
+                      numberOfLines={2}
+                    >
+                      {t(game.titleKey)}
+                    </AppText>
+                    <AppText
+                      style={stylesForScreen.tileSubtitle}
+                      languageCode={locale}
+                      align="start"
+                      forceKurdishFont={isRtl}
+                      fullWidth
                       numberOfLines={2}
                     >
                       {t(game.subKey)}
                     </AppText>
-                  ) : null}
-                </View>
-                <View style={[
-                  stylesForScreen.tileArrow,
-                  { backgroundColor: game.accentColor },
-                  isRtl && stylesForScreen.tileArrowRtl,
-                ]}>
-                  <HugeiconsIcon
-                    icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
-                    size={compact ? 16 : 19}
-                    color="#FFFFFF"
-                    strokeWidth={2.4}
-                  />
-                </View>
-              </PremiumPressable>
-            ))}
+                  </View>
+
+                  <View style={stylesForScreen.tileArrow}>
+                    <HugeiconsIcon
+                      icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+                      size={19}
+                      color={colors.primary}
+                      strokeWidth={2.2}
+                    />
+                  </View>
+                </PremiumPressable>
+              );
+            })}
           </View>
 
-          {!isDesktopWeb ? (
-          <View style={[stylesForScreen.streakCard, isRtl && stylesForScreen.rowReverse]}>
-            <HugeiconsIcon icon={FireIcon} size={32} color="#FF7A2F" strokeWidth={2.3} />
-             <View style={[stylesForScreen.streakCopy, isRtl && stylesForScreen.streakCopyRtl]}>
-              <View style={[stylesForScreen.streakHeading, isRtl && stylesForScreen.rowReverse]}>
-                <AppText style={stylesForScreen.streakDays} forceLatinFont latinRole="bold">{streakDays || 0}</AppText>
-                <AppText style={stylesForScreen.streakLabel} forceKurdishFont={isRtl}>{t("games.dayStreak")}</AppText>
+          <View
+            style={[
+              stylesForScreen.streakStrip,
+              isRtl && stylesForScreen.rowReverse,
+              { borderTopColor: colors.border },
+            ]}
+          >
+            <View
+              style={[
+                stylesForScreen.streakIcon,
+                { backgroundColor: colors.muted },
+              ]}
+            >
+              <HugeiconsIcon
+                icon={FireIcon}
+                size={23}
+                color={colors.warning}
+                strokeWidth={2.1}
+              />
+            </View>
+
+            <View
+              style={[
+                stylesForScreen.streakCopy,
+                isRtl && stylesForScreen.streakCopyRtl,
+              ]}
+            >
+              <View
+                style={[
+                  stylesForScreen.streakHeading,
+                  isRtl && stylesForScreen.rowReverse,
+                ]}
+              >
+                <AppText
+                  style={[
+                    stylesForScreen.streakDays,
+                    { color: colors.foreground },
+                  ]}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  {streakDays || 0}
+                </AppText>
+                <AppText
+                  style={[
+                    stylesForScreen.streakLabel,
+                    { color: colors.foreground },
+                  ]}
+                  languageCode={locale}
+                  forceKurdishFont={isRtl}
+                >
+                  {t("games.dayStreak")}
+                </AppText>
               </View>
-              <AppText style={stylesForScreen.streakSub} forceKurdishFont={isRtl}>{t("games.keepStreak")}</AppText>
+              <AppText
+                style={[
+                  stylesForScreen.streakSub,
+                  { color: colors.mutedForeground },
+                ]}
+                languageCode={locale}
+                align="start"
+                forceKurdishFont={isRtl}
+                fullWidth
+              >
+                {t("games.keepStreak")}
+              </AppText>
+              <View
+                style={[
+                  stylesForScreen.streakBars,
+                  isRtl && stylesForScreen.rowReverse,
+                ]}
+              >
+                {[0, 1, 2, 3, 4].map((bar) => (
+                  <View
+                    key={bar}
+                    style={[
+                      stylesForScreen.streakBar,
+                      {
+                        backgroundColor:
+                          bar < Math.min(5, streakDays || 0)
+                            ? colors.warning
+                            : colors.border,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
-             <View style={[stylesForScreen.streakBars, isRtl && stylesForScreen.streakBarsRtl]}>
-              {[0, 1, 2, 3, 4].map((bar) => (
-                <View key={bar} style={[stylesForScreen.streakBar, bar < Math.min(5, streakDays || 0) && stylesForScreen.streakBarDone]} />
-              ))}
-            </View>
-            <Image
-              source={require("../../../assets/images/games/ui/chest.png")}
-               style={[stylesForScreen.streakChest, isRtl && stylesForScreen.streakChestRtl]}
-              contentFit="contain"
-            />
           </View>
-          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -425,7 +536,6 @@ const styles = StyleSheet.create({
 function createStyles(
   compact: boolean,
   colors: (typeof Colors)["light"] | (typeof Colors)["dark"],
-  isDark: boolean,
   isDesktopWeb: boolean,
 ) {
   return StyleSheet.create({
@@ -438,64 +548,46 @@ function createStyles(
     },
     content: {
       width: "100%",
-      maxWidth: isDesktopWeb ? 820 : 720,
+      maxWidth: isDesktopWeb ? 900 : 720,
       paddingHorizontal: isDesktopWeb ? 28 : compact ? 16 : 24,
     },
     rowReverse: {
       flexDirection: "row-reverse",
     },
-    hero: {
-      minHeight: isDesktopWeb ? 154 : compact ? 146 : 224,
-      position: "relative",
-      justifyContent: "flex-start",
-      paddingTop: isDesktopWeb ? 14 : compact ? 2 : 8,
+    screenHeader: {
+      minHeight: isDesktopWeb ? 104 : compact ? 92 : 124,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+      paddingVertical: isDesktopWeb ? 16 : compact ? 10 : 18,
     },
-    heroCopy: {
-      position: "absolute",
-      left: 0,
-      right: "auto",
-      top: isDesktopWeb ? 20 : compact ? 8 : 14,
-      width: isDesktopWeb ? "64%" : compact ? "56%" : "58%",
+    headerCopy: {
+      flex: 1,
+      minWidth: 0,
       alignItems: "flex-start",
-      zIndex: 3,
     },
-    heroCopyRtl: {
-      left: "auto",
-      right: 0,
+    headerCopyRtl: {
       alignItems: "flex-end",
     },
-    heroTitle: {
+    headerTitle: {
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 42 : compact ? 40 : 56,
-      lineHeight: isDesktopWeb ? 50 : compact ? 47 : 64,
+      fontSize: isDesktopWeb ? 42 : compact ? 38 : 50,
+      lineHeight: isDesktopWeb ? 50 : compact ? 45 : 58,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
-      textAlign: "left",
     },
-    heroTitleRtl: {
-      textAlign: "right",
-      writingDirection: "rtl",
+    headerRule: {
+      width: 42,
+      height: 4,
+      borderRadius: 2,
+      marginTop: 7,
     },
-    heroPacksButton: {
-      marginTop: isDesktopWeb ? 10 : compact ? 7 : 12,
+    headerPacksButtonRtl: {
+      alignSelf: "center",
     },
-    heroPacksButtonRtl: {
-      alignSelf: "flex-end",
-    },
-    heroMascot: {
-      position: "absolute",
-      left: "auto",
-      right: isDesktopWeb ? 4 : compact ? -10 : -8,
-      top: isDesktopWeb ? -2 : compact ? 10 : 14,
-      width: isDesktopWeb ? 164 : compact ? 132 : 282,
-      height: isDesktopWeb ? 164 : compact ? 132 : 282,
-      zIndex: 3,
-    },
-    heroMascotRtl: {
-      right: "auto",
-      left: isDesktopWeb ? 4 : compact ? -10 : -8,
-      transform: [{ scaleX: -1 }],
-    },
+
+    // Preserved XP/level widget styles.
     progressBanner: {
       minHeight: isDesktopWeb ? 124 : compact ? 116 : 168,
       borderRadius: isDesktopWeb ? 22 : compact ? 24 : 28,
@@ -555,195 +647,147 @@ function createStyles(
       right: "auto",
       left: isDesktopWeb ? 8 : compact ? 4 : 8,
     },
-    sectionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginTop: isDesktopWeb ? 28 : compact ? 30 : 36,
-      marginBottom: isDesktopWeb ? 14 : compact ? 14 : 18,
-      paddingHorizontal: 2,
-    },
+
     sectionTitle: {
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 24 : compact ? 22 : 26,
-      lineHeight: isDesktopWeb ? 30 : compact ? 27 : 32,
+      marginTop: isDesktopWeb ? 34 : compact ? 30 : 38,
+      marginBottom: isDesktopWeb ? 15 : 12,
+      paddingHorizontal: 2,
+      fontSize: isDesktopWeb ? 24 : compact ? 21 : 25,
+      lineHeight: isDesktopWeb ? 31 : compact ? 27 : 32,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
     },
-    seeAll: {
-      color: colors.primary,
-      fontSize: compact ? 14 : 16,
-      lineHeight: compact ? 20 : 22,
-      fontWeight: "800",
-    },
-    seeAllArrow: {
-      color: colors.primary,
-      fontSize: compact ? 22 : 25,
-      lineHeight: 20,
-    },
-    gameGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "flex-start",
-    },
-    gameGridRtl: {
-      flexDirection: "row-reverse",
-    },
-    gameTileContainer: {
-      width: "50%",
-      padding: isDesktopWeb ? 8 : compact ? 5 : 7,
-    },
-    gameTile: {
+    gameList: {
       width: "100%",
-      aspectRatio: isDesktopWeb ? 1.55 : 1,
-      alignItems: "flex-start",
-      justifyContent: "flex-start",
-      paddingHorizontal: isDesktopWeb ? 18 : compact ? 13 : 18,
-      paddingTop: isDesktopWeb ? 14 : compact ? 10 : 18,
-      paddingBottom: isDesktopWeb ? 46 : compact ? 40 : 62,
-      borderRadius: isDesktopWeb ? 22 : compact ? 22 : 28,
+      paddingVertical: 4,
+      borderRadius: 26,
       borderCurve: "continuous",
       borderWidth: 1,
       borderColor: colors.border,
+      backgroundColor: colors.surface,
       overflow: "hidden",
-      ...crossShadow({ color: "#64748B", offsetY: 5, blur: 14, opacity: 0.06 }),
     },
-    gameTileRtl: {
-      alignItems: "flex-end",
+    gameListDesktop: {
+      flexDirection: "row",
+      flexWrap: "wrap",
     },
-    tileImage: {
-      width: isDesktopWeb ? 82 : compact ? 70 : 104,
-      height: isDesktopWeb ? 82 : compact ? 70 : 104,
-      alignSelf: "flex-end",
-      zIndex: 1,
+    gameListDesktopRtl: {
+      flexDirection: "row-reverse",
+    },
+    gameRowContainer: {
+      width: isDesktopWeb ? "50%" : "100%",
+      paddingHorizontal: isDesktopWeb ? 6 : 8,
+    },
+    gameRow: {
+      width: "100%",
+      minHeight: isDesktopWeb ? 104 : compact ? 88 : 100,
+      paddingHorizontal: isDesktopWeb ? 12 : compact ? 8 : 12,
+      paddingVertical: isDesktopWeb ? 12 : compact ? 9 : 12,
+      borderRadius: 18,
+      borderCurve: "continuous",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: isDesktopWeb ? 13 : compact ? 10 : 13,
+    },
+    gameIndex: {
+      width: isDesktopWeb ? 68 : compact ? 58 : 66,
+      height: isDesktopWeb ? 68 : compact ? 58 : 66,
+      borderRadius: isDesktopWeb ? 20 : compact ? 17 : 19,
+      borderCurve: "continuous",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    gameIndexText: {
+      fontSize: isDesktopWeb ? 15 : compact ? 13 : 14,
+      lineHeight: isDesktopWeb ? 20 : compact ? 18 : 19,
+      letterSpacing: 0.8,
     },
     tileCopy: {
-      width: "100%",
+      flex: 1,
+      minWidth: 0,
       alignItems: "flex-start",
-      marginTop: isDesktopWeb ? 4 : compact ? 8 : 18,
-      zIndex: 1,
     },
     tileCopyRtl: {
       alignItems: "flex-end",
     },
     tileTitle: {
       color: colors.foreground,
-      width: "100%",
-      fontSize: isDesktopWeb ? 18 : compact ? 16 : 20,
-      lineHeight: isDesktopWeb ? 23 : compact ? 21 : 26,
+      fontSize: isDesktopWeb ? 17 : compact ? 15 : 17,
+      lineHeight: isDesktopWeb ? 22 : compact ? 20 : 23,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
-      textAlign: "left",
     },
     tileSubtitle: {
       color: colors.mutedForeground,
-      fontSize: isDesktopWeb ? 12 : compact ? 12 : 15,
-      lineHeight: isDesktopWeb ? 16 : compact ? 17 : 21,
-      marginTop: isDesktopWeb ? 3 : compact ? 4 : 6,
-      paddingRight: isDesktopWeb ? 34 : compact ? 28 : 36,
-      textAlign: "left",
-    },
-    tileSubtitleRtl: {
-      width: "100%",
-      paddingRight: 0,
-      paddingLeft: isDesktopWeb ? 34 : compact ? 22 : 32,
-      textAlign: "right",
-      writingDirection: "rtl",
+      marginTop: 2,
+      fontSize: isDesktopWeb ? 12 : compact ? 12 : 13,
+      lineHeight: isDesktopWeb ? 17 : compact ? 17 : 18,
+      fontWeight: "600",
     },
     tileArrow: {
-      position: "absolute",
-      right: isDesktopWeb ? 14 : compact ? 11 : 16,
-      bottom: isDesktopWeb ? 14 : compact ? 11 : 16,
-      width: isDesktopWeb ? 34 : compact ? 30 : 38,
-      height: isDesktopWeb ? 34 : compact ? 30 : 38,
-      borderRadius: 999,
+      width: 36,
+      height: 44,
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 2,
+      flexShrink: 0,
     },
-    tileArrowRtl: {
-      right: "auto",
-      left: isDesktopWeb ? 14 : compact ? 11 : 16,
-    },
-    streakCard: {
-      minHeight: compact ? 142 : 158,
-      marginTop: compact ? 34 : 40,
-      paddingHorizontal: compact ? 18 : 24,
-      paddingVertical: compact ? 22 : 26,
-      borderRadius: compact ? 30 : 34,
-      backgroundColor: colors.surface,
+    streakStrip: {
+      minHeight: 118,
+      marginTop: isDesktopWeb ? 30 : 26,
+      paddingHorizontal: 4,
+      paddingVertical: 22,
+      borderTopWidth: StyleSheet.hairlineWidth,
       flexDirection: "row",
       alignItems: "flex-start",
-      position: "relative",
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: colors.border,
-      ...crossShadow({ color: "#6674A9", offsetY: 10, blur: 24, opacity: 0.1 }),
+      gap: 12,
+    },
+    streakIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
     },
     streakCopy: {
-      marginLeft: 12,
       flex: 1,
       minWidth: 0,
+      alignItems: "flex-start",
     },
     streakCopyRtl: {
-      marginLeft: 0,
-      marginRight: 12,
       alignItems: "flex-end",
     },
     streakHeading: {
       flexDirection: "row",
       alignItems: "baseline",
-      gap: 9,
+      gap: 7,
     },
     streakDays: {
-      color: "#FF7A2F",
-      fontSize: 28,
-      lineHeight: 32,
+      fontSize: 22,
+      lineHeight: 27,
     },
     streakLabel: {
-      color: colors.foreground,
-      fontSize: 16,
+      fontSize: 15,
       lineHeight: 21,
       fontWeight: "800",
     },
     streakSub: {
-      color: colors.mutedForeground,
+      marginTop: 2,
       fontSize: 13,
       lineHeight: 18,
-      marginTop: 4,
+      fontWeight: "600",
     },
     streakBars: {
-      position: "absolute",
-      right: compact ? 88 : 112,
-      bottom: compact ? 24 : 28,
+      marginTop: 12,
       flexDirection: "row",
-      alignItems: "center",
       gap: 5,
     },
-    streakBarsRtl: {
-      flexDirection: "row-reverse",
-      right: "auto",
-      left: compact ? 88 : 112,
-    },
     streakBar: {
-      width: compact ? 20 : 26,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "#EEF0F8",
-    },
-    streakBarDone: {
-      backgroundColor: "#FFB42C",
-    },
-    streakChest: {
-      position: "absolute",
-      right: compact ? 4 : 10,
-      bottom: compact ? 5 : 8,
-      width: compact ? 82 : 94,
-      height: compact ? 82 : 94,
-    },
-    streakChestRtl: {
-      right: "auto",
-      left: compact ? 4 : 10,
+      width: compact ? 24 : 30,
+      height: 5,
+      borderRadius: 3,
     },
   });
 }
