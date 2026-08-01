@@ -256,6 +256,36 @@ export const SvgButton = React.memo(
       };
     });
 
+    // The depth is a separate layer so a tap can visually flatten the token:
+    // the raised face settles into the rim while the lower crescent and its
+    // contact shadow fade away together.
+    const depthStyle = useAnimatedStyle(() => ({
+      opacity: interpolate(
+        pressProgress.value,
+        [0, 1],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        { translateY: -pressProgress.value },
+        { scaleY: 1 - pressProgress.value * 0.78 },
+      ],
+    }));
+
+    const contactShadowStyle = useAnimatedStyle(() => ({
+      opacity: interpolate(
+        pressProgress.value,
+        [0, 1],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        { translateY: -pressProgress.value },
+        { scaleX: 1 - pressProgress.value * 0.62 },
+        { scaleY: 1 - pressProgress.value * 0.72 },
+      ],
+    }));
+
     const haloStyle = useAnimatedStyle(() => ({
       opacity:
         (isLocked ? 0.16 : 0.3) +
@@ -309,17 +339,20 @@ export const SvgButton = React.memo(
           ]}
         >
           {/* Tight contact shadow under the circular badge. */}
-          <View
+          <Animated.View
             pointerEvents="none"
-            style={{
-              position: "absolute",
-              top: totalHeight - 1,
-              width: Math.round(width * 0.56),
-              height: 3,
-              borderRadius: 999,
-              backgroundColor: "rgba(59, 130, 246, 0.12)",
-              boxShadow: "0 2px 8px rgba(59, 130, 246, 0.18)",
-            }}
+            style={[
+              {
+                position: "absolute",
+                top: totalHeight - 1,
+                width: Math.round(width * 0.56),
+                height: 4,
+                borderRadius: 999,
+                backgroundColor: "rgba(59, 130, 246, 0.12)",
+                boxShadow: "0 2px 8px rgba(59, 130, 246, 0.18)",
+              },
+              contactShadowStyle,
+            ]}
           />
 
           <Animated.View
@@ -340,19 +373,22 @@ export const SvgButton = React.memo(
           />
 
           {/* Shallow lower crescent. */}
-          <View
-            style={{
-              position: "absolute",
-              top: rimDepth,
-              left: 0,
-              width,
-              height,
-              borderRadius,
-              backgroundColor: colors.rim,
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.11)",
-              borderBottomColor: "rgba(0,0,0,0.1)",
-            }}
+          <Animated.View
+            style={[
+              {
+                position: "absolute",
+                top: rimDepth,
+                left: 0,
+                width,
+                height,
+                borderRadius,
+                backgroundColor: colors.rim,
+                borderWidth: 1,
+                borderColor: "rgba(255,255,255,0.11)",
+                borderBottomColor: "rgba(0,0,0,0.1)",
+              },
+              depthStyle,
+            ]}
           />
 
           {/* Raised outer shell — its bevel is visible around every edge. */}
@@ -437,16 +473,26 @@ export const SvgButton = React.memo(
                 }}
               />
             {!isLocked ? (
-              <View
+              <LinearGradient
                 pointerEvents="none"
+                colors={[
+                  "rgba(145, 225, 255, 0)",
+                  "rgba(156, 231, 255, 0.26)",
+                  "rgba(198, 243, 255, 0.68)",
+                  "rgba(156, 231, 255, 0.26)",
+                  "rgba(145, 225, 255, 0)",
+                ]}
+                locations={[0, 0.22, 0.5, 0.78, 1]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
                 style={{
                   position: "absolute",
                   top: Math.round(innerHeight * 0.08),
                   left: Math.round(innerWidth * 0.14),
-                  width: Math.round(innerWidth * 0.46),
-                  height: Math.max(3, Math.round(innerHeight * 0.13)),
+                  width: Math.round(innerWidth * 0.58),
+                  height: Math.max(6, Math.round(innerHeight * 0.17)),
                   borderRadius: 9999,
-                  backgroundColor: "rgba(255,255,255,0.24)",
+                  opacity: isLocked ? 0.3 : 0.82,
                   transform: [{ rotate: "-10deg" }],
                 }}
               />
