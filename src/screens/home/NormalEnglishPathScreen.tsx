@@ -52,7 +52,6 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import { HomeMainButton } from "./components/home-main-button";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { ListItem } from "./components/list-item";
@@ -65,18 +64,6 @@ import {
 } from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
-
-const NORMAL_PATH_BACKGROUNDS = [
-  require("../../../assets/images/path-backgrounds/normal-viking.png"),
-  require("../../../assets/images/path-backgrounds/normal-rome.png"),
-  require("../../../assets/images/path-backgrounds/normal-islamic-golden-age.png"),
-  require("../../../assets/images/path-backgrounds/normal-egypt.png"),
-  require("../../../assets/images/path-backgrounds/normal-east-asia.png"),
-  require("../../../assets/images/path-backgrounds/normal-maya.png"),
-  require("../../../assets/images/path-backgrounds/normal-mali.png"),
-  require("../../../assets/images/path-backgrounds/normal-renaissance.png"),
-  require("../../../assets/images/path-backgrounds/normal-polynesia.png"),
-] as const;
 
 const NormalSectionHeader = React.memo(
   ({ section, isKu }: { section: SectionDataItem; isKu: boolean }) => {
@@ -132,10 +119,6 @@ export function NormalEnglishPathScreen({
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] =
     useState<SectionTheme>("blue");
-  const activePathBackground =
-    NORMAL_PATH_BACKGROUNDS[
-      Math.abs(activeSectionIndex) % NORMAL_PATH_BACKGROUNDS.length
-    ];
 
   const localizedSections = useMemo(() => {
     const units = getUnitsForPath("normal");
@@ -377,17 +360,6 @@ export function NormalEnglishPathScreen({
       style={{ flex: 1, backgroundColor: colors.background }}
       onTouchStart={dismissLesson}
     >
-      <Image
-        source={activePathBackground}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        transition={240}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      />
-      {isDark ? <View pointerEvents="none" style={darkStyles.backgroundDim} /> : null}
       <View
         style={[
           darkStyles.root,
@@ -445,10 +417,6 @@ export function NormalEnglishPathScreen({
 
 const darkStyles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "transparent" },
-  backgroundDim: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(2, 6, 23, 0.72)",
-  },
   list: { flex: 1, backgroundColor: "transparent" },
   listContent: { backgroundColor: "transparent", paddingTop: 4 },
   emptyState: {
