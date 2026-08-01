@@ -3,6 +3,7 @@ import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { SkiaWebGate } from "../components/animations/skia-gsap-opening/SkiaWebGate";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { initSentry, wrapSentry } from "../lib/sentry";
+import { isSupabaseConfigured } from "../lib/supabase";
 import { fontMap } from "../fontMap";
 import { useFontStore } from "../stores/useFontStore";
 import { useOnboardingStore } from "../stores/useOnboardingStore";
@@ -22,7 +23,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -225,7 +226,59 @@ function InnerLayout() {
 
 const WrappedInnerLayout = wrapSentry(InnerLayout);
 
+function ConfigurationErrorScreen() {
+  useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  return (
+    <View style={configurationStyles.screen}>
+      <Text style={configurationStyles.eyebrow}>TWINO</Text>
+      <Text style={configurationStyles.title}>App setup is incomplete</Text>
+      <Text style={configurationStyles.body}>
+        This installation is missing its connection settings. Please install a
+        correctly configured release.
+      </Text>
+    </View>
+  );
+}
+
+const configurationStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    backgroundColor: "#F8FAFC",
+  },
+  eyebrow: {
+    marginBottom: 18,
+    color: "#3159D9",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 2.4,
+  },
+  title: {
+    color: "#15213A",
+    fontSize: 24,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  body: {
+    maxWidth: 340,
+    marginTop: 12,
+    color: "#657089",
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+  },
+});
+
 function RootLayout() {
+  if (!isSupabaseConfigured) {
+    return <ConfigurationErrorScreen />;
+  }
+
   return (
     <AuthProvider>
       <WrappedInnerLayout />

@@ -1,7 +1,6 @@
 import { appStorage } from "../lib/app-storage";
-import { Alert, DevSettings, I18nManager, Platform } from "react-native";
+import { I18nManager, Platform } from "react-native";
 import { create } from "zustand";
-import * as Updates from "expo-updates";
 import { getLanguageDirection } from "../i18n/direction";
 import { isSupportedLanguagePair } from "../config/languages";
 
@@ -26,8 +25,6 @@ const defaultSource = isSupportedLanguagePair(savedSource, savedTarget) ? savedS
 const defaultTarget = isSupportedLanguagePair(savedSource, savedTarget) ? savedTarget : "en";
 const defaultUi = appStorage.getItemSync(UI_LANG_KEY) || defaultSource;
 
-let rtlReloadPending = false;
-
 /** Global mirroring belongs to app chrome only; lesson content sets its own direction. */
 export function applyUiLanguageDirection(languageCode: string) {
   const shouldBeRtl = getLanguageDirection(languageCode) === "rtl";
@@ -37,25 +34,13 @@ export function applyUiLanguageDirection(languageCode: string) {
   // native RTL flag does not persist across browser page loads.
   if (Platform.OS === "web") return;
 
-  if (I18nManager.isRTL === shouldBeRtl || rtlReloadPending) return;
+  if (I18nManager.isRTL === shouldBeRtl) return;
 
-  rtlReloadPending = true;
+  // Native screens already apply direction from locale state. Persist the
+  // platform preference for the next cold start, but never reload here: a
+  // release APK can otherwise restart before the splash screen is hidden.
   I18nManager.allowRTL(true);
   I18nManager.forceRTL(shouldBeRtl);
-
-  setTimeout(() => {
-    if (__DEV__ && DevSettings?.reload) {
-      DevSettings.reload();
-      return;
-    }
-    Updates.reloadAsync().catch(() => {
-      rtlReloadPending = false;
-      Alert.alert(
-        "Restart Required",
-        "Please restart the app to fully apply the language layout changes.",
-      );
-    });
-  }, 150);
 }
 
 export const useLocaleStore = create<LocaleState>((set) => ({

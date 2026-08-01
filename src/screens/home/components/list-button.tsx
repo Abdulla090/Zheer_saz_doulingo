@@ -315,10 +315,10 @@ export const SvgButton = React.memo(
               position: "absolute",
               top: totalHeight - 1,
               width: Math.round(width * 0.56),
-              height: 4,
+              height: 3,
               borderRadius: 999,
-              backgroundColor: "rgba(48, 38, 92, 0.13)",
-              boxShadow: "0 2px 6px rgba(48, 38, 92, 0.17)",
+              backgroundColor: "rgba(59, 130, 246, 0.12)",
+              boxShadow: "0 2px 8px rgba(59, 130, 246, 0.18)",
             }}
           />
 

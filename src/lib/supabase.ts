@@ -3,12 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() || "";
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() || "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!isSupabaseConfigured) {
   console.warn("Supabase credentials missing! Check your .env file.");
 }
+
+// Keep module evaluation safe so a misconfigured release can render a useful
+// error screen instead of destroying React Native behind the native splash.
+const clientUrl = supabaseUrl || "https://unconfigured.supabase.co";
+const clientAnonKey = supabaseAnonKey || "unconfigured-public-key";
 
 const secureStoreOptions: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -53,7 +60,7 @@ const webAuthStorage = {
 
 const authStorage = Platform.OS === "web" ? webAuthStorage : nativeAuthStorage;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(clientUrl, clientAnonKey, {
   auth: {
     storage: authStorage,
     autoRefreshToken: true,
