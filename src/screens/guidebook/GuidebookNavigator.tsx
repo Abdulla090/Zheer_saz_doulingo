@@ -7,8 +7,6 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 import type { GuidebookCopy } from "./guidebook-copy";
 import type { GuidebookLessonViewModel } from "./guidebook-model";
 import type { GuidebookAccent } from "./guidebook-theme";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { BookOpen02Icon, Cards02Icon } from "@hugeicons/core-free-icons";
 
 export type GuidebookMode = "study" | "practice";
 
@@ -17,6 +15,7 @@ type GuidebookNavigatorProps = {
   selectedIndex: number;
   accent: GuidebookAccent;
   isWide: boolean;
+  isRtl: boolean;
   onSelect: (index: number) => void;
 };
 
@@ -25,89 +24,110 @@ export function GuidebookNavigator({
   selectedIndex,
   accent,
   isWide,
+  isRtl,
   onSelect,
 }: GuidebookNavigatorProps) {
   const { colors } = useThemeColors();
-  const mobileWebRtlProps =
+  const webDirection =
     Platform.OS === "web"
-      ? ({ dir: "rtl" } as Record<string, string>)
+      ? ({ dir: isRtl ? "rtl" : "ltr" } as Record<string, string>)
       : undefined;
-
-  const lessonButtons = lessons.map((lesson) => {
-    const selected = lesson.index === selectedIndex;
-
-    return (
-      <IOSPressable
-        key={lesson.id}
-        onPress={() => onSelect(lesson.index)}
-        accessibilityRole="button"
-        accessibilityState={{ selected }}
-        style={[
-          styles.lessonButton,
-          isWide ? styles.lessonButtonWide : styles.lessonButtonCompact,
-          {
-            backgroundColor: selected ? accent.strong : colors.muted,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.lessonNumber,
-            {
-              backgroundColor: selected
-                ? "rgba(255,255,255,0.18)"
-                : colors.surface,
-            },
-          ]}
-        >
-          <AppText
-            style={[
-              styles.lessonNumberText,
-              { color: selected ? "#FFFFFF" : colors.mutedForeground },
-            ]}
-          >
-            {lesson.index + 1}
-          </AppText>
-        </View>
-
-        <AppText
-          style={[
-            styles.lessonTopic,
-            { color: selected ? "#FFFFFF" : colors.foreground },
-          ]}
-          languageCode="ku"
-          align="end"
-          forceKurdishFont
-          numberOfLines={2}
-        >
-          {lesson.topicKu}
-        </AppText>
-      </IOSPressable>
-    );
-  });
 
   if (!isWide) {
     return (
-      <View style={styles.mobileNavigator}>
-        <View {...mobileWebRtlProps}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[
-              styles.mobileLessonContent,
-              Platform.OS !== "web" && styles.rowReverse,
-            ]}
-          >
-            {lessonButtons}
-          </ScrollView>
-        </View>
+      <View style={styles.mobileNavigator} {...webDirection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.mobileLessonContent,
+            isRtl && Platform.OS !== "web" && styles.rowReverse,
+          ]}
+        >
+          {lessons.map((lesson) => {
+            const selected = lesson.index === selectedIndex;
+            return (
+              <IOSPressable
+                key={lesson.id}
+                onPress={() => onSelect(lesson.index)}
+                accessibilityRole="button"
+                accessibilityLabel={`${lesson.index + 1}. ${lesson.topicKu}`}
+                accessibilityState={{ selected }}
+                style={[
+                  styles.chapterDot,
+                  {
+                    backgroundColor: selected ? accent.strong : "transparent",
+                    borderColor: selected ? accent.strong : colors.border,
+                  },
+                ]}
+              >
+                <AppText
+                  style={[
+                    styles.chapterDotText,
+                    { color: selected ? "#FFFFFF" : colors.mutedForeground },
+                  ]}
+                  forceLatinFont
+                >
+                  {lesson.index + 1}
+                </AppText>
+              </IOSPressable>
+            );
+          })}
+        </ScrollView>
       </View>
     );
   }
 
   return (
     <View style={styles.desktopNavigator}>
-      <View style={styles.desktopLessonList}>{lessonButtons}</View>
+      {lessons.map((lesson) => {
+        const selected = lesson.index === selectedIndex;
+        return (
+          <IOSPressable
+            key={lesson.id}
+            onPress={() => onSelect(lesson.index)}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            style={[
+              styles.lessonRow,
+              isRtl && Platform.OS !== "web" && styles.rowReverse,
+              { backgroundColor: selected ? accent.tint : "transparent" },
+            ]}
+          >
+            <View
+              style={[
+                styles.lessonNumber,
+                {
+                  backgroundColor: selected ? accent.strong : colors.muted,
+                },
+              ]}
+            >
+              <AppText
+                style={[
+                  styles.lessonNumberText,
+                  { color: selected ? "#FFFFFF" : colors.mutedForeground },
+                ]}
+                forceLatinFont
+              >
+                {lesson.index + 1}
+              </AppText>
+            </View>
+
+            <AppText
+              style={[
+                styles.lessonTopic,
+                { color: selected ? accent.deep : colors.foreground },
+              ]}
+              languageCode={lesson.sourceLanguage}
+              align="start"
+              forceKurdishFont={lesson.sourceLanguage === "ku"}
+              numberOfLines={2}
+            >
+              {lesson.topicKu}
+            </AppText>
+          </IOSPressable>
+        );
+      })}
     </View>
   );
 }
@@ -129,12 +149,19 @@ export function GuidebookModeSwitch({
 }) {
   const { colors } = useThemeColors();
   const items = [
-    { key: "study" as const, label: copy.study, icon: BookOpen02Icon },
-    { key: "practice" as const, label: copy.practice, icon: Cards02Icon },
+    { key: "study" as const, label: copy.study },
+    { key: "practice" as const, label: copy.practice },
   ];
 
   return (
-    <View style={[styles.modeSwitch, isRtl && styles.rowReverse]}>
+    <View
+      accessibilityRole="tablist"
+      style={[
+        styles.modeSwitch,
+        { backgroundColor: colors.muted },
+        isRtl && Platform.OS !== "web" && styles.rowReverse,
+      ]}
+    >
       {items.map((item) => {
         const active = mode === item.key;
         return (
@@ -145,25 +172,13 @@ export function GuidebookModeSwitch({
             accessibilityState={{ selected: active }}
             style={[
               styles.modeButton,
-              isRtl && styles.rowReverse,
-              {
-                backgroundColor: active ? accent.tint : "transparent",
-              },
+              { backgroundColor: active ? accent.strong : "transparent" },
             ]}
           >
-            <HugeiconsIcon
-              icon={item.icon}
-              size={18}
-              color={active ? accent.strong : colors.mutedForeground}
-              strokeWidth={2.2}
-            />
             <AppText
               style={[
                 styles.modeLabel,
-                {
-                  color: active ? accent.deep : colors.mutedForeground,
-                },
-                isRtl && styles.rtlText,
+                { color: active ? "#FFFFFF" : colors.mutedForeground },
               ]}
               forceKurdishFont={isKurdish}
             >
@@ -180,10 +195,6 @@ const styles = StyleSheet.create({
   rowReverse: {
     flexDirection: "row-reverse",
   },
-  rtlText: {
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
   mobileNavigator: {
     paddingTop: 18,
   },
@@ -191,44 +202,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
   },
+  chapterDot: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chapterDotText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+  },
   desktopNavigator: {
-    width: 248,
+    width: 226,
     flexShrink: 0,
     alignSelf: "flex-start",
+    gap: 3,
   },
-  desktopLessonList: {
-    gap: 7,
-  },
-  lessonButton: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 9,
-  },
-  lessonButtonWide: {
+  lessonRow: {
     width: "100%",
     minHeight: 54,
     borderRadius: 18,
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     paddingVertical: 7,
-  },
-  lessonButtonCompact: {
-    width: 132,
-    minHeight: 52,
-    borderRadius: 18,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   lessonNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   lessonNumberText: {
-    fontSize: 13,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: "900",
     fontVariant: ["tabular-nums"],
   },
@@ -236,25 +250,27 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontSize: 14,
-    lineHeight: 19,
+    lineHeight: 20,
     fontWeight: "800",
   },
   modeSwitch: {
+    minHeight: 50,
+    padding: 4,
+    borderRadius: 18,
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
   },
   modeButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: 16,
-    flexDirection: "row",
+    minHeight: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    paddingHorizontal: 14,
   },
   modeLabel: {
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 });

@@ -23,8 +23,10 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
+import { isDesktopWebWidth } from "../../constants/web-layout";
 import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -32,6 +34,7 @@ import { PressableScale } from "../../components/animations";
 import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { CreditPacksButton } from "../../components/CreditPacksButton";
 import { getMascot } from "../../constants/mascots";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { useAuth } from "../../context/AuthContext";
@@ -224,13 +227,15 @@ function isUploadedAvatarUrl(value: string | null | undefined) {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
   const router = useRouter();
   const { t, locale } = useI18n();
   const localeCode = resolveLocale(locale);
   const copy = COPY[localeCode];
   const isRtl = localeCode !== "en";
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
   const { user } = useAuth();
 
   const avatarUrl = useSettingsStore((state) => state.avatarUrl);
@@ -552,15 +557,18 @@ export default function ProfileScreen() {
       >
         {isRtl ? (
           <>
-            <PressableScale
-              style={styles.settingsButton}
-              onPress={() => router.push("/settings")}
-              accessibilityRole="button"
-              accessibilityLabel={copy.settings}
-              scaleDown={0.94}
-            >
-              <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
-            </PressableScale>
+            <View style={styles.headerActions}>
+              <CreditPacksButton />
+              <PressableScale
+                style={styles.settingsButton}
+                onPress={() => router.push("/settings")}
+                accessibilityRole="button"
+                accessibilityLabel={copy.settings}
+                scaleDown={0.94}
+              >
+                <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
+              </PressableScale>
+            </View>
             <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
               {copy.title}
             </AppText>
@@ -570,15 +578,18 @@ export default function ProfileScreen() {
             <AppText style={styles.headerTitle} languageCode={locale} align="start" latinRole="bold">
               {copy.title}
             </AppText>
-            <PressableScale
-              style={styles.settingsButton}
-              onPress={() => router.push("/settings")}
-              accessibilityRole="button"
-              accessibilityLabel={copy.settings}
-              scaleDown={0.94}
-            >
-              <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
-            </PressableScale>
+            <View style={styles.headerActions}>
+              <CreditPacksButton />
+              <PressableScale
+                style={styles.settingsButton}
+                onPress={() => router.push("/settings")}
+                accessibilityRole="button"
+                accessibilityLabel={copy.settings}
+                scaleDown={0.94}
+              >
+                <HugeiconsIcon icon={Settings01Icon} size={21} color={colors.foreground} strokeWidth={2.2} />
+              </PressableScale>
+            </View>
           </>
         )}
       </View>
@@ -776,97 +787,99 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
-            {copy.paths}
-          </AppText>
-          <View style={styles.groupedList}>
-            {paths.map((path, index) => (
-              <View
-                key={path.id}
-                style={[
-                  styles.listRow,
-                  index < paths.length - 1 && styles.rowDivider,
-                ]}
-              >
-                <View style={[styles.rowIcon, pathMode === path.id && styles.rowIconActive]}>
-                  <HugeiconsIcon
-                    icon={path.icon}
-                    size={20}
-                    color={pathMode === path.id ? colors.primary : colors.mutedForeground}
-                    strokeWidth={2.2}
-                  />
-                </View>
-                <View style={styles.rowCopy}>
-                  <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
-                    {path.title}
-                  </AppText>
-                  <AppText style={styles.rowDescription} languageCode={locale} align="start">
-                    {copy.lessonsCompleted(path.lessons)}
-                  </AppText>
-                </View>
-                {pathMode === path.id ? (
-                  <AppText style={styles.activeLabel} languageCode={locale} align="center" latinRole="bold">
-                    {copy.active}
-                  </AppText>
-                ) : null}
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
-            {copy.achievements}
-          </AppText>
-          <View style={styles.groupedList}>
-            {achievements.map((achievement, index) => {
-              const selected = selectedAchievementId === achievement.id;
-              return (
-                <View key={achievement.id} style={index < achievements.length - 1 && styles.rowDivider}>
-                  <PressableScale
-                    style={styles.listRow}
-                    onPress={() => setSelectedAchievementId(selected ? null : achievement.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={achievement.title}
-                    scaleDown={0.985}
-                  >
-                    <View style={[styles.rowIcon, achievement.unlocked && styles.achievementUnlocked]}>
-                      <HugeiconsIcon
-                        icon={achievement.icon}
-                        size={20}
-                        color={achievement.unlocked ? colors.primary : colors.mutedForeground}
-                        strokeWidth={2.2}
-                      />
-                    </View>
-                    <View style={styles.rowCopy}>
-                      <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
-                        {achievement.title}
-                      </AppText>
-                      <AppText style={styles.rowDescription} languageCode={locale} align="start">
-                        {achievement.description}
-                      </AppText>
-                    </View>
-                    <View style={[styles.statusDot, achievement.unlocked && styles.statusDotUnlocked]} />
-                  </PressableScale>
-                  {selected ? (
-                    <View style={styles.achievementDetail}>
-                      <AppText style={styles.detailText} languageCode={locale} align="start">
-                        {achievement.hint}
-                      </AppText>
-                      <AppText
-                        style={[styles.detailStatus, achievement.unlocked && styles.detailStatusUnlocked]}
-                        languageCode={locale}
-                        align="start"
-                        latinRole="bold"
-                      >
-                        {achievement.unlocked ? copy.unlocked : copy.inProgress}
-                      </AppText>
-                    </View>
+        <View style={isDesktopWeb ? styles.desktopTwoColumnRow : styles.sectionStack}>
+          <View style={[styles.section, isDesktopWeb && styles.desktopColumnHalf]}>
+            <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+              {copy.paths}
+            </AppText>
+            <View style={styles.groupedList}>
+              {paths.map((path, index) => (
+                <View
+                  key={path.id}
+                  style={[
+                    styles.listRow,
+                    index < paths.length - 1 && styles.rowDivider,
+                  ]}
+                >
+                  <View style={[styles.rowIcon, pathMode === path.id && styles.rowIconActive]}>
+                    <HugeiconsIcon
+                      icon={path.icon}
+                      size={20}
+                      color={pathMode === path.id ? colors.primary : colors.mutedForeground}
+                      strokeWidth={2.2}
+                    />
+                  </View>
+                  <View style={styles.rowCopy}>
+                    <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                      {path.title}
+                    </AppText>
+                    <AppText style={styles.rowDescription} languageCode={locale} align="start">
+                      {copy.lessonsCompleted(path.lessons)}
+                    </AppText>
+                  </View>
+                  {pathMode === path.id ? (
+                    <AppText style={styles.activeLabel} languageCode={locale} align="center" latinRole="bold">
+                      {copy.active}
+                    </AppText>
                   ) : null}
                 </View>
-              );
-            })}
+              ))}
+            </View>
+          </View>
+
+          <View style={[styles.section, isDesktopWeb && styles.desktopColumnHalf]}>
+            <AppText style={styles.sectionTitle} languageCode={locale} align="start" latinRole="bold">
+              {copy.achievements}
+            </AppText>
+            <View style={styles.groupedList}>
+              {achievements.map((achievement, index) => {
+                const selected = selectedAchievementId === achievement.id;
+                return (
+                  <View key={achievement.id} style={index < achievements.length - 1 && styles.rowDivider}>
+                    <PressableScale
+                      style={styles.listRow}
+                      onPress={() => setSelectedAchievementId(selected ? null : achievement.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={achievement.title}
+                      scaleDown={0.985}
+                    >
+                      <View style={[styles.rowIcon, achievement.unlocked && styles.achievementUnlocked]}>
+                        <HugeiconsIcon
+                          icon={achievement.icon}
+                          size={20}
+                          color={achievement.unlocked ? colors.primary : colors.mutedForeground}
+                          strokeWidth={2.2}
+                        />
+                      </View>
+                      <View style={styles.rowCopy}>
+                        <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                          {achievement.title}
+                        </AppText>
+                        <AppText style={styles.rowDescription} languageCode={locale} align="start">
+                          {achievement.description}
+                        </AppText>
+                      </View>
+                      <View style={[styles.statusDot, achievement.unlocked && styles.statusDotUnlocked]} />
+                    </PressableScale>
+                    {selected ? (
+                      <View style={styles.achievementDetail}>
+                        <AppText style={styles.detailText} languageCode={locale} align="start">
+                          {achievement.hint}
+                        </AppText>
+                        <AppText
+                          style={[styles.detailStatus, achievement.unlocked && styles.detailStatusUnlocked]}
+                          languageCode={locale}
+                          align="start"
+                          latinRole="bold"
+                        >
+                          {achievement.unlocked ? copy.unlocked : copy.inProgress}
+                        </AppText>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -896,7 +909,7 @@ export default function ProfileScreen() {
   );
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = false) {
   const surface = isDark ? "rgba(255,255,255,0.045)" : "#FFFFFF";
   const softSurface = isDark ? "rgba(255,255,255,0.06)" : "#F4F6F8";
   const panel = isDark ? "#18243A" : "#172033";
@@ -914,14 +927,17 @@ function createStyles(colors: any, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: 20,
+      paddingHorizontal: isDesktopWeb ? 32 : 20,
       paddingBottom: 12,
+      maxWidth: isDesktopWeb ? 960 : "100%",
+      width: "100%",
+      alignSelf: isDesktopWeb ? "center" : "stretch",
       backgroundColor: colors.background,
     },
     headerTitle: {
       flex: 1,
-      fontSize: 28,
-      lineHeight: 34,
+      fontSize: isDesktopWeb ? 32 : 28,
+      lineHeight: isDesktopWeb ? 38 : 34,
       color: colors.foreground,
       letterSpacing: -0.5,
     },
@@ -935,10 +951,30 @@ function createStyles(colors: any, isDark: boolean) {
       borderWidth: 1,
       borderColor: colors.border,
     },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
     content: {
-      paddingHorizontal: 20,
-      paddingTop: 8,
+      paddingHorizontal: isDesktopWeb ? 32 : 20,
+      paddingTop: isDesktopWeb ? 16 : 8,
+      maxWidth: isDesktopWeb ? 960 : "100%",
+      width: "100%",
+      alignSelf: isDesktopWeb ? "center" : "stretch",
+      gap: isDesktopWeb ? 32 : 28,
+    },
+    desktopTwoColumnRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 24,
+    },
+    sectionStack: {
       gap: 28,
+    },
+    desktopColumnHalf: {
+      flex: 1,
+      minWidth: 0,
     },
     guestStrip: {
       flexDirection: "row",

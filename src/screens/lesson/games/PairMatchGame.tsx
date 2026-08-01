@@ -16,6 +16,7 @@ import Animated, {
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguage } from "../../../config/languages";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { useTTS } from "../../../hooks/use-tts";
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -105,6 +106,7 @@ const MatchChip = memo(function MatchChip({
 export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
   const { colors } = useThemeColors();
+  const { speak, stop } = useTTS();
   const isKids = pathMode === "kids";
   const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
   const left = useMemo(() =>
@@ -132,6 +134,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
   const firedRef = useRef(false);
 
   React.useEffect(() => {
+    void stop();
     selLRef.current = null;
     selRRef.current = null;
     setSelL(null);
@@ -140,7 +143,11 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
     setWrongL(null);
     setWrongR(null);
     firedRef.current = false;
-  }, [question]);
+  }, [question, stop]);
+
+  React.useEffect(() => () => {
+    void stop();
+  }, [stop]);
 
   const total = question.pairs.length;
   const matchedCount = matched.size / 2;
@@ -181,6 +188,9 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
 
   const handleL = (w: string) => {
     if (isLocked || matched.has(w)) return;
+    void speak(w, question.sourceLanguage ?? "ku", `pair-source-${w}`, {
+      provider: "device",
+    });
     if (selL === w) {
       selLRef.current = null;
       setSelL(null);
@@ -193,6 +203,9 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
 
   const handleR = (w: string) => {
     if (isLocked || matched.has(w)) return;
+    void speak(w, question.targetLanguage ?? "en", `pair-target-${w}`, {
+      provider: "device",
+    });
     if (selR === w) {
       selRRef.current = null;
       setSelR(null);

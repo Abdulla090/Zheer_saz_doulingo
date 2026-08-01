@@ -165,15 +165,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Listen for session/auth changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      if (initialSession?.user) {
-        handleUserLogin(initialSession.user);
-      } else {
-        setLoading(false);
+    let mounted = true;
+
+    // Never leave the app in a permanent loading state if secure storage or
+    // the initial auth read fails. Remote profile/progress synchronization is
+    // deliberately background work: it must not block the first screen.
+    const initializeSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        if (initialSession?.user) {
+          void handleUserLogin(initialSession.user);
+        }
+      } catch (error) {
+        console.error("Unable to restore the saved session:", error);
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
-    });
+    };
+
+    void initializeSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession);
@@ -190,6 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [handleUserLogin]);

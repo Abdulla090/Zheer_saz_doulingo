@@ -2,7 +2,7 @@ import "../utils/web-deprecations-patch";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { SkiaWebGate } from "../components/animations/skia-gsap-opening/SkiaWebGate";
 import { OfflineBanner } from "../components/OfflineBanner";
-import { initSentry, Sentry } from "../lib/sentry";
+import { initSentry, wrapSentry } from "../lib/sentry";
 import { fontMap } from "../fontMap";
 import { useFontStore } from "../stores/useFontStore";
 import { useOnboardingStore } from "../stores/useOnboardingStore";
@@ -18,20 +18,21 @@ import { applyUiLanguageDirection, useLocaleStore } from "../stores/useLocaleSto
 import { getLanguageDirection } from "../i18n/direction";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
-import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect } from "react";
-import { Platform, View, useColorScheme } from "react-native";
+import React, { useEffect } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
-import { AuthProvider, useAuth } from "../context/AuthContext";
+import { AuthProvider } from "../context/AuthContext";
 
 initSentry();
 
+// Prevent the native splash screen from auto-hiding until initial assets/stores are ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function BottomSheetModalProvider({ children }: { children: React.ReactNode }) {
@@ -61,12 +62,9 @@ function InnerLayout() {
   const { selectedFont, ready: fontStoreReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
-  const themeSetting = useSettingsStore((s) => s.theme);
-  const systemColorScheme = useColorScheme();
   const contentAdminReady = useContentAdminStore((s) => s.ready);
   const onboardingReady = useOnboardingStore((s) => s.ready);
   const uiLanguage = useLocaleStore((s) => s.selectedUiLanguage);
-  const { loading: authLoading } = useAuth();
 
   const [kurdishFontLoaded, setKurdishFontLoaded] = React.useState(false);
 
@@ -101,28 +99,36 @@ function InnerLayout() {
     progressReady &&
     settingsReady &&
     contentAdminReady &&
-    onboardingReady &&
-    !authLoading;
+    onboardingReady;
 
   useEffect(() => {
     applyGlobalFont(selectedFont);
   }, [selectedFont]);
 
-  const [coreFontsLoaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     DINNextRoundedBold: require("../../assets/fonts/DIN_BOLD.ttf"),
     DINNextRoundedMedium: require("../../assets/fonts/DIN_MEDIUM.ttf"),
     DINNextRoundedRegular: require("../../assets/fonts/DIN_REGULAR.ttf"),
   });
 
-  const onLayoutReady = useCallback(async () => {
-    if (coreFontsLoaded && ready) {
-      await SplashScreen.hideAsync();
-    }
-  }, [coreFontsLoaded, ready]);
-
+  // Hide the native splash screen as soon as fonts and stores are ready, or after a maximum safety timeout.
   useEffect(() => {
-    onLayoutReady();
-  }, [onLayoutReady]);
+    let hidden = false;
+    const hideSplash = () => {
+      if (!hidden) {
+        hidden = true;
+        void SplashScreen.hideAsync().catch(() => {});
+      }
+    };
+
+    if (ready && fontsLoaded) {
+      hideSplash();
+    }
+
+    // Safety fallback: guarantee splash screen is hidden within 1.5 seconds max
+    const timer = setTimeout(hideSplash, 1500);
+    return () => clearTimeout(timer);
+  }, [ready, fontsLoaded]);
 
   useEffect(() => {
     applyUiLanguageDirection(uiLanguage);
@@ -145,13 +151,6 @@ function InnerLayout() {
       void fetchRemoteCurriculum("kids");
     }
   }, [ready]);
-
-  if (!coreFontsLoaded || !ready) {
-    const isLoadingDark =
-      themeSetting === "dark" ||
-      (themeSetting === "system" && systemColorScheme === "dark");
-    return <View style={{ flex: 1, backgroundColor: isLoadingDark ? "#0F172A" : "#FFFFFF" }} />;
-  }
 
   const rnWebVars = Platform.OS === "web" ? {} : {
     "--font-rd-bold": selectedFont,
@@ -224,7 +223,7 @@ function InnerLayout() {
   );
 }
 
-const WrappedInnerLayout = Sentry.wrap(InnerLayout);
+const WrappedInnerLayout = wrapSentry(InnerLayout);
 
 function RootLayout() {
   return (
@@ -234,4 +233,4 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default wrapSentry(RootLayout);

@@ -17,6 +17,7 @@ import Animated, {
 import { AppText } from "../../../components/ui/AppText";
 import { DirectionalView } from "../../../components/ui/Directional";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { useTTS } from "../../../hooks/use-tts";
 
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -88,6 +89,7 @@ type Props = {
 export default function FillBlankGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
+  const { speak, stop } = useTTS();
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -110,6 +112,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
   const flyIdCounter = useRef(0);
 
   React.useEffect(() => {
+    void stop();
     setSelected(null);
     setFlySession(null);
     setRevealed(false);
@@ -117,7 +120,11 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     measuringWordRef.current = null;
     bankCoords.current = {};
     blankCoords.current = null;
-  }, [question]);
+  }, [question, stop]);
+
+  React.useEffect(() => () => {
+    void stop();
+  }, [stop]);
 
   const finishFly = useCallback((_id: string, word: string) => {
     setSelected(word);
@@ -128,6 +135,10 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     if (revealed) return;
     if (selected === word) return;
     if (flySession || measuringWordRef.current) return;
+
+    void speak(word, question.targetLanguage ?? "en", `fill-${word}`, {
+      provider: "device",
+    });
 
     measuringWordRef.current = word;
     if (Platform.OS !== "web") {

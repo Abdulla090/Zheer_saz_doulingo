@@ -231,66 +231,63 @@ if (Platform.OS === "web") {
   } catch {}
 }
 
-// ── Global React Native Text Patch ──
-// Overrides the default React Native Text component to automatically use the selected Kurdish font.
-try {
-  const OriginalText = RN.Text as any;
+// ── Global React Native Text Patch (Web Only) ──
+// Overrides the default React Native Text component to automatically use the selected Kurdish font on Web.
+if (Platform.OS === "web") {
+  try {
+    const OriginalText = RN.Text as any;
 
-  if (OriginalText) {
-    const textDescriptor = Object.getOwnPropertyDescriptor(RN, "Text");
-    const canPatchText =
-      !textDescriptor || textDescriptor.configurable || Boolean(textDescriptor.writable);
+    if (OriginalText) {
+      const textDescriptor = Object.getOwnPropertyDescriptor(RN, "Text");
+      const canPatchText =
+        !textDescriptor || textDescriptor.configurable || Boolean(textDescriptor.writable);
 
-    if (!canPatchText) {
-      throw null;
-    }
+      if (canPatchText) {
+        const CustomTextRenderer = (props: any, ref: any) => {
+          // Dynamically subscribe to the selected font
+          const selectedFont = useFontStore((s) => s.selectedFont);
+          const style = props.style;
+          let hasFont = false;
 
-    const CustomTextRenderer = (props: any, ref: any) => {
-      // Dynamically subscribe to the selected font
-      const selectedFont = useFontStore((s) => s.selectedFont);
-      const style = props.style;
-      let hasFont = false;
+          if (style) {
+            if (Array.isArray(style)) {
+              const flat = RN.StyleSheet.flatten(style);
+              hasFont = !!(flat && flat.fontFamily);
+            } else {
+              hasFont = !!style.fontFamily;
+            }
+          }
 
-      if (style) {
-        if (Array.isArray(style)) {
-          const flat = RN.StyleSheet.flatten(style);
-          hasFont = !!(flat && flat.fontFamily);
-        } else {
-          hasFont = !!style.fontFamily;
+          let newStyle = style;
+          if (!hasFont && selectedFont) {
+            newStyle = [style, { fontFamily: selectedFont }];
+          }
+
+          return React.createElement(OriginalText, {
+            ...props,
+            style: newStyle,
+            ref,
+          });
+        };
+
+        const CustomText = React.forwardRef(CustomTextRenderer);
+        (CustomText as any).displayName = "Text";
+
+        try {
+          Object.defineProperty(RN, "Text", {
+            get() {
+              return CustomText;
+            },
+            configurable: true,
+          });
+        } catch {
+          (RN as any).Text = CustomText;
         }
       }
-
-      // Default to the selected Kurdish font if no fontFamily is explicitly defined
-      let newStyle = style;
-      if (!hasFont && selectedFont) {
-        newStyle = [style, { fontFamily: selectedFont }];
-      }
-
-      return React.createElement(OriginalText, {
-        ...props,
-        style: newStyle,
-        ref,
-      });
-    };
-
-    const CustomText = React.forwardRef(CustomTextRenderer);
-
-    (CustomText as any).displayName = "Text";
-
-    try {
-      Object.defineProperty(RN, "Text", {
-        get() {
-          return CustomText;
-        },
-        configurable: true,
-      });
-    } catch (err) {
-      if (textDescriptor && !textDescriptor.writable) throw err;
-      (RN as any).Text = CustomText;
     }
-  }
-} catch (err) {
-  if (err) {
-    console.warn("Global RN.Text patch failed:", err);
+  } catch (err) {
+    if (err) {
+      console.warn("Global RN.Text patch failed:", err);
+    }
   }
 }

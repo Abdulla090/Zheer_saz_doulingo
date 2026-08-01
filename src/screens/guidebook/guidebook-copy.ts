@@ -1,9 +1,11 @@
 export type GuidebookCopy = {
   screenTitle: string;
+  close: string;
   study: string;
   practice: string;
   vocabulary: string;
   keyPhrases: string;
+  more: string;
   meaningsOn: string;
   meaningsOff: string;
   listen: string;
@@ -20,15 +22,17 @@ export type GuidebookCopy = {
 
 const COPY: Record<"en" | "ku" | "ar", GuidebookCopy> = {
   en: {
-    screenTitle: "Study guide",
-    study: "Study",
-    practice: "Practice",
-    vocabulary: "Vocabulary",
-    keyPhrases: "Useful phrases",
+    screenTitle: "Guide",
+    close: "Close guide",
+    study: "Discover",
+    practice: "Remember",
+    vocabulary: "Word",
+    keyPhrases: "Phrase",
+    more: "More",
     meaningsOn: "Hide meanings",
     meaningsOff: "Show meanings",
     listen: "Listen",
-    practiceTitle: "Quick recall",
+    practiceTitle: "From memory",
     tapToReveal: "Tap to reveal",
     revealAnswer: "Reveal meaning",
     nextCard: "Next",
@@ -39,15 +43,17 @@ const COPY: Record<"en" | "ku" | "ar", GuidebookCopy> = {
     notAvailable: "This study guide is not available.",
   },
   ku: {
-    screenTitle: "ڕێبەری خوێندن",
-    study: "خوێندن",
-    practice: "ڕاهێنان",
-    vocabulary: "فەرهەنگ",
-    keyPhrases: "دەستەواژەکان",
+    screenTitle: "ڕێبەر",
+    close: "داخستنی ڕێبەر",
+    study: "دۆزینەوە",
+    practice: "بیرخستنەوە",
+    vocabulary: "وشە",
+    keyPhrases: "دەستەواژە",
+    more: "زیاتر",
     meaningsOn: "واتاکان بشارەوە",
     meaningsOff: "واتاکان پیشان بدە",
     listen: "گوێبگرە",
-    practiceTitle: "بیرەوەری",
+    practiceTitle: "لەبیرەوە",
     tapToReveal: "واتاکە پیشان بدە",
     revealAnswer: "واتاکە پیشان بدە",
     nextCard: "دواتر",
@@ -58,15 +64,17 @@ const COPY: Record<"en" | "ku" | "ar", GuidebookCopy> = {
     notAvailable: "ئەم ڕێبەرە بەردەست نییە.",
   },
   ar: {
-    screenTitle: "دليل الدراسة",
-    study: "دراسة",
-    practice: "تدريب",
-    vocabulary: "المفردات",
-    keyPhrases: "العبارات",
+    screenTitle: "الدليل",
+    close: "إغلاق الدليل",
+    study: "اكتشف",
+    practice: "تذكّر",
+    vocabulary: "كلمة",
+    keyPhrases: "عبارة",
+    more: "المزيد",
     meaningsOn: "إخفاء المعاني",
     meaningsOff: "إظهار المعاني",
     listen: "استمع",
-    practiceTitle: "تذكّر",
+    practiceTitle: "من الذاكرة",
     tapToReveal: "إظهار المعنى",
     revealAnswer: "إظهار المعنى",
     nextCard: "التالي",

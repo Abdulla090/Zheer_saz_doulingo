@@ -4,6 +4,14 @@ export function initSentry(): void {
   // Sentry is disabled on web for now. To enable it, use @sentry/react
 }
 
+export function isSentryInitialized(): boolean {
+  return false;
+}
+
+export function wrapSentry<T>(Component: T): T {
+  return Component;
+}
+
 export function captureError(error: unknown, context?: Record<string, unknown>) {
   if (__DEV__) console.error("Sentry (Web Mock) captured error:", error, context);
 }

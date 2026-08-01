@@ -6,6 +6,7 @@ import { isGeminiConfigured } from "../constants/gemini";
 import { generateGeminiSpeech, pcmBase64ToWavBase64 } from "../services/gemini-speech-service";
 
 let Speech: typeof import("expo-speech") | null = null;
+let deviceSpeechRequest = 0;
 
 async function getSpeech() {
   if (Speech) return Speech;
@@ -61,7 +62,7 @@ export function useTTS() {
       }
     } else {
       const mod = await getSpeech();
-      mod?.stop();
+      await mod?.stop();
     }
     setSpeaking(false);
     setActiveId(null);
@@ -94,6 +95,7 @@ export function useTTS() {
       .replace(/\s+([,.!?;:])/g, "$1")
       .trim();
     if (!normalized) return;
+    let deviceRequest = useDeviceTts ? ++deviceSpeechRequest : null;
 
     speakTokenRef.current += 1;
     const token = speakTokenRef.current;
@@ -238,7 +240,22 @@ export function useTTS() {
       return;
     }
 
-    mod.stop();
+    // expo-speech uses one device-wide queue. A short shared guard lets every
+    // earlier tap finish cancelling before only the newest tap starts speech.
+    deviceRequest ??= ++deviceSpeechRequest;
+    await new Promise<void>((resolve) => setTimeout(resolve, 60));
+    if (deviceSpeechRequest !== deviceRequest) {
+      finish();
+      return;
+    }
+    await mod.stop();
+    if (
+      deviceSpeechRequest !== deviceRequest ||
+      speakTokenRef.current !== token
+    ) {
+      finish();
+      return;
+    }
     mod.speak(normalized, {
       language: speechLocale,
       rate: options?.rate ?? 0.96,
@@ -251,6 +268,7 @@ export function useTTS() {
 
   const stop = useCallback(async () => {
     speakTokenRef.current += 1;
+    deviceSpeechRequest += 1;
     await stopActiveAudio();
   }, [stopActiveAudio]);
 

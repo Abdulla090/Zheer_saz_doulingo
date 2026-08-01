@@ -9,6 +9,8 @@ export type GuidebookEntry = {
   kind: "word" | "phrase";
   english: string;
   kurdish: string;
+  sourceLanguage: string;
+  targetLanguage: string;
 };
 
 export type GuidebookLessonViewModel = {
@@ -16,6 +18,8 @@ export type GuidebookLessonViewModel = {
   index: number;
   topic: string;
   topicKu: string;
+  sourceLanguage: string;
+  targetLanguage: string;
   words: GuidebookEntry[];
   phrases: GuidebookEntry[];
   entries: GuidebookEntry[];
@@ -52,6 +56,8 @@ function toEntries(
   lesson: GuidebookLesson,
   lessonIndex: number,
   kind: GuidebookEntry["kind"],
+  sourceLanguage: string,
+  targetLanguage: string,
 ): GuidebookEntry[] {
   const source = kind === "word" ? lesson.words : lesson.phrases;
   return source.map((entry, entryIndex) => ({
@@ -59,6 +65,8 @@ function toEntries(
     kind,
     english: entry.english,
     kurdish: entry.kurdish,
+    sourceLanguage,
+    targetLanguage,
   }));
 }
 
@@ -75,13 +83,15 @@ export function buildGuidebookViewModel(
     : guidebook.title.trim();
 
   const lessons = guidebook.lessons.map((lesson, index) => {
-    const words = toEntries(lesson, index, "word");
-    const phrases = toEntries(lesson, index, "phrase");
+    const words = toEntries(lesson, index, "word", guidebook.sourceLanguage, guidebook.targetLanguage);
+    const phrases = toEntries(lesson, index, "phrase", guidebook.sourceLanguage, guidebook.targetLanguage);
     return {
       id: `lesson-${index}`,
       index,
       topic: lesson.topic,
       topicKu: lesson.topicKu,
+      sourceLanguage: guidebook.sourceLanguage,
+      targetLanguage: guidebook.targetLanguage,
       words,
       phrases,
       entries: [...words, ...phrases],

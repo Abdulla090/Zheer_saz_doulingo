@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -15,6 +16,7 @@ import { useI18n } from "../../hooks/useI18n";
 import { useTTS } from "../../hooks/use-tts";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useLocaleStore } from "../../stores/useLocaleStore";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { getGuidebookCopy } from "./guidebook-copy";
 import { GuidebookHeader } from "./GuidebookHeader";
@@ -33,8 +35,8 @@ import {
 } from "./guidebook-model";
 import { getGuidebookAccent } from "./guidebook-theme";
 
-const WIDE_GUIDE_BREAKPOINT = 980;
-const GUIDE_MAX_WIDTH = 1180;
+const WIDE_GUIDE_BREAKPOINT = 920;
+const GUIDE_MAX_WIDTH = 1080;
 
 export default function GuidebookScreen() {
   const params = useLocalSearchParams<{
@@ -47,16 +49,22 @@ export default function GuidebookScreen() {
   const { locale, isKu, isAr } = useI18n();
   const { colors } = useThemeColors();
   const { speak, stop, activeId } = useTTS();
+  const sourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
+  const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
 
   const unitIndex = parseUnitIndex(params.unit);
   const pathMode = parsePathMode(params.mode);
   const isWide = width >= WIDE_GUIDE_BREAKPOINT;
   const isRtl = isKu || isAr;
+  const webDirectionProps =
+    Platform.OS === "web"
+      ? ({ dir: isRtl ? "rtl" : "ltr" } as Record<string, string>)
+      : undefined;
   const copy = useMemo(() => getGuidebookCopy(locale), [locale]);
 
   const guidebook = useMemo(
-    () => getGuidebook(pathMode, unitIndex, locale),
-    [locale, pathMode, unitIndex],
+    () => getGuidebook(pathMode, unitIndex, locale, sourceLanguage, targetLanguage),
+    [locale, pathMode, sourceLanguage, targetLanguage, unitIndex],
   );
   const guide = useMemo(
     () => (guidebook ? buildGuidebookViewModel(guidebook) : null),
@@ -69,7 +77,8 @@ export default function GuidebookScreen() {
 
   const [selectedLessonIndex, setSelectedLessonIndex] = useState(0);
   const [mode, setMode] = useState<GuidebookMode>("study");
-  const [showMeanings, setShowMeanings] = useState(true);
+  const [studyIndex, setStudyIndex] = useState(0);
+  const [studyRevealed, setStudyRevealed] = useState(true);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceRevealed, setPracticeRevealed] = useState(false);
   const [practiceComplete, setPracticeComplete] = useState(false);
@@ -78,11 +87,19 @@ export default function GuidebookScreen() {
     ? Math.min(selectedLessonIndex, Math.max(guide.lessons.length - 1, 0))
     : 0;
   const selectedLesson = guide?.lessons[safeLessonIndex];
+  const safeStudyIndex = selectedLesson
+    ? Math.min(studyIndex, Math.max(selectedLesson.entries.length - 1, 0))
+    : 0;
 
   const resetPractice = useCallback(() => {
     setPracticeIndex(0);
     setPracticeRevealed(false);
     setPracticeComplete(false);
+  }, []);
+
+  const resetStudy = useCallback(() => {
+    setStudyIndex(0);
+    setStudyRevealed(true);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -95,9 +112,10 @@ export default function GuidebookScreen() {
       void stop();
       hapticSelection();
       setSelectedLessonIndex(index);
+      resetStudy();
       resetPractice();
     },
-    [resetPractice, stop],
+    [resetPractice, resetStudy, stop],
   );
 
   const handleModeChange = useCallback(
@@ -117,15 +135,49 @@ export default function GuidebookScreen() {
         void stop();
         return;
       }
-      void speak(entry.english, "en", entry.id, { provider: "device" });
+      void speak(entry.english, entry.targetLanguage, entry.id, {
+        provider: "device",
+      });
     },
     [activeId, speak, stop],
   );
 
-  const handleToggleMeanings = useCallback(() => {
+  const handleToggleMeaning = useCallback(() => {
     hapticSelection();
-    setShowMeanings((visible) => !visible);
+    setStudyRevealed((visible) => !visible);
   }, []);
+
+  const handleStudyNext = useCallback(() => {
+    if (!selectedLesson) return;
+    void stop();
+    hapticSelection();
+    if (safeStudyIndex >= selectedLesson.entries.length - 1) {
+      setMode("practice");
+      resetPractice();
+      return;
+    }
+    setStudyIndex((index) => index + 1);
+    setStudyRevealed(true);
+  }, [resetPractice, safeStudyIndex, selectedLesson, stop]);
+
+  const handleStudyPrevious = useCallback(() => {
+    if (safeStudyIndex === 0) return;
+    void stop();
+    hapticSelection();
+    setStudyIndex((index) => Math.max(0, index - 1));
+    setStudyRevealed(true);
+  }, [safeStudyIndex, stop]);
+
+  const handleStudySelect = useCallback(
+    (index: number) => {
+      if (index === safeStudyIndex) return;
+      void stop();
+      hapticSelection();
+      setStudyIndex(index);
+      setStudyRevealed(true);
+    },
+    [safeStudyIndex, stop],
+  );
 
   const handleReveal = useCallback(() => {
     if (practiceRevealed) return;
@@ -204,6 +256,7 @@ export default function GuidebookScreen() {
 
   return (
     <ScrollView
+      {...webDirectionProps}
       style={[styles.root, { backgroundColor: colors.background }]}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
@@ -239,6 +292,7 @@ export default function GuidebookScreen() {
             selectedIndex={safeLessonIndex}
             accent={accent}
             isWide={false}
+            isRtl={isRtl}
             onSelect={handleSelectLesson}
           />
         ) : null}
@@ -247,7 +301,7 @@ export default function GuidebookScreen() {
           style={[
             styles.studyLayout,
             isWide && styles.studyLayoutWide,
-            isWide && isRtl && styles.rowReverse,
+            isWide && isRtl && Platform.OS !== "web" && styles.rowReverse,
           ]}
         >
           {isWide ? (
@@ -256,6 +310,7 @@ export default function GuidebookScreen() {
               selectedIndex={safeLessonIndex}
               accent={accent}
               isWide
+              isRtl={isRtl}
               onSelect={handleSelectLesson}
             />
           ) : null}
@@ -275,11 +330,15 @@ export default function GuidebookScreen() {
                 lesson={selectedLesson}
                 copy={copy}
                 accent={accent}
-                showMeanings={showMeanings}
+                currentIndex={safeStudyIndex}
+                revealed={studyRevealed}
                 activeId={activeId}
                 isRtl={isRtl}
                 isKurdish={isKu}
-                onToggleMeanings={handleToggleMeanings}
+                onToggleMeaning={handleToggleMeaning}
+                onNext={handleStudyNext}
+                onPrevious={handleStudyPrevious}
+                onSelect={handleStudySelect}
                 onSpeak={handleSpeak}
               />
             ) : (
@@ -323,11 +382,11 @@ const styles = StyleSheet.create({
   },
   studyLayout: {
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 18,
   },
   studyLayoutWide: {
     paddingHorizontal: 0,
-    paddingTop: 24,
+    paddingTop: 28,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 24,
@@ -335,7 +394,8 @@ const styles = StyleSheet.create({
   reader: {
     flex: 1,
     minWidth: 0,
-    gap: 10,
+    maxWidth: 720,
+    gap: 18,
   },
   unavailable: {
     flex: 1,

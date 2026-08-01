@@ -5,7 +5,8 @@ import { ChestUnlockedV2 } from "../../constants/icons";
 import { Image } from "expo-image";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowLeft01Icon, ArrowRight01Icon, Clock01Icon, GiftIcon, Notification01Icon } from "@hugeicons/core-free-icons";
-import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { isDesktopWebWidth } from "../../constants/web-layout";
 import { AnimatedCard } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import { useI18n } from "../../hooks/useI18n";
@@ -349,17 +350,22 @@ const QuestScreen = () => {
 
 function useQuestStyles() {
   const { colors, isDark } = useThemeColors();
-  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
+  return useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = false) {
   return StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
   },
   safeHeader: {
-    paddingHorizontal: 20,
+    paddingHorizontal: isDesktopWeb ? 32 : 20,
+    maxWidth: isDesktopWeb ? 960 : "100%",
+    width: "100%",
+    alignSelf: isDesktopWeb ? "center" : "stretch",
     backgroundColor: "#0F172A",
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
@@ -431,22 +437,22 @@ function createStyles(colors: any, isDark: boolean) {
   },
   topCardTitle: {
     fontSize: 16,
-    fontWeight: "800",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-    marginBottom: 10,
+    marginTop: 8,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: isDesktopWeb ? 32 : 20,
+    paddingTop: 16,
     paddingBottom: 40,
+    maxWidth: isDesktopWeb ? 960 : "100%",
+    width: "100%",
+    alignSelf: isDesktopWeb ? "center" : "stretch",
   },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
-    marginTop: 8,
+    marginTop: 16,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,

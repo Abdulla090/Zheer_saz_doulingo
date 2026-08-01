@@ -5,12 +5,28 @@ node_modules/
 bun.lock
 bun.lockb
 
-# Expo
+# Expo & Build Caches
 .expo/
 .metro-cache/
 dist/
 web-build/
 expo-env.d.ts
+
+# Large Local Folders & Artifacts
+artifacts/
+videos/
+tmp/
+store-assets/
+scratch/
+docs/
+maestro/
+playwright-report/
+
+# Large Binaries & APKs
+*.apk
+*.aab
+*.zip
+*.log
 
 # Native
 .kotlin/

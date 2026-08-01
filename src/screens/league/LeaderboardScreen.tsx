@@ -8,11 +8,14 @@ import { Image } from "expo-image";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   RefreshControl,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { isDesktopWebWidth } from "../../constants/web-layout";
 
 import { PressableScale } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
@@ -48,7 +51,9 @@ const keyExtractor = (item: LeaderboardEntry) => item.userId;
 
 export const LeaderboardScreen = () => {
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
+  const styles = useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
   const { user } = useAuth();
@@ -306,12 +311,15 @@ export const LeaderboardScreen = () => {
   );
 };
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = false) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     header: {
-      paddingHorizontal: 20,
+      paddingHorizontal: isDesktopWeb ? 32 : 20,
       paddingBottom: 16,
+      maxWidth: isDesktopWeb ? 960 : "100%",
+      width: "100%",
+      alignSelf: isDesktopWeb ? "center" : "stretch",
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
@@ -330,7 +338,9 @@ function createStyles(colors: any, isDark: boolean) {
     subtitle: { marginTop: 2, fontSize: 12, color: colors.mutedForeground },
     rowSlot: {
       width: "100%",
-      paddingHorizontal: 16,
+      maxWidth: isDesktopWeb ? 960 : "100%",
+      alignSelf: isDesktopWeb ? "center" : "stretch",
+      paddingHorizontal: isDesktopWeb ? 32 : 16,
       paddingBottom: 10,
     },
     row: {

@@ -9,21 +9,21 @@ import {
 import React, { useMemo } from "react";
 import {
   Platform,
-  Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
 } from "react-native";
-import { router } from "expo-router";
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
-import { useCreditBalance } from "../../../hooks/useCreditBalance";
+import { Battery, Fire, Flag, Gem } from "../../../constants/icons";
 
 type StatItem = {
   key: string;
   label: string;
   shortLabel: string;
   value: string;
+  accent: string;
+  Icon: React.ComponentType<{ width?: number; height?: number; color?: string; fill?: string }>;
 };
 
 export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
@@ -35,7 +35,6 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const streakDays = useProgressStore((state) => state.streakDays);
   const currentProgress = useCurrentProgress();
-  const { balance: creditBalance } = useCreditBalance();
   const isRtl = isKu || isAr;
   const mobileWeb = Platform.OS === "web" && width < 768;
   const compact = width < 370 || mobileWeb;
@@ -54,24 +53,32 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         label: t("games.xpEarned"),
         shortLabel: "XP",
         value: totalXp.toLocaleString(),
+        accent: "#2AA9E8",
+        Icon: Gem,
       },
       {
         key: "streak",
         label: t("games.dayStreak"),
         shortLabel: isKu ? "ڕۆژ" : isAr ? "يوم" : "Streak",
         value: streakDays.toLocaleString(),
+        accent: "#A5A7AA",
+        Icon: Fire,
       },
       {
         key: "goal",
         label: t("home.dailyGoal"),
         shortLabel: isKu ? "ئامانج" : isAr ? "هدف" : "Goal",
         value: `${dailyXp}/${dailyGoalXp}`,
+        accent: "#E97BBE",
+        Icon: Battery,
       },
       {
         key: "lessons",
         label: t("home.lessonsComplete"),
         shortLabel: isKu ? "وانە" : isAr ? "درس" : "Lessons",
         value: completedLessons.toLocaleString(),
+        accent: "#F05B57",
+        Icon: Flag,
       },
     ],
     [completedLessons, dailyGoalXp, dailyXp, isAr, isKu, streakDays, t, totalXp],
@@ -89,43 +96,6 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   return (
     <View style={styles.shell}>
       <View
-        style={[
-          styles.brandRow,
-          { flexDirection: isRtl ? "row-reverse" : "row" },
-        ]}
-      >
-        <AppText style={styles.brand} forceLatinFont latinRole="bold" numberOfLines={1}>
-          twino
-        </AppText>
-        <Pressable
-          onPress={() => router.push("/subscription")}
-          accessibilityRole="button"
-          accessibilityLabel={
-            creditBalance === null
-              ? isKu
-                ? "پاکەتەکانی کرێدیتی TWINO ببینە"
-                : "View TWINO credit packs"
-              : isKu
-                ? `کرێدیتی TWINO: ${creditBalance}. پاکەتەکان ببینە`
-                : `TWINO credits: ${creditBalance}. View credit packs`
-          }
-          style={({ pressed }) => [
-            styles.creditBadge,
-            pressed && styles.creditBadgePressed,
-          ]}
-        >
-          <AppText
-            style={styles.creditValue}
-            forceKurdishFont={isKu}
-            forceLatinFont={!isKu}
-            latinRole="bold"
-            numberOfLines={1}
-          >
-            {isKu ? "پاکەتەکان" : "Packs"}
-          </AppText>
-        </Pressable>
-      </View>
-      <View
         style={[styles.row, { flexDirection: isRtl ? "row-reverse" : "row" }]}
         accessibilityRole="summary"
       >
@@ -139,8 +109,14 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
             ]}
             accessibilityLabel={`${item.label}: ${item.value}`}
           >
+            {React.createElement(item.Icon, {
+              width: compact ? 20 : 23,
+              height: compact ? 20 : 23,
+              color: item.accent,
+              fill: item.accent,
+            })}
             <AppText
-              style={styles.value}
+              style={[styles.value, { color: item.accent }]}
               forceKurdishFont={isKu}
               forceLatinFont={!isRtl}
               latinRole="bold"
@@ -148,7 +124,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
               adjustsFontSizeToFit
               minimumFontScale={0.68}
             >
-              {`${item.shortLabel} ${item.value}`}
+              {item.value}
             </AppText>
           </View>
         ))}
@@ -169,46 +145,10 @@ function createStyles(
       width: "100%",
       maxWidth: 640,
     },
-    brandRow: {
-      minHeight: 38,
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginHorizontal: mobileWeb ? 12 : 18,
-      marginBottom: mobileWeb ? 2 : 4,
-    },
-    brand: {
-      flexShrink: 1,
-      color: colors.foreground,
-      fontSize: 22,
-      lineHeight: 28,
-      fontWeight: "900",
-      letterSpacing: -0.7,
-    },
-    creditBadge: {
-      minHeight: 34,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(69,180,240,0.3)" : "#CDEBFA",
-      borderRadius: 11,
-      backgroundColor: isDark ? "rgba(22,139,210,0.12)" : "#EFF9FE",
-      paddingHorizontal: 10,
-    },
-    creditValue: {
-      color: isDark ? "#75CCFA" : "#0E6FA9",
-      fontSize: 12.5,
-      lineHeight: 16,
-      fontVariant: ["tabular-nums"],
-    },
-    creditBadgePressed: {
-      opacity: 0.72,
-      transform: [{ scale: 0.97 }],
-    },
     row: {
       alignSelf: "center",
       width: "100%",
-      minHeight: mobileWeb ? 48 : compact ? 54 : 60,
+      minHeight: mobileWeb ? 46 : compact ? 52 : 56,
       alignItems: "center",
       paddingHorizontal: mobileWeb ? 10 : 14,
       marginBottom: mobileWeb ? 4 : 6,
@@ -216,11 +156,11 @@ function createStyles(
     item: {
       flex: 1,
       minWidth: 0,
-      minHeight: mobileWeb ? 40 : compact ? 44 : 48,
+      minHeight: mobileWeb ? 38 : compact ? 42 : 46,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 0,
+      gap: compact ? 3 : 5,
       paddingHorizontal: compact ? 2 : 6,
     },
     divider: {
@@ -236,7 +176,7 @@ function createStyles(
       minWidth: 0,
       flexShrink: 1,
       color: colors.foreground,
-      fontSize: mobileWeb ? 11 : compact ? 11.5 : 12.5,
+      fontSize: mobileWeb ? 12 : compact ? 12 : 14,
       lineHeight: mobileWeb ? 16 : 18,
       fontWeight: "800",
       fontVariant: ["tabular-nums"],

@@ -8,7 +8,6 @@ import { Platform, View } from "react-native";
 import { useI18n } from "../../../hooks/useI18n";
 import { FirstItemSparkles } from "./first-item-sparkles";
 import { getPathCurveOffset } from "./path-curve";
-import { LessonPathBadge } from "./lesson-path-badge";
 import { CompletedCheckIcon } from "./completed-check-icon";
 import {
   SVG_BUTTON_COLOR_SETS,
@@ -17,6 +16,7 @@ import {
   SvgButtonVariant,
 } from "./list-button";
 import { getPathMetrics } from "./path-metrics";
+import { hapticSelection } from "../../../utils/haptics";
 
 export type UnitChestKind = "silver" | "gold";
 
@@ -125,6 +125,7 @@ export const ListItem = React.memo(
       });
     };
     const handleSelect = () => {
+      hapticSelection();
       if (onSelect) {
         onSelect(nodeRef.current);
         return;
@@ -224,8 +225,7 @@ export const ListItem = React.memo(
                 size={metrics.lessonButtonSize}
                 onPress={isLocked && !onSelect ? undefined : handleSelect}
                 variant={buttonColor}
-                label={isCompleted ? undefined : item.pathIndex + 1}
-                IconComponent={isCompleted ? CompletedCheckIcon : undefined}
+                label={item.pathIndex + 1}
                 iconColor={iconColorOverride}
                 accessibilityLabel={
                   isLocked
@@ -236,14 +236,6 @@ export const ListItem = React.memo(
                 }
               />
             )}
-            {!isNormalPath ? (
-              <LessonPathBadge
-                unitNumber={unitNumber}
-                lessonNumber={lessonNumber}
-                nodeSize={metrics.lessonButtonSize}
-                muted={isLocked}
-              />
-            ) : null}
           </View>
         </View>
       </View>

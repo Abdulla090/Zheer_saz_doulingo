@@ -1,52 +1,77 @@
-bun.lock
-bun.lockb
+# Dependencies
 node_modules/
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# Build caches & output
 .expo/
 .metro-cache/
 dist/
 web-build/
+
+# IDE / editor
 .cursor/
-artifacts/
-playwright-report/
-*.log
-/ios
-/android
+.vscode/
+.codex/
+.codex-export-check/
+
+# Git & repo tooling
+.git/
+.agents/
+agent/
+
+# iOS & Android native folders (EAS builds from source)
+ios/
+android/
 .kotlin/
+
+# Credentials (never upload)
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
+
+# Large binaries & APKs
+*.apk
+*.aab
+*.zip
+
+# Temp images
 tmp-onboarding*.png
 tmp-*.png
+
+# TypeScript build info
 *.tsbuildinfo
-app-example
 
-# Custom local artifacts and skill tools
-/goat-expo-skill/
-/goat-expo-skill-fixed/
-/scratch/
-/practice-variant-1/
-/*.zip
-/inappgame.riv
-/27975-52851-fully-interactive-learning-app-with-rive.riv
+# Logs
+*.log
+
+# Example app
+app-example/
+
+# Local artifacts, videos, docs, scripts
+artifacts/
+scratch/
+videos/
+tmp/
+store-assets/
+docs/
+maestro/
+playwright-report/
+goat-expo-skill/
+goat-expo-skill-fixed/
+practice-variant-1/
+inappgame.riv
+27975-52851-fully-interactive-learning-app-with-rive.riv
+bun.lock
+bun.lockb
+
+# Yarn
+.yarn/
+
+# Root-level PNGs (generated screenshots etc)
 /*.png
-
-# Repository tooling and generated previews are not part of the mobile app.
-/.git/
-/.agents/
-/agent/
-/.codex/
-/.codex-export-check/
-/.cursor/
-/.vscode/
-/.yarn/
-/videos/
-/tmp/
-/store-assets/
-/artifacts/
-/docs/
-/maestro/

@@ -78,7 +78,8 @@ export function VoiceTutorScreen() {
   const isRtl = isKu || isAr;
   const tutor = useLiveVoiceTutor();
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(screenWidth);
+  const styles = useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
 
   const level = useSettingsStore((s) => s.englishLevel) || 5;
   const onboardingComplete = useSettingsStore((s) => s.tutorOnboardingComplete);
@@ -1105,7 +1106,9 @@ export function VoiceTutorScreen() {
   );
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
+import { isDesktopWebWidth } from "../../constants/web-layout";
+
+const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = false) =>
   StyleSheet.create({
     root: {
       flex: 1,
@@ -1199,7 +1202,10 @@ const createStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      paddingHorizontal: 24,
+      paddingHorizontal: isDesktopWeb ? 32 : 24,
+      maxWidth: isDesktopWeb ? 960 : "100%",
+      width: "100%",
+      alignSelf: isDesktopWeb ? "center" : "stretch",
     },
     orbContainer: {
       width: 240,

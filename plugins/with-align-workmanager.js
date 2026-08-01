@@ -38,9 +38,11 @@ const withAlignWorkManager = (config) => {
 
   configurations.all {
     resolutionStrategy {
-      force 'androidx.work:work-runtime:2.8.1'
+      // WorkManager 2.8 moved the Kotlin request helpers into work-runtime.
+      // Keeping an older work-runtime-ktx beside 2.8.1 duplicates those classes.
+      force 'androidx.work:work-runtime:2.8.1',
+            'androidx.work:work-runtime-ktx:2.8.1'
     }
-    exclude group: 'androidx.work', module: 'work-runtime-ktx'
   }`;
         // Insert after 'allprojects {'
         buildGradle = buildGradle.replace(

@@ -6,6 +6,7 @@ import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { ltrText, rtlText } from "../../lesson/games/game-text";
 import { hapticSelection } from "../../../utils/haptics";
+import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { useWindowDimensions, View } from "react-native";
@@ -54,11 +55,14 @@ function GuidebookBtn({
           justifyContent: "center",
           gap: compact ? 0 : 6,
           minHeight: 40,
-          minWidth: compact ? 40 : 112,
+          minWidth: compact ? 56 : 112,
           paddingHorizontal: compact ? 10 : 12,
           paddingVertical: 8,
           borderRadius: 14,
           backgroundColor: "rgba(255,255,255,0.22)",
+          borderLeftWidth: isRtl ? 0 : 1,
+          borderRightWidth: isRtl ? 1 : 0,
+          borderColor: "rgba(0,0,0,0.12)",
         }}
       >
         <NoteBook width={18} height={18} color="#FFFFFF" fill="#FFFFFF" />
@@ -131,6 +135,13 @@ export const HomeMainButton = React.memo(({
           paddingTop: 12,
           paddingBottom: 10,
           minHeight: 78,
+          ...crossShadow({
+            color: rimColor,
+            offsetY: 4,
+            blur: 8,
+            opacity: 0.16,
+            elevation: 3,
+          }),
         }}
       >
         <View

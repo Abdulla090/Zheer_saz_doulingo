@@ -26,7 +26,18 @@ export function OnboardingHeroScene({
   height?: number;
 }) {
   const reduceMotion = useReducedMotion();
-  const scale = height < 220 ? 0.72 : height < 270 ? 0.84 : height < 330 ? 0.94 : 1;
+  const responsiveScale =
+    height < 230
+      ? 0.78
+      : height < 300
+        ? 0.92
+        : height < 380
+          ? 1.04
+          : height < 480
+            ? 1.14
+            : 1.2;
+  const scale =
+    variant === "progress" ? Math.min(responsiveScale, 1.08) : responsiveScale;
 
   return (
     <View style={[styles.stage, { height }]}>
@@ -398,7 +409,7 @@ const styles = StyleSheet.create({
   },
   flag: {
     position: "absolute",
-    right: "-11%",
+    right: "-4%",
     top: "3%",
     width: 72,
     height: 46,

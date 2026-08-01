@@ -10,6 +10,7 @@ import { kidsSectionConfigs } from "./kids-english";
 import { getPathUnitTitle } from "./path-unit-titles";
 import { sectionConfigs } from "./list-items";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { mapLessonBankGenerically } from "./lesson-content";
 
 export type GuidebookWord = {
   english: string;
@@ -35,6 +36,8 @@ export type GuidebookUnit = {
   unitIndex: number;
   title: string;
   displayTheme: string;
+  sourceLanguage: string;
+  targetLanguage: string;
   lessons: GuidebookLesson[];
 };
 
@@ -66,15 +69,20 @@ function addPhrase(
   });
 }
 
-function buildGuidebookFromUnit(
+export function buildGuidebookFromUnit(
   unitIndex: number,
   unitBank: UnitBank | undefined,
   config: SectionConfig | undefined,
   title: string,
+  sourceLanguage = "ku",
+  targetLanguage = "en",
 ): GuidebookUnit | null {
   if (!unitBank || !config) return null;
 
-  const lessons: GuidebookLesson[] = unitBank.map((lesson) => {
+  const localizedUnit = unitBank.map((lesson) =>
+    mapLessonBankGenerically(lesson, sourceLanguage, targetLanguage),
+  );
+  const lessons: GuidebookLesson[] = localizedUnit.map((lesson) => {
     const phrases: GuidebookPhrase[] = [];
     const seenPhrases = new Set<string>();
 
@@ -115,6 +123,8 @@ function buildGuidebookFromUnit(
     unitIndex,
     title,
     displayTheme: config.displayTheme,
+    sourceLanguage,
+    targetLanguage,
     lessons,
   };
 }
@@ -170,11 +180,43 @@ export function getGuidebook(
   mode: LessonPathMode,
   unitIndex: number,
   locale: AppLocale = "en",
+  sourceLanguage = "ku",
+  targetLanguage = "en",
 ): GuidebookUnit | null {
   if (!Number.isFinite(unitIndex) || unitIndex < 0) return null;
-  if (mode === "normal") return getGuidebookForNormalUnit(unitIndex, locale);
-  if (mode === "kids") return getGuidebookForKidsUnit(unitIndex, locale);
-  return getGuidebookForUnit(unitIndex, locale);
+  if (mode === "normal") {
+    const skippedUnits = getSkippedUnitsCount(
+      useSettingsStore.getState().englishLevel || 5,
+    );
+    const activeUnitIndex = unitIndex >= skippedUnits ? unitIndex - skippedUnits : unitIndex;
+    const sourceUnitIndex = activeUnitIndex + skippedUnits;
+    return buildGuidebookFromUnit(
+      activeUnitIndex,
+      getUnitsForPath("normal")[activeUnitIndex],
+      normalSectionConfigs[sourceUnitIndex] ?? normalSectionConfigs[activeUnitIndex],
+      getPathUnitTitle("normal", sourceUnitIndex, locale),
+      sourceLanguage,
+      targetLanguage,
+    );
+  }
+  if (mode === "kids") {
+    return buildGuidebookFromUnit(
+      unitIndex,
+      getUnitsForPath("kids")[unitIndex],
+      kidsSectionConfigs[unitIndex],
+      getPathUnitTitle("kids", unitIndex, locale),
+      sourceLanguage,
+      targetLanguage,
+    );
+  }
+  return buildGuidebookFromUnit(
+    unitIndex,
+    getUnitsForPath("street")[unitIndex],
+    sectionConfigs[unitIndex],
+    getPathUnitTitle("street", unitIndex, locale),
+    sourceLanguage,
+    targetLanguage,
+  );
 }
 
 /** Pre-build guidebooks for street-English units (English titles by default). */

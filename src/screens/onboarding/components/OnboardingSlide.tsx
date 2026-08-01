@@ -36,14 +36,14 @@ export function OnboardingSlide({ slide, locale }: Props) {
   const isRtl = locale === "ku" || locale === "ar";
   const artworkFirst = slide.id === "welcome";
   const artHeight = isWideLayout
-    ? 500
+    ? 520
     : isVeryCompactPhone
-      ? 190
+      ? 210
       : isCompactPhone
-        ? 235
+        ? 270
         : isTallPhone
-          ? 350
-          : 315;
+          ? 400
+          : 355;
   const styles = useMemo(
     () => createStyles(isWideLayout, isTallPhone, isCompactPhone, isVeryCompactPhone, isRtl),
     [isCompactPhone, isRtl, isTallPhone, isVeryCompactPhone, isWideLayout],
@@ -135,23 +135,22 @@ const createStyles = (
       alignSelf: "center",
       flexDirection: isWideLayout ? (isRtl ? "row-reverse" : "row") : "column",
       alignItems: "center",
-      justifyContent: isWideLayout ? "center" : "flex-start",
-      gap: isWideLayout ? 72 : isCompactPhone ? 0 : 6,
+      justifyContent: "center",
+      gap: isWideLayout ? 72 : isCompactPhone ? 2 : 10,
       paddingHorizontal: isWideLayout ? 60 : isVeryCompactPhone ? 20 : 28,
-      paddingTop: isWideLayout ? 12 : isCompactPhone ? 0 : 8,
-      paddingBottom: isWideLayout ? 18 : 0,
+      paddingVertical: isWideLayout ? 16 : isVeryCompactPhone ? 2 : 8,
     },
     artwork: {
       width: isWideLayout ? "52%" : "100%",
       height: isWideLayout
-        ? 500
+        ? 520
         : isVeryCompactPhone
-          ? 190
+          ? 210
           : isCompactPhone
-            ? 235
+            ? 270
             : isTallPhone
-              ? 350
-              : 315,
+              ? 400
+              : 355,
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 1,

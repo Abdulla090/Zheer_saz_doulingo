@@ -32,6 +32,7 @@ import {
   StyleSheet,
   TextInput,
   View,
+  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -62,11 +63,15 @@ function createAiColors(theme: any, isDark: boolean) {
   };
 }
 
+import { isDesktopWebWidth } from "../../constants/web-layout";
+
 function useAiTeacherTheme() {
   const { colors: theme, isDark } = useThemeColors();
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
   const Colors = useMemo(() => createAiColors(theme, isDark), [theme, isDark]);
-  const styles = useMemo(() => createStyles(Colors), [Colors]);
-  return { Colors, styles, isDark };
+  const styles = useMemo(() => createStyles(Colors, isDesktopWeb), [Colors, isDesktopWeb]);
+  return { Colors, styles, isDark, isDesktopWeb };
 }
 
 const HISTORY_KEY = "twino.ai-teacher.last-attempt";
@@ -203,7 +208,7 @@ export function AiTeacherScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
   const { t, locale, isKu } = useI18n();
-  const { Colors, styles, isDark } = useAiTeacherTheme();
+  const { Colors, styles, isDark, isDesktopWeb } = useAiTeacherTheme();
   const isRtl = isKu || locale === "ar";
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
@@ -418,9 +423,9 @@ export function AiTeacherScreen() {
         contentContainerStyle={{
           paddingTop: Math.max(insets.top, 20),
           paddingBottom: insets.bottom + 32,
-          paddingHorizontal: 24,
+          paddingHorizontal: isDesktopWeb ? 32 : 24,
           width: "100%",
-          maxWidth: 760,
+          maxWidth: isDesktopWeb ? 960 : 760,
           alignSelf: "center",
           direction: isRtl ? "rtl" : "ltr",
         }}
@@ -943,7 +948,7 @@ function ResultsView({
   );
 }
 
-function createStyles(Colors: ReturnType<typeof createAiColors>) {
+function createStyles(Colors: ReturnType<typeof createAiColors>, isDesktopWeb: boolean = false) {
   return StyleSheet.create({
   root: {
     flex: 1,

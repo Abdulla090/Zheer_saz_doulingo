@@ -34,8 +34,19 @@ export function initSentry(): void {
   initialized = true;
 }
 
+export function isSentryInitialized(): boolean {
+  return initialized;
+}
+
+export function wrapSentry<T>(Component: T): T {
+  if (initialized) {
+    return Sentry.wrap(Component as any) as unknown as T;
+  }
+  return Component;
+}
+
 export function captureError(error: unknown, context?: Record<string, unknown>) {
-  if (!dsn) {
+  if (!dsn || !initialized) {
     if (__DEV__) console.error(error, context);
     return;
   }

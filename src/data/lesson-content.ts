@@ -209,7 +209,7 @@ function getPromptText(
   return word;
 }
 
-function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, targetLang: string): LessonBank {
+export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, targetLang: string): LessonBank {
   if (nativeLang === "ku" && targetLang === "en") return lesson; // Default, no need to map
 
   const getNativeStr = (obj: any, lang: string, fallbackField: string): string => {

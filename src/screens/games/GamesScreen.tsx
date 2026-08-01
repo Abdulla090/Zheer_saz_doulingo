@@ -14,6 +14,7 @@ import Svg, { Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 
 import { AppText } from "../../components/ui/AppText";
+import { CreditPacksButton } from "../../components/CreditPacksButton";
 import { getMascotExpressionSource } from "../../constants/mascot-expressions";
 import { getMascot, getMascotDisplayName } from "../../constants/mascots";
 import { Colors } from "../../constants/theme";
@@ -195,6 +196,12 @@ export function GamesScreen() {
               >
                 {t("games.screenTitle")}
               </AppText>
+              <CreditPacksButton
+                style={[
+                  stylesForScreen.heroPacksButton,
+                  isRtl && stylesForScreen.heroPacksButtonRtl,
+                ]}
+              />
             </View>
             <Image
               source={getMascotExpressionSource(selectedMascot.id, "happy")}
@@ -468,6 +475,12 @@ function createStyles(
     heroTitleRtl: {
       textAlign: "right",
       writingDirection: "rtl",
+    },
+    heroPacksButton: {
+      marginTop: isDesktopWeb ? 10 : compact ? 7 : 12,
+    },
+    heroPacksButtonRtl: {
+      alignSelf: "flex-end",
     },
     heroMascot: {
       position: "absolute",

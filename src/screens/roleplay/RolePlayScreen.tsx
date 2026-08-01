@@ -22,7 +22,8 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { ArrowLeft01Icon, ArrowRight01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { isDesktopWebWidth } from "../../constants/web-layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
@@ -702,10 +703,12 @@ export function RolePlayScreen() {
 /* ─── Styles ─── */
 function useRolePlayStyles() {
   const { colors, isDark } = useThemeColors();
-  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
+  return useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = false) {
   return StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
 
@@ -714,8 +717,11 @@ function createStyles(colors: any, isDark: boolean) {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: isDesktopWeb ? 32 : 16,
     paddingBottom: 10,
+    maxWidth: isDesktopWeb ? 960 : "100%",
+    width: "100%",
+    alignSelf: isDesktopWeb ? "center" : "stretch",
   },
   headerButton: {
     width: 44,
@@ -905,7 +911,10 @@ function createStyles(colors: any, isDark: boolean) {
   /* Chat transcript */
   chatContainer: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: isDesktopWeb ? 32 : 16,
+    maxWidth: isDesktopWeb ? 960 : "100%",
+    width: "100%",
+    alignSelf: isDesktopWeb ? "center" : "stretch",
   },
   chatContent: {
     gap: 10,
