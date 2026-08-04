@@ -35,6 +35,7 @@ import { crossShadow } from "../../../utils/shadows";
 import { AppText } from "../../../components/ui/AppText";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { getLanguageDirection } from "../../../i18n/direction";
+import { LayoutDirectionProvider, useLayoutDirection } from "../../../i18n/layout-direction";
 
 type Props = {
   question: MemoryFlipQuestion;
@@ -77,6 +78,7 @@ const MemoryCard = memo(function MemoryCard({
   languageCode?: string;
 }) {
   const { colors, isDark } = useThemeColors();
+  const ambientDirection = useLayoutDirection();
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
   const shakeX = useSharedValue(0);
@@ -123,7 +125,14 @@ const MemoryCard = memo(function MemoryCard({
     };
   });
 
+  const cardDirection = getLanguageDirection(languageCode);
+  const ltrBoundary =
+    Platform.OS !== "web" && cardDirection === "ltr"
+      ? ({ direction: "ltr" } as const)
+      : undefined;
+
   return (
+    <LayoutDirectionProvider value={ltrBoundary ? "ltr" : ambientDirection}>
     <Pressable
       onPress={() => {
         if (!shown) {
@@ -137,12 +146,7 @@ const MemoryCard = memo(function MemoryCard({
       onPressOut={() => {
         scale.value = withSpring(1, LightMotion.soft);
       }}
-      style={[
-        s.cardWrapper,
-        Platform.OS !== "web" && getLanguageDirection(languageCode) === "ltr"
-          ? { direction: "ltr" }
-          : undefined,
-      ]}
+      style={[s.cardWrapper, ltrBoundary]}
     >
       {/* Front Side (Face Down — Question Mark) */}
       <Animated.View
@@ -240,6 +244,7 @@ const MemoryCard = memo(function MemoryCard({
         )}
       </Animated.View>
     </Pressable>
+    </LayoutDirectionProvider>
   );
 });
 

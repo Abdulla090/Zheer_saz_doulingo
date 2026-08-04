@@ -89,6 +89,8 @@ export class LivePcmPlayer {
   private writeChain: Promise<void> = Promise.resolve();
   private generation = 0;
   private lastStatus: any = null;
+  private queuedAudioBytes = 0;
+  private playbackStarted = false;
 
   constructor(
     private onPlayingStateChange?: (isPlaying: boolean) => void,
@@ -101,16 +103,26 @@ export class LivePcmPlayer {
   }
 
   /**
-   * Buffer threshold: ~0.33s of 24kHz 16-bit mono PCM.
-   * Larger buffers reduce the stop-start feel from very small audio fragments.
+   * Keep native playback away from tiny WAV boundaries. Gemini emits many
+   * small PCM messages; opening one native source for each message clips the
+   * first/last samples and lets Android fall behind between tracks.
    */
-  private static BUFFER_THRESHOLD = 16_384;
+  private static BUFFER_THRESHOLD = 32_768;
+
+  /**
+   * Do not start until roughly two buffered sources are ready, unless the
+   * server has already completed the turn. This gives the native playlist a
+   * runway before the first track can finish.
+   */
+  private static START_BUFFER_THRESHOLD = 65_536;
 
   /**
    * Flush delay: how long to wait for more data before flushing a partial buffer.
    * Shorter = lower latency for the first audible tutor response.
    */
-  private static FLUSH_DELAY_MS = 28;
+  private static FLUSH_DELAY_MS = 160;
+
+  private static DRAIN_CONFIRMATION_DELAY_MS = 160;
 
   private reportPlaybackError(message: string, error?: unknown) {
     console.warn(message, error);
@@ -149,6 +161,7 @@ export class LivePcmPlayer {
           !this.paused
         ) {
           this.playRequested = false;
+          this.playbackStarted = true;
           try {
             this.playlist?.play();
           } catch (error) {
@@ -183,12 +196,21 @@ export class LivePcmPlayer {
       return;
     }
 
+    if (
+      !this.playbackStarted &&
+      !this.turnComplete &&
+      this.queuedAudioBytes < LivePcmPlayer.START_BUFFER_THRESHOLD
+    ) {
+      return;
+    }
+
     if (!playlist.isLoaded) {
       this.playRequested = true;
       return;
     }
 
     this.playRequested = false;
+    this.playbackStarted = true;
     try {
       playlist.play();
     } catch (error) {
@@ -232,14 +254,31 @@ export class LivePcmPlayer {
     }
   }
 
-  private flushBuffer(): Promise<void> {
+  private flushBuffer(finalizePartial = false): Promise<void> {
     this.flushTimeout = null;
     if (this.destroyed || this.pendingBytes.length === 0) {
       return this.writeChain;
     }
 
-    const pcmBytes = this.pendingBytes;
-    this.pendingBytes = new Uint8Array(0);
+    // PCM is 16-bit. Keep an odd trailing byte attached to the next server
+    // fragment; only pad it on the final flush so no response tail is lost.
+    let evenLength = this.pendingBytes.length - (this.pendingBytes.length % 2);
+    if (evenLength === 0) {
+      if (!finalizePartial) return this.writeChain;
+      const padded = new Uint8Array(2);
+      padded[0] = this.pendingBytes[0] ?? 0;
+      this.pendingBytes = padded;
+      evenLength = 2;
+    } else if (finalizePartial && evenLength < this.pendingBytes.length) {
+      const padded = new Uint8Array(evenLength + 2);
+      padded.set(this.pendingBytes.subarray(0, evenLength));
+      padded[evenLength] = this.pendingBytes[evenLength] ?? 0;
+      this.pendingBytes = padded;
+      evenLength += 2;
+    }
+
+    const pcmBytes = this.pendingBytes.slice(0, evenLength);
+    this.pendingBytes = this.pendingBytes.slice(evenLength);
     const generation = this.generation;
     this.pendingWrites += 1;
 
@@ -281,6 +320,7 @@ export class LivePcmPlayer {
         return;
       }
       this.generatedFiles.push(uri);
+      this.queuedAudioBytes += pcmBytes.length;
       const existingPlaylist = this.playlist;
       const playlist = this.ensurePlaylist(existingPlaylist ? undefined : uri);
 
@@ -308,9 +348,8 @@ export class LivePcmPlayer {
           playlist.skipTo(appendedIndex);
         }
 
-        // The old status describes a shorter playlist and must never be used
-        // to declare this newly-extended queue drained.
-        this.lastStatus = null;
+        // maybeReportQueueDrained() also requires a matching track count, so
+        // a status emitted for the shorter queue cannot drain this extension.
       }
       this.requestPlayback();
     } catch (error) {
@@ -333,6 +372,8 @@ export class LivePcmPlayer {
   private resetCompletedTurn() {
     this.lastStatus = null;
     this.playRequested = false;
+    this.queuedAudioBytes = 0;
+    this.playbackStarted = false;
     try {
       this.playlist?.clear();
     } catch {
@@ -402,7 +443,7 @@ export class LivePcmPlayer {
       ) {
         this.finishQueue();
       }
-    }, 100);
+    }, LivePcmPlayer.DRAIN_CONFIRMATION_DELAY_MS);
   }
 
   private finishQueue() {
@@ -423,10 +464,13 @@ export class LivePcmPlayer {
       this.flushTimeout = null;
     }
     if (this.pendingBytes.length > 0) {
-      await this.flushBuffer();
+      await this.flushBuffer(true);
     } else {
       await this.writeChain;
     }
+    // The last buffer may have been written while turnComplete was still
+    // false, so the normal append path intentionally did not start it.
+    this.requestPlayback();
     this.maybeReportQueueDrained(this.lastStatus);
   }
 
@@ -486,6 +530,9 @@ export class LivePcmPlayer {
       this.flushTimeout = null;
     }
     this.pendingBytes = new Uint8Array(0);
+    this.queuedAudioBytes = 0;
+    this.playbackStarted = false;
+    this.lastStatus = null;
     this.playRequested = false;
     if (this.idleTimer) {
       clearTimeout(this.idleTimer);

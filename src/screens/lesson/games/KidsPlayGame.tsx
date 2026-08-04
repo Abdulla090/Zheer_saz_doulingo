@@ -5,6 +5,7 @@
 
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
+import { LayoutDirectionProvider, useLayoutDirection } from "../../../i18n/layout-direction";
 import { HomeLiquidButton, HomeLiquidCard } from "../../../components/ui/ios-liquid-home";
 import { KidsPlayQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -144,14 +145,18 @@ function FloatingBubble({
     transform: [{ scale: bubbleScale.value }],
   }));
 
+  const bubbleDirection = getLanguageDirection(languageCode);
+  const ambientDirection = useLayoutDirection();
+  const ltrBoundary =
+    Platform.OS !== "web" && bubbleDirection === "ltr"
+      ? ({ direction: "ltr" } as const)
+      : undefined;
+
   return (
+    <LayoutDirectionProvider value={ltrBoundary ? "ltr" : ambientDirection}>
     <Animated.View style={[style, kb.bubbleWrap]} entering={FadeInDown.delay(index * 80).duration(320)}>
       <Pressable
-        style={
-          Platform.OS !== "web" && getLanguageDirection(languageCode) === "ltr"
-            ? { direction: "ltr" }
-            : undefined
-        }
+        style={ltrBoundary}
         onPress={() => {
           if (disabled) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -177,6 +182,7 @@ function FloatingBubble({
         </Animated.View>
       </Pressable>
     </Animated.View>
+    </LayoutDirectionProvider>
   );
 }
 export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {

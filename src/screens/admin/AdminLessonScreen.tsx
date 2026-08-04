@@ -303,6 +303,8 @@ function previewSummary(g: ReturnType<typeof previewLessonQuestions>[number]): s
       return `${g.prompt} → ${g.targetWord}`;
     case "sentence_builder":
       return g.kurdishSentence;
+    case "listen_build":
+      return g.sentence;
     case "fill_blank":
       return `${g.sentenceParts[0]}_${g.sentenceParts[1]}`;
     case "conversation_pick":

@@ -53,7 +53,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         label: t("games.xpEarned"),
         shortLabel: "XP",
         value: totalXp.toLocaleString(),
-        accent: "#2AA9E8",
+        accent: "#FF9600",
         Icon: Gem,
       },
       {
@@ -121,8 +121,6 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
               forceLatinFont={!isRtl}
               latinRole="bold"
               numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.68}
             >
               {item.value}
             </AppText>

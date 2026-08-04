@@ -20,7 +20,7 @@ import { useTTS } from "../../../hooks/use-tts";
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { L, LightType } from "./lesson-light-design";
+import { Duo, LightType } from "./lesson-light-design";
 import {
   LightGameHeading,
   LightWordTile,
@@ -54,6 +54,7 @@ const MatchChip = memo(function MatchChip({
   rtl,
   forceLatinFont,
   isKids,
+  isNormal,
   languageCode,
 }: {
   label: string;
@@ -63,6 +64,7 @@ const MatchChip = memo(function MatchChip({
   rtl?: boolean;
   forceLatinFont?: boolean;
   isKids?: boolean;
+  isNormal?: boolean;
   languageCode?: string;
 }) {
   const shakeX = useSharedValue(0);
@@ -93,11 +95,12 @@ const MatchChip = memo(function MatchChip({
         languageCode={languageCode}
         wrapLabel
         centerLabel
-        fitLabel
+        // Normal path wraps instead of shrinking — the tile grows to the text.
+        fitLabel={!isNormal}
         fitLabelLines={3}
         isKids={isKids}
-        fontSize={isKids ? 19 : 17}
-        style={s.pairTile}
+        fontSize={isNormal ? undefined : isKids ? 19 : 17}
+        style={isNormal ? s.pairTileDuo : s.pairTile}
       />
     </Animated.View>
   );
@@ -279,6 +282,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
                 matched={matched.has(lw)}
                 languageCode={question.sourceLanguage}
                 isKids={isKids}
+                isNormal={pathMode === "normal"}
               />
             ))}
           </View>
@@ -293,6 +297,7 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
                 matched={matched.has(rw)}
                 languageCode={question.targetLanguage}
                 isKids={isKids}
+                isNormal={pathMode === "normal"}
               />
             ))}
           </View>
@@ -331,16 +336,16 @@ const s = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 3,
-    backgroundColor: L.track,
+    backgroundColor: Duo.border,
   },
   progressPipDone: {
-    backgroundColor: L.green,
+    backgroundColor: Duo.green,
   },
   progressLabel: {
     minWidth: 36,
     fontSize: 13,
     fontWeight: "800",
-    color: L.gray,
+    color: Duo.hare,
     fontFamily: "DINNextRoundedBold",
     textAlign: "right",
   },
@@ -382,6 +387,12 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 24,
+  },
+  pairTileDuo: {
+    width: "100%",
+    minHeight: 78,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
   },
   bottomSpacer: {
     flexGrow: 0,

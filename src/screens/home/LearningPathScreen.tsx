@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
 
 import type { PathMode } from "../../stores/useSettingsStore";
+import { isPathEnabled, resolvePathMode } from "../../constants/path-availability";
 
 function parseMode(raw: string | string[] | undefined): PathMode | null {
   if (raw == null) return null;
@@ -35,10 +36,14 @@ export function LearningPathScreen({
 }) {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const savedMode = useSettingsStore((s) => s.pathMode);
-  const activeMode = overrideMode ?? parseMode(params.mode) ?? savedMode;
+  // A paused path can still be requested by a stale deep link or an old
+  // in-app route, so the resolved mode is always coerced to an enabled one.
+  const activeMode = resolvePathMode(
+    overrideMode ?? parseMode(params.mode) ?? savedMode,
+  );
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  
+
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
@@ -102,13 +107,23 @@ export function LearningPathScreen({
   // Lazy rendering: only the active tab mounts; inactive tabs are fully unmounted
   const renderActiveContent = () => {
     switch (activeMode) {
-      case "normal":
-        return <NormalEnglishPathScreen topChromeHeight={topChromeHeight} />;
       case "kids":
-        return <KidsEnglishPathScreen topChromeHeight={topChromeHeight} />;
+        // Unreachable while kids is paused — resolvePathMode() rewrites it to
+        // normal above. Kept so re-enabling the flag needs no change here.
+        return isPathEnabled("kids") ? (
+          <KidsEnglishPathScreen topChromeHeight={topChromeHeight} />
+        ) : (
+          <NormalEnglishPathScreen topChromeHeight={topChromeHeight} />
+        );
       case "street":
+        return isPathEnabled("street") ? (
+          <StreetEnglishPathScreen topChromeHeight={topChromeHeight} />
+        ) : (
+          <NormalEnglishPathScreen topChromeHeight={topChromeHeight} />
+        );
+      case "normal":
       default:
-        return <StreetEnglishPathScreen topChromeHeight={topChromeHeight} />;
+        return <NormalEnglishPathScreen topChromeHeight={topChromeHeight} />;
     }
   };
 

@@ -1,13 +1,11 @@
- 
 import { KidsGameImage } from "../../../components/kids/KidsGameImage";
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState, useMemo, useCallback } from "react";
-import { ScrollView, StyleSheet, View, Platform } from "react-native";
+import { ScrollView, StyleSheet, View, Platform, Pressable } from "react-native";
 import Animated, {
   FadeInUp,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-
 import { ImageMultipleChoiceQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useTTS } from "../../../hooks/use-tts";
@@ -21,6 +19,8 @@ import {
   LightGameHeading,
   LightWordTile,
 } from "./lesson-light-primitives";
+import { Duo } from "./lesson-light-design";
+import { AppText } from "../../../components/ui/AppText";
 import { crossShadow } from "../../../utils/shadows";
 import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
 import { useThemeColors } from "../../../hooks/useThemeColors";
@@ -51,9 +51,10 @@ export default function ImageMultipleChoiceGame({
   questionIndex,
   totalQuestions,
 }: Props) {
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
   const { t } = useI18n();
   const { speak } = useTTS();
+  const isNormal = pathMode === "normal";
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
@@ -128,20 +129,19 @@ export default function ImageMultipleChoiceGame({
         <GameHeader>
           <LightGameHeading
             title={t("lessons.imageChoiceTitle")}
-            subtitle={t("lessons.imageChoiceSub")}
             badge={kidsBadgeText}
           />
         </GameHeader>
 
         <Animated.View
           entering={FadeInUp.duration(400).springify()}
-          style={[s.imageCard, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }, crossShadow({
-            color: "#1A2B48",
-            offsetY: 10,
-            blur: 24,
-            opacity: 0.1,
-            elevation: 5,
-          })]}
+          style={[
+            s.imageCard,
+            // Normal path shows the illustration bare — no frame, wider crop.
+            isNormal
+              ? s.imageCardFlush
+              : { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+          ]}
         >
           <KidsGameImage
             source={question.image}
@@ -163,7 +163,7 @@ export default function ImageMultipleChoiceGame({
                   isKids={pathMode === "kids"}
                   fontSize={18}
                   centerLabel
-                  fitLabel
+                  fitLabel={!isNormal}
                   fitLabelLines={3}
                   languageCode={question.targetLanguage}
                   style={s.choiceTile}
@@ -174,11 +174,25 @@ export default function ImageMultipleChoiceGame({
         </View>
 
         <View style={s.listenBtnContainer}>
-          <HomeLiquidButton
-            label={t("lessons.listenLabel")}
-            color="#8B5CF6"
-            onPress={handleListen}
-          />
+          {(pathMode === "kids" || isDark) && !isNormal ? (
+            <HomeLiquidButton
+              label={t("lessons.listenLabel")}
+              color="#8B5CF6"
+              onPress={handleListen}
+            />
+          ) : (
+            <Pressable
+              onPress={handleListen}
+              style={({ pressed }) => [
+                s.duoListenBtn,
+                pressed && s.duoListenBtnPressed,
+              ]}
+            >
+              <AppText style={s.duoListenBtnText} forceLatinFont latinRole="bold">
+                {t("lessons.listenLabel").toUpperCase()}
+              </AppText>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
 
@@ -201,20 +215,31 @@ const s = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 24,
-    gap: 16,
+    gap: 24,
   },
   imageCard: {
     alignSelf: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Duo.snow,
     padding: 12,
-    borderRadius: 24,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: Duo.border,
+    borderBottomWidth: 4,
+    borderBottomColor: Duo.borderDark,
     marginVertical: 10,
     width: 220,
     height: 180,
+  },
+  imageCardFlush: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderBottomWidth: 0,
+    padding: 0,
+    width: "100%",
+    height: 210,
+    marginVertical: 4,
   },
   heroImage: {
     width: "100%",
@@ -234,13 +259,33 @@ const s = StyleSheet.create({
   choiceTile: {
     width: "100%",
     height: 64,
-    borderRadius: 18,
+    borderRadius: 12,
   },
   listenBtnContainer: {
     width: "100%",
     alignItems: "center",
     marginTop: 16,
     marginBottom: 8,
+  },
+  duoListenBtn: {
+    height: 48,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: Duo.accent,
+    borderBottomWidth: 4,
+    borderBottomColor: Duo.accentDark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  duoListenBtnPressed: {
+    transform: [{ translateY: 2 }],
+    borderBottomWidth: 2,
+  },
+  duoListenBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 0.8,
   },
   footer: {
     paddingHorizontal: 20,

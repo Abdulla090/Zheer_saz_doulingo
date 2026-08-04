@@ -34,6 +34,7 @@ import {
 import { PressableScale } from "../../components/animations";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
 import { AppText } from "../../components/ui/AppText";
+import { DirectionBoundary } from "../../i18n/layout-direction";
 import {
   HomeMeshBackground,
   HomePalette as C,
@@ -607,7 +608,7 @@ export default function ReadingPracticeScreen() {
     }
 
     return (
-      <View style={[styles.wordWrap, { direction: "ltr" }]}>
+      <DirectionBoundary direction="ltr" style={styles.wordWrap}>
         {evaluation.wordResults.map((item, index) => (
           <AppText
             key={`${item.word}-${index}`}
@@ -622,7 +623,7 @@ export default function ReadingPracticeScreen() {
             {item.word}{" "}
           </AppText>
         ))}
-      </View>
+      </DirectionBoundary>
     );
   };
 
@@ -943,9 +944,10 @@ export default function ReadingPracticeScreen() {
                 {isKu ? "هەڵسەنگاندنی ڕستەکان" : "Sentence check"}
               </AppText>
               {evaluation.sentenceResults.map((sentence, index) => (
-                <View
+                <DirectionBoundary
                   key={`${sentence.sentence}-${index}`}
-                  style={[styles.sentenceResult, { direction: "ltr" }]}
+                  direction="ltr"
+                  style={styles.sentenceResult}
                 >
                   <View
                     style={[
@@ -976,7 +978,7 @@ export default function ReadingPracticeScreen() {
                   >
                     {sentence.score}%
                   </AppText>
-                </View>
+                </DirectionBoundary>
               ))}
             </View>
 

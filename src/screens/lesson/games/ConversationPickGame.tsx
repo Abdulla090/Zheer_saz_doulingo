@@ -33,10 +33,9 @@ import {
   GameOption,
 
   GameRoot,
-
 } from "./GameAnimatedShell";
 
-import { L } from "./lesson-light-design";
+import { Duo } from "./lesson-light-design";
 
 import {
 
@@ -214,6 +213,7 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
           s.checkWrap,
           { backgroundColor: colors.background, borderTopColor: colors.border },
           pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 },
+          pathMode === "normal" && s.checkWrapDuo,
         ]}>
           <LightCheckButton
             label={t("lessons.check")}
@@ -238,11 +238,11 @@ const s = StyleSheet.create({
 
     paddingHorizontal: 20,
 
-    paddingTop: 8,
+    paddingTop: 12,
 
     paddingBottom: 100,
 
-    gap: 14,
+    gap: 24,
 
   },
 
@@ -252,7 +252,7 @@ const s = StyleSheet.create({
 
     fontWeight: "700",
 
-    color: L.gray,
+    color: Duo.hare,
 
     fontFamily: "DINNextRoundedBold",
 
@@ -260,7 +260,7 @@ const s = StyleSheet.create({
 
   },
 
-  options: { gap: 10 },
+  options: { gap: 12 },
 
   checkWrap: {
 
@@ -270,12 +270,19 @@ const s = StyleSheet.create({
 
     paddingTop: 8,
 
-    backgroundColor: L.bg,
+    backgroundColor: Duo.snow,
 
     borderTopWidth: 1,
 
-    borderTopColor: L.border,
+    borderTopColor: Duo.border,
 
+  },
+
+  checkWrapDuo: {
+    borderTopWidth: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
   },
 
 });

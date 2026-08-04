@@ -26,6 +26,8 @@ export type IOSPressableProps = PressableProps & {
   /** Compatibility with TouchableOpacity while migrating older controls. */
   activeOpacity?: number;
   pressScale?: number;
+  /** Set to true in heavy virtualized lists to bypass Reanimated shared value allocation */
+  inList?: boolean;
 };
 
 /** Current iOS compression and release motion without overriding semantic colors. */
@@ -34,6 +36,7 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
     {
       activeOpacity = IOS_BUTTON_PRESS_OPACITY,
       pressScale = IOS_BUTTON_PRESS_SCALE,
+      inList = false,
       disabled,
       onPressIn,
       onPressOut,
@@ -42,6 +45,32 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
     },
     ref,
   ) {
+    if (inList) {
+      return (
+        <Pressable
+          ref={ref}
+          {...props}
+          disabled={disabled}
+          /*
+           * Forward the press callbacks explicitly. They are destructured out of
+           * `props` above (so this branch can skip Reanimated), which silently
+           * dropped them: any `inList` consumer running its own press animation
+           * off onPressIn/onPressOut got no events at all. The path nodes were
+           * built exactly that way, so their 3D press travel never ran.
+           */
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          style={(state) => {
+            const baseStyle = typeof style === "function" ? style(state) : style;
+            return [
+              baseStyle,
+              { borderCurve: "continuous" as const },
+              state.pressed && { opacity: activeOpacity },
+            ];
+          }}
+        />
+      );
+    }
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
     const translateY = useSharedValue(0);

@@ -30,8 +30,10 @@ const PATH_UNITS: [BundledLessonPathMode, typeof ALL_UNITS][] = [
 
 const EXPECTED_GAME_TYPES: Record<BundledLessonPathMode, string[]> = {
   street: [
+    "conversation_complete",
     "conversation_pick",
     "fill_blank",
+    "listen_build",
     "multiple_choice",
     "pair_match",
     "paragraph_speech",
@@ -39,8 +41,10 @@ const EXPECTED_GAME_TYPES: Record<BundledLessonPathMode, string[]> = {
     "voice",
   ],
   normal: [
+    "conversation_complete",
     "conversation_pick",
     "fill_blank",
+    "listen_build",
     "multiple_choice",
     "pair_match",
     "paragraph_speech",
@@ -51,6 +55,7 @@ const EXPECTED_GAME_TYPES: Record<BundledLessonPathMode, string[]> = {
     "fill_blank",
     "image_multiple_choice",
     "image_pair_match",
+    "listen_build",
     "memory_flip",
     "multiple_choice",
     "pair_match",

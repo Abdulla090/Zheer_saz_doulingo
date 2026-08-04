@@ -17,6 +17,7 @@ import {
 import { TAB_FAB_ROUTE } from "../constants/tab-order";
 import { useI18n } from "../hooks/useI18n";
 import type { I18nKey } from "../i18n";
+import { LayoutDirectionProvider } from "../i18n/layout-direction";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { BlurView } from "expo-blur";
 import { router, usePathname } from "expo-router";
@@ -324,7 +325,10 @@ export function CustomTabBar({
   ];
 
   const tabButtons = (
-    <>
+    /* The bar keeps a fixed physical tab order in every UI language (see
+       `contentStyle`), so its labels must not compensate for the app's RTL
+       layout either. */
+    <LayoutDirectionProvider value="ltr">
       {Platform.OS === "android" ? (
         <Animated.View
           pointerEvents="none"
@@ -431,7 +435,7 @@ export function CustomTabBar({
             />
           );
         })}
-    </>
+    </LayoutDirectionProvider>
   );
 
   return (

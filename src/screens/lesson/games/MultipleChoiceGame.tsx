@@ -7,7 +7,7 @@ import { useI18n } from "../../../hooks/useI18n";
 import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { MultipleChoiceQuestion } from "../../../data/lesson-content";
+import { MultipleChoiceQuestion, mcHeadingKey } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import {
   GameFooter,
@@ -89,7 +89,7 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
       >
         <GameHeader>
           <LightGameHeading
-            title={t("lessons.chooseAnswer")}
+            title={t(mcHeadingKey(question.promptKind))}
             badge={kidsBadgeText}
           />
         </GameHeader>
@@ -140,11 +140,11 @@ const s = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 24,
-    gap: 16,
+    gap: 24,
   },
-  options: { gap: 14 },
+  options: { gap: 12 },
   footer: {
     paddingHorizontal: 20,
     paddingBottom: 12,

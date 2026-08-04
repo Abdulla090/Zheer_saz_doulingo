@@ -50,6 +50,10 @@ import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrom
 import {
   ONBOARDING_DESIGN,
 } from "./components/onboarding-design";
+import {
+  ONBOARDING_TOTAL_STEPS,
+  onboardingStepNumber,
+} from "./onboarding-steps";
 
 export type OnboardingSetupStep = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
 
@@ -378,7 +382,6 @@ export function LanguageSelectionFlow({
             accessibilityState={{ checked: isSelected }}
             style={[
               styles.languageRow,
-              isRtl && styles.languageRowRtl,
               isSelected && styles.languageRowSelected,
             ]}
             activeOpacity={0.82}
@@ -472,6 +475,11 @@ export function LanguageSelectionFlow({
     else onBackToIntro();
   }, [onBackToIntro, step]);
 
+  /**
+   * Local page position (1-5) for the background gradient only — it pans across
+   * this sub-flow's own pages. Progress *reporting* uses
+   * `onboardingStepNumber(step)` so the bar stays correct if slides are added.
+   */
   const stepIndex =
     step === "nativeLanguage"
       ? 1
@@ -482,6 +490,8 @@ export function LanguageSelectionFlow({
           : step === "level"
             ? 4
             : 5;
+
+  const progressStep = onboardingStepNumber(step);
 
   const continueDisabled = step === "profile" && !name.trim();
   const continueLabel = step === "goal" ? copy.start : copy.continue;
@@ -513,8 +523,8 @@ export function LanguageSelectionFlow({
     <View style={styles.root}>
       {!isDark && <OnboardingSkiaBg scrollX={bgScrollX} />}
       <OnboardingTopBar
-        current={stepIndex + 3}
-        total={9}
+        current={progressStep}
+        total={ONBOARDING_TOTAL_STEPS}
         locale={selectedNativeLang}
         topInset={insets.top}
         onBack={onBack}
@@ -660,7 +670,6 @@ export function LanguageSelectionFlow({
                     accessibilityState={{ checked: isSelected }}
                     style={[
                       styles.gridCard,
-                      isRtl && styles.selectionRowRtl,
                       isSelected && styles.gridCardSelected,
                     ]}
                     activeOpacity={0.8}
@@ -716,7 +725,6 @@ export function LanguageSelectionFlow({
                     accessibilityState={{ checked: isSelected }}
                     style={[
                       styles.gridCard,
-                      isRtl && styles.selectionRowRtl,
                       isSelected && styles.gridCardSelected,
                     ]}
                     activeOpacity={0.8}
@@ -779,8 +787,8 @@ export function LanguageSelectionFlow({
           onPress={handleCurrentContinue}
           disabled={continueDisabled}
           hint={setupError ?? undefined}
-          current={stepIndex + 3}
-          total={9}
+          current={progressStep}
+          total={ONBOARDING_TOTAL_STEPS}
         />
       ) : null}
       </KeyboardAvoidingView>
@@ -832,7 +840,8 @@ function createStyles(colors: any, isDark: boolean, isCompact: boolean) {
   stepNumLabel: {
     fontSize: isCompact ? 13 : 15,
     fontWeight: "600",
-    color: ONBOARDING_DESIGN.orange,
+    // Small accent type needs the text-safe accent, not the graphic one.
+    color: ONBOARDING_DESIGN.accentInk,
     letterSpacing: 0.4,
     marginBottom: isCompact ? 5 : 8,
     textAlign: "left",
@@ -943,12 +952,9 @@ function createStyles(colors: any, isDark: boolean, isCompact: boolean) {
     borderColor: ONBOARDING_DESIGN.hairline,
     backgroundColor: ONBOARDING_DESIGN.paperRaised,
   },
-  languageRowRtl: {
-    flexDirection: "row-reverse",
-  },
   languageRowSelected: {
-    borderColor: ONBOARDING_DESIGN.orange,
-    backgroundColor: "#FFF7ED",
+    borderColor: ONBOARDING_DESIGN.accent,
+    backgroundColor: ONBOARDING_DESIGN.accentWash,
   },
   languageCopy: {
     flex: 1,
@@ -979,11 +985,8 @@ function createStyles(colors: any, isDark: boolean, isCompact: boolean) {
     gap: 12,
   },
   gridCardSelected: {
-    borderColor: ONBOARDING_DESIGN.orange,
-    backgroundColor: "#FFF7ED",
-  },
-  selectionRowRtl: {
-    flexDirection: "row-reverse",
+    borderColor: ONBOARDING_DESIGN.accent,
+    backgroundColor: ONBOARDING_DESIGN.accentWash,
   },
   flagWrap: {
     width: 42,

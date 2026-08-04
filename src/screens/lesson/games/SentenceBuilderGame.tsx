@@ -32,7 +32,7 @@ import Animated, {
 
 import { SentenceBuilderQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { L } from "./lesson-light-design";
+import { L, Duo } from "./lesson-light-design";
 import {
   LightCheckButton,
   LightGameHeading,
@@ -46,6 +46,18 @@ import {
   GameRoot,
 } from "./GameAnimatedShell";
 import { measureGameElement } from "./game-layout-measure";
+import {
+  MIN_RAILS,
+  RAIL_DROP,
+  RAIL_H,
+  RAIL_RADIUS,
+  ROW_GAP,
+  ROW_H,
+  ROW_STRIDE,
+  TILE_GAP,
+  estimateRailCount,
+  linesFromHeight,
+} from "./duo-answer-rails";
 
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
@@ -71,7 +83,12 @@ type Props = {
   pathMode?: LessonPathMode;
 };
 
-function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; languageCode?: string }) {
+/*
+ * Duolingo answer-area geometry lives in `duo-answer-rails` — see the note there
+ * about why line boxes are pinned rather than content-sized.
+ */
+
+function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; isNormal?: boolean; languageCode?: string }) {
   const flyProgress = useSharedValue(0);
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
@@ -104,10 +121,14 @@ function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlyS
             state="pending"
             isKids={isKids}
             languageCode={languageCode}
-            fitLabel
+            fitLabel={!isNormal}
             fitLabelLines={2}
-            fontSize={session.word.length > 12 ? 10 : session.word.length > 9 ? 11 : 14}
-            style={s.flyWordTile}
+            fontSize={
+              isNormal
+                ? undefined
+                : session.word.length > 12 ? 10 : session.word.length > 9 ? 11 : 14
+            }
+            style={isNormal ? s.flyWordTileDuo : s.flyWordTile}
           />
         </View>
       </Animated.View>
@@ -120,6 +141,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const { colors, isDark } = useThemeColors();
   const { width } = useWindowDimensions();
   const compact = width < 390;
+  const isNormal = pathMode === "normal";
   const targetDirection = getLanguageDirection(question.targetLanguage);
   
   const shuffledWordBank = React.useMemo(() => {
@@ -137,6 +159,10 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   );
   const [fb, setFb] = useState<FBState>("idle");
   const [flySessions, setFlySessions] = useState<FlySession[]>([]);
+  /** Lines the placed words actually occupy — drives how many rails are drawn. */
+  const [placedLines, setPlacedLines] = useState(1);
+  /** Usable width of the answer area, used to pre-compute the rail count. */
+  const [answerWidth, setAnswerWidth] = useState(0);
 
   const slotN = useRef(0);
   const completedRef = useRef(false);
@@ -163,6 +189,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     setUsedBank(shuffledWordBank.map(() => false));
     setFb("idle");
     setFlySessions([]);
+    setPlacedLines(1);
     slotN.current = 0;
     completedRef.current = false;
     wrongSentRef.current = false;
@@ -246,12 +273,15 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           fromH: bank.h,
           toX: slot.x - root.x,
           toY: slot.y - root.y,
-          toW: slot.w,
-          toH: slot.h,
+          // Normal path words keep their own width end to end — the landing
+          // anchor is a zero-width marker, so resizing to it would collapse the
+          // tile mid-flight. Street/kids fly into fixed-size slots.
+          toW: isNormal ? bank.w : slot.w,
+          toH: isNormal ? bank.h : slot.h,
         },
       ]);
     },
-    [fb, usedBank, sentence.length, flySessions.length, slotCount, shuffledWordBank, commitAddWord],
+    [fb, usedBank, sentence.length, flySessions.length, slotCount, shuffledWordBank, commitAddWord, isNormal],
   );
 
   const addWord = (bankIndex: number) => {
@@ -310,6 +340,18 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
   const canCheck = sentence.length + flySessions.length > 0 && fb !== "correct";
 
+  /*
+   * Rails are sized for the *whole* answer up front so the area never grows a
+   * rail mid-solve, then `placedLines` (measured) can only push it higher — an
+   * under-estimate corrects itself the moment the words actually wrap.
+   */
+  const answerRails = Math.max(
+    MIN_RAILS,
+    placedLines,
+    estimateRailCount(question.correctWords, answerWidth),
+  );
+  const railColor = isDark ? colors.border : Duo.rail;
+
   return (
     <GameRoot style={{ flex: 1 }}>
       <View
@@ -346,83 +388,155 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               {question.kurdishSentence}
             </LightQuestionPrompt>
 
-            <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <Animated.View
-                {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
-                style={[
-                  s.slotsRow,
-                  { flexDirection: "row" },
-                  Platform.OS !== "web" ? { direction: targetDirection } : undefined,
-                ]}
-              >
-                {(() => {
-                  const slotsArray = Array.from({ length: slotCount }).map((_, i) => i);
-                  return slotsArray.map((i) => {
-                    const placed = sentence[i];
-                    const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
+            <Animated.View style={[s.slotsWrap, isNormal && s.slotsWrapDuo, shakeStyle]}>
+              {isNormal ? (
+                /*
+                 * Duolingo answer area: two full-width rails with the chosen
+                 * words resting on the top one. Words keep their natural width
+                 * and wrap, so long words are never squeezed — the rails are
+                 * decoration behind a normal wrapping row, not a grid.
+                 */
+                <View
+                  style={[s.duoAnswerArea, { height: answerRails * ROW_STRIDE }]}
+                  onLayout={(e) => setAnswerWidth(e.nativeEvent.layout.width)}
+                >
+                  {Array.from({ length: answerRails }).map((_, i) => (
+                    <View
+                      key={`rail-${i}`}
+                      pointerEvents="none"
+                      style={[
+                        s.duoRail,
+                        { top: i * ROW_STRIDE + ROW_H + RAIL_DROP, backgroundColor: railColor },
+                      ]}
+                    />
+                  ))}
+                  <Animated.View
+                    {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+                    style={[
+                      s.duoPlacedRow,
+                      { flexDirection: "row" },
+                      Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+                    ]}
+                    onLayout={(e) =>
+                      setPlacedLines(linesFromHeight(e.nativeEvent.layout.height))
+                    }
+                  >
+                    {sentence.map((placed, i) => {
+                      const hideWhileFlying = flySessions.some(
+                        (f) => f.slotIndex === i && f.bankIndex === placed.bankIndex,
+                      );
+                      if (hideWhileFlying) return null;
+                      return (
+                        <View
+                          key={placed.id}
+                          ref={(r) => {
+                            slotRefs.current[i] = r;
+                          }}
+                          onLayout={() => {
+                            slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                              slotCoords.current[i] = { x, y, w, h };
+                            });
+                          }}
+                          collapsable={false}
+                          style={s.duoPlacedCell}
+                        >
+                          <LightWordTile
+                            label={placed.word}
+                            state={slotTileState(i)}
+                            onPress={() => removeFromSlot(i)}
+                            languageCode={question.targetLanguage}
+                            style={s.duoWordTile}
+                          />
+                        </View>
+                      );
+                    })}
+                    {/* Measurement anchor for the next incoming word. */}
+                    <View
+                      ref={(r) => {
+                        slotRefs.current[sentence.length] = r;
+                      }}
+                      onLayout={() => {
+                        slotRefs.current[sentence.length]?.measureInWindow((x, y, w, h) => {
+                          slotCoords.current[sentence.length] = { x, y, w, h };
+                        });
+                      }}
+                      collapsable={false}
+                      style={s.duoLandingAnchor}
+                    />
+                  </Animated.View>
+                </View>
+              ) : (
+                <Animated.View
+                  {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+                  style={[
+                    s.slotsRow,
+                    { flexDirection: "row" },
+                    Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+                  ]}
+                >
+                  {(() => {
+                    const slotsArray = Array.from({ length: slotCount }).map((_, i) => i);
+                    return slotsArray.map((i) => {
+                      const placed = sentence[i];
+                      const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
 
-                    return (
-                      <View
-                        key={`slot-${i}`}
-                        ref={(r) => {
-                          slotRefs.current[i] = r;
-                        }}
-                        onLayout={() => {
-                          slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                            slotCoords.current[i] = { x, y, w, h };
-                          });
-                        }}
-                        collapsable={false}
-                        style={s.slotCell}
-                      >
-                        {placed && !hideWhileFlying ? (
-                          <Animated.View
-                            collapsable={false}
-                          >
-                            <LightWordTile
-                              label={placed.word}
-                              state={slotTileState(i)}
-                              onPress={() => removeFromSlot(i)}
-                              isKids={pathMode === "kids"}
-                              languageCode={question.targetLanguage}
-                              fitLabel
-                              fitLabelLines={2}
-                              fontSize={placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14}
-                              style={s.slotWordTile}
-                            />
-                          </Animated.View>
-                        ) : (
-                          <View
-                            style={[
-                              s.emptySlot,
-                              isDark && {
-                                backgroundColor: colors.muted,
-                                borderColor: colors.border,
-                              },
-                            ]}
-                          >
-                            <AppText
-                              style={[s.slotNumber, isDark && { color: colors.mutedForeground }]}
-                              forceLatinFont
-                              latinRole="bold"
+                      return (
+                        <View
+                          key={`slot-${i}`}
+                          ref={(r) => {
+                            slotRefs.current[i] = r;
+                          }}
+                          onLayout={() => {
+                            slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                              slotCoords.current[i] = { x, y, w, h };
+                            });
+                          }}
+                          collapsable={false}
+                          style={s.slotCell}
+                        >
+                          {placed && !hideWhileFlying ? (
+                            <Animated.View
+                              collapsable={false}
                             >
-                              {i + 1}
-                            </AppText>
-                          </View>
-                        )}
-                      </View>
-                    );
-                  });
-                })()}
-              </Animated.View>
+                              <LightWordTile
+                                label={placed.word}
+                                state={slotTileState(i)}
+                                onPress={() => removeFromSlot(i)}
+                                isKids={pathMode === "kids"}
+                                languageCode={question.targetLanguage}
+                                fitLabel
+                                fitLabelLines={2}
+                                fontSize={placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14}
+                                style={s.slotWordTile}
+                              />
+                            </Animated.View>
+                          ) : (
+                            <View
+                              style={[
+                                pathMode === "kids" ? s.emptySlot : s.emptySlotDuo,
+                                isDark && {
+                                  backgroundColor: colors.muted,
+                                  borderColor: colors.border,
+                                },
+                              ]}
+                            />
+                          )}
+                        </View>
+                      );
+                    });
+                  })()}
+                </Animated.View>
+              )}
             </Animated.View>
 
             <View style={s.wordBankSpacer} />
+            {!isNormal ? <View style={s.bankDivider} /> : null}
 
             <Animated.View
               {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
               style={[
                 s.bank,
+                isNormal && s.bankDuo,
                 { flexDirection: "row" },
                 Platform.OS !== "web" ? { direction: targetDirection } : undefined,
               ]}
@@ -431,6 +545,38 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                 const bankItemsArray = shuffledWordBank.map((w, i) => ({ w, i }));
                 return bankItemsArray.map(({ w, i }) => {
                   const taken = usedBank[i];
+
+                  if (isNormal) {
+                    /*
+                     * The lifted word leaves a grey slug of the *same* size
+                     * behind, so the bank never reflows while a word is in the
+                     * answer area — the remaining tiles stay exactly where the
+                     * user last saw them.
+                     */
+                    return (
+                      <View
+                        key={`bank-${i}`}
+                        ref={(el) => { bankRefs.current[i] = el; }}
+                        onLayout={() => {
+                          bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                            bankCoords.current[i] = { x, y, w, h };
+                          });
+                        }}
+                        collapsable={false}
+                        style={s.bankCellDuo}
+                      >
+                        <LightWordTile
+                          label={w}
+                          state={taken ? "ghost" : "idle"}
+                          onPress={taken ? undefined : () => addWord(i)}
+                          disabled={taken || fb === "correct"}
+                          languageCode={question.targetLanguage}
+                          style={s.duoWordTile}
+                        />
+                      </View>
+                    );
+                  }
+
                   return (
                     <View
                       key={`bank-${i}`}
@@ -482,7 +628,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             collapsable={false}
           >
             {flySessions.map(session => (
-              <FlyingTile key={session.id} session={session} onFinish={finishFly} isKids={pathMode === "kids"} languageCode={question.targetLanguage} />
+              <FlyingTile key={session.id} session={session} onFinish={finishFly} isKids={pathMode === "kids"} isNormal={isNormal} languageCode={question.targetLanguage} />
             ))}
           </Animated.View>
         ) : null}
@@ -494,6 +640,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             s.footerWrap,
             { backgroundColor: colors.background, borderTopColor: colors.border },
             pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 },
+            isNormal && s.footerWrapDuo,
           ]}
         >
           <LightCheckButton
@@ -515,9 +662,9 @@ const s = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingBottom: 24,
-    gap: 18,
+    gap: 24,
   },
   exerciseArea: {
     flex: 1,
@@ -529,6 +676,12 @@ const s = StyleSheet.create({
     backgroundColor: L.bg,
     borderTopWidth: 1,
     borderTopColor: L.border,
+  },
+  footerWrapDuo: {
+    borderTopWidth: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
   },
   bank: {
     flexWrap: "wrap",
@@ -551,7 +704,7 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: L.slotDash,
@@ -564,6 +717,61 @@ const s = StyleSheet.create({
     minHeight: 118,
     paddingTop: 16,
     paddingBottom: 6,
+  },
+  slotsWrapDuo: {
+    minHeight: 0,
+    paddingTop: 26,
+    paddingBottom: 0,
+  },
+  duoAnswerArea: {
+    width: "100%",
+    position: "relative",
+  },
+  duoPlacedRow: {
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    alignContent: "flex-start",
+    justifyContent: "flex-start",
+  },
+  /*
+   * Fixed height + bottom margin is what guarantees a wrapped flex line is
+   * exactly ROW_STRIDE tall, which is what keeps every line on its rail.
+   */
+  duoPlacedCell: {
+    height: ROW_H,
+    marginEnd: TILE_GAP,
+    marginBottom: ROW_GAP,
+  },
+  duoLandingAnchor: {
+    width: 1,
+    height: ROW_H,
+    marginBottom: ROW_GAP,
+  },
+  duoRail: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: RAIL_H,
+    borderRadius: RAIL_RADIUS,
+  },
+  duoWordTile: {
+    height: ROW_H,
+    minHeight: ROW_H,
+    paddingHorizontal: 15,
+    paddingVertical: 0,
+  },
+  bankDuo: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    // Duolingo left-aligns the bank: a half-full last row starts at the edge
+    // rather than floating in the middle.
+    justifyContent: "flex-start",
+    alignContent: "flex-start",
+  },
+  bankCellDuo: {
+    height: ROW_H,
+    marginEnd: TILE_GAP,
+    marginBottom: 8,
   },
   slotsRow: {
     flexWrap: "wrap",
@@ -580,7 +788,7 @@ const s = StyleSheet.create({
     maxWidth: 156,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   wordTileCompact: {
     maxWidth: 128,
@@ -591,18 +799,33 @@ const s = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: 2,
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   emptySlot: {
     width: 74,
     height: 48,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: L.slotDash,
     backgroundColor: L.bgSoft,
     alignItems: "center",
     justifyContent: "center",
+  },
+  emptySlotDuo: {
+    width: 74,
+    height: 48,
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: 2,
+    borderBottomColor: Duo.border,
+    backgroundColor: "transparent",
+  },
+  bankDivider: {
+    height: 2,
+    backgroundColor: Duo.border,
+    marginHorizontal: 8,
+    borderRadius: 1,
   },
   slotNumber: {
     color: L.grayLight,
@@ -614,10 +837,6 @@ const s = StyleSheet.create({
     backgroundColor: "#EEF4FF",
   },
   flyLayer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
     zIndex: 40,
   },
@@ -639,6 +858,13 @@ const s = StyleSheet.create({
     minHeight: 0,
     paddingHorizontal: 2,
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: 12,
+  },
+  flyWordTileDuo: {
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
+    paddingHorizontal: 15,
+    paddingVertical: 0,
   },
 });

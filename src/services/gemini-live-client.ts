@@ -251,20 +251,27 @@ export class GeminiLiveSession {
   private ws: WebSocket | null = null;
   private callbacks: LiveSessionCallbacks = {};
   private setupDone = false;
+  private incomingMessageChain: Promise<void> = Promise.resolve();
+  private connectionId = 0;
 
   async connect(callbacks: LiveSessionCallbacks): Promise<void> {
     this.callbacks = callbacks;
     this.setupDone = false;
+    const connectionId = ++this.connectionId;
+    this.incomingMessageChain = Promise.resolve();
 
     const ephemeralToken = await createGeminiLiveToken();
+    if (connectionId !== this.connectionId) return;
     const url = getGeminiLiveWebSocketUrl(ephemeralToken);
 
     await new Promise<void>((resolve, reject) => {
       let settled = false;
       const ws = new WebSocket(url);
       this.ws = ws;
+      const isCurrentConnection = () =>
+        this.connectionId === connectionId && this.ws === ws;
       const setupTimeout = setTimeout(() => {
-        if (settled) return;
+        if (settled || !isCurrentConnection()) return;
         settled = true;
         const message = "Gemini Live took too long to connect.";
         this.callbacks.onError?.(message);
@@ -273,20 +280,25 @@ export class GeminiLiveSession {
       }, 15_000);
 
       ws.onopen = () => {
+        if (!isCurrentConnection()) return;
         this.callbacks.onOpen?.();
         this.sendSetup();
       };
 
-      ws.onmessage = async (event) => {
+      const processMessage = async (eventData: unknown) => {
+        if (!isCurrentConnection()) return;
         let data: string | null = null;
-        if (typeof event.data === "string") {
-          data = event.data;
-        } else if (event.data instanceof Blob) {
-          data = await event.data.text();
-        } else if (event.data instanceof ArrayBuffer) {
-          data = new TextDecoder().decode(event.data);
-        } else if (event.data?.text) {
-          data = await event.data.text();
+        if (typeof eventData === "string") {
+          data = eventData;
+        } else if (eventData instanceof Blob) {
+          data = await eventData.text();
+        } else if (eventData instanceof ArrayBuffer) {
+          data = new TextDecoder().decode(eventData);
+        } else if (
+          eventData &&
+          typeof (eventData as { text?: unknown }).text === "function"
+        ) {
+          data = await (eventData as { text: () => Promise<string> }).text();
         }
         if (!data) return;
 
@@ -342,7 +354,28 @@ export class GeminiLiveSession {
         }
       };
 
+      ws.onmessage = (event) => {
+        // React Native can deliver WebSocket frames as Blob objects. Reading
+        // Blob.text() is async, so separate handlers can otherwise resolve out
+        // of order and let turnComplete reach the hook before the final audio.
+        const next = this.incomingMessageChain.then(() =>
+          processMessage(event.data),
+        );
+        this.incomingMessageChain = next.catch((error) => {
+          if (!isCurrentConnection()) return;
+          const message =
+            error instanceof Error ? error.message : "Live message failed.";
+          this.callbacks.onError?.(message);
+          if (!settled) {
+            settled = true;
+            clearTimeout(setupTimeout);
+            reject(error instanceof Error ? error : new Error(message));
+          }
+        });
+      };
+
       ws.onerror = (event) => {
+        if (!isCurrentConnection()) return;
         console.error("WS ERROR:", event);
         const err = new Error("Live connection failed.");
         this.callbacks.onError?.(err.message);
@@ -354,6 +387,8 @@ export class GeminiLiveSession {
       };
 
       ws.onclose = (event) => {
+        if (!isCurrentConnection()) return;
+        this.ws = null;
         console.warn("WS CLOSE:", event.code, event.reason);
         this.callbacks.onClose?.(event.reason || undefined);
         if (!settled) {
@@ -446,6 +481,7 @@ export class GeminiLiveSession {
   }
 
   disconnect() {
+    this.connectionId += 1;
     this.ws?.close();
     this.ws = null;
     this.setupDone = false;

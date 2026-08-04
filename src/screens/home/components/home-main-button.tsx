@@ -6,6 +6,7 @@ import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { ltrText, rtlText } from "../../lesson/games/game-text";
 import { hapticSelection } from "../../../utils/haptics";
+import { IS_ANDROID } from "../../../utils/native-perf";
 import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
@@ -135,13 +136,15 @@ export const HomeMainButton = React.memo(({
           paddingTop: 12,
           paddingBottom: 10,
           minHeight: 78,
-          ...crossShadow({
-            color: rimColor,
-            offsetY: 4,
-            blur: 8,
-            opacity: 0.16,
-            elevation: 3,
-          }),
+          ...(IS_ANDROID
+            ? {}
+            : crossShadow({
+                color: rimColor,
+                offsetY: 4,
+                blur: 8,
+                opacity: 0.16,
+                elevation: 3,
+              })),
         }}
       >
         <View

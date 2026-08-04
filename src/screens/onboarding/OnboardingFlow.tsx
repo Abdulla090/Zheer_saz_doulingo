@@ -30,8 +30,14 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 import { useI18n } from "../../hooks/useI18n";
 import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
 import { ONBOARDING_DESIGN } from "./components/onboarding-design";
+import {
+  ONBOARDING_SLIDE_IDS,
+  ONBOARDING_TOTAL_STEPS,
+  onboardingStepNumber,
+} from "./onboarding-steps";
+import { resolvePathMode } from "../../constants/path-availability";
 
-const STEP_IDS = ["welcome", "practice", "progress"] as const;
+const STEP_IDS = ONBOARDING_SLIDE_IDS;
 
 export function OnboardingFlow() {
   const insets = useSafeAreaInsets();
@@ -57,9 +63,9 @@ export function OnboardingFlow() {
     () => createStyles(colors, isDark, isDesktopWeb),
     [colors, isDark, isDesktopWeb],
   );
-  const [selectedPath] = useState<PathMode>(
-    pathMode === "street" || pathMode === "kids" ? pathMode : "normal",
-  );
+  // Street and kids are paused; a stale stored preference must not survive
+  // onboarding and drop the user onto a path that no longer renders.
+  const [selectedPath] = useState<PathMode>(() => resolvePathMode(pathMode));
 
   /* Continuous scroll position for smooth gradient morph */
   const scrollX = useSharedValue(0);
@@ -243,8 +249,8 @@ export function OnboardingFlow() {
     <Animated.View style={[styles.root, animatedRootStyle]}>
       <OnboardingSkiaBg scrollX={scrollX} />
       <OnboardingTopBar
-        current={index + 1}
-        total={9}
+        current={onboardingStepNumber(STEP_IDS[index])}
+        total={ONBOARDING_TOTAL_STEPS}
         locale={locale}
         topInset={insets.top}
         onBack={index > 0 ? goBack : undefined}
@@ -296,8 +302,8 @@ export function OnboardingFlow() {
         locale={locale}
         bottomInset={insets.bottom}
         onPress={goNext}
-        current={index + 1}
-        total={9}
+        current={onboardingStepNumber(STEP_IDS[index])}
+        total={ONBOARDING_TOTAL_STEPS}
       />
     </Animated.View>
   );

@@ -3,6 +3,10 @@ import {
   type PathMode,
 } from "./PathSwitcher";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
+import {
+  hasMultiplePaths,
+  resolvePathMode,
+} from "../../../constants/path-availability";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
@@ -15,11 +19,23 @@ function parseMode(raw: string | string[] | undefined): PathMode {
   return "street";
 }
 
+/** True when the switcher renders at all. */
+export const PATH_SWITCHER_VISIBLE = hasMultiplePaths();
+
 /** PathSwitcher pill + bar padding (continue CTA is not in this chrome).
  *  44px back-button row + 56px switcher pill + 14px gap to unit bar = 114 */
-export const PATH_SWITCHER_HEIGHT = 56;
+export const PATH_SWITCHER_HEIGHT = PATH_SWITCHER_VISIBLE ? 56 : 0;
 
-export const PATH_TOP_CHROME_HEIGHT = 44 + PATH_SWITCHER_HEIGHT + 14;
+/**
+ * Reserved space above the path list.
+ *
+ * With a single path live there is no switcher and no back row to clear, so the
+ * list starts just below the status bar and gains ~100px of usable height —
+ * roughly one extra lesson node visible without scrolling.
+ */
+export const PATH_TOP_CHROME_HEIGHT = PATH_SWITCHER_VISIBLE
+  ? 44 + PATH_SWITCHER_HEIGHT + 14
+  : 8;
 
 export function PathModeTabs({
   hasSafeArea = true,
@@ -33,8 +49,9 @@ export function PathModeTabs({
   const insets = useSafeAreaInsets();
   const savedMode = useSettingsStore((s) => s.pathMode);
   const setPathMode = useSettingsStore((s) => s.setPathMode);
-  const activeMode =
-    params.mode != null ? parseMode(params.mode) : savedMode;
+  const activeMode = resolvePathMode(
+    params.mode != null ? parseMode(params.mode) : savedMode,
+  );
 
   const handleSwitch = useCallback(
     (next: PathMode) => {
@@ -46,6 +63,9 @@ export function PathModeTabs({
     },
     [router, setPathMode],
   );
+
+  // Only one path is live — a switcher with a single option is just chrome.
+  if (!PATH_SWITCHER_VISIBLE) return null;
 
   return (
     <View

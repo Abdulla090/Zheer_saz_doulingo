@@ -27,6 +27,10 @@ import {
   ONBOARDING_DESIGN,
   ONBOARDING_PAPER_SHADOW,
 } from "./onboarding-design";
+import {
+  ONBOARDING_TOTAL_STEPS,
+  onboardingStepNumber,
+} from "../onboarding-steps";
 
 type Props = {
   onFinish: () => void;
@@ -174,8 +178,8 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
   return (
     <View style={styles.root}>
       <OnboardingTopBar
-        current={9}
-        total={9}
+        current={onboardingStepNumber("pet")}
+        total={ONBOARDING_TOTAL_STEPS}
         locale={locale}
         topInset={insets.top}
         onBack={onBack}
@@ -236,8 +240,8 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
         bottomInset={insets.bottom}
         onPress={onFinish}
         testID="onboarding-finish"
-        current={9}
-        total={9}
+        current={onboardingStepNumber("pet")}
+        total={ONBOARDING_TOTAL_STEPS}
       />
     </View>
   );
@@ -265,7 +269,8 @@ const createStyles = (
       paddingHorizontal: 10,
     },
     eyebrow: {
-      color: ONBOARDING_DESIGN.orange,
+      // 13px accent type needs the text-safe accent, not the graphic one.
+      color: ONBOARDING_DESIGN.accentInk,
       fontSize: 13,
       lineHeight: 18,
       fontWeight: "800",

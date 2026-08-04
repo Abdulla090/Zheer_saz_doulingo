@@ -3,8 +3,9 @@ import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable"
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { StarIcon } from "@hugeicons/core-free-icons";
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { PATH_RASTERIZE_NODES, PATH_SKIP_NODE_SHADOW, FX_ALLOW_GRADIENTS } from "../../../utils/native-perf";
 import { crossTextShadow } from "../../../utils/shadows";
 import Animated, {
   cancelAnimation,
@@ -19,19 +20,59 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-export type SvgButtonVariant = keyof typeof SVG_BUTTON_COLOR_SETS;
+import {
+  SVG_BUTTON_COLOR_SETS,
+  type SvgButtonVariant,
+} from "../../../constants/button-theme-colors";
 
-export const SVG_BUTTON_COLOR_SETS = {
-  green: { rim: "#46a302", face: "#58cc02" },
-  purple: { rim: "#6751C9", face: "#8B73E8" },
-  blue: { rim: "#1482b8", face: "#1cb0f6" },
-  mint: { rim: "#068265", face: "#08c296" },
-  gray: { rim: "#B5B6B8", face: "#E9EAEB" },
-  yellow: { rim: "#e59400", face: "#ffc800" },
-  gold: { rim: "#e59400", face: "#ffc800" },
-  orange: { rim: "#d86f00", face: "#ff9600" },
-  red: { rim: "#d32f2f", face: "#ff4b4b" },
-} as const;
+/*
+ * The palette itself lives in `constants/button-theme-colors` so data consumers
+ * (the unit banner, tests) can read it without importing this component. Both
+ * names are re-exported here because existing call sites import them from here.
+ */
+export { SVG_BUTTON_COLOR_SETS, type SvgButtonVariant };
+
+// Native surfaces render the same gradients with much higher perceived
+// contrast than the web canvas, so native gets its own, gentler ramp rather
+// than no ramp at all. Skipping the gradient entirely (the previous behaviour)
+// left the node a single flat fill — geometrically 3D, but visually a sticker.
+const isNativeNode = Platform.OS !== "web";
+
+/**
+ * Shading for one node.
+ *
+ * Duolingo's depth comes from three cheap cues stacked in order: a light top
+ * edge, the base colour through the middle, and a darker bottom edge — read as
+ * a lit dome. Native keeps the same three stops at roughly half the contrast,
+ * because the same alpha reads far stronger on an OLED phone than on a browser
+ * canvas.
+ *
+ * The ramp is near-vertical (a slight lean, not a diagonal wash): a light source
+ * above the token is what makes a round face look spherical instead of tilted.
+ */
+function faceGradient(face: string, locked: boolean) {
+  if (isNativeNode) {
+    return locked
+      ? (["rgba(255,255,255,0.22)", face, "rgba(0,0,0,0.08)"] as const)
+      : (["rgba(255,255,255,0.32)", face, "rgba(0,0,0,0.14)"] as const);
+  }
+  return locked
+    ? (["rgba(255,255,255,0.3)", face, "rgba(0,0,0,0.05)"] as const)
+    : (["rgba(255,255,255,0.26)", face, "rgba(0,0,0,0.07)"] as const);
+}
+
+function shellGradient(face: string, rim: string, locked: boolean) {
+  if (isNativeNode) {
+    // The shell is the side wall; it stays closer to the rim colour so the
+    // raised face still reads as the brightest surface.
+    return locked
+      ? (["#EDEEF0", face, "#D3D5D8"] as const)
+      : (["rgba(255,255,255,0.34)", face, rim] as const);
+  }
+  return locked
+    ? (["#F4F5F6", face, "#D3D5D8"] as const)
+    : (["rgba(255,255,255,0.46)", face, rim] as const);
+}
 
 type SvgButtonProps = {
   size?: number;
@@ -176,10 +217,16 @@ export const SvgButton = React.memo(
     const haloProgress = useSharedValue(0);
     const hoverProgress = useSharedValue(0);
 
-    // Slightly wide seated token: full perimeter bevel plus an inset face.
+    // Seated token geometry.
+    //
+    // `rimDepth` is the visible thickness of the side wall — the single value
+    // that decides whether the node reads as a sticker lying on the screen or a
+    // physical button standing on it. At 0.09 it was too thin to register, so
+    // it is now 0.155 of the node size (~10px at 62px) which is close to
+    // Duolingo's own proportion. The 96px slot has room for the extra height.
     const width = size;
     const height = Math.round(size * 0.86);
-    const rimDepth = Math.max(4, Math.round(size * 0.09));
+    const rimDepth = Math.max(7, Math.round(size * 0.155));
     const totalHeight = height + rimDepth;
     const borderRadius = Math.round(height / 2);
     const faceInsetX = Math.max(3, Math.round(size * 0.055));
@@ -188,6 +235,12 @@ export const SvgButton = React.memo(
     const innerWidth = width - faceInsetX * 2;
     const innerHeight = height - faceInsetTop - faceInsetBottom;
     const innerRadius = Math.round(innerHeight / 2);
+
+    // Ground shadow: wider and softer than the token, offset below it. This is
+    // what visually detaches the node from the background — without it a deep
+    // rim just looks like a thick border.
+    const groundWidth = Math.round(width * 0.82);
+    const groundHeight = Math.max(6, Math.round(size * 0.14));
 
     const iconSize = Math.round(innerHeight * 0.52);
     const resolvedIconColor =
@@ -247,6 +300,8 @@ export const SvgButton = React.memo(
     };
 
     const topFaceStyle = useAnimatedStyle(() => {
+      // Travel the full rim minus a 2px sliver, so a pressed node looks seated
+      // on the surface but never completely loses its edge.
       const pressTranslate = pressProgress.value * (rimDepth - 2);
       return {
         transform: [
@@ -273,24 +328,29 @@ export const SvgButton = React.memo(
     }));
 
     const contactShadowStyle = useAnimatedStyle(() => ({
+      // The ground shadow tightens rather than vanishing: a pressed object
+      // still touches the surface, it just casts less.
       opacity: interpolate(
         pressProgress.value,
         [0, 1],
-        [1, 0],
+        [1, 0.45],
         Extrapolation.CLAMP,
       ),
       transform: [
-        { translateY: -pressProgress.value },
-        { scaleX: 1 - pressProgress.value * 0.62 },
-        { scaleY: 1 - pressProgress.value * 0.72 },
+        { translateY: -pressProgress.value * (rimDepth - 2) },
+        { scaleX: 1 - pressProgress.value * 0.22 },
+        { scaleY: 1 - pressProgress.value * 0.3 },
       ],
     }));
 
     const haloStyle = useAnimatedStyle(() => ({
-      opacity:
-        (isLocked ? 0.16 : 0.3) +
-        hoverProgress.value * 0.2 +
-        (showHalo ? haloProgress.value * 0.2 : 0),
+      opacity: isNativeNode
+        ? showHalo
+          ? 0.4 + hoverProgress.value * 0.08 + haloProgress.value * 0.06
+          : 0
+        : (isLocked ? 0.16 : 0.3) +
+          hoverProgress.value * 0.2 +
+          (showHalo ? haloProgress.value * 0.2 : 0),
       transform: [
         {
           scale:
@@ -316,6 +376,7 @@ export const SvgButton = React.memo(
 
     return (
       <Pressable
+        inList
         disabled={!onPress || isLocked}
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -333,23 +394,38 @@ export const SvgButton = React.memo(
         ]}
       >
         <Animated.View
+          renderToHardwareTextureAndroid={PATH_RASTERIZE_NODES}
+          shouldRasterizeIOS={PATH_RASTERIZE_NODES}
           style={[
             { width, height: totalHeight, alignItems: "center" },
             tokenStyle,
           ]}
         >
-          {/* Tight contact shadow under the circular badge. */}
+          {/*
+            Ground shadow. A soft ellipse sitting under and slightly wider than
+            the token, so the node reads as resting ON the surface rather than
+            printed into it. It shrinks and fades as the token is pressed down,
+            which is what sells the travel.
+
+            Android gets a flat translucent ellipse (no blur): elevation on a
+            non-opaque view in a virtualized list is a per-frame CPU cost, and
+            at this size the soft edge is not missed.
+          */}
           <Animated.View
             pointerEvents="none"
             style={[
               {
                 position: "absolute",
-                top: totalHeight - 1,
-                width: Math.round(width * 0.56),
-                height: 4,
+                top: totalHeight - Math.round(groundHeight * 0.55),
+                width: groundWidth,
+                height: groundHeight,
                 borderRadius: 999,
-                backgroundColor: "rgba(59, 130, 246, 0.12)",
-                boxShadow: "0 2px 8px rgba(59, 130, 246, 0.18)",
+                backgroundColor: isLocked
+                  ? "rgba(15,23,42,0.10)"
+                  : "rgba(15,23,42,0.16)",
+                ...(isNativeNode || PATH_SKIP_NODE_SHADOW
+                  ? {}
+                  : { filter: "blur(4px)" as any }),
               },
               contactShadowStyle,
             ]}
@@ -365,8 +441,12 @@ export const SvgButton = React.memo(
                 width: width + 8,
                 height: height + 8,
                 borderRadius: borderRadius + 5,
-                backgroundColor: `${colors.face}2B`,
-                boxShadow: `0 2px 11px ${colors.face}70`,
+                backgroundColor: isNativeNode ? "transparent" : `${colors.face}2B`,
+                borderWidth: isNativeNode && showHalo ? 1 : 0,
+                borderColor: isNativeNode ? `${colors.face}8A` : undefined,
+                ...(isNativeNode
+                  ? {}
+                  : { boxShadow: `0 2px 11px ${colors.face}70` }),
               },
               haloStyle,
             ]}
@@ -385,7 +465,10 @@ export const SvgButton = React.memo(
                 backgroundColor: colors.rim,
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.11)",
-                borderBottomColor: "rgba(0,0,0,0.1)",
+                // A real side wall darkens toward its base — this is what makes
+                // the exposed rim read as thickness instead of an outline.
+                borderBottomWidth: 2,
+                borderBottomColor: "rgba(0,0,0,0.22)",
               },
               depthStyle,
             ]}
@@ -403,35 +486,43 @@ export const SvgButton = React.memo(
                 borderRadius,
                 backgroundColor: colors.rim,
                 borderWidth: 1,
-                borderColor: isCompleted
-                  ? "rgba(255,255,255,0.42)"
-                  : "rgba(255,255,255,0.24)",
-                borderTopColor: "rgba(255,255,255,0.58)",
-                borderBottomColor: "rgba(0,0,0,0.08)",
+                borderColor: isNativeNode
+                  ? isCompleted
+                    ? "rgba(255,255,255,0.24)"
+                    : "rgba(15,23,42,0.14)"
+                  : isCompleted
+                    ? "rgba(255,255,255,0.42)"
+                    : "rgba(255,255,255,0.24)",
+                borderTopColor: isNativeNode
+                  ? "rgba(255,255,255,0.22)"
+                  : "rgba(255,255,255,0.58)",
+                borderBottomColor: isNativeNode
+                  ? "rgba(15,23,42,0.2)"
+                  : "rgba(0,0,0,0.08)",
                 overflow: "hidden",
               },
               topFaceStyle,
             ]}
           >
-            <LinearGradient
-              pointerEvents="none"
-              colors={
-                isLocked
-                  ? ["#F4F5F6", colors.face, "#D3D5D8"]
-                  : ["rgba(255,255,255,0.46)", colors.face, colors.rim]
-              }
-              locations={[0, 0.5, 1]}
-              start={{ x: 0.12, y: 0.02 }}
-              end={{ x: 0.9, y: 1 }}
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
-                borderRadius,
-              }}
-            />
+            {/* Low-end devices fall through to the flat `colors.rim` fill
+                underneath — same geometry and colour, just no ramp. */}
+            {FX_ALLOW_GRADIENTS ? (
+              <LinearGradient
+                pointerEvents="none"
+                colors={shellGradient(colors.face, colors.rim, isLocked)}
+                locations={[0, 0.5, 1]}
+                start={{ x: 0.12, y: 0.02 }}
+                end={{ x: 0.9, y: 1 }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  left: 0,
+                  borderRadius,
+                }}
+              />
+            ) : null}
 
             {/* Smaller top face inset into the perimeter bevel. */}
             <View
@@ -446,56 +537,122 @@ export const SvgButton = React.memo(
                 alignItems: "center",
                 justifyContent: "center",
                 overflow: "hidden",
-                borderWidth: 0.75,
-                borderColor: "rgba(255,255,255,0.24)",
-                borderBottomColor: "rgba(0,0,0,0.08)",
-                boxShadow:
-                  "inset 0 1px 1px rgba(255,255,255,0.22), inset 0 -2px 3px rgba(38,27,91,0.12)",
+                borderWidth: isNativeNode ? 0 : 0.75,
+                borderColor: isNativeNode
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(255,255,255,0.24)",
+                borderBottomColor: isNativeNode
+                  ? "rgba(15,23,42,0.12)"
+                  : "rgba(0,0,0,0.08)",
+                ...(isNativeNode
+                  ? {}
+                  : {
+                      boxShadow:
+                        "inset 0 1px 1px rgba(255,255,255,0.22), inset 0 -2px 3px rgba(38,27,91,0.12)",
+                    }),
               }}
             >
-              <LinearGradient
+              {FX_ALLOW_GRADIENTS ? (
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={faceGradient(colors.face, isLocked)}
+                  locations={[0, 0.54, 1]}
+                  /* Near-vertical: the light reads as coming from above the token. */
+                  start={{ x: 0.32, y: 0 }}
+                  end={{ x: 0.68, y: 1 }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
+                    borderRadius: innerRadius,
+                  }}
+                />
+              ) : null}
+              {/*
+                Crown highlight — a hairline at the very top of the face, where a
+                lit dome would catch the light. Inset by the full corner radius:
+                the face is a pill with `overflow: hidden`, so anything wider
+                gets clipped by the rounded caps and ends in two hard stubs.
+                Cheap enough (1px View, no gradient) to keep on every device.
+              */}
+              <View
                 pointerEvents="none"
-                colors={
-                  isLocked
-                    ? ["rgba(255,255,255,0.3)", colors.face, "rgba(0,0,0,0.05)"]
-                    : ["rgba(255,255,255,0.26)", colors.face, "rgba(0,0,0,0.07)"]
-                }
-                locations={[0, 0.54, 1]}
-                start={{ x: 0.18, y: 0.04 }}
-                end={{ x: 0.82, y: 1 }}
                 style={{
                   position: "absolute",
                   top: 0,
-                  right: 0,
-                  bottom: 0,
-                  left: 0,
-                  borderRadius: innerRadius,
+                  left: innerRadius,
+                  right: innerRadius,
+                  height: 1,
+                  borderRadius: 9999,
+                  backgroundColor: isLocked
+                    ? "rgba(255,255,255,0.30)"
+                    : "rgba(255,255,255,0.45)",
                 }}
               />
             {!isLocked ? (
-              <LinearGradient
-                pointerEvents="none"
-                colors={[
-                  "rgba(145, 225, 255, 0)",
-                  "rgba(156, 231, 255, 0.26)",
-                  "rgba(198, 243, 255, 0.68)",
-                  "rgba(156, 231, 255, 0.26)",
-                  "rgba(145, 225, 255, 0)",
-                ]}
-                locations={[0, 0.22, 0.5, 0.78, 1]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={{
-                  position: "absolute",
-                  top: Math.round(innerHeight * 0.08),
-                  left: Math.round(innerWidth * 0.14),
-                  width: Math.round(innerWidth * 0.58),
-                  height: Math.max(6, Math.round(innerHeight * 0.17)),
-                  borderRadius: 9999,
-                  opacity: isLocked ? 0.3 : 0.82,
-                  transform: [{ rotate: "-10deg" }],
-                }}
-              />
+              /*
+               * Specular sheen. A gradient fades the highlight out at both ends;
+               * a flat translucent bar reads as a painted-on stripe, which is
+               * the single biggest tell that a node is not a lit object. Native
+               * runs the same shape at lower peak alpha, in white rather than
+               * the web's blue-tinted glass.
+               *
+               * Low-end devices keep the flat bar — one opaque-ish View is far
+               * cheaper than a third overlapping gradient per node in a
+               * virtualized list, and some highlight beats none.
+               */
+              FX_ALLOW_GRADIENTS ? (
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={
+                    isNativeNode
+                      ? [
+                          "rgba(255,255,255,0)",
+                          "rgba(255,255,255,0.16)",
+                          "rgba(255,255,255,0.34)",
+                          "rgba(255,255,255,0.16)",
+                          "rgba(255,255,255,0)",
+                        ]
+                      : [
+                          "rgba(145, 225, 255, 0)",
+                          "rgba(156, 231, 255, 0.26)",
+                          "rgba(198, 243, 255, 0.68)",
+                          "rgba(156, 231, 255, 0.26)",
+                          "rgba(145, 225, 255, 0)",
+                        ]
+                  }
+                  locations={[0, 0.22, 0.5, 0.78, 1]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={{
+                    position: "absolute",
+                    top: Math.round(innerHeight * 0.08),
+                    left: Math.round(innerWidth * 0.14),
+                    width: Math.round(innerWidth * 0.58),
+                    height: Math.max(6, Math.round(innerHeight * 0.17)),
+                    borderRadius: 9999,
+                    opacity: isNativeNode ? 0.9 : 0.82,
+                    transform: [{ rotate: "-10deg" }],
+                  }}
+                />
+              ) : (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: "absolute",
+                    top: Math.max(2, Math.round(innerHeight * 0.1)),
+                    left: Math.round(innerWidth * 0.2),
+                    width: Math.round(innerWidth * 0.36),
+                    height: Math.max(2, Math.round(innerHeight * 0.06)),
+                    borderRadius: 9999,
+                    backgroundColor: "rgba(255,255,255,0.22)",
+                    opacity: 0.42,
+                    transform: [{ rotate: "-10deg" }],
+                  }}
+                />
+              )
             ) : null}
             {label !== undefined ? (
               <View

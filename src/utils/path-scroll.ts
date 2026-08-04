@@ -18,6 +18,28 @@ export function findCurrentLessonLocation(
   return null;
 }
 
+/**
+ * Section/item coordinates of a specific lesson, for `scrollToLocation`.
+ *
+ * Matched on `id` rather than object identity: the path screens rebuild their
+ * section data on every progress change, so the item handed to a tap callback
+ * is not guaranteed to be the same reference now held in `sections`.
+ */
+export function findItemLocation(
+  sections: SectionDataItem[],
+  target: Pick<LessonListItem, "id">,
+): { sectionIndex: number; itemIndex: number } | null {
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+    const itemIndex = sections[sectionIndex].data.findIndex(
+      (item) => item.id === target.id,
+    );
+    if (itemIndex >= 0) {
+      return { sectionIndex, itemIndex };
+    }
+  }
+  return null;
+}
+
 export function scrollPathToCurrentLesson(
   listRef: RefObject<SectionList<LessonListItem, SectionDataItem> | null>,
   sections: SectionDataItem[],

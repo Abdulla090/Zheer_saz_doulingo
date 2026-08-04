@@ -7,6 +7,7 @@ import {
 export type PracticeGameKind =
   | "pair_match"
   | "sentence_builder"
+  | "listen_build"
   | "voice_listen"
   | "voice_speak"
   | "conversation_pick"
@@ -45,7 +46,9 @@ export function findPracticeQuestionIndex(
           ? "pair_match"
           : kind === "paragraph_speech"
             ? "paragraph_speech"
-            : "sentence_builder";
+            : kind === "listen_build"
+              ? "listen_build"
+              : "sentence_builder";
 
   const idx = questions.findIndex((q) => q.type === type);
   return idx >= 0 ? idx : 0;

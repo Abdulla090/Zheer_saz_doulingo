@@ -72,19 +72,28 @@ export function resolveTextAlign(
 /**
  * Encode a desired physical edge for React Native's platform text engines.
  *
- * Android and iOS both swap explicit left/right paragraph alignment when the
- * same text node also has RTL layout direction. Web does not. Compensating at
- * this boundary keeps `start` physically right for Kurdish/Arabic while
- * leaving every LTR alignment unchanged.
+ * Android and iOS swap explicit left/right paragraph alignment when the text
+ * sits inside an RTL *layout*. That layout direction comes from
+ * `I18nManager.forceRTL`, which this app sets from the UI language — it is NOT
+ * the direction of the text's own content. English answer tiles inside a Kurdish
+ * UI are the case that distinguishes the two: content is LTR, layout is RTL, and
+ * the platform still swaps, so `left` must be pre-encoded as `right` to land on
+ * the left edge.
+ *
+ * `layoutDirection` defaults to `contentDirection` so existing single-direction
+ * callers keep their behaviour; mixed-language content should pass both.
  */
 export function resolvePlatformTextAlign(
   platform: DirectionPlatform,
-  direction: Direction,
+  contentDirection: Direction,
   physicalAlignment: PhysicalTextAlign,
+  layoutDirection: Direction = contentDirection,
 ): PhysicalTextAlign {
-  if (platform === "web" || direction === "ltr" || physicalAlignment === "center") {
+  if (platform === "web" || physicalAlignment === "center") {
     return physicalAlignment;
   }
+  // The swap is a property of the surrounding layout, not of the glyphs.
+  if (layoutDirection === "ltr") return physicalAlignment;
 
   return physicalAlignment === "right" ? "left" : "right";
 }

@@ -486,9 +486,13 @@ export function HomeMeshBackground() {
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      <View style={styles.meshOrbCoral} pointerEvents="none" />
-      <View style={styles.meshOrbBlue} pointerEvents="none" />
-      <View style={styles.meshOrbAmber} pointerEvents="none" />
+      {!IS_ANDROID && (
+        <>
+          <View style={styles.meshOrbCoral} pointerEvents="none" />
+          <View style={styles.meshOrbBlue} pointerEvents="none" />
+          <View style={styles.meshOrbAmber} pointerEvents="none" />
+        </>
+      )}
     </>
   );
 }

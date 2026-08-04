@@ -228,6 +228,9 @@
   },
   "lessons": {
     "chooseAnswer": "وەڵام هەڵبژێرە",
+    "mcHowToSay": "چۆن ئەمە دەڵێیت؟",
+    "mcWhatIsWord": "ئەمە واتای چییە؟",
+    "mcChooseCorrect": "ڕستەی دروست هەڵبژێرە",
     "chooseAnswerSub": "باشترین هەڵبژاردە دیاری بکە.",
     "questionLabel": "پرسیار",
     "fillBlank": "بۆشایی پڕبکەرەوە",
@@ -277,6 +280,8 @@
     "imageChoiceSub": "کام وشە لەگەڵ وێنەکە دەگونجێت؟",
     "exerciseBadgeText": "ڕاهێنانی {current} لە {total}",
     "listenLabel": "گوێگرتن",
+    "completeConversation": "گفتوگۆکە تەواو بکە",
+    "youLabel": "تۆ",
     "nice": "زۆر باشە!",
     "skip": "تێپەڕاندن",
     "dontKnow": "نازانم",

@@ -15,7 +15,10 @@ import {
 import { OnboardingProgressBar } from "./OnboardingProgressBar";
 import {
   ONBOARDING_DESIGN,
+  ONBOARDING_GUTTER,
   ONBOARDING_PAPER_SHADOW,
+  ONBOARDING_SPACE,
+  resolveOnboardingSize,
 } from "./onboarding-design";
 
 export function OnboardingTopBar({
@@ -39,13 +42,15 @@ export function OnboardingTopBar({
 }) {
   const isRtl = locale === "ku" || locale === "ar";
   const { width, height } = useWindowDimensions();
-  const compact = width < 390 || height < 720;
+  const size = resolveOnboardingSize(width, height);
+  const compact = size === "xs" || size === "sm";
 
   return (
     <View
       style={[
         styles.topBar,
         compact && styles.topBarCompact,
+        { paddingHorizontal: ONBOARDING_GUTTER[size] },
         { paddingTop: Math.max(topInset, 8) + (compact ? 6 : 10) },
       ]}
     >
@@ -120,14 +125,16 @@ export function OnboardingFooter({
   current?: number;
   total?: number;
 }) {
-  const { width } = useWindowDimensions();
-  const compact = width < 390;
+  const { width, height } = useWindowDimensions();
+  const size = resolveOnboardingSize(width, height);
+  const compact = size === "xs" || size === "sm";
 
   return (
     <View
       style={[
         styles.footer,
         compact && styles.footerCompact,
+        { paddingHorizontal: ONBOARDING_GUTTER[size] },
         { paddingBottom: Math.max(bottomInset, Platform.OS === "ios" ? 12 : 10) },
       ]}
     >
@@ -168,8 +175,7 @@ const styles = StyleSheet.create({
     maxWidth: 1120,
     alignSelf: "center",
     minHeight: 76,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
+    paddingBottom: ONBOARDING_SPACE.sm,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -177,8 +183,7 @@ const styles = StyleSheet.create({
   },
   topBarCompact: {
     minHeight: 62,
-    paddingHorizontal: 18,
-    paddingBottom: 4,
+    paddingBottom: ONBOARDING_SPACE.xs,
   },
   brand: {
     color: ONBOARDING_DESIGN.ink,
@@ -207,24 +212,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   skipText: {
-    color: ONBOARDING_DESIGN.mutedInk,
-    fontSize: 14,
-    lineHeight: 19,
+    // Skip is a real escape route, not fine print — it needs to be findable.
+    color: ONBOARDING_DESIGN.ink,
+    fontSize: 15,
+    lineHeight: 20,
   },
   footer: {
     width: "100%",
     maxWidth: 640,
     alignSelf: "center",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    gap: 10,
+    paddingTop: ONBOARDING_SPACE.md,
+    gap: ONBOARDING_SPACE.md,
     flexShrink: 0,
     backgroundColor: ONBOARDING_DESIGN.canvas,
     zIndex: 30,
   },
   footerCompact: {
-    paddingHorizontal: 18,
-    paddingTop: 8,
+    paddingTop: ONBOARDING_SPACE.sm,
   },
   footerHint: {
     color: ONBOARDING_DESIGN.mutedInk,
@@ -234,7 +238,6 @@ const styles = StyleSheet.create({
   },
   footerProgress: {
     width: "100%",
-    paddingHorizontal: 18,
-    paddingTop: 2,
+    paddingTop: ONBOARDING_SPACE.xs,
   },
 });

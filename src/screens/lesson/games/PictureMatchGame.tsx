@@ -295,7 +295,7 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
   return (
     <GameRoot style={s.root}>
       <GameHeader>
-        <LightGameHeading title="Match the Pairs" subtitle="Match the images with their names" />
+        <LightGameHeading title="Match the Pairs" />
       </GameHeader>
 
       <View style={s.progressRow}>

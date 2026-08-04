@@ -20,6 +20,7 @@ import Svg, { Circle } from "react-native-svg";
 import { CreditPacksButton } from "../../components/CreditPacksButton";
 import { PremiumPressable } from "../../components/PremiumPressable";
 import { AppText } from "../../components/ui/AppText";
+import { DirectionBoundary } from "../../i18n/layout-direction";
 import { getMascot } from "../../constants/mascots";
 import { Colors } from "../../constants/theme";
 import { isDesktopWebWidth } from "../../constants/web-layout";
@@ -167,13 +168,7 @@ export function GamesScreen() {
   );
 
   return (
-    <View
-      {...(Platform.OS === "web" ? ({ dir: "ltr" } as Record<string, string>) : {})}
-      style={[
-        stylesForScreen.root,
-        Platform.OS !== "web" && ({ direction: "ltr" } as const),
-      ]}
-    >
+    <DirectionBoundary direction="ltr" style={stylesForScreen.root}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -499,7 +494,7 @@ export function GamesScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </DirectionBoundary>
   );
 }
 

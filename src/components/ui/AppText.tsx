@@ -6,8 +6,10 @@ import {
   resolvePlatformAlignment,
   resolvePlatformTextAlign,
   resolveTextAlign,
+  type Direction,
   type LogicalAlignment,
 } from "../../i18n/direction";
+import { useLayoutDirection } from "../../i18n/layout-direction";
 import { latinRoleFromWeight } from "../../utils/pickFontFamily";
 import React, { useMemo } from "react";
 import {
@@ -86,10 +88,29 @@ export function AppText({
   const desiredPhysicalAlignment = effectiveAlignment
     ? resolveTextAlign(direction, effectiveAlignment)
     : requestedPhysicalAlignment ?? resolveTextAlign(direction, "start");
+  /*
+   * The platform swaps explicit left/right based on the *layout* the text sits
+   * in, not the text's own script — English lesson content inside a Kurdish
+   * lesson needs the swap compensated even though its content direction is LTR.
+   *
+   * That layout direction is read from the ambient boundary rather than from
+   * `I18nManager.isRTL`: the app sets RTL through a `direction` style on the
+   * root view and never reloads after `forceRTL`, so the native flag lags a
+   * language change by one cold start. Screens also override the direction
+   * locally (English answer tiles inside a Kurdish lesson), which a global flag
+   * cannot express at all.
+   *
+   * iOS is the exception — this component pins `direction` on the Text node
+   * itself below, so its paragraph direction is the content direction.
+   */
+  const ambientDirection = useLayoutDirection();
+  const layoutDirection: Direction =
+    Platform.OS === "android" ? ambientDirection : direction;
   const textAlign = resolvePlatformTextAlign(
     Platform.OS,
     direction,
     desiredPhysicalAlignment,
+    layoutDirection,
   );
   const directionStyle = {
     // Android already receives the app direction from the root view. Applying

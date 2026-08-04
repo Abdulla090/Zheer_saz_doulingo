@@ -2,6 +2,7 @@ import React from "react";
 import { StyleProp, StyleSheet, ViewStyle } from "react-native";
 import Animated from "react-native-reanimated";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { useIsNormalPath } from "./duo-normal";
 import {
   enterCard,
   enterFooter,
@@ -51,6 +52,7 @@ export function GameOption({ index, children, baseDelay = 120 }: Props & { index
 
 export function GameFooter({ children, delay = 280, style }: Props & { delay?: number }) {
   const { colors } = useThemeColors();
+  const isNormal = useIsNormalPath();
   return (
     <Animated.View
       entering={enterFooter(delay)}
@@ -58,7 +60,8 @@ export function GameFooter({ children, delay = 280, style }: Props & { delay?: n
         {
           backgroundColor: colors.background,
           borderTopColor: colors.border,
-          borderTopWidth: StyleSheet.hairlineWidth,
+          // The reference has no rule above the CTA — the button carries itself.
+          borderTopWidth: isNormal ? 0 : StyleSheet.hairlineWidth,
         },
         style,
       ]}

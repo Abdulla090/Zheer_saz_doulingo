@@ -46,7 +46,7 @@ import { HomeMainButton } from "./components/home-main-button";
 import { KidsPathListRow } from "./components/kids-path-list-row";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
-import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import { IS_ANDROID, PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import {
   isDesktopWebWidth,
   WEB_DESKTOP_PATH_WIDTH,
@@ -301,11 +301,11 @@ export function KidsEnglishPathScreen({
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
           ]}
           stickySectionHeadersEnabled={false}
-          initialNumToRender={6}
-          maxToRenderPerBatch={4}
-          windowSize={3}
-          removeClippedSubviews={false}
-          updateCellsBatchingPeriod={100}
+          initialNumToRender={10}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
+          updateCellsBatchingPeriod={50}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />
@@ -332,34 +332,38 @@ function KidsMeshBackground() {
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      <View
-        style={[
-          styles.meshOrb,
-          { top: -90, left: -70, backgroundColor: "rgba(251, 146, 60, 0.16)" },
-        ]}
-        pointerEvents="none"
-      />
-      <View
-        style={[
-          styles.meshOrb,
-          { top: -70, right: -62, backgroundColor: "rgba(56, 189, 248, 0.16)" },
-        ]}
-        pointerEvents="none"
-      />
-      <View
-        style={[
-          styles.meshOrb,
-          {
-            top: 292,
-            left: -74,
-            width: 190,
-            height: 190,
-            borderRadius: 95,
-            backgroundColor: "rgba(250, 204, 21, 0.14)",
-          },
-        ]}
-        pointerEvents="none"
-      />
+      {!IS_ANDROID && (
+        <>
+          <View
+            style={[
+              styles.meshOrb,
+              { top: -90, left: -70, backgroundColor: "rgba(251, 146, 60, 0.16)" },
+            ]}
+            pointerEvents="none"
+          />
+          <View
+            style={[
+              styles.meshOrb,
+              { top: -70, right: -62, backgroundColor: "rgba(56, 189, 248, 0.16)" },
+            ]}
+            pointerEvents="none"
+          />
+          <View
+            style={[
+              styles.meshOrb,
+              {
+                top: 292,
+                left: -74,
+                width: 190,
+                height: 190,
+                borderRadius: 95,
+                backgroundColor: "rgba(250, 204, 21, 0.14)",
+              },
+            ]}
+            pointerEvents="none"
+          />
+        </>
+      )}
     </>
   );
 }

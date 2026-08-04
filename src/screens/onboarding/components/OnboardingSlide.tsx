@@ -8,7 +8,14 @@ import {
 
 import { AppText } from "../../../components/ui/AppText";
 import { OnboardingHeroScene, type OnboardingSceneVariant } from "./OnboardingHeroScene";
-import { ONBOARDING_DESIGN } from "./onboarding-design";
+import {
+  ONBOARDING_ART_HEIGHT,
+  ONBOARDING_DESIGN,
+  ONBOARDING_GUTTER,
+  ONBOARDING_SPACE,
+  ONBOARDING_TYPE,
+  resolveOnboardingSize,
+} from "./onboarding-design";
 
 export type OnboardingSlideModel = {
   id: string;
@@ -29,31 +36,20 @@ const SLIDE_NUMBER: Record<string, string> = {
 
 export function OnboardingSlide({ slide, locale }: Props) {
   const { width, height } = useWindowDimensions();
-  const isWideLayout = width >= 760;
-  const isTallPhone = !isWideLayout && height >= 820;
-  const isCompactPhone = !isWideLayout && height < 760;
-  const isVeryCompactPhone = !isWideLayout && (height < 680 || width < 360);
+  const size = resolveOnboardingSize(width, height);
+  const isWide = size === "xl";
   const isRtl = locale === "ku" || locale === "ar";
-  const artworkFirst = slide.id === "welcome";
-  const artHeight = isWideLayout
-    ? 520
-    : isVeryCompactPhone
-      ? 210
-      : isCompactPhone
-        ? 270
-        : isTallPhone
-          ? 400
-          : 355;
+
   const styles = useMemo(
-    () => createStyles(isWideLayout, isTallPhone, isCompactPhone, isVeryCompactPhone, isRtl),
-    [isCompactPhone, isRtl, isTallPhone, isVeryCompactPhone, isWideLayout],
+    () => createStyles(size, isWide, isRtl),
+    [isRtl, isWide, size],
   );
 
   const artwork = (
     <View style={styles.artwork}>
       <OnboardingHeroScene
         variant={slide.id as OnboardingSceneVariant}
-        height={artHeight}
+        height={ONBOARDING_ART_HEIGHT[size]}
       />
     </View>
   );
@@ -61,7 +57,7 @@ export function OnboardingSlide({ slide, locale }: Props) {
   const copy = (
     <View style={styles.copy}>
       <AppText
-        style={[styles.number, { color: slideAccent(slide.id) }]}
+        style={styles.number}
         languageCode="en"
         forceLatinFont
         latinRole="medium"
@@ -70,6 +66,7 @@ export function OnboardingSlide({ slide, locale }: Props) {
       >
         {SLIDE_NUMBER[slide.id] ?? "01"}
       </AppText>
+
       {isRtl ? (
         <AppText
           style={styles.titleRtl}
@@ -77,9 +74,12 @@ export function OnboardingSlide({ slide, locale }: Props) {
           latinRole="regular"
           align="start"
           fullWidth
+          accessibilityRole="header"
         >
           {slide.title}
-          <AppText style={styles.titleDot} languageCode={locale}>.</AppText>
+          <AppText style={styles.titleDot} languageCode={locale}>
+            .
+          </AppText>
         </AppText>
       ) : (
         <Text style={styles.title} accessibilityRole="header">
@@ -87,6 +87,7 @@ export function OnboardingSlide({ slide, locale }: Props) {
           <Text style={styles.titleDot}>.</Text>
         </Text>
       )}
+
       <AppText
         style={styles.subtitle}
         languageCode={locale}
@@ -98,22 +99,24 @@ export function OnboardingSlide({ slide, locale }: Props) {
     </View>
   );
 
+  /*
+   * Order is fixed: artwork above copy on every slide.
+   *
+   * It previously alternated (`artworkFirst` on welcome only), which moved the
+   * title to a different vertical position on each page. Paging between slides
+   * then read as the layout jumping rather than the content advancing.
+   */
   return (
     <View style={styles.container}>
-      {isWideLayout ? (
+      {isWide ? (
         <>
           {copy}
           {artwork}
-        </>
-      ) : artworkFirst ? (
-        <>
-          {artwork}
-          {copy}
         </>
       ) : (
         <>
-          {copy}
           {artwork}
+          {copy}
         </>
       )}
     </View>
@@ -121,81 +124,76 @@ export function OnboardingSlide({ slide, locale }: Props) {
 }
 
 const createStyles = (
-  isWideLayout: boolean,
-  isTallPhone: boolean,
-  isCompactPhone: boolean,
-  isVeryCompactPhone: boolean,
+  size: ReturnType<typeof resolveOnboardingSize>,
+  isWide: boolean,
   isRtl: boolean,
-) =>
-  StyleSheet.create({
+) => {
+  const type = ONBOARDING_TYPE[size];
+  const gutter = ONBOARDING_GUTTER[size];
+  const tight = size === "xs" || size === "sm";
+
+  return StyleSheet.create({
     container: {
       flex: 1,
       width: "100%",
-      maxWidth: isWideLayout ? 1120 : 620,
+      maxWidth: isWide ? 1120 : 620,
       alignSelf: "center",
-      flexDirection: isWideLayout ? (isRtl ? "row-reverse" : "row") : "column",
+      // RTL row order is mirrored by the layout engine (forceRTL / document.dir),
+      // so this stays `row` — see LESSON_REDESIGN.md.
+      flexDirection: isWide ? "row" : "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: isWideLayout ? 72 : isCompactPhone ? 2 : 10,
-      paddingHorizontal: isWideLayout ? 60 : isVeryCompactPhone ? 20 : 28,
-      paddingVertical: isWideLayout ? 16 : isVeryCompactPhone ? 2 : 8,
+      gap: isWide ? ONBOARDING_SPACE.huge : tight ? ONBOARDING_SPACE.sm : ONBOARDING_SPACE.lg,
+      paddingHorizontal: gutter,
+      paddingVertical: tight ? ONBOARDING_SPACE.xs : ONBOARDING_SPACE.md,
     },
     artwork: {
-      width: isWideLayout ? "52%" : "100%",
-      height: isWideLayout
-        ? 520
-        : isVeryCompactPhone
-          ? 210
-          : isCompactPhone
-            ? 270
-            : isTallPhone
-              ? 400
-              : 355,
+      width: isWide ? "52%" : "100%",
+      height: ONBOARDING_ART_HEIGHT[size],
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 1,
     },
     copy: {
-      width: isWideLayout ? "40%" : "100%",
+      width: isWide ? "40%" : "100%",
       maxWidth: 520,
-      alignItems: isRtl ? "flex-end" : "flex-start",
-      paddingHorizontal: isWideLayout ? 0 : 6,
+      alignItems: "flex-start",
       flexShrink: 0,
     },
     number: {
-      fontSize: isVeryCompactPhone ? 13 : isCompactPhone ? 15 : 19,
-      lineHeight: isVeryCompactPhone ? 17 : isCompactPhone ? 19 : 24,
-      marginBottom: isCompactPhone ? 5 : 9,
-      letterSpacing: 0.6,
+      color: ONBOARDING_DESIGN.accentInk,
+      fontSize: type.label.size,
+      lineHeight: type.label.lineHeight,
+      letterSpacing: type.label.letterSpacing,
+      marginBottom: tight ? ONBOARDING_SPACE.xs : ONBOARDING_SPACE.sm,
     },
     title: {
       width: "100%",
       color: ONBOARDING_DESIGN.ink,
       fontFamily: ONBOARDING_DESIGN.serif,
-      fontSize: isWideLayout ? 66 : isVeryCompactPhone ? 33 : isCompactPhone ? 39 : isTallPhone ? 52 : 48,
-      lineHeight: isWideLayout ? 69 : isVeryCompactPhone ? 38 : isCompactPhone ? 44 : isTallPhone ? 56 : 52,
-      letterSpacing: -1.8,
+      fontSize: type.display.size,
+      lineHeight: type.display.lineHeight,
+      letterSpacing: type.display.letterSpacing,
       textAlign: "left",
     },
     titleRtl: {
       width: "100%",
       color: ONBOARDING_DESIGN.ink,
-      fontSize: isWideLayout ? 54 : isVeryCompactPhone ? 31 : isCompactPhone ? 35 : isTallPhone ? 44 : 41,
-      lineHeight: isWideLayout ? 65 : isVeryCompactPhone ? 40 : isCompactPhone ? 45 : isTallPhone ? 56 : 52,
-      letterSpacing: -0.6,
+      fontSize: type.displayRtl.size,
+      // RTL scripts need more leading than the 1.07 editorial ratio: Kurdish
+      // and Arabic ascenders/descenders collide at display sizes otherwise.
+      lineHeight: Math.round(type.displayRtl.size * 1.42),
+      letterSpacing: 0,
     },
     titleDot: {
-      color: ONBOARDING_DESIGN.orange,
+      color: ONBOARDING_DESIGN.accent,
     },
     subtitle: {
       color: ONBOARDING_DESIGN.mutedInk,
-      fontSize: isWideLayout ? 20 : isVeryCompactPhone ? 13 : isCompactPhone ? 14 : isTallPhone ? 17 : 16,
-      lineHeight: isWideLayout ? 29 : isVeryCompactPhone ? 18 : isCompactPhone ? 20 : isTallPhone ? 25 : 23,
-      marginTop: isCompactPhone ? 7 : 10,
+      fontSize: type.body.size,
+      lineHeight: type.body.lineHeight,
+      marginTop: tight ? ONBOARDING_SPACE.sm : ONBOARDING_SPACE.md,
       maxWidth: 430,
     },
   });
-
-function slideAccent(slideId: string) {
-  return slideId === "practice" ? ONBOARDING_DESIGN.orange : ONBOARDING_DESIGN.lavenderDeep;
-}
+};

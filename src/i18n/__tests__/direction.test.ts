@@ -79,4 +79,34 @@ describe("platform alignment", () => {
     expect(resolvePlatformTextAlign("android", "ltr", "left")).toBe("left");
     expect(resolvePlatformTextAlign("ios", "ltr", "right")).toBe("right");
   });
+
+  /*
+   * The regression behind English lesson text drifting right on a physical
+   * phone: the app runs under forceRTL for a Kurdish UI, so the platform swaps
+   * explicit left/right even for LTR *content*. The swap follows the layout,
+   * not the glyphs.
+   */
+  it.each(["android", "ios"])(
+    "compensates the swap for LTR content inside an RTL layout on %s",
+    (platform) => {
+      expect(resolvePlatformTextAlign(platform, "ltr", "left", "rtl")).toBe("right");
+      expect(resolvePlatformTextAlign(platform, "ltr", "right", "rtl")).toBe("left");
+      expect(resolvePlatformTextAlign(platform, "ltr", "center", "rtl")).toBe("center");
+    },
+  );
+
+  it("leaves RTL content in an LTR layout untouched", () => {
+    expect(resolvePlatformTextAlign("android", "rtl", "right", "ltr")).toBe("right");
+    expect(resolvePlatformTextAlign("ios", "rtl", "left", "ltr")).toBe("left");
+  });
+
+  it("defaults the layout direction to the content direction", () => {
+    expect(resolvePlatformTextAlign("android", "rtl", "right")).toBe(
+      resolvePlatformTextAlign("android", "rtl", "right", "rtl"),
+    );
+  });
+
+  it("keeps web unswapped regardless of layout direction", () => {
+    expect(resolvePlatformTextAlign("web", "ltr", "left", "rtl")).toBe("left");
+  });
 });

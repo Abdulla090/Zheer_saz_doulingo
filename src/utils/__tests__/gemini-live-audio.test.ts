@@ -6,6 +6,7 @@ import {
   it,
   jest,
 } from "@jest/globals";
+import * as FileSystem from "expo-file-system/legacy";
 import { LivePcmPlayer } from "../gemini-live-audio";
 
 let mockStatusListener: ((status: Record<string, unknown>) => void) | null =
@@ -84,6 +85,21 @@ async function flushPromises() {
   await Promise.resolve();
 }
 
+function pcmBase64(bytes: number | number[]): string {
+  const values =
+    typeof bytes === "number" ? new Uint8Array(bytes) : Uint8Array.from(bytes);
+  let binary = "";
+  for (const value of values) binary += String.fromCharCode(value);
+  return globalThis.btoa(binary);
+}
+
+function decodeBase64(value: string): Uint8Array {
+  const binary = globalThis.atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 describe("LivePcmPlayer turn draining", () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -111,7 +127,7 @@ describe("LivePcmPlayer turn draining", () => {
     player.enqueueBase64Pcm("AAAA");
     expect(states).toEqual([true]);
 
-    jest.advanceTimersByTime(30);
+    jest.advanceTimersByTime(200);
     await flushPromises();
     emitStatus({
       playing: false,
@@ -121,7 +137,7 @@ describe("LivePcmPlayer turn draining", () => {
       currentTime: 1,
       duration: 1,
     });
-    jest.advanceTimersByTime(150);
+    jest.advanceTimersByTime(200);
     expect(states).toEqual([true]);
 
     player.enqueueBase64Pcm("AAAA");
@@ -134,9 +150,38 @@ describe("LivePcmPlayer turn draining", () => {
       currentTime: 1,
       duration: 1,
     });
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(200);
 
     expect(states).toEqual([true, false]);
+    player.destroy();
+  });
+
+  it("prebuffers the opening instead of starting a tiny native source", async () => {
+    const player = new LivePcmPlayer();
+
+    player.enqueueBase64Pcm(pcmBase64(32_768));
+    await flushPromises();
+
+    expect(mockPlaylist.play).not.toHaveBeenCalled();
+
+    await player.finishTurn();
+
+    expect(mockPlaylist.play).toHaveBeenCalledTimes(1);
+    player.destroy();
+  });
+
+  it("keeps the first and final PCM bytes in the turn WAV", async () => {
+    const player = new LivePcmPlayer();
+
+    player.enqueueBase64Pcm(pcmBase64([0x01, 0x02]));
+    player.enqueueBase64Pcm(pcmBase64([0x7d, 0x7e]));
+    await player.finishTurn();
+
+    const writeAsStringAsync = FileSystem.writeAsStringAsync as unknown as jest.Mock;
+    const wavBase64 = writeAsStringAsync.mock.calls[0]?.[1] as string;
+    const wav = decodeBase64(wavBase64);
+
+    expect(Array.from(wav.slice(44))).toEqual([0x01, 0x02, 0x7d, 0x7e]);
     player.destroy();
   });
 
@@ -155,11 +200,11 @@ describe("LivePcmPlayer turn draining", () => {
       currentTime: 1,
       duration: 1,
     });
-    jest.advanceTimersByTime(150);
+    jest.advanceTimersByTime(200);
     expect(states).toEqual([true]);
 
     player.resume();
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(200);
     expect(states).toEqual([true, false]);
     player.destroy();
   });
@@ -169,7 +214,7 @@ describe("LivePcmPlayer turn draining", () => {
     mockPlaylist.isLoaded = false;
 
     player.enqueueBase64Pcm("AAAA");
-    jest.advanceTimersByTime(30);
+    jest.advanceTimersByTime(200);
     await flushPromises();
 
     player.enqueueBase64Pcm("AAAA");
@@ -185,7 +230,7 @@ describe("LivePcmPlayer turn draining", () => {
     const player = new LivePcmPlayer((isPlaying) => states.push(isPlaying));
 
     player.enqueueBase64Pcm("AAAA");
-    jest.advanceTimersByTime(30);
+    jest.advanceTimersByTime(200);
     await flushPromises();
     emitStatus({
       playing: false,
@@ -211,7 +256,7 @@ describe("LivePcmPlayer turn draining", () => {
       currentTime: 1,
       duration: 1,
     });
-    jest.advanceTimersByTime(100);
+    jest.advanceTimersByTime(200);
     expect(states).toEqual([true, false]);
     player.destroy();
   });

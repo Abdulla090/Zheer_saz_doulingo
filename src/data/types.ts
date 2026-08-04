@@ -28,10 +28,33 @@ export type SentenceBuilderQuestion = LessonLanguageContext & {
   xp: number;
 };
 
+/**
+ * "Type what you hear" — the sentence is never shown, only spoken. The learner
+ * rebuilds it from the word bank, so this is a sentence builder whose prompt is
+ * audio instead of text.
+ */
+export type ListenBuildQuestion = LessonLanguageContext & {
+  type: "listen_build";
+  /** Spoken sentence — also the answer, so it is never rendered as text. */
+  sentence: string;
+  wordBank: string[];
+  correctWords: string[];
+  /** Shown only after the answer is revealed. */
+  translation?: string;
+  xp: number;
+};
+
 export type MultipleChoiceQuestion = LessonLanguageContext & {
   type: "multiple_choice";
   prompt: string;
   promptLang: string;
+  /**
+   * What the learner is being asked to do. The prompt bubble carries only the
+   * phrase, so this is what lets the screen title say "How do you say…" rather
+   * than the generic "Choose an answer". Optional: hand-authored questions that
+   * omit it fall back to the generic heading.
+   */
+  promptKind?: "how_to_say" | "what_is_word" | "choose_correct";
   correctAnswer: string;
   options: string[];
   xp: number;
@@ -60,6 +83,23 @@ export type ConversationPickQuestion = LessonLanguageContext & {
   correctAnswer: string;
   optionTiers: Record<string, AnswerTier>;
   explanation: string;
+  xp: number;
+};
+
+/**
+ * "Complete the conversation" — the other speaker's line is shown in a chat
+ * bubble, the learner's reply bubble is empty, and the answer is picked from
+ * options. Distinct from `conversation_pick`: that one grades every option on a
+ * tier (great/good/bad) and shows the situation as a prompt, whereas this is a
+ * plain right/wrong reply drill presented as a two-turn chat.
+ */
+export type ConversationCompleteQuestion = LessonLanguageContext & {
+  type: "conversation_complete";
+  /** The other speaker's line. */
+  theyAsk: string;
+  options: string[];
+  correctAnswer: string;
+  explanation?: string;
   xp: number;
 };
 
@@ -121,10 +161,12 @@ export type ParagraphSpeechQuestion = LessonLanguageContext & {
 export type GameQuestion =
   | VoiceQuestion
   | SentenceBuilderQuestion
+  | ListenBuildQuestion
   | MultipleChoiceQuestion
   | PairMatchQuestion
   | FillBlankQuestion
   | ConversationPickQuestion
+  | ConversationCompleteQuestion
   | ImagePairMatchQuestion
   | ImageMultipleChoiceQuestion
   | MemoryFlipQuestion

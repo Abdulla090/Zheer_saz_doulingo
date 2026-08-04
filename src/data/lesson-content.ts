@@ -78,6 +78,7 @@ export type {
   PairMatchQuestion,
   FillBlankQuestion,
   ConversationPickQuestion,
+  ConversationCompleteQuestion,
   ImagePairMatchQuestion,
   ImageMultipleChoiceQuestion,
   MemoryFlipQuestion,
@@ -156,57 +157,52 @@ function shuffle<T>(arr: T[], seed: number): T[] {
 // ── Safe circular accessor (never throws) ───────────────────────────────────
 const pick = <T>(arr: T[], i: number): T => arr[Math.abs(i) % arr.length];
 
+/**
+ * Text for the prompt bubble.
+ *
+ * The bubble carries *content* only — the phrase to translate, the word to say.
+ * The instruction ("choose the correct sentence") belongs to the screen heading,
+ * which every game already renders. Embedding it here too printed the same
+ * sentence twice on screen and pushed the bubble to four or five lines.
+ *
+ * `which_matches_image` is the exception: it has no content of its own, so the
+ * question itself is the prompt.
+ */
 function getPromptText(
   key: "how_to_say" | "what_is_word" | "choose_correct" | "say_word" | "which_matches_image",
   nativeLang: string,
   targetLang: string,
   word: string,
 ): string {
-  const getLanguageName = (tLang: string, nLang: string) => {
-    if (nLang === "ku") return tLang === "ar" ? "عەرەبی" : "ئینگلیزی";
-    if (nLang === "ar") return tLang === "ku" ? "الكردية" : "الإنجليزية";
-    if (nLang === "es") return tLang === "ar" ? "árabe" : (tLang === "ku" ? "kurdo" : "inglés");
-    if (nLang === "ru") return tLang === "ar" ? "арабском" : (tLang === "ku" ? "курдском" : "английском");
-    return tLang === "ar" ? "Arabic" : (tLang === "ku" ? "Kurdish" : "English");
-  };
+  if (key === "which_matches_image") {
+    if (nativeLang === "ku") return `کۆدام وشە لەگەڵ وێنەکە دەگونجێت؟`;
+    if (nativeLang === "ar") return `أي كلمة تطابق الصورة؟`;
+    if (nativeLang === "es") return `¿Qué palabra coincide con la imagen?`;
+    if (nativeLang === "ru") return `Какое слово соответствует картинке?`;
+    return `Which word matches the image?`;
+  }
 
-  const langName = getLanguageName(targetLang, nativeLang);
-
-  if (nativeLang === "ku") {
-    if (key === "how_to_say") return `چۆن بە ${langName} دەڵێیت:\n«${word}»`;
-    if (key === "what_is_word") return `${word} بە ${langName} چییە؟`;
-    if (key === "choose_correct") return `ڕستەی دروست هەڵبژێرە:\n«${word}»`;
-    if (key === "say_word") return `بڵێ: ${word}`;
-    if (key === "which_matches_image") return `کۆدام وشە لەگەڵ وێنەکە دەگونجێت؟`;
-  }
-  if (nativeLang === "ar") {
-    if (key === "how_to_say") return `كيف تقول ب${langName}:\n«${word}»؟`;
-    if (key === "what_is_word") return `ما معنى ${word} ب${langName}؟`;
-    if (key === "choose_correct") return `اختر الجملة الصحيحة:\n«${word}»`;
-    if (key === "say_word") return `قل: ${word}`;
-    if (key === "which_matches_image") return `أي كلمة تطابق الصورة؟`;
-  }
-  if (nativeLang === "es") {
-    if (key === "how_to_say") return `¿Cómo se dice en ${langName}:\n«${word}»?`;
-    if (key === "what_is_word") return `¿Qué significa ${word} en ${langName}?`;
-    if (key === "choose_correct") return `Elige la frase correcta:\n«${word}»`;
-    if (key === "say_word") return `Di: ${word}`;
-    if (key === "which_matches_image") return `¿Qué palabra coincide con la imagen?`;
-  }
-  if (nativeLang === "ru") {
-    if (key === "how_to_say") return `Как сказать на ${langName}:\n«${word}»?`;
-    if (key === "what_is_word") return `Что означает ${word} на ${langName}?`;
-    if (key === "choose_correct") return `Выберите правильную фразу:\n«${word}»`;
-    if (key === "say_word") return `Скажи: ${word}`;
-    if (key === "which_matches_image") return `Какое слово соответствует картинке?`;
-  }
-  // Default/English
-  if (key === "how_to_say") return `How do you say in ${langName}:\n«${word}»?`;
-  if (key === "what_is_word") return `What does ${word} mean in ${langName}?`;
-  if (key === "choose_correct") return `Choose the correct sentence:\n«${word}»`;
-  if (key === "say_word") return `Say: ${word}`;
-  if (key === "which_matches_image") return `Which word matches the image?`;
+  // Every other prompt is the bare phrase; the heading supplies the verb.
   return word;
+}
+
+/**
+ * Heading key for a generated multiple-choice question, so the instruction the
+ * prompt used to repeat still reaches the learner — once, in the title.
+ */
+export type McPromptKind = "how_to_say" | "what_is_word" | "choose_correct";
+
+export function mcHeadingKey(kind?: McPromptKind): string {
+  switch (kind) {
+    case "how_to_say":
+      return "lessons.mcHowToSay";
+    case "what_is_word":
+      return "lessons.mcWhatIsWord";
+    case "choose_correct":
+      return "lessons.mcChooseCorrect";
+    default:
+      return "lessons.chooseAnswer";
+  }
 }
 
 export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string, targetLang: string): LessonBank {
@@ -497,15 +493,12 @@ function buildLessonQuestionsFromBank(
           3,
           optionSeed,
         );
+    const mcKind = isNormal ? "how_to_say" : "what_is_word";
     questions.push({
       type: "multiple_choice",
-      prompt: getPromptText(
-        isNormal ? "how_to_say" : "what_is_word",
-        nativeLang,
-        targetLang,
-        mcWord.kurdish
-      ),
+      prompt: getPromptText(mcKind, nativeLang, targetLang, mcWord.kurdish),
       promptLang: nativeLang,
+      promptKind: mcKind,
       correctAnswer: mcWord.english,
       options: shuffle([mcWord.english, ...mcWrongs], optionSeed),
       xp: 10,
@@ -541,6 +534,27 @@ function buildLessonQuestionsFromBank(
         wordBank: shuffle([...s.english, ...extra], seed + 20),
         correctWords: s.english,
         xp: 20,
+      });
+    }
+
+    // 3b. Listen & Build (1×) — audio-only prompt over the same sentence pool.
+    if (sentences.length > 1) {
+      const s = pick(sentences, 1);
+      const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
+      const extra = pickLessonWrongs(
+        lessonWords,
+        "",
+        2,
+        seed + 30,
+        (d) => !sentSet.has(d.toLowerCase()),
+      );
+      questions.push({
+        type: "listen_build",
+        sentence: s.english.join(" "),
+        wordBank: shuffle([...s.english, ...extra], seed + 30),
+        correctWords: s.english,
+        translation: s.kurdish,
+        xp: 25,
       });
     }
 
@@ -678,6 +692,7 @@ function buildLessonQuestionsFromBank(
       type: "multiple_choice",
       prompt: getPromptText("choose_correct", nativeLang, targetLang, mcSource.kurdish),
       promptLang: nativeLang,
+      promptKind: "choose_correct",
       correctAnswer: correctSentence,
       options: shuffle([correctSentence, ...sentenceWrongs], seed + 10),
       xp: 10,
@@ -719,7 +734,35 @@ function buildLessonQuestionsFromBank(
     });
   }
 
-  // 5. Fill Blank (2×)
+  // 5. Listen & Build (1×) — same sentence pool, audio-only prompt.
+  if (sentences.length > 0) {
+    const s = pick(sentences, 2);
+    const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
+    const extra = normalDifficulty
+      ? selectSentenceBuilderExtras(
+          learnedSingleWords,
+          s.english,
+          normalDifficulty.sentenceExtraCount,
+          seed + 30,
+        )
+      : pickLessonWrongs(
+          lessonWords,
+          "",
+          2,
+          seed + 30,
+          (d) => !sentSet.has(d.toLowerCase()),
+        );
+    questions.push({
+      type: "listen_build",
+      sentence: s.english.join(" "),
+      wordBank: shuffle([...s.english, ...extra], seed + 30),
+      correctWords: s.english,
+      translation: s.kurdish,
+      xp: 25,
+    });
+  }
+
+  // 6. Fill Blank (2×)
   for (let i = 0; i < 2; i++) {
     const f = pick(fills, i);
     const fillWrongs = normalDifficulty
@@ -740,13 +783,45 @@ function buildLessonQuestionsFromBank(
     });
   }
 
-  // 6. Conversation Pick (2×) — fallback to word MC when only one scenario exists
+  /*
+   * 7. Conversation drills (2×) — fallback to word MC when a scenario is missing.
+   *
+   * The first scenario becomes a tier-graded `conversation_pick`; the second
+   * becomes the reply-completion drill. They are split across *different*
+   * scenarios deliberately: authored banks hold one or two conversations each
+   * (never three), so drawing both drills from the same pool by index made the
+   * completion drill replay the dialogue the pick had just shown.
+   */
   for (let i = 0; i < 2; i++) {
     const c = convos[i];
     if (!c) {
       pushWordMc(6 + i, seed + 50 + i);
       continue;
     }
+
+    if (i === 1) {
+      /*
+       * Distractors come from the same authored wrongs the pick uses, deduped:
+       * two identical "wrong" tiles would read as a bug to the learner. A
+       * scenario whose wrongs collapse to nothing falls back to a word MC,
+       * since a one-option drill is unanswerable.
+       */
+      const completeOptions = [...new Set([c.correct, c.wrong1, c.wrong2].filter(Boolean))];
+      if (completeOptions.length < 2) {
+        pushWordMc(6 + i, seed + 50 + i);
+        continue;
+      }
+      questions.push({
+        type: "conversation_complete",
+        theyAsk: c.theyAsk,
+        correctAnswer: c.correct,
+        options: shuffle(completeOptions, seed + 60),
+        explanation: c.explanation,
+        xp: 20,
+      });
+      continue;
+    }
+
     const progressiveConversation = normalDifficulty
       ? buildProgressiveConversationChoices(
           c,
@@ -769,7 +844,7 @@ function buildLessonQuestionsFromBank(
     });
   }
 
-  // 7. Paragraph Speech (if present, or fallback for advanced units)
+  // 8. Paragraph Speech (if present, or fallback for advanced units)
   if (lesson.paragraphSpeeches && lesson.paragraphSpeeches.length > 0) {
     for (const ps of lesson.paragraphSpeeches) {
       questions.push({

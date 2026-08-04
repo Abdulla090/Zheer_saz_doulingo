@@ -33,6 +33,7 @@ import Animated, {
     useSharedValue,
     useAnimatedProps,
     withSequence,
+    withSpring,
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,7 +52,7 @@ import { getCurrentLessonMeta, buildLessonRouteForMode } from "../../utils/lesso
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
 import FillBlankGame from "./games/FillBlankGame";
-import { L } from "./games/lesson-light-design";
+import { L, DuoMotion } from "./games/lesson-light-design";
 import {
   LessonLightHeader,
   LessonLiquidFeedback,
@@ -62,16 +63,45 @@ import { HomeLiquidButton, HomeLiquidCard } from "../../components/ui/ios-liquid
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
+import ListenBuildGame from "./games/ListenBuildGame";
 import VoiceGame from "./games/VoiceGame";
 import PictureMatchGame from "./games/PictureMatchGame";
 import ImageMultipleChoiceGame from "./games/ImageMultipleChoiceGame";
 import MemoryFlipGame from "./games/MemoryFlipGame";
 import ParagraphSpeechGame from "./games/ParagraphSpeechGame";
+import ConversationCompleteGame from "./games/ConversationCompleteGame";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const MAX_HEARTS = 5;
 const SHEET_H = 280;
+
+/**
+ * The expected answer, in the shape the feedback panel shows it.
+ *
+ * Each question type stores its answer differently, and a few (matching games,
+ * open speaking) have no single answer worth printing — those return undefined
+ * and the panel falls back to its subtitle.
+ */
+function expectedAnswer(q: GameQuestion | undefined): string | undefined {
+  if (!q) return undefined;
+  switch (q.type) {
+    case "multiple_choice":
+    case "fill_blank":
+    case "image_multiple_choice":
+    case "conversation_pick":
+    case "conversation_complete":
+      return (q as any).correctAnswer;
+    case "sentence_builder":
+      return (q as any).correctWords?.join(" ");
+    case "listen_build":
+      return (q as any).correctWords?.join(" ");
+    case "voice":
+      return (q as any).targetWord;
+    default:
+      return undefined;
+  }
+}
 
 /* Summary stat card */
 function StatCard({
@@ -138,6 +168,7 @@ export default function LessonScreen() {
     correct: boolean;
     tier?: AnswerTier;
     explanation?: string;
+    correctAnswer?: string;
   } | null>(null);
 
   const nextRef = useRef(0);
@@ -267,36 +298,32 @@ export default function LessonScreen() {
       nextRef.current = next;
       // Animate smoothly to end (100% / 1.0) on the last question, maintaining a small minimum otherwise
       const nextVal = next >= questions.length ? 1.0 : Math.max(0.05, next / questions.length);
-      progressW.value = withTiming(nextVal, {
-        duration: 420,
-        easing: Easing.out(Easing.cubic),
-      });
+      progressW.value = withSpring(nextVal, DuoMotion.progress);
 
       setFeedback({
         correct: correct === "skip" ? false : correct,
         tier: isConversationPick ? tier : undefined,
         explanation,
+        correctAnswer: expectedAnswer(q),
       });
-      sheetY.value = withTiming(0, {
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-      });
-      sheetScale.value = withTiming(1, {
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-      });
-      sheetOpacity.value = withTiming(1, { duration: 160 });
+      // Spring in — the panel settles rather than stopping dead, which reads as
+      // weight. Opacity leads slightly so it never flashes at full offset.
+      sheetY.value = withSpring(0, DuoMotion.sheet);
+      sheetScale.value = withSpring(1, DuoMotion.sheet);
+      sheetOpacity.value = withTiming(1, { duration: 150 });
     },
     [current, hearts, questions],
   );
 
   const continueToNext = useCallback(() => {
+    // Exit is timing-based, not spring: a spring's tail would keep the panel
+    // faintly on-screen while the next question is already mounting.
     sheetY.value = withTiming(SHEET_H + insets.bottom, {
-      duration: 220,
-      easing: Easing.in(Easing.quad),
+      duration: 200,
+      easing: Easing.in(Easing.cubic),
     });
-    sheetScale.value = withTiming(0.94, { duration: 220 });
-    sheetOpacity.value = withTiming(0, { duration: 180 });
+    sheetScale.value = withTiming(0.96, { duration: 200 });
+    sheetOpacity.value = withTiming(0, { duration: 150 });
     setTimeout(() => {
       setFeedback(null);
       const next = nextRef.current;
@@ -306,7 +333,7 @@ export default function LessonScreen() {
       } else {
         setCurrent(next);
       }
-    }, 260);
+    }, 210);
   }, [questions.length, insets.bottom]);
 
   const renderGame = (q: GameQuestion) => {
@@ -316,9 +343,11 @@ export default function LessonScreen() {
       case "multiple_choice":     return <MultipleChoiceGame       key={key} {...shared} question={q} />;
       case "pair_match":          return <PairMatchGame            key={key} {...shared} question={q} />;
       case "sentence_builder":    return <SentenceBuilderGame      key={key} {...shared} question={q} />;
+      case "listen_build":        return <ListenBuildGame          key={key} {...shared} question={q} />;
       case "voice":               return <VoiceGame                key={key} {...shared} question={q} />;
       case "fill_blank":          return <FillBlankGame            key={key} {...shared} question={q} />;
       case "conversation_pick":   return <ConversationPickGame     key={key} {...shared} question={q} />;
+      case "conversation_complete": return <ConversationCompleteGame key={key} {...shared} question={q} />;
       case "image_pair_match":    return <PictureMatchGame         key={key} {...shared} question={q} />;
       case "image_multiple_choice": return <ImageMultipleChoiceGame key={key} {...shared} question={q} />;
       case "memory_flip":         return <MemoryFlipGame           key={key} {...shared} question={q} />;
@@ -528,6 +557,7 @@ export default function LessonScreen() {
   /* ─────── ACTIVE GAME SCREEN ─────── */
   const isCorrect = feedback?.correct === true;
   const Backdrop = isKidsMode ? KidsLessonBackdrop : LessonMeshBackdrop;
+  const isNormalMode = pathMode === "normal";
   const isConversationPick = questions[current]?.type === "conversation_pick";
   const feedbackTier = isConversationPick ? feedback?.tier : undefined;
   const feedbackTitle = feedbackTier
@@ -550,6 +580,8 @@ export default function LessonScreen() {
           <LessonLightHeader
             progressFillStyle={progressStyle}
             hearts={hearts}
+            maxHearts={MAX_HEARTS}
+            step={current}
             onBack={exitToPath}
             unitNumber={displayUnitNumber}
             lessonNumber={lessonIndex + 1}
@@ -577,7 +609,11 @@ export default function LessonScreen() {
             style={[
               sL.sheet,
               isDesktopWeb && sL.sheetDesktop,
-              { paddingBottom: Math.max(insets.bottom, 16) + 8 },
+              // The normal path's panel is full-bleed: it supplies its own
+              // padding and absorbs the safe-area inset internally.
+              isNormalMode
+                ? sL.sheetFlush
+                : { paddingBottom: Math.max(insets.bottom, 16) + 8 },
               sheetStyle,
             ]}
           >
@@ -586,7 +622,9 @@ export default function LessonScreen() {
               tier={feedbackTier}
               title={feedbackTitle}
               subtitle={feedbackSubtitle}
-              buttonLabel={t("common.continue")}
+              correctAnswer={feedback?.correctAnswer}
+              bottomInset={Math.max(insets.bottom, 12)}
+              buttonLabel={isNormalMode ? undefined : t("common.continue")}
               onContinue={continueToNext}
               variant={isKidsMode ? "kids" : "default"}
             />
@@ -696,6 +734,11 @@ const sL = StyleSheet.create({
     maxWidth: 640,
     marginHorizontal: "auto",
     paddingHorizontal: 10,
+  },
+  /** Normal path: edge-to-edge panel, no card inset. */
+  sheetFlush: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
 });
 

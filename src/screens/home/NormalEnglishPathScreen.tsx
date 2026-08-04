@@ -32,7 +32,13 @@ import {
 } from "../../data/path-unit-titles";
 import { useI18n } from "../../hooks/useI18n";
 import { ltrText, rtlText } from "../lesson/games/game-text";
-import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import { PATH_LIST_REMOVE_CLIPPED, PATH_LIST_TUNING } from "../../utils/native-perf";
+import { shadeHex } from "../../utils/color-shade";
+import {
+  SVG_BUTTON_COLOR_SETS,
+  type SvgButtonVariant,
+} from "./components/list-button";
+import { Duo } from "../lesson/games/lesson-light-design";
 import { PressableScale } from "../../components/animations/PressableScale";
 import React, {
   useCallback,
@@ -66,22 +72,32 @@ import {
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
 
 const NormalSectionHeader = React.memo(
-  ({ section, isKu }: { section: SectionDataItem; isKu: boolean }) => {
+  ({
+    section,
+    isKu,
+    lineColor,
+    titleColor,
+  }: {
+    section: SectionDataItem;
+    isKu: boolean;
+    lineColor: string;
+    titleColor: string;
+  }) => {
     if (section.unitIndex === 0) return null;
     const direction = isKu ? rtlText : ltrText;
 
     return (
       <View style={darkStyles.sectionHeader}>
-        <View style={darkStyles.sectionLine} />
+        <View style={[darkStyles.sectionLine, { backgroundColor: lineColor }]} />
         <AppText
-          style={[darkStyles.sectionTitle, direction]}
+          style={[darkStyles.sectionTitle, { color: titleColor }, direction]}
           forceKurdishFont={isKu}
           forceLatinFont={!isKu}
           numberOfLines={2}
         >
           {section.title}
         </AppText>
-        <View style={darkStyles.sectionLine} />
+        <View style={[darkStyles.sectionLine, { backgroundColor: lineColor }]} />
       </View>
     );
   },
@@ -208,10 +224,10 @@ export function NormalEnglishPathScreen({
           style={{
             paddingVertical: 14,
             paddingHorizontal: 28,
-            backgroundColor: "#0F172A",
+            backgroundColor: Duo.accent,
             borderRadius: 20,
             borderBottomWidth: 4,
-            borderBottomColor: "#020617",
+            borderBottomColor: Duo.accentDark,
           }}
           onPress={() => setVisibleUnitsCount((prev) => prev + 2)}
         >
@@ -244,23 +260,25 @@ export function NormalEnglishPathScreen({
   }, [activeSectionIndex, locale]);
 
   const buttonColors = useMemo(() => {
+    /*
+     * The unit banner now takes the colour of the unit it labels, so scrolling
+     * into a new unit recolours the header along with its nodes. Sourced from
+     * `SVG_BUTTON_COLOR_SETS` — the same table the nodes read — rather than a
+     * parallel palette, so the two can never drift apart.
+     *
+     * Dark mode darkens both stops: the node colours are tuned for a white
+     * canvas and read as glare on a dark one.
+     */
+    const theme = localizedSections[activeSectionIndex]?.displayTheme;
+    const set =
+      (theme && SVG_BUTTON_COLOR_SETS[theme as SvgButtonVariant]) ||
+      SVG_BUTTON_COLOR_SETS.orange;
+
     if (isDark) {
-      return { rim: "#0F172A", face: "#1E293B" };
+      return { rim: shadeHex(set.rim, 0.72), face: shadeHex(set.face, 0.82) };
     }
-    const lightColorSets: Record<string, { face: string; rim: string }> = {
-      green: { rim: "#0B8A6C", face: "#08c296" },
-      purple: { rim: "#5E35B1", face: "#7E57C2" },
-      blue: { rim: "#0277BD", face: "#039BE5" },
-      mint: { rim: "#00695C", face: "#00897B" },
-      gray: { rim: "#90A4AE", face: "#B0BEC5" },
-      yellow: { rim: "#F57F17", face: "#FBC02D" },
-      orange: { rim: "#E65100", face: "#FF9800" },
-      red: { rim: "#B71C1C", face: "#F44336" },
-    };
-    return (
-      lightColorSets[activeSectionTheme] ?? { rim: "#0277BD", face: "#039BE5" }
-    );
-  }, [isDark, activeSectionTheme]);
+    return set;
+  }, [isDark, localizedSections, activeSectionIndex]);
 
   const recalcMaxScroll = useCallback(() => {
     maxScrollYRef.current = Math.max(
@@ -314,9 +332,14 @@ export function NormalEnglishPathScreen({
 
   const renderSectionHeader = useCallback(
     ({ section }: { section: SectionDataItem }) => (
-      <NormalSectionHeader section={section} isKu={isKu} />
+      <NormalSectionHeader
+        section={section}
+        isKu={isKu}
+        lineColor={colors.border}
+        titleColor={colors.mutedForeground}
+      />
     ),
-    [isKu],
+    [isKu, colors.border, colors.mutedForeground],
   );
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -344,10 +367,18 @@ export function NormalEnglishPathScreen({
 
     return (
       <View style={[darkStyles.emptyState, { backgroundColor: colors.background }]}>
-        <AppText style={darkStyles.emptyTitle} languageCode={locale} align="center">
+        <AppText
+          style={[darkStyles.emptyTitle, { color: colors.foreground }]}
+          languageCode={locale}
+          align="center"
+        >
           {emptyCopy.title}
         </AppText>
-        <AppText style={darkStyles.emptyBody} languageCode={locale} align="center">
+        <AppText
+          style={[darkStyles.emptyBody, { color: colors.mutedForeground }]}
+          languageCode={locale}
+          align="center"
+        >
           {emptyCopy.body}
         </AppText>
       </View>
@@ -397,11 +428,13 @@ export function NormalEnglishPathScreen({
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
           ]}
           stickySectionHeadersEnabled={false}
-          initialNumToRender={6}
-          maxToRenderPerBatch={4}
-          windowSize={3}
+          // Virtualization budget scales with the device: old hardware wins more
+          // from a small render window than from any single visual effect.
+          initialNumToRender={PATH_LIST_TUNING.initialNumToRender}
+          maxToRenderPerBatch={PATH_LIST_TUNING.maxToRenderPerBatch}
+          windowSize={PATH_LIST_TUNING.windowSize}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          updateCellsBatchingPeriod={100}
+          updateCellsBatchingPeriod={PATH_LIST_TUNING.updateCellsBatchingPeriod}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />

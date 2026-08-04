@@ -49,29 +49,30 @@ export const NORMAL_UNITS: UnitBank[] = [
   unit5SpecialEncounters, // Unit 18 (C2)
 ];
 
+/**
+ * Per-unit node colour, in order. Unit 1 is orange (the app's system accent, so
+ * the path opens on-brand), unit 2 purple, then the rest cycle. `theme` and
+ * `displayTheme` are kept equal here: the street path uses `theme: "gray"` to
+ * mute later units, but the normal path keeps every unit fully coloured.
+ */
+export const NORMAL_SECTION_THEME_CYCLE: SectionTheme[] = [
+  "orange",
+  "purple",
+  "blue",
+  "green",
+  "mint",
+  "yellow",
+  "red",
+];
+
 export const normalSectionConfigs: {
   theme: SectionTheme;
   displayTheme: SectionTheme;
-}[] = [
-  { theme: "mint", displayTheme: "mint" },
-  { theme: "yellow", displayTheme: "yellow" },
-  { theme: "blue", displayTheme: "blue" },
-  { theme: "green", displayTheme: "green" },
-  { theme: "purple", displayTheme: "purple" },
-  { theme: "orange", displayTheme: "orange" },
-  { theme: "red", displayTheme: "red" },
-  { theme: "blue", displayTheme: "blue" },
-  { theme: "green", displayTheme: "green" },
-  { theme: "purple", displayTheme: "purple" },
-  { theme: "orange", displayTheme: "orange" },
-  { theme: "red", displayTheme: "red" },
-  { theme: "yellow", displayTheme: "yellow" },
-  { theme: "mint", displayTheme: "mint" },
-  { theme: "purple", displayTheme: "purple" },
-  { theme: "blue", displayTheme: "blue" },
-  { theme: "green", displayTheme: "green" },
-  { theme: "orange", displayTheme: "orange" },
-];
+}[] = Array.from({ length: 18 }, (_, unitIndex) => {
+  const theme =
+    NORMAL_SECTION_THEME_CYCLE[unitIndex % NORMAL_SECTION_THEME_CYCLE.length];
+  return { theme, displayTheme: theme };
+});
 
 const BASE_PATTERN: LessonType[] = [
   "practice",

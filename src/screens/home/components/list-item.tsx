@@ -139,9 +139,15 @@ export const ListItem = React.memo(
           height: metrics.slotHeight,
           width: "100%",
           alignItems: "center",
+          // The rendered node is taller than `lessonButtonSize` — it also
+          // carries a rim and a ground shadow below the face. Centring on the
+          // face size alone would sit every node low in its slot, so the
+          // occupied height is approximated before splitting the remainder.
           paddingTop: Math.max(
-            8,
-            (metrics.slotHeight - metrics.lessonButtonSize) / 2,
+            6,
+            Math.round(
+              (metrics.slotHeight - metrics.lessonButtonSize * 1.16) / 2,
+            ),
           ),
         }}
       >

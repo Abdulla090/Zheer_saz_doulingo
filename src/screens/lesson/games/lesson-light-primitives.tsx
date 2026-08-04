@@ -43,7 +43,17 @@ import Animated, {
 import Svg, { Path, Circle, Line } from "react-native-svg";
 import { useLocalSearchParams } from "expo-router";
 import { useTTS } from "../../../hooks/use-tts";
-import { L, LightMotion, LightRadius, LightType } from "./lesson-light-design";
+import { L, Duo, LightMotion, LightRadius, LightType } from "./lesson-light-design";
+import {
+  DuoCheckButton,
+  DuoFeedbackPanel,
+  DuoHeading,
+  DuoLessonHeader,
+  DuoPrompt,
+  DuoTile,
+  useIsNormalPath,
+  type DuoTileState,
+} from "./duo-normal";
 import type { AnswerTier } from "../../../utils/answer-tier";
 import { TIER_COLORS } from "../../../utils/answer-tier";
 import { LessonUnitLessonChip } from "../components/LessonUnitLessonChip";
@@ -52,6 +62,7 @@ import { TwinoMascot, type TwinoPose } from "../../../components/mascot/TwinoMas
 import { RiveMascot } from "../../../components/mascot/RiveMascot";
 import { DirectionalView } from "../../../components/ui/Directional";
 import { getLanguageDirection } from "../../../i18n/direction";
+import { LayoutDirectionProvider, useLayoutDirection } from "../../../i18n/layout-direction";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 
@@ -68,10 +79,20 @@ export function LightGameHeading({
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
+  const params = useLocalSearchParams();
+  const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const isKidsRoute = rawMode === "kids";
+  const showExtras = isKidsRoute || isDark;
+  const isNormal = useIsNormalPath();
+
+  if (isNormal) {
+    return <DuoHeading title={title} />;
+  }
+
   return (
     <View style={[lh.headingWrap, { alignItems: rtl ? "flex-end" : "flex-start" }]}>
-      {badge ? (
+      {showExtras && badge ? (
         <View style={[lh.kidsGameHeadingBadge, { alignSelf: rtl ? "flex-end" : "flex-start" }]}>
           <AppText style={lh.kidsGameHeadingBadgeText} forceLatinFont latinRole="bold">
             {badge.toUpperCase()}
@@ -81,7 +102,7 @@ export function LightGameHeading({
       <AppText languageCode={uiLanguage} align="start" fullWidth style={[LightType.title, { color: colors.foreground }]}>
         {title}
       </AppText>
-      {subtitle ? (
+      {showExtras && subtitle ? (
         <AppText languageCode={uiLanguage} align="start" fullWidth style={[LightType.subtitle, { color: colors.mutedForeground }]} latinRole="regular">
           {subtitle}
         </AppText>
@@ -109,7 +130,7 @@ export function LightPromptCard({
   const isKids = variant === "kids";
   const storedSourceLanguage = useLocaleStore((state) => state.selectedSourceLanguage);
   const storedTargetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
-  const { colors } = useThemeColors();
+  const { colors, isDark } = useThemeColors();
 
   const inner = (
     <>
@@ -159,10 +180,17 @@ export function LightPromptCard({
     );
   }
 
+  if (isDark) {
+    return (
+      <HomeLiquidCard contentStyle={lh.promptCardInner} radius={22}>
+        {inner}
+      </HomeLiquidCard>
+    );
+  }
   return (
-    <HomeLiquidCard contentStyle={lh.promptCardInner} radius={22}>
+    <View style={[lh.promptCardInner, { backgroundColor: Duo.snow, borderRadius: 16, borderWidth: 2, borderColor: Duo.border, borderBottomWidth: 4, borderBottomColor: Duo.borderDark }]}>
       {inner}
-    </HomeLiquidCard>
+    </View>
   );
 }
 
@@ -190,10 +218,28 @@ export function LightSurfaceCard({
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   const lh = useLessonStyles();
+  const { isDark } = useThemeColors();
+  const params = useLocalSearchParams();
+  const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const isKidsRoute = rawMode === "kids";
+  const isNormal = useIsNormalPath();
+
+  // Normal path: content sits directly on the canvas — no card, no frame.
+  if (isNormal) {
+    return <View style={[lh.surfaceBare, contentStyle, style]}>{children}</View>;
+  }
+
+  if (isDark || isKidsRoute) {
+    return (
+      <HomeLiquidCard style={style} contentStyle={[lh.surfaceCardInner, contentStyle]} radius={22}>
+        {children}
+      </HomeLiquidCard>
+    );
+  }
   return (
-    <HomeLiquidCard style={style} contentStyle={[lh.surfaceCardInner, contentStyle]} radius={22}>
+    <View style={[lh.surfaceCardInner, contentStyle, style]}>
       {children}
-    </HomeLiquidCard>
+    </View>
   );
 }
 
@@ -208,17 +254,86 @@ export function LightDialogueCard({
   contentLanguageCode?: string;
 }) {
   const lh = useLessonStyles();
-  const { isKu, isAr } = useI18n();
+  const { t, isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
   const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
   const languageCode = contentLanguageCode ?? targetLanguage;
   const { colors, isDark } = useThemeColors();
+  const isNormal = useIsNormalPath();
+  const { speak } = useTTS();
+
+  const speakDialogue = React.useCallback(() => {
+    if (Platform.OS !== "web") void Haptics.selectionAsync();
+    void speak(children, languageCode, undefined, { provider: "device" });
+  }, [children, languageCode, speak]);
+
+  if (isNormal) {
+    /*
+     * This is the other speaker's line, not something the learner can pick. It
+     * previously rendered as a white 2px-bordered box — the exact silhouette of
+     * an answer tile sitting directly below it, so the turn read as a sixth
+     * option. Three cues separate them now:
+     *   • a tinted fill instead of the tiles' white face
+     *   • no bottom rim (the tiles' 4px rim is what reads as "pressable")
+     *   • a tail pointing back at the speaker, plus a replayable speaker glyph
+     */
+    return (
+      <View style={lh.duoDialogueWrap}>
+        <AppText
+          languageCode={uiLanguage}
+          align="start"
+          fullWidth
+          style={lh.duoDialogueLabel}
+        >
+          {label}
+        </AppText>
+        <View style={lh.duoDialogueBubbleWrap}>
+          <Pressable
+            onPress={() => speakDialogue()}
+            accessibilityRole="button"
+            accessibilityLabel={`${t("lessons.listenLabel")}: ${children}`}
+            style={[
+              lh.duoDialogueBubble,
+              {
+                backgroundColor: isDark ? colors.surfaceRaised : Duo.accentBg,
+                borderColor: isDark ? colors.border : Duo.accentBorder,
+              },
+            ]}
+          >
+            <View style={lh.duoDialogueSpeaker}>
+              <HugeiconsIcon icon={VolumeHighIcon} size={22} color={Duo.accent} strokeWidth={2.4} />
+            </View>
+            <AppText
+              languageCode={languageCode}
+              align="start"
+              style={[lh.duoDialogueText, { color: colors.foreground, flex: 1 }]}
+            >
+              {children}
+            </AppText>
+          </Pressable>
+          {/* Tail points back toward the speaker; physical side is not mirrored for us. */}
+          <View
+            style={[
+              lh.duoDialogueTail,
+              rtl ? lh.duoDialogueTailRtl : lh.duoDialogueTailLtr,
+              {
+                backgroundColor: isDark ? colors.surfaceRaised : Duo.accentBg,
+                borderColor: isDark ? colors.border : Duo.accentBorder,
+              },
+            ]}
+            pointerEvents="none"
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[lh.dialogueWrap, rtl ? { marginLeft: 0, marginRight: 4 } : undefined]}>
       <View style={lh.dialogueBubble}>
         <LinearGradient
-          colors={isDark ? [colors.surfaceRaised, colors.surface, "#172A46"] : ["#F0F9FF", "#E0F2FE", "#BAE6FD"]}
+          colors={isDark ? [colors.surfaceRaised, colors.surface, "#172A46"] : [Duo.snow, Duo.snow, "#F8FAFC"]}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -295,6 +410,7 @@ export function LightQuestionPrompt({
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKids = variant === "kids" || rawMode === "kids";
   const { width, height } = useWindowDimensions();
+  const isNormal = useIsNormalPath();
 
   const { speak } = useTTS();
   const { t, isKu, isAr } = useI18n();
@@ -380,6 +496,19 @@ export function LightQuestionPrompt({
     const index = Math.abs(hash) % poses.length;
     return poses[index];
   }, [children, label]);
+
+  if (isNormal) {
+    return (
+      <DuoPrompt
+        speechText={speechText}
+        speechLanguageCode={speechLanguageCode}
+        contentLanguageCode={languageCode}
+        pose={pose}
+      >
+        {children}
+      </DuoPrompt>
+    );
+  }
 
   if (isKids) {
     return (
@@ -515,8 +644,7 @@ export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) 
   const lh = useLessonStyles();
   const { colors, isDark } = useThemeColors();
   return (
-    <View style={[lh.backdrop, { backgroundColor: colors.background }]}>
-      {!isDark && <HomeMeshBackground />}
+    <View style={[lh.backdrop, { backgroundColor: isDark ? colors.background : Duo.snow }]}>
       <View style={lh.backdropContent}>{children}</View>
     </View>
   );
@@ -724,6 +852,8 @@ export function LightWordTile({
   const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
   const { colors, isDark } = useThemeColors();
+  const isNormal = useIsNormalPath();
+  const ambientDirection = useLayoutDirection();
 
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -760,10 +890,10 @@ export function LightWordTile({
     return {
       bg: [
         isDark && !isKidsRoute ? colors.surfaceRaised : "#FFFFFF", // idle
-        isDark && !isKidsRoute ? colors.surface : "#F8FAFC", // pending
-        isKidsRoute ? "#7DD3FC" : isDark ? darkState.selected : "#E8EFFF", // selected
-        isKidsRoute ? "#BBF7D0" : isDark ? darkState.correct : "#E7F9E0", // correct
-        isKidsRoute ? "#FEF2F2" : isDark ? darkState.wrong : "#FFE8E8", // wrong
+        isDark && !isKidsRoute ? colors.surface : Duo.snow, // pending
+        isKidsRoute ? "#7DD3FC" : isDark ? darkState.selected : Duo.blueBg, // selected
+        isKidsRoute ? "#BBF7D0" : isDark ? darkState.correct : Duo.greenBg, // correct
+        isKidsRoute ? "#FEF2F2" : isDark ? darkState.wrong : Duo.redBg, // wrong
         isDark && !isKidsRoute ? darkState.correct : TIER_COLORS.great.bg,
         isDark && !isKidsRoute ? darkState.good : TIER_COLORS.good.bg,
         isDark && !isKidsRoute ? darkState.bad : TIER_COLORS.bad.bg,
@@ -773,9 +903,9 @@ export function LightWordTile({
       border: [
         isKidsRoute ? "#E5E7EB" : dividerColor, // idle
         "#94A3B8", // pending
-        isKidsRoute ? "#38BDF8" : L.blue, // selected
-        isKidsRoute ? "#16A34A" : L.green, // correct
-        isKidsRoute ? "#EF4444" : L.red, // wrong
+        isKidsRoute ? "#38BDF8" : Duo.blue, // selected
+        isKidsRoute ? "#16A34A" : Duo.green, // correct
+        isKidsRoute ? "#EF4444" : Duo.red, // wrong
         TIER_COLORS.great.accent,
         TIER_COLORS.good.accent,
         TIER_COLORS.bad.accent,
@@ -839,10 +969,45 @@ export function LightWordTile({
   const shouldCenterLabel = centerLabel && !isLtrLabel;
   // Native Pressable inherits the app's RTL direction. Keep English answer
   // tiles explicitly LTR before checking; Kurdish/Arabic tiles are untouched.
+  // The provider must travel with the style so AppText inside compensates for
+  // this boundary rather than the outer one — see `i18n/layout-direction`.
   const nativeLtrBoundary =
     Platform.OS !== "web" && isLtrLabel
       ? ({ direction: "ltr" } as const)
       : undefined;
+  const tileDirection: "ltr" | "rtl" = nativeLtrBoundary ? "ltr" : ambientDirection;
+
+  if (isNormal) {
+    // "pending" (a word sitting in an answer slot) reads as a plain resting
+    // tile in the reference design; the tier states collapse onto correct/wrong.
+    const duoState: DuoTileState =
+      state === "ghost"
+        ? "ghost"
+        : state === "selected"
+          ? "selected"
+          : state === "correct" || state === "great"
+            ? "correct"
+            : state === "wrong" || state === "bad" || state === "terrible"
+              ? "wrong"
+              : state === "good"
+                ? "selected"
+                : "idle";
+
+    return (
+      <DuoTile
+        label={label}
+        tierLabel={tierLabel}
+        state={duoState}
+        onPress={onPress}
+        disabled={disabled}
+        languageCode={labelLanguageCode}
+        align={wide ? "start" : "center"}
+        fontSize={fontSize}
+        numberOfLines={wrapLabel ? 3 : undefined}
+        style={[wide && { width: "100%" }, style]}
+      />
+    );
+  }
 
   const content = (
     <Animated.View
@@ -867,13 +1032,13 @@ export function LightWordTile({
           opacity: state === "ghost" ? 0.35 : 1,
           overflow: wrapLabel ? "visible" : "hidden",
         },
-        state !== "ghost" &&
+        state !== "ghost" && isKidsRoute &&
           crossShadow({
             color: "#1A2B48",
-            offsetY: isKidsRoute ? 8 : 6,
-            blur: isKidsRoute ? 16 : 14,
-            opacity: isKidsRoute ? 0.1 : 0.07,
-            elevation: isKidsRoute ? 4 : 3,
+            offsetY: 8,
+            blur: 16,
+            opacity: 0.1,
+            elevation: 4,
           }),
         style,
         nativeLtrBoundary,
@@ -972,30 +1137,36 @@ export function LightWordTile({
   );
 
   if (!onPress || disabled || state === "ghost") {
-    return <Animated.View style={[animScale, nativeLtrBoundary]}>{content}</Animated.View>;
+    return (
+      <LayoutDirectionProvider value={tileDirection}>
+        <Animated.View style={[animScale, nativeLtrBoundary]}>{content}</Animated.View>
+      </LayoutDirectionProvider>
+    );
   }
 
   return (
-    <Animated.View style={[animScale, nativeLtrBoundary]}>
-      <Pressable
-        style={nativeLtrBoundary}
-        onPress={() => {
-          if (Platform.OS !== "web") void Haptics.selectionAsync();
-          onPress();
-        }}
-        onPressIn={() => {
-          scale.value = withSpring(0.97, LightMotion.soft);
-          translateY.value = withSpring(isKidsRoute ? 4 : 0, LightMotion.soft);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, LightMotion.soft);
-          translateY.value = withSpring(0, LightMotion.soft);
-        }}
-        disabled={disabled}
-      >
-        {content}
-      </Pressable>
-    </Animated.View>
+    <LayoutDirectionProvider value={tileDirection}>
+      <Animated.View style={[animScale, nativeLtrBoundary]}>
+        <Pressable
+          style={nativeLtrBoundary}
+          onPress={() => {
+            if (Platform.OS !== "web") void Haptics.selectionAsync();
+            onPress();
+          }}
+          onPressIn={() => {
+            scale.value = withSpring(0.97, LightMotion.soft);
+            translateY.value = withSpring(isKidsRoute ? 4 : 0, LightMotion.soft);
+          }}
+          onPressOut={() => {
+            scale.value = withSpring(1, LightMotion.soft);
+            translateY.value = withSpring(0, LightMotion.soft);
+          }}
+          disabled={disabled}
+        >
+          {content}
+        </Pressable>
+      </Animated.View>
+    </LayoutDirectionProvider>
   );
 }
 
@@ -1073,6 +1244,11 @@ export function LightCheckButton({
   const params = useLocalSearchParams();
   const rawMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
   const isKids = variant === "kids" || rawMode === "kids";
+  const isNormal = useIsNormalPath();
+
+  if (isNormal) {
+    return <DuoCheckButton label={label} onPress={onPress} disabled={disabled} />;
+  }
 
   if (isKids) {
     if (disabled) {
@@ -1220,6 +1396,8 @@ export function LessonLightHeader({
   unitNumber,
   lessonNumber,
   variant = "default",
+  maxHearts = 5,
+  step,
 }: {
   progressFillStyle: any;
   hearts: number;
@@ -1227,12 +1405,27 @@ export function LessonLightHeader({
   unitNumber: number;
   lessonNumber: number;
   variant?: "default" | "kids";
+  maxHearts?: number;
+  step?: number;
 }) {
   const lh = useLessonStyles();
   const { isKu, isAr } = useI18n();
   const rtl = isKu || isAr;
   const isKids = variant === "kids";
   const { colors, isDark } = useThemeColors();
+  const isNormal = useIsNormalPath();
+
+  if (isNormal) {
+    return (
+      <DuoLessonHeader
+        progressFillStyle={progressFillStyle}
+        hearts={hearts}
+        maxHearts={maxHearts}
+        onBack={onBack}
+        step={step}
+      />
+    );
+  }
 
   if (isKids) {
     return (
@@ -1310,6 +1503,8 @@ export function LessonLiquidFeedback({
   buttonLabel,
   onContinue,
   variant = "default",
+  correctAnswer,
+  bottomInset = 0,
 }: {
   correct: boolean;
   tier?: AnswerTier;
@@ -1318,12 +1513,31 @@ export function LessonLiquidFeedback({
   buttonLabel?: string;
   onContinue: () => void;
   variant?: "default" | "kids";
+  /** Shown under a "Correct Answer:" label when the attempt was wrong. */
+  correctAnswer?: string;
+  bottomInset?: number;
 }) {
   const lh = useLessonStyles();
   const { t, isKu, isAr } = useI18n();
+  const { colors, isDark } = useThemeColors();
   const rtl = isKu || isAr;
   const isKids = variant === "kids";
   const isPassing = correct || tier === "great" || tier === "good";
+  const isNormal = useIsNormalPath();
+
+  if (isNormal) {
+    return (
+      <DuoFeedbackPanel
+        correct={isPassing}
+        title={title}
+        subtitle={subtitle}
+        correctAnswer={correctAnswer}
+        buttonLabel={buttonLabel}
+        onContinue={onContinue}
+        bottomInset={bottomInset}
+      />
+    );
+  }
 
   if (isKids) {
     const kidsBg = isPassing ? "#EAFBE0" : "#FEECEC";
@@ -1380,44 +1594,61 @@ export function LessonLiquidFeedback({
     );
   }
 
-  const accent = isPassing ? L.green : L.red;
-  const titleColor = isPassing ? L.greenDeep : L.redDeep;
-
-  // Decide Pingo pose based on correctness
-  const isTierGoodOrGreat = tier === "good" || tier === "great";
-  const pose = isPassing ? (isTierGoodOrGreat ? "wink" : "happy") : "losing";
+  const duoBg = isPassing ? Duo.greenBg : Duo.redBg;
+  const duoTitleColor = isPassing ? Duo.greenText : Duo.redText;
+  const duoBtnBg = isPassing ? Duo.green : Duo.red;
+  const duoBtnDark = isPassing ? Duo.greenDark : Duo.redDark;
 
   return (
-    <HomeLiquidCard
-      style={{ borderColor: accent, borderWidth: 1.5 }}
-      contentStyle={[lh.feedbackInner, { paddingBottom: 16 }]}
-      radius={26}
+    <View
+      style={[
+        lh.duoFeedbackWrap,
+        { backgroundColor: isDark ? colors.surfaceRaised : duoBg },
+      ]}
     >
-      <View style={[lh.trayHandle, { backgroundColor: isPassing ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)" }]} />
-      <View style={[lh.feedbackAccent, { backgroundColor: accent }]} />
-      
-      <View style={lh.feedbackRow}>
-        <View style={lh.feedbackMascotCol}>
-          <TwinoMascot size={110} pose={pose} />
-        </View>
-        
-        <View style={lh.feedbackTextCol}>
-          <AppText style={[lh.feedbackTitle, { color: titleColor, textAlign: rtl ? "right" : "left" }]}>
+      <View style={[lh.feedbackTextCol, { paddingHorizontal: 20, paddingTop: 20 }]}>
+        <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
+          {isPassing ? (
+            <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+              <Path d="M9 12l2 2 4-4" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+              <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
+            </Svg>
+          ) : (
+            <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+              <Path d="M18 6L6 18M6 6l12 12" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+              <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
+            </Svg>
+          )}
+          <AppText style={[lh.feedbackTitle, { color: isDark ? (isPassing ? "#A7F3D0" : "#FECACA") : duoTitleColor, textAlign: rtl ? "right" : "left" }]}>
             {title}
           </AppText>
-          <AppText style={[lh.feedbackSub, { textAlign: rtl ? "right" : "left" }]}>
+        </View>
+        {subtitle ? (
+          <AppText style={[lh.feedbackSub, { color: isDark ? colors.mutedForeground : duoTitleColor, textAlign: rtl ? "right" : "left", marginTop: 4 }]}>
             {subtitle}
           </AppText>
-        </View>
+        ) : null}
       </View>
 
-      <HomeLiquidButton
-        label={buttonLabel ?? t("common.continue")}
-        onPress={onContinue}
-        variant="login"
-        style={{ marginTop: 8 }}
-      />
-    </HomeLiquidCard>
+      <View style={{ paddingHorizontal: 20, paddingBottom: 20, paddingTop: 14 }}>
+        <Pressable
+          onPress={onContinue}
+          style={({ pressed }) => [
+            lh.duoFeedbackBtn,
+            {
+              backgroundColor: isDark ? (isPassing ? "#10B981" : "#EF4444") : duoBtnBg,
+              borderBottomColor: isDark ? (isPassing ? "#047857" : "#B91C1C") : duoBtnDark,
+              transform: [{ translateY: pressed ? 1 : 0 }],
+              borderBottomWidth: pressed ? 2 : 4,
+            },
+          ]}
+        >
+          <AppText style={lh.duoFeedbackBtnText} forceLatinFont latinRole="bold">
+            {(buttonLabel ?? t("common.continue")).toUpperCase()}
+          </AppText>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -1540,7 +1771,7 @@ function createLessonStyles(
     color: L.red,
     fontFamily: "DINNextRoundedBold",
   },
-  headingWrap: { gap: 6, marginBottom: 4 },
+  headingWrap: { gap: 8, marginBottom: 12 },
   promptCardInner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1560,6 +1791,63 @@ function createLessonStyles(
   promptTextCol: { flex: 1, gap: 4 },
   surfaceCardInner: {
     padding: 18,
+  },
+  surfaceBare: {
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+  },
+  duoDialogueWrap: {
+    gap: 8,
+  },
+  duoDialogueLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: Duo.hare,
+    fontFamily: "DINNextRoundedBold",
+  },
+  duoDialogueBubbleWrap: {
+    position: "relative",
+  },
+  duoDialogueBubble: {
+    borderWidth: 2,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    /*
+     * Deliberately no borderBottomWidth: the answer tiles below carry a 4px rim
+     * that reads as depth/pressability. Keeping this face flat is what stops the
+     * spoken line from looking like one more option.
+     */
+  },
+  duoDialogueSpeaker: {
+    marginTop: 2,
+  },
+  duoDialogueTail: {
+    position: "absolute",
+    top: 22,
+    width: 14,
+    height: 14,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+  },
+  duoDialogueTailLtr: {
+    left: -8,
+    transform: [{ rotate: "45deg" }],
+  },
+  duoDialogueTailRtl: {
+    right: -8,
+    transform: [{ rotate: "225deg" }],
+  },
+  duoDialogueText: {
+    fontSize: 19,
+    lineHeight: 28,
+    fontWeight: "600",
+    fontFamily: "DINNextRoundedMedium",
   },
   dialogueWrap: {
     marginLeft: 4,
@@ -1691,8 +1979,9 @@ function createLessonStyles(
     marginBottom: 4,
   },
   kidsGameHeadingBadgeText: {
-    color: "#B05A1D",
-    fontSize: 14,
+    color: "#FFFFFF",
+    fontSize: 12,
+    lineHeight: 16,
     fontFamily: "DINNextRoundedBold",
     letterSpacing: 0.5,
   },
@@ -1811,24 +2100,25 @@ function createLessonStyles(
     backgroundColor: "transparent",
   },
   tile: {
-    minHeight: 48,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 56,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderRadius: LightRadius.tile,
-    borderWidth: 1.5,
+    borderWidth: 2,
+    borderBottomWidth: isDark ? 2 : Duo.tileDepth,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
   tileWide: {
     width: "100%",
-    minHeight: 54,
-    paddingHorizontal: 18,
+    minHeight: 64,
+    paddingHorizontal: 20,
   },
   tileWrap: {
-    minHeight: 48,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   tileWrapText: {
     alignSelf: "stretch",
@@ -2053,6 +2343,24 @@ function createLessonStyles(
     color: "#FFFFFF",
     fontFamily: "DINNextRoundedBold",
     letterSpacing: 0.3,
+  },
+  duoFeedbackWrap: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  duoFeedbackBtn: {
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 4,
+  },
+  duoFeedbackBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    fontFamily: "DINNextRoundedBold",
+    letterSpacing: 1,
   },
   kidsMascotStage: {
     flexDirection: "row",
@@ -2296,12 +2604,12 @@ function createLessonStyles(
   normalBubble: {
     flex: 1,
     marginLeft: 12,
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderBottomWidth: 3.5,
-    borderBottomColor: isDark ? colors.muted : "#CBD5E1",
+    backgroundColor: isDark ? colors.surfaceRaised : Duo.snow,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: isDark ? "#E2E8F0" : Duo.border,
+    borderBottomWidth: isDark ? 3.5 : 4,
+    borderBottomColor: isDark ? colors.muted : Duo.borderDark,
     paddingVertical: 14,
     paddingHorizontal: 16,
     minHeight: 76,
@@ -2326,15 +2634,15 @@ function createLessonStyles(
   },
   normalBubbleTail: {
     position: "absolute",
-    left: -7,
+    left: -8,
     top: "50%",
-    marginTop: -7,
-    width: 14,
-    height: 14,
-    backgroundColor: colors.surfaceRaised,
-    borderLeftWidth: 1.5,
-    borderBottomWidth: 1.5,
-    borderColor: colors.border,
+    marginTop: -8,
+    width: 16,
+    height: 16,
+    backgroundColor: isDark ? colors.surfaceRaised : Duo.snow,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: isDark ? colors.border : Duo.border,
     transform: [{ rotate: "45deg" }],
     zIndex: 2,
   },

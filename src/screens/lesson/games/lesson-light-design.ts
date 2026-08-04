@@ -39,7 +39,7 @@ export const LightMotion = {
 
 export const LightRadius = {
   card: 20,
-  tile: 16,
+  tile: 15,
   btn: 16,
   pill: 999,
 } as const;
@@ -49,12 +49,98 @@ export function usesLightLessonShell(_type?: string): boolean {
   return true;
 }
 
+/* ────────────────────────────────────────────────────────────────────
+ * Duolingo-faithful tokens — used in normal (non-kids, non-street)
+ * light mode only.  Kids & street modes keep their current styling.
+ * ──────────────────────────────────────────────────────────────────── */
+export const Duo = {
+  /* Core brand */
+  green:       "#58CC02",
+  greenDark:   "#58A700",
+  greenBg:     "#D7FFB8",
+  greenBorder: "#A5ED6E",
+  greenText:   "#58A700",
+
+  red:         "#FF4B4B",
+  redDark:     "#EA2B2B",
+  redBg:       "#FFDFE0",
+  redBorder:   "#FFB2B2",
+  redBgDeep:   "#FFC1C1",
+  redText:     "#EA2B2B",
+
+  /*
+   * System accent — orange, not blue. Used for selection, the speaker glyph,
+   * active rails and any "in progress" affordance. `accent*` is the canonical
+   * name; the `blue*` keys below are kept as aliases so existing street/kids
+   * call sites keep compiling, and they now resolve to orange too.
+   */
+  accent:       "#FF9600",
+  accentDark:   "#E08600",
+  accentBg:     "#FFF3DE",
+  accentBorder: "#FFCE7A",
+  accentText:   "#C86D00",
+
+  blue:        "#FF9600",
+  blueDark:    "#E08600",
+  blueBg:      "#FFF3DE",
+  blueBorder:  "#FFCE7A",
+
+  yellow:      "#FFC800",
+
+  /* Hearts — discrete row in the lesson header */
+  heart:       "#FF4B4B",
+  heartSpent:  "#E5E5E5",
+
+  /* Neutrals */
+  eel:         "#4B4B4B",
+  hare:        "#777777",
+  swan:        "#AFAFAF",
+  snow:        "#FFFFFF",
+  border:      "#E5E5E5",
+  borderDark:  "#D6D6D6",
+  bgSoft:      "#F7F7F7",
+
+  /* Word-bank underline rails */
+  rail:        "#E5E5E5",
+  railActive:  "#FF9600",
+
+  /* Tile 3D depth */
+  tileDepth:   4,
+  tilePressedDepth: 2,
+} as const;
+
+/**
+ * Duolingo-faithful motion.
+ *
+ * Tiles compress into their own bottom rim rather than scaling down — the depth
+ * shrinks while the face travels the same distance, so the tile reads as a
+ * physical key being pushed. Springs are critically damped (no wobble) except
+ * the reward pop, which is allowed a single overshoot.
+ */
+export const DuoMotion = {
+  /** Tile / button press — fast, no bounce back. */
+  press:    { damping: 30, stiffness: 520, mass: 0.5, overshootClamping: true },
+  /** Release — slightly softer so the rim re-inflates smoothly. */
+  release:  { damping: 22, stiffness: 380, mass: 0.55, overshootClamping: true },
+  /** Reward pop on a correct reveal — one gentle overshoot. */
+  pop:      { damping: 12, stiffness: 320, mass: 0.5, overshootClamping: false },
+  /** Feedback sheet slide-in. */
+  sheet:    { damping: 26, stiffness: 260, mass: 0.75, overshootClamping: true },
+  /** Progress bar fill. */
+  progress: { damping: 24, stiffness: 180, mass: 0.6, overshootClamping: true },
+  /** Tile state cross-fade (ms). */
+  colorMs:  200,
+  /** Word flying from bank into a slot (ms). */
+  flyMs:    300,
+} as const;
+
 export const LightType = {
   title: {
     fontSize: 26,
     fontWeight: "800" as const,
     letterSpacing: -0.6,
-    color: L.navy,
+    lineHeight: 33,
+    color: Duo.eel,
     fontFamily: "DINNextRoundedBold",
   },
   subtitle: {
@@ -110,9 +196,9 @@ export const LightType = {
     textTransform: "uppercase" as const,
   },
   tile: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: "700" as const,
-    color: L.navy,
+    color: Duo.eel,
     fontFamily: "DINNextRoundedBold",
     backgroundColor: "transparent",
   },

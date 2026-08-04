@@ -23,7 +23,8 @@ import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { measureGameElement } from "./game-layout-measure";
-import { L } from "./lesson-light-design";
+import { L, Duo } from "./lesson-light-design";
+import { RAIL_H, RAIL_RADIUS } from "./duo-answer-rails";
 import {
   LightCheckButton,
   LightGameHeading,
@@ -90,6 +91,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
   const { speak, stop } = useTTS();
+  const isNormal = pathMode === "normal";
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -223,16 +225,55 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     return a;
   }, [question.options]);
 
+  /*
+   * The empty blank reserves the width its answer will need, so the sentence
+   * does not reflow the moment a word lands in it. Sized from the *longest*
+   * option, not the correct one — a wrong pick must not resize the row either.
+   *
+   * Deliberately no upper clamp: any ceiling below the tile's natural width
+   * puts the reflow straight back, because the tile grows with its content
+   * regardless. 35 answers in the content set are multi-word phrases ("public
+   * transport", "on the other hand") that need >220dp. If the result is wider
+   * than the row, the blank takes its own line — but it does so identically
+   * before and after answering, which is the property that matters.
+   *
+   * Estimated rather than measured (a measure pass would cost the very layout
+   * jump this avoids), and biased generous: too wide is invisible, too narrow
+   * reflows.
+   */
+  const blankWidth = React.useMemo(() => {
+    const longest = [question.correctAnswer, ...question.options].reduce(
+      (a, b) => (b.length > a.length ? b : a),
+      "",
+    );
+    const fontSize = isNormal ? 25 : 19;
+    const padding = isNormal ? 34 : 42;
+    return Math.round(Math.max(96, longest.length * fontSize * 0.58 + padding));
+  }, [question.correctAnswer, question.options, isNormal]);
+
   const blankBorder =
     revealed && selected
       ? selected === question.correctAnswer
-        ? L.green
-        : L.red
+        ? (isNormal ? Duo.green : L.green)
+        : (isNormal ? Duo.red : L.red)
       : selected || flySession
-        ? L.blue
-        : isDark
-          ? colors.border
-          : L.slotDash;
+        ? (isNormal ? Duo.accent : L.blue)
+        : isNormal
+          ? Duo.rail
+          : isDark
+            ? colors.border
+            : L.slotDash;
+
+  /*
+   * The row uses no flex gap (it would double up on the spaces the sentence
+   * already contains), so the tail owns its own leading space — except when it
+   * opens with punctuation, where a space before "," or "!" would be wrong.
+   */
+  const sentenceTail = React.useMemo(() => {
+    const raw = question.sentenceParts[1]?.trimStart() ?? "";
+    if (!raw) return "";
+    return /^[,.!?;:%)\]}'"؛؟،]/.test(raw) ? raw : ` ${raw}`;
+  }, [question.sentenceParts]);
 
   const kidsBadgeText = pathMode === "kids" && questionIndex !== undefined && totalQuestions !== undefined
     ? `EXERCISE ${questionIndex + 1} OF ${totalQuestions}`
@@ -257,23 +298,30 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         />
       </GameHeader>
 
-      <LightQuestionPrompt
-        label={t("lessons.questionLabel")}
-        forceKurdishFont
-        contentLanguageCode={question.sourceLanguage}
-        speechText={`${question.sentenceParts[0] ?? ""} ${question.correctAnswer} ${question.sentenceParts[1] ?? ""}`}
-        speechLanguageCode={question.targetLanguage ?? "en"}
-        variant={pathMode === "kids" ? "kids" : "default"}
-      >
-        {question.kurdishHint}
-      </LightQuestionPrompt>
+      {/*
+        Exercise area owns the slack between the header and the word bank, and
+        centres its content in it. Short prompts therefore sit optically centred
+        instead of clinging to the top with a void beneath them; long ones fill
+        the space and the group behaves exactly as a top-aligned stack.
+      */}
+      <View style={s.exerciseArea}>
+        <LightQuestionPrompt
+          label={t("lessons.questionLabel")}
+          forceKurdishFont
+          contentLanguageCode={question.sourceLanguage}
+          speechText={`${question.sentenceParts[0] ?? ""} ${question.correctAnswer} ${question.sentenceParts[1] ?? ""}`}
+          speechLanguageCode={question.targetLanguage ?? "en"}
+          variant={pathMode === "kids" ? "kids" : "default"}
+        >
+          {question.kurdishHint}
+        </LightQuestionPrompt>
 
-      <Animated.View style={shakeStyle}>
-        <LightSurfaceCard>
+        <Animated.View style={shakeStyle}>
+          <LightSurfaceCard>
           <Animated.View layout={layoutSmooth} style={s.sentenceRow}>
             <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.sentenceLeadRow}>
               {question.sentenceParts[0] ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, { color: colors.foreground }]}>
+                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}>
                   {question.sentenceParts[0].trimEnd()}{" "}
                 </AppText>
               ) : null}
@@ -281,7 +329,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                 ref={blankRef}
                 layout={layoutSmooth}
                 collapsable={false}
-                style={s.blankContainer}
+                style={[s.blankContainer, { minWidth: blankWidth }]}
                 onLayout={() => {
                   blankRef.current?.measureInWindow((x, y, w, h) => {
                     blankCoords.current = { x, y, w, h };
@@ -302,12 +350,23 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                       }}
                       isKids={pathMode === "kids"}
                       languageCode={question.targetLanguage}
+                      style={[
+                        isNormal && s.duoBlankTile,
+                        /* Same floor as the empty slot — see `blankWidth`. */
+                        { minWidth: blankWidth },
+                      ]}
                     />
                   </Animated.View>
-                ) : (
+                ) : isNormal ? (
+                  /* Empty blank: a coloured rail sitting on the text baseline. */
+                  <View style={[s.duoBlankSlot, { width: blankWidth }]}>
+                    <View style={[s.duoBlankRail, { backgroundColor: blankBorder }]} />
+                  </View>
+                ) : pathMode === "kids" ? (
                   <View style={[
                     s.emptySlot,
                     {
+                      width: blankWidth,
                       borderColor: blankBorder,
                       backgroundColor: isDark ? colors.muted : L.bgSoft,
                     },
@@ -320,19 +379,27 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                       ____
                     </AppText>
                   </View>
+                ) : (
+                  <View style={[
+                    s.emptySlotDuo,
+                    {
+                      width: blankWidth,
+                      borderBottomColor: blankBorder,
+                      backgroundColor: isDark ? colors.muted : "transparent",
+                    },
+                  ]} />
                 )}
               </Animated.View>
-              {question.sentenceParts[1] ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText, { color: colors.foreground }]}>
-                  {question.sentenceParts[1].trimStart()}
+              {sentenceTail ? (
+                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}>
+                  {sentenceTail}
                 </AppText>
               ) : null}
             </DirectionalView>
           </Animated.View>
         </LightSurfaceCard>
-      </Animated.View>
-
-      <View style={s.optionsSpacer} />
+        </Animated.View>
+      </View>
 
       <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.chipsWrap}>
         {shuffledOptions.map((w) => {
@@ -413,7 +480,13 @@ const s = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: 6,
+    /*
+     * Zero gap: the sentence fragments carry their own spaces (see the
+     * trimEnd/trimStart at the call site), and a flex gap here would add a
+     * second space around the blank that the answered sentence doesn't have.
+     */
+    gap: 0,
+    rowGap: 6,
   },
   sentenceText: {
     fontSize: 19,
@@ -423,24 +496,55 @@ const s = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     backgroundColor: "transparent",
   },
+  /** Normal path reads at display size, matching the reference. */
+  sentenceTextDuo: {
+    fontSize: 25,
+    lineHeight: 36,
+    fontWeight: "600",
+    fontFamily: "DINNextRoundedMedium",
+  },
   sentenceTailText: {
     flexShrink: 1,
-    minWidth: 80,
   },
   blankContainer: {
-    minWidth: 88,
-    minHeight: 48,
     justifyContent: "center",
     alignItems: "center",
   },
+  duoBlankSlot: {
+    /* Width comes from `blankWidth` at the call site. */
+    height: 52,
+    justifyContent: "flex-end",
+    paddingBottom: 6,
+  },
+  duoBlankRail: {
+    height: RAIL_H,
+    width: "100%",
+    borderRadius: RAIL_RADIUS,
+  },
+  duoBlankTile: {
+    minHeight: 52,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
   emptySlot: {
-    minWidth: 88,
+    /* Width comes from `blankWidth` at the call site. */
     height: 48,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: L.slotDash,
     backgroundColor: L.bgSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptySlotDuo: {
+    /* Width comes from `blankWidth` at the call site. */
+    height: 48,
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: 2,
+    borderBottomColor: Duo.border,
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -451,6 +555,17 @@ const s = StyleSheet.create({
     fontFamily: "DINNextRoundedBold",
     opacity: 0.35,
   },
+  exerciseArea: {
+    /*
+     * Replaces the old flex:1 spacer that used to sit *below* the sentence.
+     * Owning the slack here instead lets the prompt + sentence centre within it
+     * (see `justifyContent`), which is what stops a short exercise from sitting
+     * jammed against the header.
+     */
+    flex: 1,
+    justifyContent: "center",
+    gap: 24,
+  },
   chipsWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -458,10 +573,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 24,
     width: "100%",
-  },
-  optionsSpacer: {
-    flex: 1,
-    minHeight: 20,
   },
   flySessionLayer: {
     position: "absolute",

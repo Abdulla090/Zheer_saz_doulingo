@@ -299,11 +299,11 @@ export const StreetEnglishPathScreen = ({
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
           ]}
           stickySectionHeadersEnabled={false}
-          initialNumToRender={6}
-          maxToRenderPerBatch={4}
-          windowSize={3}
+          initialNumToRender={10}
+          maxToRenderPerBatch={8}
+          windowSize={5}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          updateCellsBatchingPeriod={100}
+          updateCellsBatchingPeriod={50}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />

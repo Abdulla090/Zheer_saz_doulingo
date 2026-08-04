@@ -1,4 +1,5 @@
 import type { LessonListItem, SectionDataItem } from "../data/list-items";
+import { findItemLocation } from "../utils/path-scroll";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { SectionList, View } from "react-native";
 
@@ -14,6 +15,22 @@ export type SelectedPathLesson = {
     rootHeight: number;
   };
 };
+
+/**
+ * Vertical room the popup needs below a node before it fits there. Mirrors the
+ * flip threshold in `path-lesson-popup`: its card runs roughly 200pt, plus an
+ * 18pt gap and 80pt of bottom clearance.
+ */
+const POPUP_CLEARANCE = 300;
+
+/**
+ * Top band, as a fraction of viewport height, where a node is too high for the
+ * popup to open above it — the unit header and stats chrome live up there.
+ */
+const TOP_BAND = 0.24;
+
+/** Settle time for the scroll before measuring — a moving node measures stale. */
+const SCROLL_SETTLE_MS = 320;
 
 export function usePathLessonSelection(
   listRef: RefObject<SectionList<LessonListItem, SectionDataItem> | null>,
@@ -51,24 +68,77 @@ export function usePathLessonSelection(
         return;
       }
 
-      // Measure node instantly on user tap before any async layout shifts
-      root.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
-        node.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
-          const anchorX = nodeX - rootX + nodeWidth / 2;
-          const nodeTop = nodeY - rootY;
+      /** Measure, then show. Re-measured after any scroll so the caret lands true. */
+      const measureAndShow = () => {
+        const currentRoot = overlayRootRef.current;
+        const target = node;
+        if (!currentRoot || !target) {
+          displayPopupWithAnchor();
+          return;
+        }
+        currentRoot.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
+          target.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
+            const anchorX = nodeX - rootX + nodeWidth / 2;
+            const nodeTop = nodeY - rootY;
 
-          displayPopupWithAnchor({
-            x: anchorX,
-            y: nodeTop + nodeHeight,
-            nodeTop,
-            nodeHeight,
-            rootWidth,
-            rootHeight,
+            displayPopupWithAnchor({
+              x: anchorX,
+              y: nodeTop + nodeHeight,
+              nodeTop,
+              nodeHeight,
+              rootWidth,
+              rootHeight,
+            });
           });
+        });
+      };
+
+      // Decide from the first measurement whether the node needs centring.
+      root.measureInWindow((_rootX, rootY, _rootWidth, rootHeight) => {
+        if (selectionRequestRef.current !== requestId) return;
+
+        node.measureInWindow((_nodeX, nodeY, _nodeWidth, nodeHeight) => {
+          if (selectionRequestRef.current !== requestId) return;
+
+          const nodeTop = nodeY - rootY;
+          const nodeBottom = nodeTop + nodeHeight;
+
+          // Too high for the popup to open above it, or too low to open below.
+          const nearTop = nodeTop < rootHeight * TOP_BAND;
+          const nearBottom = nodeBottom + POPUP_CLEARANCE > rootHeight;
+          const location = findItemLocation(sections, item);
+
+          if ((!nearTop && !nearBottom) || !location || !listRef.current) {
+            measureAndShow();
+            return;
+          }
+
+          /*
+           * Bring the node to the middle of the viewport, then open. Measuring
+           * before the scroll settles would anchor the popup to where the node
+           * *was*, which is exactly the off-screen popup this avoids.
+           */
+          try {
+            listRef.current.scrollToLocation({
+              sectionIndex: location.sectionIndex,
+              itemIndex: location.itemIndex,
+              animated: true,
+              viewPosition: 0.5,
+            });
+          } catch {
+            measureAndShow();
+            return;
+          }
+
+          openTimerRef.current = setTimeout(() => {
+            openTimerRef.current = null;
+            if (selectionRequestRef.current !== requestId) return;
+            measureAndShow();
+          }, SCROLL_SETTLE_MS);
         });
       });
     },
-    [overlayRootRef],
+    [listRef, overlayRootRef, sections],
   );
 
   useEffect(

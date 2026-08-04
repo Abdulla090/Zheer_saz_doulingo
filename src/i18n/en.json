@@ -228,6 +228,9 @@
   },
   "lessons": {
     "chooseAnswer": "Choose the answer",
+    "mcHowToSay": "How do you say this?",
+    "mcWhatIsWord": "What does this mean?",
+    "mcChooseCorrect": "Choose the correct sentence",
     "chooseAnswerSub": "Select the best option.",
     "questionLabel": "QUESTION",
     "fillBlank": "Fill in the blank",
@@ -277,6 +280,8 @@
     "imageChoiceSub": "Which word matches the picture?",
     "exerciseBadgeText": "EXERCISE {current} OF {total}",
     "listenLabel": "Listen",
+    "completeConversation": "Complete the conversation",
+    "youLabel": "YOU",
     "nice": "Nice!",
     "skip": "Skip",
     "dontKnow": "I don't know",

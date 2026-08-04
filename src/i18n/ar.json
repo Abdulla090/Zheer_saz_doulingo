@@ -228,6 +228,9 @@
   },
   "lessons": {
     "chooseAnswer": "اختر الإجابة",
+    "mcHowToSay": "كيف تقول هذا؟",
+    "mcWhatIsWord": "ما معنى هذا؟",
+    "mcChooseCorrect": "اختر الجملة الصحيحة",
     "chooseAnswerSub": "اختر الخيار الأفضل.",
     "questionLabel": "سؤال",
     "fillBlank": "املأ الفراغ",
@@ -277,6 +280,8 @@
     "imageChoiceSub": "أي كلمة تطابق الصورة؟",
     "exerciseBadgeText": "التمرين {current} من {total}",
     "listenLabel": "استمع",
+    "completeConversation": "أكمل المحادثة",
+    "youLabel": "أنت",
     "nice": "رائع!",
     "skip": "تخطي",
     "dontKnow": "لا أعرف",

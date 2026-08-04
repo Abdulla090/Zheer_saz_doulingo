@@ -17,6 +17,7 @@ import { syncHomeWidget } from "../services/home-widget-sync";
 import { fetchRemoteCurriculum } from "../services/curriculum-loader";
 import { applyUiLanguageDirection, useLocaleStore } from "../stores/useLocaleStore";
 import { getLanguageDirection } from "../i18n/direction";
+import { LayoutDirectionProvider } from "../i18n/layout-direction";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
@@ -174,6 +175,7 @@ function InnerLayout() {
             BottomSheetModalProvider above). The imperative API in
             useAndroidImmersiveChrome already handles hiding the nav bar. */}
         <OfflineBanner />
+        <LayoutDirectionProvider value={isRTL ? "rtl" : "ltr"}>
         <GestureHandlerRootView
           style={[
             { flex: 1 },
@@ -219,6 +221,7 @@ function InnerLayout() {
           </AppErrorBoundary>
           </SkiaWebGate>
         </GestureHandlerRootView>
+        </LayoutDirectionProvider>
       </KeyboardProvider>
     </SafeAreaProvider>
   );

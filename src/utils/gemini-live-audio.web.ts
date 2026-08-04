@@ -37,9 +37,10 @@ export class LivePcmPlayer {
   private scheduleChain: Promise<void> = Promise.resolve();
   private generation = 0;
 
-  // ~85 ms at 24 kHz/16-bit mono. Small enough for low latency, large enough to avoid tiny-buffer overhead.
-  private static BUFFER_THRESHOLD = 4_096;
-  private static FLUSH_DELAY_MS = 24;
+  // Keep the web path aligned with native: tiny standalone PCM buffers can
+  // lose their first/last samples and make a multi-sentence reply sound cut.
+  private static BUFFER_THRESHOLD = 16_384;
+  private static FLUSH_DELAY_MS = 160;
   private static START_LEAD_SECONDS = 0.035;
 
   constructor(
@@ -92,14 +93,28 @@ export class LivePcmPlayer {
     }
   }
 
-  private flushBuffer() {
+  private flushBuffer(finalizePartial = false): Promise<void> {
     this.flushTimeout = null;
-    if (this.destroyed || this.pendingBytes.length === 0) return;
+    if (this.destroyed || this.pendingBytes.length === 0) {
+      return this.scheduleChain;
+    }
 
     try {
-      const evenLength =
+      let evenLength =
         this.pendingBytes.length - (this.pendingBytes.length % 2);
-      if (evenLength <= 0) return;
+      if (evenLength <= 0) {
+        if (!finalizePartial) return this.scheduleChain;
+        const padded = new Uint8Array(2);
+        padded[0] = this.pendingBytes[0] ?? 0;
+        this.pendingBytes = padded;
+        evenLength = 2;
+      } else if (finalizePartial && evenLength < this.pendingBytes.length) {
+        const padded = new Uint8Array(evenLength + 2);
+        padded.set(this.pendingBytes.subarray(0, evenLength));
+        padded[evenLength] = this.pendingBytes[evenLength] ?? 0;
+        this.pendingBytes = padded;
+        evenLength += 2;
+      }
 
       const pcmBytes = this.pendingBytes.slice(0, evenLength);
       this.pendingBytes = this.pendingBytes.slice(evenLength);
@@ -118,6 +133,8 @@ export class LivePcmPlayer {
     } catch (e) {
       this.reportPlaybackError("Live tutor audio playback failed.", e);
     }
+
+    return this.scheduleChain;
   }
 
   private getAudioContext() {
@@ -218,6 +235,10 @@ export class LivePcmPlayer {
 
   private markQueueActive() {
     this.queueDrained = false;
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
     if (!this.playing) {
       this.playing = true;
       this.onPlayingStateChange?.(true);
@@ -241,7 +262,7 @@ export class LivePcmPlayer {
       this.flushTimeout = null;
     }
     if (this.pendingBytes.length > 0) {
-      this.flushBuffer();
+      this.flushBuffer(true);
     }
     await this.scheduleChain;
     this.updateIdleState();

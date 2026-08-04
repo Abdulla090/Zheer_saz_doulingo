@@ -1,6 +1,8 @@
 import { AppText } from "../../../components/ui/AppText";
 import { HomeLiquidCard, HomePalette } from "../../../components/ui/ios-liquid-home";
 import type { PathMode } from "../../home/components/PathSwitcher";
+import { isPathEnabled } from "../../../constants/path-availability";
+import { Duo } from "../../lesson/games/lesson-light-design";
 import { Motion } from "../../lesson/games/game-design";
 import { crossShadow } from "../../../utils/shadows";
 import * as Haptics from "expo-haptics";
@@ -15,9 +17,9 @@ const C = HomePalette;
 
 const PATH_ACCENTS: Record<string, string> = {
   street: C.blue,
-  normal: "#475569",
+  normal: Duo.accent,
   kids: C.grayLight,
-  custom: C.blue,
+  custom: Duo.accent,
 };
 
 export function OnboardingPathPicker({
@@ -39,6 +41,8 @@ export function OnboardingPathPicker({
   kidsTitle: string;
   kidsSub: string;
 }) {
+  // Paused paths are filtered out rather than shown disabled: offering a choice
+  // during onboarding that cannot be taken is worse than not offering it.
   const items: {
     mode: PathMode;
     title: string;
@@ -47,7 +51,14 @@ export function OnboardingPathPicker({
     { mode: "street", title: streetTitle, subtitle: streetSub },
     { mode: "normal", title: normalTitle, subtitle: normalSub },
     { mode: "kids", title: kidsTitle, subtitle: kidsSub },
-  ];
+  ].filter((item) => isPathEnabled(item.mode as PathMode)) as {
+    mode: PathMode;
+    title: string;
+    subtitle: string;
+  }[];
+
+  // A single option is not a choice — the caller's default already applies.
+  if (items.length < 2) return null;
 
   return (
     <View style={styles.list} accessibilityRole="radiogroup">

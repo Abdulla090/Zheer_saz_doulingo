@@ -10,7 +10,7 @@ describe("path node metrics", () => {
     });
     expect(getPathMetrics("normal", true)).toEqual({
       lessonButtonSize: 54,
-      slotHeight: 82,
+      slotHeight: 90,
     });
     expect(getPathMetrics("kids", true)).toEqual({
       lessonButtonSize: 52,
@@ -23,9 +23,11 @@ describe("path node metrics", () => {
       lessonButtonSize: 58,
       slotHeight: 92,
     });
+    // Normal nodes carry a deeper rim + ground shadow, so their slot is taller
+    // than street/kids to keep the vertical rhythm even.
     expect(getPathMetrics("normal")).toEqual({
       lessonButtonSize: 62,
-      slotHeight: 96,
+      slotHeight: 104,
     });
     expect(getPathMetrics("kids")).toEqual({
       lessonButtonSize: 60,

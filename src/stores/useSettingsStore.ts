@@ -6,10 +6,16 @@ import {
   isMascotId,
   type MascotId,
 } from "../constants/mascots";
+import {
+  DEFAULT_PATH_MODE,
+  resolvePathMode,
+  type PathMode,
+} from "../constants/path-availability";
 
 const STORAGE_KEY = "twino.app.settings";
 
-export type PathMode = "street" | "normal" | "kids";
+/** Canonical home is `constants/path-availability`; re-exported for existing importers. */
+export type { PathMode } from "../constants/path-availability";
 export type AppTheme = "light" | "dark" | "system";
 
 interface SettingsState {
@@ -75,7 +81,7 @@ const initialSettings = (() => {
     return {
       hapticsEnabled: true,
       soundsEnabled: true,
-      pathMode: "normal" as PathMode,
+      pathMode: DEFAULT_PATH_MODE,
       theme: "light" as AppTheme,
       nativeLang: "ku",
       targetLang: "en",
@@ -96,10 +102,8 @@ const initialSettings = (() => {
   }
   try {
     const parsed = JSON.parse(savedSettingsRaw) as Partial<SettingsState>;
-    const savedMode: PathMode =
-      parsed.pathMode === "street" || parsed.pathMode === "kids"
-        ? parsed.pathMode
-        : "normal";
+    // A path paused after this preference was written must not resurrect it.
+    const savedMode: PathMode = resolvePathMode(parsed.pathMode ?? null);
     return {
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
@@ -131,7 +135,7 @@ const initialSettings = (() => {
     return {
       hapticsEnabled: true,
       soundsEnabled: true,
-      pathMode: "normal" as PathMode,
+      pathMode: DEFAULT_PATH_MODE,
       theme: "light" as AppTheme,
       nativeLang: "ku",
       targetLang: "en",
@@ -167,8 +171,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   setPathMode: (pathMode) => {
-    set({ pathMode });
-    persist({ pathMode });
+    // Coerce here too: LessonScreen and deep links both call this with whatever
+    // mode they were handed, so a paused path must never reach storage.
+    const safeMode = resolvePathMode(pathMode);
+    set({ pathMode: safeMode });
+    persist({ pathMode: safeMode });
   },
 
   setTheme: (theme) => {
