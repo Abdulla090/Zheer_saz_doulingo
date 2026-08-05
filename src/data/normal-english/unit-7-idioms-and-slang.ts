@@ -1,8 +1,10 @@
-import { buildLesson } from "./build-lesson";
+import { buildLesson, fill } from "./build-lesson";
 import { UnitBank } from "../types";
 
 // ── Unit 7: Idioms & Natural Slang — 10 unique lessons ───────────────────────
 // Conversational idioms and everyday casual English — friendly, not vulgar.
+// Each lesson teaches a *family* of interchangeable American expressions rather
+// than one phrase repeated six ways, and every game draws from its own pool.
 
 const unit07: UnitBank = [
   buildLesson(
@@ -10,13 +12,39 @@ const unit07: UnitBank = [
     "نیگەران مەبە",
     [
       { en: "No worries, it happens to everyone.", ku: "نیگەران مەبە، بۆ هەمووان ڕوودەدات.", ar: "لا تقلق، يحدث هذا للجميع." },
-      { en: "No worries at all — I completely forgot too.", ku: "هیچ نیگەرانییەک نییە — منیش تەواو لەبیرم چوو.", ar: "لا تقلق أبداً — أنا أيضاً نسيت تماماً." },
-      { en: "Don't stress about it, no worries.", ku: "خەمی مەخۆ، نیگەران مەبە.", ar: "لا تجهد نفسك بهذا الأمر، لا تقلق." },
-      { en: "Thanks for understanding, no worries.", ku: "سوپاس بۆ تێگەیشتنت، نیگەران مەبە.", ar: "شكراً لتفهّمك، لا تقلق." },
-      { en: "No worries, we can figure it out later.", ku: "نیگەران مەبە، دواتر دەتوانین چارەسەری بکەین.", ar: "لا تقلق، يمكننا حلّ الأمر لاحقاً." },
-      { en: "It's totally fine — no worries on my end.", ku: "تەواو باشە — لە لای من هیچ کێشەیەک نییە.", ar: "الأمر عادي تماماً — لا مشكلة من طرفي." },
+      { en: "Don't sweat it, seriously.", ku: "خەمی مەخۆ، بەڕاستی.", ar: "لا تشغل بالك، حقاً." },
+      { en: "You're good — I wasn't waiting long.", ku: "هیچ کێشەیەک نییە — زۆر چاوەڕێم نەکرد.", ar: "لا عليك — لم أنتظر طويلاً." },
+      { en: "It's all good, honestly.", ku: "هەمووی باشە، بەڕاستی.", ar: "كلّ شيء على ما يُرام، بصراحة." },
+      { en: "No biggie, I already handled it.", ku: "شتێکی گەورە نییە، پێشتر چارەسەرم کرد.", ar: "ليست مشكلة كبيرة، تولّيت الأمر مسبقاً." },
+      { en: "Please don't even think about it.", ku: "تکایە تەنانەت بیریشی لێ مەکەرەوە.", ar: "أرجوك لا تفكّر في الأمر أصلاً." },
     ],
     {
+      speakPhrases: [
+        { en: "Hey, we've all been there.", ku: "ئەی، هەموومان تووشی ئەمە بووین.", ar: "يا صاح، جميعنا مررنا بهذا." },
+        { en: "Totally fine — I hadn't started yet.", ku: "تەواو باشە — هێشتا دەستم پێ نەکردبوو.", ar: "لا بأس أبداً — لم أكن قد بدأت بعد." },
+        { en: "Seriously, stop apologizing.", ku: "بەڕاستی، وازبهێنە لە داوای لێبوردن.", ar: "بجدّية، توقّف عن الاعتذار." },
+      ],
+      sentencePhrases: [
+        { en: "Thanks for letting me know.", ku: "سوپاس کە ئاگادارت کردم.", ar: "شكراً لإخباري." },
+        { en: "We can push it to tomorrow.", ku: "دەتوانین بیخەینە سبەینێ.", ar: "يمكننا تأجيله إلى الغد." },
+        { en: "It's really not a big deal.", ku: "بەڕاستی شتێکی گەورە نییە.", ar: "الأمر ليس بذي أهميّة حقاً." },
+      ],
+      fills: [
+        fill(
+          "Don't ___ it — I already fixed the file.",
+          "sweat",
+          ["sweaty", "sweating", "swept"],
+          "خەمی مەخۆ — پێشتر فایلەکەم چاک کردەوە.",
+          "لا تشغل بالك — لقد أصلحت الملف بالفعل.",
+        ),
+        fill(
+          "No ___ , I've got it covered.",
+          "worries",
+          ["worry", "worried", "worrying"],
+          "نیگەران مەبە، من چارەسەری دەکەم.",
+          "لا تقلق، الأمر تحت سيطرتي.",
+        ),
+      ],
       convos: [
         {
           situation: "دوای ئەوەی بە هەڵە نامەیەکی درەنگ ناردیت",
@@ -33,12 +61,12 @@ const unit07: UnitBank = [
           situation: "هاوڕێیەکت داوای لێبوردن دەکات بۆ ئەوەی نەیتوانی بێت",
           situationAr: "صديقك يعتذر لأنه لم يستطع الحضور",
           theyAsk: "I'm really sorry I couldn't make it to dinner last night.",
-          correct: "No worries at all — I completely forgot you were busy too.",
+          correct: "You're good — honestly, we've all been there. Let's try again next week.",
           wrong1: "You should have come.",
           wrong2: "Why you not come?",
           wrong3: "I was waiting long time.",
-          explanation: "'No worries at all' بە توندی دەڵێت کە هیچ کێشەیەک نییە",
-          explanationAr: "'No worries at all' يؤكّد بقوة أنه لا توجد أي مشكلة",
+          explanation: "'You're good' لە ئەمریکادا واتای 'هیچ کێشەیەک نییە' — زۆر باوە لەناو هاوڕێکاندا",
+          explanationAr: "'You're good' في أمريكا تعني 'لا مشكلة إطلاقاً' — شائعة جداً بين الأصدقاء",
         },
       ],
     },
@@ -50,13 +78,39 @@ const unit07: UnitBank = [
     "هەڵەی من بوو",
     [
       { en: "My bad, I sent the wrong file.", ku: "هەڵەی من بوو، فایلی هەڵەم نارد.", ar: "خطئي، أرسلت الملف الخطأ." },
-      { en: "My bad — I totally misread the schedule.", ku: "هەڵەی من بوو — بەتەواوی خشتەکەم بە هەڵە تێگەیشتم.", ar: "خطئي — قرأت الجدول بشكل خاطئ تماماً." },
-      { en: "Sorry, my bad for not calling you back.", ku: "ببوورە، هەڵەی من بوو کە پەیوەندیم پێوە نەکردەوە.", ar: "آسف، خطئي لأنني لم أعاود الاتصال بك." },
-      { en: "My bad, I thought the meeting was tomorrow.", ku: "هەڵەی من بوو، پێم وابوو کۆبوونەوەکە سبەیە.", ar: "خطئي، ظننت أن الاجتماع غداً." },
-      { en: "That was my bad, I should have double-checked.", ku: "ئەوە هەڵەی من بوو، دەبوایە دووبارە بپشکنم.", ar: "كان ذلك خطئي، كان يجب أن أتحقق مرة أخرى." },
-      { en: "My bad — I'll fix it right away.", ku: "هەڵەی من بوو — دەستبەجێ چارەسەری دەکەم.", ar: "خطئي — سأصلحه فوراً." },
+      { en: "That one's on me.", ku: "ئەوە لە ئەستۆی منە.", ar: "تلك المرّة الذنب ذنبي." },
+      { en: "Oops — wrong group chat.", ku: "ئۆپس — چاتی گروپی هەڵە.", ar: "عذراً — مجموعة محادثة خاطئة." },
+      { en: "Yeah, I messed that up.", ku: "بەڵێ، ئەوەم تێکدا.", ar: "نعم، لقد أفسدت ذلك." },
+      { en: "I owe you one for covering me.", ku: "قەرزارتم کە جێگەی منت گرتەوە.", ar: "أنا مدين لك لأنّك غطّيت مكاني." },
+      { en: "I should've double-checked first.", ku: "دەبوایە سەرەتا دووبارە بمپشکنیایە.", ar: "كان عليّ التحقّق مرّتين أوّلاً." },
     ],
     {
+      speakPhrases: [
+        { en: "My bad — I totally spaced on that.", ku: "هەڵەی من بوو — تەواو لەبیرم چوو.", ar: "خطئي — نسيت الأمر تماماً." },
+        { en: "I dropped the ball on this one.", ku: "لەمەدا کەمتەرخەم بووم.", ar: "لقد قصّرت في هذا الأمر." },
+        { en: "That was one hundred percent me.", ku: "ئەوە بە سەدا سەد هەڵەی من بوو.", ar: "كان ذلك خطئي أنا مئة بالمئة." },
+      ],
+      sentencePhrases: [
+        { en: "I'll fix it before lunch.", ku: "پێش نانی نیوەڕۆ چاکی دەکەمەوە.", ar: "سأصلحه قبل الغداء." },
+        { en: "Let me redo that part real quick.", ku: "با بە خێرایی ئەو بەشە دووبارە بکەمەوە.", ar: "دعني أُعيد ذلك الجزء بسرعة." },
+        { en: "It won't happen again, I promise.", ku: "دووبارە ڕوونادات، بەڵێن دەدەم.", ar: "لن يتكرّر، أعدك." },
+      ],
+      fills: [
+        fill(
+          "Sorry, I totally ___ on our call yesterday.",
+          "spaced",
+          ["space", "spacing", "spaces"],
+          "ببوورە، تەواو پەیوەندییەکەی دوێنێم لەبیر چوو.",
+          "آسف، نسيت مكالمتنا أمس تماماً.",
+        ),
+        fill(
+          "That mistake is ___ me, not the team.",
+          "on",
+          ["at", "for", "by"],
+          "ئەو هەڵەیە لە ئەستۆی منە، نەک تیمەکە.",
+          "ذلك الخطأ ذنبي أنا، وليس ذنب الفريق.",
+        ),
+      ],
       convos: [
         {
           situation: "فایلی هەڵەت ناردووە بۆ تیمەکەت",
@@ -73,12 +127,12 @@ const unit07: UnitBank = [
           situation: "بە هەڵە بە دوای کۆبوونەوەکە هاتووی",
           situationAr: "وصلت متأخراً إلى الاجتماع بالخطأ",
           theyAsk: "The meeting started twenty minutes ago.",
-          correct: "My bad — I totally misread the schedule. Can you catch me up?",
+          correct: "I totally spaced on that — that one's on me. Can you catch me up?",
           wrong1: "Meeting is not important.",
           wrong2: "Why meeting so early?",
           wrong3: "I don't care about meeting.",
-          explanation: "'Totally misread' بە توندی دەڵێت کە بە هەڵە تێگەیشتووی",
-          explanationAr: "'Totally misread' يؤكد بقوة أنك فهمت الأمر بشكل خاطئ",
+          explanation: "'Spaced on it' واتای 'تەواو لەبیرم چوو' — لە قسەی ڕۆژانەدا زۆر باوە",
+          explanationAr: "'Spaced on it' تعني 'نسيت الأمر تماماً' — شائعة جداً في الكلام اليومي",
         },
       ],
     },
@@ -89,14 +143,40 @@ const unit07: UnitBank = [
     "Hang On",
     "چاوەڕێ بکە / وەستە",
     [
-      { en: "Hang on, let me grab my notebook.", ku: "چاوەڕێ بکە، با دەفتەری تێبینییەکانم بهێنم.", ar: "انتظر لحظة، دعني أحضر دفتري." },
-      { en: "Hang on a second — I'm almost ready.", ku: "چرکەیەک چاوەڕێ بکە — نزیکم لە ئامادەبوون.", ar: "انتظر ثانية — أنا شبه جاهز." },
-      { en: "Can you hang on while I check that?", ku: "دەتوانیت چاوەڕێ بکەیت تا ئەوە بپشکنم؟", ar: "هل يمكنك الانتظار بينما أتحقق من ذلك؟" },
-      { en: "Hang on, I think I left my keys inside.", ku: "وەستە، پێم وایە کلیلەکانم لەناو ماوە.", ar: "انتظر لحظة، أظن أنني نسيت مفاتيحي في الداخل." },
-      { en: "Hang on — that doesn't sound right to me.", ku: "وەستە — ئەوە بەلامەوە ڕاست نییە.", ar: "انتظر لحظة — هذا لا يبدو صحيحاً بالنسبة لي." },
-      { en: "Just hang on, the page is still loading.", ku: "تەنها چاوەڕێ بکە، لاپەڕەکە هێشتا بار دەبێت.", ar: "انتظر فقط، الصفحة لا تزال تُحمَّل." },
+      { en: "Hang on, let me grab my notebook.", ku: "چاوەڕێ بکە، با دەفتەری تێبینییەکانم بهێنم.", ar: "انتظر لحظة، دعني أُحضر دفتري." },
+      { en: "Give me a sec.", ku: "چرکەیەکم پێ بدە.", ar: "أمهلني ثانية." },
+      { en: "Hold up — say that again?", ku: "وەستە — دووبارەی بکەرەوە؟", ar: "مهلاً — أعد ما قلته؟" },
+      { en: "One second, I'm almost done.", ku: "چرکەیەک، نزیکە تەواو بم.", ar: "ثانية واحدة، أوشكت على الانتهاء." },
+      { en: "Wait, back up a little.", ku: "وەستە، کەمێک بگەڕێرەوە دواوە.", ar: "مهلاً، ارجع قليلاً إلى الوراء." },
+      { en: "Bear with me for a minute.", ku: "خۆڕاگر بە لەگەڵم بۆ خولەکێک.", ar: "تحمّلني لدقيقة واحدة." },
     ],
     {
+      speakPhrases: [
+        { en: "Hang on, my phone's about to die.", ku: "چاوەڕێ بکە، مۆبایلەکەم خەریکە کوێر دەبێت.", ar: "انتظر، بطارية هاتفي على وشك النفاد." },
+        { en: "Hold on, someone's at the door.", ku: "وەستە، کەسێک لە دەرگایە.", ar: "لحظة، هناك أحد على الباب." },
+        { en: "Hang tight, I'm pulling up the file.", ku: "کەمێک ئارام بگرە، فایلەکە دەکەمەوە.", ar: "انتظر قليلاً، أنا أفتح الملف." },
+      ],
+      sentencePhrases: [
+        { en: "I'll be right with you.", ku: "دەستبەجێ لەگەڵت دەبم.", ar: "سأكون معك حالاً." },
+        { en: "Let me finish this email first.", ku: "با سەرەتا ئەم ئیمەیلە تەواو بکەم.", ar: "دعني أُنهي هذا البريد أوّلاً." },
+        { en: "Can you give me two minutes?", ku: "دەتوانیت دوو خولەکم پێ بدەیت؟", ar: "هل يمكنك أن تمهلني دقيقتين؟" },
+      ],
+      fills: [
+        fill(
+          "___ on, I think I left my keys inside.",
+          "Hang",
+          ["Hung", "Hanging", "Hangs"],
+          "وەستە، پێم وایە کلیلەکانم لەناو ماوە.",
+          "انتظر، أظنّ أنّني نسيت مفاتيحي في الداخل.",
+        ),
+        fill(
+          "Bear ___ me — the page is still loading.",
+          "with",
+          ["for", "to", "on"],
+          "خۆڕاگر بە لەگەڵم — لاپەڕەکە هێشتا بار دەبێت.",
+          "تحمّلني — الصفحة لا تزال تُحمَّل.",
+        ),
+      ],
       convos: [
         {
           situation: "لە تەلەفۆندا کەسێک داوای یارمەتی دەکات",
@@ -113,12 +193,12 @@ const unit07: UnitBank = [
           situation: "هاوکارێکت پێشنیارێک دەدات و تۆ گومانت هەیە",
           situationAr: "زميلك يقترح شيئاً وأنت لديك شك",
           theyAsk: "So we should launch the app this Friday, right?",
-          correct: "Hang on — that doesn't sound right to me. Didn't we agree on next week?",
+          correct: "Hold up — say that again? I thought we agreed on next week.",
           wrong1: "Friday is good, yes.",
           wrong2: "I don't know about app.",
           wrong3: "Launch whenever you want.",
-          explanation: "'Hang on' لێرە واتای 'وەستە، با بیربکەمەوە' — بۆ گومانکردن یان ڕاستکردنەوە",
-          explanationAr: "'Hang on' هنا تعني 'انتظر، دعني أفكر' — للتشكيك أو التصحيح",
+          explanation: "'Hold up' لێرە واتای 'وەستە، با بیربکەمەوە' — بۆ گومانکردن یان ڕاستکردنەوە",
+          explanationAr: "'Hold up' هنا تعني 'انتظر، دعني أفكر' — للتشكيك أو التصحيح",
         },
       ],
     },
@@ -127,16 +207,42 @@ const unit07: UnitBank = [
 
   buildLesson(
     "That Makes Sense",
-    "ئەوە مەعنا هەیە / تێگەیشتم",
+    "ئەوە لۆژیکییە / تێگەیشتم",
     [
       { en: "Oh, that makes sense now.", ku: "ئاهـ، ئێستا تێگەیشتم.", ar: "آه، هذا منطقي الآن." },
-      { en: "That makes sense — thanks for explaining.", ku: "لۆژیکییە — سوپاس بۆ ڕوونکردنەوەکە.", ar: "هذا منطقي — شكراً للتوضيح." },
-      { en: "Yeah, that makes total sense to me.", ku: "بەڵێ، بەلای منەوە تەواو ڕوونە.", ar: "نعم، هذا منطقي تماماً بالنسبة لي." },
-      { en: "It makes sense why you were frustrated.", ku: "ئێستا تێدەگەم بۆچی بێزار بوویت.", ar: "من المنطقي لماذا كنت محبطاً." },
-      { en: "That makes sense given the deadline.", ku: "بە لەبەرچاوگرتنی مۆڵەتەکە، ئەمە لۆژیکییە.", ar: "هذا منطقي بالنظر إلى الموعد النهائي." },
-      { en: "Now it all makes sense — I get it.", ku: "ئێستا هەمووی ڕوون بووەوە — تێگەیشتم.", ar: "الآن كل شيء منطقي — فهمت." },
+      { en: "Gotcha, that clears it up.", ku: "تێگەیشتم، ئەوە ڕوونی کردەوە.", ar: "فهمت، هذا يوضّح الأمر." },
+      { en: "Ah, okay — I follow you.", ku: "ئاهـ، باشە — شوێنت کەوتم.", ar: "آه، حسناً — أنا أتابع معك." },
+      { en: "That tracks, actually.", ku: "بەڕاستی ئەوە لۆژیکییە.", ar: "هذا منطقي فعلاً." },
+      { en: "Right, I see what you mean.", ku: "بەڵێ، دەبینم مەبەستت چییە.", ar: "صحيح، أرى ما تقصده." },
+      { en: "Okay, now I get it.", ku: "باشە، ئێستا تێگەیشتم.", ar: "حسناً، الآن فهمت." },
     ],
     {
+      speakPhrases: [
+        { en: "That makes sense given the deadline.", ku: "بە لەبەرچاوگرتنی مۆڵەتەکە، ئەمە لۆژیکییە.", ar: "هذا منطقي بالنظر إلى الموعد النهائي." },
+        { en: "Wait, say more — I almost get it.", ku: "وەستە، زیاتر بڵێ — نزیکم لە تێگەیشتن.", ar: "مهلاً، أوضح أكثر — كدت أفهم." },
+        { en: "Yeah, no, I'm with you.", ku: "بەڵێ، تێگەیشتم، لەگەڵتم.", ar: "نعم، فهمت، أنا معك." },
+      ],
+      sentencePhrases: [
+        { en: "Thanks for walking me through it.", ku: "سوپاس کە هەنگاو بە هەنگاو ڕوونت کردمەوە.", ar: "شكراً لأنّك شرحتَ لي خطوة بخطوة." },
+        { en: "That explains a lot.", ku: "ئەوە زۆر شت ڕوون دەکاتەوە.", ar: "هذا يُفسّر الكثير." },
+        { en: "I was confused until just now.", ku: "تا ئێستا سەرم لێ شێوابوو.", ar: "كنت مشوّشاً حتى هذه اللحظة." },
+      ],
+      fills: [
+        fill(
+          "Oh, that ___ sense now that you explain it.",
+          "makes",
+          ["make", "making", "made"],
+          "ئاهـ، ئێستا کە ڕوونت کردەوە لۆژیکییە.",
+          "آه، أصبح هذا منطقياً الآن بعد أن شرحته.",
+        ),
+        fill(
+          "Gotcha — that ___ it up for me.",
+          "clears",
+          ["clear", "clearing", "cleared"],
+          "تێگەیشتم — ئەوە بۆ من ڕوونی کردەوە.",
+          "فهمت — هذا وضّح لي الأمر.",
+        ),
+      ],
       convos: [
         {
           situation: "مامۆستایەک ڕوونی دەکاتەوە بۆچی تاقیکردنەوە دواخست",
@@ -153,12 +259,12 @@ const unit07: UnitBank = [
           situation: "هاوڕێیەکت دەڵێت بۆچی نەچووە بۆ ئاهەنگ",
           situationAr: "صديقك يقول لماذا لم يذهب إلى الحفلة",
           theyAsk: "I skipped the party because I had to work early tomorrow.",
-          correct: "Yeah, that makes total sense to me. I would've done the same.",
+          correct: "That tracks, actually. I would've done the exact same thing.",
           wrong1: "Party was fun you missed.",
           wrong2: "Work is not important.",
           wrong3: "You always skip parties.",
-          explanation: "'Makes total sense' بە توندی پشتگیری لە بڕیارەکە دەکات",
-          explanationAr: "'Makes total sense' يدعم القرار بقوة",
+          explanation: "'That tracks' زاراوەیەکی نوێ و زۆر باوی ئەمریکییە بە واتای 'ئەوە لۆژیکییە'",
+          explanationAr: "'That tracks' تعبير أمريكي حديث وشائع جداً بمعنى 'هذا منطقي'",
         },
       ],
     },
@@ -167,16 +273,42 @@ const unit07: UnitBank = [
 
   buildLesson(
     "Sounds Good",
-    "باشە / ڕازی م",
+    "باشە / ڕازیم",
     [
-      { en: "Sounds good — let's meet at six.", ku: "باشە — با لە شەشدا بینین.", ar: "يبدو جيداً — لنلتقِ عند السادسة." },
-      { en: "That sounds good to me.", ku: "بۆ من باشە.", ar: "يبدو جيداً بالنسبة لي." },
-      { en: "Sounds good, I'll bring the drinks.", ku: "باشە، من خواردنەوە دەهێنم.", ar: "يبدو جيداً، سأحضر المشروبات." },
-      { en: "Yeah, sounds good — see you then.", ku: "بەڵێ، باشە — ئەو کاتە دەبینینەوە.", ar: "نعم، يبدو جيداً — أراك حينها." },
-      { en: "Sounds good, just text me when you leave.", ku: "باشە، تەنها کاتێک دەڕۆیت نامەم بۆ بنێرە.", ar: "يبدو جيداً، فقط أرسل لي رسالة عندما تغادر." },
-      { en: "That plan sounds good — I'm in.", ku: "ئەو پلانە باشە — من بەشداری دەکەم.", ar: "تلك الخطة تبدو جيدة — أنا موافق." },
+      { en: "Sounds good — let's meet at six.", ku: "باشە — با لە شەشدا یەکتر ببینین.", ar: "يبدو جيداً — لنلتقِ عند السادسة." },
+      { en: "Works for me.", ku: "بۆ من گونجاوە.", ar: "هذا يناسبني." },
+      { en: "Bet, I'll see you there.", ku: "باشە، لەوێ دەتبینم.", ar: "اتّفقنا، سأراك هناك." },
+      { en: "I'm down for that.", ku: "من ڕازیم بەوە.", ar: "أنا موافق على ذلك." },
+      { en: "Yeah, let's do it.", ku: "بەڵێ، با بیکەین.", ar: "نعم، لنفعلها." },
+      { en: "Perfect, that'll work.", ku: "نایاب، ئەوە دەگونجێت.", ar: "ممتاز، سينجح ذلك." },
     ],
     {
+      speakPhrases: [
+        { en: "Sounds good, I'll bring the drinks.", ku: "باشە، من خواردنەوەکان دەهێنم.", ar: "يبدو جيداً، سأُحضر المشروبات." },
+        { en: "That works on my end.", ku: "لە لای منەوە گونجاوە.", ar: "هذا مناسب من طرفي." },
+        { en: "Count me in.", ku: "منیش لەگەڵتان دام.", ar: "اعتبرني معكم." },
+      ],
+      sentencePhrases: [
+        { en: "Just text me when you head out.", ku: "تەنها کاتێک بەڕێ دەکەویت نامەم بۆ بنێرە.", ar: "فقط راسلني عندما تنطلق." },
+        { en: "I'll grab us a table.", ku: "مێزێکمان بۆ دەگرم.", ar: "سأحجز لنا طاولة." },
+        { en: "See you around seven then.", ku: "کەواتە نزیکەی حەوت دەتبینم.", ar: "أراك إذاً حوالي السابعة." },
+      ],
+      fills: [
+        fill(
+          "That ___ good to me — let's lock it in.",
+          "sounds",
+          ["sound", "sounding", "sounded"],
+          "ئەوە بۆ من باشە — با یەکلایی بکەینەوە.",
+          "هذا يبدو جيداً لي — لنُثبّت الموعد.",
+        ),
+        fill(
+          "Saturday ___ better for my schedule.",
+          "works",
+          ["work", "working", "worked"],
+          "شەممە باشتر لەگەڵ خشتەکەم دەگونجێت.",
+          "السبت يناسب جدولي أكثر.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەک پلانی کۆبوونەوە پێشنیار دەکات",
@@ -193,12 +325,12 @@ const unit07: UnitBank = [
           situation: "هاوکارێک پلانی پڕۆژە ڕوون دەکاتەوە",
           situationAr: "زميل يشرح خطة المشروع",
           theyAsk: "We'll draft the report today and review it together tomorrow morning.",
-          correct: "That plan sounds good — I'm in. I'll start the draft after lunch.",
+          correct: "Works for me — count me in. I'll start the draft after lunch.",
           wrong1: "I don't want draft.",
           wrong2: "Tomorrow is too late.",
           wrong3: "You do everything alone.",
-          explanation: "'I'm in' لەگەڵ 'sounds good' دەڵێت کە بە توندی بەشداری دەکەیت",
-          explanationAr: "'I'm in' مع 'sounds good' تعني أنك موافق بشدة وستشارك",
+          explanation: "'Count me in' دەڵێت کە بە توندی بەشداری دەکەیت",
+          explanationAr: "'Count me in' تعني أنك موافق بشدة وستشارك",
         },
       ],
     },
@@ -207,16 +339,42 @@ const unit07: UnitBank = [
 
   buildLesson(
     "Fair Enough",
-    "دادپەروەرانە / قبوڵە",
+    "قبوڵە / ڕاست دەکەیت",
     [
-      { en: "Fair enough — I see your point.", ku: "قبوڵە — لە مەبەستەکەت تێگەیشتم.", ar: "هذا عادل — أفهم وجهة نظرك." },
-      { en: "Fair enough, we can try it your way.", ku: "ڕاست دەکەیت، دەتوانین بە ڕێگەکەت تاقیی بکەینەوە.", ar: "هذا عادل، يمكننا تجربة طريقتك." },
-      { en: "Yeah, fair enough — I hadn't thought of that.", ku: "بەڵێ، قبوڵە — من بیرم لێ نەکردبووەوە.", ar: "نعم، هذا عادل — لم أفكر في ذلك." },
-      { en: "Fair enough, you win this argument.", ku: "قبوڵە، ئەم جارە تۆ بردتەوە.", ar: "هذا عادل، فزت بهذا النقاش." },
-      { en: "That's fair enough given the circumstances.", ku: "بە لەبەرچاوگرتنی بارودۆخەکە ئەوە قبوڵکراوە.", ar: "هذا عادل بالنظر إلى الظروف." },
-      { en: "Fair enough — let's compromise on this.", ku: "قبوڵە — با لەسەر ئەمە ڕێک بکەوین.", ar: "هذا عادل — لنتوصل إلى حل وسط." },
+      { en: "Fair enough — I see your point.", ku: "قبوڵە — لە مەبەستەکەت تێگەیشتم.", ar: "كلام منطقي — أفهم وجهة نظرك." },
+      { en: "Yeah, that's fair.", ku: "بەڵێ، ئەوە دادپەروەرانەیە.", ar: "نعم، هذا عادل." },
+      { en: "Okay, I'll give you that.", ku: "باشە، ئەوەت بۆ دان دەنێم.", ar: "حسناً، سأُسلّم لك بهذه." },
+      { en: "Honestly, I can't argue with that.", ku: "بەڕاستی ناتوانم دژایەتی ئەوە بکەم.", ar: "بصراحة، لا أستطيع الجدال في ذلك." },
+      { en: "Alright, you've got a point.", ku: "باشە، خاڵێکی دروستت هەیە.", ar: "حسناً، لديك وجهة نظر." },
+      { en: "I hadn't looked at it that way.", ku: "بەو شێوەیە سەیرم نەکردبوو.", ar: "لم أنظر إلى الأمر من تلك الزاوية." },
     ],
     {
+      speakPhrases: [
+        { en: "Fair enough, let's try it your way.", ku: "قبوڵە، با بە ڕێگەی تۆ تاقیی بکەینەوە.", ar: "كلام منطقي، لنجرّب طريقتك." },
+        { en: "Okay, you win this one.", ku: "باشە، ئەم جارە تۆ بردتەوە.", ar: "حسناً، فزتَ هذه المرة." },
+        { en: "That's a fair ask.", ku: "ئەوە داواکارییەکی ڕەوایە.", ar: "هذا طلب معقول." },
+      ],
+      sentencePhrases: [
+        { en: "I still think mine is faster.", ku: "هێشتا پێم وایە هی من خێراترە.", ar: "لا أزال أعتقد أنّ طريقتي أسرع." },
+        { en: "Let's meet in the middle.", ku: "با لە ناوەڕاستدا ڕێک بکەوین.", ar: "لنلتقِ في منتصف الطريق." },
+        { en: "We can revisit it next week.", ku: "دەتوانین هەفتەی داهاتوو بگەڕێینەوە بۆی.", ar: "يمكننا العودة إليه الأسبوع القادم." },
+      ],
+      fills: [
+        fill(
+          "___ enough — I hadn't thought of that.",
+          "Fair",
+          ["Fairly", "Fairness", "Fairest"],
+          "قبوڵە — بیرم لەوە نەکردبووەوە.",
+          "كلام منطقي — لم أفكّر في ذلك.",
+        ),
+        fill(
+          "Honestly, I can't ___ with that logic.",
+          "argue",
+          ["argued", "arguing", "argument"],
+          "بەڕاستی ناتوانم دژی ئەو لۆژیکە بوەستم.",
+          "بصراحة، لا أستطيع الجدال في هذا المنطق.",
+        ),
+      ],
       convos: [
         {
           situation: "گفتوگۆیەک دەربارەی کێ پێشتر دەچێتە ماڵ",
@@ -233,12 +391,12 @@ const unit07: UnitBank = [
           situation: "هاوڕێیەک ڕوونی دەکاتەوە بۆچی فیلمێکی جیاواز هەڵبژارد",
           situationAr: "صديق يوضح لماذا اختار فيلماً مختلفاً",
           theyAsk: "I picked the comedy because you've chosen the last three movies.",
-          correct: "Yeah, fair enough — I hadn't thought of that. Let's watch your pick.",
+          correct: "Okay, I'll give you that — I hadn't looked at it that way. Let's watch your pick.",
           wrong1: "I always choose movies.",
           wrong2: "Comedy is boring.",
           wrong3: "We watch nothing tonight.",
-          explanation: "'Fair enough' نیشانی دەدات کە قبوڵت کردووە بەڵام بە شێوەیەکی ئاسایی",
-          explanationAr: "'Fair enough' تُظهر أنك قبلت الأمر بطريقة عفوية",
+          explanation: "'I'll give you that' واتای 'ئەو خاڵەت بۆ دان دەنێم' — دانپێدانانێکی ئاسایی",
+          explanationAr: "'I'll give you that' تعني 'أُسلّم لك بهذه النقطة' — اعتراف عفوي",
         },
       ],
     },
@@ -250,13 +408,39 @@ const unit07: UnitBank = [
     "کورت بڵێم",
     [
       { en: "Long story short, we missed the flight.", ku: "کورت بڵێم، فڕۆکەکەمان لەدەستدا.", ar: "باختصار، فاتتنا الرحلة." },
-      { en: "Long story short, it all worked out.", ku: "کورت بڵێم، هەموو شتێک باش بوو.", ar: "باختصار، كل شيء نجح في النهاية." },
-      { en: "To make a long story short, she got the job.", ku: "بۆ کورتکردنەوە، ئەو کارەکەی وەرگرت.", ar: "لاختصار القصة، حصلت على الوظيفة." },
-      { en: "Long story short, I didn't see that coming.", ku: "کورت بڵێم، ئەمە چاوەڕوان نەکردبووم.", ar: "باختصار، لم أتوقع ذلك." },
-      { en: "Long story short, we're starting over.", ku: "کورت بڵێم، دووبارە دەستپێدەکەینەوە.", ar: "باختصار، سنبدأ من جديد." },
-      { en: "Anyway, long story short — we're moving in June.", ku: "بەهەرحاڵ، کورت بڵێم — لە حوزەیراندا دەگوازرێینەوە.", ar: "على أي حال، باختصار — سننتقل في يونيو." },
+      { en: "To cut to the chase, she said yes.", ku: "بۆ ئەوەی ڕاستەوخۆ بڵێم، ئەو ڕازی بوو.", ar: "لأدخل في صلب الموضوع، لقد وافقت." },
+      { en: "Anyway, we're moving in June.", ku: "بەهەرحاڵ، لە حوزەیراندا دەگوازرێینەوە.", ar: "على أيّ حال، سننتقل في يونيو." },
+      { en: "Bottom line, it all worked out.", ku: "کۆتا قسە، هەموو شتێک باش بوو.", ar: "خلاصة القول، كلّ شيء سار على ما يُرام." },
+      { en: "Basically, the deal fell through.", ku: "بەکورتی، ڕێککەوتنەکە شکستی هێنا.", ar: "باختصار، فشلت الصفقة." },
+      { en: "In a nutshell, we're starting over.", ku: "بەکورتی، لە سەرەتاوە دەستپێدەکەینەوە.", ar: "في جملة واحدة، سنبدأ من جديد." },
     ],
     {
+      speakPhrases: [
+        { en: "Long story short, I didn't see that coming.", ku: "کورت بڵێم، ئەمەم چاوەڕوان نەکردبوو.", ar: "باختصار، لم أتوقّع ذلك." },
+        { en: "I'll spare you the details.", ku: "وردەکارییەکانت پێ ناڵێم.", ar: "سأُجنّبك التفاصيل." },
+        { en: "So here's the short version.", ku: "کەواتە ئەمە وەشانە کورتەکەیە.", ar: "إذاً هذه هي النسخة المختصرة." },
+      ],
+      sentencePhrases: [
+        { en: "It's a long story, honestly.", ku: "بەڕاستی چیرۆکێکی درێژە.", ar: "إنّها قصة طويلة، بصراحة." },
+        { en: "I'll fill you in later.", ku: "دواتر ئاگادارت دەکەمەوە.", ar: "سأُطلعك على التفاصيل لاحقاً." },
+        { en: "You kind of had to be there.", ku: "دەبوایە خۆت لەوێ بوایتایە.", ar: "كان عليك أن تكون هناك لتفهم." },
+      ],
+      fills: [
+        fill(
+          "Long story ___ , we're back to square one.",
+          "short",
+          ["shortly", "shorter", "shortest"],
+          "کورت بڵێم، گەڕاینەوە بۆ خاڵی سفر.",
+          "باختصار، عُدنا إلى نقطة البداية.",
+        ),
+        fill(
+          "In a ___ , the whole trip was a disaster.",
+          "nutshell",
+          ["nutshells", "shell", "nut"],
+          "بەکورتی، هەموو گەشتەکە کارەسات بوو.",
+          "باختصار شديد، كانت الرحلة كلّها كارثة.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت دەپرسێت چۆن گەشتەکەت بوو",
@@ -270,15 +454,15 @@ const unit07: UnitBank = [
           explanationAr: "'Long story short' لاختصار قصة طويلة — بمعنى 'باختصار'",
         },
         {
-          situation: "لە کۆبوونەوەی کار پرسیار دەکرێت بۆچی پڕۆژەکە دواکەوت",
-          situationAr: "في اجتماع العمل يُسأل لماذا تأخر المشروع",
+          situation: "لە کۆبوونەوەی کاردا پرسیارت لێ دەکرێت دەربارەی کڕیارێک",
+          situationAr: "في اجتماع العمل يُسأل عن أحد العملاء",
           theyAsk: "Can you update us on the client situation?",
-          correct: "To make a long story short, she got the promotion and we're starting fresh with her replacement.",
+          correct: "To cut to the chase, she took another offer, so we're starting over with her replacement.",
           wrong1: "Client is difficult person.",
           wrong2: "Many emails were sent.",
           wrong3: "Project is late because problems.",
-          explanation: "'To make a long story short' هەمان ئیدیۆمە بە شێوەیەکی کەمێک فەرمیتر",
-          explanationAr: "'To make a long story short' نفس التعبير لكن بأسلوب أكثر رسمية",
+          explanation: "'Cut to the chase' واتای 'ڕاستەوخۆ بچۆ سەر بابەتەکە' — لە کاردا زۆر باوە",
+          explanationAr: "'Cut to the chase' تعني 'ادخل في صلب الموضوع مباشرة' — شائعة جداً في العمل",
         },
       ],
     },
@@ -287,16 +471,42 @@ const unit07: UnitBank = [
 
   buildLesson(
     "Take Your Time",
-    "کاتت هەبێت / پەلە مەکە",
+    "پەلە مەکە",
     [
-      { en: "Take your time — there's no rush.", ku: "کاتی خۆت وەربگرە — پەلە نییە.", ar: "خذ وقتك — لا داعي للاستعجال." },
-      { en: "No rush, take your time deciding.", ku: "پەلە نییە، کاتت هەبێت بۆ بڕیاردان.", ar: "لا استعجال، خذ وقتك في اتخاذ القرار." },
-      { en: "Take your time and let me know later.", ku: "کاتت هەبێت و دواتر پێم بڵێ.", ar: "خذ وقتك وأخبرني لاحقاً." },
-      { en: "Sure, take your time — I'll wait here.", ku: "باشە، کاتت هەبێت — لێرە چاوەڕێ دەکەم.", ar: "بالتأكيد، خذ وقتك — سأنتظر هنا." },
-      { en: "Don't worry, take all the time you need.", ku: "نیگەران مەبە، هەموو کاتێک کە پێویستتە وەربگرە.", ar: "لا تقلق، خذ كل الوقت الذي تحتاجه." },
-      { en: "Take your time with the form — it's long.", ku: "لەگەڵ فۆڕمەکە کاتت هەبێت — درێژە.", ar: "خذ وقتك مع النموذج — إنه طويل." },
+      { en: "Take your time — there's no rush.", ku: "کاتی خۆت وەربگرە — پەلە نییە.", ar: "خُذ وقتك — لا داعي للاستعجال." },
+      { en: "Whenever you're ready.", ku: "هەر کاتێک ئامادە بوویت.", ar: "متى ما كنتَ جاهزاً." },
+      { en: "No pressure at all.", ku: "هیچ فشارێک نییە.", ar: "لا يوجد أيّ ضغط إطلاقاً." },
+      { en: "We're not in a hurry.", ku: "ئێمە پەلەمان نییە.", ar: "نحن لسنا مستعجلين." },
+      { en: "Take as long as you need.", ku: "هەرچەندە پێویستتە کات وەربگرە.", ar: "خُذ ما تحتاجه من وقت." },
+      { en: "Don't feel rushed on my account.", ku: "لەبەر من هەست بە پەلە مەکە.", ar: "لا تشعر بالاستعجال بسببي." },
     ],
     {
+      speakPhrases: [
+        { en: "Take your time with the form — it's long.", ku: "لەگەڵ فۆڕمەکە پەلە مەکە — درێژە.", ar: "خُذ وقتك مع النموذج — إنّه طويل." },
+        { en: "Seriously, no rush on my end.", ku: "بەڕاستی، لە لای من پەلە نییە.", ar: "بجدّية، لا استعجال من طرفي." },
+        { en: "I'll wait right here.", ku: "هەر لێرە چاوەڕێ دەکەم.", ar: "سأنتظر هنا تماماً." },
+      ],
+      sentencePhrases: [
+        { en: "Just let me know when you decide.", ku: "تەنها کاتێک بڕیارت دا پێم بڵێ.", ar: "فقط أخبرني عندما تُقرّر." },
+        { en: "There's no deadline on this.", ku: "هیچ مۆڵەتێکی کۆتایی بۆ ئەمە نییە.", ar: "لا يوجد موعد نهائي لهذا." },
+        { en: "Sleep on it if you want.", ku: "ئەگەر دەتەوێت شەوێک بیری لێ بکەرەوە.", ar: "فكّر فيه ليلة كاملة إن أردت." },
+      ],
+      fills: [
+        fill(
+          "Take your ___ — I'm not going anywhere.",
+          "time",
+          ["times", "timing", "timed"],
+          "کاتی خۆت وەربگرە — بۆ هیچ شوێنێک ناڕۆم.",
+          "خُذ وقتك — أنا لن أذهب إلى أيّ مكان.",
+        ),
+        fill(
+          "Honestly, there's no ___ at all.",
+          "rush",
+          ["rushed", "rushing", "rushes"],
+          "بەڕاستی، هیچ پەلەیەک نییە.",
+          "بصراحة، لا يوجد أيّ استعجال.",
+        ),
+      ],
       convos: [
         {
           situation: "کڕیارێک لە فرۆشگادا بڕیار دەدات",
@@ -313,12 +523,12 @@ const unit07: UnitBank = [
           situation: "هاوکارێکت داوای مۆڵەت دەکات بۆ بڕیار لەسەر پڕۆپۆزاڵ",
           situationAr: "زميلك يطلب وقتاً لاتخاذ قرار بشأن العرض",
           theyAsk: "Can I get back to you on the proposal tomorrow?",
-          correct: "Sure, take your time — I'll wait. Just let me know when you've decided.",
+          correct: "Of course — no pressure at all. Sleep on it and let me know when you decide.",
           wrong1: "Answer must be today.",
           wrong2: "Why you need time?",
           wrong3: "Proposal is simple decide now.",
-          explanation: "'Let me know when you've decided' بە شێوەیەکی پیشەیی کات دەدات بە کەسەکە",
-          explanationAr: "'Let me know when you've decided' تمنح الشخص وقتاً بأسلوب مهني",
+          explanation: "'Sleep on it' واتای 'شەوێک بیری لێ بکەرەوە پێش بڕیاردان' — ئیدیۆمێکی زۆر باو",
+          explanationAr: "'Sleep on it' تعني 'فكّر في الأمر ليلة قبل أن تُقرّر' — تعبير شائع جداً",
         },
       ],
     },
@@ -327,20 +537,46 @@ const unit07: UnitBank = [
 
   buildLesson(
     "It Is What It Is",
-    "ئەوە ئەوە — چارەسەر نییە",
+    "ئیتر ئەوەیە کە هەیە",
     [
       { en: "It is what it is — we can't change the past.", ku: "ئیتر ئەوەیە کە هەیە — ناتوانین ڕابردوو بگۆڕین.", ar: "هو ما هو عليه — لا يمكننا تغيير الماضي." },
-      { en: "Well, it is what it is at this point.", ku: "باشە، لەم قۆناغەدا ئیتر ئەوەیە کە هەیە.", ar: "حسناً، هو ما هو عليه في هذه المرحلة." },
-      { en: "It is what it is — let's focus on what's next.", ku: "ئیتر ئەوەیە کە هەیە — با سەرنج بدەینە داهاتوو.", ar: "هو ما هو عليه — لنركّز على ما هو قادم." },
-      { en: "I wish it were different, but it is what it is.", ku: "خۆزگە جیاواز بووایە، بەڵام ئیتر ئەوەیە کە هەیە.", ar: "أتمنى لو كان مختلفاً، لكنه هو ما هو عليه." },
-      { en: "It is what it is — no point stressing about it.", ku: "ئیتر ئەوەیە کە هەیە — بێسوودە خۆتی بۆ تووڕە بکەیت.", ar: "هو ما هو عليه — لا فائدة من القلق بشأنه." },
-      { en: "Yeah, it is what it is — we'll adapt.", ku: "بەڵێ، ئیتر ئەوەیە کە هەیە — خۆمان دەگونجێنین.", ar: "نعم، هو ما هو عليه — سنتأقلم." },
+      { en: "There's nothing we can do about it now.", ku: "ئێستا هیچ شتێک نییە بتوانین بیکەین.", ar: "لا يوجد شيء يمكننا فعله الآن." },
+      { en: "Oh well, that's life.", ku: "باشە، ژیان ئاوایە.", ar: "لا بأس، هذه هي الحياة." },
+      { en: "We'll just have to roll with it.", ku: "دەبێت تەنها خۆمان لەگەڵی بگونجێنین.", ar: "علينا فقط أن نتأقلم معه." },
+      { en: "No use crying over it.", ku: "سوودی نییە خەمی بۆ بخۆین.", ar: "لا فائدة من البكاء عليه." },
+      { en: "It's out of our hands at this point.", ku: "لەم قۆناغەدا لە دەستی ئێمە دەرچووە.", ar: "الأمر خارج عن سيطرتنا في هذه المرحلة." },
     ],
     {
+      speakPhrases: [
+        { en: "It is what it is — let's focus on what's next.", ku: "ئیتر ئەوەیە کە هەیە — با سەرنج بدەینە داهاتوو.", ar: "هو ما هو عليه — لنُركّز على ما هو قادم." },
+        { en: "I wish it were different, honestly.", ku: "بەڕاستی خۆزگە جیاواز بووایە.", ar: "بصراحة، أتمنّى لو كان الأمر مختلفاً." },
+        { en: "We'll adapt — we always do.", ku: "خۆمان دەگونجێنین — هەمیشە وا دەکەین.", ar: "سنتأقلم — نحن نفعل ذلك دائماً." },
+      ],
+      sentencePhrases: [
+        { en: "There's no point stressing about it.", ku: "بێسوودە خۆتی بۆ ماندوو بکەیت.", ar: "لا جدوى من القلق بشأنه." },
+        { en: "Let's make the best of it.", ku: "با باشترین کەڵکی لێ وەربگرین.", ar: "لنستفد منه قدر الإمكان." },
+        { en: "Tomorrow's a new day.", ku: "سبەینێ ڕۆژێکی نوێیە.", ar: "غداً يوم جديد." },
+      ],
+      fills: [
+        fill(
+          "It is what it ___ — let's move on.",
+          "is",
+          ["was", "be", "are"],
+          "ئیتر ئەوەیە کە هەیە — با تێپەڕین.",
+          "هو ما هو عليه — لنمضِ قُدماً.",
+        ),
+        fill(
+          "We'll just have to ___ with it.",
+          "roll",
+          ["rolled", "rolling", "rolls"],
+          "دەبێت تەنها خۆمان لەگەڵی بگونجێنین.",
+          "علينا فقط أن نتأقلم معه.",
+        ),
+      ],
       convos: [
         {
-          situation: "تیمەکەت لە پێشبڕکێدا دۆڕاند",
-          situationAr: "فريقك خسر في المنافسة",
+          situation: "تیمەکەت گرێبەستێکی گەورەی لەدەستدا",
+          situationAr: "فريقك خسر عقداً كبيراً",
           theyAsk: "I can't believe we lost the contract after all that work.",
           correct: "It is what it is — we can't change the past. Let's focus on what's next.",
           wrong1: "We should cry about it.",
@@ -353,12 +589,12 @@ const unit07: UnitBank = [
           situation: "هاوڕێیەکت دەربارەی باران لە ڕۆژی پیکنیک",
           situationAr: "صديقك يتحدث عن المطر في يوم النزهة",
           theyAsk: "The weather ruined our whole picnic plan.",
-          correct: "Yeah, it is what it is — no point stressing. We can do a movie night instead.",
+          correct: "Oh well, that's life. There's no point stressing — we can do a movie night instead.",
           wrong1: "Weather is your fault.",
           wrong2: "Picnic must happen today.",
           wrong3: "I hate rain always.",
-          explanation: "لەگەڵ 'no point stressing' — دەڵێت کە نیگەران بوون فائیدەی نییە",
-          explanationAr: "مع 'no point stressing' — تقول إن القلق لا فائدة منه",
+          explanation: "'Oh well, that's life' قبوڵکردنێکی سووکە بۆ شتێکی نەخوازراو",
+          explanationAr: "'Oh well, that's life' قبول خفيف لأمر غير مرغوب فيه",
         },
       ],
     },
@@ -370,13 +606,39 @@ const unit07: UnitBank = [
     "ئیدیۆمەکانی ڕۆژانە",
     [
       { en: "I'm all ears — tell me what happened.", ku: "گوێم لێیە — پێم بڵێ چی ڕوویدا.", ar: "أنا كلّي آذان صاغية — أخبرني ماذا حدث." },
-      { en: "That's on me — I'll pay for dinner.", ku: "ئەوە لە ئەستۆی منە — شەوخواردنەکە من دەدەم.", ar: "هذا عليّ — سأدفع ثمن العشاء." },
-      { en: "You're pulling my leg — seriously?", ku: "گاڵتە دەکەیت — بەڕاستی؟", ar: "أنت تمزح معي — جدياً؟" },
+      { en: "That's on me — I'll pay for dinner.", ku: "ئەوە لە ئەستۆی منە — شێوخواردنەکە من دەیدەم.", ar: "هذا عليّ — سأدفع ثمن العشاء." },
+      { en: "You're pulling my leg — seriously?", ku: "گاڵتەم پێ دەکەیت — بەڕاستی؟", ar: "أنت تمزح معي — جدياً؟" },
       { en: "Let's call it a day and head home.", ku: "با بۆ ئەمڕۆ کۆتایی پێ بهێنین و بگەڕێینەوە ماڵەوە.", ar: "لننهِ يومنا ونعود إلى المنزل." },
-      { en: "I'm beat — I need to crash early tonight.", ku: "مردوم لە ماندوێتی — پێویستە ئەمشەو زوو بخەوێم.", ar: "أنا منهك — أحتاج أن أنام مبكراً الليلة." },
-      { en: "Keep me posted on how it goes.", ku: "ئاگادارم بکەرەوە بزانم چۆن دەڕوات.", ar: "أبقني على اطلاع بما يحدث." },
+      { en: "I'm beat — I need to crash early tonight.", ku: "ماندووم — پێویستە ئەمشەو زوو بخەوم.", ar: "أنا منهك — أحتاج أن أنام مبكراً الليلة." },
+      { en: "Keep me posted on how it goes.", ku: "ئاگادارم بکەرەوە بزانم چۆن دەڕوات.", ar: "أبقني على اطّلاع بما يحدث." },
     ],
     {
+      speakPhrases: [
+        { en: "That totally slipped my mind.", ku: "ئەوە تەواو لەبیرم چوو.", ar: "غاب ذلك عن ذهني تماماً." },
+        { en: "I'm swamped this week.", ku: "ئەم هەفتەیە زۆر سەرقاڵم.", ar: "أنا غارق في العمل هذا الأسبوع." },
+        { en: "Let's play it by ear.", ku: "با بەپێی بارودۆخ بڕیار بدەین.", ar: "لنرَ ما سيحدث ونُقرّر حينها." },
+      ],
+      sentencePhrases: [
+        { en: "It's a piece of cake, honestly.", ku: "بەڕاستی زۆر ئاسانە.", ar: "إنّه أمر سهل جداً، بصراحة." },
+        { en: "We're on the same page.", ku: "هەردووکمان یەک تێگەیشتنمان هەیە.", ar: "نحن على الموجة نفسها." },
+        { en: "I'll touch base with you Monday.", ku: "دووشەممە پەیوەندیت پێوە دەکەم.", ar: "سأتواصل معك يوم الاثنين." },
+      ],
+      fills: [
+        fill(
+          "Hang in ___ , it gets easier after the first week.",
+          "there",
+          ["their", "here", "them"],
+          "خۆڕاگر بە، دوای هەفتەی یەکەم ئاسانتر دەبێت.",
+          "اصبر قليلاً، سيصبح الأمر أسهل بعد الأسبوع الأوّل.",
+        ),
+        fill(
+          "I'm not sure yet — let's play it by ___ .",
+          "ear",
+          ["ears", "hear", "year"],
+          "هێشتا دڵنیا نیم — با بەپێی بارودۆخ بڕیار بدەین.",
+          "لستُ متأكّداً بعد — لنرَ ما سيحدث ونُقرّر حينها.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت دەیەوێت چیرۆکێکی سەرنجڕاکێش بڵێت",
@@ -397,7 +659,7 @@ const unit07: UnitBank = [
           wrong1: "Work all night no sleep.",
           wrong2: "I go home you stay.",
           wrong3: "Project never finish.",
-          explanation: "'Call it a day' = کاری ئەمڕۆ تەواو بکە | 'I'm beat' = زۆر ماندووام",
+          explanation: "'Call it a day' = کاری ئەمڕۆ تەواو بکە | 'I'm beat' = زۆر ماندووم",
           explanationAr: "'Call it a day' = أنهِ عمل اليوم | 'I'm beat' = أنا منهك جداً",
         },
       ],
