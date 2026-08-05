@@ -265,14 +265,33 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
             : L.slotDash;
 
   /*
-   * The row uses no flex gap (it would double up on the spaces the sentence
-   * already contains), so the tail owns its own leading space — except when it
-   * opens with punctuation, where a space before "," or "!" would be wrong.
+   * The sentence is rendered one word per flex item rather than as two big
+   * `<Text>` blocks. A whole fragment is a single flex item, so as soon as the
+   * blank grows wide enough that the remainder no longer fits beside it, that
+   * entire fragment jumps to the next line and leaves a gap after the blank —
+   * the sentence visibly "breaks" mid-clause. Word-level items wrap the way
+   * running text does: they fill the space next to the blank and only spill
+   * over the word that genuinely doesn't fit.
    */
-  const sentenceTail = React.useMemo(() => {
+  const leadTokens = React.useMemo(() => {
+    const raw = question.sentenceParts[0]?.trimEnd() ?? "";
+    return raw ? raw.split(/\s+/).filter(Boolean) : [];
+  }, [question.sentenceParts]);
+
+  /*
+   * Punctuation that opens the tail (",", "!", "?") belongs to the blank and
+   * must never start a line on its own, so it is glued into the blank's group.
+   * The rest of the tail wraps word by word.
+   */
+  const { gluedPunctuation, tailTokens } = React.useMemo(() => {
     const raw = question.sentenceParts[1]?.trimStart() ?? "";
-    if (!raw) return "";
-    return /^[,.!?;:%)\]}'"؛؟،]/.test(raw) ? raw : ` ${raw}`;
+    if (!raw) return { gluedPunctuation: "", tailTokens: [] as string[] };
+    const glued = raw.match(/^[,.!?;:%)\]}'"؛؟،]+/)?.[0] ?? "";
+    const rest = raw.slice(glued.length).trim();
+    return {
+      gluedPunctuation: glued,
+      tailTokens: rest ? rest.split(/\s+/).filter(Boolean) : [],
+    };
   }, [question.sentenceParts]);
 
   const kidsBadgeText = pathMode === "kids" && questionIndex !== undefined && totalQuestions !== undefined
@@ -320,11 +339,16 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
           <LightSurfaceCard>
           <Animated.View layout={layoutSmooth} style={s.sentenceRow}>
             <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.sentenceLeadRow}>
-              {question.sentenceParts[0] ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}>
-                  {question.sentenceParts[0].trimEnd()}{" "}
+              {leadTokens.map((word, i) => (
+                <AppText
+                  key={`lead_${i}`}
+                  languageCode={question.targetLanguage}
+                  align="start"
+                  style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}
+                >
+                  {word}{" "}
                 </AppText>
-              ) : null}
+              ))}
               <Animated.View
                 ref={blankRef}
                 layout={layoutSmooth}
@@ -336,65 +360,90 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                   });
                 }}
               >
-                {selected && !flySession ? (
-                  <Animated.View layout={layoutSmooth}>
-                    <LightWordTile
-                      label={selected}
-                      state={mapOptionState(getState(selected))}
-                      onPress={() => {
-                        if (revealed) return;
-                        if (Platform.OS !== "web") {
-                          void Haptics.selectionAsync();
-                        }
-                        setSelected(null);
-                      }}
-                      isKids={pathMode === "kids"}
-                      languageCode={question.targetLanguage}
-                      style={[
-                        isNormal && s.duoBlankTile,
-                        /* Same floor as the empty slot — see `blankWidth`. */
-                        { minWidth: blankWidth },
-                      ]}
-                    />
-                  </Animated.View>
-                ) : isNormal ? (
-                  /* Empty blank: a coloured rail sitting on the text baseline. */
-                  <View style={[s.duoBlankSlot, { width: blankWidth }]}>
-                    <View style={[s.duoBlankRail, { backgroundColor: blankBorder }]} />
-                  </View>
-                ) : pathMode === "kids" ? (
-                  <View style={[
-                    s.emptySlot,
-                    {
-                      width: blankWidth,
-                      borderColor: blankBorder,
-                      backgroundColor: isDark ? colors.muted : L.bgSoft,
-                    },
-                  ]}>
+                  {selected && !flySession ? (
+                    <Animated.View layout={layoutSmooth}>
+                      <LightWordTile
+                        label={selected}
+                        state={mapOptionState(getState(selected))}
+                        onPress={() => {
+                          if (revealed) return;
+                          if (Platform.OS !== "web") {
+                            void Haptics.selectionAsync();
+                          }
+                          setSelected(null);
+                        }}
+                        isKids={pathMode === "kids"}
+                        languageCode={question.targetLanguage}
+                        style={[
+                          isNormal && s.duoBlankTile,
+                          /* Same floor as the empty slot — see `blankWidth`. */
+                          { minWidth: blankWidth },
+                        ]}
+                      />
+                    </Animated.View>
+                  ) : isNormal ? (
+                    /* Empty blank: a coloured rail sitting on the text baseline. */
+                    <View style={[s.duoBlankSlot, { width: blankWidth }]}>
+                      <View style={[s.duoBlankRail, { backgroundColor: blankBorder }]} />
+                    </View>
+                  ) : pathMode === "kids" ? (
+                    <View style={[
+                      s.emptySlot,
+                      {
+                        width: blankWidth,
+                        borderColor: blankBorder,
+                        backgroundColor: isDark ? colors.muted : L.bgSoft,
+                      },
+                    ]}>
+                      <AppText
+                        languageCode={question.targetLanguage}
+                        align="center"
+                        style={[s.blankPlaceholder, { color: colors.mutedForeground }]}
+                      >
+                        ____
+                      </AppText>
+                    </View>
+                  ) : (
+                    <View style={[
+                      s.emptySlotDuo,
+                      {
+                        width: blankWidth,
+                        borderBottomColor: blankBorder,
+                        backgroundColor: isDark ? colors.muted : "transparent",
+                      },
+                    ]} />
+                  )}
+                </Animated.View>
+                {gluedPunctuation ? (
+                  <AppText
+                    languageCode={question.targetLanguage}
+                    align="start"
+                    style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}
+                  >
+                    {gluedPunctuation}{" "}
+                  </AppText>
+                ) : (
+                  /* Space between the blank and the first tail word. */
+                  tailTokens.length ? (
                     <AppText
                       languageCode={question.targetLanguage}
-                      align="center"
-                      style={[s.blankPlaceholder, { color: colors.mutedForeground }]}
+                      align="start"
+                      style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}
                     >
-                      ____
+                      {" "}
                     </AppText>
-                  </View>
-                ) : (
-                  <View style={[
-                    s.emptySlotDuo,
-                    {
-                      width: blankWidth,
-                      borderBottomColor: blankBorder,
-                      backgroundColor: isDark ? colors.muted : "transparent",
-                    },
-                  ]} />
+                  ) : null
                 )}
-              </Animated.View>
-              {sentenceTail ? (
-                <AppText languageCode={question.targetLanguage} align="start" style={[s.sentenceText, s.sentenceTailText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}>
-                  {sentenceTail}
-                </AppText>
-              ) : null}
+                {tailTokens.map((word, i) => (
+                  <AppText
+                    key={`tail_${i}`}
+                    languageCode={question.targetLanguage}
+                    align="start"
+                    style={[s.sentenceText, isNormal && s.sentenceTextDuo, { color: colors.foreground }]}
+                  >
+                    {word}{i < tailTokens.length - 1 ? " " : ""}
+                  </AppText>
+                ))}
             </DirectionalView>
           </Animated.View>
         </LightSurfaceCard>
@@ -405,10 +454,6 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         {shuffledOptions.map((w) => {
           const isFlying = flySession?.word === w;
           const isSelected = selected === w;
-          // Hide the chip if it is currently flying, OR if it's selected and not revealed yet
-          // Wait, if it's revealed, we want to show it? No, selected chips in FillBlankGame usually stay in the slot, 
-          // or we can make them disappear from the bank just like SentenceBuilderGame.
-          // Let's make it disappear from the bank to match.
           const isTaken = isFlying || isSelected;
 
           return (
@@ -416,7 +461,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
               key={w}
               ref={(el) => { bankRefs.current[w] = el; }}
               collapsable={false}
-              style={{ opacity: isTaken ? 0 : 1 }}
+              style={{ opacity: isFlying ? 0 : 1 }}
               pointerEvents={isTaken ? "none" : "auto"}
               onLayout={() => {
                 bankRefs.current[w]?.measureInWindow((x, y, w, h) => {
@@ -426,9 +471,9 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
             >
               <LightWordTile
                 label={w}
-                state={mapOptionState(getState(w))}
+                state={isTaken ? "ghost" : mapOptionState(getState(w))}
                 onPress={() => pick(w)}
-                disabled={revealed}
+                disabled={revealed || isTaken}
                 isKids={pathMode === "kids"}
                 languageCode={question.targetLanguage}
               />
@@ -502,9 +547,6 @@ const s = StyleSheet.create({
     lineHeight: 36,
     fontWeight: "600",
     fontFamily: "DINNextRoundedMedium",
-  },
-  sentenceTailText: {
-    flexShrink: 1,
   },
   blankContainer: {
     justifyContent: "center",

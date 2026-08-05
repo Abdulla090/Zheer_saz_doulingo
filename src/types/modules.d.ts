@@ -1,11 +1,5 @@
-declare module 'react-native-keyboard-controller' {
-  export const KeyboardProvider: any;
-  export const KeyboardAwareScrollView: any;
-  export const KeyboardToolbar: any;
-  export const useKeyboardHandler: any;
-  const content: any;
-  export default content;
-}
+// react-native-keyboard-controller ships its own types; declaring the module
+// here shadowed them and hid exports like KeyboardAvoidingView.
 
 declare module '@rive-app/react-native' {
   export const RiveView: any;

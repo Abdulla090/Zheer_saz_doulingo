@@ -789,8 +789,14 @@ export function DuoTile({
       <Animated.View
         style={[s.tile, align === "start" && s.tileStart, ltrBoundary, style, boxAnim]}
       >
+        {/*
+          The ghost slug keeps its label mounted — that is what holds the slot
+          at the exact width of the word taken out of it, so the bank never
+          reflows mid-solve — but the text is hidden, because a still-readable
+          word reads as a tile that was never picked up.
+        */}
         {tierLabel ? (
-          <View style={s.tileTierRow}>
+          <View style={[s.tileTierRow, state === "ghost" && { opacity: 0 }]}>
             <AppText
               languageCode={lang}
               align="start"
@@ -815,6 +821,7 @@ export function DuoTile({
               LightType.tile,
               fontSize !== undefined && { fontSize, lineHeight: fontSize + 7 },
               { color: labelColor },
+              state === "ghost" && { opacity: 0 },
             ]}
           >
             {label}

@@ -56,7 +56,11 @@ export function useSpeechCapture(lang = "en-US") {
   const start = useCallback(
     async (
       handlers: SpeechCaptureHandlers,
-      options?: { continuous?: boolean; contextualStrings?: string[] },
+      options?: {
+        continuous?: boolean;
+        contextualStrings?: string[];
+        interimResults?: boolean;
+      },
     ) => {
       handlersRef.current = handlers;
 
@@ -99,9 +103,16 @@ export function useSpeechCapture(lang = "en-US") {
         setError(null);
         ExpoSpeechRecognitionModule.start({
           lang,
-          interimResults: true,
+          interimResults: options?.interimResults ?? true,
           continuous: options?.continuous ?? false,
           contextualStrings: options?.contextualStrings,
+          // Android cuts recognition off at the first pause by default, which
+          // clips learners mid-sentence. Give them room to finish.
+          androidIntentOptions: {
+            EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
+            EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
+            EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 4000,
+          },
         });
         return true;
       } catch (err) {

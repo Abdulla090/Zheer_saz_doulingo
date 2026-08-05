@@ -898,7 +898,12 @@ export function LightWordTile({
         isDark && !isKidsRoute ? darkState.good : TIER_COLORS.good.bg,
         isDark && !isKidsRoute ? darkState.bad : TIER_COLORS.bad.bg,
         isDark && !isKidsRoute ? darkState.wrong : TIER_COLORS.terrible.bg,
-        "rgba(255, 255, 255, 0)", // ghost
+        /*
+         * Ghost is the empty slug a lifted word leaves behind, so it reads as a
+         * hole in the bank: a filled grey well, not a transparent outline that
+         * still looks like an available tile.
+         */
+        isDark && !isKidsRoute ? colors.muted : L.bgSoft, // ghost
       ],
       border: [
         isKidsRoute ? "#E5E7EB" : dividerColor, // idle
@@ -910,7 +915,7 @@ export function LightWordTile({
         TIER_COLORS.good.accent,
         TIER_COLORS.bad.accent,
         TIER_COLORS.terrible.accent,
-        L.slotDash, // ghost
+        isDark && !isKidsRoute ? colors.border : L.slotDash, // ghost
       ]
     };
   }, [colors, isDark, isKidsRoute]);
@@ -1029,7 +1034,6 @@ export function LightWordTile({
         animColor,
         {
           borderStyle: state === "ghost" ? "dashed" : "solid",
-          opacity: state === "ghost" ? 0.35 : 1,
           overflow: wrapLabel ? "visible" : "hidden",
         },
         state !== "ghost" && isKidsRoute &&
@@ -1045,8 +1049,18 @@ export function LightWordTile({
       ]}
     >
 
+      {/*
+        A ghost tile is the empty grey slug left behind when its word has been
+        lifted out. The label still renders — it is what gives the slug the
+        exact width of the word it stands in for, so the bank never reflows —
+        but it is made invisible rather than merely faded, because a readable
+        word in the bank makes it look like the tile was never taken.
+      */}
       {parsedEmoji ? (
-        <DirectionalView languageCode={labelLanguageCode} style={{ alignItems: "center", gap: 8 }}>
+        <DirectionalView
+          languageCode={labelLanguageCode}
+          style={{ alignItems: "center", gap: 8, opacity: state === "ghost" ? 0 : 1 }}
+        >
           <EmojiSticker emoji={parsedEmoji} size={36} animateOnMount={false} />
           {cleanText ? (
             <AppText
@@ -1069,7 +1083,10 @@ export function LightWordTile({
           ) : null}
         </DirectionalView>
       ) : tierLabel ? (
-        <DirectionalView languageCode={labelLanguageCode} style={lh.tileRow}>
+        <DirectionalView
+          languageCode={labelLanguageCode}
+          style={[lh.tileRow, { opacity: state === "ghost" ? 0 : 1 }]}
+        >
           <AppText
             languageCode={labelLanguageCode}
             align="start"
@@ -1125,6 +1142,7 @@ export function LightWordTile({
             isKidsRoute && { fontFamily: "DINNextRoundedBold", fontSize: fontSize ?? 16 },
             fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: fontSize + 8 },
             fontSize !== undefined && isKidsRoute && { lineHeight: fontSize + 8 },
+            state === "ghost" && { opacity: 0 },
           ]}
           numberOfLines={fitLabel ? fitLabelLines : undefined}
           adjustsFontSizeToFit={fitLabel}

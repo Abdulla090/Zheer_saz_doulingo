@@ -28,12 +28,15 @@ type Props = {
   locale: string;
 };
 
-const SLIDE_NUMBER: Record<string, string> = {
-  welcome: "01",
-  practice: "02",
-  progress: "03",
-};
-
+/*
+ * A slide is one artwork, one title, one line of support — nothing else.
+ *
+ * The "01 / 02 / 03" eyebrow above the title is dropped: the footer progress
+ * bar already answers "where am I", and the number was a second, competing
+ * position indicator rendered in the accent colour at the strongest point on
+ * the page. The decorative accent full stop after the title goes with it for
+ * the same reason — it drew colour to punctuation rather than to meaning.
+ */
 export function OnboardingSlide({ slide, locale }: Props) {
   const { width, height } = useWindowDimensions();
   const size = resolveOnboardingSize(width, height);
@@ -56,17 +59,6 @@ export function OnboardingSlide({ slide, locale }: Props) {
 
   const copy = (
     <View style={styles.copy}>
-      <AppText
-        style={styles.number}
-        languageCode="en"
-        forceLatinFont
-        latinRole="medium"
-        align="start"
-        fullWidth
-      >
-        {SLIDE_NUMBER[slide.id] ?? "01"}
-      </AppText>
-
       {isRtl ? (
         <AppText
           style={styles.titleRtl}
@@ -77,14 +69,10 @@ export function OnboardingSlide({ slide, locale }: Props) {
           accessibilityRole="header"
         >
           {slide.title}
-          <AppText style={styles.titleDot} languageCode={locale}>
-            .
-          </AppText>
         </AppText>
       ) : (
         <Text style={styles.title} accessibilityRole="header">
           {slide.title}
-          <Text style={styles.titleDot}>.</Text>
         </Text>
       )}
 
@@ -160,13 +148,6 @@ const createStyles = (
       alignItems: "flex-start",
       flexShrink: 0,
     },
-    number: {
-      color: ONBOARDING_DESIGN.accentInk,
-      fontSize: type.label.size,
-      lineHeight: type.label.lineHeight,
-      letterSpacing: type.label.letterSpacing,
-      marginBottom: tight ? ONBOARDING_SPACE.xs : ONBOARDING_SPACE.sm,
-    },
     title: {
       width: "100%",
       color: ONBOARDING_DESIGN.ink,
@@ -180,13 +161,8 @@ const createStyles = (
       width: "100%",
       color: ONBOARDING_DESIGN.ink,
       fontSize: type.displayRtl.size,
-      // RTL scripts need more leading than the 1.07 editorial ratio: Kurdish
-      // and Arabic ascenders/descenders collide at display sizes otherwise.
       lineHeight: Math.round(type.displayRtl.size * 1.42),
       letterSpacing: 0,
-    },
-    titleDot: {
-      color: ONBOARDING_DESIGN.accent,
     },
     subtitle: {
       color: ONBOARDING_DESIGN.mutedInk,

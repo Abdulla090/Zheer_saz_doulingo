@@ -1,4 +1,4 @@
-import { buildLesson } from "./build-lesson";
+import { buildLesson, fill } from "./build-lesson";
 import { UnitBank } from "../types";
 
 // ── Unit 9: Relationships & Feelings — 10 unique lessons ───────────────────
@@ -17,6 +17,32 @@ const unit09: UnitBank = [
       { en: "Let's exchange numbers and keep in touch.", ku: "با ژمارە ئاڵوگۆڕ بکەین و لە پەیوەندیدا بین.", ar: "لنتبادل الأرقام ونبقى على تواصل." },
     ],
     {
+      speakPhrases: [
+        { en: "So what do you do for fun?", ku: "باشە، بۆ خۆشی چی دەکەیت؟", ar: "إذاً، ماذا تفعل للتسلية؟" },
+        { en: "Wait, you're from Chicago too?", ku: "چاوەڕێ بە، تۆش خەڵکی شیکاگۆیت؟", ar: "لحظة، أنت أيضاً من شيكاغو؟" },
+        { en: "I don't know anybody here yet.", ku: "هێشتا کەس لێرە ناناسم.", ar: "لا أعرف أحداً هنا حتى الآن." },
+      ],
+      sentencePhrases: [
+        { en: "My friend dragged me along tonight.", ku: "ئەمشەو هاوڕێکەم بە زۆر هێنامی.", ar: "أحضرني صديقي معه الليلة." },
+        { en: "You should come with us next time.", ku: "جاری داهاتوو دەبێت لەگەڵمان بێیت.", ar: "يجب أن تأتي معنا في المرة القادمة." },
+        { en: "I'm glad I came out tonight.", ku: "دڵخۆشم کە ئەمشەو هاتمە دەرەوە.", ar: "أنا سعيد لأنني خرجت الليلة." },
+      ],
+      fills: [
+        fill(
+          "We should ___ out again sometime.",
+          "hang",
+          ["hold", "stand", "stay"],
+          "دەبێت جارێکی تر پێکەوە دەربچین.",
+          "يجب أن نلتقي مرة أخرى في وقت ما.",
+        ),
+        fill(
+          "Let's exchange numbers and keep in ___ .",
+          "touch",
+          ["contact", "reach", "sight"],
+          "با ژمارەکانمان بگۆڕینەوە و پەیوەندیمان بمێنێت.",
+          "لنتبادل الأرقام ونبقى على تواصل.",
+        ),
+      ],
       convos: [
         {
           situation: "لە بۆنەیەکی کۆمەڵایەتیدا کەسێکی نوێ دەناسیت",
@@ -57,6 +83,32 @@ const unit09: UnitBank = [
       { en: "I feel like a weight has been lifted.", ku: "هەست دەکەم بارێکی قورس لە کۆڵم بووەوە.", ar: "أشعر وكأنّ عبئاً ثقيلاً قد رُفع عن كاهلي." },
     ],
     {
+      speakPhrases: [
+        { en: "I'm just kind of drained.", ku: "تەنها هەندێک ماندووم.", ar: "أنا فقط مُستنزف نوعاً ما." },
+        { en: "That really stung, honestly.", ku: "بەڕاستی ئەوە زۆر ئازارم دا.", ar: "بصراحة، ذلك أوجعني حقاً." },
+        { en: "I'm honestly over the moon.", ku: "بەڕاستی زۆر دڵخۆشم.", ar: "أنا في قمة السعادة بصراحة." },
+      ],
+      sentencePhrases: [
+        { en: "I need to get this off my chest.", ku: "پێویستە ئەمە لە دڵم دەرکەم.", ar: "أحتاج أن أُفرغ ما في صدري." },
+        { en: "I've been on edge all week.", ku: "هەموو هەفتەکە دڵەڕاوکێم هەبووە.", ar: "كنت متوتراً طوال الأسبوع." },
+        { en: "Talking about it actually helps.", ku: "قسەکردن لەسەری بەڕاستی یارمەتیدەرە.", ar: "الحديث عنه يساعد فعلاً." },
+      ],
+      fills: [
+        fill(
+          "I've been feeling a bit ___ lately.",
+          "overwhelmed",
+          ["overcome", "overloaded", "overtaken"],
+          "بەم دواییانە هەندێک بەرگەنەگر بووم.",
+          "أشعر بأنني مُثقل قليلاً هذه الأيام.",
+        ),
+        fill(
+          "I feel like a ___ has been lifted.",
+          "weight",
+          ["load", "stone", "mass"],
+          "هەست دەکەم بارێک لەسەر شانم لابرا.",
+          "أشعر كأن حِملاً قد أُزيل عني.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت دەپرسێت چۆنیت",
@@ -97,6 +149,32 @@ const unit09: UnitBank = [
       { en: "Let me know if you need anything at all.", ku: "ئەگەر هەر شتێکت پێویست بوو پێم بڵێ.", ar: "أخبرني إذا احتجتَ أيّ شيء على الإطلاق." },
     ],
     {
+      speakPhrases: [
+        { en: "Do you want advice, or do you just want to vent?", ku: "ئامۆژگاری دەوێت، یان تەنها دەتەوێت دەربڕینی بکەیت؟", ar: "هل تريد نصيحة، أم تريد فقط أن تُفرّغ ما بداخلك؟" },
+        { en: "I'll swing by after work and bring dinner.", ku: "دوای کار دێمە لات و ئێوارەخوان دەهێنم.", ar: "سأمرّ عليك بعد العمل وأُحضر العشاء." },
+        { en: "Don't apologize for being upset.", ku: "داوای لێبوردن مەکە لەبەر ئەوەی دڵگرانی.", ar: "لا تعتذر لأنّك مستاء." },
+      ],
+      sentencePhrases: [
+        { en: "Text me anytime, even at 2 a.m.", ku: "هەر کاتێک نامەم بۆ بنێرە، تەنانەت کاتژمێر دووی شەویش.", ar: "راسلني في أيّ وقت، حتى الساعة الثانية فجراً." },
+        { en: "You don't have to be strong around me.", ku: "پێویست نییە لەلای من بەهێز بی.", ar: "لستَ مضطراً أن تكون قوياً أمامي." },
+        { en: "I've got your back on this one.", ku: "لەمەدا پشتیوانتم.", ar: "أنا ظهرك في هذا الأمر." },
+      ],
+      fills: [
+        fill(
+          "That's completely ___ — anyone would feel that way.",
+          "valid",
+          ["value", "valued", "validate"],
+          "ئەوە تەواو ڕەوایە — هەر کەسێک هەمان هەست دەکرد.",
+          "هذا مفهوم تماماً — أيّ شخص كان سيشعر بذلك.",
+        ),
+        fill(
+          "Lean ___ me whenever it gets heavy.",
+          "on",
+          ["at", "for", "with"],
+          "هەر کاتێک بارەکە قورس بوو خۆت بەمن بگرە.",
+          "اتّكئ عليّ في أيّ وقت يصبح الأمر ثقيلاً.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت بەدەست کێشەیەکەوە دەناڵێنێت",
@@ -137,6 +215,32 @@ const unit09: UnitBank = [
       { en: "Can I be honest about how I feel?", ku: "دەتوانم ڕاستگۆ بم دەربارەی هەستەکانم؟", ar: "هل يمكنني أن أكون صريحاً بشأن مشاعري؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Are you free Friday? There's a place I want to try.", ku: "هەینی بەتاڵی؟ شوێنێک هەیە دەمەوێت تاقی بکەمەوە.", ar: "هل أنت متفرّغ الجمعة؟ هناك مكان أريد تجربته." },
+        { en: "I'm really into you, if that wasn't obvious.", ku: "بەڕاستی حەزم لێتە، ئەگەر ڕوون نەبووە.", ar: "أنا معجب بك حقاً، إن لم يكن ذلك واضحاً." },
+        { en: "Let's take this slow and see where it goes.", ku: "با بە هێواشی بڕوانین بۆ کوێ دەچێت.", ar: "لنأخذ الأمور ببطء ونرى إلى أين تصل." },
+      ],
+      sentencePhrases: [
+        { en: "I can't stop thinking about last night.", ku: "ناتوانم لە شەوی ڕابردوو بیر نەکەمەوە.", ar: "لا أستطيع التوقّف عن التفكير في ليلة أمس." },
+        { en: "You're honestly the best part of my day.", ku: "بەڕاستی تۆ باشترین بەشی ڕۆژمی.", ar: "أنتَ بصراحة أجمل ما في يومي." },
+        { en: "I want us to be on the same page.", ku: "دەمەوێت هەردووکمان یەک تێگەیشتن هەبێت.", ar: "أريد أن نكون على الموجة نفسها." },
+      ],
+      fills: [
+        fill(
+          "We've been ___ each other for about a month now.",
+          "seeing",
+          ["watching", "looking", "meeting"],
+          "نزیکەی مانگێکە پەیوەندیمان هەیە.",
+          "نحن نتواعد منذ حوالي شهر الآن.",
+        ),
+        fill(
+          "I have a huge ___ on you, honestly.",
+          "crush",
+          ["crash", "crushed", "smash"],
+          "بەڕاستی زۆر حەزم لێتە.",
+          "بصراحة، أنا مُعجب بك جداً.",
+        ),
+      ],
       convos: [
         {
           situation: "دوای یەکەم ژوان (دەرچوون)",
@@ -177,6 +281,32 @@ const unit09: UnitBank = [
       { en: "My brother just got engaged — we're all thrilled.", ku: "براکەم تازە دەستگیرانداری کرد — هەموومان زۆر دڵخۆشین.", ar: "أخي خُطب للتوّ — جميعنا في غاية السعادة." },
     ],
     {
+      speakPhrases: [
+        { en: "My cousins are basically my best friends.", ku: "ئامۆزاکانم بەشێوەیەکی سەرەکی باشترین هاوڕێمن.", ar: "أبناء عمّي هم أصدقائي المقرّبون فعلياً." },
+        { en: "My mom still sends me recipes every week.", ku: "دایکم هێشتا هەموو هەفتەیەک ڕێنمایی خواردن بۆم دەنێرێت.", ar: "أمي لا تزال تُرسل لي وصفات كلّ أسبوع." },
+        { en: "My dad's the one who taught me to drive.", ku: "باوکم ئەو کەسەیە فێری شۆفێری کردم.", ar: "والدي هو من علّمني قيادة السيارة." },
+      ],
+      sentencePhrases: [
+        { en: "My grandpa tells the same story every time.", ku: "باپیرم هەموو جارێک هەمان چیرۆک دەگێڕێت.", ar: "جدّي يحكي القصة نفسها في كلّ مرة." },
+        { en: "We're driving up to see my aunt for the holidays.", ku: "بۆ پشووەکان بە ئۆتۆمبێل دەڕۆین بۆ لای پۆرم.", ar: "سنقود السيارة لزيارة خالتي في الأعياد." },
+        { en: "My little nephew just started walking.", ku: "برازای بچووکم تازە دەستی بە ڕۆیشتن کردووە.", ar: "ابن أخي الصغير بدأ المشي للتوّ." },
+      ],
+      fills: [
+        fill(
+          "I take ___ my mother's side of the family.",
+          "after",
+          ["over", "from", "up"],
+          "لە لایەنی خێزانی دایکم دەچم.",
+          "أنا أشبه عائلة أمي.",
+        ),
+        fill(
+          "My whole family is really ___ -knit.",
+          "close",
+          ["closed", "closing", "closely"],
+          "تەواوی خێزانم زۆر نزیکن لە یەکتر.",
+          "عائلتي كلّها متقاربة جداً.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوکارێکت دەپرسێت بۆچی ئەم کۆتایی هەفتەیە سەرقاڵیت",
@@ -217,6 +347,32 @@ const unit09: UnitBank = [
       { en: "Let's not go to bed angry.", ku: "با بە دڵگرانییەوە نەخەوین.", ar: "دعنا لا ننام ونحن غاضبون." },
     ],
     {
+      speakPhrases: [
+        { en: "Can we hit pause and come back to this?", ku: "دەتوانین وەستان بدەین و دواتر بگەڕێینەوە بۆی؟", ar: "هل يمكننا التوقّف والعودة لهذا لاحقاً؟" },
+        { en: "I'm not trying to win — I'm trying to fix it.", ku: "هەوڵ نادەم سەربکەوم — هەوڵ دەدەم چاکی بکەم.", ar: "لا أحاول أن أفوز — أحاول أن أُصلح الأمر." },
+        { en: "That came out harsher than I meant it.", ku: "ئەوە توندتر دەرچوو لەوەی مەبەستم بوو.", ar: "خرج ذلك أقسى مما قصدت." },
+      ],
+      sentencePhrases: [
+        { en: "Let's agree to disagree on this one.", ku: "با ڕازی بین کە لەمەدا هاوڕا نین.", ar: "لنتّفق على أن نختلف في هذا الأمر." },
+        { en: "I could have handled that better.", ku: "دەمتوانی بە باشتری مامەڵەی لەگەڵ بکەم.", ar: "كان بإمكاني التعامل مع ذلك بشكل أفضل." },
+        { en: "Where did we lose each other in this?", ku: "لە کوێ لەم بابەتەدا لێک تێنەگەیشتین؟", ar: "في أيّ لحظة لم يفهم أحدنا الآخر؟" },
+      ],
+      fills: [
+        fill(
+          "Let's not blow this ___ of proportion.",
+          "out",
+          ["off", "up", "over"],
+          "با ئەمە زیاد لە پێویست گەورە نەکەین.",
+          "دعنا لا نُبالغ في تضخيم هذا الأمر.",
+        ),
+        fill(
+          "I think we just need to ___ down first.",
+          "cool",
+          ["cold", "cooling", "chill"],
+          "پێم وایە پێویستە سەرەتا ئارام بینەوە.",
+          "أعتقد أنّنا نحتاج أن نهدأ أولاً.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت تووڕەیە چونکە شتێکت پێ نەوتووە",
@@ -257,6 +413,32 @@ const unit09: UnitBank = [
       { en: "Would it help to talk it through together?", ku: "ئایا یارمەتیدەر دەبێت ئەگەر پێکەوە قسەی لەسەر بکەین؟", ar: "هل سيساعد لو تحدّثنا عنه معاً؟" },
     ],
     {
+      speakPhrases: [
+        { en: "I'm just gonna sit here with you, okay?", ku: "تەنها لێرە لەگەڵت دادەنیشم، باشە؟", ar: "سأجلس هنا معك فقط، حسناً؟" },
+        { en: "You don't owe anybody an explanation.", ku: "پێویست نییە ڕوونکردنەوە بۆ هیچ کەس بدەیت.", ar: "لستَ مضطراً أن تُقدّم تفسيراً لأحد." },
+        { en: "I can tell something's off — talk to me.", ku: "دەزانم شتێک لە جێی خۆیدا نییە — قسەم لەگەڵ بکە.", ar: "أستطيع أن أرى أنّ شيئاً ما ليس على ما يُرام — تحدّث معي." },
+      ],
+      sentencePhrases: [
+        { en: "Take your time — I'm not going anywhere.", ku: "بە ئارامی، من بۆ هیچ شوێنێک ناڕۆم.", ar: "خُذ وقتك — أنا لن أذهب إلى أيّ مكان." },
+        { en: "That's a lot to carry by yourself.", ku: "ئەوە بارێکی زۆرە بۆ ئەوەی بەتەنیا هەڵی بگریت.", ar: "هذا حِمل كبير لتحمله وحدك." },
+        { en: "I'd probably feel the exact same way.", ku: "ڕەنگە منیش هەمان هەست بکەم.", ar: "من المحتمل أنّني كنت سأشعر بالشيء نفسه تماماً." },
+      ],
+      fills: [
+        fill(
+          "I'm all ___ if you want to talk.",
+          "ears",
+          ["ear", "hearing", "listen"],
+          "ئەگەر دەتەوێت قسە بکەیت، من بە تەواوی گوێم لێتە.",
+          "أنا كلّي آذان إن أردتَ الحديث.",
+        ),
+        fill(
+          "Try to put yourself in her ___ for a second.",
+          "shoes",
+          ["shoe", "boots", "steps"],
+          "بۆ چرکەیەک خۆت لە شوێنی ئەو دابنێ.",
+          "حاول أن تضع نفسك في مكانها لثانية.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەکت نهێنییەکی قورس و هەستیارت پێ دەڵێت",
@@ -297,6 +479,32 @@ const unit09: UnitBank = [
       { en: "Thanks for respecting my boundary.", ku: "سوپاس بۆ ڕێزگرتن لە سنوورەکەم.", ar: "شكرًا لاحترامك حدودي." },
     ],
     {
+      speakPhrases: [
+        { en: "I'd rather keep that between us.", ku: "پێم خۆشترە ئەوە لە نێوان ئێمەدا بمێنێتەوە.", ar: "أفضّل أن يبقى ذلك بيننا." },
+        { en: "That's a hard no for me, sorry.", ku: "ئەوە بۆ من نەخێرێکی ڕوونە، ببوورە.", ar: "هذا رفض قاطع من جانبي، آسف." },
+        { en: "Please don't tag me in that.", ku: "تکایە لەوەدا ناوم مەنێ.", ar: "من فضلك لا تُشِر إليّ في ذلك." },
+      ],
+      sentencePhrases: [
+        { en: "I'm gonna pass this time.", ku: "ئەم جارە بەشداری ناکەم.", ar: "سأتخطّى هذه المرة." },
+        { en: "I don't discuss that with coworkers.", ku: "ئەو بابەتە لەگەڵ هاوکارانم باس ناکەم.", ar: "لا أُناقش ذلك مع زملاء العمل." },
+        { en: "I appreciate you checking with me first.", ku: "سوپاس کە سەرەتا پرسیت لە من.", ar: "أُقدّر أنّك سألتني أوّلاً." },
+      ],
+      fills: [
+        fill(
+          "I just need a little ___ right now.",
+          "space",
+          ["spacing", "room", "gap"],
+          "ئێستا تەنها کەمێک بۆشایی کەسیم پێویستە.",
+          "أحتاج فقط بعض المساحة الشخصية الآن.",
+        ),
+        fill(
+          "That's crossing a ___ for me.",
+          "line",
+          ["lane", "row", "path"],
+          "ئەوە بۆ من تێپەڕاندنی سنوورە.",
+          "ذلك يتجاوز حدّاً بالنسبة لي.",
+        ),
+      ],
       convos: [
         {
           situation: "هاوڕێیەک دەتەوێت وێنەیەکی تۆ بڵاو بکاتەوە",
@@ -337,6 +545,32 @@ const unit09: UnitBank = [
       { en: "I don't expect you to forgive me right away.", ku: "چاوەڕێ ناکەم یەکسەر لێم خۆش بیت.", ar: "لا أتوقع منك أن تسامحني فورًا." },
     ],
     {
+      speakPhrases: [
+        { en: "That was on me, not you.", ku: "ئەوە هەڵەی من بوو، نەک تۆ.", ar: "كان ذلك خطئي أنا، لا خطأك." },
+        { en: "No excuses — I dropped the ball.", ku: "هیچ بیانوویەک نییە — من کەمتەرخەم بووم.", ar: "لا أعذار — أنا من قصّر." },
+        { en: "I'm going to earn that back, slowly.", ku: "بە هێواشی ئەو متمانەیە دەهێنمەوە.", ar: "سأستعيد تلك الثقة، ببطء." },
+      ],
+      sentencePhrases: [
+        { en: "You have every right to be upset.", ku: "هەموو مافێکت هەیە کە دڵگران بیت.", ar: "من حقّك تماماً أن تكون مستاءً." },
+        { en: "I want to show you, not just tell you.", ku: "دەمەوێت پیشانت بدەم، نەک تەنها پێت بڵێم.", ar: "أريد أن أُريك، لا أن أُخبرك فقط." },
+        { en: "I won't put you in that position again.", ku: "جارێکی تر تووشی ئەو بارودۆخەت ناکەمەوە.", ar: "لن أضعك في ذلك الموقف مرة أخرى." },
+      ],
+      fills: [
+        fill(
+          "I want to make it ___ to you somehow.",
+          "up",
+          ["on", "over", "out"],
+          "دەمەوێت بەشێوەیەک قەرەبووت بکەمەوە.",
+          "أريد أن أُعوّضك بطريقة ما.",
+        ),
+        fill(
+          "I know actions ___ louder than words.",
+          "speak",
+          ["spoke", "talk", "sound"],
+          "دەزانم کردار لە قسە بەهێزترە.",
+          "أعرف أنّ الأفعال أبلغ من الأقوال.",
+        ),
+      ],
       convos: [
         {
           situation: "بەڵێنێکت شکاندووە و هاوڕێکەت بێزارە",
@@ -377,6 +611,32 @@ const unit09: UnitBank = [
       { en: "Tell me what works for your schedule.", ku: "پێم بڵێ کام کات لەگەڵ بەرنامەکەت دەگونجێت.", ar: "أخبرني بالوقت المناسب لجدولك." },
     ],
     {
+      speakPhrases: [
+        { en: "Long time no see — how've you been?", ku: "ماوەیەکی زۆرە نەمدیتووی — چۆن بووی؟", ar: "لم نتقابل منذ زمن — كيف كنت؟" },
+        { en: "We're way overdue for a coffee.", ku: "زۆر لەمەوپێش دەبوو پێکەوە قاوەیەک بخوێنەوە.", ar: "لقد تأخّرنا كثيراً عن موعد قهوة معاً." },
+        { en: "You popped into my head this morning.", ku: "ئەم بەیانی بەبیرم هاتییەوە.", ar: "خطرتَ في بالي هذا الصباح." },
+      ],
+      sentencePhrases: [
+        { en: "Are you around this weekend at all?", ku: "ئەم کۆتایی هەفتەیە هیچ لێرەی؟", ar: "هل ستكون موجوداً نهاية هذا الأسبوع؟" },
+        { en: "Send me a picture of the new place!", ku: "وێنەیەکی شوێنی نوێ بۆم بنێرە!", ar: "أرسل لي صورة للمكان الجديد!" },
+        { en: "Let's not let another year go by.", ku: "با ڕێگە نەدەین ساڵێکی تر تێپەڕێت.", ar: "دعنا لا نترك سنة أخرى تمضي." },
+      ],
+      fills: [
+        fill(
+          "Let's ___ up soon — I want to hear everything.",
+          "catch",
+          ["catching", "caught", "reach"],
+          "با بەم زووانە یەکتر ببینین — دەمەوێت هەموو شتێک ببیستم.",
+          "لنتقابل قريباً — أريد أن أسمع كلّ شيء.",
+        ),
+        fill(
+          "Don't be a ___ — text me back sometime!",
+          "stranger",
+          ["strange", "strangely", "stranger's"],
+          "خۆت دوور مەخەرەوە — کاتێک وەڵامم بدەوە!",
+          "لا تبتعد عنّا — راسلني في وقت ما!",
+        ),
+      ],
       convos: [
         {
           situation: "ماوەیەکی زۆرە قسەت لەگەڵ هاوڕێیەکی کۆن نەکردووە",

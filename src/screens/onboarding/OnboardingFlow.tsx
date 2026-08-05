@@ -69,18 +69,23 @@ export function OnboardingFlow() {
 
   /* Continuous scroll position for smooth gradient morph */
   const scrollX = useSharedValue(0);
-  const isProgrammaticTransition = useSharedValue(0);
   const rootOpacity = useSharedValue(1);
 
   const animatedRootStyle = useAnimatedStyle(() => ({
     opacity: rootOpacity.value,
   }));
 
+  /*
+   * The ScrollView offset is the single source of truth for `scrollX` on native.
+   * Driving it with a parallel `withTiming` (as this previously did during
+   * programmatic paging) made the Skia background travel on its own 460ms curve
+   * while the slides travelled on the platform's native scroll curve, so the
+   * two drifted apart mid-transition and the background settled on the wrong
+   * page whenever the native animation finished first.
+   */
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      if (isProgrammaticTransition.value === 0) {
-        scrollX.value = Math.abs(event.contentOffset.x);
-      }
+      scrollX.value = Math.abs(event.contentOffset.x);
     },
   });
 
@@ -150,28 +155,19 @@ export function OnboardingFlow() {
       return;
     }
     const nextIndex = index + 1;
-
     const targetX = nextIndex * screenWidth;
-    const backgroundTarget = nextIndex * screenWidth;
 
-    isProgrammaticTransition.value = 1;
-    scrollX.value = withTiming(
-      backgroundTarget,
-      {
-        duration: 460,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
-      },
-      () => {
-        isProgrammaticTransition.value = 0;
-      },
-    );
-
-    if (!isWeb) {
-      scrollRef.current?.scrollTo({
-        x: targetX,
-        y: 0,
-        animated: true,
-      } as any);
+    if (isWeb) {
+      // No ScrollView on web, so nothing reports scroll position back —
+      // `scrollX` has to be driven directly to morph the background.
+      scrollX.value = reduceMotion
+        ? targetX
+        : withTiming(targetX, {
+            duration: 460,
+            easing: Easing.bezier(0.22, 1, 0.36, 1),
+          });
+    } else {
+      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: !reduceMotion });
     }
 
     setIndex(nextIndex);
@@ -180,7 +176,7 @@ export function OnboardingFlow() {
     index,
     isWeb,
     isLast,
-    isProgrammaticTransition,
+    reduceMotion,
     screenWidth,
     scrollX,
   ]);
@@ -189,15 +185,18 @@ export function OnboardingFlow() {
     if (index <= 0) return;
     const previousIndex = index - 1;
     const targetX = previousIndex * screenWidth;
-    scrollX.value = reduceMotion
-      ? targetX
-      : withTiming(targetX, {
-          duration: 240,
-          easing: Easing.out(Easing.cubic),
-        });
-    if (!isWeb) {
+
+    if (isWeb) {
+      scrollX.value = reduceMotion
+        ? targetX
+        : withTiming(targetX, {
+            duration: 460,
+            easing: Easing.bezier(0.22, 1, 0.36, 1),
+          });
+    } else {
       scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: !reduceMotion });
     }
+
     setIndex(previousIndex);
   }, [index, isWeb, reduceMotion, screenWidth, scrollX]);
 
@@ -205,16 +204,18 @@ export function OnboardingFlow() {
   const handleMomentumEnd = useCallback(
     (e: { nativeEvent: { contentOffset: { x: number } } }) => {
       const offsetX = Math.abs(e.nativeEvent.contentOffset.x);
-      const newIndex = Math.round(offsetX / screenWidth);
-      if (newIndex >= 0 && newIndex < total && newIndex !== index) {
+      const newIndex = Math.min(
+        total - 1,
+        Math.max(0, Math.round(offsetX / screenWidth)),
+      );
+      if (newIndex !== index) {
         setIndex(newIndex);
       }
-      scrollX.value = withTiming(newIndex * screenWidth, {
-        duration: 480,
-        easing: Easing.out(Easing.cubic),
-      });
+      // `scrollX` already tracks the settled offset via `scrollHandler`; the
+      // previous `withTiming` here re-animated it from the position it was
+      // already at, which re-ran the background morph after every swipe.
     },
-    [index, screenWidth, scrollX, total],
+    [index, screenWidth, total],
   );
 
   if (!localeReady) {

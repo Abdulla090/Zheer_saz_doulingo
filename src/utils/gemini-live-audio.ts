@@ -71,15 +71,20 @@ function pcmBytesToWavBase64(pcmBytes: Uint8Array, sampleRate: number): string {
   return encodeBase64(wav);
 }
 
+/** 16-bit mono silence, rounded to a whole sample. */
+function silenceBytes(milliseconds: number): Uint8Array {
+  const samples = Math.round((GEMINI_LIVE_OUTPUT_RATE * milliseconds) / 1000);
+  return new Uint8Array(samples * 2);
+}
+
 export class LivePcmPlayer {
   private pendingBytes = new Uint8Array(0);
   private flushTimeout: ReturnType<typeof setTimeout> | null = null;
   private playlist: ReturnType<typeof createAudioPlaylist> | null = null;
   private statusListener: { remove: () => void } | null = null;
-  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private watchdog: ReturnType<typeof setInterval> | null = null;
   private generatedFiles: string[] = [];
   private playing = false;
-  private playRequested = false;
   private destroyed = false;
   private audioModeSet = false;
   private turnComplete = true;
@@ -88,9 +93,10 @@ export class LivePcmPlayer {
   private pendingWrites = 0;
   private writeChain: Promise<void> = Promise.resolve();
   private generation = 0;
-  private lastStatus: any = null;
   private queuedAudioBytes = 0;
   private playbackStarted = false;
+  private drainCandidateSince = 0;
+  private receivedFirstChunk = false;
 
   constructor(
     private onPlayingStateChange?: (isPlaying: boolean) => void,
@@ -106,15 +112,17 @@ export class LivePcmPlayer {
    * Keep native playback away from tiny WAV boundaries. Gemini emits many
    * small PCM messages; opening one native source for each message clips the
    * first/last samples and lets Android fall behind between tracks.
+   * 48000 bytes is ~1.0s of 24 kHz 16-bit mono audio, so a multi-sentence
+   * reply becomes a handful of tracks instead of dozens.
    */
-  private static BUFFER_THRESHOLD = 32_768;
+  private static BUFFER_THRESHOLD = 48_000;
 
   /**
-   * Do not start until roughly two buffered sources are ready, unless the
-   * server has already completed the turn. This gives the native playlist a
-   * runway before the first track can finish.
+   * Do not start until roughly 1.5s of audio is ready, unless the server has
+   * already completed the turn. This gives the native playlist enough runway
+   * that normal network jitter cannot drain it mid-sentence.
    */
-  private static START_BUFFER_THRESHOLD = 65_536;
+  private static START_BUFFER_THRESHOLD = 72_000;
 
   /**
    * Flush delay: how long to wait for more data before flushing a partial buffer.
@@ -122,7 +130,25 @@ export class LivePcmPlayer {
    */
   private static FLUSH_DELAY_MS = 160;
 
-  private static DRAIN_CONFIRMATION_DELAY_MS = 160;
+  /**
+   * The watchdog reads live native properties (not cached status events) to
+   * recover from playlist underruns. Android stops emitting periodic status
+   * updates while playback is stopped, so event-driven recovery cannot be
+   * trusted to restart a queue that ran dry mid-turn.
+   */
+  private static WATCHDOG_INTERVAL_MS = 100;
+
+  private static DRAIN_CONFIRMATION_MS = 220;
+
+  /**
+   * Silence padding around each turn. Switching the native audio route from
+   * mic capture to playback swallows the first few milliseconds, and ExoPlayer
+   * can clip the tail of the final track — pad both edges so only silence is
+   * ever lost, never speech.
+   */
+  private static LEAD_IN_SILENCE_MS = 140;
+
+  private static TAIL_SILENCE_MS = 180;
 
   private reportPlaybackError(message: string, error?: unknown) {
     console.warn(message, error);
@@ -142,74 +168,167 @@ export class LivePcmPlayer {
       "playlistStatusUpdate",
       (status: any) => {
         if (this.destroyed) return;
-        this.lastStatus = status;
 
-        if (status.error) {
+        if (status?.error) {
           const message =
             typeof status.error?.message === "string"
               ? status.error.message
               : "Live tutor audio playback failed.";
-          this.playRequested = false;
           this.reportPlaybackError(message);
           return;
         }
 
-        if (
-          this.playRequested &&
-          status.isLoaded &&
-          !status.playing &&
-          !this.paused
-        ) {
-          this.playRequested = false;
-          this.playbackStarted = true;
-          try {
-            this.playlist?.play();
-          } catch (error) {
-            this.reportPlaybackError(
-              "Live tutor audio could not start.",
-              error,
-            );
-          }
-          return;
-        }
-
-        if (status.playing) {
+        if (status?.playing) {
+          this.drainCandidateSince = 0;
           this.markQueueActive();
-          if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-            this.idleTimer = null;
-          }
-          return;
         }
-
-        this.maybeReportQueueDrained(status);
       },
     );
 
     return this.playlist;
   }
 
-  private requestPlayback() {
+  private ensureWatchdog() {
+    if (this.watchdog || this.destroyed) return;
+    this.watchdog = setInterval(() => {
+      this.tick();
+    }, LivePcmPlayer.WATCHDOG_INTERVAL_MS);
+  }
+
+  private clearWatchdog() {
+    if (this.watchdog) {
+      clearInterval(this.watchdog);
+      this.watchdog = null;
+    }
+  }
+
+  /** Playback may only begin once there is a runway, or once the turn ended. */
+  private canStartPlayback(): boolean {
+    return (
+      this.turnComplete ||
+      this.queuedAudioBytes >= LivePcmPlayer.START_BUFFER_THRESHOLD
+    );
+  }
+
+  /**
+   * Poll live playlist properties and repair stalls. ExoPlayer normally
+   * auto-advances, but when the queue runs dry it parks in STATE_ENDED and
+   * later-appended tracks are never reached without an explicit skip.
+   */
+  private tick() {
+    if (this.destroyed || this.paused) return;
+
     const playlist = this.playlist;
-    if (!playlist || playlist.playing || this.paused) {
-      this.playRequested = false;
+    if (!playlist) {
+      this.considerDrain();
+      return;
+    }
+
+    let trackCount = 0;
+    let currentIndex = 0;
+    let playing = false;
+    let isBuffering = false;
+    let duration = 0;
+    let currentTime = 0;
+    try {
+      trackCount = playlist.trackCount;
+      currentIndex = playlist.currentIndex;
+      playing = playlist.playing;
+      isBuffering = playlist.isBuffering;
+      duration = playlist.duration;
+      currentTime = playlist.currentTime;
+    } catch {
+      return;
+    }
+
+    if (trackCount === 0) {
+      this.considerDrain();
+      return;
+    }
+
+    if (playing || isBuffering) {
+      this.drainCandidateSince = 0;
+      return;
+    }
+
+    if (!this.playbackStarted && !this.canStartPlayback()) return;
+
+    const trackFinished = duration > 0 && currentTime >= duration - 0.05;
+    const hasUnplayedTracks = currentIndex < trackCount - 1;
+
+    if (hasUnplayedTracks) {
+      this.drainCandidateSince = 0;
+      this.playbackStarted = true;
+      try {
+        // Only advance when the current track truly reached its end, so a
+        // track that is merely still loading is never skipped past.
+        if (trackFinished) playlist.skipTo(currentIndex + 1);
+        playlist.play();
+      } catch (error) {
+        this.reportPlaybackError("Live tutor audio could not continue.", error);
+      }
+      return;
+    }
+
+    if (!trackFinished) {
+      // Sitting on the last track without having reached its end: either it is
+      // still loading or playback was never kicked off. Both want play().
+      this.drainCandidateSince = 0;
+      this.playbackStarted = true;
+      try {
+        playlist.play();
+      } catch (error) {
+        this.reportPlaybackError("Live tutor audio could not start.", error);
+      }
+      return;
+    }
+
+    this.considerDrain();
+  }
+
+  /**
+   * The turn is only finished when the server closed it, every byte has been
+   * written to disk, and the final track has actually played to its end.
+   */
+  private considerDrain() {
+    if (
+      !this.turnComplete ||
+      this.pendingWrites > 0 ||
+      this.pendingBytes.length > 0 ||
+      this.flushTimeout
+    ) {
+      this.drainCandidateSince = 0;
+      return;
+    }
+
+    if (this.drainCandidateSince === 0) {
+      this.drainCandidateSince = Date.now();
       return;
     }
 
     if (
-      !this.playbackStarted &&
-      !this.turnComplete &&
-      this.queuedAudioBytes < LivePcmPlayer.START_BUFFER_THRESHOLD
+      Date.now() - this.drainCandidateSince >=
+      LivePcmPlayer.DRAIN_CONFIRMATION_MS
     ) {
+      this.finishQueue();
+    }
+  }
+
+  private requestPlayback() {
+    if (this.destroyed || this.paused) return;
+    const playlist = this.playlist;
+    if (!playlist) return;
+
+    this.ensureWatchdog();
+
+    let alreadyPlaying = false;
+    try {
+      alreadyPlaying = playlist.playing;
+    } catch {
       return;
     }
+    if (alreadyPlaying || !this.canStartPlayback()) return;
 
-    if (!playlist.isLoaded) {
-      this.playRequested = true;
-      return;
-    }
-
-    this.playRequested = false;
     this.playbackStarted = true;
     try {
       playlist.play();
@@ -229,12 +348,26 @@ export class LivePcmPlayer {
         this.resetCompletedTurn();
       }
 
-      const merged = new Uint8Array(this.pendingBytes.length + newBytes.length);
+      // Pad the very start of a turn so an audio-route switch cannot eat the
+      // tutor's first syllable.
+      const leadIn =
+        this.receivedFirstChunk
+          ? null
+          : silenceBytes(LivePcmPlayer.LEAD_IN_SILENCE_MS);
+      this.receivedFirstChunk = true;
+      const leadInLength = leadIn?.length ?? 0;
+
+      const merged = new Uint8Array(
+        this.pendingBytes.length + leadInLength + newBytes.length,
+      );
       merged.set(this.pendingBytes, 0);
-      merged.set(newBytes, this.pendingBytes.length);
+      if (leadIn) merged.set(leadIn, this.pendingBytes.length);
+      merged.set(newBytes, this.pendingBytes.length + leadInLength);
       this.pendingBytes = merged;
       this.turnComplete = false;
+      this.drainCandidateSince = 0;
       this.markQueueActive();
+      this.ensureWatchdog();
     } catch (e) {
       console.warn("LivePcmPlayer: decode failed", e);
       return;
@@ -292,7 +425,6 @@ export class LivePcmPlayer {
       })
       .finally(() => {
         this.pendingWrites = Math.max(0, this.pendingWrites - 1);
-        this.maybeReportQueueDrained(this.lastStatus);
       });
 
     this.writeChain = write;
@@ -325,33 +457,16 @@ export class LivePcmPlayer {
       const playlist = this.ensurePlaylist(existingPlaylist ? undefined : uri);
 
       if (existingPlaylist) {
-        const appendedIndex = playlist.trackCount;
-        const previousStatus = this.lastStatus;
-        const previousTrackReallyFinished =
-          previousStatus?.isLoaded === true &&
-          previousStatus?.playing !== true &&
-          previousStatus?.isBuffering !== true &&
-          previousStatus?.trackCount === appendedIndex &&
-          previousStatus?.currentIndex >= appendedIndex - 1 &&
-          (previousStatus?.didJustFinish === true ||
-            (previousStatus?.duration > 0 &&
-              previousStatus.currentTime >= previousStatus.duration - 0.03));
         // The native Android bridge expects the record form even though the
         // public AudioSource type also permits a bare string.
         playlist.add({ uri });
-
-        // A non-playing playlist is not necessarily finished: while the first
-        // source is loading, or during a native transition between sources,
-        // skipTo() would discard valid speech at the start/end of the turn.
-        // Only advance explicitly when the last known source truly completed.
-        if (previousTrackReallyFinished) {
-          playlist.skipTo(appendedIndex);
-        }
-
-        // maybeReportQueueDrained() also requires a matching track count, so
-        // a status emitted for the shorter queue cannot drain this extension.
+        // No skipTo() here. ExoPlayer auto-advances while it is still playing,
+        // and if the queue had already run dry the watchdog detects the parked
+        // player from live properties and advances it. Guessing from a cached
+        // status event is what previously dropped the rest of the turn.
       }
       this.requestPlayback();
+      this.ensureWatchdog();
     } catch (error) {
       throw error;
     }
@@ -359,10 +474,7 @@ export class LivePcmPlayer {
 
   private markQueueActive() {
     this.queueDrained = false;
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
+    this.drainCandidateSince = 0;
     if (!this.playing) {
       this.playing = true;
       this.onPlayingStateChange?.(true);
@@ -370,10 +482,11 @@ export class LivePcmPlayer {
   }
 
   private resetCompletedTurn() {
-    this.lastStatus = null;
-    this.playRequested = false;
     this.queuedAudioBytes = 0;
     this.playbackStarted = false;
+    this.drainCandidateSince = 0;
+    // Reset first-chunk flag so the next turn gets leading silence again.
+    this.receivedFirstChunk = false;
     try {
       this.playlist?.clear();
     } catch {
@@ -390,66 +503,11 @@ export class LivePcmPlayer {
     }
   }
 
-  private maybeReportQueueDrained(status: any) {
-    if (
-      this.destroyed ||
-      this.paused ||
-      this.queueDrained ||
-      !this.turnComplete ||
-      this.pendingBytes.length > 0 ||
-      this.flushTimeout ||
-      this.pendingWrites > 0
-    ) {
-      return;
-    }
-
-    const playlist = this.playlist;
-    if (!playlist) {
-      this.finishQueue();
-      return;
-    }
-
-    const currentStatus = status ?? this.lastStatus;
-    if (!currentStatus || currentStatus.trackCount !== playlist.trackCount) {
-      return;
-    }
-    const isLastTrack =
-      currentStatus?.trackCount > 0 &&
-      currentStatus.currentIndex >= currentStatus.trackCount - 1;
-    const reachedTrackEnd =
-      currentStatus?.didJustFinish === true ||
-      (currentStatus?.duration > 0 &&
-        currentStatus.currentTime >= currentStatus.duration - 0.03);
-
-    if (
-      currentStatus?.playing ||
-      currentStatus?.isBuffering ||
-      !isLastTrack ||
-      !reachedTrackEnd
-    ) {
-      return;
-    }
-
-    if (this.idleTimer) clearTimeout(this.idleTimer);
-    this.idleTimer = setTimeout(() => {
-      this.idleTimer = null;
-      if (
-        !this.playlist?.playing &&
-        !this.playlist?.isBuffering &&
-        this.turnComplete &&
-        this.pendingWrites === 0 &&
-        this.pendingBytes.length === 0 &&
-        !this.flushTimeout
-      ) {
-        this.finishQueue();
-      }
-    }, LivePcmPlayer.DRAIN_CONFIRMATION_DELAY_MS);
-  }
-
   private finishQueue() {
     if (this.queueDrained) return;
     this.queueDrained = true;
-    this.playRequested = false;
+    this.drainCandidateSince = 0;
+    this.clearWatchdog();
     if (this.playing) {
       this.playing = false;
       this.onPlayingStateChange?.(false);
@@ -463,20 +521,41 @@ export class LivePcmPlayer {
       clearTimeout(this.flushTimeout);
       this.flushTimeout = null;
     }
+
+    // Append trailing silence so the closing word is never clipped by the
+    // native end-of-stream transition. Only do so for a turn that produced
+    // audio, otherwise an empty turn would create a stray silent track.
+    if (this.receivedFirstChunk) {
+      const tail = silenceBytes(LivePcmPlayer.TAIL_SILENCE_MS);
+      const padded = new Uint8Array(this.pendingBytes.length + tail.length);
+      padded.set(this.pendingBytes, 0);
+      padded.set(tail, this.pendingBytes.length);
+      this.pendingBytes = padded;
+    }
+
     if (this.pendingBytes.length > 0) {
       await this.flushBuffer(true);
     } else {
       await this.writeChain;
     }
+    if (this.destroyed) return;
+
     // The last buffer may have been written while turnComplete was still
     // false, so the normal append path intentionally did not start it.
     this.requestPlayback();
-    this.maybeReportQueueDrained(this.lastStatus);
+
+    if (!this.playlist) {
+      this.finishQueue();
+      return;
+    }
+    // Drain is confirmed by the watchdog once the final track truly ends.
+    this.ensureWatchdog();
   }
 
   pause() {
     if (this.destroyed || this.paused) return;
     this.paused = true;
+    this.drainCandidateSince = 0;
     try {
       this.playlist?.pause();
     } catch {
@@ -487,22 +566,12 @@ export class LivePcmPlayer {
   resume() {
     if (this.destroyed || !this.paused) return;
     this.paused = false;
-    const status = this.lastStatus;
-    const finishedAtLastTrack =
-      this.turnComplete &&
-      status?.trackCount > 0 &&
-      status.currentIndex >= status.trackCount - 1 &&
-      (status.didJustFinish === true ||
-        (status.duration > 0 && status.currentTime >= status.duration - 0.03));
-    if (finishedAtLastTrack) {
-      this.maybeReportQueueDrained(status);
-      return;
-    }
+    this.drainCandidateSince = 0;
     if (!this.queueDrained) {
       this.markQueueActive();
       this.requestPlayback();
     }
-    this.maybeReportQueueDrained(this.lastStatus);
+    this.ensureWatchdog();
   }
 
   private async ensureAudioMode() {
@@ -525,6 +594,7 @@ export class LivePcmPlayer {
     this.turnComplete = true;
     this.queueDrained = true;
     this.paused = false;
+    this.clearWatchdog();
     if (this.flushTimeout) {
       clearTimeout(this.flushTimeout);
       this.flushTimeout = null;
@@ -532,12 +602,8 @@ export class LivePcmPlayer {
     this.pendingBytes = new Uint8Array(0);
     this.queuedAudioBytes = 0;
     this.playbackStarted = false;
-    this.lastStatus = null;
-    this.playRequested = false;
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
+    this.drainCandidateSince = 0;
+    this.receivedFirstChunk = false;
     try {
       this.playlist?.pause();
     } catch {
@@ -567,6 +633,7 @@ export class LivePcmPlayer {
 
   destroy() {
     this.destroyed = true;
+    this.clearWatchdog();
     void this.stop();
     try {
       this.statusListener?.remove();

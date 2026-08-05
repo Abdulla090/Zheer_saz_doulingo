@@ -12,6 +12,7 @@ import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import { LightGameHeading, LightCheckButton } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
 import { useI18n } from "../../../hooks/useI18n";
+import { normalizeSpeech, spokenWordMatches } from "../../../utils/speech-match";
 import { ltrText } from "./game-text";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 
@@ -31,32 +32,48 @@ type ParagraphSpeechEvaluation = {
   transcript: string;
 };
 
+/** Engine sessions end at every pause; restart this many times per attempt. */
+const MAX_LISTEN_RESTARTS = 40;
+/** Errors that only mean "stopped hearing speech", not a real failure. */
+const RECOVERABLE_SPEECH_ERRORS = new Set([
+  "no-speech",
+  "speech-timeout",
+  "client",
+  "network",
+  "busy",
+  "unknown",
+]);
+/** Teleprompter pace — higher is slower. */
+const SCROLL_MS_PER_PX = 46;
+/** Extra scroll past the end so the last line clears the bottom fade. */
+const TELEPROMPTER_TAIL = 72;
+/** Give final results a moment to land before grading. */
+const FINAL_RESULT_GRACE_MS = 700;
+
 function evaluateSpeechLocally(transcript: string, paragraphs: string[]): ParagraphSpeechEvaluation {
-  const normalize = (str: string) =>
-    str
-      .toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  // Split target paragraphs into clean individual words
   const targetWords = paragraphs.join(" ").split(/\s+/).filter(Boolean);
-  
-  // Create a normalized set of spoken words for quick lookup
-  const spokenWords = new Set(normalize(transcript).split(/\s+/).filter(Boolean));
+  const spokenWords = normalizeSpeech(transcript).split(/\s+/).filter(Boolean);
 
+  // Walk the spoken words in order so a repeated word can't mark several
+  // different target words correct, and a skipped line stays skipped.
+  let cursor = 0;
   let correctCount = 0;
   const wordAnalysis = targetWords.map((originalWord) => {
-    const normalizedTarget = normalize(originalWord);
-    const correct = spokenWords.has(normalizedTarget);
-    if (correct) {
-      correctCount++;
+    const target = normalizeSpeech(originalWord);
+    let correct = false;
+    if (target) {
+      // Allow a small lookahead so one misheard word doesn't desync the rest.
+      const limit = Math.min(spokenWords.length, cursor + 6);
+      for (let i = cursor; i < limit; i++) {
+        if (spokenWordMatches(target, spokenWords[i]!)) {
+          correct = true;
+          cursor = i + 1;
+          break;
+        }
+      }
     }
-    
-    return {
-      word: originalWord,
-      correct,
-    };
+    if (correct) correctCount++;
+    return { word: originalWord, correct };
   });
 
   const accuracyScore = targetWords.length > 0 ? Math.round((correctCount / targetWords.length) * 100) : 0;
@@ -84,7 +101,17 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
   const [textHeight, setTextHeight] = useState(0);
 
   const transcriptRef = useRef("");
+  const stateRef = useRef<ListenState>("idle");
+  /** Text captured by earlier engine sessions within the same reading turn. */
+  const baseTranscriptRef = useRef("");
+  const restartCountRef = useRef(0);
+  const restartRef = useRef<(() => void) | null>(null);
   const fullText = question.paragraphs.join("\n\n");
+
+  const updateState = (next: ListenState) => {
+    stateRef.current = next;
+    setState(next);
+  };
 
   useEffect(() => {
     return () => {
@@ -93,51 +120,100 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
     };
   }, [abortGeminiCapture, abortSpeech]);
 
+  const buildSpeechHandlers = () => ({
+    onResult: (text: string, _isFinal: boolean) => {
+      transcriptRef.current = [baseTranscriptRef.current, text.trim()]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    },
+    onEnd: () => {
+      // Reading a paragraph has natural pauses between sentences, and the
+      // engine ends the session on each one. Restart so the learner can keep
+      // reading until they tap the mic to finish.
+      if (stateRef.current !== "listening") return;
+      if (restartCountRef.current >= MAX_LISTEN_RESTARTS) return;
+      restartCountRef.current += 1;
+      baseTranscriptRef.current = transcriptRef.current;
+      restartRef.current?.();
+    },
+    onError: (code: string, message: string) => {
+      if (stateRef.current !== "listening") return;
+      console.warn("Speech recognition error:", code, message);
+
+      // The engine reports these when it stops hearing speech, which happens
+      // constantly while the passage is still scrolling into view. Restart
+      // rather than failing the attempt.
+      if (RECOVERABLE_SPEECH_ERRORS.has(code)) {
+        if (restartCountRef.current >= MAX_LISTEN_RESTARTS) return;
+        restartCountRef.current += 1;
+        baseTranscriptRef.current = transcriptRef.current;
+        restartRef.current?.();
+        return;
+      }
+
+      updateState("fail");
+    },
+  });
+
+  const startRecognitionSession = async (isRestart: boolean): Promise<boolean> => {
+    if (isRestart && stateRef.current !== "listening") return false;
+    const started = await speech.start(buildSpeechHandlers(), {
+      // Reading passages span multiple sentences; a non-continuous session
+      // ends at the first pause.
+      continuous: true,
+      interimResults: true,
+    });
+    return Boolean(started) || isRestart;
+  };
+
   const handleStart = async () => {
-    setState("listening");
+    updateState("listening");
     transcriptRef.current = "";
+    baseTranscriptRef.current = "";
+    restartCountRef.current = 0;
     setEvaluation(null);
-    scrollY.value = containerHeight;
-    
-    const distance = containerHeight + textHeight;
-    const duration = distance * 28;
-    
+
     let started = false;
     if (useGeminiBackend) {
       started = await geminiCapture.start({
         onResult: () => {},
         onError: (message) => {
           console.warn("Gemini recording error:", message);
-          setState("fail");
+          updateState("fail");
         }
       });
     } else {
-      started = await speech.start({
-        onResult: (text: string, _isFinal: boolean) => {
-          transcriptRef.current = text;
-        },
-        onError: (code: string, message: string) => {
-          console.warn("Speech recognition error:", code, message);
-          setState("fail");
-        }
-      });
+      started = await startRecognitionSession(false);
     }
 
-    if (started) {
-      scrollY.value = withTiming(-textHeight, { duration, easing: Easing.linear });
-    } else {
-      setState("idle");
+    if (!started) {
+      updateState("idle");
       scrollY.value = 0;
+      return;
     }
+
+    // Only scroll once the mic is live, and start with the first lines already
+    // on screen — the learner should never be asked to read blank space.
+    scrollY.value = 0;
+    const distance = Math.max(0, textHeight - containerHeight + TELEPROMPTER_TAIL);
+    if (distance <= 0) return;
+    const duration = distance * SCROLL_MS_PER_PX;
+    scrollY.value = withTiming(-distance, {
+      duration,
+      easing: Easing.linear,
+    });
   };
 
   const handleStop = async () => {
-    setState("processing");
+    updateState("processing");
+    // Blocks the onEnd/onError handlers from restarting the session.
+    restartCountRef.current = MAX_LISTEN_RESTARTS;
     cancelAnimation(scrollY);
-    
+
     try {
       let evalResult: ParagraphSpeechEvaluation;
-      
+
       if (useGeminiBackend) {
         const audio = await geminiCapture.stopAndGetAudio();
         if (audio?.base64) {
@@ -155,22 +231,34 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
         }
       } else {
         speech.stop();
+        // stop() resolves the final result asynchronously; grading immediately
+        // would score the passage against a truncated transcript.
+        await new Promise((resolve) =>
+          setTimeout(resolve, FINAL_RESULT_GRACE_MS),
+        );
         const lastTranscript = transcriptRef.current;
         evalResult = evaluateSpeechLocally(lastTranscript, question.paragraphs);
       }
 
       setEvaluation(evalResult);
-      
+
       if (question.mode === "practice") {
-        setState("success");
+        updateState("success");
       } else {
-        setState(evalResult.accuracyScore >= 60 ? "success" : "fail");
+        updateState(evalResult.accuracyScore >= 60 ? "success" : "fail");
       }
     } catch (err) {
       console.warn("Speech evaluation error:", err);
-      setState("fail");
+      updateState("fail");
     }
   };
+
+  // Refreshed every render so a restart always uses current handlers.
+  useEffect(() => {
+    restartRef.current = () => {
+      void startRecognitionSession(true);
+    };
+  });
 
   const handleMicPress = () => {
     if (state === "processing") return;

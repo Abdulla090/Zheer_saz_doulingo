@@ -139,11 +139,11 @@ export function buildLiveTutorSystem(): string {
     `Your tone is calm, friendly, encouraging, and modern.`,
     ``,
     `STRICT RULES FOR EVERY TURN:`,
-    `- Keep every turn to 1–3 short sentences (roughly 10–25 words). Never lecture.`,
+    `- Speak naturally and complete your full thought. You may use multiple sentences when needed to teach effectively.`,
     `- Ask ONE question, then STOP and wait for the student's answer. Never stack multiple questions.`,
     `- No filler phrases (e.g. 'Great question!', 'Sure, let's dive in!', 'Awesome!').`,
     `- Acknowledge briefly ('Good.', 'Nice try.', 'Almost!') and move on.`,
-    `- Corrections are always short: state the fixed sentence once, no grammar essays or unsolicited lectures.`,
+    `- Corrections should be clear and complete: state the fixed sentence, explain why briefly if helpful, then move forward.`,
     `- Never break character to explain what you are doing.`,
   ];
 
@@ -420,7 +420,7 @@ export class GeminiLiveSession {
               prebuiltVoiceConfig: { voiceName: useSettingsStore.getState().tutorVoice || "Aoede" },
             },
           },
-          maxOutputTokens: 150,
+          maxOutputTokens: 800,
         },
         systemInstruction: {
           parts: [{ text: buildLiveTutorSystem() }],

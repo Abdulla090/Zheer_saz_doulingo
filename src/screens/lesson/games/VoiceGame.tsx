@@ -27,7 +27,7 @@ import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
 import { useTTS } from "../../../hooks/use-tts";
 import { useThemeColors } from "../../../hooks/useThemeColors";
-import { matchesTarget } from "../../../utils/speech-match";
+import { isPartialUtterance, matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
 import {
   LightCheckButton,
@@ -47,10 +47,18 @@ type Props = {
 type ListenState = "idle" | "listening" | "processing" | "success" | "fail";
 type CaptureBackend = "gemini" | "speech" | "manual";
 
-const LISTEN_TIMEOUT_MS = 12000;
+const LISTEN_TIMEOUT_MS = 20000;
 /** Ignore premature engine `end` events on all platforms. */
 const MIN_LISTEN_MS = Platform.OS === "android" ? 1800 : 900;
 const SPEECH_EVAL_DELAY_MS = 350;
+/**
+ * A matching interim transcript is held for this long before it counts.
+ * Speech engines emit "I would like a" before "I would like a coffee", so
+ * grading the first match that arrives ends the turn mid-sentence.
+ */
+const SPEECH_SETTLE_MS = 900;
+/** Engine sessions end on short silences; restart while the learner is still talking. */
+const MAX_LISTEN_RESTARTS = 3;
 
 const BENIGN_SPEECH_ERRORS = new Set([
   "no-speech",
@@ -71,6 +79,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const geminiCapture = useGeminiVoiceCapture();
   const useGeminiBackend = !speech.available && geminiCapture.available;
 
+  const isMultiWordTarget =
+    question.targetWord.trim().split(/\s+/).filter(Boolean).length > 1;
+
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
   const [hasHintRevealed, setHasHintRevealed] = useState(false);
@@ -82,7 +93,12 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const speechEvalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listenStartedAtRef = useRef(0);
+  const restartCountRef = useRef(0);
+  /** Text kept from earlier engine sessions in this same listening turn. */
+  const baseTranscriptRef = useRef("");
+  const restartListeningRef = useRef<(() => void) | null>(null);
 
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
@@ -98,7 +114,8 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     firedRef.current = false;
     stateRef.current = "idle";
     transcriptRef.current = "";
-    
+    restartCountRef.current = 0;
+
     if (listenTimeoutRef.current) {
       clearTimeout(listenTimeoutRef.current);
       listenTimeoutRef.current = null;
@@ -106,6 +123,10 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (speechEvalTimeoutRef.current) {
       clearTimeout(speechEvalTimeoutRef.current);
       speechEvalTimeoutRef.current = null;
+    }
+    if (settleTimeoutRef.current) {
+      clearTimeout(settleTimeoutRef.current);
+      settleTimeoutRef.current = null;
     }
   }, [question.targetWord]);
 
@@ -125,6 +146,13 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (speechEvalTimeoutRef.current) {
       clearTimeout(speechEvalTimeoutRef.current);
       speechEvalTimeoutRef.current = null;
+    }
+  };
+
+  const clearSettleTimeout = () => {
+    if (settleTimeoutRef.current) {
+      clearTimeout(settleTimeoutRef.current);
+      settleTimeoutRef.current = null;
     }
   };
 
@@ -148,6 +176,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const stopSession = useCallback(() => {
     clearListenTimeout();
     clearSpeechEvalTimeout();
+    clearSettleTimeout();
     try {
       if (useGeminiBackend) {
         geminiCapture.abort();
@@ -174,6 +203,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     () => () => {
       clearListenTimeout();
       clearSpeechEvalTimeout();
+      clearSettleTimeout();
       try {
         speechAbortRef.current();
       } catch (e) {
@@ -190,6 +220,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const onSuccess = useCallback(
     (text: string) => {
+      if (stateRef.current === "success") return;
       stopSession();
       setTranscript(text);
       updateState("success");
@@ -220,6 +251,28 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     [onFail, onSuccess, question.targetWord],
   );
 
+  /**
+   * Interim results arrive word by word, so a match on the first few words is
+   * not proof the learner finished. Wait for the transcript to stop growing
+   * (and still match) before accepting it.
+   */
+  const scheduleSettledSuccess = useCallback(
+    (text: string) => {
+      clearSettleTimeout();
+      settleTimeoutRef.current = setTimeout(() => {
+        settleTimeoutRef.current = null;
+        if (stateRef.current !== "listening") return;
+        const latest = transcriptRef.current.trim();
+        // Transcript grew while waiting — let the newer result decide.
+        if (latest !== text) return;
+        if (matchesTarget(latest, question.targetWord)) {
+          onSuccess(latest);
+        }
+      }, SPEECH_SETTLE_MS);
+    },
+    [onSuccess, question.targetWord],
+  );
+
   const scheduleSpeechEvaluation = useCallback(() => {
     clearSpeechEvalTimeout();
     speechEvalTimeoutRef.current = setTimeout(() => {
@@ -236,10 +289,17 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const buildSpeechHandlers = useCallback(
     () => ({
       onResult: (text: string, _isFinal: boolean) => {
-        transcriptRef.current = text;
-        setTranscript(text);
-        if (matchesTarget(text, question.targetWord)) {
-          onSuccess(text);
+        const combined = [baseTranscriptRef.current, text.trim()]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        transcriptRef.current = combined;
+        setTranscript(combined);
+        if (matchesTarget(combined, question.targetWord)) {
+          scheduleSettledSuccess(combined);
+        } else {
+          // Transcript changed and no longer matches — drop any pending accept.
+          clearSettleTimeout();
         }
       },
       onEnd: () => {
@@ -261,27 +321,62 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
           return;
         }
 
+        // The engine ends on brief silences. If they are clearly mid-phrase,
+        // keep the session alive instead of grading an unfinished sentence.
+        if (
+          restartCountRef.current < MAX_LISTEN_RESTARTS &&
+          (!last || isPartialUtterance(last, question.targetWord))
+        ) {
+          restartCountRef.current += 1;
+          baseTranscriptRef.current = last;
+          restartListeningRef.current?.();
+          return;
+        }
+
         clearListenTimeout();
         scheduleSpeechEvaluation();
       },
       onError: (code: string, message?: string) => {
         if (stateRef.current !== "listening") return;
         console.warn(`Speech recognition error: ${code} - ${message}`);
-        
+
+        const last = transcriptRef.current.trim();
+
+        // "no-speech" / "speech-timeout" just mean the engine gave up waiting.
+        // Restart while the learner still has time on the clock.
+        if (
+          (code === "no-speech" || code === "speech-timeout") &&
+          restartCountRef.current < MAX_LISTEN_RESTARTS &&
+          (!last || isPartialUtterance(last, question.targetWord))
+        ) {
+          restartCountRef.current += 1;
+          baseTranscriptRef.current = last;
+          restartListeningRef.current?.();
+          return;
+        }
+
         clearListenTimeout();
-        if (transcriptRef.current.trim()) {
+        if (last) {
           scheduleSpeechEvaluation();
         } else {
           onFail();
         }
       },
     }),
-    [onFail, onSuccess, question.targetWord, scheduleSpeechEvaluation],
+    [
+      onFail,
+      onSuccess,
+      question.targetWord,
+      scheduleSettledSuccess,
+      scheduleSpeechEvaluation,
+    ],
   );
 
   const finishSpeechCapture = useCallback(async () => {
     if (stateRef.current !== "listening") return;
     clearListenTimeout();
+    clearSettleTimeout();
+    restartCountRef.current = MAX_LISTEN_RESTARTS;
     updateState("processing");
     if (useGeminiBackend) {
       await geminiCapture.stopAndEvaluate(question.targetWord);
@@ -295,22 +390,29 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     }
   }, [scheduleSpeechEvaluation, speech, useGeminiBackend, geminiCapture, question.targetWord]);
 
-  const startSpeechListening = useCallback(async () => {
-    firedRef.current = false;
-    transcriptRef.current = "";
-    setTranscript("");
+  const startSpeechListening = useCallback(async (isRestart = false) => {
+    if (!isRestart) {
+      firedRef.current = false;
+      transcriptRef.current = "";
+      baseTranscriptRef.current = "";
+      restartCountRef.current = 0;
+      setTranscript("");
+      clearListenTimeout();
+      // The overall turn budget spans engine restarts, so it is only armed once.
+      listenTimeoutRef.current = setTimeout(() => {
+        if (stateRef.current === "listening") {
+          restartCountRef.current = MAX_LISTEN_RESTARTS;
+          if (useGeminiBackend) {
+            void finishSpeechCapture();
+          } else {
+            scheduleSpeechEvaluation();
+          }
+        }
+      }, LISTEN_TIMEOUT_MS);
+    }
+    clearSettleTimeout();
     listenStartedAtRef.current = Date.now();
     updateState("listening");
-    clearListenTimeout();
-    listenTimeoutRef.current = setTimeout(() => {
-      if (stateRef.current === "listening") {
-        if (useGeminiBackend) {
-          void finishSpeechCapture();
-        } else {
-          scheduleSpeechEvaluation();
-        }
-      }
-    }, LISTEN_TIMEOUT_MS);
 
     try {
       if (useGeminiBackend) {
@@ -336,7 +438,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         }
       } else {
         const started = await speech.start(buildSpeechHandlers(), {
-          continuous: false,
+          // Full sentences need the engine to tolerate mid-phrase pauses;
+          // single words still end on their own final result.
+          continuous: isMultiWordTarget,
           contextualStrings: [question.targetWord],
         });
         if (!started) {
@@ -353,7 +457,15 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     }
 
     listenStartedAtRef.current = Date.now();
-  }, [buildSpeechHandlers, scheduleSpeechEvaluation, speech, question.targetWord, useGeminiBackend, geminiCapture, finishSpeechCapture, onSuccess, onFail]);
+  }, [buildSpeechHandlers, isMultiWordTarget, scheduleSpeechEvaluation, speech, question.targetWord, useGeminiBackend, geminiCapture, finishSpeechCapture, onSuccess, onFail]);
+
+  // `onEnd`/`onError` need to restart listening, but they are built before
+  // `startSpeechListening` exists — the ref breaks that cycle.
+  useEffect(() => {
+    restartListeningRef.current = () => {
+      void startSpeechListening(true);
+    };
+  }, [startSpeechListening]);
 
   const finishSpeechCaptureSync = useCallback(() => {
     void finishSpeechCapture();
@@ -363,6 +475,8 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (state === "processing") return;
 
     if (state === "listening") {
+      // Manual stop means they are done — no more restarts.
+      restartCountRef.current = MAX_LISTEN_RESTARTS;
       finishSpeechCaptureSync();
       return;
     }
