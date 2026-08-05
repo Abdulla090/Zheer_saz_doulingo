@@ -1,4 +1,4 @@
-import { buildLesson } from "./build-lesson";
+import { buildLesson, fill } from "./build-lesson";
 import { UnitBank } from "../types";
 
 // ── Unit 10: Health & Emergencies — 10 unique lessons ────────────────────────
@@ -17,6 +17,32 @@ const unit10: UnitBank = [
       { en: "The pain comes and goes in waves.", ku: "ئازارەکە بە شەپۆل دێت و دەڕوات.", ar: "الألم يأتي ويذهب على شكل موجات." },
     ],
     {
+      speakPhrases: [
+        { en: "My stomach's been off since last night.", ku: "لە شەوی ڕابردووەوە گەدەم بەجێی خۆی نییە.", ar: "معدتي ليست على ما يُرام منذ ليلة أمس." },
+        { en: "It's a sharp pain right here.", ku: "ئازارێکی تیژە هەر لێرەدا.", ar: "إنّه ألم حادّ هنا تماماً." },
+        { en: "I can barely keep any food down.", ku: "بەزەحمەت دەتوانم خواردن لە گەدەمدا بمێنێتەوە.", ar: "بالكاد أستطيع إبقاء أيّ طعام في معدتي." },
+      ],
+      sentencePhrases: [
+        { en: "It started out mild and got worse.", ku: "سەرەتا سووک بوو و خراپتر بوو.", ar: "بدأ خفيفاً ثمّ ازداد سوءاً." },
+        { en: "I haven't been able to sleep through the night.", ku: "نەمتوانیوە بە درێژایی شەو بخەوم.", ar: "لم أستطع النوم طوال الليل." },
+        { en: "It hurts more when I move my arm.", ku: "کاتێک قۆڵم دەجوڵێنم زیاتر ئازارم دەدات.", ar: "يؤلمني أكثر عندما أُحرّك ذراعي." },
+      ],
+      fills: [
+        fill(
+          "I've been feeling under the ___ all week.",
+          "weather",
+          ["water", "wind", "cloud"],
+          "هەموو هەفتەکە هەستم بە نەخۆشی کردووە.",
+          "أشعر بالتوعّك طوال الأسبوع.",
+        ),
+        fill(
+          "The pain ___ down into my leg.",
+          "shoots",
+          ["shoot", "shot", "shooting"],
+          "ئازارەکە بەرەو خوارەوە بۆ قاچم دەڕوات.",
+          "الألم يمتدّ إلى أسفل ساقي.",
+        ),
+      ],
       convos: [
         {
           situation: "پزیشک دەپرسێت چی هەیە و چیت لێ هاتووە",
@@ -57,6 +83,32 @@ const unit10: UnitBank = [
       { en: "Will I need any blood tests?", ku: "ئایا پێویستم بە هیچ پشکنینێکی خوێن دەبێت؟", ar: "هل سأحتاج إلى أيّ تحاليل دم؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Am I okay to keep working out?", ku: "ئایا باشە بەردەوام بم لە وەرزش؟", ar: "هل من المناسب أن أُواصل التمارين؟" },
+        { en: "Does this run in families?", ku: "ئایا ئەمە لە خێزانەکاندا باوە؟", ar: "هل هذا وراثي في العائلات؟" },
+        { en: "What are my options besides medication?", ku: "جگە لە دەرمان چ هەڵبژاردەیەکی ترم هەیە؟", ar: "ما خياراتي غير الأدوية؟" },
+      ],
+      sentencePhrases: [
+        { en: "I brought a list of my medications.", ku: "لیستی دەرمانەکانم هێناوە.", ar: "أحضرتُ قائمة بأدويتي." },
+        { en: "Could you write that down for me?", ku: "دەتوانیت ئەوە بۆم بنووسیت؟", ar: "هل يمكنك أن تكتب لي ذلك؟" },
+        { en: "I'd rather try the least invasive option first.", ku: "پێم خۆشترە سەرەتا سووکترین هەڵبژاردە تاقی بکەمەوە.", ar: "أُفضّل تجربة الخيار الأقلّ تدخّلاً أوّلاً." },
+      ],
+      fills: [
+        fill(
+          "I'm ___ to penicillin, so please note that.",
+          "allergic",
+          ["allergy", "allergies", "allergen"],
+          "هەستیاریم بە پەنیسیلین هەیە، تکایە ئەوە تۆمار بکە.",
+          "لديّ حساسية من البنسلين، يُرجى تسجيل ذلك.",
+        ),
+        fill(
+          "I'd like to get a second ___ before deciding.",
+          "opinion",
+          ["opinions", "advice", "thought"],
+          "پێش بڕیاردان دەمەوێت ڕای پزیشکێکی تر وەربگرم.",
+          "أودّ الحصول على رأي طبيب آخر قبل أن أُقرّر.",
+        ),
+      ],
       convos: [
         {
           situation: "پزیشک پرسیار لە مێژووی تەندروستیت دەکات",
@@ -97,6 +149,32 @@ const unit10: UnitBank = [
       { en: "I'm looking for something to help me sleep.", ku: "بەدوای شتێکدا دەگەڕێم یارمەتیم بدات بخەوم.", ar: "أبحث عن شيء يساعدني على النوم." },
     ],
     {
+      speakPhrases: [
+        { en: "Is there a generic version of this?", ku: "ئایا وەشانێکی هاوشێوەی هەرزانتری هەیە؟", ar: "هل يوجد بديل جنيس لهذا الدواء؟" },
+        { en: "Can I take this with my other prescription?", ku: "دەتوانم ئەمە لەگەڵ دەرمانەکەی ترم بخۆم؟", ar: "هل يمكنني تناول هذا مع وصفتي الأخرى؟" },
+        { en: "How long until I start feeling better?", ku: "چەند دەخایەنێت تا هەست بە باشتربوون بکەم؟", ar: "كم من الوقت حتى أبدأ بالشعور بالتحسّن؟" },
+      ],
+      sentencePhrases: [
+        { en: "My insurance should cover this one.", ku: "دەبێت دڵنیایی تەندروستیم ئەمە بگرێتەوە.", ar: "يُفترض أن يُغطّي تأميني هذا الدواء." },
+        { en: "I need a refill on my inhaler.", ku: "پێویستم بە پڕکردنەوەی ئینهەیلەرەکەمە.", ar: "أحتاج إعادة تعبئة لبخّاخ الربو." },
+        { en: "Do you have anything for a sore throat?", ku: "هیچت هەیە بۆ ئازاری گەروو؟", ar: "هل لديكم شيء لالتهاب الحلق؟" },
+      ],
+      fills: [
+        fill(
+          "Can I get this over the ___ , or do I need a script?",
+          "counter",
+          ["desk", "table", "shelf"],
+          "دەتوانم ئەمە بەبێ ڕەچەتە وەربگرم، یان پێویستم بە ڕەچەتەیە؟",
+          "هل يمكنني شراء هذا بدون وصفة، أم أحتاج وصفة طبية؟",
+        ),
+        fill(
+          "Take one pill twice a day on an ___ stomach.",
+          "empty",
+          ["empties", "emptied", "emptying"],
+          "ڕۆژی دوو جار حەبێک لەسەر گەدەی بەتاڵ بخۆ.",
+          "تناول حبّة مرّتين يومياً على معدة فارغة.",
+        ),
+      ],
       convos: [
         {
           situation: "لە دەرمانخانە دەرمان وەردەگریت",
@@ -137,6 +215,32 @@ const unit10: UnitBank = [
       { en: "When will the test results be ready?", ku: "کەی ئەنجامی پشکنینەکان ئامادە دەبن؟", ar: "متى ستكون نتائج الفحوصات جاهزة؟" },
     ],
     {
+      speakPhrases: [
+        { en: "She hit her head and blacked out.", ku: "سەری کێشا و بێهۆش بوو.", ar: "ضربت رأسها وفقدت الوعي." },
+        { en: "He's having trouble breathing.", ku: "کێشەی هەناسەدانی هەیە.", ar: "يواجه صعوبة في التنفّس." },
+        { en: "Has anyone been in to see him yet?", ku: "هێشتا هیچ کەس نەهاتووە بۆ بینینی؟", ar: "هل جاء أحد لرؤيته حتى الآن؟" },
+      ],
+      sentencePhrases: [
+        { en: "He's on blood thinners, just so you know.", ku: "ئەو دەرمانی تەنککەری خوێن دەخوات، بۆ زانیاری.", ar: "إنّه يتناول مسيّلات للدم، فقط لعلمكم." },
+        { en: "This started about twenty minutes ago.", ku: "ئەمە نزیکەی بیست خولەک لەمەوپێش دەستی پێکرد.", ar: "بدأ هذا قبل نحو عشرين دقيقة." },
+        { en: "Please tell me what's happening.", ku: "تکایە پێم بڵێ چی ڕوودەدات.", ar: "من فضلك أخبرني بما يجري." },
+      ],
+      fills: [
+        fill(
+          "We need to see someone right ___ — this is urgent.",
+          "away",
+          ["ago", "now", "then"],
+          "پێویستە یەکسەر کەسێک بمانبینێت — ئەمە فریاگوزارییە.",
+          "نحتاج أن يرانا أحد فوراً — الأمر عاجل.",
+        ),
+        fill(
+          "He was ___ in by ambulance an hour ago.",
+          "brought",
+          ["bring", "bringing", "brings"],
+          "کاتژمێرێک لەمەوپێش بە ئەمبولانس هێنرا بۆ ئێرە.",
+          "أُحضر بسيارة الإسعاف قبل ساعة.",
+        ),
+      ],
       convos: [
         {
           situation: "لە بەشی فریاکەوتن (هەواڵدان بە حاڵەتی خێرا)",
@@ -177,6 +281,32 @@ const unit10: UnitBank = [
       { en: "Try to stay still — help is on the way.", ku: "هەوڵ بدە نەجوڵێیت — یارمەتی لە ڕێگایە.", ar: "حاول ألّا تتحرك — المساعدة في الطريق." },
     ],
     {
+      speakPhrases: [
+        { en: "Does anyone here know CPR?", ku: "هیچ کەسێک لێرە فێری فریاگوزاری دڵ و هەناسەیە؟", ar: "هل يعرف أحد هنا الإنعاش القلبي الرئوي؟" },
+        { en: "Grab the first aid kit from the kitchen.", ku: "سندووقی فریاگوزاری لە چێشتخانە بهێنە.", ar: "أحضر حقيبة الإسعافات الأوّلية من المطبخ." },
+        { en: "Don't move him — he might have hurt his neck.", ku: "مەیجوڵێنە — لەوانەیە ملی بریندار بووبێت.", ar: "لا تُحرّكه — قد تكون رقبته مُصابة." },
+      ],
+      sentencePhrases: [
+        { en: "I'm putting you on speaker.", ku: "دەخەمە سەر بڵندگۆ.", ar: "سأضعك على مكبّر الصوت." },
+        { en: "We're at the corner of Fifth and Oak.", ku: "لە سووچی شەقامی پێنجەم و ئۆکداین.", ar: "نحن عند تقاطع الشارع الخامس وشارع أوك." },
+        { en: "He's breathing but not responding.", ku: "هەناسە دەدات بەڵام وەڵام نادات.", ar: "إنّه يتنفّس لكنّه لا يستجيب." },
+      ],
+      fills: [
+        fill(
+          "Keep ___ on the wound until the bleeding stops.",
+          "pressure",
+          ["press", "pressing", "pressed"],
+          "پەستان لەسەر برینەکە ڕابگرە تا خوێنبەربوونەکە دەوەستێت.",
+          "استمرّ في الضغط على الجرح حتى يتوقّف النزيف.",
+        ),
+        fill(
+          "Stay on the ___ with me until they arrive.",
+          "line",
+          ["lines", "lining", "lined"],
+          "لەگەڵم لەسەر خەت بمێنەرەوە تا دەگەن.",
+          "ابقَ معي على الخطّ حتى يصلوا.",
+        ),
+      ],
       convos: [
         {
           situation: "پەیوەندی بە ژمارەی فریاگوزاری (٩١١) دەکەیت",
@@ -217,6 +347,32 @@ const unit10: UnitBank = [
       { en: "Can I set up a payment plan?", ku: "دەتوانم پلانی پارەدان دابنێم؟", ar: "هل يمكنني إعداد خطة للدفع؟" },
     ],
     {
+      speakPhrases: [
+        { en: "What's my deductible for the year?", ku: "بڕی خۆبەشداریم بۆ ئەم ساڵە چەندە؟", ar: "كم يبلغ مبلغ التحمّل السنوي الخاص بي؟" },
+        { en: "This charge doesn't look right to me.", ku: "ئەم بڕە پارە بەلامەوە دروست نییە.", ar: "هذه الرسوم لا تبدو صحيحة بالنسبة لي." },
+        { en: "Do I need a referral to see a specialist?", ku: "پێویستم بە ناردنی پزیشکە بۆ بینینی پسپۆڕ؟", ar: "هل أحتاج إلى تحويل لرؤية طبيب مختصّ؟" },
+      ],
+      sentencePhrases: [
+        { en: "I never received a bill for that visit.", ku: "هیچ پسووڵەیەک بۆ ئەو سەردانە پێم نەگەیشت.", ar: "لم أستلم أبداً فاتورة لتلك الزيارة." },
+        { en: "Can you check what my plan covers?", ku: "دەتوانیت بپشکنیت پلانەکەم چی دەگرێتەوە؟", ar: "هل يمكنك التحقّق ممّا تُغطّيه خطّتي؟" },
+        { en: "I'd like to appeal that decision.", ku: "دەمەوێت تانە لەو بڕیارە بدەم.", ar: "أودّ تقديم استئناف على ذلك القرار." },
+      ],
+      fills: [
+        fill(
+          "Is this doctor in ___ with my insurance?",
+          "network",
+          ["networks", "networking", "networked"],
+          "ئایا ئەم پزیشکە لە تۆڕی دڵنیاییەکەمدایە؟",
+          "هل هذا الطبيب داخل شبكة تأميني؟",
+        ),
+        fill(
+          "How much is the ___ for today's visit?",
+          "copay",
+          ["copays", "coping", "copy"],
+          "هاوبەشی پارەدان بۆ سەردانی ئەمڕۆ چەندە؟",
+          "كم تبلغ الدفعة المشتركة لزيارة اليوم؟",
+        ),
+      ],
       convos: [
         {
           situation: "پێش دانانی کاتی پزیشک دڵنیایی دەکەیتەوە لە دڵنیایی تەندروستی",
@@ -257,6 +413,32 @@ const unit10: UnitBank = [
       { en: "What should I do if my symptoms get worse?", ku: "ئەگەر نیشانەکانم خراپتر بوون چی بکەم؟", ar: "ماذا أفعل إذا ازدادت أعراضي سوءًا؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Do you take my insurance for therapy?", ku: "ئایا دڵنیایی تەندروستیم بۆ چارەسەری دەروونی وەردەگرن؟", ar: "هل تقبلون تأميني للعلاج النفسي؟" },
+        { en: "I'd prefer someone who does virtual sessions.", ku: "پێم خۆشترە کەسێک بێت کە دانیشتنی ئۆنڵاین ئەنجام بدات.", ar: "أُفضّل شخصاً يُقدّم جلسات عن بُعد." },
+        { en: "How soon could I get in?", ku: "چەند زوو دەتوانم کاتێک وەربگرم؟", ar: "ما أقرب موعد يمكنني الحصول عليه؟" },
+      ],
+      sentencePhrases: [
+        { en: "I've been isolating myself from friends.", ku: "خۆم لە هاوڕێکانم دوور خستووەتەوە.", ar: "كنتُ أعزل نفسي عن الأصدقاء." },
+        { en: "Talking to someone would really help.", ku: "قسەکردن لەگەڵ کەسێک بەڕاستی یارمەتیدەر دەبێت.", ar: "الحديث مع أحدهم سيساعدني حقاً." },
+        { en: "I want to learn how to cope better.", ku: "دەمەوێت فێر بم چۆن باشتر بەرگە بگرم.", ar: "أريد أن أتعلّم كيف أتأقلم بشكل أفضل." },
+      ],
+      fills: [
+        fill(
+          "Is everything I say here kept ___ ?",
+          "confidential",
+          ["confidence", "confident", "confidently"],
+          "ئایا هەموو ئەوەی لێرە دەیڵێم بە نهێنی دەمێنێتەوە؟",
+          "هل يبقى كلّ ما أقوله هنا سرّياً؟",
+        ),
+        fill(
+          "I've been struggling to ___ with the stress.",
+          "cope",
+          ["coped", "coping", "copes"],
+          "کێشەم هەبووە لە بەرگەگرتنی فشارەکە.",
+          "أُعاني في التعامل مع الضغط النفسي.",
+        ),
+      ],
       convos: [
         {
           situation: "پەیوەندی بە ناوەندێکی تەندروستی دەروونی دەکەیت",
@@ -297,6 +479,32 @@ const unit10: UnitBank = [
       { en: "When should I schedule my next screening?", ku: "کەی پشکنینی داهاتووم دابنێم؟", ar: "متى يجب أن أحدد موعد الفحص القادم؟" },
     ],
     {
+      speakPhrases: [
+        { en: "I skipped my checkup last year, honestly.", ku: "بەڕاستی ساڵی ڕابردوو پشکنینەکەم نەکرد.", ar: "بصراحة، تخطّيت فحصي العام الماضي." },
+        { en: "I've cut way back on soda.", ku: "زۆر کەمم کردووەتەوە لە خواردنەوەی گازدار.", ar: "قلّلتُ كثيراً من المشروبات الغازية." },
+        { en: "I walk about three miles a day now.", ku: "ئێستا ڕۆژانە نزیکەی پێنج کیلۆمەتر پیاسە دەکەم.", ar: "أمشي الآن حوالي خمسة كيلومترات يومياً." },
+      ],
+      sentencePhrases: [
+        { en: "My dad had heart problems in his fifties.", ku: "باوکم لە پەنجاکانیدا کێشەی دڵی هەبوو.", ar: "كان والدي يُعاني من مشاكل في القلب في الخمسينات من عمره." },
+        { en: "I'd like to get my cholesterol checked.", ku: "دەمەوێت کۆلیسترۆلم بپشکنرێت.", ar: "أودّ فحص الكوليسترول لديّ." },
+        { en: "Sleep is honestly my biggest problem.", ku: "بەڕاستی خەو گەورەترین کێشەمە.", ar: "النوم هو أكبر مشكلة لديّ بصراحة." },
+      ],
+      fills: [
+        fill(
+          "I'm ___ for my annual physical this month.",
+          "due",
+          ["dues", "duly", "dued"],
+          "ئەم مانگە کاتی پشکنینی ساڵانەم هاتووە.",
+          "حان موعد فحصي السنوي هذا الشهر.",
+        ),
+        fill(
+          "High blood pressure ___ in my family.",
+          "runs",
+          ["run", "running", "ran"],
+          "فشاری خوێنی بەرز لە خێزانەکەماندا باوە.",
+          "ارتفاع ضغط الدم منتشر في عائلتي.",
+        ),
+      ],
       convos: [
         {
           situation: "لە پشکنینی ساڵانەداییت",
@@ -337,6 +545,32 @@ const unit10: UnitBank = [
       { en: "What warning signs should I watch for?", ku: "ئاگاداری کام نیشانە مەترسیدارانە بم؟", ar: "ما العلامات التحذيرية التي يجب أن أراقبها؟" },
     ],
     {
+      speakPhrases: [
+        { en: "The morning dose knocks me out.", ku: "دۆزی بەیانی بێهێزم دەکات.", ar: "جرعة الصباح تُنهكني تماماً." },
+        { en: "My numbers have been creeping up.", ku: "ژمارەکانم بەرەبەرە بەرز دەبنەوە.", ar: "أرقامي ترتفع تدريجياً." },
+        { en: "I keep a log on my phone.", ku: "تۆمارێک لەسەر مۆبایلەکەم هەڵدەگرم.", ar: "أحتفظ بسجلّ على هاتفي." },
+      ],
+      sentencePhrases: [
+        { en: "It's been manageable most days.", ku: "زۆربەی ڕۆژان بەڕێوەبردنی کراوە.", ar: "كان الأمر مُحتملاً في معظم الأيام." },
+        { en: "I can send you the readings before my visit.", ku: "دەتوانم پێش سەردانەکەم ئەنجامەکانت بۆ بنێرم.", ar: "يمكنني إرسال القراءات لك قبل زيارتي." },
+        { en: "I'd rather not add another pill.", ku: "پێم خۆش نییە حەبێکی تر زیاد بکەم.", ar: "أُفضّل ألّا أُضيف حبّة أخرى." },
+      ],
+      fills: [
+        fill(
+          "I ___ two doses last week by accident.",
+          "missed",
+          ["miss", "missing", "misses"],
+          "هەفتەی ڕابردوو بە هەڵە دوو دۆزم لەبیر چوو.",
+          "فاتتني جرعتان الأسبوع الماضي عن غير قصد.",
+        ),
+        fill(
+          "Should we ___ the dose or change the timing?",
+          "adjust",
+          ["adjusts", "adjusted", "adjusting"],
+          "ئایا بڕەکە ڕێک بخەین یان کاتەکەی بگۆڕین؟",
+          "هل نُعدّل الجرعة أم نُغيّر التوقيت؟",
+        ),
+      ],
       convos: [
         {
           situation: "پزیشک دەپرسێت دەرمانەکەت چۆن بەکاردەهێنیت",
@@ -377,6 +611,32 @@ const unit10: UnitBank = [
       { en: "Let's write down the discharge instructions.", ku: "با ڕێنماییەکانی دەرچوون لە نەخۆشخانە بنووسینەوە.", ar: "لنكتب تعليمات الخروج من المستشفى." },
     ],
     {
+      speakPhrases: [
+        { en: "When can I drive again?", ku: "کەی دەتوانمەوە شۆفێری بکەم؟", ar: "متى يمكنني القيادة مرّة أخرى؟" },
+        { en: "I can pick up your groceries this week.", ku: "ئەم هەفتەیە دەتوانم کەلوپەلی خواردنت بۆ بکڕم.", ar: "يمكنني شراء بقالتك هذا الأسبوع." },
+        { en: "Are you comfortable, or do you need another pillow?", ku: "ئاسوودەیت، یان سەرینێکی تر دەوێت؟", ar: "هل أنت مرتاح، أم تحتاج وسادة أخرى؟" },
+      ],
+      sentencePhrases: [
+        { en: "I'll set an alarm for your next dose.", ku: "کاتژمێرێک بۆ دۆزی داهاتووت دادەنێم.", ar: "سأضبط منبّهاً لجرعتك القادمة." },
+        { en: "You're getting stronger every day.", ku: "ڕۆژ لەدوای ڕۆژ بەهێزتر دەبیت.", ar: "أنت تزداد قوّة يوماً بعد يوم." },
+        { en: "Don't push yourself too hard yet.", ku: "هێشتا خۆت زۆر ماندوو مەکە.", ar: "لا تُجهد نفسك كثيراً بعد." },
+      ],
+      fills: [
+        fill(
+          "The swelling has gone ___ a lot since yesterday.",
+          "down",
+          ["downs", "downed", "downing"],
+          "ئاوسانەکە لە دوێنێوە زۆر کەم بووەتەوە.",
+          "انخفض التورّم كثيراً منذ أمس.",
+        ),
+        fill(
+          "Let's go over the ___ instructions together.",
+          "discharge",
+          ["discharged", "discharges", "discharging"],
+          "با پێکەوە ڕێنماییەکانی دەرچوون بخوێنینەوە.",
+          "لنُراجع تعليمات الخروج من المستشفى معاً.",
+        ),
+      ],
       convos: [
         {
           situation: "پێش دەرچوون لە نەخۆشخانە ڕێنمایی وەردەگریت",
