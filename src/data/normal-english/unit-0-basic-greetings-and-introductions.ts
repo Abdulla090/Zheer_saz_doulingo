@@ -29,9 +29,9 @@ const normalUnit00: UnitBank = [
       { english: ["No", "thank", "you", "I", "am", "fine"], kurdish: "نەخێر، سوپاس من باشم", arabic: "لا، شكراً لك أنا بخير" },
     ],
     fillBlanks: [
-      { parts: ["Good", ", my friend!"], hint: "بەیانیت باش، هاوڕێم!", answer: "morning", wrongs: ["evening", "goodbye", "please"], arabicHint: "صباح الخير، يا صديقي!", arabicParts: ["صباح", "، يا صديقي!"], arabicAnswer: "الخير", arabicWrongs: ["الخير", "الخير", "الخير"] },
+      { parts: ["Good", ", my friend!"], hint: "بەیانیت باش، هاوڕێم!", answer: "morning", wrongs: ["evening", "goodbye", "please"], arabicHint: "صباح الخير، يا صديقي!", arabicParts: ["صباح", "، يا صديقي!"], arabicAnswer: "الخير", arabicWrongs: ["المساء", "الليل", "الظهر"] },
       { parts: ["No,", "you."], hint: "نەخێر، سوپاس.", answer: "thank", wrongs: ["please", "hello", "yes"], arabicHint: "لا، شكراً لك.", arabicParts: ["لا،", "لك."], arabicAnswer: "شكراً", arabicWrongs: ["من فضلك", "مرحبا", "نعم"] },
-      { parts: ["Yes,", "."], hint: "بەڵێ، تکایە.", answer: "please", wrongs: ["goodbye", "no", "thank"], arabicHint: "نعم، من فضلك.", arabicParts: ["نعم،", "."], arabicAnswer: "من فضلك", arabicWrongs: ["مع السلامة", "لا", "شكراً"] },
+      { parts: ["Nice to", " you!"], hint: "خۆشحاڵم بە ناسینت!", answer: "meet", wrongs: ["met", "meeting", "meets"], arabicHint: "تشرفت بمعرفتك!", arabicParts: ["تشرفت", "!"], arabicAnswer: "بمعرفتك", arabicWrongs: ["بوداعك", "بمغادرتك", "بغيابك"] },
     ],
     conversations: [
       {

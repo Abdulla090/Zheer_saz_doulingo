@@ -9,6 +9,9 @@ type Fill = {
   answer: string;
   wrongs: [string, string, string];
   arabicHint?: string;
+  arabicParts?: [string, string];
+  arabicAnswer?: string;
+  arabicWrongs?: [string, string, string];
 };
 type Convo = {
   situation: string;
@@ -20,18 +23,19 @@ type Convo = {
   explanation: string;
   situationAr?: string;
   explanationAr?: string;
+  theyAskAr?: string;
+  correctAr?: string;
+  wrong1Ar?: string;
+  wrong2Ar?: string;
+  wrong3Ar?: string;
 };
 
 function splitSentence(en: string): string[] {
   return en.replace(/[.!?]+$/g, "").split(/\s+/).filter(Boolean);
 }
 
-function cleanFillToken(token: string): string {
-  return token.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g, "");
-}
-
-function defaultSpeaks(phrases: Phrase[]): Speak[] {
-  return phrases.slice(0, 3).map((p) => ({
+function toSpeaks(phrases: Phrase[]): Speak[] {
+  return phrases.map((p) => ({
     prompt: `ئەم ڕستەیە بە ئینگلیزی بڵێ:`,
     target: p.en,
     targetKurdish: p.ku,
@@ -39,52 +43,69 @@ function defaultSpeaks(phrases: Phrase[]): Speak[] {
   }));
 }
 
-function defaultSentences(phrases: Phrase[]): Sentence[] {
-  return phrases.slice(0, 3).map((p) => ({
+function toSentences(phrases: Phrase[]): Sentence[] {
+  return phrases.map((p) => ({
     english: splitSentence(p.en),
     kurdish: p.ku,
     ...(p.ar ? { arabic: p.ar } : {}),
   }));
 }
 
-function defaultFills(phrases: Phrase[]): Fill[] {
-  const tokenizedPhrases = phrases.map((phrase) => splitSentence(phrase.en));
-
-  return phrases.slice(0, 2).map((p) => {
-    const words = splitSentence(p.en);
-    const answerIndex = Math.min(2, words.length - 1);
-    const answer = cleanFillToken(words[answerIndex] ?? words[0]);
-    const candidates = [
-      ...tokenizedPhrases.map((tokens) => cleanFillToken(tokens[answerIndex] ?? "")),
-      ...tokenizedPhrases.flatMap((tokens) => tokens.slice(1).map(cleanFillToken)),
-      "usually",
-      "already",
-      "instead",
-    ];
-    const seen = new Set([answer.toLowerCase()]);
-    const alternatives = candidates.filter((candidate) => {
-      const key = candidate.toLowerCase();
-      if (!candidate || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    const wrongs = alternatives.slice(0, 3) as [string, string, string];
-    return {
-      parts: [words.slice(0, answerIndex).join(" ") + " ", words.slice(answerIndex + 1).join(" ")],
-      hint: p.ku,
-      answer,
-      wrongs,
-      ...(p.ar ? { arabicHint: p.ar } : {}),
-    };
-  });
+/**
+ * Author one fill-in-the-blank from a sentence containing a `___` placeholder.
+ *
+ *   fill("Could you ___ this at the register?", "hold", ["keep", "save", "stay"], ku, ar)
+ *
+ * Keeping the blank inline means `parts[0] + answer + parts[1]` always reads
+ * back as the original sentence, which is what the game renders. Pass `arBlank`
+ * (an Arabic sentence with its own `___`) to localize the drill itself rather
+ * than only the hint.
+ */
+export function fill(
+  blanked: string,
+  answer: string,
+  wrongs: [string, string, string],
+  hint: string,
+  arabicHint?: string,
+  arBlank?: { sentence: string; answer: string; wrongs: [string, string, string] },
+): Fill {
+  const [before = "", after = ""] = blanked.split("___");
+  const base: Fill = {
+    parts: [before, after],
+    hint,
+    answer,
+    wrongs,
+    ...(arabicHint ? { arabicHint } : {}),
+  };
+  if (!arBlank) return base;
+  const [arBefore = "", arAfter = ""] = arBlank.sentence.split("___");
+  return {
+    ...base,
+    arabicParts: [arBefore, arAfter],
+    arabicAnswer: arBlank.answer,
+    arabicWrongs: arBlank.wrongs,
+  };
 }
 
-/** Build a full lesson bank from real-world phrases + optional rich extras. */
+/**
+ * Build a full lesson bank.
+ *
+ * Each game slot draws from its OWN pool so a learner never meets the same
+ * sentence twice inside one lesson. `phrases` is the vocabulary list only;
+ * `speakPhrases`, `sentencePhrases` and `fills` carry different material on the
+ * same topic. When a pool is omitted the slot falls back to a *disjoint* slice
+ * of `phrases` rather than repeating the first three entries everywhere.
+ */
 export function buildLesson(
   topic: string,
   topicKu: string,
   phrases: Phrase[],
   extras?: {
+    /** Sentences for the speaking game — distinct from `phrases`. */
+    speakPhrases?: Phrase[];
+    /** Sentences for the sentence-builder game — distinct from the above. */
+    sentencePhrases?: Phrase[];
+    /** Fully authored overrides, used as-is when present. */
     speak?: Speak[];
     sentences?: Sentence[];
     fills?: Fill[];
@@ -92,14 +113,19 @@ export function buildLesson(
   },
   topicAr?: string,
 ): LessonBank {
+  const speakPool = extras?.speakPhrases ?? phrases.slice(0, 3);
+  const sentencePool =
+    extras?.sentencePhrases ??
+    (phrases.length >= 6 ? phrases.slice(3, 6) : phrases.slice(0, 3));
+
   return {
     topic,
     topicKu,
     ...(topicAr ? { topicAr } : {}),
     words: phrases.map((p) => ({ english: p.en, kurdish: p.ku, ...(p.ar ? { arabic: p.ar } : {}) })),
-    voices: extras?.speak ?? defaultSpeaks(phrases),
-    sentences: extras?.sentences ?? defaultSentences(phrases),
-    fillBlanks: extras?.fills ?? defaultFills(phrases),
+    voices: extras?.speak ?? toSpeaks(speakPool),
+    sentences: extras?.sentences ?? toSentences(sentencePool),
+    fillBlanks: extras?.fills ?? [],
     conversations: extras?.convos ?? [],
   };
 }

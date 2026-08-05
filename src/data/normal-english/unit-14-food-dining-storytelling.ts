@@ -354,7 +354,7 @@ const normalUnit06: UnitBank = [
       { english: ["They", "played", "football", "after", "school"], kurdish: "ئەوان دوای قوتابخانە یاری تۆپی پێیان کرد", arabic: "لعبوا كرة القدم بعد المدرسة" },
     ],
     fillBlanks: [
-      { parts: ["Last night, we", "a great action movie."], hint: "شەوی ڕابردوو سەیری فیلمێکی ئەکشنی نایابمان کرد.", answer: "watched", wrongs: ["watched", "visiting", "walks"], arabicHint: "الليلة الماضية، شاهدنا فيلماً رائعاً.", arabicParts: ["الليلة الماضية،", "فيلماً رائعاً."], arabicAnswer: "شاهدنا", arabicWrongs: ["شاهد", "يزور", "يمشي"] },
+      { parts: ["Last night, we", "a great action movie."], hint: "شەوی ڕابردوو سەیری فیلمێکی ئەکشنی نایابمان کرد.", answer: "watched", wrongs: ["watch", "visiting", "walks"], arabicHint: "الليلة الماضية، شاهدنا فيلماً رائعاً.", arabicParts: ["الليلة الماضية،", "فيلماً رائعاً."], arabicAnswer: "شاهدنا", arabicWrongs: ["شاهد", "يزور", "يمشي"] },
       { parts: ["Yesterday afternoon, I", "in the green park."], hint: "دوێنێ دوانیوەڕۆ، لە پارکە سەوزەکەدا پیاسەم کرد.", answer: "walked", wrongs: ["talked", "cleaned", "visited"], arabicHint: "أمس بعد الظهر، مشيت في الحديقة الخضراء.", arabicParts: ["أمس بعد الظهر،", "في الحديقة الخضراء."], arabicAnswer: "مشيت", arabicWrongs: ["تحدثت", "نظفت", "زرت"] },
       { parts: ["She", "her family last weekend."], hint: "ئەو کۆتایی هەفتەی ڕابردوو سەردانی خێزانەکەی کرد.", answer: "visited", wrongs: ["cleaned", "enjoyed", "played"], arabicHint: "هي زارت عائلتها عطلة نهاية الأسبوع الماضي.", arabicParts: ["هي", "عائلتها عطلة نهاية الأسبوع الماضي."], arabicAnswer: "زارت", arabicWrongs: ["نظفت", "استمتعت", "لعبت"] },
     ],

@@ -1,4 +1,4 @@
-import { buildLesson } from "./build-lesson";
+import { buildLesson, fill } from "./build-lesson";
 import { UnitBank } from "../types";
 
 // ── Unit 11: Money & Shopping — 10 unique lessons ────────────────────────────
@@ -17,6 +17,32 @@ const unit11: UnitBank = [
       { en: "Could you hold this at the register for me?", ku: "دەتوانیت ئەمە لەلای کاشێرەکە بۆم بپارێزیت تا دەگەڕێمەوە؟", ar: "هل يمكنك أن تحتفظ بهذا عند الصندوق حتى أعود؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Do you guys carry these in black?", ku: "ئەمانەتان بە ڕەنگی ڕەش هەیە؟", ar: "هل لديكم هذه باللون الأسود؟" },
+        { en: "What time do you close tonight?", ku: "ئەمشەو کاتژمێر چەند دادەخەن؟", ar: "في أيّ ساعة تُغلقون الليلة؟" },
+        { en: "Is there a line for the fitting rooms?", ku: "ڕیز هەیە بۆ ژووری خۆگۆڕین؟", ar: "هل هناك طابور لغرف القياس؟" },
+      ],
+      sentencePhrases: [
+        { en: "I'll take this one.", ku: "ئەمە دەبەم.", ar: "سآخذ هذه." },
+        { en: "Can I get a gift receipt?", ku: "دەتوانم پسووڵەی دیاری وەربگرم؟", ar: "هل يمكنني الحصول على إيصال هديّة؟" },
+        { en: "That's a little out of my price range.", ku: "ئەمە کەمێک لە توانای نرخی منەوە دوورە.", ar: "هذا أغلى قليلاً ممّا أستطيع دفعه." },
+      ],
+      fills: [
+        fill(
+          "Do these shoes ___ in a size nine?",
+          "come",
+          ["arrive", "reach", "stay"],
+          "ئایا ئەم پێڵاوانە بە قیاسی نۆ هەن؟",
+          "هل يتوفّر هذا الحذاء بمقاس تسعة؟",
+        ),
+        fill(
+          "Honestly, that price seems a little ___ to me.",
+          "steep",
+          ["tall", "deep", "heavy"],
+          "ڕاستییەکەی، ئەو نرخە کەمێک گران دێتە بەرچاوم.",
+          "بصراحة، يبدو لي هذا السعر مرتفعاً بعض الشيء.",
+        ),
+      ],
       convos: [
         {
           situation: "فرۆشیار دەپرسێت ئایا یارمەتیت دەوێت",
@@ -57,6 +83,32 @@ const unit11: UnitBank = [
       { en: "Can I get a refund to my original card?", ku: "دەتوانم پارەکە بگەڕێندرێتەوە بۆ هەمان کارت کە پێم کڕیوە؟", ar: "هل يمكنني استرداد المبلغ إلى بطاقتي الأصلية؟" },
     ],
     {
+      speakPhrases: [
+        { en: "I never opened it — the tags are still on.", ku: "هەرگیز نەمکردۆتەوە — لەیبڵەکانی هێشتا لەسەرییەتی.", ar: "لم أفتحه إطلاقاً — البطاقات ما زالت عليه." },
+        { en: "Can you put it back on the card I used?", ku: "دەتوانیت بیگەڕێنیتەوە سەر ئەو کارتەی بەکارم هێنا؟", ar: "هل يمكنك إعادته إلى البطاقة التي استخدمتها؟" },
+        { en: "Store credit works for me, that's fine.", ku: "کریدیتی فرۆشگا بۆم باشە، کێشە نییە.", ar: "رصيد المتجر يناسبني، لا مشكلة." },
+      ],
+      sentencePhrases: [
+        { en: "The zipper broke the second day.", ku: "زنجیرەکەی ڕۆژی دووەم شکا.", ar: "انكسر السحّاب في اليوم الثاني." },
+        { en: "I ordered a large but they sent a medium.", ku: "قەبارەی گەورەم داوا کرد بەڵام مامناوەندیان نارد.", ar: "طلبت مقاساً كبيراً لكنّهم أرسلوا وسطاً." },
+        { en: "Do I need to print the shipping label?", ku: "پێویستە لەیبڵی ناردنەکە چاپ بکەم؟", ar: "هل يجب أن أطبع ملصق الشحن؟" },
+      ],
+      fills: [
+        fill(
+          "It's still under ___ , so the repair is free.",
+          "warranty",
+          ["promise", "insurance", "contract"],
+          "هێشتا لەژێر گەرەنتیدایە، بۆیە چاککردنەوەکەی بەخۆڕاییە.",
+          "ما زال تحت الضمان، لذلك الإصلاح مجّاني.",
+        ),
+        fill(
+          "The refund should ___ up in three business days.",
+          "show",
+          ["stand", "look", "wake"],
+          "پارەکە دەبێت لە ماوەی سێ ڕۆژی کاردا دەربکەوێت.",
+          "من المفترض أن يظهر المبلغ خلال ثلاثة أيام عمل.",
+        ),
+      ],
       convos: [
         {
           situation: "لە بەشی خزمەتگوزاری کڕیار بۆ گەڕاندنەوەی جلێک",
@@ -97,6 +149,32 @@ const unit11: UnitBank = [
       { en: "Is there a fee for international transfers?", ku: "ئایا هیچ عمولەیەک (کرێیەک) هەیە بۆ حەواڵەی نێودەوڵەتی؟", ar: "هل هناك رسوم على التحويلات الدولية؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Do you charge a monthly maintenance fee?", ku: "کرێی مانگانەی بەڕێوەبردن دەگرن؟", ar: "هل تتقاضون رسم صيانة شهرياً؟" },
+        { en: "I'd rather not deal with overdraft fees.", ku: "پێم باشترە مامەڵە لەگەڵ کرێی زیادەڕۆیی نەکەم.", ar: "أفضّل ألّا أتعامل مع رسوم السحب على المكشوف." },
+        { en: "Which ATMs can I use for free?", ku: "کام ئای‌تی‌ئێمەکان دەتوانم بەخۆڕایی بەکاربهێنم؟", ar: "أيّ أجهزة صرف يمكنني استخدامها بالمجّان؟" },
+      ],
+      sentencePhrases: [
+        { en: "My paycheck hits on the first.", ku: "مووچەکەم ڕۆژی یەکەم دێت.", ar: "يصل راتبي في اليوم الأول." },
+        { en: "I bank mostly through the app.", ku: "زۆرتر بە ئەپەکە مامەڵەی بانکی دەکەم.", ar: "أُجري معاملاتي المصرفية عبر التطبيق غالباً." },
+        { en: "Can I add my wife to this account?", ku: "دەتوانم هاوسەرەکەم بۆ ئەم هەژمارە زیاد بکەم؟", ar: "هل يمكنني إضافة زوجتي إلى هذا الحساب؟" },
+      ],
+      fills: [
+        fill(
+          "I need to ___ a check for two hundred dollars.",
+          "deposit",
+          ["borrow", "spend", "count"],
+          "پێویستە چەکێکی دووسەد دۆلاری دابنێم.",
+          "أحتاج إلى إيداع شيك بمئتَي دولار.",
+        ),
+        fill(
+          "My account is ___ eighty dollars until Friday.",
+          "short",
+          ["small", "late", "empty"],
+          "هەژمارەکەم تا ڕۆژی هەینی هەشتا دۆلار کەمە.",
+          "ينقص حسابي ثمانون دولاراً حتى يوم الجمعة.",
+        ),
+      ],
       convos: [
         {
           situation: "یەکەم جار دەچیتە بانک بۆ کردنەوەی حساب",
@@ -137,6 +215,32 @@ const unit11: UnitBank = [
       { en: "I'm looking for a two-bedroom apartment.", ku: "بەدوای شوقەیەکی دوو نوستندا دەگەڕێم.", ar: "أبحث عن شقّة بغرفتَي نوم." },
     ],
     {
+      speakPhrases: [
+        { en: "Is parking included or is that extra?", ku: "شوێنی ئۆتۆمبێل هەژمارکراوە یان زیادەیە؟", ar: "هل موقف السيارة مشمول أم إضافي؟" },
+        { en: "How much notice do I need to give before I move out?", ku: "چەند ڕۆژ پێشتر پێویستە ئاگادار بکەم پێش ئەوەی بڕۆم؟", ar: "كم مدّة إشعار يجب أن أقدّمها قبل مغادرتي؟" },
+        { en: "Are pets allowed in the building?", ku: "ئاژەڵی ماڵی لە بینایەکە ڕێپێدراوە؟", ar: "هل يُسمح بالحيوانات الأليفة في المبنى؟" },
+      ],
+      sentencePhrases: [
+        { en: "The heat stopped working last night.", ku: "گەرمکەرەوەکە دوێنێ شەو کاری نەکرد.", ar: "توقّف التدفئة عن العمل الليلة الماضية." },
+        { en: "My roommate covers half the rent.", ku: "هاوژووریەکەم نیوەی کرێیەکە دەدات.", ar: "يدفع شريكي في الغرفة نصف الإيجار." },
+        { en: "We signed a twelve-month lease.", ku: "گرێبەستی دوانزە مانگمان واژۆ کرد.", ar: "وقّعنا عقد إيجار لمدّة اثنَي عشر شهراً." },
+      ],
+      fills: [
+        fill(
+          "The rent is ___ on the first of the month.",
+          "due",
+          ["ready", "open", "full"],
+          "کرێیەکە ڕۆژی یەکەمی مانگ دەبێت بدرێت.",
+          "يُستحقّ الإيجار في اليوم الأول من الشهر.",
+        ),
+        fill(
+          "I get my ___ back if I leave the place clean.",
+          "deposit",
+          ["payment", "receipt", "salary"],
+          "ئەگەر شوێنەکە پاک بەجێبهێڵم، بارمتەکەم دەگەڕێتەوە.",
+          "أستعيد مبلغ التأمين إذا تركت المكان نظيفاً.",
+        ),
+      ],
       convos: [
         {
           situation: "پرسیارکردن دەربارەی شوقەیەک بۆ کرێ",
@@ -177,6 +281,32 @@ const unit11: UnitBank = [
       { en: "Do you take card or cash only?", ku: "کارت قبوڵ دەکەن یان تەنها کاش؟", ar: "هل تقبلون البطاقة أم نقداً فقط؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Can we get separate checks?", ku: "دەتوانین پسووڵەی جیاواز وەربگرین؟", ar: "هل يمكننا الحصول على فواتير منفصلة؟" },
+        { en: "I think they forgot to take off the appetizer.", ku: "پێم وایە خواردنی پێش‌خواردنەکەیان لەبیر کردووە لابەرن.", ar: "أعتقد أنّهم نسوا حذف المقبّلات." },
+        { en: "Twenty on the card and the rest in cash.", ku: "بیست بە کارت و ئەوەی مایە بە کاش.", ar: "عشرون بالبطاقة والباقي نقداً." },
+      ],
+      sentencePhrases: [
+        { en: "The tip is already on there.", ku: "بەخشیشەکە پێشتر لەسەرییەتی.", ar: "الإكرامية مضافة بالفعل." },
+        { en: "Lunch is on me today.", ku: "نانی نیوەڕۆ ئەمڕۆ لەسەر منە.", ar: "غداء اليوم على حسابي." },
+        { en: "Do you validate parking here?", ku: "لێرە پسووڵەی پارکینگ پەسەند دەکەن؟", ar: "هل تُصدّقون تذكرة الموقف هنا؟" },
+      ],
+      fills: [
+        fill(
+          "Let's just ___ it three ways.",
+          "split",
+          ["cut", "share", "break"],
+          "با بە سێ بەش دابەشی بکەین.",
+          "لِنقسمها ثلاثة أقسام فقط.",
+        ),
+        fill(
+          "I usually ___ around twenty percent.",
+          "tip",
+          ["give", "add", "pay"],
+          "زۆرتر نزیکەی بیست لەسەد بەخشیش دەدەم.",
+          "أترك عادةً إكرامية بنحو عشرين بالمئة.",
+        ),
+      ],
       convos: [
         {
           situation: "دوای تەواوبوونی نانخواردن لە چێشتخانە",
@@ -217,6 +347,32 @@ const unit11: UnitBank = [
       { en: "Can I leave the bags here while I get my car?", ku: "دەتوانم جانتاکان لێرە جێبهێڵم تا ئۆتۆمبێلەکەم دێنم؟", ar: "هل يمكنني ترك الأكياس هنا بينما أحضر سيارتي؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Are these bananas ripe enough for tonight?", ku: "ئەم مۆزەکان بەقەدەر پێگەیشتوون بۆ ئەمشەو؟", ar: "هل هذا الموز ناضج بما يكفي لهذه الليلة؟" },
+        { en: "I'm just grabbing a few things.", ku: "تەنها چەند شتێک دەبەم.", ar: "سآخذ بضعة أشياء فقط." },
+        { en: "Do you have any more of these in the back?", ku: "لە پشتەوە زیاتر لەمانە هەتان هەیە؟", ar: "هل لديكم المزيد من هذه في المخزن؟" },
+      ],
+      sentencePhrases: [
+        { en: "Paper bags, please.", ku: "جانتای کاغەز، تکایە.", ar: "أكياس ورقية، من فضلك." },
+        { en: "The milk expires on Sunday.", ku: "شیرەکە ڕۆژی یەکشەممە بەسەر دەچێت.", ar: "ينتهي تاريخ صلاحية الحليب يوم الأحد." },
+        { en: "I forgot my reusable bags in the car.", ku: "جانتاکانی دووبارە بەکارهێنانم لە ئۆتۆمبێلەکە بەجێهێشت.", ar: "نسيت أكياسي القابلة لإعادة الاستخدام في السيارة." },
+      ],
+      fills: [
+        fill(
+          "Which ___ is the pasta in?",
+          "aisle",
+          ["shelf", "corner", "line"],
+          "پاستا لە کام ڕیزدایە؟",
+          "في أيّ ممرّ توجد المعكرونة؟",
+        ),
+        fill(
+          "This coupon ___ tomorrow, so let's use it today.",
+          "expires",
+          ["finishes", "closes", "leaves"],
+          "ئەم کوپۆنە سبەی بەسەر دەچێت، بۆیە ئەمڕۆ بەکاری بهێنین.",
+          "تنتهي صلاحية هذه القسيمة غداً، فلنستخدمها اليوم.",
+        ),
+      ],
       convos: [
         {
           situation: "کاڵایەک لەسەر تەختەکە داشکاندنی هەیە، بەڵام لە کاشێر نرخەکە جیاوازە",
@@ -257,6 +413,32 @@ const unit11: UnitBank = [
       { en: "I'd like an itemized breakdown before I decide.", ku: "پێش بڕیاردان وردەکارییەکی دابەشکراوی نرخەکانم دەوێت.", ar: "أريد تفصيلاً بنداً بنداً قبل أن أقرر." },
     ],
     {
+      speakPhrases: [
+        { en: "Does the cheaper tier still let me stream in HD?", ku: "پلانە هەرزانەکە هێشتا ڕێگەم دەدات بە HD تەماشا بکەم؟", ar: "هل تتيح لي الباقة الأرخص المشاهدة بجودة عالية؟" },
+        { en: "I'd rather pay month to month for now.", ku: "ئێستا پێم باشترە مانگ بە مانگ پارە بدەم.", ar: "أفضّل الدفع شهراً بشهر في الوقت الحالي." },
+        { en: "How many people can share one account?", ku: "چەند کەس دەتوانن یەک هەژمار بەکاربهێنن؟", ar: "كم شخصاً يمكنه مشاركة حساب واحد؟" },
+      ],
+      sentencePhrases: [
+        { en: "I'm paying for three things I never use.", ku: "پارە بۆ سێ شت دەدەم کە هەرگیز بەکاریان ناهێنم.", ar: "أدفع مقابل ثلاثة أشياء لا أستخدمها أبداً." },
+        { en: "They raised the price without telling me.", ku: "نرخەکەیان بەرز کردەوە بێ ئەوەی پێم بڵێن.", ar: "رفعوا السعر من دون أن يُخبروني." },
+        { en: "Let me compare the two before I sign up.", ku: "با هەردووکیان بەراورد بکەم پێش ئەوەی خۆم تۆمار بکەم.", ar: "دعني أقارن بينهما قبل أن أشترك." },
+      ],
+      fills: [
+        fill(
+          "The free trial ___ automatically unless I cancel.",
+          "renews",
+          ["returns", "repeats", "reminds"],
+          "تاقیکردنەوە بەخۆڕاییەکە خۆکارانە نوێ دەبێتەوە مەگەر هەڵیوەشێنمەوە.",
+          "تتجدّد التجربة المجانية تلقائياً ما لم أُلغِها.",
+        ),
+        fill(
+          "It's cheaper in the long ___ if I pay yearly.",
+          "run",
+          ["time", "way", "term"],
+          "ئەگەر ساڵانە پارە بدەم، لە درێژخایەندا هەرزانترە.",
+          "يكون أرخص على المدى الطويل إذا دفعت سنوياً.",
+        ),
+      ],
       convos: [
         {
           situation: "بەرنامەیەک دەتەوێت دوای تاقیکردنەوەی بەخۆڕایی پارەت لێ بسێنێت",
@@ -297,6 +479,32 @@ const unit11: UnitBank = [
       { en: "Please email me a confirmation of the change.", ku: "تکایە پشتڕاستکردنەوەی گۆڕانکارییەکە بە ئیمەیڵ بۆم بنێرە.", ar: "يرجى إرسال تأكيد التغيير إليّ بالبريد الإلكتروني." },
     ],
     {
+      speakPhrases: [
+        { en: "Can you walk me through this line by line?", ku: "دەتوانیت دێڕ بە دێڕ بۆم ڕوونی بکەیتەوە؟", ar: "هل يمكنك أن تشرح لي بنداً بنداً؟" },
+        { en: "I've been a customer for six years.", ku: "شەش ساڵە کڕیارتانم.", ar: "أنا عميل لديكم منذ ست سنوات." },
+        { en: "Is there any promotion I qualify for?", ku: "هیچ داشکاندنێک هەیە کە شایستەی بم؟", ar: "هل هناك أيّ عرض أنا مؤهّل له؟" },
+      ],
+      sentencePhrases: [
+        { en: "My internet keeps dropping in the evening.", ku: "ئینتەرنێتەکەم بەیانی‌ئێوارە بەردەوام دەبڕێت.", ar: "ينقطع الإنترنت لديّ باستمرار في المساء." },
+        { en: "I never signed up for that add-on.", ku: "هەرگیز خۆم بۆ ئەو زیادکردنە تۆمار نەکردووە.", ar: "لم أشترك في تلك الإضافة إطلاقاً." },
+        { en: "Put me through to billing, please.", ku: "تکایە پەیوەندیم بدە بە بەشی پسووڵە.", ar: "أرجو تحويلي إلى قسم الفواتير." },
+      ],
+      fills: [
+        fill(
+          "There's a twenty-five dollar ___ I don't recognize.",
+          "charge",
+          ["price", "cost", "money"],
+          "بڕی بیست و پێنج دۆلار هەیە کە ناناسمەوە.",
+          "هناك مبلغ خمسة وعشرين دولاراً لا أعرفه.",
+        ),
+        fill(
+          "Could you ___ that fee from my account?",
+          "remove",
+          ["delete", "clean", "cancel"],
+          "دەتوانیت ئەو کرێیە لە هەژمارەکەم لاببەیت؟",
+          "هل يمكنك إزالة تلك الرسوم من حسابي؟",
+        ),
+      ],
       convos: [
         {
           situation: "پەیوەندی بە کۆمپانیای مۆبایل دەکەیت چونکە پسووڵەکەت زیاد بووە",
@@ -337,6 +545,32 @@ const unit11: UnitBank = [
       { en: "I'd rather have a professional file my return.", ku: "پێم باشترە پسپۆڕێک ڕاپۆرتی باجەکەم پێشکەش بکات.", ar: "أفضل أن يتولى مختص تقديم إقراري الضريبي." },
     ],
     {
+      speakPhrases: [
+        { en: "How much is coming out for retirement?", ku: "چەند بۆ خانەنشینی دەبڕدرێت؟", ar: "كم يُقتطع من أجل التقاعد؟" },
+        { en: "I picked up two overtime shifts last week.", ku: "هەفتەی ڕابردوو دوو شیفتی زیادەم وەرگرت.", ar: "أخذت وردِيَّتَي عمل إضافيتين الأسبوع الماضي." },
+        { en: "Should I be claiming a different number?", ku: "پێویستە ژمارەیەکی جیاواز داوا بکەم؟", ar: "هل ينبغي أن أُصرّح برقم مختلف؟" },
+      ],
+      sentencePhrases: [
+        { en: "I get paid every other Friday.", ku: "هەموو دوو هەفتە جارێک ڕۆژی هەینی مووچە وەردەگرم.", ar: "أتقاضى راتبي كلّ يوم جمعة بعد أسبوعين." },
+        { en: "The refund went straight to savings.", ku: "پارە گەڕاوەکە ڕاستەوخۆ چووە سەر پاشەکەوت.", ar: "ذهب مبلغ الاسترداد مباشرةً إلى المدّخرات." },
+        { en: "My side job counts as income too.", ku: "کاری لاوەکیشم بە داهات دەژمێردرێت.", ar: "عملي الجانبي يُحتسب دخلاً أيضاً." },
+      ],
+      fills: [
+        fill(
+          "Taxes are ___ out before I ever see the money.",
+          "taken",
+          ["given", "brought", "held"],
+          "باج دەبڕدرێت پێش ئەوەی هەرگیز پارەکە ببینم.",
+          "تُقتطع الضرائب قبل أن أرى المال أصلاً.",
+        ),
+        fill(
+          "I need to ___ my taxes before April fifteenth.",
+          "file",
+          ["send", "write", "make"],
+          "پێویستە پێش پازدەی نیسان ڕاپۆرتی باجەکەم پێشکەش بکەم.",
+          "يجب أن أقدّم إقراري الضريبي قبل الخامس عشر من نيسان.",
+        ),
+      ],
       convos: [
         {
           situation: "لە مووچەکەتدا چەند کاتژمێرێک دیار نییە",
@@ -377,6 +611,32 @@ const unit11: UnitBank = [
       { en: "Could you send the case number by text?", ku: "دەتوانیت ژمارەی کەیسەکە بە نامە بۆم بنێریت؟", ar: "هل يمكنك إرسال رقم القضية برسالة نصية؟" },
     ],
     {
+      speakPhrases: [
+        { en: "Someone tried to use my card in another state.", ku: "کەسێک هەوڵی داوە کارتەکەم لە ویلایەتێکی تر بەکاربهێنێت.", ar: "حاول شخص ما استخدام بطاقتي في ولاية أخرى." },
+        { en: "Go ahead and send me a new card.", ku: "تکایە کارتێکی نوێم بۆ بنێرە.", ar: "من فضلك أرسل لي بطاقة جديدة." },
+        { en: "I've already changed my password.", ku: "پێشتر وشەی نهێنیم گۆڕیوە.", ar: "لقد غيّرت كلمة المرور بالفعل." },
+      ],
+      sentencePhrases: [
+        { en: "The charge went through at two in the morning.", ku: "پارەکە کاتژمێر دووی بەیانی کێشرا.", ar: "تمّت العملية في الثانية صباحاً." },
+        { en: "I got a text alert right away.", ku: "دەستبەجێ ئاگادارییەکی نامەم پێگەیشت.", ar: "وصلني تنبيه نصّي على الفور." },
+        { en: "Turn off international purchases for me.", ku: "کڕینی نێودەوڵەتیم بۆ بکوژێنەوە.", ar: "أوقف عمليات الشراء الدولية من فضلك." },
+      ],
+      fills: [
+        fill(
+          "I'd like to ___ this charge.",
+          "dispute",
+          ["argue", "refuse", "complain"],
+          "دەمەوێت ناڕەزایی لەم بڕە پارەیە دەربڕم.",
+          "أودّ الاعتراض على هذه العملية.",
+        ),
+        fill(
+          "Please ___ the card so nothing else goes through.",
+          "freeze",
+          ["stop", "hold", "close"],
+          "تکایە کارتەکە ڕابگرە تا هیچی تر نەکێشرێت.",
+          "من فضلك جمّد البطاقة حتى لا تتمّ أيّ عملية أخرى.",
+        ),
+      ],
       convos: [
         {
           situation: "مامەڵەیەکی نەناسراو لە کارتی بانکیت دەبینیت",
