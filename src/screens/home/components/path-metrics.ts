@@ -1,15 +1,19 @@
 import type { LessonPathMode } from "../../../data/lesson-content";
 
 const STREET_LESSON_BUTTON_SIZE = 58;
-const NORMAL_LESSON_BUTTON_SIZE = 62;
+const NORMAL_LESSON_BUTTON_SIZE = 80;
 const KIDS_LESSON_BUTTON_SIZE = 60;
 const ITEM_SLOT_HEIGHT = 92;
 /**
- * Normal path nodes carry a deeper rim and a cast ground shadow, so their slot
- * is taller than street/kids to keep the vertical rhythm even. 62px node →
- * 53px face + 10px rim + shadow ≈ 72px of ink in a 104px slot.
+ * The reference path's own numbers: an 80px node in a 78px slot. The slot being
+ * *shorter* than the node is deliberate and not a bug — the node's SVG viewBox
+ * (`-10 -10 120 130`) is mostly padding, so the drawn token is roughly 73×63 of
+ * those 80px. Centring it in 78px leaves the reference's gap between rows.
+ *
+ * Street and kids still pad from the top: their View-based node hangs a rim and
+ * a cast shadow *below* `lessonButtonSize`, so centring would sit them low.
  */
-const NORMAL_ITEM_SLOT_HEIGHT = 104;
+const NORMAL_ITEM_SLOT_HEIGHT = 78;
 const KIDS_ITEM_SLOT_HEIGHT = 94;
 
 export function getPathMetrics(
@@ -20,9 +24,10 @@ export function getPathMetrics(
   const isNormal = pathMode === "normal";
 
   if (compactWeb) {
+    // Normal keeps the reference's node:slot ratio (80:78) at a smaller scale.
     return {
-      lessonButtonSize: isKids ? 52 : isNormal ? 54 : 50,
-      slotHeight: isKids ? 80 : isNormal ? 90 : 78,
+      lessonButtonSize: isKids ? 52 : isNormal ? 68 : 50,
+      slotHeight: isKids ? 80 : isNormal ? 66 : 78,
     };
   }
 

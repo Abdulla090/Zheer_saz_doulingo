@@ -13,7 +13,7 @@ import { tileFlyTiming } from "../../../components/animations/motion";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
-import { useTTS } from "../../../hooks/use-tts";
+import { useWordSpeech } from "./use-word-speech";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -223,9 +223,9 @@ function FlyingTile({
 export default function ListenBuildGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
-  const { speak } = useTTS();
   const targetDirection = getLanguageDirection(question.targetLanguage);
   const speechLanguage = question.targetLanguage ?? "en";
+  const { speak, speakWord } = useWordSpeech(speechLanguage);
 
   const shuffledWordBank = React.useMemo(() => {
     const bank = [...question.wordBank];
@@ -336,6 +336,11 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
       if (slotIndex >= slotCount) return;
 
       const word = shuffledWordBank[bankIndex];
+      // The guards above already reject taps on a used tile, taps during a
+      // flight and taps past the last slot, so this fires once per placed word.
+      // The word is printed on the tile face, so reading it aloud gives nothing
+      // away that the learner cannot already see.
+      speakWord(word, `listen-build-word-${bankIndex}`);
       measuringBankRef.current = bankIndex;
       const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
         measureGameElement(rootRef.current),
@@ -389,6 +394,7 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
       slotCount,
       shuffledWordBank,
       commitAddWord,
+      speakWord,
     ],
   );
 

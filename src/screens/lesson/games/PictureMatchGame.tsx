@@ -32,6 +32,7 @@ import {
 import { GameHeader, GameRoot } from "./GameAnimatedShell";
 import { crossShadow } from "../../../utils/shadows";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { useWordSpeech } from "./use-word-speech";
 
 type Props = {
   question: ImagePairMatchQuestion;
@@ -132,6 +133,7 @@ const ImageTile = memo(function ImageTile({
 export default function PictureMatchGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
   const isKids = pathMode === "kids";
+  const { speakWord } = useWordSpeech(question.targetLanguage);
   const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
 
   // Build stable unique IDs for left (image) and right (text) items
@@ -271,8 +273,12 @@ export default function PictureMatchGame({ question, onAnswer, pathMode }: Props
     }
     selRRef.current = pairIdx;
     setSelR(pairIdx);
+    // Word column only — the picture column stays silent, since naming an image
+    // out loud would hand over the pairing this game is testing. Deselecting
+    // returns above, so this only fires when a word is actually picked.
+    speakWord(pairsData[pairIdx]?.word, `picture-match-word-${pairIdx}`);
     tryMatch(selLRef.current, pairIdx);
-  }, [isLocked, matched, tryMatch]);
+  }, [isLocked, matched, tryMatch, speakWord, pairsData]);
 
   const lState = (pairIdx: number): TileState =>
     matched.has(pairIdx)

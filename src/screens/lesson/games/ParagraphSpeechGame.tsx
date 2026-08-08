@@ -45,8 +45,8 @@ const RECOVERABLE_SPEECH_ERRORS = new Set([
 ]);
 /** Teleprompter pace — higher is slower. */
 const SCROLL_MS_PER_PX = 46;
-/** Extra scroll past the end so the last line clears the bottom fade. */
-const TELEPROMPTER_TAIL = 72;
+/** Small overscroll so the last line doesn't finish flush against the border. */
+const TELEPROMPTER_TAIL = 24;
 /** Give final results a moment to land before grading. */
 const FINAL_RESULT_GRACE_MS = 700;
 
@@ -86,7 +86,7 @@ function evaluateSpeechLocally(transcript: string, paragraphs: string[]): Paragr
 }
 
 export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
-  const { colors, isDark } = useThemeColors();
+  const { colors } = useThemeColors();
   const { t } = useI18n();
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
@@ -368,14 +368,6 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
             {containerContent}
           </ScrollView>
         )}
-        <View
-          style={[styles.gradientOverlayTop, { backgroundColor: isDark ? "rgba(22,32,51,0.86)" : "rgba(248,250,252,0.8)" }]}
-          pointerEvents="none"
-        />
-        <View
-          style={[styles.gradientOverlayBottom, { backgroundColor: isDark ? "rgba(22,32,51,0.86)" : "rgba(248,250,252,0.8)" }]}
-          pointerEvents="none"
-        />
       </View>
 
       <View style={styles.micStage}>
@@ -387,7 +379,7 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
           }
           disabled={state === "success"}
           color={micColor}
-          size={108}
+          size={94}
           hint={statusText}
           onPress={handleMicPress}
         />
@@ -412,7 +404,7 @@ export default function ParagraphSpeechGame({ question, onAnswer }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { paddingHorizontal: 24, paddingBottom: 40 },
+  root: { paddingHorizontal: 20, paddingBottom: 16 },
   teleprompterContainer: {
     flex: 1,
     width: "100%",
@@ -421,45 +413,38 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#E2E8F0",
     overflow: "hidden",
-    marginVertical: 24,
-    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 14,
+    paddingHorizontal: 18,
     justifyContent: "flex-start",
   },
+  // No fade overlays any more, so the passage only needs breathing room off
+  // the border — the first and last lines stay fully legible.
   scrollContent: {
-    paddingVertical: 64,
+    paddingVertical: 18,
   },
   paragraphText: {
     fontSize: 22,
-    lineHeight: 30,
+    lineHeight: 32,
     color: "#334155",
     fontFamily: "DINNextRoundedBold",
     ...ltrText,
   },
   wordText: {
     fontSize: 22,
-    lineHeight: 30,
+    lineHeight: 32,
     fontFamily: "DINNextRoundedBold",
     ...ltrText,
   },
   micStage: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 8,
   },
   skipLink: {
     color: "#64748B",
     fontSize: 16,
     fontFamily: "DINNextRoundedBold",
     textAlign: "center",
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
-  gradientOverlayTop: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, height: 60,
-    backgroundColor: "rgba(248, 250, 252, 0.8)"
-  },
-  gradientOverlayBottom: {
-    position: "absolute",
-    bottom: 0, left: 0, right: 0, height: 60,
-    backgroundColor: "rgba(248, 250, 252, 0.8)"
-  }
 });

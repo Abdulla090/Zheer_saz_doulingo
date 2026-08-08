@@ -29,7 +29,7 @@ import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useI18n } from "../../hooks/useI18n";
 import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
-import { ONBOARDING_DESIGN } from "./components/onboarding-design";
+import { useOnboardingTheme } from "./components/onboarding-theme";
 import {
   ONBOARDING_SLIDE_IDS,
   ONBOARDING_TOTAL_STEPS,
@@ -59,9 +59,10 @@ export function OnboardingFlow() {
   const [resumeLanguageAtGoal, setResumeLanguageAtGoal] = useState(false);
 
   const { colors, isDark } = useThemeColors();
+  const onboardingTheme = useOnboardingTheme();
   const styles = useMemo(
-    () => createStyles(colors, isDark, isDesktopWeb),
-    [colors, isDark, isDesktopWeb],
+    () => createStyles(colors, isDark, isDesktopWeb, onboardingTheme.canvas),
+    [colors, isDark, isDesktopWeb, onboardingTheme.canvas],
   );
   // Street and kids are paused; a stale stored preference must not survive
   // onboarding and drop the user onto a path that no longer renders.
@@ -148,6 +149,17 @@ export function OnboardingFlow() {
       }
     });
   }, [completeOnboarding, reduceMotion, rootOpacity, selectedPath, setPathMode]);
+
+  const goToSignIn = useCallback(() => {
+    /*
+     * A returning user has already done setup — language, level, goal and pet
+     * are all on their account. Sending them through those five questions again
+     * would overwrite the answers with fresh defaults, so this marks onboarding
+     * done and hands straight off to auth.
+     */
+    setPathMode(selectedPath);
+    completeOnboarding("/auth?redirect=/(tabs)");
+  }, [completeOnboarding, selectedPath, setPathMode]);
 
   const goNext = useCallback(() => {
     if (isLast) {
@@ -258,6 +270,7 @@ export function OnboardingFlow() {
         onSkip={finishSlides}
         skipLabel={t("onboarding.skip")}
         backLabel={t("onboarding.back")}
+        showBrand
       />
       <View style={styles.slideFrame}>
       {isWeb ? (
@@ -303,6 +316,9 @@ export function OnboardingFlow() {
         locale={locale}
         bottomInset={insets.bottom}
         onPress={goNext}
+        secondaryLabel={index === 0 ? t("onboarding.alreadyHaveAccount") : undefined}
+        onSecondaryPress={index === 0 ? goToSignIn : undefined}
+        secondaryTestID="onboarding-sign-in"
         current={onboardingStepNumber(STEP_IDS[index])}
         total={ONBOARDING_TOTAL_STEPS}
       />
@@ -310,11 +326,16 @@ export function OnboardingFlow() {
   );
 }
 
-const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean) =>
+const createStyles = (
+  colors: any,
+  isDark: boolean,
+  isDesktopWeb: boolean,
+  canvas: string,
+) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: ONBOARDING_DESIGN.canvas,
+      backgroundColor: canvas,
     },
     container: {
       flex: 1,

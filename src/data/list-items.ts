@@ -57,7 +57,7 @@ export type SectionDataItem = {
   data: LessonListItem[];
 };
 
-const BASE_PATTERN: LessonType[] = [
+export const BASE_PATTERN: LessonType[] = [
   "practice",
   "practice",
   "speaking",
@@ -69,6 +69,20 @@ const BASE_PATTERN: LessonType[] = [
   "gift",
   "practice",
 ];
+
+/**
+ * Lesson type by position within a unit, which is what varies the node's face
+ * icon along the path. Positional rather than content-derived, matching the
+ * reference path — a lesson bank carries every exercise kind, so there is no
+ * single "type" to read off it.
+ *
+ * `gift` is excluded: this app resolves chest slots separately via
+ * `resolveUnitChestKind`, so a gift here would be a node with no chest.
+ */
+export function lessonTypeForIndex(sectionItemIndex: number): LessonType {
+  const type = BASE_PATTERN[sectionItemIndex % BASE_PATTERN.length];
+  return type === "gift" ? "practice" : type;
+}
 
 // ── 12 units: first is BLUE, second uses GREEN, rest follow  ──────────────
 export const sectionConfigs: {

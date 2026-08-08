@@ -937,6 +937,9 @@ export function DuoCheckButton({
       <Animated.View style={[s.cta, box]}>
         <AppText
           style={[s.ctaLabel, { color: labelColor }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
           forceLatinFont
           latinRole="bold"
         >
@@ -1169,7 +1172,14 @@ export function DuoFeedbackPanel({
               ctaAnim,
             ]}
           >
-            <AppText style={s.ctaLabelOn} forceLatinFont latinRole="bold">
+            <AppText
+              style={s.ctaLabelOn}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              forceLatinFont
+              latinRole="bold"
+            >
               {label.toUpperCase()}
             </AppText>
           </Animated.View>

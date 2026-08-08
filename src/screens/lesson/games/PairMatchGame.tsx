@@ -16,7 +16,7 @@ import Animated, {
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguage } from "../../../config/languages";
 import { useThemeColors } from "../../../hooks/useThemeColors";
-import { useTTS } from "../../../hooks/use-tts";
+import { useWordSpeech } from "./use-word-speech";
 
 import { PairMatchQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -109,7 +109,7 @@ const MatchChip = memo(function MatchChip({
 export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu } = useI18n();
   const { colors } = useThemeColors();
-  const { speak, stop } = useTTS();
+  const { speakWord, stop } = useWordSpeech(question.targetLanguage);
   const isKids = pathMode === "kids";
   const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
   const left = useMemo(() =>
@@ -126,6 +126,15 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
     ),
     [question.pairs, seed]
   );
+
+  /*
+   * The native column reads in the native voice and the target column in the
+   * target one. `useWordSpeech` drops a language with no device voice — no
+   * shipping engine carries Sorani, and `useTTS` would map it onto `ar-IQ` and
+   * read Kurdish orthography with Arabic phonology, so the learner would hear a
+   * word that is not the one on the tile. The tile stays tappable either way.
+   */
+  const sourceLanguage = question.sourceLanguage ?? "ku";
 
   const selLRef = useRef<string | null>(null);
   const selRRef = useRef<string | null>(null);
@@ -189,16 +198,21 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
     }
   };
 
+  /*
+   * Speech follows selection, never deselection. Reading the word aloud is the
+   * confirmation that a tile is now picked; saying it again while the tile is
+   * being *un*-picked contradicts what the user just did, so the deselect
+   * branch returns before anything is spoken.
+   */
   const handleL = (w: string) => {
     if (isLocked || matched.has(w)) return;
-    void speak(w, question.sourceLanguage ?? "ku", `pair-source-${w}`, {
-      provider: "device",
-    });
     if (selL === w) {
       selLRef.current = null;
       setSelL(null);
+      void stop();
       return;
     }
+    speakWord(w, `pair-source-${w}`, { language: sourceLanguage });
     selLRef.current = w;
     setSelL(w);
     tryMatch(w, selRRef.current);
@@ -206,14 +220,13 @@ export default function PairMatchGame({ question, onAnswer, pathMode }: Props) {
 
   const handleR = (w: string) => {
     if (isLocked || matched.has(w)) return;
-    void speak(w, question.targetLanguage ?? "en", `pair-target-${w}`, {
-      provider: "device",
-    });
     if (selR === w) {
       selRRef.current = null;
       setSelR(null);
+      void stop();
       return;
     }
+    speakWord(w, `pair-target-${w}`);
     selRRef.current = w;
     setSelR(w);
     tryMatch(selLRef.current, w);

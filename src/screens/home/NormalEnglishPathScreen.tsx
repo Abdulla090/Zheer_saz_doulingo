@@ -13,7 +13,10 @@ import type {
   SectionTheme,
 } from "../../data/list-items";
 import { getUnitsForPath } from "../../data/content-access";
-import { resolveUnitLessonStatus, type LessonType } from "../../data/list-items";
+import {
+  lessonTypeForIndex,
+  resolveUnitLessonStatus,
+} from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { usePathLessonSelection } from "../../hooks/use-path-lesson-selection";
 import { useCurrentProgress } from "../../stores/useProgressStore";
@@ -161,12 +164,15 @@ export function NormalEnglishPathScreen({
           pathIndex: currentIndex,
           globalIndex: currentIndex,
           sectionItemIndex: lessonIndex,
-          type: "practice" as LessonType,
+          type: lessonTypeForIndex(lessonIndex),
           sectionTheme: displayTheme,
           displayTheme,
           status: itemStatus,
           isCurrent: itemStatus === "current",
-          progressSegments: itemStatus === "current" ? 2 : 0,
+          // No per-lesson progress is tracked yet — the store only records which
+          // path index you are on. Reporting 0 keeps the ring an honest "you are
+          // here" halo instead of a permanent fake fraction.
+          progressSegments: 0,
           lessonId: unitIndex + skipCount,
         };
       });
@@ -319,6 +325,11 @@ export function NormalEnglishPathScreen({
         pathMode="normal"
         isActiveLesson={item.pathIndex === normalNextLessonPathIndex}
         isSelected={selectedLesson?.item.id === item.id}
+        // A unit counts as reached once its first lesson is unlocked, which
+        // covers both "working through it" and "already finished it".
+        isUnitReached={
+          normalNextLessonPathIndex >= (section.data[0]?.pathIndex ?? 0)
+        }
         onSelect={(node) => selectLesson(item, section.title, node)}
       />
     ),

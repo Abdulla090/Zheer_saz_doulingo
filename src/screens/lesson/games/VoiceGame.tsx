@@ -25,7 +25,7 @@ import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
-import { useTTS } from "../../../hooks/use-tts";
+import { useWordSpeech } from "./use-word-speech";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { isPartialUtterance, matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
@@ -74,7 +74,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const { width, height } = useWindowDimensions();
   const compactLayout = width < 480 || height < 720;
   const micOrbSize = compactLayout ? 82 : 92;
-  const { speak } = useTTS();
+  const { speakWord } = useWordSpeech(question.targetLanguage);
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
   const useGeminiBackend = !speech.available && geminiCapture.available;
@@ -491,7 +491,7 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const handleHearPhrase = () => {
-    void speak(question.targetWord, question.targetLanguage ?? "en", question.targetWord);
+    speakWord(question.targetWord, question.targetWord);
   };
 
   const handleRevealHint = () => {

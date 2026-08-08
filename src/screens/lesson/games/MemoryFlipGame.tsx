@@ -36,6 +36,7 @@ import { AppText } from "../../../components/ui/AppText";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { LayoutDirectionProvider, useLayoutDirection } from "../../../i18n/layout-direction";
+import { useWordSpeech } from "./use-word-speech";
 
 type Props = {
   question: MemoryFlipQuestion;
@@ -252,7 +253,14 @@ export default function MemoryFlipGame({ question, onAnswer, pathMode }: Props) 
   const seed = useMemo(() => Math.floor(Math.random() * 1000000), [question.pairs]);
 
   const [cards, setCards] = useState<CardItem[]>([]);
+  const { speakWord } = useWordSpeech(question.targetLanguage);
   const firedRef = useRef(false);
+  /**
+   * Mirrors `cards` so a tap can inspect the card it hit without doing it
+   * inside the `setCards` updater — that callback has to stay pure.
+   */
+  const cardsRef = useRef<CardItem[]>([]);
+  cardsRef.current = cards;
   // Use ref to track currently flipped (but unmatched) card index
   const firstFlippedRef = useRef<number | null>(null);
   const lockRef = useRef(false); // prevents rapid taps during animations
@@ -313,6 +321,13 @@ export default function MemoryFlipGame({ question, onAnswer, pathMode }: Props) 
 
   const handleCardPress = useCallback((index: number) => {
     if (lockRef.current) return;
+
+    // Text cards only. Reading a picture card aloud would name the image, which
+    // is the whole thing the learner is here to recall.
+    const tapped = cardsRef.current[index];
+    if (tapped?.type === "text" && !tapped.isFlipped && !tapped.isMatched) {
+      speakWord(tapped.value, `memory-flip-${tapped.id}`);
+    }
 
     setCards((prev) => {
       const card = prev[index];
@@ -380,7 +395,7 @@ export default function MemoryFlipGame({ question, onAnswer, pathMode }: Props) 
 
       return next;
     });
-  }, [onAnswer, registerTimeout]);
+  }, [onAnswer, registerTimeout, speakWord]);
 
   const matchedCount = cards.filter((c) => c.isMatched).length / 2;
   const totalPairs = question.pairs.length;

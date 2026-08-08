@@ -53,6 +53,8 @@ import {
 
 } from "./lesson-light-primitives";
 
+import { useWordSpeech } from "./use-word-speech";
+
 
 
 type Props = {
@@ -78,6 +80,8 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
 
   const firedRef = useRef(false);
 
+  const { speakWord } = useWordSpeech(question.targetLanguage);
+
   React.useEffect(() => {
     setSelected(null);
     setRevealed(false);
@@ -89,6 +93,10 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
     if (revealed) return;
 
     setSelected(opt);
+
+    // The replies are target-language lines, so hearing the one you chose is
+    // how you judge whether it sounds right.
+    speakWord(opt, `conversation-pick-${opt}`);
 
   };
 

@@ -48,6 +48,7 @@ import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import type { AnswerTier } from "../../utils/answer-tier";
 import { tierFeedbackKey, tierLabelKey } from "../../utils/answer-tier";
+import { playCelebrateSound, playLessonFinishSound } from "../../utils/game-sounds";
 import { getCurrentLessonMeta, buildLessonRouteForMode } from "../../utils/lesson-navigation";
 import { enterGame } from "./games/game-motion";
 import ConversationPickGame from "./games/ConversationPickGame";
@@ -186,6 +187,13 @@ export default function LessonScreen() {
       }
 
       if (passed) {
+        /*
+         * Clearing the lesson is the only thing that earns the fanfare — running
+         * out of hearts lands on this same screen and gets the error haptic
+         * above instead. `passed` and `finished` are set in one batch, so this
+         * effect settles once per lesson and the sound cannot double up.
+         */
+        playLessonFinishSound();
         accuracyValue.value = 0;
         accuracyValue.value = withTiming(correctN / Math.max(1, questions.length), {
           duration: 1200,
@@ -274,6 +282,8 @@ export default function LessonScreen() {
       const isConversationPick = q.type === "conversation_pick";
 
       if (correct === true) {
+        // Every game type funnels through here, so one call covers all of them.
+        playCelebrateSound();
         xpSc.value = withSequence(
           withTiming(1.4, { duration: 90, easing: Easing.out(Easing.cubic) }),
           withTiming(1.0, { duration: 160, easing: Easing.out(Easing.cubic) }),

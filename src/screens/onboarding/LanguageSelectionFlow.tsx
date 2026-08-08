@@ -1,16 +1,20 @@
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressable";
-import { useLocaleStore } from "../../stores/useLocaleStore";
-import { hapticSelection } from "../../utils/haptics";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import {
+  Airplane01Icon,
+  Briefcase01Icon,
+  Message01Icon,
+  RocketIcon,
+} from "@hugeicons/core-free-icons";
+import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
   Platform,
   ScrollView,
   StyleSheet,
-  View,
   TextInput,
+  View,
   useWindowDimensions,
 } from "react-native";
 // KeyboardProvider is mounted at the app root, so use this library's
@@ -19,46 +23,58 @@ import {
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
+  FadeIn,
   FadeInRight,
   FadeOutLeft,
   LinearTransition,
+  useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withTiming,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import {
-  Message01Icon,
-  Airplane01Icon,
-  BookOpen02Icon,
-  SparklesIcon,
-  LeafIcon,
-  BotMessageSquareIcon,
-  RocketIcon,
-  CloudLightningIcon
-} from "@hugeicons/core-free-icons";
-import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
-import { useProgressStore } from "../../stores/useProgressStore";
-import { getSkippedUnitsCount } from "../../data/normal-english";
-import { useThemeColors } from "../../hooks/useThemeColors";
+
+import { AppText } from "../../components/ui/AppText";
 import {
   LANGUAGES as LANGUAGE_CATALOG,
   SOURCE_LANGUAGES,
   getTargetLanguagesForSource,
-  type LanguageDefinition,
 } from "../../config/languages";
-import { AppText } from "../../components/ui/AppText";
+import { getMascotExpressionSource } from "../../constants/mascot-expressions";
+import type { MascotExpression } from "../../constants/mascot-expressions";
+import { getSkippedUnitsCount } from "../../data/normal-english";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { useProgressStore } from "../../stores/useProgressStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { hapticSelection } from "../../utils/haptics";
 import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
+import { OnboardingFlag } from "./components/OnboardingFlag";
 import {
-  ONBOARDING_DESIGN,
-} from "./components/onboarding-design";
+  OnboardingLevelBars,
+  OnboardingOptionRow,
+} from "./components/OnboardingOptionRow";
+import { OnboardingQuestion } from "./components/OnboardingQuestion";
+import {
+  onboardingLift,
+  useOnboardingMetrics,
+  useOnboardingTheme,
+  type OnboardingMetrics,
+  type OnboardingTheme,
+} from "./components/onboarding-theme";
 import {
   ONBOARDING_TOTAL_STEPS,
   onboardingStepNumber,
 } from "./onboarding-steps";
 
-export type OnboardingSetupStep = "nativeLanguage" | "targetLanguage" | "profile" | "level" | "goal" | "generating";
+export type OnboardingSetupStep =
+  | "nativeLanguage"
+  | "targetLanguage"
+  | "profile"
+  | "level"
+  | "goal"
+  | "generating";
 
 type Props = {
   onFinish: () => void;
@@ -68,7 +84,6 @@ type Props = {
 
 const ONBOARDING_COPY = {
   en: {
-    step: (current: number) => `STEP ${current} OF 5`,
     profileTitle: "What's your name?",
     profileSubtitle: "We'll personalize your learning journey for you.",
     namePlaceholder: "Your Name",
@@ -85,7 +100,6 @@ const ONBOARDING_COPY = {
     setupError: "We couldn't prepare your path. Check your choices and try again.",
   },
   ku: {
-    step: (current: number) => `هەنگاوی ${current} لە 5`,
     profileTitle: "ناوت چییە؟",
     profileSubtitle: "ڕێڕەوی فێربوونت بۆ خۆت تایبەت دەکەین.",
     namePlaceholder: "ناوت",
@@ -102,7 +116,6 @@ const ONBOARDING_COPY = {
     setupError: "نەتوانرا ڕێڕەوەکەت ئامادە بکرێت. هەڵبژاردنەکانت بپشکنە و دووبارە هەوڵ بدەرەوە.",
   },
   ar: {
-    step: (current: number) => `الخطوة ${current} من 5`,
     profileTitle: "ما اسمك؟",
     profileSubtitle: "سنخصص رحلة التعلم لك.",
     namePlaceholder: "اسمك",
@@ -119,7 +132,6 @@ const ONBOARDING_COPY = {
     setupError: "تعذر تجهيز مسارك. تحقق من اختياراتك وحاول مرة أخرى.",
   },
   es: {
-    step: (current: number) => `PASO ${current} DE 5`,
     profileTitle: "¿Cómo te llamas?",
     profileSubtitle: "Personalizaremos tu aprendizaje.",
     namePlaceholder: "Tu nombre",
@@ -136,7 +148,6 @@ const ONBOARDING_COPY = {
     setupError: "No pudimos preparar tu ruta. Revisa tus opciones e inténtalo de nuevo.",
   },
   ru: {
-    step: (current: number) => `ШАГ ${current} ИЗ 5`,
     profileTitle: "Как тебя зовут?",
     profileSubtitle: "Мы настроим обучение под тебя.",
     namePlaceholder: "Твоё имя",
@@ -158,44 +169,50 @@ const GOALS = [
   {
     id: "conversations",
     title: "Have Conversations",
-    desc: "Speak confidently in real life situations.",
     icon: Message01Icon,
     color: "#8B5CF6",
-    bg: "#F5F3FF",
+    bg: "#F3F0FF",
+    bgDark: "rgba(139, 92, 246, 0.20)",
   },
   {
     id: "travel",
     title: "Travel the World",
-    desc: "Communicate easily while traveling.",
     icon: Airplane01Icon,
-    color: "#F97316",
-    bg: "#FFF7ED",
+    color: "#0EA5E9",
+    bg: "#E3F4FE",
+    bgDark: "rgba(14, 165, 233, 0.20)",
   },
   {
     id: "career",
     title: "Advance My Career",
-    desc: "Improve communication for work opportunities.",
-    icon: BookOpen02Icon,
+    icon: Briefcase01Icon,
     color: "#10B981",
-    bg: "#ECFDF5",
+    bg: "#E4FBF1",
+    bgDark: "rgba(16, 185, 129, 0.20)",
   },
   {
     id: "challenge",
     title: "Challenge Myself",
-    desc: "Learn a new language and expand my mind.",
-    icon: SparklesIcon,
-    color: "#EF4444",
-    bg: "#FEF2F2",
+    icon: RocketIcon,
+    color: "#EC4899",
+    bg: "#FDECF5",
+    bgDark: "rgba(236, 72, 153, 0.20)",
   },
-];
+] as const;
 
+/**
+ * Levels, in curriculum order.
+ *
+ * Order is load-bearing here: the index drives how many bars the row's chart
+ * fills, so this array must stay sorted beginner-first.
+ */
 const LEVELS = [
-  { id: 2, label: "Beginner (A1)", desc: "Start from the very basics, simple words and greetings.", icon: LeafIcon },
-  { id: 4, label: "Elementary (A2)", desc: "Can form basic sentences and talk about daily routines.", icon: BotMessageSquareIcon },
-  { id: 6, label: "Intermediate (B1)", desc: "Can handle travel situations and express opinions.", icon: RocketIcon },
-  { id: 8, label: "Upper-Intermediate (B2)", desc: "Can converse fluently and understand main ideas.", icon: BookOpen02Icon },
-  { id: 10, label: "Advanced / Expert (C1/C2)", desc: "Fluent, natural, and complex sentence structures.", icon: CloudLightningIcon },
-];
+  { id: 2, label: "Beginner (A1)" },
+  { id: 4, label: "Elementary (A2)" },
+  { id: 6, label: "Intermediate (B1)" },
+  { id: 8, label: "Upper-Intermediate (B2)" },
+  { id: 10, label: "Advanced / Expert (C1/C2)" },
+] as const;
 
 const LEVEL_LABELS: Record<string, Record<number, string>> = {
   en: {
@@ -268,6 +285,27 @@ const GOAL_LABELS: Record<string, Record<string, string>> = {
   },
 };
 
+/** The mascot reacts to what it is asking about. */
+const STEP_EXPRESSION: Record<OnboardingSetupStep, MascotExpression> = {
+  nativeLanguage: "happy",
+  targetLanguage: "happy",
+  profile: "encouraging",
+  level: "thinking",
+  goal: "winning",
+  generating: "thinking",
+};
+
+/**
+ * How long a tapped row stays visibly selected before the flow advances.
+ *
+ * Single-choice steps advance on tap rather than waiting for a Continue press —
+ * with one answer per screen, the button was a second tap that carried no
+ * information. The delay is not padding: without it the row is replaced in the
+ * same frame it is pressed, so the selection never renders and the tap feels
+ * unacknowledged.
+ */
+const AUTO_ADVANCE_MS = 260;
+
 export function LanguageSelectionFlow({
   onFinish,
   onBackToIntro,
@@ -275,23 +313,27 @@ export function LanguageSelectionFlow({
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
   const isCompact = screenWidth < 390 || screenHeight < 760;
-  const { colors, isDark } = useThemeColors();
+
+  const theme = useOnboardingTheme();
+  const metrics = useOnboardingMetrics(isCompact);
   const styles = useMemo(
-    () => createStyles(colors, isDark, isCompact),
-    [colors, isCompact, isDark],
+    () => createStyles(theme, metrics, isCompact),
+    [isCompact, metrics, theme],
   );
+
   const reduceMotion = useReducedMotion();
-  const contentLayout = Platform.OS === "web"
-    ? LinearTransition.duration(220)
-    : LinearTransition.springify();
+  const contentLayout =
+    Platform.OS === "web"
+      ? LinearTransition.duration(220)
+      : LinearTransition.springify();
 
   // Stores
   const setUserName = useSettingsStore((s) => s.setUserName);
   const setUserAge = useSettingsStore((s) => s.setUserAge);
   const userName = useSettingsStore((s) => s.userName);
   const userAge = useSettingsStore((s) => s.userAge);
+  const selectedMascotId = useSettingsStore((s) => s.selectedMascotId);
   const storedNativeLang = useLocaleStore((s) => s.selectedSourceLanguage);
   const storedTargetLang = useLocaleStore((s) => s.selectedTargetLanguage);
   const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
@@ -299,33 +341,64 @@ export function LanguageSelectionFlow({
   const setEnglishLevel = useSettingsStore((s) => s.setEnglishLevel);
   const learningGoal = useSettingsStore((s) => s.learningGoal);
   const setLearningGoal = useSettingsStore((s) => s.setLearningGoal);
+  const setPathMode = useSettingsStore((s) => s.setPathMode);
 
   const [step, setStep] = useState<OnboardingSetupStep>(initialStep);
-  const [selectedNativeLang, setSelectedNativeLang] = useState<string>(storedNativeLang || "ku");
-  const [selectedTargetLang, setSelectedTargetLang] = useState<string>(storedTargetLang || "en");
+  const [selectedNativeLang, setSelectedNativeLang] = useState<string>(
+    storedNativeLang || "ku",
+  );
+  const [selectedTargetLang, setSelectedTargetLang] = useState<string>(
+    storedTargetLang || "en",
+  );
   const [selectedLevel, setSelectedLevel] = useState<number>(
     LEVELS.some((level) => level.id === englishLevel) ? englishLevel : LEVELS[0].id,
   );
-  const [selectedGoal, setSelectedGoal] = useState<string>(learningGoal || "conversations");
+  const [selectedGoal, setSelectedGoal] = useState<string>(
+    learningGoal || "conversations",
+  );
   const [name, setName] = useState(userName || "");
   const [age, setAge] = useState(userAge || "");
+  const [focusedField, setFocusedField] = useState<"name" | "age" | null>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
+
   const isRtl = selectedNativeLang === "ku" || selectedNativeLang === "ar";
-  const copy = ONBOARDING_COPY[selectedNativeLang as keyof typeof ONBOARDING_COPY] ?? ONBOARDING_COPY.en;
+  const copy =
+    ONBOARDING_COPY[selectedNativeLang as keyof typeof ONBOARDING_COPY] ??
+    ONBOARDING_COPY.en;
   const levelLabels = LEVEL_LABELS[selectedNativeLang] ?? LEVEL_LABELS.en;
   const goalLabels = GOAL_LABELS[selectedNativeLang] ?? GOAL_LABELS.en;
   const textDirectionStyle = isRtl ? styles.rtlText : styles.ltrText;
 
+  /*
+   * A pending auto-advance has to be cancellable. Without this a user who taps
+   * a language and immediately hits back gets pushed forward again ~260ms
+   * later, from a screen they already left.
+   */
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelAdvance = useCallback(() => {
+    if (advanceTimer.current !== null) {
+      clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
+  }, []);
+  const scheduleAdvance = useCallback(
+    (run: () => void) => {
+      cancelAdvance();
+      advanceTimer.current = setTimeout(() => {
+        advanceTimer.current = null;
+        run();
+      }, AUTO_ADVANCE_MS);
+    },
+    [cancelAdvance],
+  );
+  useEffect(() => cancelAdvance, [cancelAdvance]);
+
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, () => {
-      setKeyboardVisible(true);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardVisible(false);
-    });
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
 
     return () => {
       showSub.remove();
@@ -335,106 +408,71 @@ export function LanguageSelectionFlow({
 
   // Force reset keyboard visibility when step changes away from profile
   useEffect(() => {
-    if (step !== "profile") {
-      setKeyboardVisible(false);
-    }
+    if (step !== "profile") setKeyboardVisible(false);
   }, [step]);
+
+  const handleNativeLanguageSelect = useCallback(
+    (langId: string) => {
+      hapticSelection();
+      setSelectedNativeLang(langId);
+      scheduleAdvance(() => {
+        /*
+         * Target options depend on the source, so a source change can strand
+         * the current target on a pair the curriculum does not support. Repair
+         * it here rather than letting `getTargetLanguagesForSource` render a
+         * list with nothing selected.
+         */
+        const targets = getTargetLanguagesForSource(langId);
+        setSelectedTargetLang((current) =>
+          targets.some((language) => language.id === current)
+            ? current
+            : targets[0]?.id ?? "en",
+        );
+        setStep("targetLanguage");
+      });
+    },
+    [scheduleAdvance],
+  );
+
+  const handleTargetLanguageSelect = useCallback(
+    (langId: string) => {
+      hapticSelection();
+      setSelectedTargetLang(langId);
+      scheduleAdvance(() => {
+        setLanguagePair(selectedNativeLang, langId);
+        setStep("profile");
+      });
+    },
+    [scheduleAdvance, selectedNativeLang, setLanguagePair],
+  );
+
+  const handleLevelSelect = useCallback(
+    (levelId: number) => {
+      hapticSelection();
+      setSelectedLevel(levelId);
+      scheduleAdvance(() => {
+        setEnglishLevel(levelId);
+        setStep("goal");
+      });
+    },
+    [scheduleAdvance, setEnglishLevel],
+  );
 
   const handleProfileContinue = useCallback(() => {
     if (!name.trim()) {
       if (Platform.OS !== "web") {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Error,
+        ).catch(() => {});
       }
       return;
     }
+    Keyboard.dismiss();
     setUserName(name);
     setUserAge(age);
     hapticSelection();
     setStep("level");
-  }, [name, age, setUserName, setUserAge]);
-
-  const handleNativeLanguageContinue = useCallback(() => {
-    hapticSelection();
-    if (selectedTargetLang === selectedNativeLang) {
-      const fallbackTarget = getTargetLanguagesForSource(selectedNativeLang)[0]?.id ?? "en";
-      setSelectedTargetLang(fallbackTarget);
-    }
-    setStep("targetLanguage");
-  }, [selectedNativeLang, selectedTargetLang]);
-
-  const handleTargetLanguageContinue = useCallback(() => {
-    hapticSelection();
-    setLanguagePair(selectedNativeLang, selectedTargetLang);
-    setStep("profile");
-  }, [selectedNativeLang, selectedTargetLang, setLanguagePair]);
-
-  const handleNativeLanguageSelect = useCallback((langId: string) => {
-    hapticSelection();
-    setSelectedNativeLang(langId);
-  }, []);
-
-  const handleTargetLanguageSelect = useCallback((langId: string) => {
-    hapticSelection();
-    setSelectedTargetLang(langId);
-  }, []);
-
-  const renderLanguageOptions = (
-    languages: LanguageDefinition[],
-    selectedLanguage: string,
-    onSelect: (langId: string) => void,
-  ) => (
-    <View style={styles.languageList} accessibilityRole="radiogroup">
-      {languages.map((language) => {
-        const isSelected = selectedLanguage === language.id;
-
-        return (
-          <TouchableOpacity
-            key={language.id}
-            testID={`onboarding-language-${language.id}`}
-            accessibilityRole="radio"
-            accessibilityLabel={language.name}
-            accessibilityState={{ checked: isSelected }}
-            style={[
-              styles.languageRow,
-              isSelected && styles.languageRowSelected,
-            ]}
-            activeOpacity={0.82}
-            onPress={() => onSelect(language.id)}
-          >
-            <View style={styles.languageCopy}>
-              <AppText
-                style={styles.languageName}
-                languageCode={language.id}
-                align="start"
-                fullWidth
-                numberOfLines={1}
-              >
-                {language.nativeName}
-              </AppText>
-            </View>
-
-            <View
-              style={[
-                styles.radioDot,
-                styles.languageRadio,
-                isSelected && styles.radioDotSelected,
-              ]}
-            >
-              {isSelected ? <View style={styles.radioInner} /> : null}
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-
-  const handleLevelContinue = useCallback(() => {
-    hapticSelection();
-    setEnglishLevel(selectedLevel);
-    setStep("goal");
-  }, [selectedLevel, setEnglishLevel]);
-
-  const setPathMode = useSettingsStore((s) => s.setPathMode);
+  }, [age, name, setUserAge, setUserName]);
 
   const handleGoalContinue = useCallback(async () => {
     hapticSelection();
@@ -449,10 +487,10 @@ export function LanguageSelectionFlow({
       const skipCount = getSkippedUnitsCount(selectedLevel);
       const initialIndex = skipCount * 10;
       const langPair = `${selectedNativeLang}-${selectedTargetLang}`;
-      
+
       // Initialize normal progress in the store
       useProgressStore.getState().initializeNormalProgress(langPair, initialIndex);
-      
+
       setEnglishLevel(selectedLevel);
       setLearningGoal(selectedGoal);
       setLanguagePair(selectedNativeLang, selectedTargetLang);
@@ -463,23 +501,26 @@ export function LanguageSelectionFlow({
       setSetupError(copy.setupError);
       setStep("goal");
       if (Platform.OS !== "web") {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Error,
+        ).catch(() => {});
       }
     }
   }, [
     copy.setupError,
     onFinish,
     selectedGoal,
+    selectedLevel,
     selectedNativeLang,
     selectedTargetLang,
-    selectedLevel,
+    setEnglishLevel,
     setLanguagePair,
     setLearningGoal,
     setPathMode,
-    setEnglishLevel,
   ]);
 
   const onBack = useCallback(() => {
+    cancelAdvance();
     hapticSelection();
     if (step === "generating") setStep("goal");
     else if (step === "goal") setStep("level");
@@ -487,55 +528,53 @@ export function LanguageSelectionFlow({
     else if (step === "profile") setStep("targetLanguage");
     else if (step === "targetLanguage") setStep("nativeLanguage");
     else onBackToIntro();
-  }, [onBackToIntro, step]);
-
-  /**
-   * Local page position (1-5) for the background gradient only — it pans across
-   * this sub-flow's own pages. Progress *reporting* uses
-   * `onboardingStepNumber(step)` so the bar stays correct if slides are added.
-   */
-  const stepIndex =
-    step === "nativeLanguage"
-      ? 1
-      : step === "targetLanguage"
-        ? 2
-        : step === "profile"
-          ? 3
-          : step === "level"
-            ? 4
-            : 5;
+  }, [cancelAdvance, onBackToIntro, step]);
 
   const progressStep = onboardingStepNumber(step);
 
-  const continueDisabled = step === "profile" && !name.trim();
+  /*
+   * Only the steps that cannot resolve themselves keep a footer: `profile`
+   * needs a typed name committed, and `goal` is the point of no return into
+   * curriculum generation. The single-choice steps advance on tap.
+   */
+  const showFooter = step === "profile" || step === "goal";
   const continueLabel = step === "goal" ? copy.start : copy.continue;
-  const handleCurrentContinue = () => {
-    if (step === "nativeLanguage") {
-      handleNativeLanguageContinue();
-    } else if (step === "targetLanguage") {
-      handleTargetLanguageContinue();
-    } else if (step === "profile") {
-      handleProfileContinue();
-    } else if (step === "level") {
-      handleLevelContinue();
-    } else if (step === "goal") {
-      void handleGoalContinue();
-    }
-  };
+  const continueDisabled = step === "profile" && !name.trim();
+  const handleCurrentContinue = useCallback(() => {
+    if (step === "profile") handleProfileContinue();
+    else if (step === "goal") void handleGoalContinue();
+  }, [handleGoalContinue, handleProfileContinue, step]);
 
-  // Background animated gradient
-  const bgScrollX = useSharedValue(0);
-  React.useEffect(() => {
-    const targetIndex = stepIndex - 1;
-    bgScrollX.value = withTiming(targetIndex * screenWidth, {
-      duration: 460,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-    });
-  }, [stepIndex, screenWidth, bgScrollX]);
+  const question =
+    step === "nativeLanguage"
+      ? copy.nativeLanguageTitle
+      : step === "targetLanguage"
+        ? copy.targetLanguageTitle
+        : step === "profile"
+          ? copy.profileTitle
+          : step === "level"
+            ? copy.levelTitle(LANGUAGE_CATALOG[selectedTargetLang]?.nativeName ?? "")
+            : copy.goalTitle;
+
+  /*
+   * Both language steps render the identical row, so only the list and the
+   * current value differ. This holds *data only* — the two select handlers are
+   * picked inside the row's `onPress` instead. They close over the pending
+   * auto-advance timer ref, and `react-hooks/refs` treats anything that carries
+   * such a handler as ref-tainted the moment it is read during render.
+   */
+  const languageOptions =
+    step === "nativeLanguage"
+      ? { languages: SOURCE_LANGUAGES, selected: selectedNativeLang }
+      : step === "targetLanguage"
+        ? {
+            languages: getTargetLanguagesForSource(selectedNativeLang),
+            selected: selectedTargetLang,
+          }
+        : null;
 
   return (
     <View style={styles.root}>
-      {!isDark && <OnboardingSkiaBg scrollX={bgScrollX} />}
       <OnboardingTopBar
         current={progressStep}
         total={ONBOARDING_TOTAL_STEPS}
@@ -544,647 +583,452 @@ export function LanguageSelectionFlow({
         onBack={onBack}
         backLabel={copy.back}
       />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoider}
       >
-      <ScrollView
-        style={{ flex: 1 }}
-        scrollEnabled={true}
-        alwaysBounceVertical={true}
-        showsVerticalScrollIndicator={true}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        contentContainerStyle={[
-          styles.scrollContent,
-          isDesktopWeb && styles.desktopFrame,
-        ]}
-      >
-        {/* STEP 1: NATIVE LANGUAGE */}
-        {step === "nativeLanguage" && (
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          contentContainerStyle={styles.scrollContent}
+        >
           <Animated.View
+            key={step}
             entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
-            layout={contentLayout}
-            style={[styles.contentWrap, styles.choiceContentWrap]}
-          >
-            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.step(1)}
-            </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.nativeLanguageTitle}
-            </AppText>
-            {renderLanguageOptions(SOURCE_LANGUAGES, selectedNativeLang, handleNativeLanguageSelect)}
-
-          </Animated.View>
-        )}
-
-        {/* STEP 2: TARGET LANGUAGE */}
-        {step === "targetLanguage" && (
-          <Animated.View 
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
-            layout={contentLayout}
-            style={[styles.contentWrap, styles.choiceContentWrap]}
-          >
-            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.step(2)}
-            </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.targetLanguageTitle}
-            </AppText>
-            {renderLanguageOptions(
-              getTargetLanguagesForSource(selectedNativeLang),
-              selectedTargetLang,
-              handleTargetLanguageSelect,
-            )}
-
-          </Animated.View>
-        )}
-
-        {/* STEP 3: PROFILE NAME & AGE */}
-        {step === "profile" && (
-          <Animated.View 
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
+            exiting={reduceMotion ? undefined : FadeOutLeft.duration(180)}
             layout={contentLayout}
             style={[
-              styles.contentWrap,
-              keyboardVisible && styles.contentWrapKeyboard,
+              styles.stepBlock,
+              step === "generating" && styles.stepBlockCentered,
+              keyboardVisible && step === "profile" && styles.stepBlockKeyboard,
             ]}
           >
-            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.step(3)}
-            </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.profileTitle}
-            </AppText>
-            <AppText style={styles.subtitle} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.profileSubtitle}
-            </AppText>
-
-
-
-            <View style={styles.inputForm}>
-              <View style={styles.inputBoxClean}>
-                <TextInput
-                  testID="onboarding-name"
-                  style={[styles.textInputClean, textDirectionStyle, { outlineStyle: "none" } as any]}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder={copy.namePlaceholder}
-                  placeholderTextColor={colors.mutedForeground}
-                  selectionColor="#0F172A"
+            {step === "generating" ? (
+              <GeneratingState
+                mascotId={selectedMascotId}
+                title={copy.generatingTitle}
+                subtitle={copy.generatingSubtitle}
+                locale={selectedNativeLang}
+                theme={theme}
+                metrics={metrics}
+                reduceMotion={reduceMotion}
+              />
+            ) : (
+              <>
+                <OnboardingQuestion
+                  question={question}
+                  hint={step === "profile" ? copy.profileSubtitle : undefined}
+                  locale={selectedNativeLang}
+                  isRtl={isRtl}
+                  theme={theme}
+                  metrics={metrics}
+                  mascotId={selectedMascotId}
+                  expression={STEP_EXPRESSION[step]}
                 />
-              </View>
 
-              <View style={styles.inputBoxClean}>
-                <TextInput
-                  testID="onboarding-age"
-                  style={[styles.textInputClean, textDirectionStyle, { outlineStyle: "none" } as any]}
-                  value={age}
-                  onChangeText={setAge}
-                  placeholder={copy.agePlaceholder}
-                  placeholderTextColor={colors.mutedForeground}
-                  keyboardType="numeric"
-                  selectionColor="#0F172A"
-                />
-              </View>
-            </View>
+                <View style={styles.options}>
+                  {languageOptions
+                    ? languageOptions.languages.map((language) => (
+                        <OnboardingOptionRow
+                          key={language.id}
+                          testID={`onboarding-language-${language.id}`}
+                          label={language.nativeName}
+                          locale={language.id}
+                          theme={theme}
+                          metrics={metrics}
+                          selected={languageOptions.selected === language.id}
+                          onPress={() =>
+                            step === "nativeLanguage"
+                              ? handleNativeLanguageSelect(language.id)
+                              : handleTargetLanguageSelect(language.id)
+                          }
+                          leading={
+                            <OnboardingFlag
+                              code={language.id}
+                              borderColor={theme.border}
+                            />
+                          }
+                        />
+                      ))
+                    : null}
 
+                  {step === "profile" ? (
+                    <>
+                      <TextField
+                        testID="onboarding-name"
+                        value={name}
+                        onChangeText={setName}
+                        placeholder={copy.namePlaceholder}
+                        focused={focusedField === "name"}
+                        onFocus={() => setFocusedField("name")}
+                        onBlur={() => setFocusedField(null)}
+                        theme={theme}
+                        styles={styles}
+                        textDirectionStyle={textDirectionStyle}
+                        returnKeyType="next"
+                      />
+                      <TextField
+                        testID="onboarding-age"
+                        value={age}
+                        onChangeText={setAge}
+                        placeholder={copy.agePlaceholder}
+                        focused={focusedField === "age"}
+                        onFocus={() => setFocusedField("age")}
+                        onBlur={() => setFocusedField(null)}
+                        theme={theme}
+                        styles={styles}
+                        textDirectionStyle={textDirectionStyle}
+                        keyboardType="numeric"
+                      />
+                    </>
+                  ) : null}
+
+                  {step === "level"
+                    ? LEVELS.map((level, index) => {
+                        const isSelected = selectedLevel === level.id;
+                        return (
+                          <OnboardingOptionRow
+                            key={level.id}
+                            testID={`onboarding-level-${level.id}`}
+                            label={levelLabels[level.id] ?? level.label}
+                            locale={selectedNativeLang}
+                            theme={theme}
+                            metrics={metrics}
+                            selected={isSelected}
+                            onPress={() => handleLevelSelect(level.id)}
+                            leading={
+                              <OnboardingLevelBars
+                                filled={index + 1}
+                                total={LEVELS.length}
+                                theme={theme}
+                                selected={isSelected}
+                              />
+                            }
+                          />
+                        );
+                      })
+                    : null}
+
+                  {step === "goal"
+                    ? GOALS.map((goal) => (
+                        <OnboardingOptionRow
+                          key={goal.id}
+                          testID={`onboarding-goal-${goal.id}`}
+                          label={goalLabels[goal.id] ?? goal.title}
+                          locale={selectedNativeLang}
+                          theme={theme}
+                          metrics={metrics}
+                          control="check"
+                          selected={selectedGoal === goal.id}
+                          onPress={() => {
+                            hapticSelection();
+                            setSelectedGoal(goal.id);
+                          }}
+                          leadingBackground={theme.isDark ? goal.bgDark : goal.bg}
+                          leading={
+                            <HugeiconsIcon
+                              icon={goal.icon}
+                              size={21}
+                              color={goal.color}
+                              strokeWidth={2.2}
+                            />
+                          }
+                        />
+                      ))
+                    : null}
+                </View>
+              </>
+            )}
           </Animated.View>
-        )}
+        </ScrollView>
 
-        {/* STEP 4: LEVEL SELECTION */}
-        {step === "level" && (
-          <Animated.View 
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
-            layout={contentLayout}
-            style={[styles.contentWrap, styles.choiceContentWrap]}
-          >
-            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.step(4)}
-            </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.levelTitle(LANGUAGE_CATALOG[selectedTargetLang]?.nativeName ?? "")}
-            </AppText>
-
-
-
-            <View style={styles.gridList}>
-              {LEVELS.map((lvl) => {
-                const isSelected = selectedLevel === lvl.id;
-                return (
-                  <TouchableOpacity
-                    key={lvl.id}
-                    testID={`onboarding-level-${lvl.id}`}
-                    accessibilityRole="radio"
-                    accessibilityLabel={levelLabels[lvl.id] ?? lvl.label}
-                    accessibilityState={{ checked: isSelected }}
-                    style={[
-                      styles.gridCard,
-                      isSelected && styles.gridCardSelected,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedLevel(lvl.id)}
-                  >
-                    <View style={[styles.gridIconWrap, { backgroundColor: "#EFF6FF" }]}>
-                      <HugeiconsIcon icon={lvl.icon} size={21} color="#2563EB" strokeWidth={2} />
-                    </View>
-                    <AppText
-                      style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
-                      languageCode={selectedNativeLang}
-                      align="start"
-                    >
-                      {levelLabels[lvl.id] ?? lvl.label}
-                    </AppText>
-                    <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
-                      {isSelected && <View style={styles.radioInner} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-          </Animated.View>
-        )}
-
-        {/* STEP 5: MAIN GOAL SELECTION */}
-        {step === "goal" && (
-          <Animated.View 
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
-            layout={contentLayout}
-            style={[styles.contentWrap, styles.choiceContentWrap]}
-          >
-            <AppText style={styles.stepNumLabel} languageCode={selectedNativeLang} align="start" fullWidth>
-              {copy.step(5)}
-            </AppText>
-            <AppText style={styles.title} languageCode={selectedNativeLang} align="start" fullWidth latinRole="regular" fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}>
-              {copy.goalTitle}
-            </AppText>
-
-
-
-            <View style={styles.gridList}>
-              {GOALS.map((g) => {
-                const isSelected = selectedGoal === g.id;
-                return (
-                  <TouchableOpacity
-                    key={g.id}
-                    testID={`onboarding-goal-${g.id}`}
-                    accessibilityRole="radio"
-                    accessibilityLabel={goalLabels[g.id] ?? g.title}
-                    accessibilityState={{ checked: isSelected }}
-                    style={[
-                      styles.gridCard,
-                      isSelected && styles.gridCardSelected,
-                    ]}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedGoal(g.id)}
-                  >
-                    <View style={[styles.gridIconWrap, { backgroundColor: g.bg }]}>
-                      <HugeiconsIcon icon={g.icon} size={21} color={g.color} strokeWidth={2.5} />
-                    </View>
-                    <AppText
-                      style={[styles.gridCardTitle, isSelected && styles.goalTitleSelected]}
-                      languageCode={selectedNativeLang}
-                      align="start"
-                    >
-                      {goalLabels[g.id] ?? g.title}
-                    </AppText>
-                    <View style={[styles.radioDot, styles.radioDotGrid, isSelected && styles.radioDotSelected]}>
-                      {isSelected && <View style={styles.radioInner} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-          </Animated.View>
-        )}
-        {/* STEP 5: GENERATING (LOADING) */}
-        {step === "generating" && (
-          <Animated.View 
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={FadeOutLeft.duration(200)}
-            style={[styles.contentWrap, { alignItems: "center", justifyContent: "center", paddingBottom: 100 }]}
-          >
-            <HugeiconsIcon icon={SparklesIcon} size={64} color={colors.foreground} />
-            <AppText
-              style={[styles.title, { marginTop: 24, fontSize: 32 }]}
-              languageCode={selectedNativeLang}
-              align="center"
-              fullWidth
-              latinRole="bold"
-            >
-              {copy.generatingTitle}
-            </AppText>
-            <AppText
-              style={[styles.subtitle, { fontSize: 16 }]}
-              languageCode={selectedNativeLang}
-              align="center"
-              fullWidth
-            >
-              {copy.generatingSubtitle}
-            </AppText>
-          </Animated.View>
-        )}
-      </ScrollView>
-
-      {step !== "generating" ? (
-        <OnboardingFooter
-          label={continueLabel}
-          locale={selectedNativeLang}
-          bottomInset={insets.bottom}
-          onPress={handleCurrentContinue}
-          disabled={continueDisabled}
-          hint={setupError ?? undefined}
-          current={progressStep}
-          total={ONBOARDING_TOTAL_STEPS}
-        />
-      ) : null}
+        {showFooter ? (
+          <OnboardingFooter
+            label={continueLabel}
+            locale={selectedNativeLang}
+            bottomInset={insets.bottom}
+            onPress={handleCurrentContinue}
+            disabled={continueDisabled}
+            hint={setupError ?? undefined}
+          />
+        ) : null}
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-function createStyles(colors: any, isDark: boolean, isCompact: boolean) {
+/* ────────────────────────────────────────────────────────────────────
+ * Text field
+ * ──────────────────────────────────────────────────────────────────── */
+
+function TextField({
+  testID,
+  value,
+  onChangeText,
+  placeholder,
+  focused,
+  onFocus,
+  onBlur,
+  theme,
+  styles,
+  textDirectionStyle,
+  keyboardType,
+  returnKeyType,
+}: {
+  testID: string;
+  value: string;
+  onChangeText: (next: string) => void;
+  placeholder: string;
+  focused: boolean;
+  onFocus: () => void;
+  onBlur: () => void;
+  theme: OnboardingTheme;
+  styles: ReturnType<typeof createStyles>;
+  textDirectionStyle: object;
+  keyboardType?: "numeric";
+  returnKeyType?: "next";
+}) {
+  /*
+   * `underlineColorAndroid` + a transparent fill are both required, and neither
+   * substitutes for the other. Android's `EditText` ships an inset rounded
+   * background drawable *and* a bottom underline; styling only the wrapper left
+   * both painting inside it, so the field rendered as a second pale box floating
+   * within its own border.
+   */
+  return (
+    <View style={[styles.inputBox, focused && styles.inputBoxFocused]}>
+      <TextInput
+        testID={testID}
+        style={[styles.textInput, textDirectionStyle, { outlineStyle: "none" } as any]}
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        placeholderTextColor={theme.faintInk}
+        selectionColor={theme.accent}
+        underlineColorAndroid="transparent"
+        keyboardType={keyboardType}
+        returnKeyType={returnKeyType}
+      />
+    </View>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+ * Generating
+ * ──────────────────────────────────────────────────────────────────── */
+
+/**
+ * The wait between "Let's get started" and the first lesson.
+ *
+ * A determinate bar would be a lie — nothing here reports real progress — so
+ * this is an indeterminate shuttle. Under reduced motion it settles as a static
+ * partial fill rather than looping, since a repeating animation is exactly what
+ * that setting exists to suppress.
+ */
+function GeneratingState({
+  mascotId,
+  title,
+  subtitle,
+  locale,
+  theme,
+  metrics,
+  reduceMotion,
+}: {
+  mascotId: string;
+  title: string;
+  subtitle: string;
+  locale: string;
+  theme: OnboardingTheme;
+  metrics: OnboardingMetrics;
+  reduceMotion: boolean;
+}) {
+  const shuttle = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      shuttle.value = 0.5;
+      return;
+    }
+    shuttle.value = withRepeat(
+      withTiming(1, { duration: 1150, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true,
+    );
+  }, [reduceMotion, shuttle]);
+
+  useEffect(() => () => cancelAnimation(shuttle), [shuttle]);
+
+  const shuttleStyle = useAnimatedStyle(() => ({
+    left: `${shuttle.value * 62}%`,
+  }));
+
+  const styles = useMemo(
+    () => createGeneratingStyles(theme, metrics),
+    [metrics, theme],
+  );
+
+  return (
+    <Animated.View entering={FadeIn.duration(240)} style={styles.wrap}>
+      <Image
+        source={getMascotExpressionSource(mascotId, "thinking")}
+        style={styles.mascot}
+        contentFit="contain"
+        transition={200}
+        accessibilityIgnoresInvertColors
+      />
+
+      <AppText
+        style={styles.title}
+        languageCode={locale}
+        latinRole="bold"
+        align="center"
+        fullWidth
+      >
+        {title}
+      </AppText>
+
+      <AppText style={styles.subtitle} languageCode={locale} align="center" fullWidth>
+        {subtitle}
+      </AppText>
+
+      <View style={styles.track} accessibilityRole="progressbar">
+        <Animated.View style={[styles.shuttle, shuttleStyle]} />
+      </View>
+    </Animated.View>
+  );
+}
+
+function createGeneratingStyles(theme: OnboardingTheme, metrics: OnboardingMetrics) {
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: ONBOARDING_DESIGN.canvas,
-  },
-  keyboardAvoider: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: isCompact ? 18 : 24,
-    paddingTop: isCompact ? 8 : 16,
-    paddingBottom: isCompact ? 14 : 22,
-  },
-  contentWrap: {
-    width: "100%",
-    flexGrow: 1,
-    flexShrink: 0,
-    justifyContent: "flex-start",
-    alignItems: "stretch",
-    position: "relative",
-    maxWidth: 640,
-    alignSelf: "center",
-  },
-  choiceContentWrap: {
-    flexGrow: 0,
-    justifyContent: "flex-start",
-  },
-  ltrText: {
-    textAlign: "left",
-    writingDirection: "ltr",
-  },
-  rtlText: {
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  contentWrapKeyboard: {
-    justifyContent: "center",
-    paddingBottom: 24,
-  },
-  stepNumLabel: {
-    fontSize: isCompact ? 13 : 15,
-    fontWeight: "600",
-    // Small accent type needs the text-safe accent, not the graphic one.
-    color: ONBOARDING_DESIGN.accentInk,
-    letterSpacing: 0.4,
-    marginBottom: isCompact ? 5 : 8,
-    textAlign: "left",
-  },
-  title: {
-    fontSize: isCompact ? 32 : 39,
-    color: ONBOARDING_DESIGN.ink,
-    textAlign: "left",
-    lineHeight: isCompact ? 39 : 46,
-    letterSpacing: isCompact ? -0.6 : -1,
-    marginBottom: isCompact ? 10 : 14,
-    width: "100%",
-  },
-  subtitle: {
-    fontSize: isCompact ? 14 : 16,
-    color: ONBOARDING_DESIGN.mutedInk,
-    textAlign: "left",
-    lineHeight: isCompact ? 20 : 23,
-    marginBottom: isCompact ? 14 : 20,
-    width: "100%",
-  },
+    wrap: {
+      width: "100%",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 8,
+    },
+    mascot: {
+      width: metrics.mascotSize * 1.6,
+      height: metrics.mascotSize * 1.6,
+      marginBottom: 4,
+    },
+    title: {
+      color: theme.ink,
+      fontSize: 24,
+      lineHeight: 31,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      color: theme.mutedInk,
+      fontSize: 15,
+      lineHeight: 21,
+      maxWidth: 360,
+    },
+    track: {
+      width: "68%",
+      maxWidth: 260,
+      height: 6,
+      borderRadius: 999,
+      backgroundColor: theme.ringTrack,
+      overflow: "hidden",
+      marginTop: 8,
+    },
+    shuttle: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      width: "38%",
+      borderRadius: 999,
+      backgroundColor: theme.accent,
+    },
+  });
+}
 
-  // -- Mascot Visual --
-  mascotVisualRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    gap: 20,
-    marginBottom: 24,
-  },
-  mascotCol: {
-    alignItems: "center",
-    position: "relative",
-  },
-  speechBubble: {
-    position: "absolute",
-    top: -34,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  speechBubbleText: {
-    fontSize: 11,
-    fontFamily: "DINNextRoundedBold",
-  },
+/* ────────────────────────────────────────────────────────────────────
+ * Styles
+ * ──────────────────────────────────────────────────────────────────── */
 
-  // -- Form Fields --
-  inputForm: {
-    width: "100%",
-    gap: isCompact ? 10 : 14,
-    marginBottom: 24,
-    marginTop: isCompact ? 8 : 14,
-  },
-  inputBoxClean: {
-    width: "100%",
-    minHeight: isCompact ? 58 : 66,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: ONBOARDING_DESIGN.hairline,
-    backgroundColor: ONBOARDING_DESIGN.paperRaised,
-    justifyContent: "center",
-  },
-  textInputClean: {
-    width: "100%",
-    fontSize: isCompact ? 18 : 21,
-    color: ONBOARDING_DESIGN.ink,
-    fontFamily: "DINNextRoundedMedium",
-    textAlign: "left",
-  },
-
-  // -- Options List --
-  gridList: {
-    width: "100%",
-    gap: isCompact ? 8 : 10,
-    marginBottom: 12,
-  },
-  languageList: {
-    width: "100%",
-    maxWidth: 640,
-    alignSelf: "center",
-    gap: isCompact ? 8 : 10,
-    backgroundColor: "transparent",
-    marginTop: 6,
-    marginBottom: 4,
-  },
-  languageRow: {
-    width: "100%",
-    minHeight: isCompact ? 52 : 58,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: isCompact ? 14 : 16,
-    paddingVertical: 8,
-    borderRadius: 15,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: ONBOARDING_DESIGN.hairline,
-    backgroundColor: ONBOARDING_DESIGN.paperRaised,
-  },
-  languageRowSelected: {
-    borderColor: ONBOARDING_DESIGN.accent,
-    backgroundColor: ONBOARDING_DESIGN.accentWash,
-  },
-  languageCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  languageName: {
-    color: ONBOARDING_DESIGN.ink,
-    fontSize: isCompact ? 16 : 17,
-    lineHeight: isCompact ? 21 : 23,
-    fontFamily: "DINNextRoundedBold",
-  },
-  languageRadio: {
-    flexShrink: 0,
-    marginRight: 0,
-  },
-  gridCard: {
-    width: "100%",
-    minHeight: isCompact ? 58 : 66,
-    borderRadius: 16,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: ONBOARDING_DESIGN.hairline,
-    backgroundColor: ONBOARDING_DESIGN.paperRaised,
-    paddingHorizontal: isCompact ? 12 : 14,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  gridCardSelected: {
-    borderColor: ONBOARDING_DESIGN.accent,
-    backgroundColor: ONBOARDING_DESIGN.accentWash,
-  },
-  flagWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "rgba(15, 23, 42, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  gridIconWrap: {
-    width: isCompact ? 38 : 42,
-    height: isCompact ? 38 : 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  gridCardTitle: {
-    flex: 1,
-    fontSize: isCompact ? 14 : 15,
-    color: ONBOARDING_DESIGN.ink,
-    fontFamily: "DINNextRoundedBold",
-    lineHeight: 20,
-  },
-  gridCardSub: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
-    marginTop: -6,
-  },
-  gridCardDesc: {
-    fontSize: 11.5,
-    color: colors.mutedForeground,
-    lineHeight: 15,
-  },
-  gridCode: {
-    alignSelf: "flex-start",
-    overflow: "hidden",
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    backgroundColor: colors.muted,
-    color: colors.mutedForeground,
-    fontSize: 10.5,
-    fontFamily: "DINNextRoundedBold",
-  },
-  kurdistanFlag: {
-    width: 34,
-    height: 24,
-    borderRadius: 5,
-    overflow: "hidden",
-    position: "relative",
-    borderWidth: 1,
-    borderColor: "rgba(15, 23, 42, 0.1)",
-  },
-  kurdistanBand: {
-    flex: 1,
-    width: "100%",
-  },
-  kurdistanSun: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 1,
-    textAlign: "center",
-    color: "#F9D423",
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  optionsList: {
-    width: "100%",
-    gap: 10,
-    marginBottom: 28,
-  },
-  optionRow: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
-  },
-  optionRowSelected: {
-    borderColor: isDark ? colors.primary : "rgba(0, 0, 0, 0.2)",
-    backgroundColor: colors.surfaceRaised,
-  },
-  radioDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.mutedForeground,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  radioDotGrid: {
-    marginRight: 0,
-  },
-  radioDotSelected: {
-    borderColor: ONBOARDING_DESIGN.orange,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: ONBOARDING_DESIGN.orange,
-  },
-  flagEmoji: {
-    fontSize: 25,
-  },
-  optionLabel: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  optionLabelSelected: {
-    color: colors.foreground,
-  },
-  codeTag: {
-    backgroundColor: colors.muted,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  codeTagText: {
-    fontSize: 11,
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedBold",
-  },
-
-  // -- Goals List --
-  goalRow: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: isDark ? colors.surface : "rgba(255, 255, 255, 0.4)",
-  },
-  goalRowSelected: {
-    borderColor: isDark ? colors.primary : "rgba(0, 0, 0, 0.2)",
-    backgroundColor: colors.surfaceRaised,
-  },
-  goalIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  goalInfoCol: {
-    flex: 1,
-    marginRight: 8,
-  },
-  goalTitle: {
-    fontSize: 15,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  goalTitleSelected: {
-    color: colors.foreground,
-  },
-  goalDesc: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-    marginTop: 2,
-  },
-  goalDescSelected: {
-    color: colors.foreground,
-  },
-
-  desktopFrame: {
-    width: "100%",
-    maxWidth: 720,
-    alignSelf: "center",
-  },
+function createStyles(
+  theme: OnboardingTheme,
+  metrics: OnboardingMetrics,
+  isCompact: boolean,
+) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.canvas,
+    },
+    keyboardAvoider: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: metrics.gutter,
+      paddingTop: isCompact ? 4 : 10,
+      paddingBottom: isCompact ? 18 : 26,
+    },
+    stepBlock: {
+      width: "100%",
+      maxWidth: metrics.maxWidth,
+      alignSelf: "center",
+      flexGrow: 1,
+      gap: isCompact ? 16 : 20,
+    },
+    stepBlockCentered: {
+      justifyContent: "center",
+      alignItems: "center",
+      paddingBottom: 64,
+    },
+    stepBlockKeyboard: {
+      justifyContent: "flex-start",
+    },
+    options: {
+      width: "100%",
+      gap: metrics.rowGap,
+    },
+    ltrText: {
+      textAlign: "left",
+      writingDirection: "ltr",
+    },
+    rtlText: {
+      textAlign: "right",
+      writingDirection: "rtl",
+    },
+    inputBox: {
+      width: "100%",
+      minHeight: metrics.rowMinHeight,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: metrics.rowRadius,
+      borderCurve: "continuous",
+      borderWidth: metrics.rowBorderWidth,
+      borderColor: theme.border,
+      backgroundColor: theme.surface,
+      justifyContent: "center",
+      ...onboardingLift(theme),
+    },
+    inputBoxFocused: {
+      borderColor: theme.accentBorder,
+      backgroundColor: theme.accentWash,
+    },
+    textInput: {
+      width: "100%",
+      fontSize: isCompact ? 17 : 19,
+      color: theme.ink,
+      fontFamily: "DINNextRoundedMedium",
+      textAlign: "left",
+      backgroundColor: "transparent",
+      // Android gives the control its own vertical padding on top of the box's.
+      paddingVertical: 0,
+      // The box owns the horizontal inset; the control must not add a second one.
+      paddingHorizontal: 0,
+    },
   });
 }

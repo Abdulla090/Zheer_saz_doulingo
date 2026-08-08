@@ -8,7 +8,6 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { ImageMultipleChoiceQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { useTTS } from "../../../hooks/use-tts";
 import {
   GameFooter,
   GameHeader,
@@ -19,6 +18,7 @@ import {
   LightGameHeading,
   LightWordTile,
 } from "./lesson-light-primitives";
+import { useWordSpeech } from "./use-word-speech";
 import { Duo } from "./lesson-light-design";
 import { AppText } from "../../../components/ui/AppText";
 import { crossShadow } from "../../../utils/shadows";
@@ -53,7 +53,7 @@ export default function ImageMultipleChoiceGame({
 }: Props) {
   const { colors, isDark } = useThemeColors();
   const { t } = useI18n();
-  const { speak } = useTTS();
+  const { speakWord } = useWordSpeech(question.targetLanguage);
   const isNormal = pathMode === "normal";
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -69,7 +69,8 @@ export default function ImageMultipleChoiceGame({
     if (revealed) return;
     if (Platform.OS !== "web") void Haptics.selectionAsync();
     setSelected(opt);
-  }, [revealed]);
+    speakWord(opt, `image-mc-option-${opt}`);
+  }, [revealed, speakWord]);
 
   const check = useCallback(() => {
     if (!selected || revealed) return;
@@ -97,8 +98,8 @@ export default function ImageMultipleChoiceGame({
   }, [revealed, selected, question.correctAnswer]);
 
   const handleListen = useCallback(() => {
-    void speak(question.correctAnswer, question.targetLanguage ?? "en", question.correctAnswer);
-  }, [speak, question.correctAnswer, question.targetLanguage]);
+    speakWord(question.correctAnswer, question.correctAnswer);
+  }, [speakWord, question.correctAnswer]);
 
   // Seeded shuffle — stable across re-renders
   const shuffledOptions = useMemo(() => {

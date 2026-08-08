@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, useWindowDimensions } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 
-import { ONBOARDING_DESIGN } from "./onboarding-design";
+import { useOnboardingGradient } from "./onboarding-theme";
 
 /**
  * Onboarding canvas background.
@@ -15,6 +15,9 @@ import { ONBOARDING_DESIGN } from "./onboarding-design";
  *
  * Now it is a single static gradient — no shape morphs, no glow repositioning,
  * no scroll coupling. Simpler to render, and the slides remain the subject.
+ *
+ * The stops follow the user's theme, so the intro no longer stays cream while
+ * the rest of the app is dark.
  */
 export function OnboardingSkiaBg({
   scrollX: _scrollX,
@@ -22,6 +25,7 @@ export function OnboardingSkiaBg({
   scrollX: SharedValue<number>;
 }) {
   const { width, height } = useWindowDimensions();
+  const stops = useOnboardingGradient();
 
   return (
     <Canvas pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -29,7 +33,7 @@ export function OnboardingSkiaBg({
         <LinearGradient
           start={vec(0, 0)}
           end={vec(width, height)}
-          colors={[ONBOARDING_DESIGN.paper, ONBOARDING_DESIGN.canvas, "#F3EEE7"]}
+          colors={stops as unknown as string[]}
         />
       </Fill>
     </Canvas>

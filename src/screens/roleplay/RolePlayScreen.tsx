@@ -1,17 +1,16 @@
 /**
- * RolePlayScreen — iOS 27 hyper-professional redesign.
- * Full-width scenario rows, animated voice orb, live chat transcript.
+ * RolePlayScreen — on the shared practice-surface system (`games-theme.ts`).
+ *
+ * The four scenarios used to carry their own accent colours (`#F59E0B`,
+ * `#8B5CF6`, `#10B981`, `#EF4444`). Two of those are the app's success and
+ * danger colours, on a screen that also grades spoken answers — so "green"
+ * meant both "the interview scenario" and "you got that right". Scenario
+ * identity is now carried by the icon and the title; colour is reserved for
+ * meaning: coral for what you can act on, red only for stop.
  */
 
 import { PressableScale } from "../../components/animations";
-import { RolePlayGameIcon } from "../../components/icons/GameHubIcons";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
-import {
-  HomeLiquidButton,
-  HomeLiquidCard,
-  HomeMeshBackground,
-  HomeType,
-} from "../../components/ui/ios-liquid-home";
 import { useI18n } from "../../hooks/useI18n";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useSafeBack } from "../../hooks/use-safe-back";
@@ -19,11 +18,17 @@ import { useTTS } from "../../hooks/use-tts";
 import { crossShadow } from "../../utils/shadows";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, ArrowRight01Icon, Coffee01Icon, Rocket01Icon, Briefcase01Icon, Store01Icon, RotateLeft01Icon } from "@hugeicons/core-free-icons";
+import {
+  Coffee01Icon,
+  Rocket01Icon,
+  Briefcase01Icon,
+  Store01Icon,
+  RotateLeft01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { isDesktopWebWidth } from "../../constants/web-layout";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Easing,
@@ -37,8 +42,30 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { isGeminiConfigured, generateRolePlayResponse } from "../../services/gemini-speech-service";
-import { useThemeColors } from "../../hooks/useThemeColors";
+import {
+  isGeminiConfigured,
+  generateRolePlayResponse,
+} from "../../services/gemini-speech-service";
+
+import {
+  GamesCard,
+  GamesGlassHeader,
+  GamesIconButton,
+  GamesIntroCard,
+  GamesPrimaryButton,
+  GamesScreenShell,
+  GamesSectionLabel,
+  useGamesChrome,
+} from "../games/components/games-chrome";
+import {
+  GamesMotion,
+  GamesType,
+  useGameHue,
+  useGamesMetrics,
+  useGamesTheme,
+  withAlpha,
+  type GamesTheme,
+} from "../games/games-theme";
 
 type HugeiconsIconData = {
   name: string;
@@ -57,7 +84,6 @@ type Scenario = {
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
-  accent: string;
 };
 
 const SCENARIOS: Scenario[] = [
@@ -72,7 +98,6 @@ const SCENARIOS: Scenario[] = [
       "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
     voicePitch: 0.95,
     voiceRate: 1.0,
-    accent: "#F59E0B",
   },
   {
     id: "space",
@@ -85,7 +110,6 @@ const SCENARIOS: Scenario[] = [
       "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
     voicePitch: 1.25,
     voiceRate: 1.05,
-    accent: "#8B5CF6",
   },
   {
     id: "job",
@@ -98,7 +122,6 @@ const SCENARIOS: Scenario[] = [
       "Thank you for joining us. Could you describe your experience optimizing small language models?",
     voicePitch: 1.1,
     voiceRate: 0.95,
-    accent: "#10B981",
   },
   {
     id: "market",
@@ -111,15 +134,23 @@ const SCENARIOS: Scenario[] = [
       "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
     voicePitch: 0.85,
     voiceRate: 1.1,
-    accent: "#EF4444",
   },
 ];
 
 type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
 
-
 /* ─── Animated Pulse Ring ─── */
-const PulseRing = React.memo(function PulseRing({ size, color, delay, status }: { size: number; color: string; delay: number; status: Status }) {
+const PulseRing = React.memo(function PulseRing({
+  size,
+  color,
+  delay,
+  status,
+}: {
+  size: number;
+  color: string;
+  delay: number;
+  status: Status;
+}) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
 
@@ -202,10 +233,27 @@ const PulseRing = React.memo(function PulseRing({ size, color, delay, status }: 
   );
 });
 
-/* ─── Chat Bubble ─── */
-const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, isRtl }: { sender: "user" | "ai"; text: string; accent: string; icon: HugeiconsIconData; isRtl: boolean }) {
+/* ─── Chat Bubble ───
+ * The AI side carries the mode hue on its avatar chip only — a persona marker,
+ * never an affordance. The user side is accent-washed, which is the same
+ * "this is yours / this is active" signal used everywhere else in the system.
+ */
+const ChatBubble = React.memo(function ChatBubble({
+  sender,
+  text,
+  icon,
+  isRtl,
+}: {
+  sender: "user" | "ai";
+  text: string;
+  icon: HugeiconsIconData;
+  isRtl: boolean;
+}) {
   const isAi = sender === "ai";
+  const theme = useGamesTheme();
+  const hue = useGameHue("roleplay");
   const st = useRolePlayStyles();
+
   return (
     <Animated.View
       entering={FadeInUp.duration(300).springify().damping(18)}
@@ -217,19 +265,34 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
       ]}
     >
       {isAi && (
-        <View style={[st.avatar, { backgroundColor: accent + "18" }]}>
-          <HugeiconsIcon icon={icon as any} size={16} color={accent} strokeWidth={2} />
+        <View
+          style={[
+            st.avatar,
+            { backgroundColor: hue.wash, borderColor: hue.border, borderWidth: 1 },
+          ]}
+        >
+          <HugeiconsIcon icon={icon as any} size={16} color={hue.ink} strokeWidth={2} />
         </View>
       )}
       <View
         style={[
           st.bubble,
           isAi
-            ? st.aiBubble
-            : [st.userBubble, { backgroundColor: accent + "12", borderColor: accent + "20" }],
+            ? { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }
+            : {
+                alignSelf: "flex-end",
+                backgroundColor: theme.accentWash,
+                borderColor: withAlpha(theme.accent, 0.28),
+                borderWidth: 1,
+              },
         ]}
       >
-        <AppText style={st.bubbleText} languageCode="en" align="start" latinRole="medium">
+        <AppText
+          style={[GamesType.body, { color: theme.ink, lineHeight: 22 }]}
+          languageCode="en"
+          align="start"
+          latinRole="medium"
+        >
           {text}
         </AppText>
       </View>
@@ -237,15 +300,13 @@ const ChatBubble = React.memo(function ChatBubble({ sender, text, accent, icon, 
   );
 });
 
-
 /* ─── Main Screen ─── */
 export function RolePlayScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
-  const { t, locale, isKu } = useI18n();
-  const { colors, isDark } = useThemeColors();
+  const { theme, hue, metrics, isWide, isRtl, t, locale, isKu } =
+    useGamesChrome("roleplay");
   const st = useRolePlayStyles();
-  const isRtl = isKu || locale === "ar";
   const scrollRef = useRef<ScrollView>(null);
   const speech = useSpeechCapture("en-US");
   const abortSpeech = speech.abort;
@@ -254,6 +315,7 @@ export function RolePlayScreen() {
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
   const [status, setStatus] = useState<Status>("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
+  const [scrolled, setScrolled] = useState(false);
 
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
@@ -457,16 +519,14 @@ export function RolePlayScreen() {
   };
 
   const sessionStarted = history.length > 0;
-  const accent = activeScenario.accent;
   const Icon = activeScenario.icon;
   const scenarioTitle = isKu ? activeScenario.titleKu : activeScenario.title;
   const scenarioSubtitle = isKu ? activeScenario.subtitleKu : activeScenario.subtitle;
   const scenarioLanguage = isKu ? "ku" : "en";
 
-  const micHint =
-    speech.error
-      ? speech.error
-      : status === "listening"
+  const micHint = speech.error
+    ? speech.error
+    : status === "listening"
       ? t("rolePlay.listening")
       : status === "thinking"
         ? t("rolePlay.thinking")
@@ -474,180 +534,196 @@ export function RolePlayScreen() {
           ? t("rolePlay.interrupt")
           : t("rolePlay.tapSpeak");
 
+  const handleExit = useCallback(() => {
+    stopAll();
+    safeBack();
+  }, [safeBack]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ─── Scenario Picker (Setup) ─── */
   if (!sessionStarted) {
     return (
-      <View style={st.root}>
-        {!isDark && <HomeMeshBackground />}
+      <GamesScreenShell
+        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+        header={
+          <GamesGlassHeader
+            title={t("rolePlay.headerTitle")}
+            titleLanguageCode={locale}
+            onBack={handleExit}
+            scrolled={scrolled}
+          />
+        }
+        footer={
+          <GamesPrimaryButton
+            label={t("rolePlay.start")}
+            languageCode={locale}
+            onPress={startSession}
+          />
+        }
+      >
+        {/* The intro card doubles as a live preview of the picked scene: the
+            hue stays constant (that is the mode's identity) while the glyph and
+            title track the selection, so the choice is confirmed immediately. */}
+        <GamesIntroCard
+          mode="roleplay"
+          icon={Icon}
+          languageCode={scenarioLanguage}
+          eyebrow={t("rolePlay.headerSub")}
+          title={scenarioTitle}
+          blurb={scenarioSubtitle}
+        />
 
-        {/* Header */}
-        <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-          <PressableScale onPress={() => { stopAll(); safeBack(); }} style={st.headerButton} scaleDown={0.94}>
-            <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={20} color={colors.foreground} strokeWidth={2.5} />
-          </PressableScale>
-          <View style={[st.headerCenter, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-            <RolePlayGameIcon size={36} />
-            <View style={{ alignItems: isRtl ? "flex-end" : "flex-start" }}>
-              <AppText style={st.headerTitle} languageCode={locale} align="start">{t("rolePlay.headerTitle")}</AppText>
-              <AppText style={st.headerSub} languageCode={locale} align="start">{t("rolePlay.headerSub")}</AppText>
-            </View>
-          </View>
-          <View style={{ width: 44 }} />
-        </View>
+        <View style={{ gap: 10 }}>
+          <GamesSectionLabel languageCode={locale}>
+            {t("rolePlay.chooseScene")}
+          </GamesSectionLabel>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 32 }}
-        >
-          {/* Hero Card */}
-          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-            <HomeLiquidCard
-              style={{ marginBottom: 24 }}
-              contentStyle={st.heroInner}
-            >
-              <View style={st.heroOrbWrap}>
-                <View style={[st.heroRingOuter, { borderColor: accent + "20" }]} />
-                <View style={[st.heroRingInner, { borderColor: accent + "35" }]} />
-                <View style={[st.heroIconCircle, { backgroundColor: accent + "14" }]}>
-                  <HugeiconsIcon icon={Icon as any} size={36} color={accent} strokeWidth={1.8} />
-                </View>
-              </View>
-              <AppText style={st.heroTitle} languageCode={scenarioLanguage} align="center">
-                {scenarioTitle}
-              </AppText>
-              <AppText style={st.heroSubtitle} languageCode={scenarioLanguage} align="center" latinRole="medium">
-                {scenarioSubtitle}
-              </AppText>
-            </HomeLiquidCard>
-          </Animated.View>
-
-          {/* Section label */}
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <AppText style={st.sectionLabel} languageCode={locale} align="start">
-              {t("rolePlay.chooseScene")}
-            </AppText>
-          </Animated.View>
-
-          {/* Scenario rows */}
-          <Animated.View entering={FadeInDown.delay(250).duration(500)}>
-            <HomeLiquidCard contentStyle={{ padding: 0, overflow: "hidden" }}>
-              {SCENARIOS.map((sc, idx) => {
-                const sel = activeScenario.id === sc.id;
-                const ScIcon = sc.icon;
-                const isLast = idx === SCENARIOS.length - 1;
-                return (
-                  <React.Fragment key={sc.id}>
-                    <PressableScale
-                      onPress={() => {
-                        hapticSelection();
-                        setActiveScenario(sc);
-                      }}
-                      scaleDown={0.98}
+          <GamesCard padded={false} entering={FadeInDown.duration(GamesMotion.enterMs)}>
+            {SCENARIOS.map((sc, idx) => {
+              const sel = activeScenario.id === sc.id;
+              const ScIcon = sc.icon;
+              const isLast = idx === SCENARIOS.length - 1;
+              return (
+                <React.Fragment key={sc.id}>
+                  <PressableScale
+                    onPress={() => {
+                      hapticSelection();
+                      setActiveScenario(sc);
+                    }}
+                    scaleDown={0.98}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: sel }}
+                  >
+                    <View
+                      style={[
+                        st.scenarioRow,
+                        { flexDirection: isRtl ? "row-reverse" : "row" },
+                        sel && { backgroundColor: theme.accentWash },
+                      ]}
                     >
                       <View
                         style={[
-                          st.scenarioRow,
-                          { flexDirection: isRtl ? "row-reverse" : "row" },
-                          sel && { backgroundColor: sc.accent + "08" },
+                          st.scenarioIconCircle,
+                          {
+                            backgroundColor: sel ? theme.accent : theme.surfaceSunken,
+                            borderColor: sel ? theme.accentBorder : theme.border,
+                          },
                         ]}
                       >
-                        <View style={[st.scenarioIconCircle, { backgroundColor: sc.accent + "14" }]}>
-                          <HugeiconsIcon icon={ScIcon as any} size={22} color={sc.accent} strokeWidth={2} />
-                        </View>
-                        <View style={[st.scenarioTextCol, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-                          <AppText style={[st.scenarioTitle, sel && { color: sc.accent }]} languageCode={isKu ? "ku" : "en"} align="start">
-                            {isKu ? sc.titleKu : sc.title}
-                          </AppText>
-                          <AppText style={st.scenarioSubtitle} languageCode={isKu ? "ku" : "en"} align="start" latinRole="medium">
-                            {isKu ? sc.subtitleKu : sc.subtitle}
-                          </AppText>
-                        </View>
-                        {sel && (
-                          <View style={[st.checkCircle, { backgroundColor: sc.accent }]}>
-                            <AppText style={{ color: "#FFF", fontSize: 11, fontWeight: "800" }}>✓</AppText>
-                          </View>
-                        )}
+                        <HugeiconsIcon
+                          icon={ScIcon as any}
+                          size={22}
+                          color={sel ? theme.onAccent : theme.mutedInk}
+                          strokeWidth={2}
+                        />
                       </View>
-                    </PressableScale>
-                    {!isLast && <View style={st.rowDivider} />}
-                  </React.Fragment>
-                );
-              })}
-            </HomeLiquidCard>
-          </Animated.View>
+                      <View
+                        style={[
+                          st.scenarioTextCol,
+                          { alignItems: isRtl ? "flex-end" : "flex-start" },
+                        ]}
+                      >
+                        <AppText
+                          style={[
+                            GamesType.section,
+                            { fontSize: 15, color: sel ? theme.accentInk : theme.ink },
+                          ]}
+                          languageCode={isKu ? "ku" : "en"}
+                          align="start"
+                        >
+                          {isKu ? sc.titleKu : sc.title}
+                        </AppText>
+                        <AppText
+                          style={[GamesType.caption, { fontSize: 12, color: theme.mutedInk }]}
+                          languageCode={isKu ? "ku" : "en"}
+                          align="start"
+                          latinRole="medium"
+                        >
+                          {isKu ? sc.subtitleKu : sc.subtitle}
+                        </AppText>
+                      </View>
+                      {sel && (
+                        <View style={[st.checkCircle, { backgroundColor: theme.accent }]}>
+                          <HugeiconsIcon
+                            icon={Tick02Icon}
+                            size={14}
+                            color={theme.onAccent}
+                            strokeWidth={3}
+                          />
+                        </View>
+                      )}
+                    </View>
+                  </PressableScale>
+                  {!isLast && <View style={st.rowDivider} />}
+                </React.Fragment>
+              );
+            })}
+          </GamesCard>
 
-          {/* Disclaimer */}
-          <Animated.View entering={FadeInDown.delay(350).duration(400)}>
-            <AppText style={st.disclaimer} languageCode={locale} align="start">
-              {t("rolePlay.practiceDisclaimer")}
-            </AppText>
-          </Animated.View>
-
-          {/* Start Button */}
-          <Animated.View entering={FadeInDown.delay(400).duration(500)} style={{ marginTop: 8 }}>
-            <HomeLiquidButton
-              label={t("rolePlay.start")}
-              onPress={startSession}
-            />
-          </Animated.View>
-        </ScrollView>
-      </View>
+          <AppText
+            style={[GamesType.caption, { color: theme.faintInk, lineHeight: 18 }]}
+            languageCode={locale}
+            align="start"
+          >
+            {t("rolePlay.practiceDisclaimer")}
+          </AppText>
+        </View>
+      </GamesScreenShell>
     );
   }
 
   /* ─── In-Session Conversation UI ─── */
+  const statusActive = status !== "idle";
+
   return (
-    <View style={st.root}>
-      {!isDark && <HomeMeshBackground />}
+    <View style={{ flex: 1, backgroundColor: theme.canvas }}>
+      <GamesGlassHeader
+        title={scenarioTitle}
+        titleLanguageCode={scenarioLanguage}
+        onBack={handleExit}
+        scrolled
+        right={
+          <GamesIconButton
+            icon={RotateLeft01Icon}
+            onPress={resetSession}
+            accessibilityLabel={t("rolePlay.headerTitle")}
+          />
+        }
+      />
 
-      {/* Session Header */}
-      <View style={[st.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-        <PressableScale onPress={() => { stopAll(); safeBack(); }} style={st.headerButton} scaleDown={0.94}>
-          <HugeiconsIcon icon={(isRtl ? ArrowRight01Icon : ArrowLeft01Icon) as any} size={20} color={colors.foreground} strokeWidth={2.5} />
-        </PressableScale>
-
-        {/* Active scenario chip */}
-        <PressableScale onPress={resetSession} scaleDown={0.95}>
-          <View style={[st.sessionChip, { borderColor: accent + "30", flexDirection: isRtl ? "row-reverse" : "row" }]}>
-            <HugeiconsIcon icon={Icon as any} size={16} color={accent} strokeWidth={2.5} />
-            <AppText style={[st.sessionChipText, { color: accent }]} languageCode={scenarioLanguage} latinRole="bold">
-              {scenarioTitle}
-            </AppText>
-          </View>
-        </PressableScale>
-
-        <PressableScale onPress={resetSession} style={st.headerButton} scaleDown={0.94}>
-          <HugeiconsIcon icon={RotateLeft01Icon as any} size={20} color={colors.foreground} strokeWidth={2.5} />
-        </PressableScale>
-      </View>
-
-      {/* Animated Voice Orb */}
+      {/* Voice orb — the one accent-filled thing on screen, because tapping it
+          is the only thing you can do here. */}
       <Animated.View entering={FadeIn.duration(500)} style={st.orbSection}>
         <View style={st.orbContainer}>
-          <PulseRing size={180} color={accent} delay={0} status={status} />
-          <PulseRing size={220} color={accent} delay={400} status={status} />
-          <PulseRing size={260} color={accent} delay={800} status={status} />
+          <PulseRing size={180} color={theme.accent} delay={0} status={status} />
+          <PulseRing size={220} color={theme.accent} delay={400} status={status} />
+          <PulseRing size={260} color={theme.accent} delay={800} status={status} />
           <View
             style={[
               st.orbCore,
               {
-                backgroundColor: accent,
+                backgroundColor: theme.accent,
                 ...crossShadow({
-                  color: accent,
+                  color: theme.accent,
                   offsetY: 12,
                   blur: 32,
-                  opacity: 0.3,
+                  opacity: theme.isDark ? 0.36 : 0.28,
                   elevation: 8,
                 }),
               },
             ]}
           >
-            <HugeiconsIcon icon={Icon as any} size={40} color="#FFF" strokeWidth={1.8} />
+            <HugeiconsIcon icon={Icon as any} size={40} color={theme.onAccent} strokeWidth={1.8} />
           </View>
         </View>
 
-        {/* Status label */}
-        <AppText style={[st.statusLabel, { color: accent }]} languageCode={locale} align="center">
+        <AppText
+          style={[
+            GamesType.eyebrow,
+            { color: statusActive ? theme.accentInk : theme.mutedInk, textAlign: "center" },
+          ]}
+          languageCode={locale}
+          align="center"
+        >
           {status === "listening"
             ? t("rolePlay.listening")
             : status === "thinking"
@@ -658,39 +734,42 @@ export function RolePlayScreen() {
         </AppText>
       </Animated.View>
 
-      {/* Chat Transcript */}
-      <View style={st.chatContainer}>
+      {/* Transcript */}
+      <View
+        style={[
+          st.chatContainer,
+          {
+            paddingHorizontal: metrics.gutter,
+            maxWidth: isWide ? metrics.maxWidth : "100%",
+            alignSelf: isWide ? "center" : "stretch",
+          },
+        ]}
+      >
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[st.chatContent, { paddingBottom: 24 }]}
         >
           {history.map((msg, idx) => (
-            <ChatBubble
-              key={idx}
-              sender={msg.sender}
-              text={msg.text}
-              accent={accent}
-              icon={Icon}
-              isRtl={isRtl}
-            />
+            <ChatBubble key={idx} sender={msg.sender} text={msg.text} icon={Icon} isRtl={isRtl} />
           ))}
           {status === "thinking" && (
             <Animated.View entering={FadeInUp.duration(200)} style={st.thinkingRow}>
-              <View style={[st.thinkingDot, { backgroundColor: accent }]} />
-              <View style={[st.thinkingDot, { backgroundColor: accent, opacity: 0.6 }]} />
-              <View style={[st.thinkingDot, { backgroundColor: accent, opacity: 0.3 }]} />
+              <View style={[st.thinkingDot, { backgroundColor: theme.accent }]} />
+              <View style={[st.thinkingDot, { backgroundColor: theme.accent, opacity: 0.6 }]} />
+              <View style={[st.thinkingDot, { backgroundColor: theme.accent, opacity: 0.3 }]} />
             </Animated.View>
           )}
         </ScrollView>
       </View>
 
-      {/* Bottom Mic Bar */}
+      {/* Mic bar. Red only while recording — that is a stop affordance, which is
+          the one non-error use of `danger` the system allows. */}
       <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <MicCaptureOrb
           listening={status === "listening" || speech.listening}
           disabled={status === "thinking"}
-          color={status === "listening" ? "#EF4444" : accent}
+          color={status === "listening" ? theme.danger : theme.accent}
           size={100}
           hint={micHint}
           onPress={handleMicTap}
@@ -702,279 +781,117 @@ export function RolePlayScreen() {
 
 /* ─── Styles ─── */
 function useRolePlayStyles() {
-  const { colors, isDark } = useThemeColors();
-  const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
-  return useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
+  const theme = useGamesTheme();
+  const metrics = useGamesMetrics(false);
+  return useMemo(() => createStyles(theme, metrics.radiusChip), [theme, metrics]);
 }
 
-function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = false) {
+function createStyles(theme: GamesTheme, radiusChip: number) {
   return StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+    /* Scenario rows */
+    scenarioRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      gap: 14,
+    },
+    scenarioIconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: radiusChip,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scenarioTextCol: {
+      flex: 1,
+      gap: 2,
+    },
+    checkCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.border,
+      marginHorizontal: 16,
+    },
 
-  /* Header */
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: isDesktopWeb ? 32 : 16,
-    paddingBottom: 10,
-    maxWidth: isDesktopWeb ? 960 : "100%",
-    width: "100%",
-    alignSelf: isDesktopWeb ? "center" : "stretch",
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    flex: 1,
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: -0.3,
-  },
-  headerSub: {
-    ...HomeType.caption,
-    color: colors.mutedForeground,
-  },
+    /* Orb section */
+    orbSection: {
+      alignItems: "center",
+      paddingTop: 12,
+      paddingBottom: 4,
+      gap: 14,
+    },
+    orbContainer: {
+      width: 160,
+      height: 160,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    orbCore: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1.5,
+      borderColor: "rgba(255,255,255,0.35)",
+    },
 
-  /* Hero card */
-  heroInner: {
-    alignItems: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    gap: 10,
-  },
-  heroOrbWrap: {
-    width: 100,
-    height: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  heroRingOuter: {
-    position: "absolute",
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 1.5,
-  },
-  heroRingInner: {
-    position: "absolute",
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 2,
-  },
-  heroIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: colors.foreground,
-    textAlign: "center",
-    fontFamily: "DINNextRoundedBold",
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: colors.mutedForeground,
-    textAlign: "center",
-    lineHeight: 20,
-  },
+    /* Transcript */
+    chatContainer: {
+      flex: 1,
+      width: "100%",
+    },
+    chatContent: {
+      gap: 10,
+      paddingTop: 8,
+    },
+    bubbleRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      maxWidth: "92%",
+    },
+    avatar: {
+      width: 30,
+      height: 30,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 2,
+    },
+    bubble: {
+      flex: 1,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    thinkingRow: {
+      flexDirection: "row",
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      alignSelf: "flex-start",
+    },
+    thinkingDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
 
-  /* Section label */
-  sectionLabel: {
-    ...HomeType.section,
-    color: colors.foreground,
-    marginBottom: 10,
-  },
-
-  /* Scenario rows */
-  scenarioRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 14,
-  },
-  scenarioIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scenarioTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  scenarioTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  scenarioSubtitle: {
-    fontSize: 12,
-    color: colors.mutedForeground,
-  },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginHorizontal: 16,
-  },
-
-  /* Disclaimer */
-  disclaimer: {
-    ...HomeType.caption,
-    color: colors.mutedForeground,
-    marginTop: 14,
-    marginBottom: 4,
-    lineHeight: 18,
-    paddingHorizontal: 4,
-  },
-
-  /* Session chip */
-  sessionChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)",
-  },
-  sessionChipText: {
-    fontSize: 13,
-    fontWeight: "700",
-    fontFamily: "DINNextRoundedBold",
-  },
-
-  /* Animated orb section */
-  orbSection: {
-    alignItems: "center",
-    paddingTop: 12,
-    paddingBottom: 4,
-    gap: 14,
-  },
-  orbContainer: {
-    width: 160,
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  orbCore: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  statusLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "DINNextRoundedBold",
-    letterSpacing: 0.5,
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-
-  /* Chat transcript */
-  chatContainer: {
-    flex: 1,
-    paddingHorizontal: isDesktopWeb ? 32 : 16,
-    maxWidth: isDesktopWeb ? 960 : "100%",
-    width: "100%",
-    alignSelf: isDesktopWeb ? "center" : "stretch",
-  },
-  chatContent: {
-    gap: 10,
-    paddingTop: 8,
-  },
-  bubbleRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    maxWidth: "92%",
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 2,
-  },
-  bubble: {
-    flex: 1,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  aiBubble: {
-    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.85)",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  userBubble: {
-    alignSelf: "flex-end",
-    borderWidth: 1,
-  },
-  bubbleText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: colors.foreground,
-    lineHeight: 22,
-    fontFamily: "DINNextRoundedRegular",
-  },
-  thinkingRow: {
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    alignSelf: "flex-start",
-  },
-  thinkingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-
-  /* Bottom bar */
-  bottomBar: {
-    alignItems: "center",
-    paddingTop: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "transparent",
-  },
+    /* Bottom bar */
+    bottomBar: {
+      alignItems: "center",
+      paddingTop: 10,
+      paddingHorizontal: 20,
+      backgroundColor: "transparent",
+    },
   });
 }

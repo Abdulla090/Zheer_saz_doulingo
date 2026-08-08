@@ -10,6 +10,7 @@ import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { useWordSpeech } from "./use-word-speech";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -62,6 +63,11 @@ import {
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
 
+/** Resting width of the landing anchor — just enough to be measurable. */
+const LANDING_ANCHOR_REST_W = 1;
+/** Fallback if reserving the anchor produces no layout event. */
+const ANCHOR_LAYOUT_TIMEOUT_MS = 80;
+
 type FlySession = {
   id: string;
   bankIndex: number;
@@ -90,16 +96,30 @@ type Props = {
 
 function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; isNormal?: boolean; languageCode?: string }) {
   const flyProgress = useSharedValue(0);
+  /*
+   * Resize by transform, never by layout.
+   *
+   * Animating `width`/`height` re-ran the tile's text layout on every frame of
+   * the flight. With `fitLabelLines={2}` the label is allowed to wrap, so a
+   * word that fit on one line in the bank broke onto two — or clipped — partway
+   * through and snapped back only once it landed at its final size.
+   *
+   * Holding the box at its source size lays the text out exactly once, looking
+   * identical to the bank tile it left, and scale carries it to the destination
+   * size. Glyphs scale like an image instead of reflowing.
+   */
+  const scaleToX = session.fromW > 0 ? session.toW / session.fromW : 1;
+  const scaleToY = session.fromH > 0 ? session.toH / session.fromH : 1;
+
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
     return {
-      width: interpolate(p, [0, 1], [session.fromW, session.toW]),
-      height: interpolate(p, [0, 1], [session.fromH, session.toH]),
       transform: [
         { translateX: interpolate(p, [0, 1], [session.fromX, session.toX]) },
         { translateY: interpolate(p, [0, 1], [session.fromY, session.toY]) },
+        { scaleX: interpolate(p, [0, 1], [1, scaleToX]) },
+        { scaleY: interpolate(p, [0, 1], [1, scaleToY]) },
       ],
-      opacity: 1,
     };
   });
 
@@ -114,7 +134,21 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
       {...(Platform.OS === "web" ? ({ dir: getLanguageDirection(languageCode) } as any) : {})}
       style={[s.flySessionLayer, Platform.OS !== "web" ? { direction: getLanguageDirection(languageCode) } : undefined]}
     >
-      <Animated.View style={flyStyle}>
+      <Animated.View
+        style={[
+          {
+            width: session.fromW,
+            height: session.fromH,
+            /*
+             * The measured coordinates are top-left based, so the scale has to
+             * pivot there too. Left at the default centre, the tile would drift
+             * by half the size difference and miss its slot.
+             */
+            transformOrigin: "top left",
+          },
+          flyStyle,
+        ]}
+      >
         <View style={s.flyTileFill}>
           <LightWordTile
             label={session.word}
@@ -143,6 +177,11 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const compact = width < 390;
   const isNormal = pathMode === "normal";
   const targetDirection = getLanguageDirection(question.targetLanguage);
+  const { speakWord, stop, language: targetLanguage } = useWordSpeech(question.targetLanguage);
+  const fullSentence = React.useMemo(
+    () => question.correctWords.join(" "),
+    [question.correctWords],
+  );
   
   const shuffledWordBank = React.useMemo(() => {
     const bank = [...question.wordBank];
@@ -163,6 +202,58 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const [placedLines, setPlacedLines] = useState(1);
   /** Usable width of the answer area, used to pre-compute the rail count. */
   const [answerWidth, setAnswerWidth] = useState(0);
+
+  /*
+   * Width the landing anchor reserves for the word currently in flight.
+   *
+   * The anchor marks where the next word will sit. At its 1px resting width it
+   * always fits on the current line — so with a nearly-full line it measured at
+   * the end of line 1, while the real word, being wider, wrapped to line 2. The
+   * tile flew to the end of line 1 and then jumped down on landing.
+   *
+   * Widening the anchor to the incoming word's width before measuring hands the
+   * decision back to the flex engine, so wrapping, gaps, padding and RTL are all
+   * resolved by the same layout pass that will place the real tile.
+   */
+  const [anchorWidth, setAnchorWidth] = useState(LANDING_ANCHOR_REST_W);
+  const anchorWidthRef = useRef(LANDING_ANCHOR_REST_W);
+  const anchorLayoutWaiterRef = useRef<(() => void) | null>(null);
+
+  const resolveAnchorLayout = useCallback(() => {
+    const waiter = anchorLayoutWaiterRef.current;
+    if (waiter) {
+      anchorLayoutWaiterRef.current = null;
+      waiter();
+    }
+  }, []);
+
+  /** Reserve `width` on the anchor and resolve once that layout has landed. */
+  const reserveLandingAnchor = useCallback(
+    (width: number) =>
+      new Promise<void>((resolve) => {
+        // Already the right width: no layout event would fire, so don't wait.
+        if (Math.abs(anchorWidthRef.current - width) < 0.5) {
+          resolve();
+          return;
+        }
+        anchorWidthRef.current = width;
+        anchorLayoutWaiterRef.current = resolve;
+        setAnchorWidth(width);
+        // A layout pass that produces no change still has to unblock the tap.
+        setTimeout(() => {
+          if (anchorLayoutWaiterRef.current === resolve) {
+            anchorLayoutWaiterRef.current = null;
+            resolve();
+          }
+        }, ANCHOR_LAYOUT_TIMEOUT_MS);
+      }),
+    [],
+  );
+
+  const releaseLandingAnchor = useCallback(() => {
+    anchorWidthRef.current = LANDING_ANCHOR_REST_W;
+    setAnchorWidth(LANDING_ANCHOR_REST_W);
+  }, []);
 
   const slotN = useRef(0);
   const completedRef = useRef(false);
@@ -185,6 +276,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   }));
 
   React.useEffect(() => {
+    void stop();
     setSentence([]);
     setUsedBank(shuffledWordBank.map(() => false));
     setFb("idle");
@@ -196,7 +288,14 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     measuringBankRef.current = null;
     bankCoords.current = {};
     slotCoords.current = {};
-  }, [shuffledWordBank]);
+    // A tap abandoned mid-measure would otherwise leave the anchor widened.
+    anchorLayoutWaiterRef.current = null;
+    releaseLandingAnchor();
+  }, [shuffledWordBank, stop, releaseLandingAnchor]);
+
+  React.useEffect(() => () => {
+    void stop();
+  }, [stop]);
 
   const slotCount = question.correctWords.length;
 
@@ -217,11 +316,13 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const finishFly = useCallback(
     (id: string, bankIndex: number) => {
       commitAddWord(bankIndex);
+      // The placed tile now occupies the space the anchor was holding open.
+      releaseLandingAnchor();
       requestAnimationFrame(() => {
         setFlySessions((prev) => prev.filter((s) => s.id !== id));
       });
     },
-    [commitAddWord],
+    [commitAddWord, releaseLandingAnchor],
   );
 
   const startFlyToSlot = useCallback(
@@ -234,7 +335,30 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       if (slotIndex >= slotCount) return;
 
       const word = shuffledWordBank[bankIndex];
+      /*
+       * Speak here rather than in `addWord`: the guards above have already
+       * rejected taps on used tiles, taps during a flight and taps past the
+       * last slot, so this fires once per word that actually gets placed.
+       * Speaking on every raw tap would stutter under fast tapping.
+       */
+      speakWord(word, `builder-word-${bankIndex}`);
       measuringBankRef.current = bankIndex;
+
+      /*
+       * Reserve the incoming word's width on the anchor *before* measuring it,
+       * so the anchor has already wrapped to line 2 if that is where the word
+       * belongs. Only the normal path wraps — street and kids fly into fixed
+       * slots laid out in a non-wrapping row.
+       */
+      if (isNormal) {
+        const bankWidth =
+          bankCoords.current[bankIndex]?.w ??
+          (await measureGameElement(bankRefs.current[bankIndex]))?.w;
+        if (measuringBankRef.current !== bankIndex) return;
+        if (bankWidth) await reserveLandingAnchor(bankWidth);
+        if (measuringBankRef.current !== bankIndex) return;
+      }
+
       const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
         measureGameElement(rootRef.current),
         measureGameElement(bankRefs.current[bankIndex]),
@@ -250,6 +374,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
       // If coordinates are not cached yet, fallback to synchronous add
       if (!root || !bank || !slot) {
+        releaseLandingAnchor();
         commitAddWord(bankIndex);
         return;
       }
@@ -281,7 +406,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
         },
       ]);
     },
-    [fb, usedBank, sentence.length, flySessions.length, slotCount, shuffledWordBank, commitAddWord, isNormal],
+    [fb, usedBank, sentence.length, flySessions.length, slotCount, shuffledWordBank, commitAddWord, isNormal, speakWord, reserveLandingAnchor, releaseLandingAnchor],
   );
 
   const addWord = (bankIndex: number) => {
@@ -327,6 +452,13 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       }
     } else if (!completedRef.current) {
       completedRef.current = true;
+      /*
+       * The `fb !== "idle"` guard above means a correct check runs once, so the
+       * sentence is never queued twice. It is also the newest device request,
+       * which makes `useTTS` cancel any word audio still playing from the last
+       * tap instead of letting the two overlap.
+       */
+      speakWord(fullSentence, "builder-sentence");
       onAnswer(true);
     }
   };
@@ -381,8 +513,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               label={t("lessons.questionLabel")}
               forceKurdishFont
               contentLanguageCode={question.sourceLanguage}
-              speechText={question.correctWords.join(" ")}
-              speechLanguageCode={question.targetLanguage ?? "en"}
+              speechText={fullSentence}
+              speechLanguageCode={targetLanguage}
               variant={pathMode === "kids" ? "kids" : "default"}
             >
               {question.kurdishSentence}
@@ -450,7 +582,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                         </View>
                       );
                     })}
-                    {/* Measurement anchor for the next incoming word. */}
+                    {/* Measurement anchor for the next incoming word. Widened
+                        to that word's width while it flies, so flexWrap decides
+                        the landing line before the flight is aimed. */}
                     <View
                       ref={(r) => {
                         slotRefs.current[sentence.length] = r;
@@ -458,10 +592,11 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                       onLayout={() => {
                         slotRefs.current[sentence.length]?.measureInWindow((x, y, w, h) => {
                           slotCoords.current[sentence.length] = { x, y, w, h };
+                          resolveAnchorLayout();
                         });
                       }}
                       collapsable={false}
-                      style={s.duoLandingAnchor}
+                      style={[s.duoLandingAnchor, { width: anchorWidth }]}
                     />
                   </Animated.View>
                 </View>
@@ -743,7 +878,6 @@ const s = StyleSheet.create({
     marginBottom: ROW_GAP,
   },
   duoLandingAnchor: {
-    width: 1,
     height: ROW_H,
     marginBottom: ROW_GAP,
   },

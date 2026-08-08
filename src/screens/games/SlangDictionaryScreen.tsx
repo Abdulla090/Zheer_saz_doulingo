@@ -1,10 +1,6 @@
 import { PressableScale } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import {
-  HomeLiquidCard,
-  HomeMeshBackground,
-} from "../../components/ui/ios-liquid-home";
-import {
   SLANG_CATEGORIES,
   SLANG_DATA,
   type SlangContextFilter,
@@ -12,23 +8,41 @@ import {
 } from "../../data/slang-dictionary";
 import { useTTS } from "../../hooks/use-tts";
 import { useI18n } from "../../hooks/useI18n";
-import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSafeBack } from "../../hooks/use-safe-back";
-import { crossShadow } from "../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon, ArrowRight01Icon, BookOpen01Icon, ChevronDownIcon, Search01Icon, VolumeHighIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import {
+  BubbleChatIcon,
+  BookOpen01Icon,
+  ChevronDownIcon,
+  Search01Icon,
+  VolumeHighIcon,
+  Cancel01Icon,
+} from "@hugeicons/core-free-icons";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback, useMemo, useState } from "react";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import {
+  GamesBadge,
+  GamesCard,
+  GamesGlassHeader,
+  GamesSectionLabel,
+  GamesStateBlock,
+  useGamesChrome,
+} from "./components/games-chrome";
+import {
+  GamesMotion,
+  GamesType,
+  gamesLift,
+  useGameHue,
+  useGamesMetrics,
+  useGamesTheme,
+  withAlpha,
+  type GamesTheme,
+} from "./games-theme";
 
 const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   categoriesList,
@@ -41,13 +55,14 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
   onSelectCategory: (category: SlangContextFilter) => void;
   locale: string;
 }) {
-  const styles = useSlangStyles();
+  const theme = useGamesTheme();
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipsContainer}
-      style={styles.chipsList}
+      contentContainerStyle={{ gap: 8, paddingEnd: 16 }}
+      style={{ marginBottom: 16, maxHeight: 42 }}
     >
       {categoriesList.map((item) => {
         const cat = SLANG_CATEGORIES[item];
@@ -55,31 +70,82 @@ const SlangCategoryHeader = React.memo(function SlangCategoryHeader({
         const isSelected = selectedCategory === item;
 
         return (
-          <View key={item}>
-            <PressableScale
-              onPress={() => {
-                if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                onSelectCategory(item);
-              }}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+          <PressableScale
+            key={item}
+            onPress={() => {
+              if (Platform.OS !== "web")
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onSelectCategory(item);
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 9,
+              borderRadius: 999,
+              backgroundColor: isSelected ? theme.accent : theme.surfaceSunken,
+              borderWidth: 1,
+              borderColor: isSelected ? theme.accentBorder : theme.border,
+            }}
+          >
+            <AppText
+              style={[
+                GamesType.caption,
+                { color: isSelected ? theme.onAccent : theme.mutedInk },
+              ]}
+              languageCode={locale}
+              align="center"
             >
-              <AppText
-                style={[
-                  styles.chipText,
-                  isSelected && styles.chipTextSelected,
-                ]}
-                languageCode={locale}
-                align="center"
-              >
-                {labelText}
-              </AppText>
-            </PressableScale>
-          </View>
+              {labelText}
+            </AppText>
+          </PressableScale>
         );
       })}
     </ScrollView>
   );
 });
+
+/** Round speak control. Accent-washed at rest, accent-filled while speaking. */
+function SpeakButton({
+  size,
+  active,
+  onPress,
+  label,
+  theme,
+}: {
+  size: number;
+  active: boolean;
+  onPress: () => void;
+  label: string;
+  theme: GamesTheme;
+}) {
+  return (
+    <PressableScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      hitSlop={6}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: active ? theme.accent : theme.accentWash,
+        borderWidth: 1,
+        borderColor: active ? theme.accentBorder : withAlpha(theme.accent, 0.24),
+      }}
+    >
+      <HugeiconsIcon
+        icon={VolumeHighIcon}
+        size={Math.round(size * 0.45)}
+        color={active ? theme.onAccent : theme.accentInk}
+        strokeWidth={2}
+      />
+    </PressableScale>
+  );
+}
 
 const SlangItemRow = React.memo(function SlangItemRow({
   item,
@@ -87,7 +153,6 @@ const SlangItemRow = React.memo(function SlangItemRow({
   isItemSpeaking,
   onToggleExpand,
   onSpeak,
-  isRtl,
   t,
   speaking,
   activeId,
@@ -98,240 +163,217 @@ const SlangItemRow = React.memo(function SlangItemRow({
   isItemSpeaking: boolean;
   onToggleExpand: (id: string) => void;
   onSpeak: (phrase: string, id: string) => void;
-  isRtl: boolean;
   t: any;
   speaking: boolean;
   activeId: string | null;
   locale: string;
 }) {
-  const { colors, isDark } = useThemeColors();
+  const theme = useGamesTheme();
+  const metrics = useGamesMetrics(false);
+  const hue = useGameHue("slang");
   const styles = useSlangStyles();
   const context = SLANG_CATEGORIES[item.context];
-  const contextLabel = locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
-  const accentIconColor = isDark ? "#FF9E59" : "#EA580C";
+  const contextLabel =
+    locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
+
   return (
-    <View>
-      <HomeLiquidCard style={styles.cardShell} contentStyle={styles.cardContent}>
-        <View style={styles.itemHeader}>
-          <View style={styles.itemHeaderTopRow}>
-            <View style={styles.badgeRow}>
-              <View style={styles.typeBadge}>
-                <AppText style={styles.typeBadgeText} forceLatinFont>
-                  {item.type}
-                </AppText>
-              </View>
-              <View style={styles.contextBadge}>
-                <AppText
-                  style={styles.contextBadgeText}
-                  languageCode={locale}
-                  align="center"
-                  numberOfLines={1}
-                >
-                  {contextLabel}
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.actionRow}>
-              <PressableScale
-                onPress={() => onSpeak(item.phrase, item.id)}
-                style={[styles.speakerBtn, isItemSpeaking && styles.speakerBtnSpeaking]}
-                accessibilityRole="button"
-                accessibilityLabel={t("slang.playAudio")}
-              >
-                <HugeiconsIcon
-                  icon={VolumeHighIcon}
-                  size={20}
-                  color={isItemSpeaking ? "#FFFFFF" : accentIconColor}
-                  strokeWidth={2.0}
-                />
-              </PressableScale>
-              <PressableScale
-                onPress={() => onToggleExpand(item.id)}
-                style={styles.expandButton}
-                scaleDown={0.92}
-                accessibilityRole="button"
-                accessibilityLabel={isExpanded ? t("slang.close") : t("slang.example")}
-              >
-                <Animated.View
-                  style={{
-                    transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
-                    transitionProperty: "transform",
-                    transitionDuration: 180,
-                  }}
-                >
-                  <HugeiconsIcon icon={ChevronDownIcon} size={20} color={colors.mutedForeground} strokeWidth={2.0} />
-                </Animated.View>
-              </PressableScale>
-            </View>
-          </View>
-
-          <PressableScale
-            onPress={() => onToggleExpand(item.id)}
-            scaleDown={0.99}
-            style={styles.expandTarget}
-            accessibilityRole="button"
-          >
-            <View style={[styles.phraseCol, isRtl && styles.phraseColRtl]}>
+    <GamesCard style={{ marginBottom: 12 }}>
+      <View style={{ gap: 8 }}>
+        <View style={styles.itemHeaderTopRow}>
+          <View style={styles.badgeRow}>
+            {/* Type is a taxonomy marker, so it carries the mode hue. */}
+            <View
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 8,
+                borderWidth: 1,
+                backgroundColor: hue.wash,
+                borderColor: hue.border,
+              }}
+            >
               <AppText
-                style={[styles.slangPhrase, styles.ltrText]}
-                languageCode="en"
-                align="start"
-                nativeAlign={isRtl ? "end" : "start"}
-                fullWidth
+                style={[GamesType.eyebrow, { fontSize: 10, color: hue.ink }]}
                 forceLatinFont
               >
-                {item.phrase}
-              </AppText>
-              <AppText
-                style={styles.slangSubtitle}
-                languageCode="ku"
-                align="start"
-                nativeAlign={isRtl ? "start" : "end"}
-                numberOfLines={1}
-              >
-                {item.pronunciation}
+                {item.type}
               </AppText>
             </View>
-          </PressableScale>
+            <GamesBadge label={contextLabel} languageCode={locale} />
+          </View>
+
+          <View style={styles.actionRow}>
+            <SpeakButton
+              size={metrics.tapMin}
+              active={isItemSpeaking}
+              onPress={() => onSpeak(item.phrase, item.id)}
+              label={t("slang.playAudio")}
+              theme={theme}
+            />
+            <PressableScale
+              onPress={() => onToggleExpand(item.id)}
+              scaleDown={0.92}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: isExpanded }}
+              accessibilityLabel={isExpanded ? t("slang.close") : t("slang.example")}
+              style={{
+                width: metrics.tapMin,
+                height: metrics.tapMin,
+                borderRadius: metrics.tapMin / 2,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: theme.surfaceSunken,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
+              <Animated.View
+                style={{
+                  transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
+                  transitionProperty: "transform",
+                  transitionDuration: GamesMotion.colorMs,
+                }}
+              >
+                <HugeiconsIcon
+                  icon={ChevronDownIcon}
+                  size={20}
+                  color={theme.mutedInk}
+                  strokeWidth={2}
+                />
+              </Animated.View>
+            </PressableScale>
+          </View>
         </View>
 
-        {isExpanded && (
-          <Animated.View
-            entering={FadeInDown.duration(220)}
-            exiting={FadeOutUp.duration(150)}
-            style={styles.itemExpanded}
-          >
-            <View style={styles.divider} />
+        <PressableScale
+          onPress={() => onToggleExpand(item.id)}
+          scaleDown={0.99}
+          style={{ width: "100%", minWidth: 0 }}
+          accessibilityRole="button"
+        >
+          <View style={styles.phraseCol}>
+            <AppText
+              style={[GamesType.title, { fontSize: 19, color: theme.ink }]}
+              languageCode="en"
+              align="start"
+              fullWidth
+              forceLatinFont
+            >
+              {item.phrase}
+            </AppText>
+            <AppText
+              style={[GamesType.body, { fontSize: 14, color: theme.mutedInk }]}
+              languageCode="ku"
+              align="start"
+              fullWidth
+              numberOfLines={1}
+            >
+              {item.pronunciation}
+            </AppText>
+          </View>
+        </PressableScale>
+      </View>
 
-            <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} languageCode={locale} align="start">
-                {t("aiTeacher.criteria.pronunciation")}
-              </AppText>
-              <AppText
-                style={[styles.detailValue, styles.rtlText]}
-                languageCode="ku"
-                align="start"
-                nativeAlign={isRtl ? "start" : "end"}
-              >
-                {item.pronunciation}
-              </AppText>
-            </View>
+      {isExpanded && (
+        <Animated.View
+          entering={FadeInDown.duration(220)}
+          exiting={FadeOutUp.duration(150)}
+          style={{ marginTop: 14, gap: 12 }}
+        >
+          <View style={styles.divider} />
 
-            <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} languageCode={locale} align="start">
-                {t("slang.meaning")}
-              </AppText>
-              <AppText
-                style={[styles.detailValue, styles.detailFigurative]}
-                languageCode="ku"
-                align="start"
-                nativeAlign={isRtl ? "start" : "end"}
-              >
-                {item.kuMeaning}
-              </AppText>
-            </View>
+          <View style={{ gap: 4 }}>
+            <GamesSectionLabel languageCode={locale}>
+              {t("aiTeacher.criteria.pronunciation")}
+            </GamesSectionLabel>
+            <AppText
+              style={[GamesType.body, { fontSize: 14, color: theme.ink }]}
+              languageCode="ku"
+              align="start"
+              fullWidth
+            >
+              {item.pronunciation}
+            </AppText>
+          </View>
 
-            <View style={styles.detailRow}>
-              <AppText style={styles.detailLabel} languageCode={locale} align="start">
-                {t("slang.example")}
-              </AppText>
-              <View style={styles.dialogueBox}>
-                {/* Dialogue Bubble A */}
-                <View style={styles.dialogueLine}>
-                  <View style={styles.dialogueMarkerA}>
-                    <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                      A
-                    </AppText>
-                  </View>
-                  <View style={styles.dialogueContent}>
-                    <AppText
-                      style={[styles.dialogueEn, styles.ltrText]}
-                      languageCode="en"
-                      align="start"
-                      nativeAlign={isRtl ? "end" : "start"}
-                    >
-                      {item.example.speakerA}
-                    </AppText>
-                    <AppText
-                      style={[styles.dialogueKu, styles.rtlText]}
-                      languageCode="ku"
-                      align="start"
-                      nativeAlign={isRtl ? "start" : "end"}
-                    >
-                      {item.example.kuA}
-                    </AppText>
-                  </View>
-                  <PressableScale
-                    onPress={() => onSpeak(item.example.speakerA, `${item.id}_a`)}
-                    style={[
-                      styles.miniSpeakerBtn,
-                      speaking && activeId === `${item.id}_a` && styles.speakerBtnSpeaking,
-                    ]}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("slang.playAudio")}
-                  >
-                    <HugeiconsIcon
-                      icon={VolumeHighIcon}
-                      size={14}
-                      color={speaking && activeId === `${item.id}_a` ? "#FFFFFF" : accentIconColor}
-                      strokeWidth={2.0}
+          <View style={{ gap: 4 }}>
+            <GamesSectionLabel languageCode={locale}>
+              {t("slang.meaning")}
+            </GamesSectionLabel>
+            <AppText
+              style={[
+                GamesType.section,
+                { fontSize: 15, color: theme.ink, lineHeight: 22 },
+              ]}
+              languageCode="ku"
+              align="start"
+              fullWidth
+            >
+              {item.kuMeaning}
+            </AppText>
+          </View>
+
+          <View style={{ gap: 4 }}>
+            <GamesSectionLabel languageCode={locale}>
+              {t("slang.example")}
+            </GamesSectionLabel>
+            <View style={styles.dialogueBox}>
+              {(
+                [
+                  { key: "a", en: item.example.speakerA, ku: item.example.kuA, marker: "A" },
+                  { key: "b", en: item.example.speakerB, ku: item.example.kuB, marker: "B" },
+                ] as const
+              ).map((line, idx) => (
+                <React.Fragment key={line.key}>
+                  {idx > 0 ? <View style={styles.divider} /> : null}
+                  <View style={styles.dialogueLine}>
+                    <View style={styles.dialogueMarker}>
+                      <AppText
+                        style={[GamesType.eyebrow, { fontSize: 11, color: theme.mutedInk }]}
+                        forceLatinFont
+                      >
+                        {line.marker}
+                      </AppText>
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText
+                        style={[
+                          GamesType.body,
+                          { fontSize: 14, fontWeight: "700", color: theme.ink, lineHeight: 19 },
+                        ]}
+                        languageCode="en"
+                        align="start"
+                        fullWidth
+                      >
+                        {line.en}
+                      </AppText>
+                      <AppText
+                        style={[
+                          GamesType.body,
+                          { fontSize: 13, color: theme.mutedInk, lineHeight: 19 },
+                        ]}
+                        languageCode="ku"
+                        align="start"
+                        fullWidth
+                      >
+                        {line.ku}
+                      </AppText>
+                    </View>
+                    <SpeakButton
+                      size={32}
+                      active={speaking && activeId === `${item.id}_${line.key}`}
+                      onPress={() => onSpeak(line.en, `${item.id}_${line.key}`)}
+                      label={t("slang.playAudio")}
+                      theme={theme}
                     />
-                  </PressableScale>
-                </View>
-
-                <View style={styles.divider} />
-
-                {/* Dialogue Bubble B */}
-                <View style={styles.dialogueLine}>
-                  <View style={styles.dialogueMarkerB}>
-                    <AppText style={styles.dialogueMarkerText} forceLatinFont>
-                      B
-                    </AppText>
                   </View>
-                  <View style={styles.dialogueContent}>
-                    <AppText
-                      style={[styles.dialogueEn, styles.ltrText]}
-                      languageCode="en"
-                      align="start"
-                      nativeAlign={isRtl ? "end" : "start"}
-                    >
-                      {item.example.speakerB}
-                    </AppText>
-                    <AppText
-                      style={[styles.dialogueKu, styles.rtlText]}
-                      languageCode="ku"
-                      align="start"
-                      nativeAlign={isRtl ? "start" : "end"}
-                    >
-                      {item.example.kuB}
-                    </AppText>
-                  </View>
-                  <PressableScale
-                    onPress={() => onSpeak(item.example.speakerB, `${item.id}_b`)}
-                    style={[
-                      styles.miniSpeakerBtn,
-                      speaking && activeId === `${item.id}_b` && styles.speakerBtnSpeaking,
-                    ]}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("slang.playAudio")}
-                  >
-                    <HugeiconsIcon
-                      icon={VolumeHighIcon}
-                      size={14}
-                      color={speaking && activeId === `${item.id}_b` ? "#FFFFFF" : accentIconColor}
-                      strokeWidth={2.0}
-                    />
-                  </PressableScale>
-                </View>
-              </View>
+                </React.Fragment>
+              ))}
             </View>
-          </Animated.View>
-        )}
-      </HomeLiquidCard>
-    </View>
+          </View>
+        </Animated.View>
+      )}
+    </GamesCard>
   );
 });
 
@@ -340,14 +382,16 @@ export function SlangDictionaryScreen() {
   const insets = useSafeAreaInsets();
   const safeBack = useSafeBack("/(tabs)/play");
   const { t, locale } = useI18n();
-  const { isDark } = useThemeColors();
+  const { theme, hue, metrics } = useGamesChrome("slang");
   const { speak, stop, speaking, activeId } = useTTS();
 
   const isRtl = locale === "ku" || locale === "ar";
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<SlangContextFilter>("All");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   // Select Slang of the Day (seeded by current day of the month)
   const slangOfTheDay = useMemo(() => {
@@ -403,36 +447,22 @@ export function SlangDictionaryScreen() {
     [],
   );
 
-  const headerIconColor = isDark ? "#FF9E59" : "#FF6B00";
-  const spotlightBadgeIconColor = isDark ? "#FFFFFF" : "#7C2D12";
+  const spotlightSpeaking = speaking && activeId === `spotlight_${slangOfTheDay.id}`;
 
   return (
-    <View style={styles.root}>
-      {!isDark && <HomeMeshBackground />}
-
-      {/* Screen Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8, flexDirection: "row" }]}>
-        <PressableScale onPress={handleBack} style={styles.backBtn}>
-          <HugeiconsIcon
-            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
-            size={22}
-            color={headerIconColor}
-            strokeWidth={2.2}
-          />
-        </PressableScale>
-        <AppText
-          style={styles.headerTitle}
-          languageCode={locale}
-          align="start"
-        >
-          {t("slang.title")}
-        </AppText>
-        <View style={{ width: 44 }} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: theme.canvas }}>
+      <GamesGlassHeader
+        title={t("slang.title")}
+        titleLanguageCode={locale}
+        onBack={handleBack}
+        scrolled={scrolled}
+      />
 
       <FlashList
         data={filteredSlang}
         keyExtractor={(item) => item.id}
+        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+        scrollEventThrottle={16}
         renderItem={({ item }) => (
           <SlangItemRow
             item={item}
@@ -440,7 +470,6 @@ export function SlangDictionaryScreen() {
             isItemSpeaking={speaking && activeId === item.id}
             onToggleExpand={toggleExpand}
             onSpeak={handleSpeak}
-            isRtl={isRtl}
             t={t}
             speaking={speaking}
             activeId={activeId}
@@ -449,76 +478,115 @@ export function SlangDictionaryScreen() {
         )}
         extraData={{ expandedId, activeId, speaking }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 28 },
-        ]}
+        contentContainerStyle={{
+          paddingHorizontal: metrics.gutter,
+          paddingTop: metrics.sectionGap,
+          paddingBottom: insets.bottom + 28,
+        }}
         ListHeaderComponent={
           <>
-            {/* Slang of the Day Spotlight */}
-            <HomeLiquidCard
-              style={[styles.spotlightCard, crossShadow({ color: "#FF6B00", opacity: isDark ? 0.25 : 0.16, offsetY: 10, blur: 24, elevation: 6 })]}
-              contentStyle={styles.spotlightContent}
-            >
+            {/*
+              Slang of the Day. This used to be a solid-orange card, which under
+              the shared system would read as one enormous button — accent fill
+              is reserved for things you can press. It gets its prominence from
+              elevation, scale and position instead, which is a stronger
+              isolation cue anyway and costs no affordance clarity.
+            */}
+            <GamesCard raised style={{ marginBottom: 18 }}>
               <View style={styles.spotlightTopRow}>
-                <View style={styles.spotlightBadge}>
-                  <HugeiconsIcon icon={BookOpen01Icon} size={14} color={spotlightBadgeIconColor} strokeWidth={2.0} />
+                <View style={[styles.spotlightBadge, { backgroundColor: hue.wash, borderColor: hue.border }]}>
+                  <HugeiconsIcon
+                    icon={BookOpen01Icon}
+                    size={13}
+                    color={hue.ink}
+                    strokeWidth={2.2}
+                  />
                   <AppText
-                    style={styles.spotlightBadgeText}
+                    style={[GamesType.eyebrow, { fontSize: 10, color: hue.ink }]}
                     languageCode={locale}
                     align="center"
                   >
                     {t("slang.slangOfTheDay")}
                   </AppText>
                 </View>
-                <View style={[styles.typeBadge, { backgroundColor: "rgba(255,255,255,0.22)", borderColor: "rgba(255,255,255,0.4)" }]}>
-                  <AppText style={[styles.typeBadgeText, { color: "#FFFFFF" }]} forceLatinFont>
-                    {slangOfTheDay.type}
-                  </AppText>
-                </View>
+                <GamesBadge label={slangOfTheDay.type} />
               </View>
 
               <View style={styles.spotlightMain}>
-                <View style={{ flex: 1, alignItems: isRtl ? "flex-end" : "flex-start" }}>
-                  <AppText style={[styles.spotlightPhrase, styles.ltrText]} forceLatinFont>
+                <View style={{ flex: 1, alignItems: "stretch" }}>
+                  <AppText
+                    style={[GamesType.display, { fontSize: 28, color: theme.ink }]}
+                    languageCode="en"
+                    align="start"
+                    fullWidth
+                    forceLatinFont
+                  >
                     {slangOfTheDay.phrase}
                   </AppText>
-                  <AppText style={[styles.spotlightTranslation, styles.ltrText]} forceLatinFont>
+                  <AppText
+                    style={[
+                      GamesType.body,
+                      { fontSize: 15, fontWeight: "700", color: theme.mutedInk, marginTop: 2 },
+                    ]}
+                    languageCode="ku"
+                    align="start"
+                    fullWidth
+                  >
                     {slangOfTheDay.pronunciation}
                   </AppText>
                 </View>
-                <PressableScale
-                  onPress={() => handleSpeak(slangOfTheDay.phrase, `spotlight_${slangOfTheDay.id}`)}
-                  style={[
-                    styles.spotlightSpeakBtn,
-                    speaking && activeId === `spotlight_${slangOfTheDay.id}` && styles.speakerBtnSpeaking,
-                  ]}
-                >
-                  <HugeiconsIcon
-                    icon={VolumeHighIcon}
-                    size={22}
-                    color="#FFFFFF"
-                    strokeWidth={2.0}
-                  />
-                </PressableScale>
+                <SpeakButton
+                  size={52}
+                  active={spotlightSpeaking}
+                  onPress={() =>
+                    handleSpeak(slangOfTheDay.phrase, `spotlight_${slangOfTheDay.id}`)
+                  }
+                  label={t("slang.playAudio")}
+                  theme={theme}
+                />
               </View>
 
-              <AppText style={styles.spotlightDescription} languageCode="ku" align="start">
+              <AppText
+                style={[GamesType.body, { color: theme.ink, lineHeight: 22, marginTop: 10 }]}
+                languageCode="ku"
+                align="start"
+              >
                 {slangOfTheDay.kuMeaning}
               </AppText>
-            </HomeLiquidCard>
+            </GamesCard>
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-              <HugeiconsIcon icon={Search01Icon} size={18} color={headerIconColor} style={styles.searchIcon} />
+            {/* Search — focus is shown in coral, the same "active" signal used
+                by every selected control in the system. */}
+            <View
+              style={[
+                styles.searchContainer,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: searchFocused ? theme.accentBorder : theme.border,
+                  borderWidth: searchFocused ? 2 : 1,
+                  paddingHorizontal: searchFocused ? 11 : 12,
+                },
+                gamesLift(theme),
+              ]}
+            >
+              <HugeiconsIcon
+                icon={Search01Icon}
+                size={18}
+                color={searchFocused ? theme.accentInk : theme.faintInk}
+                strokeWidth={2}
+                style={{ marginEnd: 8 }}
+              />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
                 placeholder={t("slang.searchPlaceholder")}
-                placeholderTextColor={isDark ? "#94A3B8" : "#64748B"}
+                placeholderTextColor={theme.faintInk}
                 style={[
                   styles.searchInput,
                   {
+                    color: theme.ink,
                     textAlign: isRtl ? "right" : "left",
                     writingDirection: isRtl ? "rtl" : "ltr",
                   },
@@ -527,17 +595,28 @@ export function SlangDictionaryScreen() {
               {searchQuery ? (
                 <PressableScale
                   onPress={() => setSearchQuery("")}
-                  style={styles.clearSearchBtn}
                   hitSlop={7}
                   accessibilityRole="button"
                   accessibilityLabel={t("slang.close")}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    backgroundColor: theme.surfaceSunken,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} size={16} color={isDark ? "#94A3B8" : "#64748B"} strokeWidth={2.0} />
+                  <HugeiconsIcon
+                    icon={Cancel01Icon}
+                    size={16}
+                    color={theme.mutedInk}
+                    strokeWidth={2}
+                  />
                 </PressableScale>
               ) : null}
             </View>
 
-            {/* Category Filters */}
             <SlangCategoryHeader
               categoriesList={categoriesList}
               selectedCategory={selectedCategory}
@@ -547,16 +626,11 @@ export function SlangDictionaryScreen() {
           </>
         }
         ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <HugeiconsIcon icon={BookOpen01Icon} size={48} color={isDark ? "#94A3B8" : "#64748B"} strokeWidth={1.5} />
-            <AppText
-              style={styles.emptyText}
-              languageCode={locale}
-              align="center"
-            >
-              {t("slang.noResults")}
-            </AppText>
-          </View>
+          <GamesStateBlock
+            icon={BubbleChatIcon}
+            languageCode={locale}
+            title={t("slang.noResults")}
+          />
         }
       />
     </View>
@@ -564,385 +638,105 @@ export function SlangDictionaryScreen() {
 }
 
 function useSlangStyles() {
-  const { colors, isDark } = useThemeColors();
+  const theme = useGamesTheme();
+  const metrics = useGamesMetrics(false);
 
-  return useMemo(() => StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.muted,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    width: "100%",
-    maxWidth: 760,
-    alignSelf: "center",
-  },
-  spotlightCard: {
-    backgroundColor: isDark ? "#D97706" : "#FF6B00",
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    borderWidth: 1,
-    borderRadius: 22,
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  spotlightContent: {
-    padding: 20,
-    backgroundColor: isDark ? "#D97706" : "#FF6B00",
-  },
-  spotlightTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  spotlightBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: isDark ? "rgba(0, 0, 0, 0.35)" : "#FFFFFF",
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    gap: 6,
-    marginBottom: 14,
-  },
-  spotlightBadgeText: {
-    color: isDark ? "#FFFFFF" : "#7C2D12",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-  },
-  spotlightMain: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  spotlightPhrase: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: -0.5,
-  },
-  spotlightTranslation: {
-    fontSize: 16,
-    color: "#FFFFFF",
-    fontWeight: "700",
-    marginTop: 2,
-    opacity: 0.95,
-  },
-  spotlightSpeakBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  spotlightDescription: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: "600",
-    marginTop: 4,
-    opacity: 0.95,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
-    paddingHorizontal: 12,
-    height: 48,
-    marginBottom: 12,
-    ...crossShadow({ color: "#FF6B00", opacity: isDark ? 0.15 : 0.08, offsetY: 3, blur: 10, elevation: 2 }),
-  },
-  searchIcon: {
-    marginEnd: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.foreground,
-    fontWeight: "600",
-    fontFamily: "DINNextRoundedMedium",
-    paddingVertical: 0,
-  },
-  clearSearchBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.muted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chipsList: {
-    marginBottom: 16,
-    maxHeight: 40,
-  },
-  chipsContainer: {
-    gap: 8,
-    paddingEnd: 16,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceRaised,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipSelected: {
-    backgroundColor: "#FF6B00",
-    borderColor: "#FF6B00",
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.mutedForeground,
-  },
-  chipTextSelected: {
-    color: "#FFFFFF",
-  },
-  cardShell: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 12,
-    overflow: "hidden",
-  },
-  cardContent: {
-    padding: 16,
-  },
-  itemHeader: {
-    gap: 8,
-  },
-  itemHeaderTopRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  phraseCol: {
-    width: "100%",
-    alignItems: "flex-start",
-    gap: 2,
-  },
-  phraseColRtl: {
-    paddingLeft: 52,
-  },
-  slangPhrase: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: colors.foreground,
-    letterSpacing: -0.2,
-  },
-  slangSubtitle: {
-    fontSize: 14,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  badgeRow: {
-    flex: 1,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 6,
-  },
-  expandTarget: {
-    width: "100%",
-    minWidth: 0,
-  },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
-    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
-    alignSelf: "flex-start",
-  },
-  typeBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: isDark ? "#FF9E59" : "#C2410C",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  contextBadge: {
-    maxWidth: 170,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
-    borderWidth: 1,
-    borderColor: isDark ? "rgba(255, 107, 0, 0.35)" : "rgba(255, 107, 0, 0.22)",
-  },
-  contextBadgeText: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: isDark ? "#FF9E59" : "#C2410C",
-  },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  expandButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.muted,
-  },
-  speakerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  speakerBtnSpeaking: {
-    backgroundColor: "#FF6B00",
-  },
-  itemExpanded: {
-    marginTop: 14,
-    gap: 12,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  detailRow: {
-    gap: 4,
-  },
-  detailLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.mutedForeground,
-    letterSpacing: 0.5,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: colors.foreground,
-    fontWeight: "600",
-  },
-  detailFigurative: {
-    color: isDark ? "#FF9E59" : "#EA580C",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  dialogueBox: {
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#F8FAFC",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    gap: 12,
-    marginTop: 4,
-  },
-  dialogueLine: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  dialogueMarkerA: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.25)" : "rgba(255, 107, 0, 0.14)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-  },
-  dialogueMarkerB: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.25)" : "rgba(255, 107, 0, 0.14)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-  },
-  dialogueMarkerText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: isDark ? "#FF9E59" : "#C2410C",
-  },
-  dialogueContent: {
-    flex: 1,
-    gap: 2,
-  },
-  dialogueEn: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.foreground,
-    lineHeight: 18,
-  },
-  dialogueKu: {
-    fontSize: 13,
-    color: isDark ? "#CBD5E1" : "#334155",
-    fontWeight: "600",
-    lineHeight: 18,
-  },
-  miniSpeakerBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: isDark ? "rgba(255, 107, 0, 0.18)" : "rgba(255, 107, 0, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: colors.mutedForeground,
-    fontWeight: "600",
-  },
-  ltrText: {
-    alignSelf: "stretch",
-    textAlign: "left",
-    writingDirection: "ltr",
-  },
-  rtlText: {
-    alignSelf: "stretch",
-    textAlign: "right",
-    writingDirection: "rtl",
-  },
-  }), [colors, isDark]);
+  return useMemo(
+    () =>
+      StyleSheet.create({
+        itemHeaderTopRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 10,
+        },
+        badgeRow: {
+          flex: 1,
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 6,
+        },
+        actionRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+        },
+        // Stretch, never shrink-wrap: a shrink-wrapped Text hugs the *layout*
+        // start edge, which puts English on the right under a Kurdish UI no
+        // matter what `textAlign` says. Full width lets alignment decide.
+        phraseCol: {
+          width: "100%",
+          alignItems: "stretch",
+          gap: 2,
+        },
+        divider: {
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: theme.border,
+        },
+        dialogueBox: {
+          backgroundColor: theme.surfaceSunken,
+          borderRadius: metrics.radiusChip,
+          borderWidth: 1,
+          borderColor: theme.border,
+          padding: 12,
+          gap: 12,
+          marginTop: 4,
+        },
+        dialogueLine: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 10,
+        },
+        dialogueMarker: {
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          backgroundColor: theme.surfaceRaised,
+          borderWidth: 1,
+          borderColor: theme.border,
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 2,
+        },
+        spotlightTopRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 14,
+          gap: 8,
+        },
+        spotlightBadge: {
+          flexDirection: "row",
+          alignItems: "center",
+          alignSelf: "flex-start",
+          paddingHorizontal: 10,
+          paddingVertical: 5,
+          borderRadius: 8,
+          borderWidth: 1,
+          gap: 6,
+        },
+        spotlightMain: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        },
+        searchContainer: {
+          flexDirection: "row",
+          alignItems: "center",
+          borderRadius: metrics.radiusControl,
+          height: 50,
+          marginBottom: 12,
+        },
+        searchInput: {
+          flex: 1,
+          fontSize: 15,
+          fontWeight: "600",
+          fontFamily: "DINNextRoundedMedium",
+          paddingVertical: 0,
+        },
+      }),
+    [theme, metrics],
+  );
 }

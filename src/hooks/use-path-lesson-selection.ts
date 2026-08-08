@@ -52,8 +52,16 @@ export function usePathLessonSelection(
 
   const selectLesson = useCallback(
     (item: LessonListItem, sectionTitle: string, node: View | null) => {
-      if (openTimerRef.current) clearTimeout(openTimerRef.current);
-      setSelectedLesson(null);
+      if (openTimerRef.current) {
+        clearTimeout(openTimerRef.current);
+        openTimerRef.current = null;
+      }
+      /*
+       * Only collapse an *open* popup. Returning the previous value untouched
+       * keeps React from re-rendering the whole path list before the measure
+       * has even started — a wasted pass over every node on the common tap.
+       */
+      setSelectedLesson((previous) => (previous ? null : previous));
       const requestId = selectionRequestRef.current + 1;
       selectionRequestRef.current = requestId;
 
@@ -93,11 +101,20 @@ export function usePathLessonSelection(
         });
       };
 
-      // Decide from the first measurement whether the node needs centring.
-      root.measureInWindow((_rootX, rootY, _rootWidth, rootHeight) => {
+      /*
+       * One measurement pass decides placement *and* anchors the popup.
+       *
+       * `measureInWindow` is an async hop to the UI thread and back. That thread
+       * is also laying out the path's nodes, so each hop costs far more than a
+       * frame under load. This used to measure root+node to choose placement and
+       * then measure root+node again to build the anchor — four serial hops
+       * before anything appeared on screen. The first pass already returns every
+       * value the anchor needs, so the common tap now opens straight from it.
+       */
+      root.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
         if (selectionRequestRef.current !== requestId) return;
 
-        node.measureInWindow((_nodeX, nodeY, _nodeWidth, nodeHeight) => {
+        node.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
           if (selectionRequestRef.current !== requestId) return;
 
           const nodeTop = nodeY - rootY;
@@ -109,7 +126,15 @@ export function usePathLessonSelection(
           const location = findItemLocation(sections, item);
 
           if ((!nearTop && !nearBottom) || !location || !listRef.current) {
-            measureAndShow();
+            // Nothing will move, so these coordinates are already final.
+            displayPopupWithAnchor({
+              x: nodeX - rootX + nodeWidth / 2,
+              y: nodeTop + nodeHeight,
+              nodeTop,
+              nodeHeight,
+              rootWidth,
+              rootHeight,
+            });
             return;
           }
 

@@ -17,7 +17,7 @@ import Animated, {
 import { AppText } from "../../../components/ui/AppText";
 import { DirectionalView } from "../../../components/ui/Directional";
 import { useThemeColors } from "../../../hooks/useThemeColors";
-import { useTTS } from "../../../hooks/use-tts";
+import { useWordSpeech } from "./use-word-speech";
 
 import { FillBlankQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -90,7 +90,7 @@ type Props = {
 export default function FillBlankGame({ question, onAnswer, pathMode, questionIndex, totalQuestions }: Props) {
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
-  const { speak, stop } = useTTS();
+  const { speakWord, stop, language: targetLanguage } = useWordSpeech(question.targetLanguage);
   const isNormal = pathMode === "normal";
   const [selected, setSelected] = useState<string | null>(null);
   const [flySession, setFlySession] = useState<FlySession | null>(null);
@@ -112,6 +112,12 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
   }));
 
   const flyIdCounter = useRef(0);
+
+  const fullSentence = React.useMemo(
+    () =>
+      `${question.sentenceParts[0] ?? ""} ${question.correctAnswer} ${question.sentenceParts[1] ?? ""}`,
+    [question.sentenceParts, question.correctAnswer],
+  );
 
   React.useEffect(() => {
     void stop();
@@ -138,9 +144,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     if (selected === word) return;
     if (flySession || measuringWordRef.current) return;
 
-    void speak(word, question.targetLanguage ?? "en", `fill-${word}`, {
-      provider: "device",
-    });
+    speakWord(word, `fill-${word}`);
 
     measuringWordRef.current = word;
     if (Platform.OS !== "web") {
@@ -191,6 +195,17 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
         withTiming(8, { duration: 36 }),
         withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
       );
+    }
+
+    /*
+     * Only a correct answer earns the sentence read — hearing the finished
+     * sentence is the reward, and reading it back over a wrong pick would
+     * teach the wrong thing. `revealed` above makes this run once per
+     * question; being the newest device request makes `useTTS` cancel the
+     * word audio from `pick` rather than layer on top of it.
+     */
+    if (ok) {
+      speakWord(fullSentence, "fill-sentence");
     }
 
     if (!firedRef.current) {
@@ -328,8 +343,8 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
           label={t("lessons.questionLabel")}
           forceKurdishFont
           contentLanguageCode={question.sourceLanguage}
-          speechText={`${question.sentenceParts[0] ?? ""} ${question.correctAnswer} ${question.sentenceParts[1] ?? ""}`}
-          speechLanguageCode={question.targetLanguage ?? "en"}
+          speechText={fullSentence}
+          speechLanguageCode={targetLanguage}
           variant={pathMode === "kids" ? "kids" : "default"}
         >
           {question.kurdishHint}

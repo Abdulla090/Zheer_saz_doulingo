@@ -11,7 +11,7 @@ import { KidsPlayQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { KidsSceneKey } from "../../../data/kids-games";
 import { useI18n } from "../../../hooks/useI18n";
-import { useTTS } from "../../../hooks/use-tts";
+import { useWordSpeech } from "./use-word-speech";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -188,7 +188,7 @@ function FloatingBubble({
 export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const { t, isKu: isSystemKu, isAr } = useI18n();
   const rtl = isSystemKu || isAr;
-  const { speak } = useTTS();
+  const { speak, speakWord } = useWordSpeech(question.targetLanguage);
   const firedRef = useRef(false);
   const heading = variantHeading(question.variant, t);
   const targetDirection = getLanguageDirection(question.targetLanguage);
@@ -300,7 +300,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   const isNight = question.scene === "night";
 
   const speakPrompt = useCallback(() => {
-    speak(question.prompt, isKu ? "ku" : "en");
+    speak(question.prompt, isKu ? "ku" : "en", "kids-prompt");
   }, [isKu, question.prompt, speak]);
 
   useEffect(() => {
@@ -317,6 +317,12 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
 
   const pickChoice = (id: string) => {
     if (revealed) return;
+    const choice = question.choices.find((c) => c.id === id);
+    // Emoji tiles read the label beneath — hearing it ties the sound to the
+    // picture, which is what the kids path is built around.
+    if (choice?.label) {
+      speakWord(choice.label, `kids-choice-${id}`);
+    }
     if (question.variant === "feed") {
       setSelectedId(id);
       return;
@@ -393,7 +399,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
     setTimeout(() => {
       setTreasureOpen(true);
       if (question.treasureRevealLabel) {
-        speak(question.treasureRevealLabel, question.targetLanguage ?? "en");
+        speakWord(question.treasureRevealLabel, "kids-treasure");
       }
     }, 320);
   };
@@ -495,7 +501,11 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
                   key={c.id}
                   label={`${c.emoji} ${c.label}`}
                   state={activeChip === c.id ? "selected" : used ? "correct" : "idle"}
-                  onPress={() => !used && !revealed && setActiveChip(c.id)}
+                  onPress={() => {
+                    if (used || revealed) return;
+                    setActiveChip(c.id);
+                    speakWord(c.label, `kids-chip-${c.id}`);
+                  }}
                   disabled={used || revealed}
                   wide
                   isKids={true}

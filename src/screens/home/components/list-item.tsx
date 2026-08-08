@@ -1,6 +1,16 @@
 import { LessonListItem, SectionTheme } from "../../../data/list-items";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { Chest, ChestUnlocked } from "../../../constants/icons";
+import {
+  Chest,
+  ChestUnlocked,
+  LessonBook,
+  LessonDumbbell,
+  LessonGame,
+  LessonHeadphone,
+  LessonMicrophone,
+  LessonStar,
+  LessonVideo,
+} from "../../../constants/icons";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
@@ -15,8 +25,28 @@ import {
   SvgButton,
   SvgButtonVariant,
 } from "./list-button";
+import { NormalPathNode } from "./normal-path-node";
+import { LessonProgressRing } from "./lesson-progress-ring";
 import { getPathMetrics } from "./path-metrics";
+import { NormalPathCurveMascot } from "./normal-path-curve-mascot";
+import { mascotForUnit, unitMascotSlot } from "./path-unit-mascots";
 import { hapticSelection } from "../../../utils/haptics";
+
+/** Node face icon per lesson type, as in the reference path. */
+const LESSON_ICON_MAP = {
+  practice: LessonStar,
+  video: LessonVideo,
+  reading: LessonBook,
+  listening: LessonHeadphone,
+  game: LessonGame,
+  speaking: LessonMicrophone,
+  conversation: LessonDumbbell,
+  gift: LessonStar,
+  cup: LessonStar,
+} as const;
+
+/** Ring geometry from the reference — 94px ring centred on an 80px node. */
+const PROGRESS_RING_SIZE_RATIO = 94 / 80;
 
 export type UnitChestKind = "silver" | "gold";
 
@@ -64,6 +94,13 @@ type ListItemProps = {
   pathMode?: LessonPathMode;
   isActiveLesson?: boolean;
   isSelected?: boolean;
+  /**
+   * Whether the learner has reached this item's unit. Drives the peak mascot's
+   * locked state, which is a unit-level question rather than a row-level one —
+   * a mascot sitting on a still-locked row inside the unit you are working
+   * through should stay in colour.
+   */
+  isUnitReached?: boolean;
   onSelect?: (node: View | null) => void;
 };
 
@@ -75,6 +112,7 @@ export const ListItem = React.memo(
     pathMode = "street",
     isActiveLesson = false,
     isSelected = false,
+    isUnitReached = true,
     onSelect,
   }: ListItemProps) => {
     const router = useRouter();
@@ -110,6 +148,16 @@ export const ListItem = React.memo(
     );
     const RewardChest = chestKind === "gold" ? ChestUnlocked : Chest;
 
+    // Normal path only: the mascot fills the gap the curve leaves at its
+    // extremes. Anchored to the unit, so each unit gets its own two companions
+    // in its own colour rather than a running global count.
+    const mascotSlot = isNormalPath
+      ? unitMascotSlot(globalIndex, item.sectionItemIndex, unitLessonCount)
+      : null;
+    const unitMascotId = mascotSlot
+      ? mascotForUnit(lessonColorTheme(item), mascotSlot.slot)
+      : null;
+
     const handleNavigate = () => {
       router.push({
         pathname: "/lesson",
@@ -133,24 +181,42 @@ export const ListItem = React.memo(
       handleNavigate();
     };
 
+    // Street and kids nodes are taller than `lessonButtonSize` — they also carry
+    // a rim and a ground shadow below the face — so centring on the face size
+    // alone would sit every node low in its slot. The occupied height is
+    // approximated before splitting the remainder.
+    //
+    // The normal path's SVG node draws entirely inside its own box, so it just
+    // centres, exactly as the reference does.
+    const slotPaddingTop = isNormalPath
+      ? 0
+      : Math.max(
+          6,
+          Math.round((metrics.slotHeight - metrics.lessonButtonSize * 1.16) / 2),
+        );
+
     return (
       <View
         style={{
           height: metrics.slotHeight,
           width: "100%",
           alignItems: "center",
-          // The rendered node is taller than `lessonButtonSize` — it also
-          // carries a rim and a ground shadow below the face. Centring on the
-          // face size alone would sit every node low in its slot, so the
-          // occupied height is approximated before splitting the remainder.
-          paddingTop: Math.max(
-            6,
-            Math.round(
-              (metrics.slotHeight - metrics.lessonButtonSize * 1.16) / 2,
-            ),
-          ),
+          justifyContent: isNormalPath ? "center" : "flex-start",
+          paddingTop: slotPaddingTop,
         }}
       >
+        {mascotSlot && unitMascotId ? (
+          <NormalPathCurveMascot
+            globalIndex={globalIndex}
+            nodeOffsetX={xOffset}
+            slotHeight={metrics.slotHeight}
+            slotPaddingTop={slotPaddingTop}
+            isLocked={!isUnitReached}
+            mascotId={unitMascotId}
+            slot={mascotSlot.slot}
+          />
+        ) : null}
+
         <View style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}>
           {globalIndex === 0 ? (
             <FirstItemSparkles size={metrics.lessonButtonSize} />
@@ -222,6 +288,47 @@ export const ListItem = React.memo(
                   </View>
                 ) : null}
               </IOSPressable>
+            ) : isNormalPath ? (
+              <>
+                {showsActiveStar ? (
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <LessonProgressRing
+                      size={Math.round(
+                        metrics.lessonButtonSize * PROGRESS_RING_SIZE_RATIO,
+                      )}
+                      progressSegments={item.progressSegments}
+                      activeColor={
+                        SVG_BUTTON_COLOR_SETS[buttonColor]?.face ?? "#B87BEF"
+                      }
+                    />
+                  </View>
+                ) : null}
+                <NormalPathNode
+                  isLocked={isLocked}
+                  isCurrentLesson={showsActiveStar}
+                  isCompleted={isCompleted}
+                  isSelected={isSelected}
+                  size={metrics.lessonButtonSize}
+                  onPress={isLocked && !onSelect ? undefined : handleSelect}
+                  variant={buttonColor}
+                  IconComponent={LESSON_ICON_MAP[item.type] ?? LessonStar}
+                  iconColor={iconColorOverride}
+                  accessibilityLabel={
+                    isLocked
+                      ? `Unit ${unitNumber} lesson ${lessonNumber}, locked`
+                      : isCompleted
+                        ? `Unit ${unitNumber} lesson ${lessonNumber}, completed`
+                        : `Unit ${unitNumber} lesson ${lessonNumber}${isActiveLesson ? ", current" : ""}`
+                  }
+                />
+              </>
             ) : (
               <SvgButton
                 isLocked={isLocked}

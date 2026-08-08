@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -21,8 +20,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
   BookOpen02Icon,
   CheckmarkCircle02Icon,
   Clock01Icon,
@@ -35,16 +32,10 @@ import { PressableScale } from "../../components/animations";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
 import { AppText } from "../../components/ui/AppText";
 import { DirectionBoundary } from "../../i18n/layout-direction";
-import {
-  HomeMeshBackground,
-  HomePalette as C,
-} from "../../components/ui/ios-liquid-home";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
-import { useThemeColors } from "../../hooks/useThemeColors";
-import { PRIMARY_ACTION } from "../../constants/primary-action";
 import {
   generateReadingPracticeParagraphs,
   evaluateParagraphSpeechWithGemini,
@@ -61,6 +52,28 @@ import {
   type ReadingEvaluation,
 } from "./reading-practice-logic";
 
+import {
+  GamesCard,
+  GamesGlassHeader,
+  GamesIntroCard,
+  GamesPrimaryButton,
+  GamesScreenShell,
+  GamesScrollFade,
+  GamesSectionLabel,
+  GamesSegmented,
+  GamesStatTile,
+  useGamesChrome,
+} from "./components/games-chrome";
+import {
+  GamesMotion,
+  GamesType,
+  useGamesMetrics,
+  useGamesTheme,
+  withAlpha,
+  type GamesMetrics,
+  type GamesTheme,
+} from "./games-theme";
+
 type PracticeState = "setup" | "generating" | "preview" | "reading" | "processing" | "results";
 type Speed = "Slow" | "Normal" | "Fast";
 type SourceMode = "ai" | "template";
@@ -73,8 +86,6 @@ type TemplateSet = {
 
 const DIFFICULTIES: Difficulty[] = ["Beginner", "Intermediate", "Advanced"];
 const SPEEDS: Speed[] = ["Slow", "Normal", "Fast"];
-
-const KURDISH_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 
 const SETUP_COPY = {
   en: {
@@ -145,12 +156,6 @@ const KURDISH_TEMPLATE_COPY: Record<string, { title: string; description: string
   "Sustainable Cities": { title: "شارە بەردەوامەکان", description: "وشەی پێشکەوتوو و ڕستەی ئاڵۆزتر." },
 };
 
-function formatUiNumber(value: number, useKurdishDigits: boolean) {
-  const text = String(value);
-  if (!useKurdishDigits) return text;
-  return text.replace(/\d/g, (digit) => KURDISH_DIGITS[Number(digit)]);
-}
-
 const MAX_READING_SECONDS = 120;
 const SPEED_RATE: Record<Speed, number> = {
   Slow: 0.8,
@@ -209,74 +214,17 @@ const TEMPLATES: Record<Difficulty, TemplateSet[]> = {
   ],
 };
 
-function OptionChip({
-  label,
-  active,
-  onPress,
-  flex = true,
-  languageCode = "en",
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-  flex?: boolean;
-  languageCode?: string;
-}) {
-  const styles = useReadingStyles();
-  return (
-    <PressableScale
-      onPress={onPress}
-      scaleDown={0.95}
-      style={[
-        styles.optionChip,
-        flex && styles.optionChipFlex,
-        active && styles.optionChipActive,
-      ]}
-    >
-      <AppText
-        style={[
-          styles.optionChipText,
-          active && styles.optionChipTextActive,
-        ]}
-        languageCode={languageCode}
-      >
-        {label}
-      </AppText>
-    </PressableScale>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  tone = "blue",
-}: {
-  label: string;
-  value: string;
-  tone?: "blue" | "green" | "red";
-}) {
-  const styles = useReadingStyles();
-  const color = tone === "green" ? "#10B981" : tone === "red" ? "#EF4444" : C.blue;
-  return (
-    <View style={styles.metricCard}>
-      <AppText style={styles.metricValue} forceLatinFont>
-        {value}
-      </AppText>
-      <AppText style={[styles.metricLabel, { color }]}>{label}</AppText>
-    </View>
-  );
-}
-
 export default function ReadingPracticeScreen() {
   const insets = useSafeAreaInsets();
   const safeBack = useSafeBack("/(tabs)/play");
   const { width, height } = useWindowDimensions();
   const { locale, isKu, isAr } = useI18n();
-  const { colors, isDark } = useThemeColors();
+  const { theme, metrics, isWide, isRtl } = useGamesChrome("reading-practice");
   const styles = useReadingStyles();
-  const isRtl = isKu || isAr;
   const setupCopy = isKu ? SETUP_COPY.ku : isAr ? SETUP_COPY.ar : SETUP_COPY.en;
-  const formatNumber = (value: number) => formatUiNumber(value, isKu);
+  // Western digits everywhere: the Sorani/Arabic UI face has no Arabic-Indic
+  // digit glyphs, so converted numbers rendered as blank dots.
+  const formatNumber = (value: number) => String(value);
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
   const abortSpeech = speech.abort;
@@ -293,6 +241,7 @@ export default function ReadingPracticeScreen() {
   const [evaluation, setEvaluation] = useState<ReadingEvaluation | null>(null);
   const [textHeight, setTextHeight] = useState(160);
   const [secondsRemaining, setSecondsRemaining] = useState(MAX_READING_SECONDS);
+  const [scrolled, setScrolled] = useState(false);
 
   const transcriptRef = useRef("");
   const finalTranscriptRef = useRef("");
@@ -564,10 +513,7 @@ export default function ReadingPracticeScreen() {
   }
 
   const teleprompterTextStyle = useMemo(
-    () => [
-      styles.passageText,
-      compact && styles.passageTextCompact,
-    ],
+    () => [styles.passageText, compact && styles.passageTextCompact],
     [compact, styles.passageText, styles.passageTextCompact],
   );
 
@@ -627,231 +573,277 @@ export default function ReadingPracticeScreen() {
     );
   };
 
-  const header = (
-    <View style={[styles.header, { paddingTop: insets.top + 12, flexDirection: "row" }]}>
-      <Pressable style={styles.backButton} onPress={handleBack}>
-        <HugeiconsIcon icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon} size={22} color={colors.foreground} strokeWidth={2.4} />
-      </Pressable>
-      <View style={styles.headerTitleWrap}>
-        <AppText
-          style={[
-            styles.headerTitle,
-            { direction: isRtl ? "rtl" : "ltr", textAlign: isRtl ? "right" : "left" },
-          ]}
-          languageCode={locale}
-          align="start"
-          fullWidth
-          latinRole="bold"
-        >
-          {setupCopy.header}
-        </AppText>
-      </View>
-    </View>
+  const glassHeader = (
+    <GamesGlassHeader
+      title={setupCopy.header}
+      titleLanguageCode={locale}
+      onBack={handleBack}
+      scrolled={state === "setup" || state === "generating" ? scrolled : true}
+    />
   );
 
+  /* ─── Setup ───────────────────────────────────────────────────────── */
   if (state === "setup" || state === "generating") {
+    const generating = state === "generating";
+
     return (
-      <View style={[styles.root, styles.setupRoot]}>
-        {header}
-
-        <ScrollView
-          contentContainerStyle={[styles.setupContent, { paddingBottom: insets.bottom + 42 }]}
-          showsVerticalScrollIndicator={false}
-        >
-          <Animated.View entering={FadeInDown.duration(280)} style={[styles.heroBlock, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-            <AppText
-              style={[
-                styles.title,
-                { direction: isRtl ? "rtl" : "ltr", textAlign: isRtl ? "right" : "left" },
-              ]}
-              languageCode={locale}
-              align="start"
-              fullWidth
-              latinRole="bold"
-            >
-              {setupCopy.title}
-            </AppText>
-            <AppText
-              style={[
-                styles.subtitle,
-                { direction: isRtl ? "rtl" : "ltr", textAlign: isRtl ? "right" : "left" },
-              ]}
-              languageCode={locale}
-              align="start"
-              fullWidth
-            >
-              {setupCopy.subtitle}
-            </AppText>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(60).duration(280)} style={styles.setupCard}>
-              <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.passage}</AppText>
-                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                  <OptionChip label={setupCopy.generateNew} languageCode={locale} active={sourceMode === "ai"} onPress={() => setSourceMode("ai")} />
-                  <OptionChip label={setupCopy.builtIn} languageCode={locale} active={sourceMode === "template"} onPress={() => setSourceMode("template")} />
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.difficulty}</AppText>
-                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                  {DIFFICULTIES.map((item) => (
-                    <OptionChip key={item} label={setupCopy.difficulties[item]} languageCode={locale} active={difficulty === item} onPress={() => setDifficulty(item)} />
-                  ))}
-                </View>
-              </View>
-
-              {sourceMode === "ai" ? (
-                <>
-                  <View style={styles.divider} />
-                  <View style={styles.splitSettings}>
-                    <View style={styles.settingsGroupHalf}>
-                      <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.paragraphs}</AppText>
-                      <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                        {[1, 2, 3].map((item) => (
-                          <OptionChip key={item} label={formatNumber(item)} languageCode={locale} active={paragraphCount === item} onPress={() => setParagraphCount(item)} />
-                        ))}
-                      </View>
-                    </View>
-                    <View style={styles.settingsGroupHalf}>
-                      <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.words}</AppText>
-                      <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                        {[90, 130, 180].map((item) => (
-                          <OptionChip key={item} label={formatNumber(item)} languageCode={locale} active={wordCount === item} onPress={() => setWordCount(item)} />
-                        ))}
-                      </View>
-                    </View>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={styles.divider} />
-                  <View style={styles.settingsGroup}>
-                    <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.template}</AppText>
-                    <View style={[styles.templateGrid, isRtl && styles.rowReverse]}>
-                      {TEMPLATES[difficulty].map((template, index) => (
-                        <PressableScale
-                          key={template.title}
-                          onPress={() => setSelectedTemplateIndex(index)}
-                          style={[
-                            styles.templateCard,
-                            selectedTemplateIndex === index && styles.templateCardActive,
-                          ]}
-                        >
-                          <AppText style={styles.templateTitle} languageCode={isKu ? "ku" : "en"}>
-                            {isKu ? KURDISH_TEMPLATE_COPY[template.title]?.title ?? template.title : template.title}
-                          </AppText>
-                          <AppText style={styles.templateDescription} languageCode={isKu ? "ku" : "en"}>
-                            {isKu ? KURDISH_TEMPLATE_COPY[template.title]?.description ?? template.description : template.description}
-                          </AppText>
-                        </PressableScale>
-                      ))}
-                    </View>
-                  </View>
-                </>
-              )}
-
-              <View style={styles.divider} />
-
-              <View style={styles.settingsGroup}>
-                <AppText style={[styles.label, { textAlign: isRtl ? "right" : "left" }]} languageCode={locale}>{setupCopy.speed}</AppText>
-                <View style={[styles.optionRow, isRtl && styles.rowReverse]}>
-                  {SPEEDS.map((item) => (
-                    <OptionChip key={item} label={setupCopy.speeds[item]} languageCode={locale} active={speed === item} onPress={() => setSpeed(item)} />
-                  ))}
-                </View>
-              </View>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(100).duration(280)} style={styles.setupFooter}>
-            <AppText style={styles.summaryText} languageCode={locale}>
-              {isKu
-                ? `نزیکەی ${formatNumber(estimatedMinutes)} خولەک  ·  ${sourceMode === "template" ? activeTemplateCopy.title : `${formatNumber(wordCount)} وشە`}`
-                : isAr
-                  ? `حوالي ${estimatedMinutes} د  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} كلمة`}`
-                  : `About ${estimatedMinutes} min  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} words`}`}
-            </AppText>
-          </Animated.View>
-
-          <View style={styles.actionArea}>
-            {sourceMode === "ai" && generationError ? (
-              <AppText
-                style={[styles.generationErrorText, { textAlign: isRtl ? "right" : "left" }]}
+      <View style={{ flex: 1 }}>
+        <GamesScreenShell
+          onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+          header={glassHeader}
+          footer={
+            <View style={{ gap: 10 }}>
+              {sourceMode === "ai" && generationError ? (
+                <AppText
+                  style={[GamesType.caption, { color: theme.dangerInk, lineHeight: 18 }]}
+                  languageCode={locale}
+                  fullWidth
+                >
+                  {generationError}
+                </AppText>
+              ) : null}
+              <GamesPrimaryButton
+                label={
+                  generating
+                    ? setupCopy.creating
+                    : sourceMode === "ai"
+                      ? setupCopy.generate
+                      : setupCopy.preview
+                }
                 languageCode={locale}
-                fullWidth
-              >
-                {generationError}
-              </AppText>
-            ) : null}
-
-            <PressableScale
-              style={styles.primaryButton}
-              onPress={state === "generating" ? () => {} : handleBuildPractice}
-              scaleDown={0.98}
-            >
-              <AppText style={styles.primaryButtonText} languageCode={locale}>
-                {state === "generating"
-                  ? setupCopy.creating
-                  : sourceMode === "ai"
-                    ? setupCopy.generate
-                    : setupCopy.preview}
-              </AppText>
-              <HugeiconsIcon
-                icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
-                size={20}
-                color="#FFFFFF"
-                strokeWidth={2.5}
+                loading={generating}
+                onPress={handleBuildPractice}
               />
-            </PressableScale>
-          </View>
-        </ScrollView>
+            </View>
+          }
+        >
+          <GamesIntroCard
+            mode="reading-practice"
+            icon={BookOpen02Icon}
+            languageCode={locale}
+            eyebrow={setupCopy.header}
+            title={setupCopy.title}
+            blurb={setupCopy.subtitle}
+          />
 
-        {state === "generating" ? (
+          <GamesCard entering={FadeInDown.delay(60).duration(GamesMotion.enterMs)}>
+            <View style={styles.settingsGroup}>
+              <GamesSectionLabel languageCode={locale}>{setupCopy.passage}</GamesSectionLabel>
+              <GamesSegmented
+                languageCode={locale}
+                value={sourceMode}
+                onChange={setSourceMode}
+                options={[
+                  { value: "ai" as SourceMode, label: setupCopy.generateNew },
+                  { value: "template" as SourceMode, label: setupCopy.builtIn },
+                ]}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.settingsGroup}>
+              <GamesSectionLabel languageCode={locale}>{setupCopy.difficulty}</GamesSectionLabel>
+              <GamesSegmented
+                languageCode={locale}
+                value={difficulty}
+                onChange={setDifficulty}
+                options={DIFFICULTIES.map((item) => ({
+                  value: item,
+                  label: setupCopy.difficulties[item],
+                }))}
+              />
+            </View>
+
+            {sourceMode === "ai" ? (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.settingsGroup}>
+                  <GamesSectionLabel languageCode={locale}>
+                    {setupCopy.paragraphs}
+                  </GamesSectionLabel>
+                  <GamesSegmented
+                    languageCode={locale}
+                    value={String(paragraphCount)}
+                    onChange={(v) => setParagraphCount(Number(v))}
+                    options={[1, 2, 3].map((item) => ({
+                      value: String(item),
+                      label: formatNumber(item),
+                    }))}
+                  />
+                </View>
+                <View style={styles.settingsGroup}>
+                  <GamesSectionLabel languageCode={locale}>{setupCopy.words}</GamesSectionLabel>
+                  <GamesSegmented
+                    languageCode={locale}
+                    value={String(wordCount)}
+                    onChange={(v) => setWordCount(Number(v))}
+                    options={[90, 130, 180].map((item) => ({
+                      value: String(item),
+                      label: formatNumber(item),
+                    }))}
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.settingsGroup}>
+                  <GamesSectionLabel languageCode={locale}>
+                    {setupCopy.template}
+                  </GamesSectionLabel>
+                  <View style={styles.templateGrid}>
+                    {TEMPLATES[difficulty].map((template, index) => {
+                      const on = selectedTemplateIndex === index;
+                      return (
+                        <GamesCard
+                          key={template.title}
+                          selected={on}
+                          onPress={() => setSelectedTemplateIndex(index)}
+                          style={styles.templateCard}
+                        >
+                          <AppText
+                            style={[
+                              GamesType.section,
+                              { fontSize: 15, color: on ? theme.accentInk : theme.ink },
+                            ]}
+                            languageCode={isKu ? "ku" : "en"}
+                          >
+                            {isKu
+                              ? KURDISH_TEMPLATE_COPY[template.title]?.title ?? template.title
+                              : template.title}
+                          </AppText>
+                          <AppText
+                            style={[
+                              GamesType.caption,
+                              { fontSize: 12, color: theme.mutedInk, lineHeight: 16 },
+                            ]}
+                            languageCode={isKu ? "ku" : "en"}
+                          >
+                            {isKu
+                              ? KURDISH_TEMPLATE_COPY[template.title]?.description ??
+                                template.description
+                              : template.description}
+                          </AppText>
+                        </GamesCard>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
+            )}
+
+            <View style={styles.divider} />
+
+            <View style={styles.settingsGroup}>
+              <GamesSectionLabel languageCode={locale}>{setupCopy.speed}</GamesSectionLabel>
+              <GamesSegmented
+                languageCode={locale}
+                value={speed}
+                onChange={setSpeed}
+                options={SPEEDS.map((item) => ({ value: item, label: setupCopy.speeds[item] }))}
+              />
+            </View>
+          </GamesCard>
+
+          <AppText
+            style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
+            languageCode={locale}
+          >
+            {isKu
+              ? `نزیکەی ${formatNumber(estimatedMinutes)} خولەک  ·  ${sourceMode === "template" ? activeTemplateCopy.title : `${formatNumber(wordCount)} وشە`}`
+              : isAr
+                ? `حوالي ${estimatedMinutes} د  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} كلمة`}`
+                : `About ${estimatedMinutes} min  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} words`}`}
+          </AppText>
+        </GamesScreenShell>
+
+        {generating ? (
           <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.generatingOverlay}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <AppText style={styles.generatingText} languageCode={locale}>{setupCopy.creatingDetail}</AppText>
+            <ActivityIndicator size="large" color={theme.accent} />
+            <AppText
+              style={[GamesType.section, { color: theme.ink, textAlign: "center" }]}
+              languageCode={locale}
+            >
+              {setupCopy.creatingDetail}
+            </AppText>
           </Animated.View>
         ) : null}
       </View>
     );
   }
 
+  /* ─── Preview / reading / results ─────────────────────────────────── */
+  const gutter = metrics.gutter;
+
   return (
-    <View style={styles.root}>
-      {!isDark && <HomeMeshBackground />}
-      {header}
+    <View style={{ flex: 1, backgroundColor: theme.canvas }}>
+      {glassHeader}
 
       <ScrollView
-        style={styles.practiceScroll}
+        style={{ flex: 1 }}
         contentContainerStyle={[
           styles.practiceScrollContent,
-          { paddingBottom: insets.bottom + (compact ? 158 : 184) },
+          {
+            paddingTop: metrics.sectionGap,
+            paddingBottom: insets.bottom + (compact ? 158 : 184),
+            maxWidth: isWide ? metrics.maxWidth : "100%",
+            alignSelf: isWide ? "center" : "stretch",
+            width: "100%",
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.stageHeader}>
+        <View style={{ paddingHorizontal: gutter, gap: 10 }}>
           <View style={[styles.stageStats, isRtl && styles.rowReverse]}>
             <View style={styles.stageStat}>
-              <HugeiconsIcon icon={BookOpen02Icon} size={16} color={C.blue} strokeWidth={2.2} />
-              <AppText style={styles.stageStatText}>{passageStats.wordCount} words</AppText>
+              <HugeiconsIcon icon={BookOpen02Icon} size={16} color={theme.mutedInk} strokeWidth={2.2} />
+              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
+                {passageStats.wordCount} words
+              </AppText>
             </View>
             <View style={styles.stageStat}>
-              <HugeiconsIcon icon={Target02Icon} size={16} color={C.blue} strokeWidth={2.2} />
-              <AppText style={styles.stageStatText}>{passageStats.sentenceCount} sentences</AppText>
+              <HugeiconsIcon icon={Target02Icon} size={16} color={theme.mutedInk} strokeWidth={2.2} />
+              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
+                {passageStats.sentenceCount} sentences
+              </AppText>
             </View>
-            <View style={styles.stageStat}>
-              <HugeiconsIcon icon={Clock01Icon} size={16} color={C.blue} strokeWidth={2.2} />
-              <AppText style={styles.stageStatText} forceLatinFont>
+            {/* The clock turns coral only while it is actually counting down —
+                a live value that never changes colour is easy to stop noticing. */}
+            <View
+              style={[
+                styles.stageStat,
+                state === "reading" && {
+                  backgroundColor: theme.accentWash,
+                  borderColor: withAlpha(theme.accent, 0.28),
+                },
+              ]}
+            >
+              <HugeiconsIcon
+                icon={Clock01Icon}
+                size={16}
+                color={state === "reading" ? theme.accentInk : theme.mutedInk}
+                strokeWidth={2.2}
+              />
+              <AppText
+                style={[
+                  GamesType.caption,
+                  { fontSize: 12, color: state === "reading" ? theme.accentInk : theme.ink },
+                ]}
+                forceLatinFont
+              >
                 {state === "reading"
                   ? `${Math.floor(secondsRemaining / 60)}:${String(secondsRemaining % 60).padStart(2, "0")}`
                   : "2:00 max"}
               </AppText>
             </View>
           </View>
-          <AppText style={[styles.stageHint, { textAlign: isRtl ? "right" : "left" }]}>
+          <AppText
+            style={[
+              GamesType.body,
+              { fontSize: 13, color: theme.mutedInk, textAlign: isRtl ? "right" : "left" },
+            ]}
+          >
             {state === "reading"
               ? "Read continuously. Tap the mic when finished, or scoring starts automatically at 2:00."
               : state === "results"
@@ -863,6 +855,7 @@ export default function ReadingPracticeScreen() {
         <View
           style={[
             styles.teleprompter,
+            { marginHorizontal: gutter },
             compact && styles.teleprompterCompact,
             state === "reading" && { height: readingViewportHeight },
             state !== "reading" && styles.teleprompterPreview,
@@ -889,12 +882,12 @@ export default function ReadingPracticeScreen() {
           {state === "reading" ? (
             <>
               <LinearGradient
-                colors={isDark ? [colors.background, "rgba(15,23,42,0)"] : ["#F8FAFC", "rgba(248,250,252,0)"]}
+                colors={[theme.surface, withAlpha(theme.surface, 0)]}
                 style={styles.gradientTop}
                 pointerEvents="none"
               />
               <LinearGradient
-                colors={isDark ? ["rgba(15,23,42,0)", colors.background] : ["rgba(248,250,252,0)", "#F8FAFC"]}
+                colors={[withAlpha(theme.surface, 0), theme.surface]}
                 style={styles.gradientBottom}
                 pointerEvents="none"
               />
@@ -903,125 +896,186 @@ export default function ReadingPracticeScreen() {
         </View>
 
         {evaluation ? (
-          <Animated.View entering={FadeInDown.duration(280)} style={styles.resultsPanel}>
-            <View style={[styles.scoreHeader, isRtl && styles.rowReverse]}>
-              <View style={styles.scoreCoin}>
-                <AppText style={styles.scoreValue} forceLatinFont>
-                  {evaluation.accuracyScore}
-                </AppText>
-              </View>
-              <View style={[styles.scoreCopy, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
-                <AppText style={[styles.scoreTitle, { textAlign: isRtl ? "right" : "left" }]}>
-                  {evaluation.accuracyScore >= 80 ? "Strong reading" : evaluation.accuracyScore >= 60 ? "Good base" : "Needs another pass"}
-                </AppText>
-                <AppText
-                  style={styles.scoreSubtitle}
-                  languageCode="en"
-                  align="start"
-                  fullWidth
-                  forceLatinFont
-                >
-                  Transcript: {evaluation.transcript || "No clear speech captured."}
-                </AppText>
-              </View>
-            </View>
-
-            <View style={styles.metricsRow}>
-              <MetricCard label="Coverage" value={`${evaluation.coverageScore}%`} tone="green" />
-              <MetricCard label="Correct" value={`${evaluation.correctWords}/${evaluation.totalWords}`} tone="green" />
-              <MetricCard label="Sentences" value={`${evaluation.correctSentences}/${evaluation.totalSentences}`} />
-              <MetricCard label="WPM" value={`${evaluation.wpm}`} tone={evaluation.fluencyScore >= 70 ? "green" : "red"} />
-              <MetricCard label="Time" value={`${evaluation.durationSeconds}s`} />
-            </View>
-
-            <View style={styles.sentenceBreakdown}>
-              <AppText
-                style={styles.sentenceBreakdownTitle}
-                languageCode={locale}
-                align="start"
-                fullWidth
-              >
-                {isKu ? "هەڵسەنگاندنی ڕستەکان" : "Sentence check"}
-              </AppText>
-              {evaluation.sentenceResults.map((sentence, index) => (
-                <DirectionBoundary
-                  key={`${sentence.sentence}-${index}`}
-                  direction="ltr"
-                  style={styles.sentenceResult}
-                >
-                  <View
+          <View style={{ paddingHorizontal: gutter }}>
+            <GamesCard raised entering={FadeInDown.duration(GamesMotion.enterMs)} style={{ gap: 14 }}>
+              <View style={[styles.scoreHeader, isRtl && styles.rowReverse]}>
+                <View style={[styles.scoreCoin, { backgroundColor: theme.accent }]}>
+                  <AppText
+                    style={[GamesType.display, { fontSize: 23, color: theme.onAccent }]}
+                    forceLatinFont
+                  >
+                    {evaluation.accuracyScore}
+                  </AppText>
+                </View>
+                <View style={[styles.scoreCopy, { alignItems: isRtl ? "flex-end" : "flex-start" }]}>
+                  <AppText
                     style={[
-                      styles.sentenceNumber,
-                      sentence.correct
-                        ? styles.sentenceNumberCorrect
-                        : styles.sentenceNumberNeedsWork,
+                      GamesType.section,
+                      { fontSize: 18, color: theme.ink, textAlign: isRtl ? "right" : "left" },
                     ]}
                   >
-                    <AppText style={styles.sentenceNumberText} forceLatinFont>
-                      {index + 1}
-                    </AppText>
-                  </View>
+                    {evaluation.accuracyScore >= 80
+                      ? "Strong reading"
+                      : evaluation.accuracyScore >= 60
+                        ? "Good base"
+                        : "Needs another pass"}
+                  </AppText>
                   <AppText
-                    style={styles.sentenceResultText}
+                    style={[GamesType.caption, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
                     languageCode="en"
                     align="start"
+                    fullWidth
                     forceLatinFont
                   >
-                    {sentence.sentence}
+                    Transcript: {evaluation.transcript || "No clear speech captured."}
                   </AppText>
-                  <AppText
-                    style={[
-                      styles.sentenceResultScore,
-                      { color: sentence.correct ? "#10B981" : C.red },
-                    ]}
-                    forceLatinFont
-                  >
-                    {sentence.score}%
-                  </AppText>
-                </DirectionBoundary>
-              ))}
-            </View>
-
-            <View style={styles.feedbackGrid}>
-              <View style={styles.feedbackBlock}>
-                <View style={styles.feedbackTitleRow}>
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={16} color="#10B981" strokeWidth={2.4} />
-                  <AppText style={styles.feedbackTitle}>What worked</AppText>
                 </View>
-                {(evaluation.strengths.length ? evaluation.strengths : ["You completed a full reading attempt."]).map((item) => (
-                  <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
+              </View>
+
+              <View style={styles.metricsRow}>
+                <GamesStatTile label="Coverage" value={`${evaluation.coverageScore}%`} tone="success" />
+                <GamesStatTile
+                  label="Correct"
+                  value={`${evaluation.correctWords}/${evaluation.totalWords}`}
+                  tone="success"
+                />
+                <GamesStatTile
+                  label="Sentences"
+                  value={`${evaluation.correctSentences}/${evaluation.totalSentences}`}
+                />
+                <GamesStatTile
+                  label="WPM"
+                  value={`${evaluation.wpm}`}
+                  tone={evaluation.fluencyScore >= 70 ? "success" : "danger"}
+                />
+                <GamesStatTile label="Time" value={`${evaluation.durationSeconds}s`} />
+              </View>
+
+              <View style={{ gap: 8 }}>
+                <GamesSectionLabel languageCode={locale}>
+                  {isKu ? "هەڵسەنگاندنی ڕستەکان" : "Sentence check"}
+                </GamesSectionLabel>
+                {evaluation.sentenceResults.map((sentence, index) => (
+                  <DirectionBoundary
+                    key={`${sentence.sentence}-${index}`}
+                    direction="ltr"
+                    style={styles.sentenceResult}
+                  >
+                    <View
+                      style={[
+                        styles.sentenceNumber,
+                        {
+                          backgroundColor: sentence.correct
+                            ? theme.successWash
+                            : theme.dangerWash,
+                        },
+                      ]}
+                    >
+                      <AppText
+                        style={[
+                          GamesType.caption,
+                          {
+                            fontSize: 12,
+                            color: sentence.correct ? theme.successInk : theme.dangerInk,
+                          },
+                        ]}
+                        forceLatinFont
+                      >
+                        {index + 1}
+                      </AppText>
+                    </View>
+                    <AppText
+                      style={[GamesType.body, { fontSize: 13, color: theme.ink, lineHeight: 18, flex: 1 }]}
+                      languageCode="en"
+                      align="start"
+                      forceLatinFont
+                    >
+                      {sentence.sentence}
+                    </AppText>
+                    <AppText
+                      style={[
+                        GamesType.caption,
+                        {
+                          fontSize: 12,
+                          minWidth: 38,
+                          textAlign: "right",
+                          color: sentence.correct ? theme.successInk : theme.dangerInk,
+                        },
+                      ]}
+                      forceLatinFont
+                    >
+                      {sentence.score}%
+                    </AppText>
+                  </DirectionBoundary>
                 ))}
               </View>
 
-              <View style={styles.feedbackBlock}>
-                <View style={styles.feedbackTitleRow}>
-                  <HugeiconsIcon icon={RefreshIcon} size={16} color={C.red} strokeWidth={2.4} />
-                  <AppText style={styles.feedbackTitle}>Next pass</AppText>
+              <View style={styles.feedbackGrid}>
+                <View style={styles.feedbackBlock}>
+                  <View style={styles.feedbackTitleRow}>
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle02Icon}
+                      size={16}
+                      color={theme.successInk}
+                      strokeWidth={2.4}
+                    />
+                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
+                      What worked
+                    </AppText>
+                  </View>
+                  {(evaluation.strengths.length
+                    ? evaluation.strengths
+                    : ["You completed a full reading attempt."]
+                  ).map((item) => (
+                    <AppText
+                      key={item}
+                      style={[GamesType.body, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
+                    >
+                      • {item}
+                    </AppText>
+                  ))}
                 </View>
-                {(evaluation.nextSteps.length ? evaluation.nextSteps : ["Try the same passage again."]).map((item) => (
-                  <AppText key={item} style={styles.feedbackText}>• {item}</AppText>
-                ))}
+
+                <View style={styles.feedbackBlock}>
+                  <View style={styles.feedbackTitleRow}>
+                    <HugeiconsIcon
+                      icon={RefreshIcon}
+                      size={16}
+                      color={theme.accentInk}
+                      strokeWidth={2.4}
+                    />
+                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
+                      Next pass
+                    </AppText>
+                  </View>
+                  {(evaluation.nextSteps.length
+                    ? evaluation.nextSteps
+                    : ["Try the same passage again."]
+                  ).map((item) => (
+                    <AppText
+                      key={item}
+                      style={[GamesType.body, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
+                    >
+                      • {item}
+                    </AppText>
+                  ))}
+                </View>
               </View>
-            </View>
-          </Animated.View>
+            </GamesCard>
+          </View>
         ) : null}
       </ScrollView>
 
       <View style={[styles.controlDock, { paddingBottom: insets.bottom + 14 }]}>
-        <LinearGradient
-          colors={[
-            "rgba(248,250,252,0)",
-            "rgba(248,250,252,0.82)",
-            "#F8FAFC",
-          ]}
-          locations={[0, 0.38, 1]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
+        {/* Theme-aware fade. The old version hardcoded #F8FAFC, which painted a
+            pale smear across the dark canvas. */}
+        <GamesScrollFade position="bottom" height={140} />
         {state === "processing" ? (
-          <View style={styles.processingPill}>
-            <ActivityIndicator size="small" color={C.blue} />
-            <AppText style={styles.processingText}>Scoring your reading...</AppText>
+          <View style={[styles.processingPill, { backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}>
+            <ActivityIndicator size="small" color={theme.accent} />
+            <AppText style={[GamesType.section, { fontSize: 14, color: theme.ink }]}>
+              Scoring your reading...
+            </AppText>
           </View>
         ) : (
           <>
@@ -1029,16 +1083,41 @@ export default function ReadingPracticeScreen() {
               <MicCaptureOrb
                 listening={state === "reading"}
                 onPress={handleMicPress}
+                color={state === "reading" ? theme.danger : theme.accent}
                 size={compact ? 66 : 78}
               />
-              <View style={[styles.micCaption, state === "reading" && styles.micCaptionLive]}>
-                <HugeiconsIcon icon={Mic01Icon} size={14} color={state === "reading" ? "#FFFFFF" : C.blue} strokeWidth={2.3} />
-                <AppText style={[styles.micCaptionText, state === "reading" && { color: "#FFFFFF" }]}>
+              <View
+                style={[
+                  styles.micCaption,
+                  {
+                    backgroundColor: state === "reading" ? theme.danger : theme.accentWash,
+                    borderColor:
+                      state === "reading" ? theme.danger : withAlpha(theme.accent, 0.24),
+                  },
+                ]}
+              >
+                <HugeiconsIcon
+                  icon={Mic01Icon}
+                  size={14}
+                  color={state === "reading" ? "#FFFFFF" : theme.accentInk}
+                  strokeWidth={2.3}
+                />
+                <AppText
+                  style={[
+                    GamesType.eyebrow,
+                    { fontSize: 11, letterSpacing: 0.6, color: state === "reading" ? "#FFFFFF" : theme.accentInk },
+                  ]}
+                >
                   {state === "reading" ? "Stop reading" : "Start reading"}
                 </AppText>
               </View>
               {state !== "reading" && (speech.error || geminiCapture.error) ? (
-                <AppText style={styles.captureErrorText}>
+                <AppText
+                  style={[
+                    GamesType.caption,
+                    { fontSize: 11, lineHeight: 15, maxWidth: 260, textAlign: "center", color: theme.dangerInk },
+                  ]}
+                >
                   {speech.error || geminiCapture.error}
                 </AppText>
               ) : null}
@@ -1046,17 +1125,36 @@ export default function ReadingPracticeScreen() {
 
             <View style={styles.secondaryActions}>
               <PressableScale
-                style={styles.secondaryButton}
+                style={[
+                  styles.secondaryButton,
+                  { backgroundColor: theme.surfaceSunken, borderColor: theme.border },
+                ]}
                 onPress={() => {
                   setEvaluation(null);
                   setState("preview");
                   resetScrollPosition();
                 }}
               >
-                <AppText style={styles.secondaryButtonText}>Retry</AppText>
+                <AppText
+                  numberOfLines={1}
+                  style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}
+                >
+                  Retry
+                </AppText>
               </PressableScale>
-              <PressableScale style={styles.secondaryButton} onPress={handleBuildPractice}>
-                <AppText style={styles.secondaryButtonText}>New passage</AppText>
+              <PressableScale
+                style={[
+                  styles.secondaryButton,
+                  { backgroundColor: theme.surfaceSunken, borderColor: theme.border },
+                ]}
+                onPress={handleBuildPractice}
+              >
+                <AppText
+                  numberOfLines={1}
+                  style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}
+                >
+                  New passage
+                </AppText>
               </PressableScale>
             </View>
           </>
@@ -1067,552 +1165,245 @@ export default function ReadingPracticeScreen() {
 }
 
 function useReadingStyles() {
-  const { colors, isDark } = useThemeColors();
-  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const theme = useGamesTheme();
+  const metrics = useGamesMetrics(false);
+  return useMemo(() => createStyles(theme, metrics), [theme, metrics]);
 }
 
-function createStyles(colors: any, isDark: boolean) {
+function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  setupRoot: {
-    backgroundColor: colors.background,
-  },
-  header: {
-    width: "100%",
-    maxWidth: 800,
-    alignSelf: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 4,
-    alignItems: "center",
-    gap: 12,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  headerTitleWrap: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  setupContent: {
-    width: "100%",
-    maxWidth: 760,
-    alignSelf: "center",
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  heroBlock: {
-    gap: 4,
-    paddingTop: 4,
-  },
-  title: {
-    fontSize: 26,
-    lineHeight: 31,
-    fontWeight: "900",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  subtitle: {
-    maxWidth: 560,
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.mutedForeground,
-  },
-  setupCard: {
-    padding: 16,
-    gap: 16,
-    borderRadius: 20,
-    borderCurve: "continuous",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  settingsGroup: {
-    gap: 8,
-  },
-  settingsGroupHalf: {
-    flexGrow: 1,
-    flexBasis: 148,
-    gap: 10,
-  },
-  splitSettings: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  optionRow: {
-    flexDirection: "row",
-    gap: 4,
-    padding: 4,
-    borderRadius: 14,
-    borderCurve: "continuous",
-    backgroundColor: colors.muted,
-  },
-  rowReverse: {
-    flexDirection: "row-reverse",
-  },
-  optionChip: {
-    minHeight: 44,
-    minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 11,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  optionChipFlex: {
-    flex: 1,
-    flexBasis: 0,
-  },
-  optionChipActive: {
-    backgroundColor: colors.surfaceRaised,
-    boxShadow: isDark
-      ? "0 1px 3px rgba(0, 0, 0, 0.28)"
-      : "0 1px 3px rgba(15, 23, 42, 0.12)",
-  },
-  optionChipText: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "800",
-    color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedBold",
-    textAlign: "center",
-  },
-  optionChipTextActive: {
-    color: colors.primary,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  templateGrid: {
-    flexDirection: "row",
-    gap: 10,
-    flexWrap: "wrap",
-  },
-  templateCard: {
-    flexGrow: 1,
-    flexBasis: 150,
-    minHeight: 98,
-    padding: 14,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    justifyContent: "space-between",
-  },
-  templateCardActive: {
-    borderColor: C.blue,
-    backgroundColor: "rgba(59,130,246,0.08)",
-  },
-  templateTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  templateDescription: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.mutedForeground,
-  },
-  setupFooter: {
-    alignItems: "center",
-  },
-  summaryText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.mutedForeground,
-    textAlign: "center",
-  },
-  actionArea: {
-    gap: 12,
-  },
-  primaryButton: {
-    height: PRIMARY_ACTION.height,
-    paddingHorizontal: 20,
-    borderRadius: PRIMARY_ACTION.radius,
-    borderCurve: "continuous",
-    backgroundColor: PRIMARY_ACTION.face,
-    borderBottomWidth: PRIMARY_ACTION.rimWidth,
-    borderBottomColor: PRIMARY_ACTION.rim,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
-  },
-  generatingOverlay: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: isDark ? "rgba(15,23,42,0.9)" : "rgba(248,250,252,0.86)",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
-  },
-  generatingText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.foreground,
-  },
-  generationErrorText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: C.red,
-    fontWeight: "700",
-  },
-  practiceScroll: {
-    flex: 1,
-  },
-  practiceScrollContent: {
-    gap: 12,
-  },
-  stageHeader: {
-    paddingHorizontal: 20,
-    gap: 10,
-  },
-  stageStats: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  stageStat: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  stageStatText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  stageHint: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.mutedForeground,
-  },
-  teleprompter: {
-    marginHorizontal: 20,
-    minHeight: 430,
-    borderRadius: 30,
-    overflow: "hidden",
-    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.72)",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  teleprompterPreview: {
-    minHeight: 0,
-    overflow: "visible",
-  },
-  teleprompterCompact: {
-    minHeight: 470,
-  },
-  teleprompterMask: {
-    flex: 1,
-    overflow: "hidden",
-  },
-  passageWrap: {
-    paddingHorizontal: 22,
-    paddingVertical: 150,
-  },
-  previewScrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-  passageText: {
-    fontSize: 22,
-    lineHeight: 34,
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  passageTextCompact: {
-    fontSize: 20,
-    lineHeight: 29,
-  },
-  wordWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 2,
-  },
-  wordText: {
-    fontSize: 20,
-    lineHeight: 32,
-    fontFamily: "DINNextRoundedBold",
-  },
-  wordCorrect: {
-    color: "#10B981",
-  },
-  wordMissed: {
-    color: "#EF4444",
-    textDecorationLine: "underline",
-  },
-  wordOutOfOrder: {
-    color: "#F59E0B",
-  },
-  gradientTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 92,
-  },
-  gradientBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 92,
-  },
-  resultsPanel: {
-    marginHorizontal: 20,
-    padding: 16,
-    borderRadius: 26,
-    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.9)",
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 14,
-  },
-  scoreHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  scoreCoin: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: isDark ? colors.primary : C.navy,
-  },
-  scoreValue: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
-  },
-  scoreCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  scoreTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  scoreSubtitle: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.mutedForeground,
-  },
-  metricsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  metricCard: {
-    flexGrow: 1,
-    flexBasis: 96,
-    minHeight: 72,
-    borderRadius: 18,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  metricValue: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
-  },
-  metricLabel: {
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  feedbackGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  feedbackBlock: {
-    flexGrow: 1,
-    flexBasis: 150,
-    gap: 8,
-  },
-  feedbackTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  feedbackTitle: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  feedbackText: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.mutedForeground,
-  },
-  sentenceBreakdown: {
-    gap: 8,
-  },
-  sentenceBreakdownTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  sentenceResult: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    backgroundColor: colors.background,
-  },
-  sentenceNumber: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sentenceNumberCorrect: {
-    backgroundColor: "rgba(16,185,129,0.14)",
-  },
-  sentenceNumberNeedsWork: {
-    backgroundColor: "rgba(239,68,68,0.12)",
-  },
-  sentenceNumberText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  sentenceResultText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.foreground,
-  },
-  sentenceResultScore: {
-    minWidth: 38,
-    fontSize: 12,
-    fontWeight: "900",
-    textAlign: "right",
-  },
-  controlDock: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    minHeight: 118,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingTop: 8,
-    backgroundColor: "transparent",
-  },
-  micWrap: {
-    alignItems: "center",
-    gap: 5,
-  },
-  micCaption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: "rgba(59,130,246,0.09)",
-  },
-  micCaptionLive: {
-    backgroundColor: C.red,
-  },
-  micCaptionText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: C.blue,
-  },
-  captureErrorText: {
-    maxWidth: 260,
-    color: C.red,
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: "center",
-  },
-  secondaryActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  secondaryButton: {
-    minWidth: 106,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 14,
-    alignItems: "center",
-    backgroundColor: isDark ? colors.surface : "rgba(255,255,255,0.78)",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  secondaryButtonText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
-  processingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 999,
-    backgroundColor: isDark ? colors.surfaceRaised : "rgba(255,255,255,0.88)",
-  },
-  processingText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: colors.foreground,
-  },
+    settingsGroup: {
+      gap: 8,
+      marginTop: 12,
+    },
+    rowReverse: {
+      flexDirection: "row-reverse",
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.border,
+      marginTop: 16,
+    },
+    templateGrid: {
+      flexDirection: "row",
+      gap: 10,
+      flexWrap: "wrap",
+    },
+    templateCard: {
+      flexGrow: 1,
+      flexBasis: 150,
+      minHeight: 98,
+      justifyContent: "space-between",
+      gap: 6,
+    },
+    generatingOverlay: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: withAlpha(theme.canvas, theme.isDark ? 0.9 : 0.9),
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 14,
+      paddingHorizontal: 32,
+    },
+
+    practiceScrollContent: {
+      gap: 12,
+    },
+    stageStats: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    stageStat: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: metrics.radiusPill,
+      backgroundColor: theme.surfaceSunken,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+
+    teleprompter: {
+      minHeight: 430,
+      borderRadius: metrics.radiusCard,
+      overflow: "hidden",
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    teleprompterPreview: {
+      minHeight: 0,
+      overflow: "visible",
+    },
+    teleprompterCompact: {
+      minHeight: 470,
+    },
+    teleprompterMask: {
+      flex: 1,
+      overflow: "hidden",
+    },
+    passageWrap: {
+      paddingHorizontal: 22,
+      paddingVertical: 150,
+    },
+    previewScrollContent: {
+      paddingHorizontal: 20,
+      paddingVertical: 24,
+    },
+    passageText: {
+      fontSize: 22,
+      lineHeight: 34,
+      color: theme.ink,
+      fontFamily: "DINNextRoundedBold",
+    },
+    passageTextCompact: {
+      fontSize: 20,
+      lineHeight: 29,
+    },
+    wordWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      paddingHorizontal: 2,
+    },
+    wordText: {
+      fontSize: 20,
+      lineHeight: 32,
+      fontFamily: "DINNextRoundedBold",
+    },
+    /* Semantic, and only here: this is the one place in the practice set where
+       colour genuinely encodes correctness. */
+    wordCorrect: {
+      color: theme.successInk,
+    },
+    wordMissed: {
+      color: theme.dangerInk,
+      textDecorationLine: "underline",
+    },
+    wordOutOfOrder: {
+      color: theme.warningInk,
+    },
+    gradientTop: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 92,
+    },
+    gradientBottom: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 92,
+    },
+
+    scoreHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+    },
+    scoreCoin: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scoreCopy: {
+      flex: 1,
+      gap: 4,
+    },
+    metricsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    feedbackGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
+    feedbackBlock: {
+      flexGrow: 1,
+      flexBasis: 150,
+      gap: 8,
+    },
+    feedbackTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    sentenceResult: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: metrics.radiusControl,
+      backgroundColor: theme.surfaceSunken,
+    },
+    sentenceNumber: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    controlDock: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      minHeight: 118,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingTop: 8,
+      backgroundColor: "transparent",
+    },
+    micWrap: {
+      alignItems: "center",
+      gap: 5,
+    },
+    micCaption: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: metrics.radiusPill,
+      borderWidth: 1,
+    },
+    secondaryActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: 8,
+      paddingHorizontal: 16,
+    },
+    secondaryButton: {
+      minWidth: 106,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: metrics.radiusControl,
+      alignItems: "center",
+      borderWidth: 1,
+    },
+    processingPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      borderRadius: metrics.radiusPill,
+      borderWidth: 1,
+    },
   });
 }

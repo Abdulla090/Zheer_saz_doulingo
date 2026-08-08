@@ -16,6 +16,7 @@ import {
   ONBOARDING_TYPE,
   resolveOnboardingSize,
 } from "./onboarding-design";
+import { useOnboardingTheme, type OnboardingTheme } from "./onboarding-theme";
 
 export type OnboardingSlideModel = {
   id: string;
@@ -42,10 +43,11 @@ export function OnboardingSlide({ slide, locale }: Props) {
   const size = resolveOnboardingSize(width, height);
   const isWide = size === "xl";
   const isRtl = locale === "ku" || locale === "ar";
+  const theme = useOnboardingTheme();
 
   const styles = useMemo(
-    () => createStyles(size, isWide, isRtl),
-    [isRtl, isWide, size],
+    () => createStyles(size, isWide, isRtl, theme),
+    [isRtl, isWide, size, theme],
   );
 
   const artwork = (
@@ -115,6 +117,7 @@ const createStyles = (
   size: ReturnType<typeof resolveOnboardingSize>,
   isWide: boolean,
   isRtl: boolean,
+  theme: OnboardingTheme,
 ) => {
   const type = ONBOARDING_TYPE[size];
   const gutter = ONBOARDING_GUTTER[size];
@@ -150,7 +153,7 @@ const createStyles = (
     },
     title: {
       width: "100%",
-      color: ONBOARDING_DESIGN.ink,
+      color: theme.ink,
       fontFamily: ONBOARDING_DESIGN.serif,
       fontSize: type.display.size,
       lineHeight: type.display.lineHeight,
@@ -159,13 +162,13 @@ const createStyles = (
     },
     titleRtl: {
       width: "100%",
-      color: ONBOARDING_DESIGN.ink,
+      color: theme.ink,
       fontSize: type.displayRtl.size,
       lineHeight: Math.round(type.displayRtl.size * 1.42),
       letterSpacing: 0,
     },
     subtitle: {
-      color: ONBOARDING_DESIGN.mutedInk,
+      color: theme.mutedInk,
       fontSize: type.body.size,
       lineHeight: type.body.lineHeight,
       marginTop: tight ? ONBOARDING_SPACE.sm : ONBOARDING_SPACE.md,

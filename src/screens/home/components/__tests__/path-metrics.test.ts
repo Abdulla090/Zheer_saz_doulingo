@@ -9,8 +9,8 @@ describe("path node metrics", () => {
       slotHeight: 78,
     });
     expect(getPathMetrics("normal", true)).toEqual({
-      lessonButtonSize: 54,
-      slotHeight: 90,
+      lessonButtonSize: 68,
+      slotHeight: 66,
     });
     expect(getPathMetrics("kids", true)).toEqual({
       lessonButtonSize: 52,
@@ -23,15 +23,28 @@ describe("path node metrics", () => {
       lessonButtonSize: 58,
       slotHeight: 92,
     });
-    // Normal nodes carry a deeper rim + ground shadow, so their slot is taller
-    // than street/kids to keep the vertical rhythm even.
+    // The reference path's own numbers. The slot is shorter than the node
+    // because the node's SVG viewBox is mostly padding — the drawn token is
+    // about 73x63 of those 80px, so centring it still leaves a row gap.
     expect(getPathMetrics("normal")).toEqual({
-      lessonButtonSize: 62,
-      slotHeight: 104,
+      lessonButtonSize: 80,
+      slotHeight: 78,
     });
     expect(getPathMetrics("kids")).toEqual({
       lessonButtonSize: 60,
       slotHeight: 94,
     });
+  });
+
+  it("keeps the normal path's node taller than its slot", () => {
+    // Guards the centring in `ListItem`: if the slot ever grows past the node,
+    // the rows would drift apart from the reference rhythm.
+    for (const compactWeb of [false, true]) {
+      const { lessonButtonSize, slotHeight } = getPathMetrics(
+        "normal",
+        compactWeb,
+      );
+      expect(slotHeight).toBeLessThan(lessonButtonSize);
+    }
   });
 });

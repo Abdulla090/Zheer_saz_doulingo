@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
@@ -18,15 +18,18 @@ import {
   MASCOTS,
   type MascotId,
 } from "../../../constants/mascots";
-import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
 import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { hapticSelection } from "../../../utils/haptics";
 import { OnboardingFooter, OnboardingTopBar } from "./OnboardingChrome";
+import { OnboardingQuestion } from "./OnboardingQuestion";
 import {
-  ONBOARDING_DESIGN,
-  ONBOARDING_PAPER_SHADOW,
-} from "./onboarding-design";
+  onboardingLift,
+  useOnboardingMetrics,
+  useOnboardingTheme,
+  type OnboardingMetrics,
+  type OnboardingTheme,
+} from "./onboarding-theme";
 import {
   ONBOARDING_TOTAL_STEPS,
   onboardingStepNumber,
@@ -39,7 +42,6 @@ type Props = {
 
 const PET_COPY = {
   en: {
-    eyebrow: "FINAL STEP",
     title: "Choose your learning buddy",
     subtitle: "Your pet will cheer you on throughout the app.",
     featured: "Twino originals",
@@ -49,7 +51,6 @@ const PET_COPY = {
     continueWith: (name: string) => `Continue with ${name}`,
   },
   ku: {
-    eyebrow: "هەنگاوی کۆتایی",
     title: "هاوڕێی فێربوونت هەڵبژێرە",
     subtitle: "ئاژەڵەکەت لە سەرانسەری ئەپەکە هانت دەدات.",
     featured: "هاوڕێ سەرەکییەکانی Twino",
@@ -59,7 +60,6 @@ const PET_COPY = {
     continueWith: (name: string) => `لەگەڵ ${name} بەردەوام بە`,
   },
   ar: {
-    eyebrow: "الخطوة الأخيرة",
     title: "اختر رفيق التعلّم",
     subtitle: "سيشجعك حيوانك الأليف في جميع أنحاء التطبيق.",
     featured: "رفيقا Twino الأصليان",
@@ -69,7 +69,6 @@ const PET_COPY = {
     continueWith: (name: string) => `تابع مع ${name}`,
   },
   es: {
-    eyebrow: "ÚLTIMO PASO",
     title: "Elige a tu compañero",
     subtitle: "Tu mascota te animará en toda la aplicación.",
     featured: "Los originales de Twino",
@@ -79,7 +78,6 @@ const PET_COPY = {
     continueWith: (name: string) => `Continuar con ${name}`,
   },
   ru: {
-    eyebrow: "ПОСЛЕДНИЙ ШАГ",
     title: "Выбери помощника",
     subtitle: "Твой питомец будет поддерживать тебя во всём приложении.",
     featured: "Оригинальные герои Twino",
@@ -90,28 +88,40 @@ const PET_COPY = {
   },
 } as const;
 
+/**
+ * The last setup step: pick the pet.
+ *
+ * It opens with the same mascot-and-speech-bubble header as every question
+ * before it, and the mascot in that bubble is the one currently selected — so
+ * the header is a live preview of the choice rather than decoration. Picking a
+ * different pet swaps who is asking.
+ */
 export function OnboardingPetPicker({ onFinish, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const locale = useLocaleStore((state) => state.selectedUiLanguage);
   const selectedMascotId = useSettingsStore((state) => state.selectedMascotId);
   const setSelectedMascotId = useSettingsStore((state) => state.setSelectedMascotId);
-  const { colors, isDark } = useThemeColors();
 
+  const theme = useOnboardingTheme();
   const copy = PET_COPY[locale as keyof typeof PET_COPY] ?? PET_COPY.en;
   const isRtl = locale === "ku" || locale === "ar";
   const isCompact = width < 390 || height < 760;
-  const contentWidth = Math.min(width - (isCompact ? 28 : 32), 640);
+  const metrics = useOnboardingMetrics(isCompact);
+
+  const contentWidth = Math.min(width - metrics.gutter * 2, metrics.maxWidth);
   const gridColumns = width >= 600 ? 4 : width < 350 ? 2 : 3;
   const gap = 10;
   const gridItemWidth = (contentWidth - gap * (gridColumns - 1)) / gridColumns;
   const featuredItemWidth = (contentWidth - gap) / 2;
 
   const styles = useMemo(
-    () => createStyles(colors, isDark, isRtl, isCompact),
-    [colors, isCompact, isDark, isRtl],
+    () => createStyles(theme, metrics, isCompact),
+    [isCompact, metrics, theme],
   );
-  const selectedMascot = MASCOTS.find((mascot) => mascot.id === selectedMascotId) ?? MASCOTS[0];
+
+  const selectedMascot =
+    MASCOTS.find((mascot) => mascot.id === selectedMascotId) ?? MASCOTS[0];
   const selectedMascotName = getMascotDisplayName(selectedMascot, locale);
   const featuredMascots = MASCOTS.filter((mascot) => mascot.featured);
   const otherMascots = MASCOTS.filter((mascot) => !mascot.featured);
@@ -144,12 +154,13 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
           selected && styles.petOptionSelected,
         ]}
       >
-        <View style={[styles.petImageFrame, selected && styles.petImageFrameSelected]}>
+        <View style={styles.petImageFrame}>
           <Image
             source={getMascotExpressionSource(mascot.id, "happy")}
             style={styles.petImage}
             contentFit="contain"
             transition={120}
+            accessibilityIgnoresInvertColors
           />
         </View>
         <AppText
@@ -164,10 +175,10 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
         {selected ? (
           <View style={styles.checkmark}>
             <HugeiconsIcon
-              icon={CheckmarkCircle02Icon}
-              size={22}
-              color={colors.onPrimary}
-              strokeWidth={2.4}
+              icon={Tick02Icon}
+              size={15}
+              color={theme.onAccent}
+              strokeWidth={3}
             />
           </View>
         ) : null}
@@ -185,38 +196,27 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
         onBack={onBack}
         backLabel={copy.back}
       />
+
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: 12, paddingBottom: 28 },
-        ]}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={[styles.header, { width: contentWidth }]}>
-          <AppText style={styles.eyebrow} languageCode={locale} align="center">
-            {copy.eyebrow}
-          </AppText>
-          <AppText
-            style={styles.title}
-            languageCode={locale}
-            align="center"
-            latinRole="regular"
-            fontFamilyOverride={isRtl ? undefined : ONBOARDING_DESIGN.serif}
-          >
-            {copy.title}
-          </AppText>
-          <AppText
-            style={styles.subtitle}
-            languageCode={locale}
-            align="center"
-          >
-            {copy.subtitle}
-          </AppText>
+        <View style={{ width: contentWidth }}>
+          <OnboardingQuestion
+            question={copy.title}
+            hint={copy.subtitle}
+            locale={locale}
+            isRtl={isRtl}
+            theme={theme}
+            metrics={metrics}
+            mascotId={selectedMascotId}
+            expression="winning"
+          />
         </View>
 
         <View style={[styles.section, { width: contentWidth }]}>
-          <AppText style={styles.sectionTitle} languageCode={locale} align="start">
+          <AppText style={styles.sectionTitle} languageCode={locale} align="start" fullWidth>
             {copy.featured}
           </AppText>
           <View style={styles.grid}>
@@ -225,7 +225,7 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
         </View>
 
         <View style={[styles.section, { width: contentWidth }]}>
-          <AppText style={styles.sectionTitle} languageCode={locale} align="start">
+          <AppText style={styles.sectionTitle} languageCode={locale} align="start" fullWidth>
             {copy.more}
           </AppText>
           <View style={styles.grid}>
@@ -240,65 +240,40 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
         bottomInset={insets.bottom}
         onPress={onFinish}
         testID="onboarding-finish"
-        current={onboardingStepNumber("pet")}
-        total={ONBOARDING_TOTAL_STEPS}
       />
     </View>
   );
 }
 
-const createStyles = (
-  colors: any,
-  isDark: boolean,
-  isRtl: boolean,
+function createStyles(
+  theme: OnboardingTheme,
+  metrics: OnboardingMetrics,
   isCompact: boolean,
-) =>
-  StyleSheet.create({
+) {
+  return StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: ONBOARDING_DESIGN.canvas,
+      backgroundColor: theme.canvas,
     },
     scrollContent: {
       alignItems: "center",
-      paddingHorizontal: isCompact ? 14 : 16,
-      gap: isCompact ? 18 : 28,
-    },
-    header: {
-      alignItems: "center",
-      gap: 8,
-      paddingHorizontal: 10,
-    },
-    eyebrow: {
-      // 13px accent type needs the text-safe accent, not the graphic one.
-      color: ONBOARDING_DESIGN.accentInk,
-      fontSize: 13,
-      lineHeight: 18,
-      fontWeight: "800",
-      letterSpacing: isRtl ? 0 : 1.1,
-    },
-    title: {
-      color: ONBOARDING_DESIGN.ink,
-      fontSize: isCompact ? 32 : 42,
-      lineHeight: isCompact ? 39 : 49,
-      fontWeight: "500",
-      letterSpacing: -1.1,
-    },
-    subtitle: {
-      color: ONBOARDING_DESIGN.mutedInk,
-      fontSize: isCompact ? 14 : 16,
-      lineHeight: isCompact ? 20 : 23,
-      maxWidth: 440,
+      paddingHorizontal: metrics.gutter,
+      paddingTop: isCompact ? 4 : 10,
+      paddingBottom: 26,
+      gap: isCompact ? 18 : 24,
     },
     section: {
-      gap: 12,
+      gap: 10,
     },
     sectionTitle: {
-      color: ONBOARDING_DESIGN.ink,
-      fontSize: 17,
-      lineHeight: 22,
-      fontWeight: "800",
+      color: theme.mutedInk,
+      fontSize: 12,
+      lineHeight: 16,
+      letterSpacing: 0.9,
+      textTransform: "uppercase",
     },
     grid: {
+      // RTL row order is mirrored by the layout engine (forceRTL / document.dir).
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 10,
@@ -306,60 +281,57 @@ const createStyles = (
     petOption: {
       position: "relative",
       alignItems: "center",
-      gap: 8,
+      gap: 6,
       padding: 6,
       paddingBottom: 10,
-      borderWidth: 1,
-      borderColor: ONBOARDING_DESIGN.hairline,
-      borderRadius: 22,
+      // Constant border width; only the colour changes on selection, so the
+      // tile's artwork does not resize as the selection moves around the grid.
+      borderWidth: metrics.rowBorderWidth,
+      borderColor: theme.border,
+      borderRadius: 20,
       borderCurve: "continuous",
-      backgroundColor: ONBOARDING_DESIGN.paperRaised,
+      backgroundColor: theme.surface,
       minHeight: isCompact ? 112 : 132,
-      ...(ONBOARDING_PAPER_SHADOW as any),
+      ...onboardingLift(theme),
     },
     petOptionSelected: {
-      borderWidth: 3,
-      borderColor: ONBOARDING_DESIGN.orange,
-      padding: 4,
-      paddingBottom: 8,
-      backgroundColor: "#FFF7ED",
+      borderColor: theme.accentBorder,
+      backgroundColor: theme.accentWash,
     },
     petImageFrame: {
       width: "100%",
       aspectRatio: 1,
       overflow: "hidden",
-      borderRadius: 17,
-      backgroundColor: "#F2ECE3",
-    },
-    petImageFrameSelected: {
-      backgroundColor: ONBOARDING_DESIGN.paper,
+      borderRadius: 15,
+      borderCurve: "continuous",
+      backgroundColor: theme.surfaceSunken,
     },
     petImage: {
       width: "100%",
       height: "100%",
     },
     petName: {
-      color: ONBOARDING_DESIGN.mutedInk,
-      fontSize: 13,
+      color: theme.mutedInk,
+      fontSize: 12.5,
       lineHeight: 16,
-      fontWeight: "700",
       minHeight: 32,
       paddingHorizontal: 2,
     },
     petNameSelected: {
-      color: ONBOARDING_DESIGN.ink,
+      color: theme.accentInk,
     },
     checkmark: {
       position: "absolute",
-      top: 10,
-      right: 10,
-      width: 30,
-      height: 30,
-      borderRadius: 15,
+      top: 9,
+      right: 9,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: ONBOARDING_DESIGN.orange,
+      backgroundColor: theme.accent,
       borderWidth: 2,
-      borderColor: ONBOARDING_DESIGN.paperRaised,
+      borderColor: theme.surface,
     },
   });
+}

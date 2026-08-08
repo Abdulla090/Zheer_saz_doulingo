@@ -34,11 +34,12 @@ function resolveAppTextAlign(opts: {
   contentLanguage: string;
   layoutRtl: boolean;
   align?: "start" | "end" | "center";
+  nativeAlign?: "start" | "end" | "center";
 }) {
-  const { platform, contentLanguage, layoutRtl, align = "start" } = opts;
+  const { platform, contentLanguage, layoutRtl, align = "start", nativeAlign } = opts;
   const contentDirection = getLanguageDirection(contentLanguage);
   const layoutDirection: Direction = layoutRtl ? "rtl" : "ltr";
-  const effective = resolvePlatformAlignment(platform, align, undefined);
+  const effective = resolvePlatformAlignment(platform, align, nativeAlign);
   const physical = effective
     ? resolveTextAlign(contentDirection, effective)
     : resolveTextAlign(contentDirection, "start");
@@ -120,4 +121,45 @@ describe("lesson text alignment in a Kurdish (RTL) UI", () => {
       ).toBe("right");
     },
   );
+
+  /*
+   * The Slang Dictionary regression. The screen passed
+   * `nativeAlign={isRtl ? "end" : "start"}` for its English phrases and dialogue
+   * lines, hand-rolling the very swap `resolvePlatformTextAlign` already encodes.
+   * Compensating twice cancels out, so "Hit me up" and every English example
+   * sentence rendered against the right edge under a Kurdish UI.
+   *
+   * Web was unaffected — `resolvePlatformAlignment` drops `nativeAlign` there —
+   * which is exactly why the bug only showed on Android and iOS. Call sites pass
+   * the logical edge; encoding it for the platform is the resolver's job.
+   */
+  it.each(["android", "ios"])(
+    "flips English to the wrong edge when a caller also compensates on %s",
+    (platform) => {
+      const logical = resolveAppTextAlign({
+        platform,
+        contentLanguage: "en",
+        layoutRtl: true,
+      });
+      const compensatedTwice = resolveAppTextAlign({
+        platform,
+        contentLanguage: "en",
+        layoutRtl: true,
+        nativeAlign: "end",
+      });
+
+      expect(compensatedTwice).not.toBe(logical);
+    },
+  );
+
+  it("ignores a caller's native compensation on web", () => {
+    expect(
+      resolveAppTextAlign({
+        platform: "web",
+        contentLanguage: "en",
+        layoutRtl: true,
+        nativeAlign: "end",
+      }),
+    ).toBe("left");
+  });
 });

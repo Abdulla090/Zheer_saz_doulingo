@@ -1,5 +1,23 @@
+/**
+ * AI Teacher — migrated onto the shared practice-screen system.
+ *
+ * What changed and why:
+ *  · The screen used to build its own palette (`createAiColors`) on top of the
+ *    app theme, which meant it drifted from the other four practice screens on
+ *    every token that mattered: card radius, border colour, track colour and
+ *    button height. It now reads `games-theme.ts` like the rest.
+ *  · The selected prompt chip was outlined in `rgba(37,99,235,0.32)` — a blue
+ *    left over from an older palette — while its fill was warm coral. Selection
+ *    is now expressed the same way it is on every other screen: coral wash,
+ *    coral border, coral ink.
+ *  · Colour is reserved for meaning. Teal appears only on the identity chip and
+ *    eyebrow; coral marks the one thing you can commit; red is only ever an
+ *    error or a stop.
+ *
+ * The live AI tutor (`/voice-tutor`) is deliberately untouched by all of this.
+ */
+
 import { AppText } from "../../components/ui/AppText";
-import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
 import { AI_TEACHER_PROMPTS } from "../../data/ai-teacher-prompts";
 import type {
   AiTeacherAttempt,
@@ -23,7 +41,7 @@ import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PressableScale } from "../../components/animations";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { TeacherIcon } from "@hugeicons/core-free-icons";
 import {
   ActivityIndicator,
   Linking,
@@ -32,47 +50,31 @@ import {
   StyleSheet,
   TextInput,
   View,
-  useWindowDimensions,
-  type StyleProp,
-  type ViewStyle,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemeColors } from "../../hooks/useThemeColors";
-import { PRIMARY_ACTION } from "../../constants/primary-action";
 
-const TEACHER_ACCENT = PRIMARY_ACTION.face;
-
-function createAiColors(theme: any, isDark: boolean) {
-  return {
-    background: theme.background,
-    foreground: theme.foreground,
-    primary: TEACHER_ACCENT,
-    accent: TEACHER_ACCENT,
-    secondary: theme.surface,
-    mutedForeground: theme.mutedForeground,
-    border: theme.border,
-    borderStrong: theme.cardBorder,
-    card: theme.surface,
-    cardSurface: theme.surface,
-    warmBg: isDark ? "rgba(255,107,74,0.18)" : "rgba(255,107,74,0.08)",
-    chart1: TEACHER_ACCENT,
-    destructive: theme.error,
-    track: isDark ? "rgba(255,255,255,0.12)" : "rgba(26,43,72,0.1)",
-  };
-}
-
-import { isDesktopWebWidth } from "../../constants/web-layout";
-
-function useAiTeacherTheme() {
-  const { colors: theme, isDark } = useThemeColors();
-  const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(width);
-  const Colors = useMemo(() => createAiColors(theme, isDark), [theme, isDark]);
-  const styles = useMemo(() => createStyles(Colors, isDesktopWeb), [Colors, isDesktopWeb]);
-  return { Colors, styles, isDark, isDesktopWeb };
-}
+import {
+  GamesCard,
+  GamesGlassHeader,
+  GamesIntroCard,
+  GamesPrimaryButton,
+  GamesProgressBar,
+  GamesSectionLabel,
+  GamesSecondaryButton,
+  GamesSegmented,
+  GamesStateBlock,
+  useGamesChrome,
+} from "../games/components/games-chrome";
+import {
+  GamesMotion,
+  GamesType,
+  useGamesMetrics,
+  useGamesTheme,
+  type GamesMetrics,
+  type GamesTheme,
+} from "../games/games-theme";
 
 const HISTORY_KEY = "twino.ai-teacher.last-attempt";
 
@@ -121,84 +123,46 @@ const DEMO_RESULT: AiTeacherResult = {
 
 type Phase = "input" | "loading" | "results";
 
-function BrandCard({
-  children,
-  style,
-  contentStyle,
-}: {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
-  contentStyle?: StyleProp<ViewStyle>;
-}) {
-  const { styles } = useAiTeacherTheme();
-  return (
-    <View style={[styles.surfaceCard, style]}>
-      <View style={contentStyle}>{children}</View>
-    </View>
-  );
+function useAiTeacherStyles() {
+  const theme = useGamesTheme();
+  const metrics = useGamesMetrics(false);
+  return useMemo(() => createStyles(theme, metrics), [theme, metrics]);
 }
 
-function BrandPrimaryButton({
-  label,
-  onPress,
-  style,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  style?: StyleProp<ViewStyle>;
-  disabled?: boolean;
-}) {
-  const { styles } = useAiTeacherTheme();
-  return (
-    <PressableScale
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.primaryBtn, style, disabled && styles.primaryBtnDisabled]}
-      scaleDown={0.96}
-    >
-      <AppText style={styles.primaryBtnText} forceLatinFont latinRole="bold">
-        {label}
-      </AppText>
-    </PressableScale>
-  );
-}
-
-function SpeakingCountdown({
-  seconds,
-  isKu,
-}: {
-  seconds: number;
-  isKu: boolean;
-}) {
-  const { styles } = useAiTeacherTheme();
+function SpeakingCountdown({ seconds, isKu }: { seconds: number; isKu: boolean }) {
+  const theme = useGamesTheme();
+  const styles = useAiTeacherStyles();
   const progress = `${Math.max(0, Math.min(100, (seconds / 60) * 100))}%` as `${number}%`;
 
   return (
     <View style={styles.countdown}>
       <View style={styles.countdownTop}>
         <AppText
-          style={styles.countdownLabel}
+          style={[GamesType.caption, { flex: 1, fontSize: 13, color: theme.mutedInk }]}
           forceKurdishFont={isKu}
           latinRole="bold"
         >
           {isKu ? "کاتی تۆمارکردن" : "Recording time"}
         </AppText>
         <Animated.View key={seconds} entering={FadeInDown.duration(160)}>
-          <AppText style={styles.countdownNumber} forceLatinFont latinRole="bold">
+          <AppText style={[styles.countdownNumber, { color: theme.ink }]} forceLatinFont latinRole="bold">
             {seconds}
           </AppText>
         </Animated.View>
         <AppText
-          style={styles.countdownUnit}
+          style={[GamesType.caption, { width: 34, fontSize: 13, color: theme.mutedInk }]}
           forceKurdishFont={isKu}
           latinRole="medium"
         >
           {isKu ? "چرکە" : "sec"}
         </AppText>
       </View>
-      <View style={styles.countdownTrack}>
-        <Animated.View style={[styles.countdownFill, { width: progress }]} />
+      {/* The bar drains rather than fills: a shrinking track reads as
+          "time is running out" without needing a colour change. */}
+      <View style={[styles.countdownTrack, { backgroundColor: theme.track }]}>
+        <Animated.View
+          style={[styles.countdownFill, { width: progress, backgroundColor: theme.accent }]}
+        />
       </View>
     </View>
   );
@@ -207,9 +171,8 @@ function SpeakingCountdown({
 export function AiTeacherScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
-  const { t, locale, isKu } = useI18n();
-  const { Colors, styles, isDark, isDesktopWeb } = useAiTeacherTheme();
-  const isRtl = isKu || locale === "ar";
+  const { theme, metrics, isWide, isRtl, t, locale, isKu } = useGamesChrome("ai-teacher");
+  const styles = useAiTeacherStyles();
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
   const directionStyle = useMemo(
@@ -224,11 +187,11 @@ export function AiTeacherScreen() {
   const [prompt, setPrompt] = useState<AiTeacherPrompt>(AI_TEACHER_PROMPTS[0]);
   const [answer, setAnswer] = useState("");
   const [phase, setPhase] = useState<Phase>(isDemo ? "results" : "input");
-  const [result, setResult] = useState<AiTeacherResult | null>(
-    isDemo ? DEMO_RESULT : null,
-  );
+  const [result, setResult] = useState<AiTeacherResult | null>(isDemo ? DEMO_RESULT : null);
   const [lastSaved, setLastSaved] = useState<AiTeacherAttempt | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const voiceCapture = useGeminiVoiceCapture();
   const {
     abort: abortVoiceCapture,
@@ -254,10 +217,7 @@ export function AiTeacherScreen() {
   }, []);
 
   useEffect(() => {
-    if (
-      promptsForMode.length &&
-      !promptsForMode.find((p) => p.id === prompt.id)
-    ) {
+    if (promptsForMode.length && !promptsForMode.find((p) => p.id === prompt.id)) {
       setPrompt(promptsForMode[0]);
     }
   }, [mode, promptsForMode, prompt.id]);
@@ -297,9 +257,7 @@ export function AiTeacherScreen() {
       hapticNotification(Haptics.NotificationFeedbackType.Success);
     } catch (caught) {
       setError(
-        caught instanceof Error
-          ? caught.message
-          : "Could not check your speech right now.",
+        caught instanceof Error ? caught.message : "Could not check your speech right now.",
       );
       setPhase("input");
     } finally {
@@ -351,9 +309,7 @@ export function AiTeacherScreen() {
       setPhase("results");
     } catch (caught) {
       setError(
-        caught instanceof Error
-          ? caught.message
-          : "Could not check your English right now.",
+        caught instanceof Error ? caught.message : "Could not check your English right now.",
       );
       setPhase("input");
     }
@@ -393,12 +349,10 @@ export function AiTeacherScreen() {
     setError(null);
     setAnswer("");
     setTimeLeft(60);
-    const started = await startVoiceCapture(
-      {
-        onResult: () => {},
-        onError: (message) => setError(message),
-      },
-    );
+    const started = await startVoiceCapture({
+      onResult: () => {},
+      onError: (message) => setError(message),
+    });
     setIsTimerActive(started);
   }, [finishSpeaking, isListening, startVoiceCapture]);
 
@@ -412,316 +366,276 @@ export function AiTeacherScreen() {
 
   const handleBack = safeBack;
 
+  const modeOptions = useMemo(
+    () =>
+      (["speaking", "writing"] as AiTeacherMode[]).map((m) => ({
+        value: m,
+        label: m === "speaking" ? t("aiTeacher.speaking") : t("aiTeacher.writing"),
+      })),
+    [t],
+  );
+
   return (
-    <View style={styles.root}>
-      {!isDark && <HomeMeshBackground />}
+    <View style={{ flex: 1, backgroundColor: theme.canvas }}>
+      <GamesGlassHeader
+        title={t("aiTeacher.title")}
+        titleLanguageCode={locale}
+        onBack={handleBack}
+        scrolled={scrolled}
+      />
+
       <KeyboardAwareScrollView
-        style={styles.flex}
+        style={{ flex: 1 }}
         bottomOffset={insets.bottom + 20}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
+        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+        scrollEventThrottle={16}
         contentContainerStyle={{
-          paddingTop: Math.max(insets.top, 20),
+          paddingTop: metrics.sectionGap,
           paddingBottom: insets.bottom + 32,
-          paddingHorizontal: isDesktopWeb ? 32 : 24,
+          paddingHorizontal: metrics.gutter,
+          gap: metrics.sectionGap,
           width: "100%",
-          maxWidth: isDesktopWeb ? 960 : 760,
+          maxWidth: isWide ? metrics.maxWidth : undefined,
           alignSelf: "center",
-          direction: isRtl ? "rtl" : "ltr",
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <View
-          style={[
-            styles.topBar,
-            { flexDirection: "row" },
-          ]}
-        >
-          <PressableScale
-            onPress={handleBack}
-            style={styles.backBtn}
-            scaleDown={0.9}
-          >
-            <View style={{ transform: [{ scaleX: isRtl ? -1 : 1 }] }}>
-              <HugeiconsIcon
-                icon={ArrowLeft01Icon}
-                size={22}
-                color={Colors.foreground}
-                strokeWidth={2.5}
-              />
-            </View>
-          </PressableScale>
-          <View
-            style={[
-              styles.topTitles,
-              { alignItems: isRtl ? "flex-end" : "flex-start" },
-            ]}
-          >
-            <AppText
-              style={[styles.pageTitle, directionStyle]}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
-              {t("aiTeacher.title")}
-            </AppText>
-            <AppText
-              style={[styles.pageSub, directionStyle]}
-              forceKurdishFont={isKu}
-              latinRole="medium"
-            >
-              {t("aiTeacher.subtitle")}
-            </AppText>
-          </View>
-        </View>
-
         {phase === "results" && result ? (
-          <ResultsView
-            result={result}
-            onTryAgain={onTryAgain}
-            onSave={onSave}
-            isRtl={isRtl}
-          />
+          <ResultsView result={result} onTryAgain={onTryAgain} onSave={onSave} isRtl={isRtl} />
         ) : (
           <>
-            <View
-              style={[
-                styles.modeRow,
-                { flexDirection: isRtl ? "row-reverse" : "row" },
-              ]}
+            <GamesIntroCard
+              mode="ai-teacher"
+              icon={TeacherIcon}
+              languageCode={locale}
+              eyebrow={isKu ? "مامۆستای AI" : "AI teacher"}
+              title={t("aiTeacher.title")}
+              blurb={t("aiTeacher.subtitle")}
             >
-              {(
-                (isRtl
-                  ? ["writing", "speaking"]
-                  : ["speaking", "writing"]) as AiTeacherMode[]
-              ).map((m) => (
-                <PressableScale
-                  key={m}
-                  onPress={() => setMode(m)}
-                  style={[styles.modeChip, mode === m && styles.modeChipOn]}
-                  scaleDown={0.96}
-                >
-                  <AppText
-                    style={[
-                      styles.modeChipText,
-                      mode === m && styles.modeChipTextOn,
-                    ]}
-                    forceLatinFont
-                    latinRole="bold"
-                  >
-                    {m === "speaking"
-                      ? t("aiTeacher.speaking")
-                      : t("aiTeacher.writing")}
-                  </AppText>
-                </PressableScale>
-              ))}
+              {/* Two visible choices rather than a hidden toggle — Hick's law
+                  works in your favour when the option set is this small. */}
+              <View style={{ marginTop: 16 }}>
+                <GamesSegmented
+                  options={modeOptions}
+                  value={mode}
+                  languageCode={locale}
+                  onChange={setMode}
+                />
+              </View>
+            </GamesIntroCard>
+
+            <View style={{ gap: 10 }}>
+              <GamesSectionLabel languageCode={locale}>
+                {t("aiTeacher.choosePrompt")}
+              </GamesSectionLabel>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.promptScroll,
+                  { flexDirection: isRtl ? "row-reverse" : "row" },
+                ]}
+              >
+                {(isRtl ? [...promptsForMode].reverse() : promptsForMode).map((p) => {
+                  const on = prompt.id === p.id;
+                  return (
+                    <PressableScale
+                      key={p.id}
+                      onPress={() => setPrompt(p)}
+                      scaleDown={0.96}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on }}
+                      style={[
+                        styles.promptChip,
+                        {
+                          backgroundColor: on ? theme.accentWash : theme.surface,
+                          borderColor: on ? theme.accentBorder : theme.border,
+                          borderWidth: on ? metrics.selectBorderWidth : 1,
+                          paddingHorizontal: on ? 13 : 14,
+                        },
+                      ]}
+                    >
+                      <AppText
+                        style={[
+                          GamesType.caption,
+                          {
+                            fontSize: 14,
+                            color: on ? theme.accentInk : theme.ink,
+                            textAlign: isRtl ? "right" : "left",
+                          },
+                        ]}
+                        forceKurdishFont={isKu}
+                        forceLatinFont={!isKu}
+                        latinRole="bold"
+                      >
+                        {isKu && p.titleKu ? p.titleKu : p.title}
+                      </AppText>
+                    </PressableScale>
+                  );
+                })}
+              </ScrollView>
             </View>
 
-            <AppText
-              style={[styles.sectionTitle, directionStyle]}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
-              {t("aiTeacher.choosePrompt")}
-            </AppText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[
-                styles.promptScroll,
-                { flexDirection: isRtl ? "row-reverse" : "row" },
-              ]}
-            >
-              {(isRtl ? [...promptsForMode].reverse() : promptsForMode).map(
-                (p) => (
-                  <PressableScale
-                    key={p.id}
-                    onPress={() => setPrompt(p)}
-                    style={[
-                      styles.promptCard,
-                      prompt.id === p.id && styles.promptCardOn,
-                    ]}
-                    scaleDown={0.96}
-                  >
-                    <AppText
-                      style={[
-                        styles.promptTitle,
-                        { textAlign: isRtl ? "right" : "left" },
-                      ]}
-                      forceKurdishFont={isKu}
-                      forceLatinFont={!isKu}
-                      latinRole="bold"
-                    >
-                      {isKu && p.titleKu ? p.titleKu : p.title}
-                    </AppText>
-                  </PressableScale>
-                ),
-              )}
-            </ScrollView>
-
-            <BrandCard
-              style={styles.taskCard}
-              contentStyle={styles.taskCardInner}
-            >
-              <AppText
-                style={[styles.promptScenarioLabel, directionStyle]}
-                forceKurdishFont={isKu}
-                latinRole="bold"
-              >
+            <GamesCard style={{ gap: 6 }}>
+              <GamesSectionLabel languageCode={locale}>
                 {t("aiTeacher.yourTask")}
-              </AppText>
+              </GamesSectionLabel>
               <AppText
-                style={[styles.promptScenario, directionStyle]}
+                style={[GamesType.body, { fontSize: 16, lineHeight: 24, color: theme.ink }, directionStyle]}
                 forceKurdishFont={isKu}
                 forceLatinFont={!isKu}
                 latinRole="medium"
               >
                 {isKu && prompt.scenarioKu ? prompt.scenarioKu : prompt.scenario}
               </AppText>
-            </BrandCard>
+            </GamesCard>
 
-            <AppText
-              style={[styles.sectionTitle, directionStyle]}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
-              {t("aiTeacher.yourAnswer")}
-            </AppText>
-            {mode === "speaking" ? (
-              <BrandCard contentStyle={styles.speakingMicBlock}>
-                {isTimerActive ? (
-                  <SpeakingCountdown seconds={timeLeft} isKu={isKu} />
-                ) : null}
-                <MicCaptureOrb
-                  listening={isListening}
-                  disabled={phase === "loading"}
-                  color={Colors.primary}
-                  size={104}
-                  hint={
-                    isListening
+            <View style={{ gap: 10 }}>
+              <GamesSectionLabel languageCode={locale}>
+                {t("aiTeacher.yourAnswer")}
+              </GamesSectionLabel>
+
+              {mode === "speaking" ? (
+                <GamesCard style={styles.speakingBlock}>
+                  {isTimerActive ? <SpeakingCountdown seconds={timeLeft} isKu={isKu} /> : null}
+                  {/* Red only while recording: the orb is a stop button at that
+                      moment, and stop is the one non-error use of danger. */}
+                  <MicCaptureOrb
+                    listening={isListening}
+                    disabled={phase === "loading"}
+                    color={isListening ? theme.danger : theme.accent}
+                    size={104}
+                    onPress={toggleMic}
+                  />
+                  <AppText
+                    style={[
+                      GamesType.body,
+                      {
+                        maxWidth: 420,
+                        fontSize: 13,
+                        lineHeight: 19,
+                        color: theme.mutedInk,
+                        textAlign: "center",
+                      },
+                    ]}
+                    forceKurdishFont={isKu}
+                    latinRole="medium"
+                  >
+                    {isListening
                       ? isKu
-                        ? "بۆ وەستاندن و ناردن دووبارە دایبگرە"
-                        : "Tap to stop and check your speech"
+                        ? "گوێ دەگرێت… دوگمەکە ئێستا نیشانی وەستاندنە."
+                        : "Listening… the microphone is now a stop button."
                       : isKu
-                        ? "دایبگرە و بە ئینگلیزی قسە بکە"
-                        : "Tap once and speak in English"
-                  }
-                  onPress={toggleMic}
-                />
-                <AppText
-                  style={styles.recordingStatus}
-                  forceKurdishFont={isKu}
-                  latinRole="medium"
-                >
-                  {isListening
-                    ? isKu
-                      ? "گوێ دەگرێت… دوگمەکە ئێستا نیشانی وەستاندنە."
-                      : "Listening… the microphone is now a stop button."
-                    : isKu
-                      ? "دەنگەکەت تۆمار دەکرێت و AI خۆی گوێی لێ دەگرێت."
-                      : "Your audio is recorded so the teacher can assess what you actually say."}
-                </AppText>
-              </BrandCard>
-            ) : (
-              <BrandCard contentStyle={styles.inputShell}>
-                <TextInput
-                  value={answer}
-                  onChangeText={setAnswer}
-                  placeholder={t("aiTeacher.typeWriting")}
-                  placeholderTextColor={Colors.mutedForeground}
-                  multiline
+                        ? "دەنگەکەت تۆمار دەکرێت و AI خۆی گوێی لێ دەگرێت."
+                        : "Your audio is recorded so the teacher can assess what you actually say."}
+                  </AppText>
+                </GamesCard>
+              ) : (
+                <View
                   style={[
-                    styles.textInput,
-                    directionStyle,
+                    styles.inputShell,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: inputFocused ? theme.accentBorder : theme.border,
+                      borderWidth: inputFocused ? metrics.selectBorderWidth : 1,
+                      padding: inputFocused ? 15 : 16,
+                    },
                   ]}
-                  editable={phase !== "loading"}
-                />
-              </BrandCard>
-            )}
+                >
+                  <TextInput
+                    value={answer}
+                    onChangeText={setAnswer}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    placeholder={t("aiTeacher.typeWriting")}
+                    placeholderTextColor={theme.faintInk}
+                    multiline
+                    style={[styles.textInput, { color: theme.ink }, directionStyle]}
+                    editable={phase !== "loading"}
+                  />
+                </View>
+              )}
+            </View>
 
             {error || voiceError ? (
-              <View style={styles.errorBox}>
-                <AppText
-                  style={[styles.errorText, directionStyle]}
-                  forceKurdishFont={isKu}
-                  latinRole="medium"
-                  selectable
-                >
-                  {isKu && permissionDenied
-                    ? "دەستگەیشتن بە مایکرۆفۆن ڕێگەپێنەدراوە. لە ڕێکخستنەکان ڕێگەی پێ بدە و دووبارە هەوڵ بدەرەوە."
-                    : error || voiceError}
-                </AppText>
-                {permissionDenied ? (
-                  <PressableScale
-                    onPress={recoverMicrophonePermission}
-                    style={styles.permissionButton}
-                    scaleDown={0.96}
-                  >
-                    <AppText
-                      style={styles.permissionButtonText}
-                      forceKurdishFont={isKu}
-                      latinRole="bold"
-                    >
-                      {Platform.OS === "web"
-                        ? isKu
-                          ? "دووبارە داوای ڕێگە بکە"
-                          : "Request microphone again"
-                        : isKu
-                          ? "کردنەوەی ڕێکخستنەکان"
-                          : "Open device settings"}
-                    </AppText>
-                  </PressableScale>
-                ) : null}
-              </View>
+              <GamesCard>
+                <GamesStateBlock
+                  tone="danger"
+                  languageCode={locale}
+                  title={isKu ? "کێشەیەک ڕوویدا" : "Something went wrong"}
+                  body={
+                    isKu && permissionDenied
+                      ? "دەستگەیشتن بە مایکرۆفۆن ڕێگەپێنەدراوە. لە ڕێکخستنەکان ڕێگەی پێ بدە و دووبارە هەوڵ بدەرەوە."
+                      : error || voiceError || undefined
+                  }
+                  action={
+                    permissionDenied ? (
+                      <GamesSecondaryButton
+                        languageCode={locale}
+                        onPress={recoverMicrophonePermission}
+                        label={
+                          Platform.OS === "web"
+                            ? isKu
+                              ? "دووبارە داوای ڕێگە بکە"
+                              : "Request microphone again"
+                            : isKu
+                              ? "کردنەوەی ڕێکخستنەکان"
+                              : "Open device settings"
+                        }
+                      />
+                    ) : undefined
+                  }
+                />
+              </GamesCard>
             ) : null}
 
             {phase === "loading" ? (
               <View style={styles.loadingBox}>
-                <ActivityIndicator color={Colors.accent} size="large" />
+                <ActivityIndicator color={theme.accent} size="large" />
                 <AppText
-                style={[styles.loadingText, directionStyle]}
-                forceKurdishFont={isKu}
-                latinRole="medium"
-              >
+                  style={[GamesType.body, { fontSize: 15, color: theme.mutedInk }, directionStyle]}
+                  forceKurdishFont={isKu}
+                  latinRole="medium"
+                >
                   {t("aiTeacher.checking")}
                 </AppText>
               </View>
             ) : mode === "writing" ? (
-              <BrandPrimaryButton
+              <GamesPrimaryButton
                 label={t("aiTeacher.checkEnglish")}
+                languageCode={locale}
                 onPress={onSubmit}
-                style={styles.submitBtn}
               />
             ) : null}
 
             {lastSaved ? (
-              <BrandCard
-                style={styles.historyCard}
-                contentStyle={styles.historyInner}
-              >
-                <AppText
-                style={[styles.historyLabel, directionStyle]}
-                forceKurdishFont={isKu}
-                latinRole="bold"
-              >
+              <GamesCard style={{ gap: 6 }}>
+                <GamesSectionLabel languageCode={locale}>
                   {isKu ? "دواین ھەوڵی پاشەکەوتکراو" : "Last saved attempt"}
-                </AppText>
+                </GamesSectionLabel>
                 <AppText
-                style={[styles.historyBand, directionStyle]}
-                forceKurdishFont={isKu}
-                latinRole="bold"
-              >
+                  style={[GamesType.section, { fontSize: 18, color: theme.ink }, directionStyle]}
+                  forceKurdishFont={isKu}
+                  latinRole="bold"
+                >
                   {isKu
                     ? `نمرە ${lastSaved.overallBand}/١٠ · ${lastSaved.mode === "speaking" ? "قسەکردن" : "نووسین"}`
                     : `Score ${lastSaved.overallBand}/10 · ${lastSaved.mode}`}
                 </AppText>
                 <AppText
-                  style={[styles.historyExcerpt, directionStyle]}
+                  style={[
+                    GamesType.body,
+                    { fontSize: 15, lineHeight: 22, color: theme.mutedInk },
+                    directionStyle,
+                  ]}
                   numberOfLines={2}
                   forceLatinFont
                 >
                   {lastSaved.excerpt}
                 </AppText>
-              </BrandCard>
+              </GamesCard>
             ) : null}
           </>
         )}
@@ -741,180 +655,197 @@ function ResultsView({
   onSave: () => void;
   isRtl: boolean;
 }) {
-  const { t, isKu } = useI18n();
-  const { styles } = useAiTeacherTheme();
+  const { t, isKu, locale } = useI18n();
+  const theme = useGamesTheme();
+  const styles = useAiTeacherStyles();
   const directionStyle = {
     textAlign: isRtl ? "right" : "left",
     writingDirection: isRtl ? "rtl" : "ltr",
   } as const;
+
   return (
-    <Animated.View entering={FadeInDown.duration(320)}>
-      <BrandCard contentStyle={styles.overallCard}>
-        <View style={styles.overallBadge}>
+    <Animated.View
+      entering={FadeInDown.duration(GamesMotion.enterMs)}
+      style={{ gap: 16 }}
+    >
+      {/* Score card. The number is the hero, so nothing else on this card
+          competes for attention — no fill, no border colour, no icon. */}
+      <GamesCard raised style={styles.overallCard}>
+        <View
+          style={[
+            styles.overallBadge,
+            { backgroundColor: theme.surfaceSunken, borderColor: theme.border },
+          ]}
+        >
           <AppText
-            style={styles.overallBadgeText}
+            style={[GamesType.eyebrow, { color: theme.mutedInk }]}
             forceKurdishFont={isKu}
             latinRole="bold"
           >
             {isKu ? "هەڵسەنگاندنی قسەکردن" : "Speaking feedback"}
           </AppText>
         </View>
-        <AppText style={[styles.overallLabel, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="bold">
+        <AppText
+          style={[GamesType.eyebrow, { color: theme.mutedInk, textAlign: "center" }]}
+          forceKurdishFont={isKu}
+          latinRole="bold"
+        >
           {isKu ? "نمرەی گشتی" : "Overall score"}
         </AppText>
         <View style={styles.scoreLine}>
-          <AppText style={styles.overallBand} forceLatinFont latinRole="bold">
+          <AppText style={[styles.overallBand, { color: theme.ink }]} forceLatinFont latinRole="bold">
             {result.overallBand}
           </AppText>
-          <AppText style={styles.scoreMaximum} forceLatinFont latinRole="bold">
+          <AppText style={[styles.scoreMaximum, { color: theme.mutedInk }]} forceLatinFont latinRole="bold">
             /10
           </AppText>
         </View>
-        <AppText style={[styles.overallHint, { textAlign: "center" }]} forceKurdishFont={isKu} latinRole="medium">
+        <GamesProgressBar value={result.overallBand / 10} style={{ marginTop: 6 }} />
+        <AppText
+          style={[GamesType.caption, { fontSize: 13, color: theme.mutedInk, textAlign: "center" }]}
+          forceKurdishFont={isKu}
+          latinRole="medium"
+        >
           {isKu
             ? "لەسەر بنەمای ئەو شتەی بەڕاستی گوتووتە"
             : "Based on the words and delivery in your recording"}
         </AppText>
-      </BrandCard>
+      </GamesCard>
 
       {result.transcript ? (
-        <>
-          <AppText
-            style={[styles.sectionTitle, directionStyle]}
-            forceKurdishFont={isKu}
-            latinRole="bold"
-          >
+        <View style={{ gap: 10 }}>
+          <GamesSectionLabel languageCode={locale}>
             {isKu ? "ئەوەی AI بیستی" : "What the teacher heard"}
-          </AppText>
-          <View style={styles.transcriptPanel}>
+          </GamesSectionLabel>
+          <GamesCard>
             <AppText
-              style={[styles.transcriptText, { textAlign: "left", writingDirection: "ltr" }]}
+              style={[
+                GamesType.body,
+                {
+                  fontSize: 16,
+                  lineHeight: 24,
+                  color: theme.ink,
+                  textAlign: "left",
+                  writingDirection: "ltr",
+                },
+              ]}
               forceLatinFont
               latinRole="medium"
               selectable
             >
               “{result.transcript}”
             </AppText>
-          </View>
-        </>
+          </GamesCard>
+        </View>
       ) : null}
 
-      <AppText
-        style={[styles.sectionTitle, directionStyle]}
-        forceKurdishFont={isKu}
-        latinRole="bold"
-      >
-        {isKu ? "پێوەرەکان" : "Criteria"}
-      </AppText>
-      <View style={styles.criteriaPanel}>
-        {result.criteria.map((c, index) => (
-          <View
-            key={c.key}
-            style={[
-              styles.criterionRow,
-              index > 0 && styles.criterionDivider,
-            ]}
-          >
+      <View style={{ gap: 10 }}>
+        <GamesSectionLabel languageCode={locale}>
+          {isKu ? "پێوەرەکان" : "Criteria"}
+        </GamesSectionLabel>
+        <GamesCard padded={false} style={{ paddingHorizontal: 16 }}>
+          {result.criteria.map((c, index) => (
             <View
+              key={c.key}
               style={[
-                styles.criterionTop,
-                { flexDirection: isRtl ? "row-reverse" : "row" },
+                styles.criterionRow,
+                index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
               ]}
             >
+              <View
+                style={[styles.criterionTop, { flexDirection: isRtl ? "row-reverse" : "row" }]}
+              >
+                <AppText
+                  style={[
+                    GamesType.section,
+                    { fontSize: 15, flex: 1, paddingRight: 8, color: theme.ink },
+                    directionStyle,
+                  ]}
+                  forceKurdishFont={isKu}
+                  forceLatinFont={!isKu}
+                  latinRole="bold"
+                >
+                  {t(`aiTeacher.criteria.${c.key}`) || c.label}
+                </AppText>
+                <AppText
+                  style={[GamesType.title, { fontSize: 20, color: theme.accentInk }]}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  {c.band}/10
+                </AppText>
+              </View>
+              <GamesProgressBar value={c.band / 10} style={{ marginTop: 12 }} />
               <AppText
                 style={[
-                  styles.criterionLabel,
-                  {
-                    textAlign: isRtl ? "right" : "left",
-                    writingDirection: isRtl ? "rtl" : "ltr",
-                  },
+                  GamesType.body,
+                  { fontSize: 14, lineHeight: 20, marginTop: 10, color: theme.mutedInk },
+                  directionStyle,
                 ]}
-                forceKurdishFont={isKu}
-                forceLatinFont={!isKu}
-                latinRole="bold"
-              >
-                {t(`aiTeacher.criteria.${c.key}`) || c.label}
-              </AppText>
-              <AppText
-                style={styles.criterionBand}
                 forceLatinFont
-                latinRole="bold"
+                latinRole="medium"
               >
-                {c.band}/10
+                {c.note}
               </AppText>
             </View>
-            <View style={styles.bandTrack}>
-              <View
-                style={[styles.bandFill, { width: `${c.band * 10}%` }]}
-              />
-            </View>
+          ))}
+        </GamesCard>
+      </View>
+
+      <View style={{ gap: 10 }}>
+        <GamesSectionLabel languageCode={locale}>
+          {isKu ? "خاڵە بەهێزەکان" : "Strengths"}
+        </GamesSectionLabel>
+        <GamesCard style={{ gap: 8 }}>
+          {result.strengths.map((s) => (
             <AppText
-              style={[styles.criterionNote, directionStyle]}
+              key={s}
+              style={[
+                GamesType.body,
+                { fontSize: 15, lineHeight: 22, color: theme.ink },
+                directionStyle,
+              ]}
               forceLatinFont
               latinRole="medium"
             >
-              {c.note}
+              • {s}
             </AppText>
-          </View>
-        ))}
+          ))}
+        </GamesCard>
       </View>
 
-      <AppText
-        style={[styles.sectionTitle, directionStyle]}
-        forceKurdishFont={isKu}
-        latinRole="bold"
-      >
-        {isKu ? "خاڵە بەهێزەکان" : "Strengths"}
-      </AppText>
-      <BrandCard contentStyle={styles.bulletCard}>
-        {result.strengths.map((s) => (
-          <AppText
-            key={s}
-            style={[styles.bullet, directionStyle]}
-            forceLatinFont
-            latinRole="medium"
-          >
-            • {s}
-          </AppText>
-        ))}
-      </BrandCard>
-
-      <AppText
-        style={[styles.sectionTitle, directionStyle]}
-        forceKurdishFont={isKu}
-        latinRole="bold"
-      >
-        {isKu ? "خاڵەکان بۆ باشترکردن" : "To improve"}
-      </AppText>
-      <BrandCard contentStyle={styles.bulletCard}>
-        {result.improvements.map((s) => (
-          <AppText
-            key={s}
-            style={[styles.bullet, directionStyle]}
-            forceLatinFont
-            latinRole="medium"
-          >
-            • {s}
-          </AppText>
-        ))}
-      </BrandCard>
+      <View style={{ gap: 10 }}>
+        <GamesSectionLabel languageCode={locale}>
+          {isKu ? "خاڵەکان بۆ باشترکردن" : "To improve"}
+        </GamesSectionLabel>
+        <GamesCard style={{ gap: 8 }}>
+          {result.improvements.map((s) => (
+            <AppText
+              key={s}
+              style={[
+                GamesType.body,
+                { fontSize: 15, lineHeight: 22, color: theme.ink },
+                directionStyle,
+              ]}
+              forceLatinFont
+              latinRole="medium"
+            >
+              • {s}
+            </AppText>
+          ))}
+        </GamesCard>
+      </View>
 
       {result.sampleRewrite ? (
-        <>
-          <AppText
-            style={[
-              styles.sectionTitle,
-              directionStyle,
-            ]}
-            forceKurdishFont={isKu}
-            latinRole="bold"
-          >
+        <View style={{ gap: 10 }}>
+          <GamesSectionLabel languageCode={locale}>
             {isKu ? "نموونەی نووسینی باشترکراو" : "Sample upgrade"}
-          </AppText>
-          <BrandCard contentStyle={styles.rewriteCard}>
+          </GamesSectionLabel>
+          <GamesCard>
             <AppText
               style={[
-                styles.rewriteText,
+                GamesType.body,
+                { fontSize: 15, lineHeight: 22, fontStyle: "italic", color: theme.ink },
                 directionStyle,
               ]}
               forceLatinFont
@@ -922,477 +853,129 @@ function ResultsView({
             >
               {result.sampleRewrite}
             </AppText>
-          </BrandCard>
-        </>
+          </GamesCard>
+        </View>
       ) : null}
 
-      <BrandPrimaryButton
-        label={isKu ? "پاشەکەوتکردنی هەوڵدانەکە" : "Save attempt"}
-        onPress={onSave}
-        style={styles.actionBtn}
-      />
-      <PressableScale
-        onPress={onTryAgain}
-        style={styles.secondaryBtn}
-        scaleDown={0.96}
-      >
-        <AppText
-          style={styles.secondaryBtnText}
-          forceLatinFont
-          latinRole="bold"
-        >
-          {isKu ? "دووبارە هەوڵبدەرەوە" : "Try again"}
-        </AppText>
-      </PressableScale>
+      <View style={{ gap: 10 }}>
+        <GamesPrimaryButton
+          label={isKu ? "پاشەکەوتکردنی هەوڵدانەکە" : "Save attempt"}
+          languageCode={locale}
+          onPress={onSave}
+        />
+        <GamesSecondaryButton
+          label={isKu ? "دووبارە هەوڵبدەرەوە" : "Try again"}
+          languageCode={locale}
+          onPress={onTryAgain}
+        />
+      </View>
     </Animated.View>
   );
 }
 
-function createStyles(Colors: ReturnType<typeof createAiColors>, isDesktopWeb: boolean = false) {
+function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
   return StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  flex: { flex: 1 },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginBottom: 18,
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.warmBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topTitles: {
-    flex: 1,
-    gap: 4,
-  },
-  pageTitle: {
-    fontSize: 26,
-    color: Colors.foreground,
-    letterSpacing: -0.5,
-  },
-  pageSub: {
-    fontSize: 13,
-    color: Colors.mutedForeground,
-  },
-  modeRow: {
-    flexDirection: "row",
-    gap: 4,
-    padding: 4,
-    borderRadius: 14,
-    backgroundColor: Colors.track,
-    marginBottom: 18,
-  },
-  modeChip: {
-    flex: 1,
-    minHeight: 42,
-    paddingVertical: 10,
-    borderRadius: 11,
-    backgroundColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modeChipOn: {
-    backgroundColor: Colors.cardSurface,
-    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
-  },
-  modeChipText: {
-    fontSize: 15,
-    color: Colors.mutedForeground,
-  },
-  modeChipTextOn: {
-    color: Colors.primary,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    color: Colors.foreground,
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  promptScroll: {
-    gap: 8,
-    paddingBottom: 12,
-  },
-  promptCard: {
-    minHeight: 40,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: Colors.cardSurface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    maxWidth: 200,
-    justifyContent: "center",
-  },
-  promptCardOn: {
-    borderColor: "rgba(37, 99, 235, 0.32)",
-    backgroundColor: Colors.warmBg,
-  },
-  promptTitle: {
-    fontSize: 14,
-    color: Colors.foreground,
-  },
-  taskCard: {
-    marginBottom: 14,
-  },
-  taskCardInner: {
-    padding: 16,
-    gap: 6,
-  },
-  promptScenarioLabel: {
-    fontSize: 12,
-    color: Colors.accent,
-  },
-  promptScenario: {
-    fontSize: 16,
-    color: Colors.foreground,
-    lineHeight: 24,
-  },
-  surfaceCard: {
-    backgroundColor: Colors.cardSurface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    borderCurve: "continuous",
-  },
-  inputShell: {
-    minHeight: 124,
-    padding: 16,
-  },
-  textInput: {
-    minHeight: 100,
-    fontSize: 16,
-    color: Colors.foreground,
-    fontFamily: "DINNextRoundedRegular",
-    textAlignVertical: "top",
-  },
-  speakingMicBlock: {
-    alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 18,
-    gap: 16,
-    marginBottom: 4,
-  },
-  countdown: {
-    width: "100%",
-    gap: 10,
-  },
-  countdownTop: {
-    minHeight: 42,
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "center",
-    gap: 6,
-  },
-  countdownLabel: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.mutedForeground,
-  },
-  countdownNumber: {
-    minWidth: 44,
-    fontSize: 34,
-    lineHeight: 38,
-    color: Colors.foreground,
-    textAlign: "right",
-    fontVariant: ["tabular-nums"],
-  },
-  countdownUnit: {
-    width: 34,
-    fontSize: 13,
-    color: Colors.mutedForeground,
-  },
-  countdownTrack: {
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: Colors.track,
-    overflow: "hidden",
-  },
-  countdownFill: {
-    height: "100%",
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-    transitionProperty: "width",
-    transitionDuration: 260,
-  },
-  recordingStatus: {
-    maxWidth: 420,
-    fontSize: 13,
-    lineHeight: 19,
-    color: Colors.mutedForeground,
-    textAlign: "center",
-  },
-  speakingTranscript: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: Colors.foreground,
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  typeInsteadBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  typeInsteadBtnInline: {
-    alignSelf: "flex-start",
-    paddingTop: 8,
-  },
-  typeInsteadText: {
-    fontSize: 14,
-    color: Colors.accent,
-  },
-  errorText: {
-    color: Colors.destructive,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  errorBox: {
-    marginTop: 10,
-    padding: 14,
-    gap: 10,
-    borderRadius: 14,
-    borderCurve: "continuous",
-    backgroundColor: Colors.warmBg,
-  },
-  permissionButton: {
-    alignSelf: "flex-start",
-    minHeight: 40,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  permissionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-  },
-  loadingBox: {
-    alignItems: "center",
-    paddingVertical: 24,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 15,
-    color: Colors.mutedForeground,
-  },
-  primaryBtn: {
-    width: "100%",
-    height: PRIMARY_ACTION.height,
-    backgroundColor: PRIMARY_ACTION.face,
-    paddingHorizontal: 18,
-    borderRadius: PRIMARY_ACTION.radius,
-    borderBottomWidth: PRIMARY_ACTION.rimWidth,
-    borderBottomColor: PRIMARY_ACTION.rim,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryBtnDisabled: {
-    opacity: 0.6,
-  },
-  primaryBtnText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    letterSpacing: 0.3,
-  },
-  submitBtn: {
-    marginTop: 12,
-  },
-  historyCard: {
-    marginTop: 16,
-  },
-  historyInner: {
-    padding: 16,
-    gap: 6,
-  },
-  historyLabel: {
-    fontSize: 11,
-    color: Colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  historyBand: {
-    fontSize: 18,
-    color: Colors.chart1,
-  },
-  historyExcerpt: {
-    fontSize: 15,
-    color: Colors.mutedForeground,
-    lineHeight: 22,
-  },
-  tipCard: {
-    marginTop: 20,
-  },
-  tipStrip: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 16,
-  },
-  tipIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.mutedForeground,
-    lineHeight: 21,
-  },
-  overallCard: {
-    alignItems: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 20,
-    marginBottom: 8,
-    gap: 6,
-  },
-  overallBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 99,
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    marginBottom: 8,
-  },
-  overallBadgeText: {
-    fontSize: 11,
-    color: Colors.foreground,
-    letterSpacing: 1.2,
-  },
-  overallLabel: {
-    fontSize: 11,
-    color: Colors.mutedForeground,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  overallBand: {
-    fontSize: 56,
-    color: Colors.foreground,
-    lineHeight: 60,
-    fontVariant: ["tabular-nums"],
-  },
-  scoreLine: {
-    flexDirection: "row",
-    alignItems: "baseline",
-  },
-  scoreMaximum: {
-    fontSize: 20,
-    color: Colors.mutedForeground,
-    fontVariant: ["tabular-nums"],
-  },
-  overallHint: {
-    fontSize: 14,
-    color: Colors.mutedForeground,
-  },
-  transcriptPanel: {
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    borderCurve: "continuous",
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 10,
-  },
-  transcriptText: {
-    color: Colors.foreground,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  criteriaPanel: {
-    backgroundColor: Colors.cardSurface,
-    borderRadius: 16,
-    borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-  },
-  criterionRow: {
-    paddingVertical: 16,
-  },
-  criterionDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-  },
-  criterionTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  criterionLabel: {
-    fontSize: 15,
-    color: Colors.foreground,
-    flex: 1,
-    paddingRight: 8,
-  },
-  criterionBand: {
-    fontSize: 20,
-    color: Colors.chart1,
-  },
-  bandTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.track,
-    marginTop: 12,
-    overflow: "hidden",
-  },
-  bandFill: {
-    height: "100%",
-    backgroundColor: Colors.accent,
-    borderRadius: 3,
-  },
-  criterionNote: {
-    fontSize: 14,
-    color: Colors.mutedForeground,
-    marginTop: 10,
-    lineHeight: 20,
-  },
-  bulletCard: {
-    padding: 16,
-    gap: 8,
-    marginBottom: 8,
-  },
-  bullet: {
-    fontSize: 15,
-    color: Colors.foreground,
-    lineHeight: 22,
-  },
-  rewriteCard: {
-    padding: 16,
-    marginBottom: 8,
-  },
-  rewriteText: {
-    fontSize: 15,
-    color: Colors.foreground,
-    fontStyle: "italic",
-    lineHeight: 22,
-  },
-  actionBtn: {
-    marginTop: 12,
-  },
-  secondaryBtn: {
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  secondaryBtnText: {
-    fontSize: 16,
-    color: Colors.accent,
-  },
+    promptScroll: {
+      gap: 8,
+      paddingBottom: 2,
+      paddingRight: 2,
+    },
+    promptChip: {
+      minHeight: metrics.tapMin,
+      paddingVertical: 10,
+      borderRadius: metrics.radiusChip,
+      borderCurve: "continuous",
+      maxWidth: 220,
+      justifyContent: "center",
+    },
+    inputShell: {
+      minHeight: 124,
+      borderRadius: metrics.radiusCard,
+      borderCurve: "continuous",
+    },
+    textInput: {
+      minHeight: 100,
+      fontSize: 16,
+      fontFamily: "DINNextRoundedRegular",
+      textAlignVertical: "top",
+    },
+    speakingBlock: {
+      alignItems: "center",
+      paddingVertical: 22,
+      gap: 16,
+    },
+    countdown: {
+      width: "100%",
+      gap: 10,
+    },
+    countdownTop: {
+      minHeight: 42,
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "center",
+      gap: 6,
+    },
+    countdownNumber: {
+      minWidth: 44,
+      fontSize: 34,
+      lineHeight: 38,
+      textAlign: "right",
+      fontFamily: "DINNextRoundedBold",
+      fontVariant: ["tabular-nums"],
+    },
+    countdownTrack: {
+      height: 7,
+      borderRadius: 4,
+      overflow: "hidden",
+    },
+    countdownFill: {
+      height: "100%",
+      borderRadius: 4,
+      transitionProperty: "width",
+      transitionDuration: GamesMotion.colorMs,
+    },
+    loadingBox: {
+      alignItems: "center",
+      paddingVertical: 24,
+      gap: 12,
+    },
+    overallCard: {
+      alignItems: "center",
+      paddingVertical: 26,
+      gap: 6,
+    },
+    overallBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: metrics.radiusPill,
+      borderWidth: 1,
+      marginBottom: 8,
+    },
+    scoreLine: {
+      flexDirection: "row",
+      alignItems: "baseline",
+    },
+    overallBand: {
+      fontSize: 56,
+      lineHeight: 60,
+      fontFamily: "DINNextRoundedBold",
+      fontVariant: ["tabular-nums"],
+    },
+    scoreMaximum: {
+      fontSize: 20,
+      fontFamily: "DINNextRoundedBold",
+      fontVariant: ["tabular-nums"],
+    },
+    criterionRow: {
+      paddingVertical: 16,
+    },
+    criterionTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
   });
 }

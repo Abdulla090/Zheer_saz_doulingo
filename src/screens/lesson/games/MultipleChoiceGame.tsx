@@ -22,6 +22,7 @@ import {
   LightQuestionPrompt,
   mapOptionState,
 } from "./lesson-light-primitives";
+import { useWordSpeech } from "./use-word-speech";
 
 type Props = {
   question: MultipleChoiceQuestion;
@@ -36,16 +37,21 @@ export default function MultipleChoiceGame({ question, onAnswer, pathMode, quest
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const firedRef = useRef(false);
+  const { speakWord, stop } = useWordSpeech(question.targetLanguage);
 
   React.useEffect(() => {
+    void stop();
     setSelected(null);
     setRevealed(false);
     firedRef.current = false;
-  }, [question]);
+  }, [question, stop]);
 
   const pick = (opt: string) => {
     if (revealed) return;
     setSelected(opt);
+    // Options are in the target language, so hearing the one you picked is part
+    // of the exercise. Re-tapping the same option repeats it on purpose.
+    speakWord(opt, `mc-option-${opt}`);
   };
 
   const check = () => {

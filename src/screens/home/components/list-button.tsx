@@ -3,7 +3,7 @@ import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable"
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { StarIcon } from "@hugeicons/core-free-icons";
 import React, { useEffect } from "react";
-import { Platform, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { PATH_RASTERIZE_NODES, PATH_SKIP_NODE_SHADOW, FX_ALLOW_GRADIENTS } from "../../../utils/native-perf";
 import { crossTextShadow } from "../../../utils/shadows";
@@ -60,6 +60,33 @@ function faceGradient(face: string, locked: boolean) {
     ? (["rgba(255,255,255,0.3)", face, "rgba(0,0,0,0.05)"] as const)
     : (["rgba(255,255,255,0.26)", face, "rgba(0,0,0,0.07)"] as const);
 }
+
+/**
+ * Face gloss: two bands sweeping across the face at -45deg, echoing the
+ * reference node's diagonal sheen.
+ *
+ * Where the reference uses hard-edged flat white at 0.3 alpha, these fade out
+ * at both ends and run much fainter — a hard band reads as a decal painted on
+ * the node, which is exactly the tell that stops it looking like a lit object.
+ * Pushed further apart than the reference's so neither one crosses the label.
+ */
+const GLOSS_BANDS = [
+  { heightRatio: 0.2, centerOffsetRatio: 0.42 },
+  { heightRatio: 0.16, centerOffsetRatio: -0.4 },
+] as const;
+
+/** cos(45deg) — resolves a band's offset onto both axes after rotation. */
+const GLOSS_DIAGONAL = Math.SQRT1_2;
+
+/** Soft along the band's length, so the ends dissolve instead of stopping. */
+const GLOSS_FADE = [
+  "rgba(255,255,255,0)",
+  "rgba(255,255,255,0.55)",
+  "rgba(255,255,255,0.85)",
+  "rgba(255,255,255,0.55)",
+  "rgba(255,255,255,0)",
+] as const;
+const GLOSS_FADE_STOPS = [0, 0.28, 0.5, 0.72, 1] as const;
 
 function shellGradient(face: string, rim: string, locked: boolean) {
   if (isNativeNode) {
@@ -593,66 +620,62 @@ export const SvgButton = React.memo(
               />
             {!isLocked ? (
               /*
-               * Specular sheen. A gradient fades the highlight out at both ends;
-               * a flat translucent bar reads as a painted-on stripe, which is
-               * the single biggest tell that a node is not a lit object. Native
-               * runs the same shape at lower peak alpha, in white rather than
-               * the web's blue-tinted glass.
+               * Diagonal gloss, matching the reference node. Two translucent
+               * white bands sweep across the face at -45deg; the face View
+               * already clips (`overflow: hidden`), so they take the pill's
+               * shape for free the way the reference's clipPath does.
                *
-               * Low-end devices keep the flat bar — one opaque-ish View is far
-               * cheaper than a third overlapping gradient per node in a
-               * virtualized list, and some highlight beats none.
+               * The bands are drawn overwide so their corners stay outside the
+               * face after rotation — a band sized to the face would pull its
+               * ends inside the pill and read as two floating lozenges.
                */
-              FX_ALLOW_GRADIENTS ? (
-                <LinearGradient
-                  pointerEvents="none"
-                  colors={
-                    isNativeNode
-                      ? [
-                          "rgba(255,255,255,0)",
-                          "rgba(255,255,255,0.16)",
-                          "rgba(255,255,255,0.34)",
-                          "rgba(255,255,255,0.16)",
-                          "rgba(255,255,255,0)",
-                        ]
-                      : [
-                          "rgba(145, 225, 255, 0)",
-                          "rgba(156, 231, 255, 0.26)",
-                          "rgba(198, 243, 255, 0.68)",
-                          "rgba(156, 231, 255, 0.26)",
-                          "rgba(145, 225, 255, 0)",
-                        ]
-                  }
-                  locations={[0, 0.22, 0.5, 0.78, 1]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={{
-                    position: "absolute",
-                    top: Math.round(innerHeight * 0.08),
-                    left: Math.round(innerWidth * 0.14),
-                    width: Math.round(innerWidth * 0.58),
-                    height: Math.max(6, Math.round(innerHeight * 0.17)),
-                    borderRadius: 9999,
-                    opacity: isNativeNode ? 0.9 : 0.82,
-                    transform: [{ rotate: "-10deg" }],
-                  }}
-                />
-              ) : (
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: "absolute",
-                    top: Math.max(2, Math.round(innerHeight * 0.1)),
-                    left: Math.round(innerWidth * 0.2),
-                    width: Math.round(innerWidth * 0.36),
-                    height: Math.max(2, Math.round(innerHeight * 0.06)),
-                    borderRadius: 9999,
-                    backgroundColor: "rgba(255,255,255,0.22)",
-                    opacity: 0.42,
-                    transform: [{ rotate: "-10deg" }],
-                  }}
-                />
-              )
+              <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                {GLOSS_BANDS.map((band, index) => {
+                  const bandHeight = Math.max(
+                    2,
+                    Math.round(innerHeight * band.heightRatio),
+                  );
+                  const span = Math.round(
+                    (innerWidth + innerHeight) * GLOSS_DIAGONAL,
+                  );
+                  const offset =
+                    Math.round(innerHeight * band.centerOffsetRatio) *
+                    GLOSS_DIAGONAL;
+                  // Rotating -45deg carries a band that starts above the face
+                  // centre up and to the LEFT, so the offset subtracts on both
+                  // axes.
+                  const bandStyle = {
+                    position: "absolute" as const,
+                    top: Math.round((innerHeight - bandHeight) / 2) - offset,
+                    left: Math.round((innerWidth - span) / 2) - offset,
+                    width: span,
+                    height: bandHeight,
+                    opacity: isNativeNode ? 0.24 : 0.3,
+                    transform: [{ rotate: "-45deg" }],
+                  };
+                  // Low-end devices keep a flat band at the same faint alpha —
+                  // two extra gradients per node is a real cost in a
+                  // virtualized list, and a soft-edged sheen is a nicety.
+                  return FX_ALLOW_GRADIENTS ? (
+                    <LinearGradient
+                      key={`gloss-${index}`}
+                      colors={GLOSS_FADE}
+                      locations={GLOSS_FADE_STOPS}
+                      start={{ x: 0, y: 0.5 }}
+                      end={{ x: 1, y: 0.5 }}
+                      style={bandStyle}
+                    />
+                  ) : (
+                    <View
+                      key={`gloss-${index}`}
+                      style={[
+                        bandStyle,
+                        { backgroundColor: "rgba(255,255,255,0.85)" },
+                      ]}
+                    />
+                  );
+                })}
+              </View>
             ) : null}
             {label !== undefined ? (
               <View

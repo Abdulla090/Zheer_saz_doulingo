@@ -133,7 +133,9 @@ export function buildNormalSectionData(
         displayTheme,
         status: itemStatus,
         isCurrent: itemStatus === "current",
-        progressSegments: itemStatus === "current" ? 2 : 0,
+        // No per-lesson progress is tracked yet, so the ring stays a neutral
+        // "you are here" halo rather than showing an invented fraction.
+        progressSegments: 0,
         lessonId: sectionIndex,
         displayUnitNumber: sourceUnitIndex + 1,
       };
