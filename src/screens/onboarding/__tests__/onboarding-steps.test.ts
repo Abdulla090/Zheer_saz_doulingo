@@ -21,13 +21,16 @@ describe("onboarding step model", () => {
     ONBOARDING_SLIDE_IDS.forEach((id, index) => {
       expect(onboardingStepNumber(id)).toBe(index + 1);
     });
-    expect(onboardingStepNumber("nativeLanguage")).toBe(
+    expect(onboardingStepNumber("pet")).toBe(
       ONBOARDING_SLIDE_IDS.length + 1,
     );
   });
 
-  it("ends on the mascot picker", () => {
-    expect(onboardingStepNumber("pet")).toBe(ONBOARDING_TOTAL_STEPS);
+  it("places the mascot picker before every personal setup question", () => {
+    expect(onboardingStepNumber("nativeLanguage")).toBe(
+      onboardingStepNumber("pet") + 1,
+    );
+    expect(onboardingStepNumber("goal")).toBe(ONBOARDING_TOTAL_STEPS);
   });
 
   it("holds the bar steady while the plan is generating", () => {

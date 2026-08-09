@@ -21,6 +21,26 @@ const RTL_LANGUAGES = new Set([
   "yi",
 ]);
 
+const RTL_STRONG_CHARACTER =
+  /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+const LTR_STRONG_CHARACTER = /[A-Za-z\u00C0-\u02AF\u0370-\u052F]/;
+
+/**
+ * Resolve a streamed paragraph from its first strong script character.
+ * Punctuation, quotation marks, emoji, and digits are skipped, so an English
+ * first word stays LTR even when Kurdish or Arabic appears later in the turn.
+ */
+export function getTextDirection(
+  text: string,
+  fallback: Direction = "ltr",
+): Direction {
+  for (const character of text.trim()) {
+    if (RTL_STRONG_CHARACTER.test(character)) return "rtl";
+    if (LTR_STRONG_CHARACTER.test(character)) return "ltr";
+  }
+  return fallback;
+}
+
 /** Normalize underscores/casing while preserving BCP-47 script information. */
 export function normalizeLanguageCode(languageCode?: string | null): string {
   return (languageCode ?? "")

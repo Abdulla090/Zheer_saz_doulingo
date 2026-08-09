@@ -330,7 +330,9 @@ export function NormalEnglishPathScreen({
         isUnitReached={
           normalNextLessonPathIndex >= (section.data[0]?.pathIndex ?? 0)
         }
-        onSelect={(node) => selectLesson(item, section.title, node)}
+        onSelect={(node) =>
+          selectLesson(item, section.title, node, section.data.length)
+        }
       />
     ),
     [

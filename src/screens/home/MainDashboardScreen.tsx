@@ -147,6 +147,7 @@ export function MainDashboardScreen({
           >
             <AppSearchIcon size={20} />
             <TextInput
+              underlineColorAndroid="transparent"
               placeholder="Search anything to learn..."
               placeholderTextColor={C.textTertiary}
               style={s.searchInput}

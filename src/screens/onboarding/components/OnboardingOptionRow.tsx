@@ -6,7 +6,6 @@ import { StyleSheet, View } from "react-native";
 import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import type { OnboardingMetrics, OnboardingTheme } from "./onboarding-theme";
-import { onboardingLift } from "./onboarding-theme";
 
 export type OnboardingRowControl = "check" | "none";
 
@@ -19,10 +18,9 @@ export type OnboardingRowControl = "check" | "none";
  * the language step and the goal step were visibly different components asking
  * the same kind of question.
  *
- * Selection is expressed as: accent border + accent wash + accent label. The
- * border *width* is constant (see `rowBorderWidth`); only its colour changes.
- * Animating width would reflow the row's contents by a pixel and the list
- * twitches as the selection moves down it.
+ * Selection is expressed as an orange outline, a quiet orange wash, and a filled
+ * check. Border widths stay constant, so moving the selection never causes the
+ * list to twitch or reflow.
  */
 export function OnboardingOptionRow({
   label,
@@ -67,7 +65,7 @@ export function OnboardingOptionRow({
       accessibilityState={{ checked: selected, disabled }}
       disabled={disabled}
       onPress={onPress}
-      pressScale={0.985}
+      pressScale={0.975}
       style={[styles.row, selected && styles.rowSelected]}
     >
       {leading ? (
@@ -125,7 +123,7 @@ export function OnboardingOptionRow({
  * Level, as a bar chart that fills up.
  *
  * The old level list used five unrelated Hugeicons — a leaf, a bot, a rocket, a
- * book, a lightning bolt — all tinted the same blue. Five arbitrary glyphs
+ * book, a lightning bolt — all tinted the same accent. Five arbitrary glyphs
  * carry no ordering, so the user had to read all five labels to work out that
  * the list ran beginner-to-advanced. Bars encode the ordering in the shape
  * itself, so the list is scannable before a single word is read.
@@ -142,7 +140,7 @@ export function OnboardingLevelBars({
   selected: boolean;
 }) {
   const activeColor = selected ? theme.accent : theme.mutedInk;
-  const restColor = selected ? "rgba(255,107,74,0.25)" : theme.ringTrack;
+  const restColor = selected ? theme.accentWash : theme.ringTrack;
 
   return (
     <View style={barStyles.wrap}>
@@ -195,13 +193,15 @@ function createStyles(theme: OnboardingTheme, metrics: OnboardingMetrics) {
       paddingVertical: 10,
       borderRadius: metrics.rowRadius,
       borderCurve: "continuous",
-      borderWidth: metrics.rowBorderWidth,
+      borderWidth: 1,
+      borderBottomWidth: 4,
       borderColor: theme.border,
+      borderBottomColor: theme.isDark ? "#0A1016" : "#CDD4DD",
       backgroundColor: theme.surface,
-      ...onboardingLift(theme),
     },
     rowSelected: {
       borderColor: theme.accentBorder,
+      borderBottomColor: theme.accentPressed,
       backgroundColor: theme.accentWash,
     },
     leading: {
@@ -212,7 +212,7 @@ function createStyles(theme: OnboardingTheme, metrics: OnboardingMetrics) {
       alignItems: "center",
       justifyContent: "center",
       flexShrink: 0,
-      backgroundColor: theme.surfaceSunken,
+      backgroundColor: theme.surfaceRaised,
     },
     copy: {
       flex: 1,
@@ -225,7 +225,7 @@ function createStyles(theme: OnboardingTheme, metrics: OnboardingMetrics) {
       lineHeight: Math.round(metrics.labelSize * 1.3),
     },
     labelSelected: {
-      color: theme.accentInk,
+      color: theme.ink,
     },
     sublabel: {
       color: theme.mutedInk,

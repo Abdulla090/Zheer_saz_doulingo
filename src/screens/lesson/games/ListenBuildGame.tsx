@@ -458,7 +458,7 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
     estimateRailCount(question.correctWords, answerWidth),
   );
   const railColor = isDark ? colors.border : Duo.rail;
-  const bubbleFace = isDark ? colors.surfaceRaised : Duo.snow;
+  const bubbleFace = isDark ? colors.surfaceRaised : Duo.surface;
   const bubbleBorder = isDark ? colors.border : Duo.border;
 
   return (

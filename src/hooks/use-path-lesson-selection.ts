@@ -6,6 +6,8 @@ import type { SectionList, View } from "react-native";
 export type SelectedPathLesson = {
   item: LessonListItem;
   sectionTitle: string;
+  /** Lessons in the tapped node's unit, for the popup's "lesson n of m" line. */
+  unitLessonCount?: number;
   anchor?: {
     x: number;
     y: number;
@@ -16,18 +18,27 @@ export type SelectedPathLesson = {
   };
 };
 
-/**
- * Vertical room the popup needs below a node before it fits there. Mirrors the
- * flip threshold in `path-lesson-popup`: its card runs roughly 200pt, plus an
- * 18pt gap and 80pt of bottom clearance.
+/*
+ * Room the popup needs, mirroring the placement maths in `path-lesson-popup`.
+ *
+ * These decide one thing only: whether the popup can open where the node
+ * already is, or whether the list has to scroll first. Scrolling costs a
+ * `SCROLL_SETTLE_MS` wait before anything appears, so it is worth being precise
+ * — the previous version asked instead whether the node sat in the top quarter
+ * of the viewport *or* within 300pt of the bottom, and on a phone-sized
+ * viewport that describes very nearly every node. Almost every tap paid for a
+ * scroll it did not need, which is why the popup felt instant on a tall desktop
+ * window and sluggish on a short one.
+ *
+ * The card is compact now, so on any ordinary phone viewport at least one of
+ * the two directions fits and the popup opens straight away.
  */
-const POPUP_CLEARANCE = 300;
-
-/**
- * Top band, as a fraction of viewport height, where a node is too high for the
- * popup to open above it — the unit header and stats chrome live up there.
- */
-const TOP_BAND = 0.24;
+const POPUP_HEIGHT = 170;
+const POPUP_GAP = 18;
+/** Tab bar and home indicator sit under the list. */
+const POPUP_BOTTOM_CLEARANCE = 110;
+/** Unit header and stats chrome sit over it. */
+const POPUP_TOP_CLEARANCE = 16;
 
 /** Settle time for the scroll before measuring — a moving node measures stale. */
 const SCROLL_SETTLE_MS = 320;
@@ -51,7 +62,12 @@ export function usePathLessonSelection(
   }, []);
 
   const selectLesson = useCallback(
-    (item: LessonListItem, sectionTitle: string, node: View | null) => {
+    (
+      item: LessonListItem,
+      sectionTitle: string,
+      node: View | null,
+      unitLessonCount?: number,
+    ) => {
       if (openTimerRef.current) {
         clearTimeout(openTimerRef.current);
         openTimerRef.current = null;
@@ -67,7 +83,7 @@ export function usePathLessonSelection(
 
       const displayPopupWithAnchor = (anchor?: SelectedPathLesson["anchor"]) => {
         if (selectionRequestRef.current !== requestId) return;
-        setSelectedLesson({ item, sectionTitle, anchor });
+        setSelectedLesson({ item, sectionTitle, unitLessonCount, anchor });
       };
 
       const root = overlayRootRef.current;
@@ -120,12 +136,17 @@ export function usePathLessonSelection(
           const nodeTop = nodeY - rootY;
           const nodeBottom = nodeTop + nodeHeight;
 
-          // Too high for the popup to open above it, or too low to open below.
-          const nearTop = nodeTop < rootHeight * TOP_BAND;
-          const nearBottom = nodeBottom + POPUP_CLEARANCE > rootHeight;
+          // The popup opens below the node when there is room, and flips above
+          // it when there is not. Only when *neither* direction fits does the
+          // list have to move.
+          const fitsBelow =
+            nodeBottom + POPUP_GAP + POPUP_HEIGHT + POPUP_BOTTOM_CLEARANCE <=
+            rootHeight;
+          const fitsAbove =
+            nodeTop - POPUP_GAP - POPUP_HEIGHT >= POPUP_TOP_CLEARANCE;
           const location = findItemLocation(sections, item);
 
-          if ((!nearTop && !nearBottom) || !location || !listRef.current) {
+          if (fitsBelow || fitsAbove || !location || !listRef.current) {
             // Nothing will move, so these coordinates are already final.
             displayPopupWithAnchor({
               x: nodeX - rootX + nodeWidth / 2,

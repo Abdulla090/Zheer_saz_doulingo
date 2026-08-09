@@ -9,7 +9,9 @@ import {
 } from "../../../components/icons/AppHugeIcons";
 import { LiquidGlassSurface } from "../../../components/LiquidGlassSurface";
 import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
+import { AppText } from "../../../components/ui/AppText";
 import { useThemeColors } from "../../../hooks/useThemeColors";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 import { useI18n } from "../../../hooks/useI18n";
 import { useContentPackStore } from "../../../stores/useContentPackStore";
 import { springMotion } from "../../../utils/motion-spring";
@@ -18,7 +20,6 @@ import React, { useCallback, useEffect, useRef, useMemo } from "react";
 import {
   LayoutChangeEvent,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -48,13 +49,13 @@ const TABS: TabDef[] = [
   {
     key: "normal",
     label: "Normal",
-    activeColor: "#7C3AED",
+    activeColor: PRIMARY_ACTION.face,
     icon: (active) => <AppLayersIcon size={16} active={active} filled />,
   },
   {
     key: "kids",
     label: "Kids",
-    activeColor: "#FF9600",
+    activeColor: "#F97316",
     icon: (active) => <AppStarIcon size={16} active={active} filled />,
   },
 ];
@@ -64,7 +65,7 @@ const PILL_PAD = 4;
 
 export function PathSwitcher({ activeMode, onSwitch }: Props) {
   const { width } = useWindowDimensions();
-  const { isKu } = useI18n();
+  const { isKu, locale } = useI18n();
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
@@ -191,15 +192,18 @@ export function PathSwitcher({ activeMode, onSwitch }: Props) {
               style={[styles.tab, { flexDirection: isKu ? "row-reverse" : "row" }]}
             >
               {tab.icon(active)}
-              <Text
+              <AppText
                 style={[
                   styles.tabLabel,
-                  active && { color: isDark ? "#000000" : tab.activeColor },
+                  active && { color: tab.activeColor },
                 ]}
+                languageCode={locale}
+                forceLatinFont
+                latinRole={active ? "bold" : "medium"}
                 numberOfLines={1}
               >
                 {tab.label}
-              </Text>
+              </AppText>
               {!downloaded && (
                 <View
                   style={[
@@ -237,8 +241,10 @@ function createStyles(colors: any, isDark: boolean) {
       bottom: PILL_PAD,
       left: PILL_PAD,
       borderRadius: 14,
-      backgroundColor: isDark ? "#FFFFFF" : "rgba(255,255,255,0.94)",
-      ...crossShadow({ color: "#000", offsetY: 1, opacity: 0.08, blur: 4, elevation: 2 }),
+      backgroundColor: colors.surfaceRaised,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...crossShadow({ color: "#000", offsetY: 1, opacity: isDark ? 0.16 : 0.05, blur: 4, elevation: 1 }),
     },
     tab: {
       flex: 1,
@@ -253,7 +259,7 @@ function createStyles(colors: any, isDark: boolean) {
     tabLabel: {
       fontSize: 13,
       fontWeight: "600",
-      color: isDark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
+      color: colors.mutedForeground,
     },
     downloadDot: {
       position: "absolute",

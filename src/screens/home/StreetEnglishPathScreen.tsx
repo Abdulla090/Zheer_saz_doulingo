@@ -224,7 +224,9 @@ export const StreetEnglishPathScreen = ({
         pathMode="street"
         isActiveLesson={item.pathIndex === nextLessonPathIndex}
         isSelected={selectedLesson?.item.id === item.id}
-        onSelect={(node) => selectLesson(item, section.title, node)}
+        onSelect={(node) =>
+          selectLesson(item, section.title, node, section.data.length)
+        }
       />
     ),
     [nextLessonPathIndex, pathLayoutWidth, selectLesson, selectedLesson?.item.id],

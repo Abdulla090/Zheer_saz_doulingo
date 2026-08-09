@@ -4,8 +4,8 @@
  * The flow spans three components that don't know about each other:
  *
  *   OnboardingFlow        intro slides
- *   LanguageSelectionFlow language / profile / level / goal
  *   OnboardingPetPicker   mascot
+ *   LanguageSelectionFlow language / profile / level / goal
  *
  * Each previously hardcoded `total={9}` and its own offset into that 9 —
  * `LanguageSelectionFlow` carried a literal `stepIndex + 3`, where the `3` was
@@ -21,12 +21,12 @@ export const ONBOARDING_STEPS = [
   "welcome",
   "practice",
   "progress",
+  "pet",
   "nativeLanguage",
   "targetLanguage",
   "profile",
   "level",
   "goal",
-  "pet",
 ] as const;
 
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number];

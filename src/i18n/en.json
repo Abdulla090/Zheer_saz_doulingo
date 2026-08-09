@@ -393,6 +393,7 @@
   "path": {
     "unitShort": "Unit",
     "lessonShort": "Lesson",
+    "lessonOfCount": "Lesson {{current}} of {{total}}",
     "guidebook": "Guidebook",
     "street": {
       "unit1": "Unit 1: Street Greetings",

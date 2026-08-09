@@ -1,10 +1,15 @@
 import React, { useMemo } from "react";
 import {
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  type SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
 import { AppText } from "../../../components/ui/AppText";
 import { OnboardingHeroScene, type OnboardingSceneVariant } from "./OnboardingHeroScene";
@@ -27,6 +32,9 @@ export type OnboardingSlideModel = {
 type Props = {
   slide: OnboardingSlideModel;
   locale: string;
+  pageIndex: number;
+  pageWidth: number;
+  scrollX: SharedValue<number>;
 };
 
 /*
@@ -38,7 +46,13 @@ type Props = {
  * the page. The decorative accent full stop after the title goes with it for
  * the same reason — it drew colour to punctuation rather than to meaning.
  */
-export function OnboardingSlide({ slide, locale }: Props) {
+export function OnboardingSlide({
+  slide,
+  locale,
+  pageIndex,
+  pageWidth,
+  scrollX,
+}: Props) {
   const { width, height } = useWindowDimensions();
   const size = resolveOnboardingSize(width, height);
   const isWide = size === "xl";
@@ -50,33 +64,79 @@ export function OnboardingSlide({ slide, locale }: Props) {
     [isRtl, isWide, size, theme],
   );
 
+  const artworkMotion = useAnimatedStyle(() => {
+    const center = pageIndex * pageWidth;
+    return {
+      opacity: interpolate(
+        scrollX.value,
+        [center - pageWidth, center, center + pageWidth],
+        [0.68, 1, 0.68],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        {
+          translateX: interpolate(
+            scrollX.value,
+            [center - pageWidth, center, center + pageWidth],
+            [pageWidth * 0.12, 0, -pageWidth * 0.12],
+            Extrapolation.CLAMP,
+          ),
+        },
+        {
+          scale: interpolate(
+            scrollX.value,
+            [center - pageWidth, center, center + pageWidth],
+            [0.94, 1, 0.94],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+    };
+  });
+
+  const copyMotion = useAnimatedStyle(() => {
+    const center = pageIndex * pageWidth;
+    return {
+      opacity: interpolate(
+        scrollX.value,
+        [center - pageWidth, center, center + pageWidth],
+        [0.55, 1, 0.55],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        {
+          translateX: interpolate(
+            scrollX.value,
+            [center - pageWidth, center, center + pageWidth],
+            [pageWidth * 0.07, 0, -pageWidth * 0.07],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+    };
+  });
+
   const artwork = (
-    <View style={styles.artwork}>
+    <Animated.View style={[styles.artwork, artworkMotion]}>
       <OnboardingHeroScene
         variant={slide.id as OnboardingSceneVariant}
         height={ONBOARDING_ART_HEIGHT[size]}
       />
-    </View>
+    </Animated.View>
   );
 
   const copy = (
-    <View style={styles.copy}>
-      {isRtl ? (
-        <AppText
-          style={styles.titleRtl}
-          languageCode={locale}
-          latinRole="regular"
-          align="start"
-          fullWidth
-          accessibilityRole="header"
-        >
-          {slide.title}
-        </AppText>
-      ) : (
-        <Text style={styles.title} accessibilityRole="header">
-          {slide.title}
-        </Text>
-      )}
+    <Animated.View style={[styles.copy, copyMotion]}>
+      <AppText
+        style={isRtl ? styles.titleRtl : styles.title}
+        languageCode={locale}
+        latinRole="bold"
+        align="start"
+        fullWidth
+        accessibilityRole="header"
+      >
+        {slide.title}
+      </AppText>
 
       <AppText
         style={styles.subtitle}
@@ -86,7 +146,7 @@ export function OnboardingSlide({ slide, locale }: Props) {
       >
         {slide.subtitle}
       </AppText>
-    </View>
+    </Animated.View>
   );
 
   /*
@@ -154,7 +214,7 @@ const createStyles = (
     title: {
       width: "100%",
       color: theme.ink,
-      fontFamily: ONBOARDING_DESIGN.serif,
+      fontFamily: ONBOARDING_DESIGN.displayFont,
       fontSize: type.display.size,
       lineHeight: type.display.lineHeight,
       letterSpacing: type.display.letterSpacing,

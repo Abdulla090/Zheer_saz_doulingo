@@ -25,7 +25,7 @@ import { useThemeColors } from "../../hooks/useThemeColors";
  *
  * One shape, two resolutions — same contract as `onboarding-theme.ts`:
  *
- *   light   white canvas, hairline-bordered cards, ink on paper
+ *   light   warm ivory canvas, quiet graphite rows, ink on paper
  *   dark    the app's navy canvas, raised cards, paper on ink
  *
  * ── Accent: one action colour, everywhere ─────────────────────────────────
@@ -102,17 +102,17 @@ export type GamesTheme = {
 const LIGHT: GamesTheme = {
   isDark: false,
 
-  canvas: "#FFFFFF",
-  surface: "#FFFFFF",
-  surfaceRaised: "#FFFFFF",
-  surfaceSunken: "#F1F5F9",
+  canvas: "#F7F5F0",
+  surface: "#EFF1F4",
+  surfaceRaised: "#FCFBF8",
+  surfaceSunken: "#E7EAEE",
 
   ink: "#0F172A",
   mutedInk: "#64748B",
   faintInk: "#94A3B8",
 
-  border: "#E3E8EF",
-  borderStrong: "#CBD5E1",
+  border: "#DCE1E7",
+  borderStrong: "#C7CFD9",
 
   accent: PRIMARY_ACTION.face,
   accentInk: "#C63D22",
@@ -132,9 +132,9 @@ const LIGHT: GamesTheme = {
   warningInk: "#B45309",
   warningWash: "rgba(245, 158, 11, 0.12)",
 
-  track: "#E7ECF2",
+  track: "#DDE2E8",
 
-  headerScrim: "rgba(255, 255, 255, 0.72)",
+  headerScrim: "rgba(247, 245, 240, 0.82)",
   headerBorder: "rgba(148, 163, 184, 0.28)",
 
   shadowColor: "#0F172A",
@@ -144,9 +144,9 @@ const LIGHT: GamesTheme = {
 const DARK: GamesTheme = {
   isDark: true,
 
-  canvas: "#0F172A",
-  surface: "#182337",
-  surfaceRaised: "#1F2C43",
+  canvas: "#10161C",
+  surface: "#161D24",
+  surfaceRaised: "#1B232C",
   surfaceSunken: "rgba(255,255,255,0.07)",
 
   ink: "#F8FAFC",
@@ -176,7 +176,7 @@ const DARK: GamesTheme = {
 
   track: "rgba(255,255,255,0.12)",
 
-  headerScrim: "rgba(15, 23, 42, 0.68)",
+  headerScrim: "rgba(16, 22, 28, 0.78)",
   headerBorder: "rgba(255, 255, 255, 0.10)",
 
   shadowColor: "#000000",
@@ -423,10 +423,20 @@ export const GamesType = {
  * every transition a user initiates.
  */
 export const GamesMotion = {
-  press: { damping: 18, stiffness: 340, mass: 0.6 },
-  settle: { damping: 20, stiffness: 220, mass: 0.8 },
-  colorMs: 160,
-  enterMs: 260,
+  press: {
+    damping: 28,
+    stiffness: 420,
+    mass: 0.42,
+    overshootClamping: true,
+  },
+  settle: {
+    damping: 28,
+    stiffness: 280,
+    mass: 0.55,
+    overshootClamping: true,
+  },
+  colorMs: 180,
+  enterMs: 280,
   /** Stagger between siblings entering. Keeps a list arrival readable. */
-  staggerMs: 45,
+  staggerMs: 36,
 } as const;

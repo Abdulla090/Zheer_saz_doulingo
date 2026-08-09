@@ -188,7 +188,7 @@ export function LightPromptCard({
     );
   }
   return (
-    <View style={[lh.promptCardInner, { backgroundColor: Duo.snow, borderRadius: 16, borderWidth: 2, borderColor: Duo.border, borderBottomWidth: 4, borderBottomColor: Duo.borderDark }]}>
+    <View style={[lh.promptCardInner, { backgroundColor: Duo.surface, borderRadius: 16, borderWidth: 1, borderColor: Duo.border, borderBottomWidth: 3, borderBottomColor: Duo.borderDark }]}>
       {inner}
     </View>
   );
@@ -333,7 +333,7 @@ export function LightDialogueCard({
     <View style={[lh.dialogueWrap, rtl ? { marginLeft: 0, marginRight: 4 } : undefined]}>
       <View style={lh.dialogueBubble}>
         <LinearGradient
-          colors={isDark ? [colors.surfaceRaised, colors.surface, "#172A46"] : [Duo.snow, Duo.snow, "#F8FAFC"]}
+          colors={isDark ? [colors.surfaceRaised, colors.surface, "#172A46"] : [Duo.canvas, Duo.canvas, "#EEF2F6"]}
           locations={[0, 0.5, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -374,7 +374,7 @@ function DialogueQuoteIcon() {
       <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
         <Path
           d="M7 11c0-2.2 1.4-4 3.5-5.2L9 3C5.1 4.6 3 8 3 12v5h6v-6H7zm10 0c0-2.2 1.4-4 3.5-5.2L19 3c-3.9 1.6-6 5-6 9v5h6v-6h-2z"
-          fill="rgba(107, 79, 212, 0.35)"
+          fill="rgba(255, 107, 74, 0.34)"
         />
       </Svg>
     </View>
@@ -631,7 +631,7 @@ export function LightQuestionPrompt({
             accessibilityLabel={`${t("lessons.listenLabel")}: ${speechText ?? children}`}
             style={lh.normalBubbleSpeaker}
           >
-            <HugeiconsIcon icon={VolumeHighIcon} size={18} color="#2B59F3" strokeWidth={2.5} />
+            <HugeiconsIcon icon={VolumeHighIcon} size={18} color={Duo.accent} strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
@@ -644,7 +644,7 @@ export function LessonMeshBackdrop({ children }: { children: React.ReactNode }) 
   const lh = useLessonStyles();
   const { colors, isDark } = useThemeColors();
   return (
-    <View style={[lh.backdrop, { backgroundColor: isDark ? colors.background : Duo.snow }]}>
+    <View style={[lh.backdrop, { backgroundColor: isDark ? colors.background : Duo.canvas }]}>
       <View style={lh.backdropContent}>{children}</View>
     </View>
   );
@@ -889,8 +889,8 @@ export function LightWordTile({
     };
     return {
       bg: [
-        isDark && !isKidsRoute ? colors.surfaceRaised : "#FFFFFF", // idle
-        isDark && !isKidsRoute ? colors.surface : Duo.snow, // pending
+        isDark && !isKidsRoute ? colors.surfaceRaised : Duo.snow, // idle
+        isDark && !isKidsRoute ? colors.surface : Duo.surface, // pending
         isKidsRoute ? "#7DD3FC" : isDark ? darkState.selected : Duo.blueBg, // selected
         isKidsRoute ? "#BBF7D0" : isDark ? darkState.correct : Duo.greenBg, // correct
         isKidsRoute ? "#FEF2F2" : isDark ? darkState.wrong : Duo.redBg, // wrong
@@ -1211,7 +1211,7 @@ export function LightAnswerSlots({
   );
 }
 
-function SvgLightbulb({ size = 16, color = "#FF9600" }: { size?: number; color?: string }) {
+function SvgLightbulb({ size = 16, color = Duo.accent }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -1238,7 +1238,7 @@ export function LightHintButton({
   return (
     <Pressable onPress={onPress}>
       <HomeLiquidCard contentStyle={lh.hintBtn} radius={LightRadius.btn}>
-        {showBulb ? <SvgLightbulb size={18} color="#FF9600" /> : null}
+        {showBulb ? <SvgLightbulb size={18} color={Duo.accent} /> : null}
         <AppText style={lh.hintLabel} forceKurdishFont>{label}</AppText>
       </HomeLiquidCard>
     </Pressable>
@@ -1874,10 +1874,10 @@ function createLessonStyles(
   dialogueBubble: {
     borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: isDark ? colors.border : "#D4C4F5",
+    borderColor: isDark ? colors.border : Duo.accentBorder,
     overflow: "visible",
     ...crossShadow({
-      color: "#6B4FD4",
+      color: Duo.accent,
       offsetY: 8,
       blur: 20,
       opacity: 0.12,
@@ -1901,7 +1901,7 @@ function createLessonStyles(
     borderTopWidth: 11,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: isDark ? colors.surfaceRaised : "#E8DEFF",
+    borderTopColor: isDark ? colors.surfaceRaised : Duo.accentBg,
   },
   dialogueContent: {
     gap: 10,
@@ -1911,9 +1911,9 @@ function createLessonStyles(
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(107, 79, 212, 0.12)",
+    backgroundColor: Duo.accentBg,
     borderWidth: 1,
-    borderColor: "rgba(107, 79, 212, 0.2)",
+    borderColor: Duo.accentBorder,
   },
   dialogueRow: {
     flexDirection: "row",
@@ -2447,10 +2447,10 @@ function createLessonStyles(
     marginLeft: 4,
     backgroundColor: colors.surfaceRaised,
     borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "#E9D5FF",
-    borderBottomWidth: 4,
-    borderBottomColor: "#C084FC",
+    borderWidth: 1,
+    borderColor: isDark ? colors.border : "#BAE6FD",
+    borderBottomWidth: 3,
+    borderBottomColor: isDark ? colors.muted : "#38BDF8",
     paddingVertical: 14,
     paddingHorizontal: 16,
     minHeight: 80,
@@ -2507,10 +2507,10 @@ function createLessonStyles(
     top: 30,
     width: 14,
     height: 14,
-    backgroundColor: "#FFFFFF",
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#E9D5FF",
+    backgroundColor: colors.surfaceRaised,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: isDark ? colors.border : "#BAE6FD",
     transform: [{ rotate: "45deg" }],
     zIndex: 2,
   },
@@ -2522,9 +2522,9 @@ function createLessonStyles(
     width: 14,
     height: 14,
     backgroundColor: colors.surfaceRaised,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: isDark ? colors.border : "#E9D5FF",
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: isDark ? colors.border : "#BAE6FD",
     transform: [{ rotate: "135deg" }],
     zIndex: 2,
   },
@@ -2622,11 +2622,11 @@ function createLessonStyles(
   normalBubble: {
     flex: 1,
     marginLeft: 12,
-    backgroundColor: isDark ? colors.surfaceRaised : Duo.snow,
+    backgroundColor: isDark ? colors.surfaceRaised : Duo.surface,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: isDark ? "#E2E8F0" : Duo.border,
-    borderBottomWidth: isDark ? 3.5 : 4,
+    borderWidth: 1,
+    borderColor: isDark ? colors.border : Duo.border,
+    borderBottomWidth: 3,
     borderBottomColor: isDark ? colors.muted : Duo.borderDark,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -2657,9 +2657,9 @@ function createLessonStyles(
     marginTop: -8,
     width: 16,
     height: 16,
-    backgroundColor: isDark ? colors.surfaceRaised : Duo.snow,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
+    backgroundColor: isDark ? colors.surfaceRaised : Duo.surface,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
     borderColor: isDark ? colors.border : Duo.border,
     transform: [{ rotate: "45deg" }],
     zIndex: 2,
@@ -2704,7 +2704,7 @@ function createLessonStyles(
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: isDark ? colors.muted : "#EEF2FF",
+    backgroundColor: isDark ? colors.muted : Duo.accentBg,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,

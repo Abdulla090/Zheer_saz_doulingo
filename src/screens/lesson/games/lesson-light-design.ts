@@ -3,6 +3,7 @@
  */
 
 import { HomePalette } from "../../../components/ui/ios-liquid-home";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 import { Easing } from "react-native-reanimated";
 
 const H = HomePalette;
@@ -17,9 +18,9 @@ export const L = {
   gray: H.gray,
   grayLight: H.grayLight,
   track: H.track,
-  trackInner: "#DCE3EA",
-  cardTint: "#F8FAFC",
-  cardTintBorder: "#E2E8F0",
+  trackInner: "#D7DDE4",
+  cardTint: "#EFF1F4",
+  cardTintBorder: "#DCE1E7",
   border: H.divider,
   red: "#EF4444",
   green: "#10B981",
@@ -69,21 +70,21 @@ export const Duo = {
   redText:     "#EA2B2B",
 
   /*
-   * System accent — orange, not blue. Used for selection, the speaker glyph,
+   * System accent — coral, not blue. Used for selection, the speaker glyph,
    * active rails and any "in progress" affordance. `accent*` is the canonical
    * name; the `blue*` keys below are kept as aliases so existing street/kids
-   * call sites keep compiling, and they now resolve to orange too.
+   * call sites keep compiling, and they now resolve to coral too.
    */
-  accent:       "#FF9600",
-  accentDark:   "#E08600",
-  accentBg:     "#FFF3DE",
-  accentBorder: "#FFCE7A",
-  accentText:   "#C86D00",
+  accent:       PRIMARY_ACTION.face,
+  accentDark:   PRIMARY_ACTION.rim,
+  accentBg:     "#FFF0EC",
+  accentBorder: "#FFC7BA",
+  accentText:   "#C63D22",
 
-  blue:        "#FF9600",
-  blueDark:    "#E08600",
-  blueBg:      "#FFF3DE",
-  blueBorder:  "#FFCE7A",
+  blue:        PRIMARY_ACTION.face,
+  blueDark:    PRIMARY_ACTION.rim,
+  blueBg:      "#FFF0EC",
+  blueBorder:  "#FFC7BA",
 
   yellow:      "#FFC800",
 
@@ -95,14 +96,16 @@ export const Duo = {
   eel:         "#4B4B4B",
   hare:        "#777777",
   swan:        "#AFAFAF",
-  snow:        "#FFFFFF",
-  border:      "#E5E5E5",
-  borderDark:  "#D6D6D6",
-  bgSoft:      "#F7F7F7",
+  canvas:      "#F7F5F0",
+  surface:     "#EFF1F4",
+  snow:        "#FCFBF8",
+  border:      "#DCE1E7",
+  borderDark:  "#C7CFD9",
+  bgSoft:      "#E7EAEE",
 
   /* Word-bank underline rails */
-  rail:        "#E5E5E5",
-  railActive:  "#FF9600",
+  rail:        "#DCE1E7",
+  railActive:  PRIMARY_ACTION.face,
 
   /* Tile 3D depth */
   tileDepth:   4,
@@ -214,7 +217,7 @@ export const LightType = {
     fontSize: 10,
     fontWeight: "800" as const,
     letterSpacing: 1.1,
-    color: "#6B4FD4",
+    color: PRIMARY_ACTION.face,
     fontFamily: "DINNextRoundedBold",
     textTransform: "uppercase" as const,
   },

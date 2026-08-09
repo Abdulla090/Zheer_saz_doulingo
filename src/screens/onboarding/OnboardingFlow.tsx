@@ -3,7 +3,7 @@ import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import * as Haptics from "expo-haptics";
-import React, { useCallback, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   Platform,
   StyleSheet,
@@ -12,8 +12,10 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
+  FadeInLeft,
   FadeInRight,
   FadeOutLeft,
+  FadeOutRight,
   useSharedValue,
   useAnimatedScrollHandler,
   withTiming,
@@ -26,7 +28,6 @@ import { OnboardingSlide, type OnboardingSlideModel } from "./components/Onboard
 import { OnboardingPetPicker } from "./components/OnboardingPetPicker";
 import { LanguageSelectionFlow } from "./LanguageSelectionFlow";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
-import { useThemeColors } from "../../hooks/useThemeColors";
 import { useI18n } from "../../hooks/useI18n";
 import { OnboardingFooter, OnboardingTopBar } from "./components/OnboardingChrome";
 import { useOnboardingTheme } from "./components/onboarding-theme";
@@ -38,14 +39,20 @@ import {
 import { resolvePathMode } from "../../constants/path-availability";
 
 const STEP_IDS = ONBOARDING_SLIDE_IDS;
+const ONBOARDING_SLIDE_EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
 export function OnboardingFlow() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
-  const isDesktopWeb = Platform.OS === "web" && screenWidth >= 900;
   const scrollRef = useRef<Animated.ScrollView>(null);
+  const pendingIndexRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
+  const [clientMounted, setClientMounted] = useState(Platform.OS !== "web");
+
+  useEffect(() => {
+    setClientMounted(true);
+  }, []);
 
   const completeOnboarding = useOnboardingStore((s) => s.completeOnboarding);
   const pathMode = useSettingsStore((s) => s.pathMode);
@@ -56,13 +63,13 @@ export function OnboardingFlow() {
   const [index, setIndex] = useState(0);
   const [showLangSelection, setShowLangSelection] = useState(false);
   const [showPetSelection, setShowPetSelection] = useState(false);
-  const [resumeLanguageAtGoal, setResumeLanguageAtGoal] = useState(false);
+  const [isPaging, setIsPaging] = useState(false);
+  const [webDirection, setWebDirection] = useState<1 | -1>(1);
 
-  const { colors, isDark } = useThemeColors();
   const onboardingTheme = useOnboardingTheme();
   const styles = useMemo(
-    () => createStyles(colors, isDark, isDesktopWeb, onboardingTheme.canvas),
-    [colors, isDark, isDesktopWeb, onboardingTheme.canvas],
+    () => createStyles(onboardingTheme.canvas),
+    [onboardingTheme.canvas],
   );
   // Street and kids are paused; a stale stored preference must not survive
   // onboarding and drop the user onto a path that no longer renders.
@@ -119,18 +126,7 @@ export function OnboardingFlow() {
   }, [t]);
 
   const finishSlides = useCallback(() => {
-    setShowLangSelection(true);
-  }, []);
-
-  const finishLanguageSelection = useCallback(() => {
-    setResumeLanguageAtGoal(true);
     setShowPetSelection(true);
-  }, []);
-
-  const returnToLanguageSelection = useCallback(() => {
-    setShowPetSelection(false);
-    setShowLangSelection(true);
-    setResumeLanguageAtGoal(true);
   }, []);
 
   const finishAll = useCallback(() => {
@@ -150,6 +146,20 @@ export function OnboardingFlow() {
     });
   }, [completeOnboarding, reduceMotion, rootOpacity, selectedPath, setPathMode]);
 
+  const finishPetSelection = useCallback(() => {
+    setShowPetSelection(false);
+    setShowLangSelection(true);
+  }, []);
+
+  const returnToIntroSlides = useCallback(() => {
+    setShowPetSelection(false);
+  }, []);
+
+  const returnToPetSelection = useCallback(() => {
+    setShowLangSelection(false);
+    setShowPetSelection(true);
+  }, []);
+
   const goToSignIn = useCallback(() => {
     /*
      * A returning user has already done setup — language, level, goal and pet
@@ -162,6 +172,7 @@ export function OnboardingFlow() {
   }, [completeOnboarding, selectedPath, setPathMode]);
 
   const goNext = useCallback(() => {
+    if (isPaging) return;
     if (isLast) {
       finishSlides();
       return;
@@ -170,47 +181,63 @@ export function OnboardingFlow() {
     const targetX = nextIndex * screenWidth;
 
     if (isWeb) {
+      setWebDirection(1);
       // No ScrollView on web, so nothing reports scroll position back —
       // `scrollX` has to be driven directly to morph the background.
       scrollX.value = reduceMotion
         ? targetX
         : withTiming(targetX, {
-            duration: 460,
-            easing: Easing.bezier(0.22, 1, 0.36, 1),
+            duration: 320,
+            easing: ONBOARDING_SLIDE_EASE,
           });
+      setIndex(nextIndex);
+    } else if (reduceMotion) {
+      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: false });
+      setIndex(nextIndex);
     } else {
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: !reduceMotion });
+      /*
+       * Keep the progress ring and CTA copy on the current step until native
+       * paging actually settles. Updating React state before scrollTo finished
+       * made the chrome jump ahead of the slide and read as a dropped frame.
+       */
+      setIsPaging(true);
+      pendingIndexRef.current = nextIndex;
+      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: true });
     }
-
-    setIndex(nextIndex);
   }, [
     finishSlides,
     index,
     isWeb,
     isLast,
+    isPaging,
     reduceMotion,
     screenWidth,
     scrollX,
   ]);
 
   const goBack = useCallback(() => {
-    if (index <= 0) return;
+    if (index <= 0 || isPaging) return;
     const previousIndex = index - 1;
     const targetX = previousIndex * screenWidth;
 
     if (isWeb) {
+      setWebDirection(-1);
       scrollX.value = reduceMotion
         ? targetX
         : withTiming(targetX, {
-            duration: 460,
-            easing: Easing.bezier(0.22, 1, 0.36, 1),
+            duration: 320,
+            easing: ONBOARDING_SLIDE_EASE,
           });
+      setIndex(previousIndex);
+    } else if (reduceMotion) {
+      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: false });
+      setIndex(previousIndex);
     } else {
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: !reduceMotion });
+      setIsPaging(true);
+      pendingIndexRef.current = previousIndex;
+      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: true });
     }
-
-    setIndex(previousIndex);
-  }, [index, isWeb, reduceMotion, screenWidth, scrollX]);
+  }, [index, isPaging, isWeb, reduceMotion, screenWidth, scrollX]);
 
   /* Derive discrete index from scroll for dots + button label */
   const handleMomentumEnd = useCallback(
@@ -223,21 +250,50 @@ export function OnboardingFlow() {
       if (newIndex !== index) {
         setIndex(newIndex);
       }
+      pendingIndexRef.current = null;
+      setIsPaging(false);
       // `scrollX` already tracks the settled offset via `scrollHandler`; the
       // previous `withTiming` here re-animated it from the position it was
       // already at, which re-ran the background morph after every swipe.
     },
     [index, screenWidth, total],
   );
+  const isRtl = locale === "ku" || locale === "ar";
+  const webEntering =
+    webDirection > 0
+      ? isRtl
+        ? FadeInLeft
+        : FadeInRight
+      : isRtl
+        ? FadeInRight
+        : FadeInLeft;
+  const webExiting =
+    webDirection > 0
+      ? isRtl
+        ? FadeOutRight
+        : FadeOutLeft
+      : isRtl
+        ? FadeOutLeft
+        : FadeOutRight;
 
-  if (!localeReady) {
-    return <View style={styles.root} />;
+  if (!localeReady || !clientMounted) {
+    /*
+     * Static web rendering cannot read localStorage. Rendering translated copy
+     * there and replacing it with the stored locale/theme during hydration
+     * caused a full React hydration recovery—the opening visibly flashed before
+     * any motion began. The identical neutral shell on server and first client
+     * frame hydrates cleanly; the real themed flow mounts in the next frame.
+     */
+    return <View style={hydrationStyles.root} />;
   }
 
   if (showPetSelection) {
     return (
       <Animated.View style={[styles.root, animatedRootStyle]}>
-        <OnboardingPetPicker onBack={returnToLanguageSelection} onFinish={finishAll} />
+        <OnboardingPetPicker
+          onBack={returnToIntroSlides}
+          onFinish={finishPetSelection}
+        />
       </Animated.View>
     );
   }
@@ -246,13 +302,9 @@ export function OnboardingFlow() {
     return (
       <View style={{ flex: 1 }}>
         <LanguageSelectionFlow
-          initialStep={resumeLanguageAtGoal ? "goal" : "nativeLanguage"}
-          onBackToIntro={() => {
-            setShowLangSelection(false);
-            setResumeLanguageAtGoal(false);
-            setIndex(STEP_IDS.length - 1);
-          }}
-          onFinish={finishLanguageSelection}
+          initialStep="nativeLanguage"
+          onBackToIntro={returnToPetSelection}
+          onFinish={finishAll}
         />
       </View>
     );
@@ -270,27 +322,55 @@ export function OnboardingFlow() {
         onSkip={finishSlides}
         skipLabel={t("onboarding.skip")}
         backLabel={t("onboarding.back")}
-        showBrand
       />
       <View style={styles.slideFrame}>
       {isWeb ? (
         <Animated.View
           key={slides[index].id}
-          entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-          exiting={reduceMotion ? undefined : FadeOutLeft.duration(180)}
+          entering={
+            reduceMotion || index === 0
+              ? undefined
+              : webEntering.duration(320).easing(ONBOARDING_SLIDE_EASE)
+          }
+          exiting={
+            reduceMotion
+              ? undefined
+              : webExiting.duration(210).easing(Easing.in(Easing.quad))
+          }
           style={styles.webSlide}
         >
-          <OnboardingSlide slide={slides[index]} locale={locale} />
+          <OnboardingSlide
+            slide={slides[index]}
+            locale={locale}
+            pageIndex={index}
+            pageWidth={screenWidth}
+            scrollX={scrollX}
+          />
         </Animated.View>
       ) : (
         <Animated.ScrollView
           ref={scrollRef}
           horizontal
-          pagingEnabled
+          decelerationRate="fast"
+          disableIntervalMomentum
+          snapToAlignment="start"
+          snapToInterval={screenWidth}
           showsHorizontalScrollIndicator={false}
           bounces={false}
           onScroll={scrollHandler}
+          onScrollBeginDrag={() => {
+            pendingIndexRef.current = null;
+            setIsPaging(true);
+          }}
           onMomentumScrollEnd={handleMomentumEnd}
+          onScrollAnimationEnd={() => {
+            const pendingIndex = pendingIndexRef.current;
+            if (pendingIndex != null) {
+              setIndex(pendingIndex);
+              pendingIndexRef.current = null;
+            }
+            setIsPaging(false);
+          }}
           scrollEventThrottle={16}
           style={styles.container}
           contentContainerStyle={{ flexGrow: 1 }}
@@ -305,7 +385,13 @@ export function OnboardingFlow() {
                 backgroundColor: "transparent",
               }}
             >
-              <OnboardingSlide slide={slide} locale={locale} />
+              <OnboardingSlide
+                slide={slide}
+                locale={locale}
+                pageIndex={STEP_IDS.indexOf(slide.id as (typeof STEP_IDS)[number])}
+                pageWidth={screenWidth}
+                scrollX={scrollX}
+              />
             </View>
           ))}
         </Animated.ScrollView>
@@ -316,6 +402,7 @@ export function OnboardingFlow() {
         locale={locale}
         bottomInset={insets.bottom}
         onPress={goNext}
+        disabled={isPaging}
         secondaryLabel={index === 0 ? t("onboarding.alreadyHaveAccount") : undefined}
         onSecondaryPress={index === 0 ? goToSignIn : undefined}
         secondaryTestID="onboarding-sign-in"
@@ -326,12 +413,7 @@ export function OnboardingFlow() {
   );
 }
 
-const createStyles = (
-  colors: any,
-  isDark: boolean,
-  isDesktopWeb: boolean,
-  canvas: string,
-) =>
+const createStyles = (canvas: string) =>
   StyleSheet.create({
     root: {
       flex: 1,
@@ -351,3 +433,10 @@ const createStyles = (
       backgroundColor: "transparent",
     },
   });
+
+const hydrationStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#F7F5F0",
+  },
+});

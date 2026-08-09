@@ -38,7 +38,9 @@ export const SVG_BUTTON_COLOR_SETS = {
   mint: { rim: "#068265", face: "#08c296" },
   gray: { rim: "#B5B6B8", face: "#E9EAEB" },
   yellow: { rim: "#e59400", face: "#ffc800" },
-  gold: { rim: "#e59400", face: "#ffc800" },
+  // Match the unlocked gold chest artwork: bright golden face, amber depth.
+  // Renderers add the same chest highlight/shadow colors as a metallic ramp.
+  gold: { rim: "#8E5000", face: "#FFC72C" },
   orange: { rim: "#d86f00", face: "#ff9600" },
   red: { rim: "#d32f2f", face: "#ff4b4b" },
 } as const;

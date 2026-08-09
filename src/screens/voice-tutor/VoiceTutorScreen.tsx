@@ -1,7 +1,6 @@
 import { AppText } from "../../components/ui/AppText";
 import {
   HomeMeshBackground,
-  HomePalette as C,
 } from "../../components/ui/ios-liquid-home";
 import { useLiveVoiceTutor } from "../../hooks/use-live-voice-tutor";
 import { useSafeBack } from "../../hooks/use-safe-back";
@@ -10,6 +9,8 @@ import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
 import { hapticImpact } from "../../utils/haptics";
+import { isDesktopWebWidth } from "../../constants/web-layout";
+import { getTextDirection } from "../../i18n/direction";
 import Svg, {
   Path,
   Defs,
@@ -84,6 +85,9 @@ export function VoiceTutorScreen() {
   const level = useSettingsStore((s) => s.englishLevel) || 5;
   const onboardingComplete = useSettingsStore((s) => s.tutorOnboardingComplete);
   const analysisData = useSettingsStore((s) => s.lastAnalysis);
+  const liveTranscriptDirection = getTextDirection(tutor.transcript);
+  const liveTranscriptLanguage =
+    liveTranscriptDirection === "rtl" ? "ar" : "en";
 
   // ── Animated voice reactive waveforms ──
   const phase = useSharedValue(0);
@@ -426,7 +430,7 @@ export function VoiceTutorScreen() {
           >
             <Defs>
               <SvgLinearGradient id="topWaveGrad" x1="0" y1="1" x2="0" y2="0">
-                <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
+                <Stop offset="0" stopColor={colors.primary} stopOpacity="0.15" />
                 <Stop
                   offset="1"
                   stopColor={colors.background}
@@ -448,7 +452,7 @@ export function VoiceTutorScreen() {
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             size={18}
-            color="#4F46E5"
+            color={colors.primary}
             strokeWidth={2.5}
           />
           <AppText style={styles.swipeText}>
@@ -499,12 +503,17 @@ export function VoiceTutorScreen() {
         {/* STATUS & LIVE TRANSCRIPT DISPLAY */}
         <View style={styles.transcriptBox}>
           <AppText
-            style={[styles.statusLabel, tutor.listening && { color: C.blue }]}
+            style={[styles.statusLabel, tutor.listening && { color: colors.primary }]}
           >
             {statusLabel}
           </AppText>
           {tutor.speaking && tutor.transcript ? (
-            <AppText style={[styles.transcriptText, isRtl && styles.rtlText]}>
+            <AppText
+              style={styles.transcriptText}
+              languageCode={liveTranscriptLanguage}
+              align="start"
+              fullWidth
+            >
               {tutor.transcript}
             </AppText>
           ) : tutor.speaking ? (
@@ -562,7 +571,7 @@ export function VoiceTutorScreen() {
                 style={[
                   styles.transcriptText,
                   isRtl && styles.rtlText,
-                  { color: C.red, fontSize: 14 },
+                  { color: colors.error, fontSize: 14 },
                 ]}
               >
                 {tutor.error}
@@ -598,7 +607,7 @@ export function VoiceTutorScreen() {
           <HugeiconsIcon
             icon={ArrowUp01Icon}
             size={18}
-            color="#4F46E5"
+            color={colors.primary}
             strokeWidth={2.5}
           />
           <AppText style={styles.swipeText}>
@@ -642,7 +651,7 @@ export function VoiceTutorScreen() {
                 x2="0"
                 y2="1"
               >
-                <Stop offset="0" stopColor="#3B82F6" stopOpacity="0.15" />
+                <Stop offset="0" stopColor={colors.primary} stopOpacity="0.15" />
                 <Stop
                   offset="1"
                   stopColor={colors.background}
@@ -703,7 +712,7 @@ export function VoiceTutorScreen() {
             <View style={styles.emptyState}>
               <ActivityIndicator
                 size="large"
-                color="#4F46E5"
+                color={colors.primary}
                 style={{ marginBottom: 16 }}
               />
               <AppText style={[styles.emptyText, isRtl && styles.rtlText]}>
@@ -733,14 +742,14 @@ export function VoiceTutorScreen() {
               <HugeiconsIcon
                 icon={AlertCircleIcon}
                 size={48}
-                color={C.red}
+                color={colors.error}
                 style={{ marginBottom: 16 }}
               />
               <AppText
                 style={[
                   styles.emptyText,
                   isRtl && styles.rtlText,
-                  { color: C.red, fontWeight: "600" },
+                  { color: colors.error, fontWeight: "600" },
                 ]}
               >
                 {analysisData.analysisError}
@@ -757,7 +766,7 @@ export function VoiceTutorScreen() {
                 ]}
                 onPress={() => tutor.runAnalysis()}
               >
-                <HugeiconsIcon icon={RefreshIcon} size={16} color="#4F46E5" />
+                <HugeiconsIcon icon={RefreshIcon} size={16} color={colors.primary} />
                 <AppText style={[styles.vocabTagText, isRtl && styles.rtlText]}>
                   {isKu ? "دووبارە هەوڵبدەرەوە" : "Retry"}
                 </AppText>
@@ -818,7 +827,7 @@ export function VoiceTutorScreen() {
                     {isKu ? "هەڵەکان" : "MISTAKES"}
                   </AppText>
                   <AppText
-                    style={[styles.metricVal, { color: C.red }]}
+                    style={[styles.metricVal, { color: colors.error }]}
                     forceLatinFont
                   >
                     {analysisData.grammarErrors.length}
@@ -862,7 +871,7 @@ export function VoiceTutorScreen() {
                                 styles.vocabTagText,
                                 isMastered
                                   ? { color: "#10B981" }
-                                  : { color: C.red },
+                                  : { color: colors.error },
                               ]}
                               forceLatinFont
                             >
@@ -897,6 +906,8 @@ export function VoiceTutorScreen() {
                 <View style={styles.transcriptLog}>
                   {tutor.turns.map((turn) => {
                     const isUser = turn.sender === "user";
+                    const turnDirection = getTextDirection(turn.text);
+                    const turnLanguage = turnDirection === "rtl" ? "ar" : "en";
                     return (
                       <View
                         key={turn.id}
@@ -940,8 +951,10 @@ export function VoiceTutorScreen() {
                             <AppText
                               style={[
                                 styles.userBubbleText,
-                                isRtl && styles.rtlText,
                               ]}
+                              languageCode={turnLanguage}
+                              align="start"
+                              fullWidth
                             >
                               {turn.text
                                 .split(" ")
@@ -968,7 +981,7 @@ export function VoiceTutorScreen() {
                                             }
                                           : null
                                       }
-                                      forceLatinFont
+                                      languageCode={turnLanguage}
                                     >
                                       {word}{" "}
                                     </AppText>
@@ -977,11 +990,10 @@ export function VoiceTutorScreen() {
                             </AppText>
                           ) : (
                             <AppText
-                              style={[
-                                styles.aiBubbleText,
-                                isRtl && styles.rtlText,
-                              ]}
-                              forceLatinFont
+                              style={styles.aiBubbleText}
+                              languageCode={turnLanguage}
+                              align="start"
+                              fullWidth
                             >
                               {turn.text}
                             </AppText>
@@ -1031,7 +1043,7 @@ export function VoiceTutorScreen() {
                             style={[
                               styles.recBadgeText,
                               isRtl && styles.rtlText,
-                              { color: C.red },
+                              { color: colors.error },
                             ]}
                           >
                             {isKu ? "وتت" : "YOU SAID"}
@@ -1106,8 +1118,6 @@ export function VoiceTutorScreen() {
   );
 }
 
-import { isDesktopWebWidth } from "../../constants/web-layout";
-
 const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = false) =>
   StyleSheet.create({
     root: {
@@ -1138,7 +1148,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     swipeText: {
       fontSize: 11,
       fontWeight: "800",
-      color: "#4F46E5",
+      color: colors.primary,
       textTransform: "uppercase",
       letterSpacing: 1.2,
     },
@@ -1150,12 +1160,12 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     permissionSettingsButton: {
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: C.red,
+      borderColor: colors.error,
       paddingHorizontal: 14,
       paddingVertical: 8,
     },
     permissionSettingsText: {
-      color: C.red,
+      color: colors.error,
       fontSize: 13,
       fontWeight: "700",
     },
@@ -1170,14 +1180,9 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: 99,
-      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      backgroundColor: colors.surfaceRaised,
       borderWidth: 1,
-      borderColor: "rgba(26, 43, 72, 0.08)",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 2,
+      borderColor: colors.border,
     },
     topicPillText: {
       fontSize: 13,
@@ -1196,7 +1201,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     },
     langText: {
       fontSize: 13,
-      color: C.blue,
+      color: colors.primary,
     },
     main: {
       flex: 1,
@@ -1273,7 +1278,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: 48,
       height: 5,
       borderRadius: 2.5,
-      backgroundColor: "rgba(255, 255, 255, 0.3)",
+      backgroundColor: colors.border,
       alignSelf: "center",
       marginBottom: 24,
     },
@@ -1293,7 +1298,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backgroundColor: colors.muted,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -1306,11 +1311,11 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     },
     topicCard: {
       width: "48%",
-      backgroundColor: "rgba(255, 255, 255, 0.05)",
+      backgroundColor: colors.surface,
       borderRadius: 24,
       padding: 24,
       borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.1)",
+      borderColor: colors.border,
       alignItems: "center",
       justifyContent: "center",
       gap: 12,
@@ -1331,7 +1336,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     },
     analysisContainer: {
       flex: 1,
-      backgroundColor: "rgba(255, 255, 255, 0.98)",
+      backgroundColor: colors.background,
       overflow: "hidden",
     },
     dragHandleArea: {
@@ -1344,7 +1349,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: 50,
       height: 6,
       borderRadius: 3,
-      backgroundColor: "rgba(26, 43, 72, 0.12)",
+      backgroundColor: colors.border,
     },
     analysisHeader: {
       flexDirection: "row",
@@ -1353,7 +1358,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       paddingHorizontal: 24,
       paddingBottom: 20,
       borderBottomWidth: 1,
-      borderColor: "rgba(26, 43, 72, 0.06)",
+      borderColor: colors.border,
     },
     analysisHeaderTitle: {
       fontSize: 22,
@@ -1365,7 +1370,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: "rgba(26, 43, 72, 0.05)",
+      backgroundColor: colors.muted,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -1411,7 +1416,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     metricVal: {
       fontSize: 22,
       fontWeight: "800",
-      color: C.blue,
+      color: colors.primary,
       marginTop: 4,
       fontFamily: "DINNextRoundedBold",
     },
@@ -1436,14 +1441,14 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 12,
-      backgroundColor: "rgba(79, 70, 229, 0.06)",
+      backgroundColor: "rgba(255, 107, 74, 0.10)",
       borderWidth: 1,
-      borderColor: "rgba(79, 70, 229, 0.12)",
+      borderColor: "rgba(255, 107, 74, 0.24)",
     },
     vocabTagText: {
       fontSize: 13,
       fontWeight: "700",
-      color: "#4F46E5",
+      color: colors.primary,
     },
     transcriptLog: {
       width: "100%",
@@ -1461,9 +1466,9 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       position: "relative",
     },
     userBubble: {
-      backgroundColor: "#4F46E5",
+      backgroundColor: colors.primary,
       borderTopRightRadius: 4,
-      shadowColor: "#4F46E5",
+      shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.15,
       shadowRadius: 8,
@@ -1473,10 +1478,10 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       borderTopLeftRadius: 4,
     },
     aiBubble: {
-      backgroundColor: "#F3F4F6",
+      backgroundColor: colors.surface,
       borderTopLeftRadius: 4,
       borderWidth: 1,
-      borderColor: "rgba(26, 43, 72, 0.04)",
+      borderColor: colors.border,
     },
     aiBubbleRtl: {
       borderTopLeftRadius: 20,

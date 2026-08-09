@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 
-import { Duo } from "../../lesson/games/lesson-light-design";
+import { PRIMARY_ACTION } from "../../../constants/primary-action";
 
 /**
  * Onboarding design system.
@@ -12,52 +12,43 @@ import { Duo } from "../../lesson/games/lesson-light-design";
  *
  * ── Colour ────────────────────────────────────────────────────────────────
  *
- * One accent hue (the system orange), expressed at two luminances because a
- * cream canvas cannot carry a single orange for both jobs:
+ * The exact login-button orange is the onboarding action color. Keeping one
+ * brand action hue lets users learn the interaction language before sign-in.
  *
- *   accent     #FF9600  fills, dots, graphic marks — needs 3:1, not 4.5:1
- *   accentInk  #A24E05  text and hairlines on paper — measured 5.0:1 on canvas
- *
- * `#FF9600` on `#FAF7F1` measures ~2.0:1, which is fine behind a 6px progress
- * dot and unreadable as 13px type. That is the entire reason two tokens exist;
- * do not collapse them.
- *
- * Lavender stays as the one supporting hue for illustration only. It never
- * carries meaning, so it never needs to pass contrast.
+ * Theme-aware components should prefer `useOnboardingTheme`; this object stays
+ * as the light-mode fallback for legacy illustration code.
  */
 
-const CANVAS = "#FAF7F1";
+const CANVAS = "#F7F5F0";
 
 export const ONBOARDING_DESIGN = {
   canvas: CANVAS,
-  paper: "#FCF9F4",
-  paperRaised: "#FFFDF8",
+  paper: "#EFF1F4",
+  paperRaised: "#FCFBF8",
 
-  lavender: "#E9E3F0",
-  lavenderDeep: "#B5A7CF",
+  lavender: "#FFF0EC",
+  lavenderDeep: "#FF9B84",
 
-  ink: "#292D2D",
-  mutedInk: "#6B6A66",
+  ink: "#132238",
+  mutedInk: "#5E6B7E",
 
-  /** Graphic accent — same value as the in-app system orange. */
-  accent: Duo.accent,
-  accentPressed: Duo.accentDark,
-  /** Text-safe accent: AA on `canvas` (~5.0:1). Use for any accent *type*. */
-  accentInk: "#A24E05",
-  accentWash: "rgba(255,150,0,0.12)",
+  accent: PRIMARY_ACTION.face,
+  accentPressed: PRIMARY_ACTION.rim,
+  accentInk: "#B93820",
+  accentWash: "#FFF0EC",
 
   /** Legacy aliases — older call sites still import these. */
-  orange: Duo.accent,
-  orangePressed: Duo.accentDark,
+  orange: PRIMARY_ACTION.face,
+  orangePressed: PRIMARY_ACTION.rim,
 
-  hairline: "rgba(72, 62, 52, 0.12)",
-  paperShadow: "rgba(72, 55, 38, 0.18)",
+  hairline: "rgba(15, 23, 42, 0.12)",
+  paperShadow: "rgba(15, 23, 42, 0.14)",
 
-  serif: Platform.select({
-    ios: "Georgia",
-    android: "serif",
-    web: "Georgia, 'Times New Roman', serif",
-    default: "serif",
+  displayFont: Platform.select({
+    ios: "DINNextRoundedBold",
+    android: "DINNextRoundedBold",
+    web: "DINNextRoundedBold",
+    default: "DINNextRoundedBold",
   }),
 } as const;
 
@@ -144,11 +135,11 @@ export const ONBOARDING_TYPE: Record<
   OnboardingSize,
   { display: TypeStep; displayRtl: TypeStep; body: TypeStep; label: TypeStep }
 > = {
-  xs: { display: display(34), displayRtl: display(30), body: body(14), label: label(12) },
-  sm: { display: display(40), displayRtl: display(35), body: body(15), label: label(13) },
-  md: { display: display(48), displayRtl: display(41), body: body(16), label: label(14) },
-  lg: { display: display(54), displayRtl: display(45), body: body(17), label: label(15) },
-  xl: { display: display(64), displayRtl: display(54), body: body(20), label: label(16) },
+  xs: { display: display(29), displayRtl: display(27), body: body(15), label: label(12) },
+  sm: { display: display(32), displayRtl: display(30), body: body(16), label: label(13) },
+  md: { display: display(35), displayRtl: display(33), body: body(16), label: label(14) },
+  lg: { display: display(38), displayRtl: display(35), body: body(17), label: label(15) },
+  xl: { display: display(46), displayRtl: display(42), body: body(18), label: label(16) },
 };
 
 /**
@@ -188,9 +179,9 @@ export const ONBOARDING_GUTTER: Record<OnboardingSize, number> = {
 
 /** Hero artwork height per breakpoint. */
 export const ONBOARDING_ART_HEIGHT: Record<OnboardingSize, number> = {
-  xs: 210,
-  sm: 270,
-  md: 340,
-  lg: 400,
-  xl: 520,
+  xs: 190,
+  sm: 225,
+  md: 270,
+  lg: 310,
+  xl: 420,
 };

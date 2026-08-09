@@ -170,6 +170,7 @@ export default function AdminHomeScreen() {
         {showImport && (
           <AdminCard title="Import JSON">
             <TextInput
+              underlineColorAndroid="transparent"
               style={styles.importInput}
               multiline
               value={importText}

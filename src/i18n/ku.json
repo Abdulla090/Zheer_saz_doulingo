@@ -394,6 +394,7 @@
   "path": {
     "unitShort": "یەکە",
     "lessonShort": "وانە",
+    "lessonOfCount": "وانەی {{current}} لە {{total}}",
     "guidebook": "کتێبی ڕێنمایی",
     "street": {
       "unit1": "یەکەی ١: سڵاوی سەر شەقام",

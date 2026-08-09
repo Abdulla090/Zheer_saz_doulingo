@@ -65,12 +65,12 @@ export const HomePalette = {
   orange: "#1E293B",
   red: "#0F172A",
   gold: "#334155",
-  cream: "#FFFFFF",
-  sand: "#F8FAFC",
-  divider: "#E2E8F0",
-  meshTop: "#FFFFFF",
-  meshMid: "#F8FAFC",
-  meshBottom: "#F1F5F9",
+  cream: "#FCFBF8",
+  sand: "#EFF1F4",
+  divider: "#DCE1E7",
+  meshTop: "#FCFBF8",
+  meshMid: "#F7F5F0",
+  meshBottom: "#ECEFF2",
 } as const;
 
 function useNativeLiquidGlass() {

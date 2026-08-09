@@ -164,7 +164,7 @@ export default function ConversationCompleteGame({ question, onAnswer, pathMode 
               s.bubble,
               s.theirBubble,
               {
-                backgroundColor: isDark ? colors.surfaceRaised : Duo.snow,
+                backgroundColor: isDark ? colors.surfaceRaised : Duo.surface,
                 borderColor: isDark ? colors.border : Duo.border,
               },
             ]}

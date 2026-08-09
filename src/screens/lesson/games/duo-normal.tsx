@@ -108,13 +108,13 @@ export function useDuoTheme() {
     if (!isDark) {
       return {
         isDark,
-        canvas: Duo.snow,
+        canvas: Duo.canvas,
         text: Duo.eel,
         textMuted: Duo.hare,
         rail: Duo.rail,
         railActive: Duo.railActive,
 
-        tileFace: Duo.snow,
+        tileFace: Duo.surface,
         tileBorder: Duo.border,
         tileRim: Duo.borderDark,
         tileText: Duo.eel,
@@ -135,7 +135,7 @@ export function useDuoTheme() {
         badText: Duo.redText,
 
         ghost: "#E5E5E5",
-        bubble: Duo.snow,
+        bubble: Duo.surface,
         bubbleBorder: Duo.border,
 
         panelOk: Duo.greenBg,
@@ -151,7 +151,7 @@ export function useDuoTheme() {
         disabledFace: Duo.border,
         disabledText: Duo.swan,
         progressTrack: Duo.border,
-        progressFill: Duo.green,
+        progressFill: Duo.accent,
         heart: Duo.heart,
         heartSpent: Duo.heartSpent,
         close: Duo.swan,
@@ -164,17 +164,17 @@ export function useDuoTheme() {
       text: colors.foreground,
       textMuted: colors.mutedForeground,
       rail: colors.border,
-      railActive: "#FFA827",
+      railActive: Duo.accent,
 
       tileFace: colors.surfaceRaised,
       tileBorder: colors.border,
       tileRim: colors.border,
       tileText: colors.foreground,
 
-      selFace: "rgba(255,150,0,0.22)",
-      selBorder: "#FFA827",
-      selRim: "#B36A00",
-      selText: "#FFCE7A",
+      selFace: "rgba(255,107,74,0.20)",
+      selBorder: "#FF8A70",
+      selRim: Duo.accentDark,
+      selText: "#FFB9A9",
 
       okFace: "rgba(88,204,2,0.20)",
       okBorder: "#5FCF12",
@@ -203,7 +203,7 @@ export function useDuoTheme() {
       disabledFace: colors.muted,
       disabledText: colors.mutedForeground,
       progressTrack: colors.muted,
-      progressFill: Duo.green,
+      progressFill: Duo.accent,
       heart: Duo.heart,
       heartSpent: colors.muted,
       close: colors.mutedForeground,

@@ -7,9 +7,8 @@
 
 import { AppText } from "../../../components/ui/AppText";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View, TextInput, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { crossShadow } from "../../../utils/shadows";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -25,7 +24,6 @@ import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useSpeechCapture } from "../../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../../hooks/use-gemini-voice-capture";
-import { useWordSpeech } from "./use-word-speech";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { isPartialUtterance, matchesTarget } from "../../../utils/speech-match";
 import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
@@ -33,8 +31,6 @@ import {
   LightCheckButton,
   LightGameHeading,
   LightQuestionPrompt,
-  SpeakerIcon,
-  SpringPressable,
 } from "./lesson-light-primitives";
 import { L } from "./lesson-light-design";
 import { ltrText, rtlBlock } from "./game-text";
@@ -74,7 +70,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const { width, height } = useWindowDimensions();
   const compactLayout = width < 480 || height < 720;
   const micOrbSize = compactLayout ? 82 : 92;
-  const { speakWord } = useWordSpeech(question.targetLanguage);
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
   const useGeminiBackend = !speech.available && geminiCapture.available;
@@ -84,7 +79,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
 
   const [state, setState] = useState<ListenState>("idle");
   const [transcript, setTranscript] = useState("");
-  const [hasHintRevealed, setHasHintRevealed] = useState(false);
 
   const firedRef = useRef(false);
   const stateRef = useRef<ListenState>("idle");
@@ -110,7 +104,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     geminiCapture.abort();
     setState("idle");
     setTranscript("");
-    setHasHintRevealed(false);
     firedRef.current = false;
     stateRef.current = "idle";
     transcriptRef.current = "";
@@ -490,15 +483,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
     if (state === "idle") void startSpeechListening();
   };
 
-  const handleHearPhrase = () => {
-    speakWord(question.targetWord, question.targetWord);
-  };
-
-  const handleRevealHint = () => {
-    setHasHintRevealed(true);
-    handleHearPhrase();
-  };
-
   const micColor =
     state === "listening" ||
     (useGeminiBackend ? geminiCapture.listening : speech.listening)
@@ -561,42 +545,6 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
         </Animated.View>
       )}
 
-      {!hasHintRevealed ? (
-        <Animated.View entering={FadeInUp.duration(300)}>
-          <SpringPressable
-            onPress={handleRevealHint}
-            style={[
-              s.hintButton,
-              compactLayout && s.hintButtonCompact,
-              { backgroundColor: colors.muted, borderColor: colors.border },
-              pathMode === "kids" && {
-                backgroundColor: "#FFF4ED",
-                borderColor: "rgba(255, 120, 30, 0.25)",
-              }
-            ]}
-          >
-            <SpeakerIcon size={24} color={pathMode === "kids" ? "#C2410C" : L.blue} />
-            <AppText style={[s.hintText, pathMode === "kids" && { color: "#C2410C" }]}>{t("lessons.voiceTapForHint")}</AppText>
-          </SpringPressable>
-        </Animated.View>
-      ) : (
-        <Animated.View entering={FadeInUp.duration(400).springify()} style={{ gap: 4 }}>
-          <AppText style={[s.targetLabel, { color: colors.mutedForeground, textAlign: rtl ? "right" : "center" }]}>{t("lessons.voiceTargetLabel")}</AppText>
-
-          <View style={s.targetRow}>
-            <AppText languageCode={question.targetLanguage} align="center" nativeAlign="start" fullWidth style={[s.targetEn, { color: colors.foreground }]} latinRole="bold">
-              {question.targetWord}
-            </AppText>
-            <SpringPressable
-              onPress={handleHearPhrase}
-              style={[s.speakerBtn, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
-            >
-              <SpeakerIcon size={20} />
-            </SpringPressable>
-          </View>
-        </Animated.View>
-      )}
-
       <View style={[s.micStage, compactLayout && s.micStageCompact]}>
         <Animated.View style={shakeStyle}>
           <MicCaptureOrb
@@ -643,41 +591,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     gap: 10,
-  },
-  targetLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: L.gray,
-    textAlign: "center",
-    fontFamily: "DINNextRoundedBold",
-    ...rtlBlock,
-  },
-  targetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingHorizontal: 8,
-  },
-  targetEn: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "800",
-    color: L.navy,
-    textAlign: "center",
-    letterSpacing: -0.3,
-    fontFamily: "DINNextRoundedBold",
-    ...ltrText,
-  },
-  speakerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: L.border,
   },
   listenHint: {
     fontSize: 13,
@@ -743,43 +656,6 @@ const s = StyleSheet.create({
     color: L.gray,
     fontFamily: "DINNextRoundedBold",
     paddingVertical: 12,
-  },
-  hintButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: "#F2F5FE",
-    borderWidth: 1.5,
-    borderColor: "rgba(43,89,243,0.15)",
-    borderRadius: 20,
-    marginTop: 8,
-    marginBottom: 8,
-    shadowColor: L.blue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  hintButtonCompact: {
-    marginTop: 2,
-    marginBottom: 2,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-  },
-  hintButtonPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.96 }],
-  },
-  hintText: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: L.blue,
-    fontFamily: "DINNextRoundedBold",
-    backgroundColor: "transparent",
   },
   fallbackLink: {
     marginTop: 18,

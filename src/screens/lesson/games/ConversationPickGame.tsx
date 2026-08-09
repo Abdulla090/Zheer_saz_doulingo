@@ -125,15 +125,16 @@ export default function ConversationPickGame({ question, onAnswer, pathMode }: P
   const getState = (opt: string) => {
     if (!revealed) return opt === selected ? "selected" : "idle";
     const tier = question.optionTiers[opt] ?? "terrible";
-    // Only "great" is correct; everything else is wrong
+    // Reveal only the correct answer. The other replies stay neutral: they are
+    // alternatives, not a wall of red errors competing with the teaching cue.
     if (tier === "great") return "great";
-    return "terrible";
+    return "idle";
   };
 
   const getTierLabel = (opt: string) => {
     if (!revealed) return undefined;
     const tier = question.optionTiers[opt] ?? "terrible";
-    return t(tierLabelKey(tier));
+    return tier === "great" ? t(tierLabelKey(tier)) : undefined;
   };
 
 
@@ -278,7 +279,7 @@ const s = StyleSheet.create({
 
     paddingTop: 8,
 
-    backgroundColor: Duo.snow,
+    backgroundColor: Duo.surface,
 
     borderTopWidth: 1,
 

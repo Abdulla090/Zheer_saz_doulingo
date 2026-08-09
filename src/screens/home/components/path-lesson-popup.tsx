@@ -1,5 +1,4 @@
 import { PressableScale } from "../../../components/animations/PressableScale";
-import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
 import { AppText } from "../../../components/ui/AppText";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import type { SelectedPathLesson } from "../../../hooks/use-path-lesson-selection";
@@ -7,11 +6,10 @@ import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
-import { HugeiconsIcon } from "@hugeicons/react-native";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import React, { useState } from "react";
 import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeOut,
@@ -24,10 +22,40 @@ import {
   WEB_DESKTOP_NAV_WIDTH,
   WEB_DESKTOP_RAIL_WIDTH,
 } from "../../../constants/web-layout";
-import { PRIMARY_ACTION } from "../../../constants/primary-action";
 
-const LOCKED_POPUP_FACE = "#475569";
-const LOCKED_POPUP_RIM = "#1E293B";
+/**
+ * Compact node callout: the unit's name, which lesson this is, and one button.
+ *
+ * The card wears the tapped node's own colour rather than a themed surface, so
+ * it reads as an extension of the node it is attached to. That colouring is why
+ * there is no close button and no second line of chrome — everything on the
+ * card has to survive being drawn on green, purple, or yellow, and the tap
+ * target that dismisses it is the whole rest of the screen.
+ */
+
+/** Node colours whose face is too pale to carry white text. */
+const PALE_FACE_VARIANTS: readonly SvgButtonVariant[] = [
+  "gray",
+  "yellow",
+  "gold",
+];
+
+const CARD_MAX_WIDTH = 268;
+const CARD_SIDE_MARGIN = 16;
+const CARD_PADDING = 16;
+const CARET_SIZE = 10;
+/** Keeps the caret from sliding out past the card's rounded corners. */
+const CARET_EDGE_INSET = 20;
+
+/**
+ * Opening height guess, used only for the very first frame before `onLayout`
+ * reports the real one. Roughly: padding, a two-line title, the lesson line,
+ * and the button.
+ */
+const ESTIMATED_CARD_HEIGHT = 168;
+
+const GAP_OFFSET = 14;
+const BOTTOM_CLEARANCE = 80;
 
 function popupVariant(selection: SelectedPathLesson): SvgButtonVariant {
   const { item } = selection;
@@ -53,8 +81,8 @@ export function PathLessonPopup({
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
-  const { colors: themeColors, isDark } = useThemeColors();
-  const [popupHeight, setPopupHeight] = useState(195);
+  const { colors } = useThemeColors();
+  const [cardHeight, setCardHeight] = useState(ESTIMATED_CARD_HEIGHT);
 
   if (!selection) return null;
 
@@ -63,53 +91,68 @@ export function PathLessonPopup({
   const isRtl = isKu || isAr;
   const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;
-  const variantColors = SVG_BUTTON_COLOR_SETS[popupVariant(selection)];
-  const popupFace = isLocked
-    ? isDark
-      ? LOCKED_POPUP_FACE
-      : "#E2E8F0"
-    : themeColors.surfaceRaised;
-  const popupRim = isLocked
-    ? isDark
-      ? LOCKED_POPUP_RIM
-      : "#94A3B8"
-    : variantColors.rim;
-  const isDesktopWeb =
-    Platform.OS === "web" && isDesktopWebWidth(windowWidth);
+
+  const variant = popupVariant(selection);
+  const variantColors = SVG_BUTTON_COLOR_SETS[variant];
+  const isPaleFace = PALE_FACE_VARIANTS.includes(variant);
+  const cardFace = variantColors.face;
+  const cardRim = variantColors.rim;
+  const ink = isPaleFace ? "#243044" : "#FFFFFF";
+  const inkSoft = isPaleFace ? "rgba(36,48,68,0.66)" : "rgba(255,255,255,0.84)";
+  const actionInk = isLocked ? colors.mutedForeground : colors.foreground;
+
+  const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(windowWidth);
   const fallbackViewportWidth = isDesktopWeb
     ? Math.max(
         320,
         windowWidth - WEB_DESKTOP_NAV_WIDTH - WEB_DESKTOP_RAIL_WIDTH,
       )
     : windowWidth;
-  const popupViewportWidth = selection.anchor?.rootWidth ?? fallbackViewportWidth;
-  const popupWidth = Math.min(popupViewportWidth - 32, 560);
-  const popupLeft = (popupViewportWidth - popupWidth) / 2;
-
-  const GAP_OFFSET = 18;
-  const BOTTOM_CLEARANCE = 80;
+  const viewportWidth = selection.anchor?.rootWidth ?? fallbackViewportWidth;
+  const cardWidth = Math.min(
+    viewportWidth - CARD_SIDE_MARGIN * 2,
+    CARD_MAX_WIDTH,
+  );
 
   const nodeTop = selection.anchor?.nodeTop ?? 0;
   const nodeHeight = selection.anchor?.nodeHeight ?? 76;
   const nodeBottom = nodeTop + nodeHeight;
 
+  /*
+   * Centred on the node rather than on the viewport. A full-width card could be
+   * centred either way and still land under the finger; this one is narrow
+   * enough that viewport-centring would push it a long way off the node it
+   * belongs to, with the caret stretched over to reach.
+   */
+  const anchorX = selection.anchor?.x ?? viewportWidth / 2;
+  const cardLeft = Math.max(
+    CARD_SIDE_MARGIN,
+    Math.min(
+      viewportWidth - cardWidth - CARD_SIDE_MARGIN,
+      anchorX - cardWidth / 2,
+    ),
+  );
+
   const placeAbove =
     Boolean(selection.anchor) &&
-    nodeBottom + popupHeight + GAP_OFFSET >
+    nodeBottom + cardHeight + GAP_OFFSET >
       (selection.anchor?.rootHeight ?? windowHeight) -
         Math.max(insets.bottom, 20) -
         BOTTOM_CLEARANCE;
 
-  const popupTop = selection.anchor
+  const cardTop = selection.anchor
     ? placeAbove
-      ? Math.max(16, nodeTop - popupHeight - GAP_OFFSET)
+      ? Math.max(16, nodeTop - cardHeight - GAP_OFFSET)
       : nodeBottom + GAP_OFFSET
     : undefined;
 
   const caretLeft = selection.anchor
     ? Math.max(
-        24,
-        Math.min(popupWidth - 44, selection.anchor.x - popupLeft - 10),
+        CARET_EDGE_INSET,
+        Math.min(
+          cardWidth - CARET_EDGE_INSET - CARET_SIZE * 2,
+          anchorX - cardLeft - CARET_SIZE,
+        ),
       )
     : 0;
 
@@ -129,11 +172,18 @@ export function PathLessonPopup({
     });
   };
 
+  const lessonLine = selection.unitLessonCount
+    ? t("path.lessonOfCount", {
+        current: lessonNumber,
+        total: selection.unitLessonCount,
+      })
+    : `${t("path.lessonShort")} ${lessonNumber}`;
+
   return (
     <>
       <Animated.View
-        entering={FadeIn.duration(90)}
-        exiting={FadeOut.duration(70)}
+        entering={FadeIn.duration(180).easing(Easing.out(Easing.cubic))}
+        exiting={FadeOut.duration(140).easing(Easing.in(Easing.quad))}
         pointerEvents="none"
         style={[
           StyleSheet.absoluteFill,
@@ -142,26 +192,23 @@ export function PathLessonPopup({
         ]}
       />
       <Animated.View
-        entering={FadeInDown.duration(140)}
-        exiting={FadeOutDown.duration(90)}
+        entering={FadeInDown.duration(220).easing(Easing.out(Easing.cubic))}
+        exiting={FadeOutDown.duration(160).easing(Easing.in(Easing.quad))}
         onTouchStart={(event) => event.stopPropagation()}
         onLayout={(event) => {
-          const measuredHeight = event.nativeEvent.layout.height;
-          if (Math.abs(measuredHeight - popupHeight) > 0.5) {
-            setPopupHeight(measuredHeight);
-          }
+          const measured = event.nativeEvent.layout.height;
+          if (Math.abs(measured - cardHeight) > 0.5) setCardHeight(measured);
         }}
         style={[
-          styles.popup,
+          styles.card,
           {
-            width: popupWidth,
-            left: popupLeft,
-            backgroundColor: popupFace,
-            borderColor: isLocked ? themeColors.border : `${variantColors.face}80`,
-            borderBottomColor: popupRim,
+            width: cardWidth,
+            left: cardLeft,
+            backgroundColor: cardFace,
+            borderBottomColor: cardRim,
           },
-          popupTop != null
-            ? { top: popupTop }
+          cardTop != null
+            ? { top: cardTop }
             : { bottom: Math.max(insets.bottom + 20, 106) },
         ]}
         accessibilityViewIsModal={false}
@@ -176,89 +223,65 @@ export function PathLessonPopup({
                 // React Native can swap an absolute `left` value a second time,
                 // which points at the English-side node instead of the tapped one.
                 transform: [{ translateX: caretLeft }],
-                [placeAbove ? "borderTopColor" : "borderBottomColor"]: popupFace,
+                [placeAbove ? "borderTopColor" : "borderBottomColor"]: cardFace,
               },
             ]}
           />
         ) : null}
-        <View
+
+        <AppText
           style={[
-            styles.headingRow,
-            { flexDirection: isRtl ? "row-reverse" : "row" },
+            styles.title,
+            {
+              color: ink,
+              textAlign: isRtl ? "right" : "left",
+              writingDirection: isRtl ? "rtl" : "ltr",
+            },
           ]}
+          forceKurdishFont={isKu}
+          forceLatinFont={!isKu}
+          numberOfLines={2}
         >
-          <View
-            style={[
-              styles.headingCopy,
-              { alignItems: isRtl ? "flex-end" : "flex-start" },
-            ]}
-          >
-            <AppText
-              style={[
-                styles.title,
-                {
-                  color: themeColors.foreground,
-                  textAlign: isRtl ? "right" : "left",
-                  writingDirection: isRtl ? "rtl" : "ltr",
-                },
-              ]}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isKu}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.78}
-            >
-              {sectionTitle || `${t("path.unitShort")} ${unitNumber}`}
-            </AppText>
-            <AppText
-              style={[
-                styles.meta,
-                {
-                  color: themeColors.mutedForeground,
-                  textAlign: isRtl ? "right" : "left",
-                  writingDirection: isRtl ? "rtl" : "ltr",
-                },
-              ]}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isKu}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.82}
-            >
-              {`${t("path.unitShort")} ${unitNumber}  ·  ${t("path.lessonShort")} ${lessonNumber}`}
-            </AppText>
-          </View>
-          <Pressable
-            onPress={onDismiss}
-            accessibilityRole="button"
-            accessibilityLabel={t("slang.close")}
-            hitSlop={10}
-            style={[styles.closeButton, { backgroundColor: themeColors.muted }]}
-          >
-            <HugeiconsIcon
-              icon={Cancel01Icon}
-              size={19}
-              color={themeColors.foreground}
-              strokeWidth={2.4}
-            />
-          </Pressable>
-        </View>
+          {sectionTitle || `${t("path.unitShort")} ${unitNumber}`}
+        </AppText>
+
+        <AppText
+          style={[
+            styles.lessonLine,
+            {
+              color: inkSoft,
+              textAlign: isRtl ? "right" : "left",
+              writingDirection: isRtl ? "rtl" : "ltr",
+            },
+          ]}
+          forceKurdishFont={isKu}
+          forceLatinFont={!isKu}
+          numberOfLines={1}
+        >
+          {lessonLine}
+        </AppText>
 
         <PressableScale
           onPress={isLocked ? undefined : startLesson}
           disabled={isLocked}
           accessibilityRole="button"
           accessibilityLabel={t("home.startLesson")}
-          style={[styles.startButton, isLocked && styles.lockedStartButton]}
+          style={[
+            styles.action,
+            {
+              backgroundColor: isLocked ? colors.muted : colors.surfaceRaised,
+              borderBottomColor: colors.border,
+            },
+          ]}
           scaleDown={0.975}
         >
           <AppText
-            style={[
-              styles.startText,
-              { color: isLocked ? "#64748B" : "#FFFFFF" },
-            ]}
+            style={[styles.actionText, { color: actionInk }]}
             forceKurdishFont={isKu}
             forceLatinFont={!isKu}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             {t("home.startLesson")}
           </AppText>
@@ -276,102 +299,73 @@ const styles = StyleSheet.create({
   lockedScrim: {
     backgroundColor: "rgba(15,23,42,0.18)",
   },
-  popup: {
+  card: {
     position: "absolute",
     zIndex: 40,
-    borderRadius: 26,
+    borderRadius: 20,
     borderCurve: "continuous",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.28)",
-    borderBottomWidth: 6,
-    padding: 18,
-    gap: 16,
+    borderBottomWidth: 5,
+    padding: CARD_PADDING,
+    gap: 4,
     ...crossShadow({
       color: "#0F172A",
-      offsetY: 12,
-      blur: 28,
-      opacity: 0.26,
-      elevation: 12,
+      offsetY: 10,
+      blur: 22,
+      opacity: 0.24,
+      elevation: 10,
     }),
   },
   caretTop: {
     position: "absolute",
     left: 0,
-    top: -10,
+    top: -CARET_SIZE,
     width: 0,
     height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 10,
+    borderLeftWidth: CARET_SIZE,
+    borderRightWidth: CARET_SIZE,
+    borderBottomWidth: CARET_SIZE,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
   },
   caretBottom: {
     position: "absolute",
     left: 0,
-    bottom: -10,
+    bottom: -CARET_SIZE,
     width: 0,
     height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderTopWidth: 10,
+    borderLeftWidth: CARET_SIZE,
+    borderRightWidth: CARET_SIZE,
+    borderTopWidth: CARET_SIZE,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
   },
-  headingRow: {
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  headingCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
   title: {
     width: "100%",
-    fontSize: 19,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 22,
     fontWeight: "800",
   },
-  meta: {
+  lessonLine: {
     width: "100%",
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "700",
   },
-  closeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.14)",
-  },
-  closePressed: {
-    transform: [{ scale: 0.94 }],
-    opacity: 0.82,
-  },
-  startButton: {
+  action: {
     width: "100%",
-    height: PRIMARY_ACTION.height,
-    borderRadius: PRIMARY_ACTION.radius,
+    marginTop: 10,
+    height: 46,
+    borderRadius: 13,
     borderCurve: "continuous",
-    backgroundColor: PRIMARY_ACTION.face,
-    borderBottomWidth: PRIMARY_ACTION.rimWidth,
-    borderBottomColor: PRIMARY_ACTION.rim,
+    borderBottomWidth: 3,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
   },
-  startText: {
+  actionText: {
     fontSize: 15,
     lineHeight: 20,
     fontWeight: "900",
-    letterSpacing: 0.35,
-  },
-  lockedStartButton: {
-    backgroundColor: "#F1F5F9",
-    borderColor: "#CBD5E1",
-    borderBottomColor: "#94A3B8",
+    letterSpacing: 0.3,
   },
 });

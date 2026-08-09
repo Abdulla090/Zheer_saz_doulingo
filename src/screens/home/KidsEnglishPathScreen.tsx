@@ -229,7 +229,9 @@ export function KidsEnglishPathScreen({
         unitLessonCount={section.data.length}
         isActiveLesson={item.pathIndex === kidsNextLessonPathIndex}
         isSelected={selectedLesson?.item.id === item.id}
-        onSelect={(node) => selectLesson(item, section.title, node)}
+        onSelect={(node) =>
+          selectLesson(item, section.title, node, section.data.length)
+        }
       />
     ),
     [

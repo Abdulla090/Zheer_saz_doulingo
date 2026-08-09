@@ -2,6 +2,7 @@ import { describe, expect, it, test } from "@jest/globals";
 
 import {
   getLanguageDirection,
+  getTextDirection,
   normalizeLanguageCode,
   resolvePlatformAlignment,
   resolvePlatformTextAlign,
@@ -35,6 +36,23 @@ describe("language direction", () => {
 
   it("normalizes locale tags without losing script metadata", () => {
     expect(normalizeLanguageCode(" KU_latn_iq ")).toBe("ku-Latn-IQ");
+  });
+});
+
+describe("streamed text direction", () => {
+  it("uses the first strong word instead of the surrounding UI language", () => {
+    expect(getTextDirection("Hi! من باشم.")).toBe("ltr");
+    expect(getTextDirection("سڵاو! I am ready.")).toBe("rtl");
+    expect(getTextDirection("مرحباً! I am ready.")).toBe("rtl");
+  });
+
+  it("skips punctuation, emoji, and digits before the first word", () => {
+    expect(getTextDirection('✨ 2... "Welcome back"')).toBe("ltr");
+    expect(getTextDirection("— ٢... بەخێربێیتەوە")).toBe("rtl");
+  });
+
+  it("uses the requested fallback when no strong script exists", () => {
+    expect(getTextDirection("... 123", "rtl")).toBe("rtl");
   });
 });
 

@@ -645,6 +645,7 @@ export default function ProfileScreen() {
             {isEditingName ? (
               <View style={styles.nameEditRow}>
                 <TextInput
+                  underlineColorAndroid="transparent"
                   value={nameInput}
                   onChangeText={setNameInput}
                   placeholder={copy.namePlaceholder}

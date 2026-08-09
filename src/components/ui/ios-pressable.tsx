@@ -45,6 +45,23 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
     },
     ref,
   ) {
+    // Hooks must run before the list fast path so the component remains valid
+    // when a virtualized row changes its `inList` flag between renders.
+    const scale = useSharedValue(1);
+    const opacity = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const reduceMotion = useReducedMotion();
+
+    const opacityStyle = useAnimatedStyle(() => ({
+      opacity: opacity.value,
+    }));
+    const transformStyle = useAnimatedStyle(() => ({
+      transform: [
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    }));
+
     if (inList) {
       return (
         <Pressable
@@ -71,21 +88,6 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
         />
       );
     }
-    const scale = useSharedValue(1);
-    const opacity = useSharedValue(1);
-    const translateY = useSharedValue(0);
-    const reduceMotion = useReducedMotion();
-
-    const opacityStyle = useAnimatedStyle(() => ({
-      opacity: opacity.value,
-    }));
-    const transformStyle = useAnimatedStyle(() => ({
-      transform: [
-        { translateY: translateY.value },
-        { scale: scale.value },
-      ],
-    }));
-
     const resolvedStyle =
       typeof style === "function"
         ? (state: Parameters<typeof style>[0]) => {

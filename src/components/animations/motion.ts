@@ -61,31 +61,45 @@ export const releaseTiming: WithTimingConfig = {
   easing: Easing.out(Easing.cubic),
 };
 
-export const enterFade = (delay = 0) =>
-  FadeIn.delay(delay).duration(CSS_ENTER_MS).easing(enterEasing);
+export const enterFade = (delay = 0) => {
+  const animation = FadeIn.delay(delay).duration(CSS_ENTER_MS);
+  return Platform.OS === "web" ? animation : animation.easing(enterEasing);
+};
 
-export const enterFadeDown = (delay = 0) =>
-  FadeInDown.delay(delay).duration(CSS_ENTER_MS).easing(enterEasing);
+export const enterFadeDown = (delay = 0) => {
+  const animation = FadeInDown.delay(delay).duration(CSS_ENTER_MS);
+  return Platform.OS === "web" ? animation : animation.easing(enterEasing);
+};
 
-export const enterFadeUp = (delay = 0) =>
-  FadeInUp.delay(delay).duration(CSS_ENTER_MS).easing(enterEasing);
+export const enterFadeUp = (delay = 0) => {
+  const animation = FadeInUp.delay(delay).duration(CSS_ENTER_MS);
+  return Platform.OS === "web" ? animation : animation.easing(enterEasing);
+};
 
-export const enterFadeLeft = (delay = 0) =>
-  FadeInLeft.delay(delay).duration(CSS_ENTER_MS).easing(enterEasing);
+export const enterFadeLeft = (delay = 0) => {
+  const animation = FadeInLeft.delay(delay).duration(CSS_ENTER_MS);
+  return Platform.OS === "web" ? animation : animation.easing(enterEasing);
+};
 
-export const enterFadeRight = (delay = 0) =>
-  FadeInRight.delay(delay).duration(CSS_ENTER_MS).easing(enterEasing);
+export const enterFadeRight = (delay = 0) => {
+  const animation = FadeInRight.delay(delay).duration(CSS_ENTER_MS);
+  return Platform.OS === "web" ? animation : animation.easing(enterEasing);
+};
 
 export const enterStagger = (index: number, baseDelay = 0) =>
   enterFadeDown(baseDelay + index * CSS_STAGGER_MS);
 
 /** Smooth layout reflow — preferred over spring layout in lists */
-export const layoutSmooth = LinearTransition.duration(160).easing(enterEasing);
+export const layoutSmooth =
+  Platform.OS === "web"
+    ? LinearTransition.duration(160)
+    : LinearTransition.duration(160).easing(enterEasing);
 
 /** Sentence builder — tiles morph into slots (spring layout + fly duration). */
-export const layoutMorph = LinearTransition.springify()
-  .damping(20)
-  .stiffness(240);
+export const layoutMorph =
+  Platform.OS === "web"
+    ? LinearTransition.duration(180)
+    : LinearTransition.springify().damping(20).stiffness(240);
 
 export const TILE_FLY_MS = 340;
 

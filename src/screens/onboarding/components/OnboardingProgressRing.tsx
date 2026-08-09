@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
   cancelAnimation,
   useAnimatedProps,
+  useReducedMotion,
   useSharedValue,
   withTiming,
   Easing,
@@ -58,13 +59,16 @@ export function OnboardingProgressRing({
   const circumference = 2 * Math.PI * radius;
 
   const progress = useSharedValue(ratio);
+  const reduceMotion = useReducedMotion();
 
   React.useEffect(() => {
-    progress.value = withTiming(ratio, {
-      duration: 420,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-    });
-  }, [progress, ratio]);
+    progress.value = reduceMotion
+      ? ratio
+      : withTiming(ratio, {
+          duration: 420,
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
+        });
+  }, [progress, ratio, reduceMotion]);
 
   React.useEffect(() => () => cancelAnimation(progress), [progress]);
 

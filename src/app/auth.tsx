@@ -867,6 +867,7 @@ function Field({
       </AppText>
       <TextInput
         {...inputProps}
+        underlineColorAndroid="transparent"
         style={[
           styles.input,
           { fontFamily: selectedFont, textAlign: isRtl ? "right" : "left" },
@@ -911,6 +912,7 @@ function PasswordField({
       </AppText>
       <View style={styles.passwordInputWrap}>
         <TextInput
+          underlineColorAndroid="transparent"
           style={[
             styles.input,
             styles.passwordInput,
@@ -1211,7 +1213,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean) {
       borderRadius: 13,
       paddingHorizontal: 14,
       color: colors.foreground,
-      backgroundColor: isDark ? colors.surface : "#FFFFFF",
+      backgroundColor: colors.muted,
       fontSize: 14.5,
       ...Platform.select({
         web: {

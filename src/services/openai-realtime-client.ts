@@ -1,5 +1,8 @@
 import { supabase } from "../lib/supabase";
-import { buildLiveTutorSystem } from "./gemini-live-client";
+import {
+  buildLiveTutorOpeningPrompt,
+  buildLiveTutorSystem,
+} from "./gemini-live-client";
 import { useSettingsStore } from "../stores/useSettingsStore";
 
 export const OPENAI_REALTIME_MODEL = "gpt-realtime-2.1";
@@ -185,12 +188,7 @@ export class OpenAIRealtimeSession {
   }
 
   startGreeting() {
-    const onboardingComplete =
-      useSettingsStore.getState().tutorOnboardingComplete;
-    const text = onboardingComplete
-      ? "Start the live tutoring session. Greet the student briefly and ask if they are ready for the first word."
-      : "Start now with exactly: Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟";
-    this.sendText(text);
+    this.sendText(buildLiveTutorOpeningPrompt());
   }
 
   sendText(text: string) {

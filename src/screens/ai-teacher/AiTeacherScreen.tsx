@@ -40,7 +40,6 @@ import * as Haptics from "expo-haptics";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PressableScale } from "../../components/animations";
-import { HugeiconsIcon } from "@hugeicons/react-native";
 import { TeacherIcon } from "@hugeicons/core-free-icons";
 import {
   ActivityIndicator,
@@ -537,7 +536,7 @@ export function AiTeacherScreen() {
                   style={[
                     styles.inputShell,
                     {
-                      backgroundColor: theme.surface,
+                      backgroundColor: theme.surfaceSunken,
                       borderColor: inputFocused ? theme.accentBorder : theme.border,
                       borderWidth: inputFocused ? metrics.selectBorderWidth : 1,
                       padding: inputFocused ? 15 : 16,
@@ -545,6 +544,7 @@ export function AiTeacherScreen() {
                   ]}
                 >
                   <TextInput
+                    underlineColorAndroid="transparent"
                     value={answer}
                     onChangeText={setAnswer}
                     onFocus={() => setInputFocused(true)}
@@ -895,6 +895,9 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
     },
     textInput: {
       minHeight: 100,
+      backgroundColor: "transparent",
+      paddingVertical: 0,
+      paddingHorizontal: 0,
       fontSize: 16,
       fontFamily: "DINNextRoundedRegular",
       textAlignVertical: "top",

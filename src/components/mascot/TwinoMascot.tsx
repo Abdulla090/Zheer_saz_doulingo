@@ -1,6 +1,5 @@
-import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, Platform, StyleSheet, View } from "react-native";
 
 import {
   getMascotExpressionSource,
@@ -27,18 +26,20 @@ type Props = {
   pose?: TwinoPose;
   mascotId?: MascotId;
   /**
-   * Renders the pet as not-yet-available. A grey copy is layered over the
-   * colour one at partial opacity: it shares the source's alpha mask, so the
-   * wash follows the pet's silhouette instead of covering a rectangle the way
-   * a plain overlay View would. React Native has no grayscale filter on
-   * native, and this needs no extra dependency.
+   * Renders the pet as not-yet-available while preserving its face, shading,
+   * and expression. Web uses luminance-preserving grayscale. Native uses a
+   * translucent neutral wash because React Native has no built-in grayscale
+   * image filter; keeping a little of the source underneath preserves detail.
    */
   muted?: boolean;
 };
 
-const MUTED_TINT = "#9AA3AF";
-const MUTED_WASH_OPACITY = 0.72;
-const MUTED_OVERALL_OPACITY = 0.75;
+const MUTED_TINT = "#9AA1A9";
+const MUTED_WASH_OPACITY = 0.78;
+const MUTED_OVERALL_OPACITY = 0.72;
+const WEB_GRAYSCALE_STYLE = {
+  filter: "grayscale(1) saturate(0)",
+} as const;
 
 function resolveExpression(pose: TwinoPose): MascotExpression {
   if (pose in LEGACY_POSE_MAP) {
@@ -68,12 +69,21 @@ export function TwinoMascot({
       ]}
       accessibilityLabel={`${resolvedMascot.name} mascot, ${expression}${muted ? ", locked" : ""}`}
     >
-      <Image source={source} style={styles.image} contentFit="contain" />
-      {muted ? (
+      <Image
+        source={source}
+        style={[
+          styles.image,
+          muted && Platform.OS === "web"
+            ? (WEB_GRAYSCALE_STYLE as any)
+            : null,
+        ]}
+        resizeMode="contain"
+      />
+      {muted && Platform.OS !== "web" ? (
         <Image
           source={source}
           style={[styles.image, styles.mutedWash]}
-          contentFit="contain"
+          resizeMode="contain"
           tintColor={MUTED_TINT}
         />
       ) : null}

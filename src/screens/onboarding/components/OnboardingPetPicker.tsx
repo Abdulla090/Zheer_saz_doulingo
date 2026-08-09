@@ -1,14 +1,15 @@
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
-import { Image } from "expo-image";
 import React, { useMemo } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSharedValue } from "react-native-reanimated";
 
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { AppText } from "../../../components/ui/AppText";
@@ -23,8 +24,8 @@ import { useSettingsStore } from "../../../stores/useSettingsStore";
 import { hapticSelection } from "../../../utils/haptics";
 import { OnboardingFooter, OnboardingTopBar } from "./OnboardingChrome";
 import { OnboardingQuestion } from "./OnboardingQuestion";
+import { OnboardingSkiaBg } from "./OnboardingSkiaBg";
 import {
-  onboardingLift,
   useOnboardingMetrics,
   useOnboardingTheme,
   type OnboardingMetrics,
@@ -89,12 +90,11 @@ const PET_COPY = {
 } as const;
 
 /**
- * The last setup step: pick the pet.
+ * The bridge between the three intro slides and the personal setup questions.
  *
- * It opens with the same mascot-and-speech-bubble header as every question
- * before it, and the mascot in that bubble is the one currently selected — so
- * the header is a live preview of the choice rather than decoration. Picking a
- * different pet swaps who is asking.
+ * The header mascot is the currently selected learner companion, so it acts as
+ * a live preview rather than decoration. Picking another pet immediately swaps
+ * who appears here and in every question that follows.
  */
 export function OnboardingPetPicker({ onFinish, onBack }: Props) {
   const insets = useSafeAreaInsets();
@@ -108,6 +108,7 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
   const isRtl = locale === "ku" || locale === "ar";
   const isCompact = width < 390 || height < 760;
   const metrics = useOnboardingMetrics(isCompact);
+  const backgroundX = useSharedValue(onboardingStepNumber("pet") * width);
 
   const contentWidth = Math.min(width - metrics.gutter * 2, metrics.maxWidth);
   const gridColumns = width >= 600 ? 4 : width < 350 ? 2 : 3;
@@ -158,9 +159,7 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
           <Image
             source={getMascotExpressionSource(mascot.id, "happy")}
             style={styles.petImage}
-            contentFit="contain"
-            transition={120}
-            accessibilityIgnoresInvertColors
+            resizeMode="contain"
           />
         </View>
         <AppText
@@ -188,6 +187,7 @@ export function OnboardingPetPicker({ onFinish, onBack }: Props) {
 
   return (
     <View style={styles.root}>
+      <OnboardingSkiaBg scrollX={backgroundX} />
       <OnboardingTopBar
         current={onboardingStepNumber("pet")}
         total={ONBOARDING_TOTAL_STEPS}
@@ -287,15 +287,17 @@ function createStyles(
       // Constant border width; only the colour changes on selection, so the
       // tile's artwork does not resize as the selection moves around the grid.
       borderWidth: metrics.rowBorderWidth,
+      borderBottomWidth: 4,
       borderColor: theme.border,
-      borderRadius: 20,
+      borderBottomColor: theme.isDark ? "#0A1016" : "#CDD4DD",
+      borderRadius: 14,
       borderCurve: "continuous",
       backgroundColor: theme.surface,
       minHeight: isCompact ? 112 : 132,
-      ...onboardingLift(theme),
     },
     petOptionSelected: {
       borderColor: theme.accentBorder,
+      borderBottomColor: theme.accentPressed,
       backgroundColor: theme.accentWash,
     },
     petImageFrame: {
@@ -304,7 +306,7 @@ function createStyles(
       overflow: "hidden",
       borderRadius: 15,
       borderCurve: "continuous",
-      backgroundColor: theme.surfaceSunken,
+      backgroundColor: theme.surfaceRaised,
     },
     petImage: {
       width: "100%",
@@ -318,7 +320,7 @@ function createStyles(
       paddingHorizontal: 2,
     },
     petNameSelected: {
-      color: theme.accentInk,
+      color: theme.ink,
     },
     checkmark: {
       position: "absolute",
@@ -331,7 +333,7 @@ function createStyles(
       justifyContent: "center",
       backgroundColor: theme.accent,
       borderWidth: 2,
-      borderColor: theme.surface,
+      borderColor: theme.canvas,
     },
   });
 }

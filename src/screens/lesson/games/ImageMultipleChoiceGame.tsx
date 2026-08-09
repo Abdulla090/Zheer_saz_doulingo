@@ -21,7 +21,6 @@ import {
 import { useWordSpeech } from "./use-word-speech";
 import { Duo } from "./lesson-light-design";
 import { AppText } from "../../../components/ui/AppText";
-import { crossShadow } from "../../../utils/shadows";
 import { HomeLiquidButton } from "../../../components/ui/ios-liquid-home";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 
@@ -222,7 +221,7 @@ const s = StyleSheet.create({
   },
   imageCard: {
     alignSelf: "center",
-    backgroundColor: Duo.snow,
+    backgroundColor: Duo.surface,
     padding: 12,
     borderRadius: 16,
     borderWidth: 2,

@@ -5,11 +5,11 @@ import {
   Message01Icon,
   RocketIcon,
 } from "@hugeicons/core-free-icons";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Keyboard,
+  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -24,8 +24,10 @@ import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
   FadeIn,
+  FadeInLeft,
   FadeInRight,
   FadeOutLeft,
+  FadeOutRight,
   LinearTransition,
   useAnimatedStyle,
   useReducedMotion,
@@ -56,8 +58,8 @@ import {
   OnboardingOptionRow,
 } from "./components/OnboardingOptionRow";
 import { OnboardingQuestion } from "./components/OnboardingQuestion";
+import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import {
-  onboardingLift,
   useOnboardingMetrics,
   useOnboardingTheme,
   type OnboardingMetrics,
@@ -104,7 +106,7 @@ const ONBOARDING_COPY = {
     profileSubtitle: "ڕێڕەوی فێربوونت بۆ خۆت تایبەت دەکەین.",
     namePlaceholder: "ناوت",
     agePlaceholder: "تەمەنت (ئارەزوومەندانە)",
-    nativeLanguageTitle: "زمانی دایکەت چییە؟",
+    nativeLanguageTitle: "زمانی دایکت چیە؟",
     targetLanguageTitle: "کام زمان دەتەوێت فێرببیت؟",
     levelTitle: (language: string) => `ئاستت لە ${language} چەندە؟`,
     goalTitle: "ئامانجی سەرەکیت چییە؟",
@@ -295,16 +297,7 @@ const STEP_EXPRESSION: Record<OnboardingSetupStep, MascotExpression> = {
   generating: "thinking",
 };
 
-/**
- * How long a tapped row stays visibly selected before the flow advances.
- *
- * Single-choice steps advance on tap rather than waiting for a Continue press —
- * with one answer per screen, the button was a second tap that carried no
- * information. The delay is not padding: without it the row is replaced in the
- * same frame it is pressed, so the selection never renders and the tap feels
- * unacknowledged.
- */
-const AUTO_ADVANCE_MS = 260;
+const SETUP_SLIDE_EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
 export function LanguageSelectionFlow({
   onFinish,
@@ -326,7 +319,11 @@ export function LanguageSelectionFlow({
   const contentLayout =
     Platform.OS === "web"
       ? LinearTransition.duration(220)
-      : LinearTransition.springify();
+      : LinearTransition.springify()
+          .damping(28)
+          .stiffness(340)
+          .mass(0.55)
+          .overshootClamping(1);
 
   // Stores
   const setUserName = useSettingsStore((s) => s.setUserName);
@@ -344,6 +341,7 @@ export function LanguageSelectionFlow({
   const setPathMode = useSettingsStore((s) => s.setPathMode);
 
   const [step, setStep] = useState<OnboardingSetupStep>(initialStep);
+  const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
   const [selectedNativeLang, setSelectedNativeLang] = useState<string>(
     storedNativeLang || "ku",
   );
@@ -370,29 +368,7 @@ export function LanguageSelectionFlow({
   const goalLabels = GOAL_LABELS[selectedNativeLang] ?? GOAL_LABELS.en;
   const textDirectionStyle = isRtl ? styles.rtlText : styles.ltrText;
 
-  /*
-   * A pending auto-advance has to be cancellable. Without this a user who taps
-   * a language and immediately hits back gets pushed forward again ~260ms
-   * later, from a screen they already left.
-   */
-  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelAdvance = useCallback(() => {
-    if (advanceTimer.current !== null) {
-      clearTimeout(advanceTimer.current);
-      advanceTimer.current = null;
-    }
-  }, []);
-  const scheduleAdvance = useCallback(
-    (run: () => void) => {
-      cancelAdvance();
-      advanceTimer.current = setTimeout(() => {
-        advanceTimer.current = null;
-        run();
-      }, AUTO_ADVANCE_MS);
-    },
-    [cancelAdvance],
-  );
-  useEffect(() => cancelAdvance, [cancelAdvance]);
+  const setupScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -411,51 +387,64 @@ export function LanguageSelectionFlow({
     if (step !== "profile") setKeyboardVisible(false);
   }, [step]);
 
+  /*
+   * Every question is a fresh page even though the same ScrollView is reused.
+   * A lower option can move the container before it advances; carrying that
+   * offset into the next page cropped its mascot/question on small screens.
+   */
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setupScrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+      if (Platform.OS === "web") {
+        // RN Web's fixed #root remains programmatically scrollable even though
+        // its CSS overflow is hidden. Browser scroll-into-view can otherwise
+        // move the whole app while clicking an option in an RTL transition.
+        const rootElement = document.getElementById("root");
+        if (rootElement) {
+          rootElement.scrollLeft = 0;
+          rootElement.scrollTop = 0;
+        }
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [step]);
+
+  const moveToStep = useCallback(
+    (next: OnboardingSetupStep, direction: 1 | -1 = 1) => {
+      setTransitionDirection(direction);
+      setStep(next);
+    },
+    [],
+  );
+
   const handleNativeLanguageSelect = useCallback(
     (langId: string) => {
       hapticSelection();
       setSelectedNativeLang(langId);
-      scheduleAdvance(() => {
-        /*
-         * Target options depend on the source, so a source change can strand
-         * the current target on a pair the curriculum does not support. Repair
-         * it here rather than letting `getTargetLanguagesForSource` render a
-         * list with nothing selected.
-         */
-        const targets = getTargetLanguagesForSource(langId);
-        setSelectedTargetLang((current) =>
-          targets.some((language) => language.id === current)
-            ? current
-            : targets[0]?.id ?? "en",
-        );
-        setStep("targetLanguage");
-      });
+      const targets = getTargetLanguagesForSource(langId);
+      setSelectedTargetLang((current) =>
+        targets.some((language) => language.id === current)
+          ? current
+          : targets[0]?.id ?? "en",
+      );
     },
-    [scheduleAdvance],
+    [],
   );
 
   const handleTargetLanguageSelect = useCallback(
     (langId: string) => {
       hapticSelection();
       setSelectedTargetLang(langId);
-      scheduleAdvance(() => {
-        setLanguagePair(selectedNativeLang, langId);
-        setStep("profile");
-      });
     },
-    [scheduleAdvance, selectedNativeLang, setLanguagePair],
+    [],
   );
 
   const handleLevelSelect = useCallback(
     (levelId: number) => {
       hapticSelection();
       setSelectedLevel(levelId);
-      scheduleAdvance(() => {
-        setEnglishLevel(levelId);
-        setStep("goal");
-      });
     },
-    [scheduleAdvance, setEnglishLevel],
+    [],
   );
 
   const handleProfileContinue = useCallback(() => {
@@ -471,13 +460,13 @@ export function LanguageSelectionFlow({
     setUserName(name);
     setUserAge(age);
     hapticSelection();
-    setStep("level");
-  }, [age, name, setUserAge, setUserName]);
+    moveToStep("level");
+  }, [age, moveToStep, name, setUserAge, setUserName]);
 
   const handleGoalContinue = useCallback(async () => {
     hapticSelection();
     setSetupError(null);
-    setStep("generating");
+    moveToStep("generating");
 
     try {
       // Give the preparation state one real render frame, then commit the
@@ -499,7 +488,7 @@ export function LanguageSelectionFlow({
     } catch (err) {
       if (__DEV__) console.warn("Failed to initialize path:", err);
       setSetupError(copy.setupError);
-      setStep("goal");
+      moveToStep("goal", -1);
       if (Platform.OS !== "web") {
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Error,
@@ -508,6 +497,7 @@ export function LanguageSelectionFlow({
     }
   }, [
     copy.setupError,
+    moveToStep,
     onFinish,
     selectedGoal,
     selectedLevel,
@@ -520,30 +510,74 @@ export function LanguageSelectionFlow({
   ]);
 
   const onBack = useCallback(() => {
-    cancelAdvance();
     hapticSelection();
-    if (step === "generating") setStep("goal");
-    else if (step === "goal") setStep("level");
-    else if (step === "level") setStep("profile");
-    else if (step === "profile") setStep("targetLanguage");
-    else if (step === "targetLanguage") setStep("nativeLanguage");
+    if (step === "generating") moveToStep("goal", -1);
+    else if (step === "goal") moveToStep("level", -1);
+    else if (step === "level") moveToStep("profile", -1);
+    else if (step === "profile") moveToStep("targetLanguage", -1);
+    else if (step === "targetLanguage") moveToStep("nativeLanguage", -1);
     else onBackToIntro();
-  }, [cancelAdvance, onBackToIntro, step]);
+  }, [moveToStep, onBackToIntro, step]);
 
   const progressStep = onboardingStepNumber(step);
+  const backgroundX = useSharedValue(progressStep * screenWidth);
+  useEffect(() => {
+    const target = progressStep * screenWidth;
+    backgroundX.value = reduceMotion
+      ? target
+      : withTiming(target, {
+          duration: 320,
+          easing: SETUP_SLIDE_EASE,
+        });
+  }, [backgroundX, progressStep, reduceMotion, screenWidth]);
 
-  /*
-   * Only the steps that cannot resolve themselves keep a footer: `profile`
-   * needs a typed name committed, and `goal` is the point of no return into
-   * curriculum generation. The single-choice steps advance on tap.
-   */
-  const showFooter = step === "profile" || step === "goal";
+  const enteringTransition =
+    transitionDirection > 0
+      ? isRtl
+        ? FadeInLeft
+        : FadeInRight
+      : isRtl
+        ? FadeInRight
+        : FadeInLeft;
+  const exitingTransition =
+    transitionDirection > 0
+      ? isRtl
+        ? FadeOutRight
+        : FadeOutLeft
+      : isRtl
+        ? FadeOutLeft
+        : FadeOutRight;
+
+  // Every user-controlled setup slide uses the same confirm action. Selection
+  // and navigation are separate actions, preventing accidental advancement.
+  const showFooter = step !== "generating";
   const continueLabel = step === "goal" ? copy.start : copy.continue;
   const continueDisabled = step === "profile" && !name.trim();
   const handleCurrentContinue = useCallback(() => {
-    if (step === "profile") handleProfileContinue();
-    else if (step === "goal") void handleGoalContinue();
-  }, [handleGoalContinue, handleProfileContinue, step]);
+    if (step === "nativeLanguage") {
+      moveToStep("targetLanguage");
+    } else if (step === "targetLanguage") {
+      setLanguagePair(selectedNativeLang, selectedTargetLang);
+      moveToStep("profile");
+    } else if (step === "profile") {
+      handleProfileContinue();
+    } else if (step === "level") {
+      setEnglishLevel(selectedLevel);
+      moveToStep("goal");
+    } else if (step === "goal") {
+      void handleGoalContinue();
+    }
+  }, [
+    handleGoalContinue,
+    handleProfileContinue,
+    moveToStep,
+    selectedLevel,
+    selectedNativeLang,
+    selectedTargetLang,
+    setEnglishLevel,
+    setLanguagePair,
+    step,
+  ]);
 
   const question =
     step === "nativeLanguage"
@@ -556,13 +590,8 @@ export function LanguageSelectionFlow({
             ? copy.levelTitle(LANGUAGE_CATALOG[selectedTargetLang]?.nativeName ?? "")
             : copy.goalTitle;
 
-  /*
-   * Both language steps render the identical row, so only the list and the
-   * current value differ. This holds *data only* — the two select handlers are
-   * picked inside the row's `onPress` instead. They close over the pending
-   * auto-advance timer ref, and `react-hooks/refs` treats anything that carries
-   * such a handler as ref-tainted the moment it is read during render.
-   */
+  // Both language steps share one row layout; only their catalog and selected
+  // value differ. Navigation is handled by the consistent footer action.
   const languageOptions =
     step === "nativeLanguage"
       ? { languages: SOURCE_LANGUAGES, selected: selectedNativeLang }
@@ -575,6 +604,7 @@ export function LanguageSelectionFlow({
 
   return (
     <View style={styles.root}>
+      <OnboardingSkiaBg scrollX={backgroundX} />
       <OnboardingTopBar
         current={progressStep}
         total={ONBOARDING_TOTAL_STEPS}
@@ -589,6 +619,7 @@ export function LanguageSelectionFlow({
         style={styles.keyboardAvoider}
       >
         <ScrollView
+          ref={setupScrollRef}
           style={styles.scroll}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -597,8 +628,16 @@ export function LanguageSelectionFlow({
         >
           <Animated.View
             key={step}
-            entering={reduceMotion ? undefined : FadeInRight.duration(240)}
-            exiting={reduceMotion ? undefined : FadeOutLeft.duration(180)}
+            entering={
+              reduceMotion
+                ? undefined
+                : enteringTransition.duration(320).easing(SETUP_SLIDE_EASE)
+            }
+            exiting={
+              reduceMotion
+                ? undefined
+                : exitingTransition.duration(210).easing(Easing.in(Easing.quad))
+            }
             layout={contentLayout}
             style={[
               styles.stepBlock,
@@ -877,8 +916,7 @@ function GeneratingState({
       <Image
         source={getMascotExpressionSource(mascotId, "thinking")}
         style={styles.mascot}
-        contentFit="contain"
-        transition={200}
+        resizeMode="contain"
         accessibilityIgnoresInvertColors
       />
 
@@ -1008,14 +1046,16 @@ function createStyles(
       paddingVertical: 10,
       borderRadius: metrics.rowRadius,
       borderCurve: "continuous",
-      borderWidth: metrics.rowBorderWidth,
+      borderWidth: 1,
+      borderBottomWidth: 4,
       borderColor: theme.border,
+      borderBottomColor: theme.isDark ? "#0A1016" : "#CDD4DD",
       backgroundColor: theme.surface,
       justifyContent: "center",
-      ...onboardingLift(theme),
     },
     inputBoxFocused: {
       borderColor: theme.accentBorder,
+      borderBottomColor: theme.accentPressed,
       backgroundColor: theme.accentWash,
     },
     textInput: {

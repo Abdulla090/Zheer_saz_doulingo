@@ -12,6 +12,7 @@ import {
   pressTiming,
   releaseTiming,
 } from "../../../components/animations/motion";
+import { Platform } from "react-native";
 import { Easing, FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
 
 export {
@@ -29,8 +30,14 @@ export {
 const smoothOut = Easing.out(Easing.cubic);
 
 /** Whole game screen swap between questions */
-export const enterGame = FadeIn.duration(240).easing(smoothOut);
-export const exitGame = FadeOut.duration(180).easing(Easing.in(Easing.quad));
+export const enterGame =
+  Platform.OS === "web"
+    ? FadeIn.duration(240)
+    : FadeIn.duration(240).easing(smoothOut);
+export const exitGame =
+  Platform.OS === "web"
+    ? FadeOut.duration(180)
+    : FadeOut.duration(180).easing(Easing.in(Easing.quad));
 
 /** Header / eyebrow block */
 export const enterHeader = (delay = 0) =>
@@ -49,7 +56,10 @@ export const enterFooter = (delay = 280) =>
   enterFadeUp(delay).duration(260);
 
 /** Feedback pop (transcript, result chip) */
-export const enterPop = () => ZoomIn.duration(220).easing(smoothOut);
+export const enterPop = () => {
+  const animation = ZoomIn.duration(220);
+  return Platform.OS === "web" ? animation : animation.easing(smoothOut);
+};
 
 /** Status / hint line */
 export const enterHint = (delay = 100) =>

@@ -95,12 +95,20 @@ export function DirectionalTextInput({
       {...webProps}
       {...props}
       accessibilityLanguage={languageCode}
+      underlineColorAndroid={props.underlineColorAndroid ?? "transparent"}
       style={StyleSheet.flatten([
         style,
         fullWidth && { width: "100%", alignSelf: "stretch" },
         {
-          direction,
           textAlign,
+          backgroundColor: "transparent",
+          /*
+           * Android 15/16 can paint the platform EditText drawable and an
+           * opaque glyph-bound rectangle when direction is repeated on the
+           * native text control. The surrounding DirectionalView already owns
+           * layout direction; the input only needs physical alignment here.
+           */
+          ...(Platform.OS !== "android" ? { direction } : null),
           ...(Platform.OS === "ios" ? { writingDirection: direction } : null),
         },
       ])}

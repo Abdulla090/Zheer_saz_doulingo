@@ -86,7 +86,17 @@ function InnerLayout() {
             setKurdishFontLoaded(true);
           })
           .catch((err) => {
-            console.error("Failed to load Kurdish font dynamically:", selectedFont, err);
+            // The bundled DIN family remains available, so this is a
+            // recoverable preference failure rather than an application error.
+            // Logging it as an error opens Expo's intrusive error toast over
+            // otherwise usable controls in development builds.
+            if (__DEV__) {
+              console.warn(
+                "Kurdish font preference could not be loaded; using the bundled fallback:",
+                selectedFont,
+                err,
+              );
+            }
             setKurdishFontLoaded(true);
           });
       } else {

@@ -8,10 +8,6 @@ import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
-import {
-  LoginPrimaryButton,
-  LoginPrimaryButtonLabel,
-} from "../../../components/ui/LoginPrimaryButton";
 import { OnboardingProgressRing } from "./OnboardingProgressRing";
 import {
   ONBOARDING_GUTTER,
@@ -21,15 +17,15 @@ import {
 import { useOnboardingTheme, type OnboardingTheme } from "./onboarding-theme";
 
 /**
- * Top bar: back, then progress, then (optionally) skip.
+ * Compact reference-matched top bar: back, then circular progress, then skip.
  *
  * Back and progress are deliberately adjacent on the leading edge. They answer
  * the same question — "where am I, and how do I undo this?" — and pairing them
  * frees the entire trailing edge for the one escape hatch that matters.
  *
- * The `twino` wordmark only renders on the intro slides (`showBrand`). During
- * setup the user is answering questions, and a wordmark at the strongest point
- * on the page competes with the question for first read.
+ * A centered wordmark is intentionally omitted from the active flow. It caused
+ * the chrome to compete with the question and made the header feel busier than
+ * the compact reference treatment.
  */
 export function OnboardingTopBar({
   current,
@@ -201,17 +197,26 @@ export function OnboardingFooter({
         </AppText>
       ) : null}
 
-      <LoginPrimaryButton
+      <IOSPressable
         testID={testID}
+        accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityState={{ disabled }}
         disabled={disabled}
         onPress={onPress}
-        style={styles.primaryButton}
+        pressScale={0.985}
+        style={[styles.primaryButton, disabled && styles.primaryButtonDisabled]}
       >
-        <LoginPrimaryButtonLabel languageCode={locale} align="center">
+        <AppText
+          style={styles.primaryButtonLabel}
+          languageCode={locale}
+          latinRole="bold"
+          align="center"
+          numberOfLines={1}
+        >
           {label}
-        </LoginPrimaryButtonLabel>
-      </LoginPrimaryButton>
+        </AppText>
+      </IOSPressable>
 
       {secondaryLabel && onSecondaryPress ? (
         <IOSPressable
@@ -261,7 +266,7 @@ function createStyles(theme: OnboardingTheme) {
       gap: 10,
     },
     backControl: {
-      width: 34,
+      width: 40,
       height: 44,
       alignItems: "center",
       justifyContent: "center",
@@ -297,7 +302,7 @@ function createStyles(theme: OnboardingTheme) {
       paddingTop: ONBOARDING_SPACE.md,
       gap: ONBOARDING_SPACE.sm,
       flexShrink: 0,
-      backgroundColor: theme.canvas,
+      backgroundColor: "transparent",
       zIndex: 30,
     },
     footerCompact: {
@@ -310,8 +315,26 @@ function createStyles(theme: OnboardingTheme) {
       paddingHorizontal: 16,
     },
     primaryButton: {
-      borderRadius: 16,
+      width: "100%",
+      minHeight: 59,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 18,
+      paddingTop: 2,
+      borderRadius: 14,
       borderCurve: "continuous",
+      borderBottomWidth: 5,
+      borderBottomColor: theme.accentPressed,
+      backgroundColor: theme.accent,
+    },
+    primaryButtonDisabled: {
+      opacity: 0.46,
+    },
+    primaryButtonLabel: {
+      color: theme.onAccent,
+      fontSize: 17,
+      lineHeight: 22,
+      letterSpacing: -0.15,
     },
     secondaryControl: {
       // 44pt of touch height even though the label is 20pt tall.

@@ -8,17 +8,16 @@
  * the same size, the exposed sliver of rim *is* the side wall, so pressing the
  * node genuinely collapses it rather than faking the collapse with opacity.
  *
- * Gloss is two bands at -45deg, clipped to an inset ellipse so they stop at the
- * face's edge. The reference fills them flat; here they are feathered across
- * their thickness with a gradient, so they read as light on a curved surface
- * rather than as two hard-edged stripes painted onto it.
+ * The reference also paints two gloss sheens across the face. Ordinary nodes
+ * stay flat and cheap to draw; completed nodes alone receive a compact metallic
+ * gold ramp so completion cannot be mistaken for the bright-yellow reward state.
  *
  * Street and kids paths keep the View + LinearGradient `SvgButton`; only the
  * normal path renders this. Locked and completed states are additions to the
  * reference, which has neither — they are load-bearing here.
  */
 
-import React, { useCallback, useId, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { Pressable } from "react-native";
 import Animated, {
   useAnimatedProps,
@@ -26,12 +25,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, {
-  ClipPath,
   Defs,
   Ellipse,
   G,
-  LinearGradient,
-  Rect,
+  LinearGradient as SvgLinearGradient,
   Stop,
 } from "react-native-svg";
 
@@ -48,38 +45,11 @@ const RIM_CY = 53;
 const FACE_PRESSED_CY = 52;
 const RX = 55;
 const RY = 45;
-const CLIP_INSET = 8;
 const ICON_SCALE = 1.8;
 const SVG_VIEWBOX = "-10 -10 120 130";
 const ICON_VB_W = 32;
 const ICON_VB_H = 32;
-const GLOSS_X = -10;
-const GLOSS_W = 120;
-const GLOSS_TOP_Y = -2;
-const GLOSS_TOP_H = 30;
-const GLOSS_BOTTOM_Y = 50;
-const GLOSS_BOTTOM_H = 26;
 
-/*
- * Gloss falloff across each band's thickness.
- *
- * The reference fills the two bands with flat `rgba(255,255,255,0.3)`, which
- * gives them two hard parallel edges — on a phone that reads as a decal printed
- * on the node rather than light falling across it, and the straight edge fights
- * the face's curve. A gradient perpendicular to the band dissolves both edges.
- *
- * Peak alpha is raised above the reference's 0.3 because a feathered band only
- * reaches full strength along its centre line, so matching 0.3 at the peak would
- * land dimmer overall than the flat original.
- */
-const GLOSS_PEAK_ALPHA = 0.42;
-const GLOSS_STOPS = [
-  { offset: "0", alpha: 0 },
-  { offset: "0.25", alpha: 0.45 },
-  { offset: "0.5", alpha: 1 },
-  { offset: "0.75", alpha: 0.45 },
-  { offset: "1", alpha: 0 },
-] as const;
 const PRESS_DURATION_MS = 100;
 
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
@@ -140,12 +110,9 @@ export const NormalPathNode = React.memo(
     isSelected = false,
     accessibilityLabel,
   }: NormalPathNodeProps) => {
+    const goldGradientId = React.useId().replace(/:/g, "");
     const colors = useMemo(() => nodeColors(variant), [variant]);
-    // `useId` returns a colon-containing value that is not a legal SVG id. Both
-    // defs need distinct ids or nodes would cross-reference each other's.
-    const rawId = useId().replace(/:/g, "");
-    const clipId = `${rawId}-clip`;
-    const glossId = `${rawId}-gloss`;
+    const usesMetallicGold = isCompleted || variant === "gold";
     const resolvedIconColor =
       iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
 
@@ -154,10 +121,10 @@ export const NormalPathNode = React.memo(
     const faceAnimatedProps = useAnimatedProps(() => ({ cy: cy.value }));
 
     /*
-     * Gloss and icon are painted *on* the face, so both travel by exactly the
-     * face's own displacement. Deriving it from `cy` rather than interpolating
-     * over a separate range keeps them welded to the surface — an independent
-     * range drifts by a unit at the pressed end and the sheen visibly slides.
+     * The icon is painted *on* the face, so it travels by exactly the face's own
+     * displacement. Deriving it from `cy` rather than interpolating over a
+     * separate range keeps it welded to the surface — an independent range
+     * drifts by a unit at the pressed end and the icon visibly slides.
      */
     const followFaceProps = useAnimatedProps(() => ({
       transform: [{ translateY: cy.value - FACE_BASE_CY }],
@@ -229,33 +196,23 @@ export const NormalPathNode = React.memo(
         }}
       >
         <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
-          <Defs>
-            <ClipPath id={clipId}>
-              <Ellipse
-                cx={BUTTON_CENTER_X}
-                cy={FACE_BASE_CY}
-                rx={RX - CLIP_INSET}
-                ry={RY - CLIP_INSET}
-              />
-            </ClipPath>
-            {/*
-             * Vertical in the band's own coordinate space, so once the -45deg
-             * transform is applied it runs across the band's thickness. Object
-             * bounding-box units (the default) resolve against each rect's own
-             * box, so one definition feathers both bands despite their differing
-             * heights.
-             */}
-            <LinearGradient id={glossId} x1="0" y1="0" x2="0" y2="1">
-              {GLOSS_STOPS.map((stop) => (
-                <Stop
-                  key={stop.offset}
-                  offset={stop.offset}
-                  stopColor="#FFFFFF"
-                  stopOpacity={stop.alpha * GLOSS_PEAK_ALPHA}
-                />
-              ))}
-            </LinearGradient>
-          </Defs>
+          {usesMetallicGold ? (
+            <Defs>
+              <SvgLinearGradient
+                id={goldGradientId}
+                x1="16%"
+                y1="2%"
+                x2="82%"
+                y2="100%"
+              >
+                <Stop offset="0%" stopColor="#FFF2B5" />
+                <Stop offset="18%" stopColor="#FFE681" />
+                <Stop offset="65%" stopColor="#FFC72C" />
+                <Stop offset="90%" stopColor="#E3A300" />
+                <Stop offset="100%" stopColor="#C97800" />
+              </SvgLinearGradient>
+            </Defs>
+          ) : null}
 
           {/* 1. Rim — static, and the part left exposed below the face reads as
               the node's side wall. */}
@@ -274,40 +231,14 @@ export const NormalPathNode = React.memo(
             cy={FACE_BASE_CY}
             rx={RX}
             ry={RY}
-            fill={colors.face}
-            // Not in the reference: a completed node keeps a white hairline so
-            // it stays distinguishable from an unstarted one at a glance.
-            stroke={isCompleted ? "rgba(255,255,255,0.75)" : undefined}
-            strokeWidth={isCompleted ? 3 : 0}
+            fill={
+              usesMetallicGold ? `url(#${goldGradientId})` : colors.face
+            }
+            stroke={usesMetallicGold ? "#FFE681" : undefined}
+            strokeWidth={usesMetallicGold ? 1.25 : 0}
           />
 
-          {/* 3. Gloss — flat white at 0.3 reads as a sheen over any hue. Dropped
-              when locked; a gray node should look inert. */}
-          {isLocked ? null : (
-            <AnimatedGroup
-              animatedProps={followFaceProps}
-              clipPath={`url(#${clipId})`}
-            >
-              <Rect
-                x={GLOSS_X}
-                y={GLOSS_TOP_Y}
-                width={GLOSS_W}
-                height={GLOSS_TOP_H}
-                fill={`url(#${glossId})`}
-                transform={`rotate(-45 ${BUTTON_CENTER_X} ${FACE_BASE_CY})`}
-              />
-              <Rect
-                x={GLOSS_X}
-                y={GLOSS_BOTTOM_Y}
-                width={GLOSS_W}
-                height={GLOSS_BOTTOM_H}
-                fill={`url(#${glossId})`}
-                transform={`rotate(-45 ${BUTTON_CENTER_X} ${FACE_BASE_CY})`}
-              />
-            </AnimatedGroup>
-          )}
-
-          {/* 4. Icon — centred, and follows the face down on press. */}
+          {/* 3. Icon — painted on the face, so it rides the same displacement. */}
           <AnimatedGroup animatedProps={followFaceProps}>
             <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
               <G

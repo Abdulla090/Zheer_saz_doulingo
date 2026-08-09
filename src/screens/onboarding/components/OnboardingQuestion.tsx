@@ -1,25 +1,16 @@
-import { Image } from "expo-image";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import { AppText } from "../../../components/ui/AppText";
 import { getMascotExpressionSource } from "../../../constants/mascot-expressions";
 import type { MascotExpression } from "../../../constants/mascot-expressions";
 import type { OnboardingMetrics, OnboardingTheme } from "./onboarding-theme";
-import { onboardingLift } from "./onboarding-theme";
 
 /**
- * The question, asked by the mascot.
- *
- * Every setup step used to open with a small "STEP 3 OF 5" eyebrow above a large
- * serif headline. That is an editorial masthead: it tells the user where they
- * are in a document. This flow is a conversation, so the question now comes out
- * of the mascot's mouth and the step counter moves to the ring in the top bar,
- * where it stops competing with the thing actually being asked.
- *
- * It also means the pet the user is about to choose is present from the first
- * screen rather than appearing once at the end, which is the whole reason the
- * pet exists.
+ * Reference-matched conversational header: the selected mascot asks one short
+ * question in a low-contrast outlined speech bubble. The bubble deliberately
+ * uses the canvas family rather than white, so it reads as dialogue without
+ * recreating the intrusive white label boxes that existed across the old UI.
  */
 export function OnboardingQuestion({
   question,
@@ -50,21 +41,18 @@ export function OnboardingQuestion({
       <Image
         source={getMascotExpressionSource(mascotId, expression)}
         style={styles.mascot}
-        contentFit="contain"
-        transition={200}
-        accessibilityIgnoresInvertColors
+        resizeMode="contain"
       />
 
-      <View style={styles.bubbleWrap}>
-        {/*
-          The tail is a rotated square with borders on exactly the two edges
-          that end up facing the mascot, so it inherits the bubble's outline
-          without a second shape to keep in sync. It sits *above* the bubble in
-          z-order: its fill then covers the short run of bubble border it
-          overlaps, which is what makes the join look continuous.
-        */}
-        <View style={styles.tail} />
-        <View style={styles.bubble}>
+      <View style={styles.bubble}>
+        <View
+          pointerEvents="none"
+          style={[
+            styles.tail,
+            isRtl ? styles.tailRtl : styles.tailLtr,
+          ]}
+        />
+        <View style={styles.copy}>
           <AppText
             style={styles.question}
             languageCode={locale}
@@ -91,81 +79,74 @@ export function OnboardingQuestion({
   );
 }
 
-const TAIL = 14;
-
 function createStyles(
   theme: OnboardingTheme,
   metrics: OnboardingMetrics,
   isRtl: boolean,
 ) {
-  /*
-   * `left` / `right` stay physical under RTL in React Native, so the tail is
-   * placed explicitly rather than with logical `start` / `end`. The row itself
-   * *is* mirrored by the layout engine, which is why the physical side has to
-   * flip with `isRtl` — in RTL the mascot ends up on the right and the tail has
-   * to point back at it.
-   */
-  const tailSide = isRtl
-    ? { right: -TAIL / 2 - 1 }
-    : { left: -TAIL / 2 - 1 };
-
-  const tailBorders = isRtl
-    ? { borderTopWidth: 2, borderRightWidth: 2 }
-    : { borderLeftWidth: 2, borderBottomWidth: 2 };
-
   return StyleSheet.create({
     row: {
       width: "100%",
       // RTL row order is mirrored by the layout engine (forceRTL / document.dir).
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: 13,
+      minHeight: metrics.mascotSize + 8,
     },
     mascot: {
       width: metrics.mascotSize,
       height: metrics.mascotSize,
       flexShrink: 0,
     },
-    bubbleWrap: {
+    bubble: {
+      position: "relative",
       flex: 1,
       minWidth: 0,
-      position: "relative",
-    },
-    bubble: {
-      width: "100%",
-      borderRadius: 18,
+      minHeight: 76,
+      justifyContent: "center",
+      paddingHorizontal: 17,
+      paddingVertical: 13,
+      borderRadius: 15,
       borderCurve: "continuous",
-      borderWidth: 2,
-      borderColor: theme.border,
-      backgroundColor: theme.surface,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      gap: 4,
-      ...onboardingLift(theme),
+      borderWidth: 1,
+      borderBottomWidth: 3,
+      borderColor: theme.bubbleBorder,
+      backgroundColor: theme.bubble,
     },
     tail: {
       position: "absolute",
-      top: "50%",
-      marginTop: -TAIL / 2,
-      ...tailSide,
-      width: TAIL,
-      height: TAIL,
-      backgroundColor: theme.surface,
-      borderColor: theme.border,
-      ...tailBorders,
+      top: 27,
+      width: 14,
+      height: 14,
+      backgroundColor: theme.bubble,
       transform: [{ rotate: "45deg" }],
-      zIndex: 2,
+    },
+    tailLtr: {
+      left: -8,
+      borderLeftWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: theme.bubbleBorder,
+    },
+    tailRtl: {
+      right: -8,
+      borderRightWidth: 1,
+      borderTopWidth: 1,
+      borderColor: theme.bubbleBorder,
+    },
+    copy: {
+      width: "100%",
+      gap: 4,
     },
     question: {
       color: theme.ink,
       fontSize: metrics.questionSize,
-      lineHeight: Math.round(metrics.questionSize * 1.32),
+      lineHeight: Math.round(metrics.questionSize * 1.28),
       letterSpacing: isRtl ? 0 : -0.3,
     },
     hint: {
       color: theme.mutedInk,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: 13.5,
+      lineHeight: 19,
     },
   });
 }

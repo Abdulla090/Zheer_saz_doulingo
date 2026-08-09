@@ -50,7 +50,10 @@ const isNativeNode = Platform.OS !== "web";
  * The ramp is near-vertical (a slight lean, not a diagonal wash): a light source
  * above the token is what makes a round face look spherical instead of tilted.
  */
-function faceGradient(face: string, locked: boolean) {
+function faceGradient(face: string, locked: boolean, gold: boolean) {
+  if (gold && !locked) {
+    return ["#FFE681", "#FFC72C", "#E3A300"] as const;
+  }
   if (isNativeNode) {
     return locked
       ? (["rgba(255,255,255,0.22)", face, "rgba(0,0,0,0.08)"] as const)
@@ -88,7 +91,10 @@ const GLOSS_FADE = [
 ] as const;
 const GLOSS_FADE_STOPS = [0, 0.28, 0.5, 0.72, 1] as const;
 
-function shellGradient(face: string, rim: string, locked: boolean) {
+function shellGradient(face: string, rim: string, locked: boolean, gold: boolean) {
+  if (gold && !locked) {
+    return ["#FFD447", "#D98A00", "#8E5000"] as const;
+  }
   if (isNativeNode) {
     // The shell is the side wall; it stays closer to the rim colour so the
     // raised face still reads as the brightest surface.
@@ -116,6 +122,18 @@ type SvgButtonProps = {
   accessibilityLabel?: string;
 };
 
+/**
+ * One jump, as fractions of the loop: rest, crouch, rise, apex, hang, fall
+ * through, settle.
+ *
+ * The apex is held from 0.44 to 0.55. A thrown object decelerates into the top
+ * of its arc and floats there before accelerating away, so without that beat
+ * the star reads as a mechanical up-and-down rather than as a jump. The uneven
+ * spacing on the way up does the rest of the work — the same keyframes drive
+ * the icon and its shadow, so the two never drift apart.
+ */
+const JUMP_PHASES = [0, 0.12, 0.3, 0.44, 0.55, 0.8, 1];
+
 export function CurrentLessonIcon({ size }: { size: number }) {
   const progress = useSharedValue(0);
 
@@ -138,14 +156,15 @@ export function CurrentLessonIcon({ size }: { size: number }) {
     const phase = progress.value;
     const translateY = interpolate(
       phase,
-      [0, 0.14, 0.48, 0.78, 1],
-      [0, 4, -8, 1, 0],
+      JUMP_PHASES,
+      [0, 4, -5, -8, -8, 1, 0],
       Extrapolation.CLAMP,
     );
+    // Biggest at the apex: the star reads as having come toward the viewer.
     const scale = interpolate(
       phase,
-      [0, 0.14, 0.48, 0.78, 1],
-      [1, 0.94, 1.08, 0.99, 1],
+      JUMP_PHASES,
+      [1, 0.94, 1.05, 1.08, 1.08, 0.99, 1],
       Extrapolation.CLAMP,
     );
 
@@ -161,24 +180,25 @@ export function CurrentLessonIcon({ size }: { size: number }) {
   });
 
   const shadowStyle = useAnimatedStyle(() => {
+    // Falls away from the star as it climbs, closes up under the crouch.
     const lift = interpolate(
       progress.value,
-      [0, 0.14, 0.48, 0.78, 1],
-      [1, 4, -2, 2, 1],
+      JUMP_PHASES,
+      [1, 4, -1, -2, -2, 2, 1],
       Extrapolation.CLAMP,
     );
     const shadowScale = interpolate(
       progress.value,
-      [0, 0.14, 0.48, 0.78, 1],
-      [1, 0.88, 1.16, 0.96, 1],
+      JUMP_PHASES,
+      [1, 0.88, 1.12, 1.16, 1.16, 0.96, 1],
       Extrapolation.CLAMP,
     );
 
     return {
       opacity: interpolate(
         progress.value,
-        [0, 0.14, 0.48, 1],
-        [0.28, 0.36, 0.13, 0.28],
+        JUMP_PHASES,
+        [0.28, 0.36, 0.17, 0.13, 0.13, 0.3, 0.28],
         Extrapolation.CLAMP,
       ),
       transform: [
@@ -240,6 +260,7 @@ export const SvgButton = React.memo(
   }: SvgButtonProps) => {
     const colors =
       SVG_BUTTON_COLOR_SETS[variant] || SVG_BUTTON_COLOR_SETS.green;
+    const usesMetallicGold = variant === "gold" && !isLocked;
     const pressProgress = useSharedValue(0);
     const haloProgress = useSharedValue(0);
     const hoverProgress = useSharedValue(0);
@@ -536,7 +557,12 @@ export const SvgButton = React.memo(
             {FX_ALLOW_GRADIENTS ? (
               <LinearGradient
                 pointerEvents="none"
-                colors={shellGradient(colors.face, colors.rim, isLocked)}
+                colors={shellGradient(
+                  colors.face,
+                  colors.rim,
+                  isLocked,
+                  usesMetallicGold,
+                )}
                 locations={[0, 0.5, 1]}
                 start={{ x: 0.12, y: 0.02 }}
                 end={{ x: 0.9, y: 1 }}
@@ -582,7 +608,11 @@ export const SvgButton = React.memo(
               {FX_ALLOW_GRADIENTS ? (
                 <LinearGradient
                   pointerEvents="none"
-                  colors={faceGradient(colors.face, isLocked)}
+                  colors={faceGradient(
+                    colors.face,
+                    isLocked,
+                    usesMetallicGold,
+                  )}
                   locations={[0, 0.54, 1]}
                   /* Near-vertical: the light reads as coming from above the token. */
                   start={{ x: 0.32, y: 0 }}

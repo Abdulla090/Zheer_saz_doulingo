@@ -36,14 +36,14 @@ export const G = {
   yellowBg:    "#FFF9E6",
   yellowText:  "#A87800",
 
-  bg:          "#FFFFFF",
-  bgSoft:      "#F7F7F7",
-  border:      "#E5E5E5",
-  borderDark:  "#DADADA",
+  bg:          "#F7F5F0",
+  bgSoft:      "#E7EAEE",
+  border:      "#DCE1E7",
+  borderDark:  "#C7CFD9",
 
-  optBg:       "#FFFFFF",
-  optBorder:   "#E5E5E5",
-  optRim:      "#E5E5E5",
+  optBg:       "#EFF1F4",
+  optBorder:   "#DCE1E7",
+  optRim:      "#C7CFD9",
 
   textDark:    "#3C3C3C",
   textMid:     "#777777",
@@ -96,9 +96,9 @@ export const iOS = {
  * ──────────────────────────────────────────────────────────────────── */
 export const Glass = {
   /* Background fills */
-  surface:        "rgba(255,255,255,0.94)",
-  surfaceSoft:    "rgba(255,255,255,0.78)",
-  surfaceInner:   "rgba(255,255,255,0.82)",
+  surface:        "rgba(252,251,248,0.94)",
+  surfaceSoft:    "rgba(239,241,244,0.84)",
+  surfaceInner:   "rgba(252,251,248,0.82)",
   surfaceDark:    "rgba(12, 20, 38, 0.68)",
 
   /* Borders — subtle white edge that catches light */

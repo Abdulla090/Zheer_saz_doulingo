@@ -26,20 +26,6 @@ export type OpenAILiveTutorStatus =
   | "thinking"
   | "error";
 
-function parseLevel(text: string): number | null {
-  const match = text.toLowerCase().match(/\b(10|[1-9])\b/);
-  if (match) return Number(match[1]);
-  const words: Record<string, number> = {
-    one: 1, two: 2, three: 3, four: 4, five: 5,
-    six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
-    beginner: 1, elementary: 3, intermediate: 5, advanced: 9, fluent: 10,
-  };
-  for (const [word, level] of Object.entries(words)) {
-    if (text.toLowerCase().includes(word)) return level;
-  }
-  return null;
-}
-
 export function useOpenAILiveTutor() {
   const supported = isLiveAudioSupported();
   const configured = Boolean(
@@ -229,6 +215,10 @@ export function useOpenAILiveTutor() {
 
   const startSession = useCallback(async () => {
     stopAll();
+    // The app's onboarding already captured the learner's current level.
+    if (!useSettingsStore.getState().tutorOnboardingComplete) {
+      useSettingsStore.getState().setTutorOnboardingComplete(true);
+    }
     const token = sessionTokenRef.current + 1;
     sessionTokenRef.current = token;
     const isCurrent = () => sessionTokenRef.current === token;
@@ -274,13 +264,6 @@ export function useOpenAILiveTutor() {
         onInputTranscription: (text) => {
           if (!isCurrent()) return;
           recordUserTurn(text);
-          if (!useSettingsStore.getState().tutorOnboardingComplete) {
-            const level = parseLevel(text);
-            if (level) {
-              useSettingsStore.getState().setEnglishLevel(level);
-              useSettingsStore.getState().setTutorOnboardingComplete(true);
-            }
-          }
         },
         onOutputTranscription: (text) => {
           if (isCurrent()) appendTranscript(text);

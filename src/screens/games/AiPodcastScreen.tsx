@@ -18,7 +18,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import React, { useCallback, useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import { FadeInDown } from "react-native-reanimated";
 import {
   setAudioModeAsync,
   useAudioPlayer,
@@ -84,7 +84,7 @@ const formatTime = (seconds: number) => {
 export function AiPodcastScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const { isKu } = useI18n();
-  const { theme, metrics, isRtl } = useGamesChrome("podcast");
+  const { theme, isRtl } = useGamesChrome("podcast");
 
   const [selectedLevel, setSelectedLevel] = useState<PodcastLevel>("basic");
   const [error, setError] = useState<string | null>(null);

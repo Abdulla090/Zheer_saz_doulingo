@@ -305,6 +305,7 @@ export function GamesCard({
   style,
   padded = true,
   raised = false,
+  flat = false,
   selected = false,
   onPress,
   entering,
@@ -313,6 +314,8 @@ export function GamesCard({
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
   raised?: boolean;
+  /** Quiet grouped-row surface for dense lists; carries no card elevation. */
+  flat?: boolean;
   selected?: boolean;
   onPress?: () => void;
   entering?: React.ComponentProps<typeof Animated.View>["entering"];
@@ -322,17 +325,25 @@ export function GamesCard({
 
   const shell: StyleProp<ViewStyle> = [
     {
-      backgroundColor: raised ? theme.surfaceRaised : theme.surface,
+      backgroundColor: flat
+        ? theme.surfaceSunken
+        : raised
+          ? theme.surfaceRaised
+          : theme.surface,
       borderRadius: metrics.radiusCard,
       borderWidth: selected ? metrics.selectBorderWidth : 1,
-      borderColor: selected ? theme.accentBorder : theme.border,
+      borderColor: selected
+        ? theme.accentBorder
+        : flat
+          ? "transparent"
+          : theme.border,
       padding: padded ? 16 : 0,
       // Selection swaps 1px→2px, so pull the padding in by the difference to
       // keep the content from shifting when a card becomes selected.
       ...(selected ? { padding: padded ? 15 : 0 } : null),
       overflow: "hidden",
     },
-    gamesLift(theme, raised ? "raised" : "card"),
+    flat ? null : gamesLift(theme, raised ? "raised" : "card"),
     style,
   ];
 
@@ -378,9 +389,8 @@ export function GamesIntroCard({
   languageCode?: string;
 }) {
   const theme = useGamesTheme();
-  const hue = useGameHue(mode);
   const metrics = useGamesMetrics(false);
-
+  const hue = useGameHue(mode);
   return (
     <GamesCard entering={FadeInDown.duration(GamesMotion.enterMs)}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -717,7 +727,6 @@ export function GamesSecondaryButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const theme = useGamesTheme();
-  const metrics = useGamesMetrics(false);
 
   return (
     <PressableScale

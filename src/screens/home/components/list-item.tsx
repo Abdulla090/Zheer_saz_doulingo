@@ -14,9 +14,8 @@ import {
 import { IOSPressable } from "../../../components/ui/ios-pressable";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
-import { Platform, View } from "react-native";
+import { Platform, View, type GestureResponderEvent } from "react-native";
 import { useI18n } from "../../../hooks/useI18n";
-import { FirstItemSparkles } from "./first-item-sparkles";
 import { getPathCurveOffset } from "./path-curve";
 import { CompletedCheckIcon } from "./completed-check-icon";
 import {
@@ -48,6 +47,45 @@ const LESSON_ICON_MAP = {
 /** Ring geometry from the reference — 94px ring centred on an 80px node. */
 const PROGRESS_RING_SIZE_RATIO = 94 / 80;
 
+/*
+ * A touch that lands on a normal-path node belongs to that node, never to the
+ * path's tap-outside-to-dismiss handling.
+ *
+ * The path root dismisses on `onTouchStart` and its list dismisses on
+ * `onTouchMove`. Both are *bubbled* touch events, so on native the same gesture
+ * that opened a popup also cancelled it:
+ *
+ *  - React Native runs the responder plugin ahead of the touch plugin, so the
+ *    node's `onPressIn` — where the normal path dispatches, to open on
+ *    touch-down — fires first and kicks off an async `measureInWindow`. The
+ *    root's `onTouchStart` then bubbles in the same batch and dismisses, so the
+ *    measure callback finds a stale request id and drops the popup on the floor.
+ *  - Whatever survived that died on the next frame anyway: a held finger emits
+ *    `topTouchMove` on the slightest jitter, which reached the list's dismiss.
+ *
+ * Scrolling is unaffected — the ScrollView negotiates through the responder
+ * system, not through these bubbled events, and `onScrollBeginDrag` still
+ * dismisses once a drag actually becomes a scroll.
+ *
+ * Native only, deliberately. On web the ordering is already the other way
+ * round: react-native-web runs its responder system off *document*-level
+ * listeners, which fire after React's own bubbling, so the dismiss lands before
+ * the open rather than after it — nothing to guard against. Worse, guarding
+ * there breaks touch input outright, because React's `stopPropagation` also
+ * stops the native event, so `touchstart` never reaches those document
+ * listeners; the tap then falls through to the compatibility mouse events the
+ * browser synthesises *after* the finger lifts, which is a press with no
+ * press-in animation and a visible delay before the popup.
+ *
+ * Only the normal path needs this. Street and kids nodes dispatch on release,
+ * by which point the gesture's own touch events have already been and gone.
+ */
+const NEEDS_TOUCH_GUARD = Platform.OS !== "web";
+
+function stopNodeTouchPropagation(event: GestureResponderEvent) {
+  event.stopPropagation();
+}
+
 export type UnitChestKind = "silver" | "gold";
 
 export function resolveUnitChestKind(
@@ -77,6 +115,7 @@ function lessonColorTheme(item: LessonListItem): SectionTheme {
 
 function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
   if (item.status === "locked") return "gray";
+  if (item.status === "completed") return "gold";
   if (item.type === "cup") return "yellow";
   if (item.isCurrent && item.sectionTheme === "gray") return "mint";
 
@@ -136,7 +175,7 @@ export const ListItem = React.memo(
     const isGrayInProgress = isActiveLesson && item.sectionTheme === "gray";
     const buttonColor = resolveButtonVariant(item);
     const iconColorOverride = isCompleted
-      ? "#FFFFFF"
+      ? "#49340E"
       : isGrayInProgress
         ? "white"
         : undefined;
@@ -147,6 +186,9 @@ export const ListItem = React.memo(
       unitLessonCount,
     );
     const RewardChest = chestKind === "gold" ? ChestUnlocked : Chest;
+    /** The one branch below that renders `NormalPathNode`. */
+    const isNormalPathNode = isNormalPath && !chestKind;
+    const guardsNodeTouches = isNormalPathNode && NEEDS_TOUCH_GUARD;
 
     // Normal path only: the mascot fills the gap the curve leaves at its
     // extremes. Anchored to the unit, so each unit gets its own two companions
@@ -218,12 +260,16 @@ export const ListItem = React.memo(
         ) : null}
 
         <View style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}>
-          {globalIndex === 0 ? (
-            <FirstItemSparkles size={metrics.lessonButtonSize} />
-          ) : null}
-
           <View
             ref={nodeRef}
+            onTouchStart={
+              guardsNodeTouches ? stopNodeTouchPropagation : undefined
+            }
+            onTouchMove={guardsNodeTouches ? stopNodeTouchPropagation : undefined}
+            // This is the view the popup anchors to, so it has to survive
+            // Android's layout-only view flattening — a collapsed view has no
+            // native counterpart for `measureInWindow` to report.
+            collapsable={isNormalPathNode ? false : undefined}
             style={{
               position: "relative",
               width: metrics.lessonButtonSize,
@@ -276,14 +322,15 @@ export const ListItem = React.memo(
                       borderRadius: Math.round(metrics.lessonButtonSize * 0.2),
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: "#F2A900",
+                      backgroundColor: "#FFC72C",
                       borderWidth: 1.5,
-                      borderColor: "rgba(255,255,255,0.72)",
+                      borderColor: "#8E5000",
                     }}
                   >
                     <CompletedCheckIcon
                       width={Math.round(metrics.lessonButtonSize * 0.28)}
                       height={Math.round(metrics.lessonButtonSize * 0.28)}
+                      color="#49340E"
                     />
                   </View>
                 ) : null}

@@ -394,6 +394,7 @@
   "path": {
     "unitShort": "وحدة",
     "lessonShort": "درس",
+    "lessonOfCount": "الدرس {{current}} من {{total}}",
     "guidebook": "دليل",
     "street": {
       "unit1": "الوحدة 1: تحيات الشارع",

@@ -10,7 +10,6 @@ import {
   Idea01Icon,
   MaskTheater01Icon,
   Mortarboard02Icon,
-  SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Image } from "expo-image";
@@ -346,7 +345,7 @@ export function GamesScreen() {
                 ]}
               >
                 <HugeiconsIcon
-                  icon={SparklesIcon}
+                  icon={Mortarboard02Icon}
                   size={13}
                   color={accent}
                   strokeWidth={2.2}
@@ -376,7 +375,7 @@ export function GamesScreen() {
               styles.statsCard,
               isRtl && styles.rowReverse,
               {
-                backgroundColor: colors.surface,
+                backgroundColor: colors.surfaceRaised,
                 borderColor: colors.border,
                 ...crossShadow({
                   color: isDark ? "#000000" : palette.shadow,
@@ -463,7 +462,7 @@ export function GamesScreen() {
           {/* Section label */}
           <View style={[styles.sectionLabel, isRtl && styles.rowReverse]}>
             <HugeiconsIcon
-              icon={SparklesIcon}
+              icon={BookOpen01Icon}
               size={15}
               color={accent}
               strokeWidth={2.2}
@@ -486,7 +485,7 @@ export function GamesScreen() {
               styles.featuredCard,
               isRtl && styles.rowReverse,
               {
-                backgroundColor: colors.surface,
+                backgroundColor: colors.surfaceRaised,
                 borderColor: colors.border,
                 ...crossShadow({
                   color: isDark ? "#000000" : palette.shadow,
@@ -534,7 +533,7 @@ export function GamesScreen() {
                 ]}
               >
                 <HugeiconsIcon
-                  icon={SparklesIcon}
+                  icon={HeadphonesIcon}
                   size={11}
                   color={accent}
                   strokeWidth={2.3}
@@ -667,7 +666,7 @@ export function GamesScreen() {
                   styles.gridCard,
                   styles.tipCard,
                   {
-                    backgroundColor: colors.surface,
+                    backgroundColor: colors.muted,
                     borderColor: colors.border,
                   },
                 ]}
@@ -790,8 +789,8 @@ function createStyles(
     },
     headerTitle: {
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 40 : compact ? 32 : 38,
-      lineHeight: isDesktopWeb ? 48 : compact ? 39 : 45,
+      fontSize: isDesktopWeb ? 36 : compact ? 30 : 34,
+      lineHeight: isDesktopWeb ? 44 : compact ? 37 : 42,
       fontWeight: "900",
       fontFamily: "DINNextRoundedBold",
       letterSpacing: -0.6,

@@ -11,7 +11,6 @@
 
 import { PressableScale } from "../../components/animations";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
-import { useI18n } from "../../hooks/useI18n";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useTTS } from "../../hooks/use-tts";
@@ -304,7 +303,7 @@ const ChatBubble = React.memo(function ChatBubble({
 export function RolePlayScreen() {
   const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
-  const { theme, hue, metrics, isWide, isRtl, t, locale, isKu } =
+  const { theme, metrics, isWide, isRtl, t, locale, isKu } =
     useGamesChrome("roleplay");
   const st = useRolePlayStyles();
   const scrollRef = useRef<ScrollView>(null);

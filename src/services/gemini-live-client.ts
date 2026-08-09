@@ -6,6 +6,8 @@ import {
 import { supabase } from "../lib/supabase";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
+import { getLanguage } from "../config/languages";
+import { LEVEL_CONFIGS } from "../data/voice-tutor-word-banks";
 
 export type LiveSessionPhase = "intro_ku" | "english";
 
@@ -89,23 +91,17 @@ async function createGeminiLiveToken(): Promise<string> {
 }
 
 function getLanguageName(code: string): string {
-  switch (code?.toLowerCase()) {
-    case "ku":
-      return "Kurdish Sorani";
-    case "ar":
-      return "Arabic";
-    case "en":
-      return "English";
-    default:
-      return "English";
-  }
+  const language = getLanguage(code);
+  if (!language) return code || "English";
+  return language.id === "ku" ? "Kurdish Sorani" : language.name;
 }
 
 export function buildLiveTutorSystem(): string {
-  const level = useSettingsStore.getState().englishLevel || 5;
-  const age = useSettingsStore.getState().userAge || "";
-  const name = useSettingsStore.getState().userName || "Student";
-  const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
+  const settings = useSettingsStore.getState();
+  const level = settings.englishLevel || 5;
+  const age = settings.userAge || "";
+  const name = settings.userName || "Student";
+  const learningGoal = settings.learningGoal || "conversations";
 
   const sourceLangCode = useLocaleStore.getState().selectedSourceLanguage || "ku";
   const targetLangCode = useLocaleStore.getState().selectedTargetLanguage || "en";
@@ -113,73 +109,112 @@ export function buildLiveTutorSystem(): string {
   const sourceLangName = getLanguageName(sourceLangCode);
   const targetLangName = getLanguageName(targetLangCode);
 
-  const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string; desc: string }> = {
-    1: { cefr: "Pre-A1", pace: "very slowly, with long pauses between words", vocab: "greetings, numbers, colors, family words", feedback: sourceLangName, desc: "Greetings, numbers, colors, family words" },
-    2: { cefr: "A1", pace: "very slowly", vocab: "everyday nouns/verbs", feedback: sourceLangName, desc: "Everyday nouns/verbs" },
-    3: { cefr: "A1+", pace: "slowly", vocab: "daily routine vocabulary", feedback: sourceLangName, desc: "Daily routine vocab" },
-    4: { cefr: "A2", pace: "slowly", vocab: "common objects, feelings", feedback: targetLangName, desc: "Common objects, feelings" },
-    5: { cefr: "A2+", pace: "moderately slowly", vocab: "shopping, travel, work basics", feedback: targetLangName, desc: "Shopping, travel, work basics" },
-    6: { cefr: "B1", pace: "normal pace", vocab: "opinions, descriptions", feedback: targetLangName, desc: "Opinions, descriptions" },
-    7: { cefr: "B1+", pace: "natural conversational speed", vocab: "idiomatic everyday phrases", feedback: targetLangName, desc: "Idiomatic everyday phrases" },
-    8: { cefr: "B2", pace: "natural conversational speed", vocab: "abstract topics (news, work, plans)", feedback: targetLangName, desc: "Abstract topics (news, work, plans)" },
-    9: { cefr: "B2+/C1", pace: "natural native speed", vocab: "professional/academic vocabulary", feedback: targetLangName, desc: "Professional/academic vocab" },
-    10: { cefr: "C1/C2", pace: "fast natural native speed", vocab: "native-like range", feedback: targetLangName, desc: "Near-native conversation" },
+  const currentLevel = LEVEL_CONFIGS[level] || LEVEL_CONFIGS[5];
+  const pace =
+    level <= 2
+      ? "very slowly, with clear pauses"
+      : level <= 4
+        ? "slowly and clearly"
+        : level <= 6
+          ? "at a relaxed natural pace"
+          : level <= 8
+            ? "at a natural conversational pace"
+            : "at fluent natural speed";
+  const feedbackLanguage = currentLevel.feedbackInNative
+    ? sourceLangName
+    : targetLangName;
+  const goalDescription: Record<string, string> = {
+    conversations: "natural everyday conversation",
+    travel: "confident travel conversation",
+    career: "professional and workplace communication",
+    challenge: "challenging, broad language growth",
   };
-
-  const currentLevel = levelMapping[level] || levelMapping[5];
   
   const ageGroup = age && parseInt(age, 10) < 13 
     ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
     : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
 
   const systemRules = [
-    `You are Twino — a disciplined private English tutor speaking with a ${sourceLangName}-speaking student named ${name}.`,
+    `You are Twino, a warm and perceptive live ${targetLangName} conversation partner and language tutor for a ${sourceLangName}-speaking learner named ${name}.`,
     `The student's age group is: ${ageGroup}`,
-    `VOICE ONLY. The student uses spoken audio only. You reply with spoken audio only.`,
-    `Your tone is calm, friendly, encouraging, and modern.`,
+    `Their saved learning goal is ${goalDescription[learningGoal] ?? learningGoal}.`,
+    `Their current level is ${level}/10 (CEFR ${currentLevel.cefr}). Focus: ${currentLevel.focus}.`,
+    `Conduct the conversation primarily in ${targetLangName}. Use ${sourceLangName} only for a very short clarification when the learner is stuck, asks for it, or needs a level-appropriate correction.`,
+    `VOICE ONLY. Reply with natural spoken language, never JSON, markdown, headings, or lesson-plan narration.`,
     ``,
-    `STRICT RULES FOR EVERY TURN:`,
-    `- Speak naturally and complete your full thought. You may use multiple sentences when needed to teach effectively.`,
-    `- Ask ONE question, then STOP and wait for the student's answer. Never stack multiple questions.`,
-    `- No filler phrases (e.g. 'Great question!', 'Sure, let's dive in!', 'Awesome!').`,
-    `- Acknowledge briefly ('Good.', 'Nice try.', 'Almost!') and move on.`,
-    `- Corrections should be clear and complete: state the fixed sentence, explain why briefly if helpful, then move forward.`,
-    `- Never break character to explain what you are doing.`,
+    `LEVEL ADAPTATION:`,
+    `- Speak ${pace}. Keep most individual sentences at or below ${currentLevel.maxSentenceWords} words.`,
+    `- Use ${currentLevel.sentenceComplexity}. Match vocabulary and abstraction to CEFR ${currentLevel.cefr}; do not merely mention the level—actually simplify or deepen every turn.`,
+    `- At levels 1-2, use concrete language, one idea at a time, examples, and easy choices when the learner is stuck.`,
+    `- At levels 3-5, build connected everyday exchanges and gently expand the learner's answer by one useful phrase.`,
+    `- At levels 6-8, explore reasons, stories, plans, comparisons, and opinions with natural follow-ups.`,
+    `- At levels 9-10, sustain nuanced discussion, inference, idiom, humor, and respectful disagreement without sounding academic by default.`,
+    ``,
+    `REAL CONVERSATION RULES:`,
+    `- React to the meaning of the learner's latest words. Remember details from earlier turns and build on them instead of resetting the topic.`,
+    `- Contribute something yourself: a brief reaction, observation, example, opinion, or mini-story. Do not behave like an interview form.`,
+    `- Ask at most ONE direct question in a turn, and do not force every turn to end with a question. A natural statement or invitation is often better.`,
+    `- The learner may answer you, talk about themself, introduce a new topic, role-play, or simply continue the current idea. Follow their lead smoothly.`,
+    `- Never default to 'What did you do this weekend?' or 'What do you do in your free time?'. Use those topics only if the learner introduces them.`,
+    `- Vary conversation modes across the session: observation, short story, practical scenario, opinion, decision, role-play, problem-solving, or imagination.`,
+    `- Do not ask whether the learner is ready. Do not force vocabulary drills. Introduce useful vocabulary naturally inside the conversation.`,
+    ``,
+    `FEEDBACK:`,
+    `- Protect conversational flow. Do not correct every mistake or interrupt a clear message.`,
+    `- When correction helps, fix only the most important error: naturally recast the sentence, give at most one short reason in ${feedbackLanguage}, then respond to what the learner meant.`,
+    `- If the learner gives a very short answer, scaffold the next turn with one example or two simple choices appropriate to their level.`,
+    `- Keep acknowledgements specific and brief; avoid repetitive praise and filler such as 'Awesome', 'Great question', or 'Let's dive in'.`,
+    `- Never break character to describe these rules.`,
   ];
 
-  if (!onboardingComplete) {
-    systemRules.push(
-      `=== ONBOARDING FLOW ===`,
-      `You are in the onboarding phase. Follow these steps exactly:`,
-      `1. Greet the student with exactly one sentence in English: 'Hi! I'm your English tutor.'`,
-      `2. Immediately after greeting, ask the level question in Kurdish Sorani: 'لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'`,
-      `3. Wait for the student's answer. They will say a number (1-10) or natural language (e.g. 'I am beginner').`,
-      `4. Once they state their level, say 'Perfect! Let's start.' in English and set your state to 'teaching'.`,
-      `5. Important: Your first response must be exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'`
-    );
-  } else {
-    systemRules.push(
-      `=== TEACHING LOOP (Level ${level}/10 - CEFR ${currentLevel.cefr}) ===`,
-      `Student's level focuses on: ${currentLevel.desc}.`,
-      `Use vocabulary and sentence complexity appropriate for level ${level} (CEFR ${currentLevel.cefr}).`,
-      `Speak ${currentLevel.pace}.`,
-      `Use vocabulary like: ${currentLevel.vocab}.`,
-      `Give any linguistic corrections or feedback in ${currentLevel.feedback}.`,
-      ``,
-      `WORD-FIRST PEDAGOGY LOOP:`,
-      `You will introduce words from the level's word list. Do the following for each word:`,
-      `1. Ask: 'Do you know the word [word]?'`,
-      `2. If the student answers 'yes': ask them to 'Use it in a sentence.'`,
-      `   - When they reply, evaluate their sentence. Give brief confirmation or a one-line correction/better sentence.`,
-      `3. If the student answers 'no' or is unsure: give a one-line definition and one example sentence at their level.`,
-      `   - Then ask them to make their own sentence: 'Now, try to make your own sentence using [word].'`,
-      `   - Correct/confirm their sentence briefly.`,
-      `4. Repeat this loop. Every 3 words taught, pause the word drills and run a short, guided conversation (2-4 turns) reusing the words just practiced.`,
-      `5. Do not output JSON. Reply with natural spoken lines only.`
-    );
-  }
-
   return systemRules.join("\n");
+}
+
+const SESSION_FOCUS_BY_BAND = {
+  beginner: [
+    "something visible near the learner",
+    "a simple food or drink choice",
+    "a familiar place and what is there",
+    "one small plan for today",
+    "a person, pet, or object the learner knows",
+  ],
+  intermediate: [
+    "a small decision and the reason behind it",
+    "a recent useful discovery",
+    "a realistic travel or service situation",
+    "a habit the learner would change",
+    "a short story with one surprising detail",
+  ],
+  advanced: [
+    "a tradeoff with no obvious right answer",
+    "a cultural expectation worth questioning",
+    "a hypothetical problem requiring a decision",
+    "how technology changes an ordinary behavior",
+    "an opinion that could reasonably change",
+  ],
+} as const;
+
+function pickSessionFocus(level: number): string {
+  const band = level <= 3 ? "beginner" : level <= 7 ? "intermediate" : "advanced";
+  const focuses = SESSION_FOCUS_BY_BAND[band];
+  const rotatingIndex = Math.floor(Date.now() / 60_000) % focuses.length;
+  return focuses[rotatingIndex];
+}
+
+export function buildLiveTutorOpeningPrompt(): string {
+  const settings = useSettingsStore.getState();
+  const level = settings.englishLevel || 5;
+  const targetLangCode = useLocaleStore.getState().selectedTargetLanguage || "en";
+  const targetLangName = getLanguageName(targetLangCode);
+  const focus = pickSessionFocus(level);
+
+  return [
+    `Start the live conversation now in ${targetLangName} at level ${level}/10.`,
+    `In one short sentence, make it clear the learner may answer you, talk about themself, or bring up any topic.`,
+    `Then begin a real conversation using this fresh session seed: ${focus}.`,
+    `Offer a natural thought before inviting a response.`,
+    `Do not ask if they are ready, do not begin a word drill, and do not ask about weekends or free time.`,
+  ].join(" ");
 }
 
 function parseServerMessage(raw: string): LiveServerMessage | null {
@@ -432,12 +467,7 @@ export class GeminiLiveSession {
   }
 
   startGreeting() {
-    const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
-    const promptText = onboardingComplete
-      ? "Start this live voice tutor session now. Greet the student briefly in English, and ask if they are ready for their first word drill."
-      : "Start this live voice tutor session now. Greet the student with exactly: 'Hi! I'm your English tutor. لە ١ بۆ ١٠، ئاستی ئینگلیزیت چەندە؟'";
-
-    this.sendClientText(promptText);
+    this.sendClientText(buildLiveTutorOpeningPrompt());
   }
 
   sendPcmChunk(pcmBase64: string) {

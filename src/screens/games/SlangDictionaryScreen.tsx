@@ -36,7 +36,6 @@ import {
 import {
   GamesMotion,
   GamesType,
-  gamesLift,
   useGameHue,
   useGamesMetrics,
   useGamesTheme,
@@ -177,7 +176,7 @@ const SlangItemRow = React.memo(function SlangItemRow({
     locale === "ku" ? context.ku : locale === "ar" ? context.ar : context.en;
 
   return (
-    <GamesCard style={{ marginBottom: 12 }}>
+    <GamesCard flat style={{ marginBottom: 10 }}>
       <View style={{ gap: 8 }}>
         <View style={styles.itemHeaderTopRow}>
           <View style={styles.badgeRow}>
@@ -561,12 +560,11 @@ export function SlangDictionaryScreen() {
               style={[
                 styles.searchContainer,
                 {
-                  backgroundColor: theme.surface,
+                  backgroundColor: theme.surfaceSunken,
                   borderColor: searchFocused ? theme.accentBorder : theme.border,
                   borderWidth: searchFocused ? 2 : 1,
                   paddingHorizontal: searchFocused ? 11 : 12,
                 },
-                gamesLift(theme),
               ]}
             >
               <HugeiconsIcon
@@ -577,6 +575,7 @@ export function SlangDictionaryScreen() {
                 style={{ marginEnd: 8 }}
               />
               <TextInput
+                underlineColorAndroid="transparent"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 onFocus={() => setSearchFocused(true)}
@@ -731,6 +730,7 @@ function useSlangStyles() {
         },
         searchInput: {
           flex: 1,
+          backgroundColor: "transparent",
           fontSize: 15,
           fontWeight: "600",
           fontFamily: "DINNextRoundedMedium",

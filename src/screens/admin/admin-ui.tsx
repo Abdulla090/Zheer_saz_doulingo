@@ -28,6 +28,7 @@ export function AdminField({
         {label}
       </AppText>
       <TextInput
+        underlineColorAndroid="transparent"
         style={[styles.input, style]}
         placeholderTextColor={colors.mutedForeground}
         multiline={rest.multiline ?? label.length > 20}

@@ -31,61 +31,6 @@ export type LiveTutorStatus =
   | "paused"
   | "error";
 
-function parseLevelFromTranscript(text: string): number | null {
-  const clean = text.toLowerCase();
-  const wordMap: Record<string, number> = {
-    one: 1,
-    first: 1,
-    "١": 1,
-    sê: 3,
-    sē: 3,
-    yazda: 10,
-    two: 2,
-    second: 2,
-    "٢": 2,
-    three: 3,
-    third: 3,
-    "٣": 3,
-    four: 4,
-    fourth: 4,
-    "٤": 4,
-    five: 5,
-    fifth: 5,
-    "٥": 5,
-    six: 6,
-    sixth: 6,
-    "٦": 6,
-    seven: 7,
-    seventh: 7,
-    "٧": 7,
-    eight: 8,
-    eighth: 8,
-    "٨": 8,
-    nine: 9,
-    ninth: 9,
-    "٩": 9,
-    ten: 10,
-    tenth: 10,
-    "١٠": 10,
-    beginner: 1,
-    elementary: 3,
-    intermediate: 5,
-    advanced: 9,
-    fluent: 10,
-  };
-
-  const matchNum = clean.match(/\b(10|[1-9])\b/);
-  if (matchNum) return parseInt(matchNum[1], 10);
-
-  for (const [word, val] of Object.entries(wordMap)) {
-    if (clean.includes(word)) {
-      return val;
-    }
-  }
-
-  return null;
-}
-
 export function useGeminiLiveTutor() {
   const configured = isGeminiLiveConfigured();
   const supported = isLiveAudioSupported();
@@ -311,6 +256,12 @@ export function useGeminiLiveTutor() {
       );
       setStatus("error");
       return;
+    }
+
+    // Onboarding already stores the learner's target-language level. The live
+    // tutor consumes that value directly instead of asking for it again.
+    if (!useSettingsStore.getState().tutorOnboardingComplete) {
+      useSettingsStore.getState().setTutorOnboardingComplete(true);
     }
 
     const sessionToken = sessionTokenRef.current + 1;
@@ -571,36 +522,18 @@ export function useGeminiLiveTutor() {
     stopPlayer,
   ]);
 
-  // Intercept client inputs to track speech and parse onboarding
+  // Intercept typed client input so it appears in the same conversation log.
   const sendClientTextWithTracking = useCallback(
     (text: string) => {
       const cleanText = text.trim();
       if (!cleanText) return;
-
-      const onboardingComplete =
-        useSettingsStore.getState().tutorOnboardingComplete;
-
-      // 1. Onboarding parsing
-      if (!onboardingComplete) {
-        const detectedLevel = parseLevelFromTranscript(cleanText);
-        if (detectedLevel) {
-          useSettingsStore.getState().setEnglishLevel(detectedLevel);
-          useSettingsStore.getState().setTutorOnboardingComplete(true);
-          // Reconnect session to launch the Level-specific curriculum prompt
-          stopAll();
-          setTimeout(() => {
-            void connectSession();
-          }, 300);
-          return;
-        }
-      }
 
       recordUserTurn(cleanText);
 
       // Send chunk to Gemini Live socket
       sessionRef.current?.sendClientText(cleanText);
     },
-    [connectSession, recordUserTurn, stopAll],
+    [recordUserTurn],
   );
 
   const interruptAi = useCallback(() => {
