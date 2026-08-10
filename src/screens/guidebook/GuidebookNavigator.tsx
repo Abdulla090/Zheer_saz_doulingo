@@ -158,7 +158,7 @@ export function GuidebookModeSwitch({
       accessibilityRole="tablist"
       style={[
         styles.modeSwitch,
-        { backgroundColor: colors.muted },
+        { borderBottomColor: colors.border },
         isRtl && Platform.OS !== "web" && styles.rowReverse,
       ]}
     >
@@ -170,20 +170,23 @@ export function GuidebookModeSwitch({
             onPress={() => onChange(item.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            style={[
-              styles.modeButton,
-              { backgroundColor: active ? accent.strong : "transparent" },
-            ]}
+            style={styles.modeButton}
           >
             <AppText
               style={[
                 styles.modeLabel,
-                { color: active ? "#FFFFFF" : colors.mutedForeground },
+                { color: active ? accent.strong : colors.mutedForeground },
               ]}
               forceKurdishFont={isKurdish}
             >
               {item.label}
             </AppText>
+            <View
+              style={[
+                styles.modeIndicator,
+                { backgroundColor: active ? accent.strong : "transparent" },
+              ]}
+            />
           </IOSPressable>
         );
       })}
@@ -196,16 +199,16 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
   },
   mobileNavigator: {
-    paddingTop: 18,
+    paddingTop: 4,
   },
   mobileLessonContent: {
     paddingHorizontal: 16,
     gap: 8,
   },
   chapterDot: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -254,23 +257,29 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   modeSwitch: {
-    minHeight: 50,
-    padding: 4,
-    borderRadius: 18,
+    minHeight: 46,
     flexDirection: "row",
-    gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   modeButton: {
     flex: 1,
-    minHeight: 42,
-    borderRadius: 14,
+    minHeight: 46,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
+    position: "relative",
   },
   modeLabel: {
     fontSize: 14,
     lineHeight: 19,
     fontWeight: "900",
+  },
+  modeIndicator: {
+    position: "absolute",
+    left: 28,
+    right: 28,
+    bottom: -1,
+    height: 3,
+    borderRadius: 2,
   },
 });

@@ -93,7 +93,10 @@ describe("ai-teacher-service", () => {
           }),
         ],
       }),
-      90000,
+      expect.objectContaining({
+        featureKey: "ai_teacher_speaking",
+        timeoutMs: 90000,
+      }),
     );
   });
 });

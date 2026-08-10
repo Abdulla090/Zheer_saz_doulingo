@@ -1073,7 +1073,7 @@ export function LightWordTile({
                 {
                   color: isKidsRoute ? L.navy : colors.foreground,
                   fontSize: 15,
-                  fontFamily: "DINNextRoundedBold",
+                  fontFamily: "Rabar_044",
                   textAlign: "center",
                 },
               ]}
@@ -1090,7 +1090,7 @@ export function LightWordTile({
           <AppText
             languageCode={labelLanguageCode}
             align="start"
-            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: isKidsRoute ? L.navy : colors.foreground }, isKidsRoute && { fontFamily: "DINNextRoundedBold" }]}
+            style={[LightType.tile, lh.tileAnswer, { zIndex: 1, color: isKidsRoute ? L.navy : colors.foreground }, isKidsRoute && { fontFamily: "Rabar_044" }]}
           >
             {label}
           </AppText>
@@ -1139,7 +1139,7 @@ export function LightWordTile({
                           ? L.blue
                           : (isKidsRoute ? L.navy : colors.foreground),
             },
-            isKidsRoute && { fontFamily: "DINNextRoundedBold", fontSize: fontSize ?? 16 },
+            isKidsRoute && { fontFamily: "Rabar_044", fontSize: fontSize ?? 16 },
             fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: fontSize + 8 },
             fontSize !== undefined && isKidsRoute && { lineHeight: fontSize + 8 },
             state === "ghost" && { opacity: 0 },
@@ -1583,10 +1583,10 @@ export function LessonLiquidFeedback({
           </View>
           
           <View style={lh.feedbackTextCol}>
-            <AppText style={[lh.feedbackTitle, { color: kidsDeepText, textAlign: rtl ? "right" : "left", fontFamily: "DINNextRoundedBold" }]}>
+            <AppText style={[lh.feedbackTitle, { color: kidsDeepText, textAlign: rtl ? "right" : "left", fontFamily: "Rabar_044" }]}>
               {title}
             </AppText>
-            <AppText style={[lh.feedbackSub, { color: kidsDeepText, opacity: 0.85, textAlign: rtl ? "right" : "left", fontFamily: "DINNextRoundedMedium" }]}>
+            <AppText style={[lh.feedbackSub, { color: kidsDeepText, opacity: 0.85, textAlign: rtl ? "right" : "left", fontFamily: "Rabar_044" }]}>
               {subtitle}
             </AppText>
           </View>
@@ -1787,7 +1787,7 @@ function createLessonStyles(
     fontSize: 17,
     fontWeight: "800",
     color: L.red,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   headingWrap: { gap: 8, marginBottom: 12 },
   promptCardInner: {
@@ -1823,7 +1823,7 @@ function createLessonStyles(
     letterSpacing: 0.8,
     textTransform: "uppercase",
     color: Duo.hare,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   duoDialogueBubbleWrap: {
     position: "relative",
@@ -1865,7 +1865,7 @@ function createLessonStyles(
     fontSize: 19,
     lineHeight: 28,
     fontWeight: "600",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   dialogueWrap: {
     marginLeft: 4,
@@ -2000,7 +2000,7 @@ function createLessonStyles(
     color: "#FFFFFF",
     fontSize: 12,
     lineHeight: 16,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: 0.5,
   },
   questionHeroBadge: {
@@ -2086,7 +2086,7 @@ function createLessonStyles(
   feedbackTitle: {
     fontSize: 22,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: -0.4,
   },
   feedbackSub: {
@@ -2094,7 +2094,7 @@ function createLessonStyles(
     fontWeight: "600",
     color: colors.mutedForeground,
     lineHeight: 22,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   optionRowWrap: { width: "100%" },
   tileRow: {
@@ -2113,7 +2113,7 @@ function createLessonStyles(
   tierBadge: {
     fontSize: 13,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flexShrink: 0,
     backgroundColor: "transparent",
   },
@@ -2183,7 +2183,7 @@ function createLessonStyles(
     fontSize: 16,
     fontWeight: "700",
     color: L.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   checkBtn: {
     height: 54,
@@ -2204,7 +2204,7 @@ function createLessonStyles(
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 1.2,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     zIndex: 1,
   },
   matchRow: {
@@ -2332,7 +2332,7 @@ function createLessonStyles(
     fontSize: 16,
     color: "#FF4B4B",
     marginTop: -1,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     fontWeight: "800",
   },
   kidsFeedbackOuter: {
@@ -2359,7 +2359,7 @@ function createLessonStyles(
   kidsFeedbackCtaText: {
     fontSize: 16,
     color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: 0.3,
   },
   duoFeedbackWrap: {
@@ -2377,7 +2377,7 @@ function createLessonStyles(
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: 1,
   },
   kidsMascotStage: {
@@ -2498,7 +2498,7 @@ function createLessonStyles(
     fontSize: 17,
     color: "#1A2B48",
     textAlign: "left",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flexShrink: 1,
   },
   kidsBubbleTail: {
@@ -2552,7 +2552,7 @@ function createLessonStyles(
     color: PRIMARY_ACTION.disabledText,
     fontSize: 17,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: 0.5,
     textTransform: "none",
   },
@@ -2571,7 +2571,7 @@ function createLessonStyles(
     fontSize: 17,
     fontWeight: "800",
     color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: 0.5,
     textTransform: "none",
   },

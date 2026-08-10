@@ -52,12 +52,20 @@ function starPath(
 
 const KURDISTAN_SUN = starPath(W / 2, H / 2, 7.4, 3.5, 21);
 
-function FlagArt({ code }: { code: FlagCode }) {
+function FlagArt({
+  code,
+  width,
+  height,
+}: {
+  code: FlagCode;
+  width: number;
+  height: number;
+}) {
   switch (code) {
     /* Kurdistan — red / white / green bands, 21-ray golden sun. */
     case "ku":
       return (
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Svg width={width} height={height} viewBox={`0 0 ${W} ${H}`}>
           <Rect x={0} y={0} width={W} height={H / 3} fill="#ED2024" />
           <Rect x={0} y={H / 3} width={W} height={H / 3} fill="#FFFFFF" />
           <Rect x={0} y={(H / 3) * 2} width={W} height={H / 3} fill="#278E43" />
@@ -69,7 +77,7 @@ function FlagArt({ code }: { code: FlagCode }) {
     /* Saudi Arabia — green field, shahada line above the sword. */
     case "ar":
       return (
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Svg width={width} height={height} viewBox={`0 0 ${W} ${H}`}>
           <Rect x={0} y={0} width={W} height={H} fill="#006C35" />
           <Rect x={6} y={7.5} width={18} height={2.4} rx={1.2} fill="#FFFFFF" />
           <Rect x={5} y={13} width={20} height={1.8} rx={0.9} fill="#FFFFFF" />
@@ -80,7 +88,7 @@ function FlagArt({ code }: { code: FlagCode }) {
     /* United Kingdom — simplified Union Jack (centred saltire). */
     case "en":
       return (
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Svg width={width} height={height} viewBox={`0 0 ${W} ${H}`}>
           <Rect x={0} y={0} width={W} height={H} fill="#012169" />
           {/* White saltire */}
           <Line x1={0} y1={0} x2={W} y2={H} stroke="#FFFFFF" strokeWidth={6} />
@@ -99,7 +107,7 @@ function FlagArt({ code }: { code: FlagCode }) {
     /* Russia — white / blue / red bands. */
     case "ru":
       return (
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Svg width={width} height={height} viewBox={`0 0 ${W} ${H}`}>
           <Rect x={0} y={0} width={W} height={H / 3} fill="#FFFFFF" />
           <Rect x={0} y={H / 3} width={W} height={H / 3} fill="#0039A6" />
           <Rect x={0} y={(H / 3) * 2} width={W} height={H / 3} fill="#D52B1E" />
@@ -110,7 +118,7 @@ function FlagArt({ code }: { code: FlagCode }) {
     case "es":
     default:
       return (
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <Svg width={width} height={height} viewBox={`0 0 ${W} ${H}`}>
           <Rect x={0} y={0} width={W} height={H / 4} fill="#AA151B" />
           <Rect x={0} y={H / 4} width={W} height={H / 2} fill="#F1BF00" />
           <Rect x={0} y={(H / 4) * 3} width={W} height={H / 4} fill="#AA151B" />
@@ -127,30 +135,39 @@ function FlagArt({ code }: { code: FlagCode }) {
  * hairline is not decoration — the white band of the Russian flag is invisible
  * against a white row without it.
  */
-export function OnboardingFlag({
+export function LanguageFlag({
   code,
   borderColor,
+  width = W,
 }: {
   code: string;
   borderColor: string;
+  width?: number;
 }) {
   const resolved: FlagCode =
     code === "ku" || code === "ar" || code === "en" || code === "ru" || code === "es"
       ? code
       : "en";
 
+  const height = Math.round((width * H) / W);
+
   return (
-    <View style={[styles.frame, { borderColor }]}>
-      <FlagArt code={resolved} />
+    <View
+      style={[
+        styles.frame,
+        { borderColor, width, height, borderRadius: Math.max(3, width / 6) },
+      ]}
+    >
+      <FlagArt code={resolved} width={width} height={height} />
     </View>
   );
 }
 
+/** Onboarding keeps its established component name while other screens use the generic one. */
+export const OnboardingFlag = LanguageFlag;
+
 const styles = StyleSheet.create({
   frame: {
-    width: W,
-    height: H,
-    borderRadius: 5,
     borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",

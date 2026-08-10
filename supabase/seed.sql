@@ -1,0 +1,4 @@
+-- Intentionally empty.
+--
+-- Payment products are real monetary offers and must be configured with
+-- merchant-approved prices. See PAYMENTS.md for the activation SQL template.

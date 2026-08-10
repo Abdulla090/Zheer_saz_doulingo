@@ -9,7 +9,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -18,100 +17,126 @@ import {
 
 import { PremiumPressable } from "../../components/PremiumPressable";
 import { TwinoBrandMark } from "../../components/branding/twino-brand-mark";
-import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { AppText } from "../../components/ui/AppText";
 import { PRIMARY_ACTION } from "../../constants/primary-action";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { supabase } from "../../lib/supabase";
+import {
+  createBillingCheckout,
+  getBillingCatalog,
+  getBillingPaymentStatus,
+  type BillingProduct,
+} from "../../services/billing";
+import {
+  getSubscriptionPlanCopy,
+  SUBSCRIPTION_PLAN_DATA,
+  SUBSCRIPTION_PLAN_ORDER,
+} from "../../constants/subscription-plans";
+import type { PlanId } from "../../types/entitlements";
 
-type CreditPack = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  creditAmount: number;
-  priceIqd: number;
-  currency: "IQD";
-};
-
-type Notice = {
-  tone: "info" | "success" | "error";
-  text: string;
-};
+type Notice = { tone: "info" | "success" | "error"; text: string };
 
 const COPY = {
   en: {
     back: "Back to learning",
-    eyebrow: "TWINO CREDITS",
-    title: "Keep learning when you need more AI practice.",
-    body: "Buy credits once and use them for eligible TWINO AI features. No subscription and no automatic renewal.",
-    balance: "Your balance",
-    signIn: "Sign in to view credit packs",
-    packsTitle: "Choose a credit pack",
-    packsBody: "You will finish payment securely on Wayl.",
-    buy: "Continue to Wayl",
-    waiting: "Credit packs are not configured yet",
-    waitingBody:
-      "Your Wayl account can stay unfinished for now. Add pack prices after the merchant account and API token are ready.",
-    setup: "Checkout is waiting for your Wayl merchant credentials.",
-    pending: "Payment is being confirmed. Your balance updates after Wayl verifies it.",
-    paid: "Payment confirmed. Your credits are ready.",
-    failed: "This payment was not completed. Your balance was not changed.",
-    secure: "Payments are handled on Wayl’s hosted checkout. TWINO never receives your card details.",
-    oneTime: "One-time purchase",
-    noRenewal: "No automatic renewal",
-    serverBalance: "Server-protected balance",
+    eyebrow: "TWINO PRICING",
+    title: "Credits when you need them. Plans when you want more.",
+    body: "Checkout stays on the web. Your balance and plan sync to the same Twino account on every device.",
+    balance: "Credits",
+    currentPlan: "Current plan",
+    expires: "Expires",
+    signIn: "Sign in to continue",
+    creditsTitle: "Credit packages",
+    creditsBody: "One-time top-ups for eligible AI practice.",
+    plansTitle: "Plans",
+    plansBody: "Plus, Pro, and Max are 30-day purchases. Each purchase or renewal adds its credits to your permanent wallet.",
+    free: "Free",
+    plus: "Plus",
+    pro: "Pro",
+    max: "Max",
+    active: "Current",
+    buy: "Buy",
+    renew: "Renew",
+    unavailable: "Purchases paused",
+    downgradeBlocked: "Available after your higher plan expires",
+    noProducts: "Add real package prices after your merchant account is approved.",
+    setup: "Checkout is ready and waiting for verified merchant activation.",
+    pending: "Confirming payment with the provider…",
+    paid: "Payment confirmed. Your Twino account is updated.",
+    failed: "Payment was not completed. Your account was not changed.",
+    secure: "Provider-hosted checkout · Verified webhooks · No card details stored by Twino",
   },
   ku: {
     back: "گەڕانەوە بۆ فێربوون",
-    eyebrow: "کرێدیتی TWINO",
-    title: "کاتێک ڕاهێنانی AI ـی زیاتر دەوێت، بەردەوام بە لە فێربوون.",
-    body: "تەنها یەکجار کرێدیت بکڕە و بۆ تایبەتمەندییە شیاوەکانی AI بەکاریبهێنە. هیچ بەشداریکردن و نوێکردنەوەی خۆکار نییە.",
-    balance: "باڵانسی تۆ",
-    signIn: "بچۆ ژوورەوە بۆ بینینی پاکەتەکان",
-    packsTitle: "پاکەتێکی کرێدیت هەڵبژێرە",
-    packsBody: "پارەدان بە پارێزراوی لە Wayl تەواو دەکەیت.",
-    buy: "بەردەوامبوون بۆ Wayl",
-    waiting: "پاکەتەکانی کرێدیت هێشتا ڕێکنەخراون",
-    waitingBody:
-      "هەژماری Wayl دەتوانێت ئێستا ناتەواو بێت. دوای ئامادەبوونی API token نرخەکان زیاد بکە.",
-    setup: "Checkout چاوەڕێی زانیارییەکانی بازرگانی Wayl ـە.",
-    pending: "پارەدان پشتڕاست دەکرێتەوە. دوای پشتڕاستکردنەوەی Wayl باڵانسەکەت نوێ دەبێتەوە.",
-    paid: "پارەدان پشتڕاست کرایەوە. کرێدیتەکانت ئامادەن.",
-    failed: "پارەدان تەواو نەبوو. باڵانسەکەت نەگۆڕا.",
-    secure: "پارەدان لە checkout ـی Wayl ئەنجام دەدرێت و TWINO زانیاری کارتەکەت نابینێت.",
-    oneTime: "کڕینی یەکجار",
-    noRenewal: "بێ نوێکردنەوەی خۆکار",
-    serverBalance: "باڵانسی پارێزراو لە سێرڤەر",
+    eyebrow: "نرخەکانی TWINO",
+    title: "کاتێک پێویستت بوو کرێدیت، و کاتێک زیاتر دەوێت پلان.",
+    body: "پارەدان لە وێبە. باڵانس و پلانەکەت لە هەمان هەژماری Twino لە هەموو ئامێرەکان نوێ دەبێتەوە.",
+    balance: "کرێدیت",
+    currentPlan: "پلانی ئێستا",
+    expires: "بەسەردەچێت",
+    signIn: "بچۆ ژوورەوە بۆ بەردەوامبوون",
+    creditsTitle: "پاکەتەکانی کرێدیت",
+    creditsBody: "زیادکردنی یەکجار بۆ ڕاهێنانی AI.",
+    plansTitle: "پلانەکان",
+    plansBody: "Plus و Pro و Max بۆ ٣٠ ڕۆژن. هەر کڕین یان نوێکردنەوەیەک کرێدیتەکانی بۆ جزدانە هەمیشەییەکەت زیاد دەکات.",
+    free: "Free",
+    plus: "Plus",
+    pro: "Pro",
+    max: "Max",
+    active: "پلانی ئێستا",
+    buy: "کڕین",
+    renew: "نوێکردنەوە",
+    unavailable: "کڕین وەستێنراوە",
+    downgradeBlocked: "دوای بەسەرچوونی پلانی بەرزتر بەردەستە",
+    noProducts: "دوای پەسەندکردنی هەژماری بازرگانی، نرخە ڕاستەقینەکان زیاد بکە.",
+    setup: "Checkout چاوەڕێی چالاککردنی پشتڕاستکراوەی هەژماری بازرگانییە.",
+    pending: "پارەدان لەلایەن دابینکەرەوە پشتڕاست دەکرێتەوە…",
+    paid: "پارەدان پشتڕاست کرایەوە و هەژماری Twino نوێ بووەوە.",
+    failed: "پارەدان تەواو نەبوو و هەژمارەکەت نەگۆڕا.",
+    secure: "Checkout ـی دابینکەر · Webhook ـی پشتڕاستکراو · Twino زانیاری کارت هەڵناگرێت",
   },
   ar: {
     back: "العودة إلى التعلم",
-    eyebrow: "رصيد TWINO",
-    title: "واصل التعلم عندما تحتاج إلى تدريب إضافي بالذكاء الاصطناعي.",
-    body: "اشترِ الرصيد مرة واحدة واستخدمه في ميزات TWINO المؤهلة. لا اشتراك ولا تجديد تلقائي.",
-    balance: "رصيدك",
-    signIn: "سجّل الدخول لعرض حزم الرصيد",
-    packsTitle: "اختر حزمة رصيد",
-    packsBody: "ستُكمل الدفع بأمان على Wayl.",
-    buy: "المتابعة إلى Wayl",
-    waiting: "لم يتم إعداد حزم الرصيد بعد",
-    waitingBody:
-      "يمكن أن يبقى حساب Wayl غير مكتمل الآن. أضف الأسعار بعد جاهزية حساب التاجر ورمز API.",
-    setup: "صفحة الدفع بانتظار بيانات تاجر Wayl.",
-    pending: "يتم تأكيد الدفع. سيُحدّث رصيدك بعد تحقق Wayl.",
-    paid: "تم تأكيد الدفع. رصيدك جاهز.",
-    failed: "لم تكتمل عملية الدفع ولم يتغير رصيدك.",
-    secure: "تتم معالجة الدفع في صفحة Wayl المستضافة ولا يستلم TWINO بيانات بطاقتك.",
-    oneTime: "شراء لمرة واحدة",
-    noRenewal: "بدون تجديد تلقائي",
-    serverBalance: "رصيد محمي على الخادم",
+    eyebrow: "أسعار TWINO",
+    title: "رصيد عند الحاجة، وخطة عندما تريد المزيد.",
+    body: "يتم الدفع على الويب، ويتزامن رصيدك وخطتك مع حساب Twino نفسه على جميع أجهزتك.",
+    balance: "الرصيد",
+    currentPlan: "الخطة الحالية",
+    expires: "تنتهي",
+    signIn: "سجّل الدخول للمتابعة",
+    creditsTitle: "حزم الرصيد",
+    creditsBody: "شحن لمرة واحدة لتدريبات الذكاء الاصطناعي المؤهلة.",
+    plansTitle: "الخطط",
+    plansBody: "Plus وPro وMax خطط لمدة 30 يوماً. يضيف كل شراء أو تجديد رصيده إلى محفظتك الدائمة.",
+    free: "Free",
+    plus: "Plus",
+    pro: "Pro",
+    max: "Max",
+    active: "الحالية",
+    buy: "شراء",
+    renew: "تجديد",
+    unavailable: "الشراء متوقف",
+    downgradeBlocked: "متاح بعد انتهاء خطتك الأعلى",
+    noProducts: "أضف الأسعار الحقيقية بعد اعتماد حساب التاجر.",
+    setup: "صفحة الدفع جاهزة وتنتظر تفعيل حساب التاجر بعد التحقق منه.",
+    pending: "يتم تأكيد الدفع مع المزوّد…",
+    paid: "تم تأكيد الدفع وتحديث حساب Twino.",
+    failed: "لم تكتمل عملية الدفع ولم يتغير حسابك.",
+    secure: "صفحة دفع مستضافة · Webhooks موثقة · لا يخزن Twino بيانات البطاقة",
   },
 } as const;
 
-function formatIqd(value: number) {
-  return `${new Intl.NumberFormat("en-IQ", { maximumFractionDigits: 0 }).format(value)} IQD`;
+function formatMoney(amount: number, currency: string) {
+  return `${new Intl.NumberFormat("en-IQ", { maximumFractionDigits: 0 }).format(amount)} ${currency}`;
+}
+
+function formatDate(value: string | null, locale: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
 }
 
 async function functionErrorMessage(error: unknown, fallback: string) {
@@ -123,7 +148,7 @@ async function functionErrorMessage(error: unknown, fallback: string) {
         return payload.message;
       }
     } catch {
-      // The fallback below is intentionally user-safe.
+      // Keep the localized fallback.
     }
   }
   return fallback;
@@ -135,151 +160,174 @@ export function SubscriptionScreen() {
   const { isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
   const copy = isKu ? COPY.ku : isAr ? COPY.ar : COPY.en;
-  const { user, profile } = useAuth();
+  const planLocale = isKu ? "ku" : isAr ? "ar" : "en";
+  const planCopy = getSubscriptionPlanCopy(planLocale);
+  const locale = isKu ? "ku" : isAr ? "ar-IQ" : "en-IQ";
+  const { user, billingAccount, refreshBillingAccount } = useAuth();
   const { colors, isDark } = useThemeColors();
   const params = useLocalSearchParams<{ payment?: string | string[] }>();
-  const returnedPayment = Array.isArray(params.payment)
-    ? params.payment[0]
-    : params.payment;
+  const returnedPayment = Array.isArray(params.payment) ? params.payment[0] : params.payment;
   const styles = useMemo(
     () => createStyles(colors, isDark, compact),
     [colors, compact, isDark],
   );
 
-  const [packs, setPacks] = useState<CreditPack[]>([]);
-  const [balance, setBalance] = useState<number | null>(null);
+  const [products, setProducts] = useState<BillingProduct[]>([]);
+  const [provider, setProvider] = useState<"wayl" | "rasedi" | null>(null);
+  const [providerReady, setProviderReady] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [processingPackId, setProcessingPackId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
 
-  const loadWallet = useCallback(async () => {
+  const loadCatalog = useCallback(async () => {
     if (!user) {
-      setPacks([]);
-      setBalance(null);
+      setProducts([]);
+      setProvider(null);
+      setProviderReady(false);
       return;
     }
-
     setLoading(true);
-    const [packsResult, balanceResult] = await Promise.all([
-      supabase.functions.invoke("wayl-checkout", {
-        body: { action: "packs" },
-      }),
-      supabase.functions.invoke("credits", {
-        body: { action: "balance" },
-      }),
-    ]);
-
-    if (!packsResult.error && Array.isArray(packsResult.data?.packs)) {
-      setPacks(packsResult.data.packs as CreditPack[]);
-    } else {
-      setPacks([]);
+    try {
+      const catalog = await getBillingCatalog();
+      setProducts(catalog.products);
+      setProvider(catalog.provider);
+      setProviderReady(catalog.providerReady);
+      await refreshBillingAccount();
+    } catch {
+      setProducts([]);
+      setProvider(null);
+      setProviderReady(false);
+    } finally {
+      setLoading(false);
     }
-    if (
-      !balanceResult.error &&
-      typeof balanceResult.data?.balance === "number"
-    ) {
-      setBalance(balanceResult.data.balance);
-    } else {
-      setBalance(null);
-    }
-    setLoading(false);
-  }, [user]);
+  }, [refreshBillingAccount, user]);
 
   useEffect(() => {
-    void loadWallet();
-  }, [loadWallet]);
+    void loadCatalog();
+  }, [loadCatalog]);
 
   useEffect(() => {
     if (!user || !returnedPayment) return;
-
     let stopped = false;
     let attempts = 0;
     setNotice({ tone: "info", text: copy.pending });
 
-    const checkStatus = async () => {
+    const check = async () => {
       attempts += 1;
-      const { data, error } = await supabase.functions.invoke("wayl-checkout", {
-        body: { action: "status", paymentId: returnedPayment },
-      });
-      if (stopped || error) return;
-
-      const status = data?.payment?.status;
-      if (status === "paid") {
-        stopped = true;
-        setNotice({ tone: "success", text: copy.paid });
-        void loadWallet();
-      } else if (["failed", "expired", "refunded"].includes(status)) {
-        stopped = true;
-        setNotice({ tone: "error", text: copy.failed });
+      try {
+        const payment = await getBillingPaymentStatus(returnedPayment);
+        if (stopped || !payment) return;
+        if (payment.status === "completed") {
+          stopped = true;
+          setNotice({ tone: "success", text: copy.paid });
+          await refreshBillingAccount();
+        } else if (["failed", "cancelled", "expired", "refunded"].includes(payment.status)) {
+          stopped = true;
+          setNotice({ tone: "error", text: copy.failed });
+        }
+      } catch {
+        // Keep the pending notice; provider reconciliation may still complete.
       }
     };
 
-    void checkStatus();
+    void check();
     const interval = setInterval(() => {
       if (stopped || attempts >= 24) {
         clearInterval(interval);
-        return;
+      } else {
+        void check();
       }
-      void checkStatus();
     }, 2500);
-
     return () => {
       stopped = true;
       clearInterval(interval);
     };
-  }, [copy.failed, copy.paid, copy.pending, loadWallet, returnedPayment, user]);
+  }, [copy.failed, copy.paid, copy.pending, refreshBillingAccount, returnedPayment, user]);
 
-  const buyPack = async (pack: CreditPack) => {
+  const startCheckout = async (product: BillingProduct) => {
     if (!user) {
-      router.push({ pathname: "/auth", params: { redirect: "/credits" } });
+      router.push({ pathname: "/auth", params: { redirect: "/pricing" } });
       return;
     }
-
-    setProcessingPackId(pack.id);
+    setProcessingId(product.id);
     setNotice(null);
-    const { data, error } = await supabase.functions.invoke("wayl-checkout", {
-      body: { action: "create", creditPackId: pack.id },
-    });
-
-    if (error) {
+    try {
+      const checkout = await createBillingCheckout(product.id);
+      const url = new URL(checkout.checkoutUrl);
+      const waylHostAllowed =
+        checkout.provider === "wayl" &&
+        (url.hostname === "checkout.thewayl.com" ||
+          url.hostname.endsWith(".checkout.thewayl.com"));
+      if (url.protocol !== "https:" || !waylHostAllowed) {
+        throw new Error("Untrusted checkout URL");
+      }
+      window.location.assign(url.toString());
+    } catch (error) {
       setNotice({
         tone: "error",
         text: await functionErrorMessage(error, copy.setup),
       });
-      setProcessingPackId(null);
-      return;
+      setProcessingId(null);
     }
+  };
 
-    const checkoutUrl =
-      typeof data?.checkoutUrl === "string" ? data.checkoutUrl : "";
-    if (
-      Platform.OS === "web" &&
-      checkoutUrl.startsWith("https://checkout.thewayl.com/")
-    ) {
-      window.location.assign(checkoutUrl);
-      return;
+  const creditProducts = products.filter((product) => product.productType === "credits");
+  const subscriptionProducts = products.filter(
+    (product) => product.productType === "subscription",
+  );
+  const productForPlan = (plan: Exclude<PlanId, "free">) =>
+    subscriptionProducts.find((product) => product.plan === plan);
+  const currentPlan =
+    billingAccount?.subscription.status === "active"
+      ? billingAccount.subscription.plan
+      : "free";
+
+  const planRank: Record<PlanId, number> = { free: 0, plus: 1, pro: 2, max: 3 };
+  const renderProductAction = (
+    product: BillingProduct | undefined,
+    plan?: Exclude<PlanId, "free">,
+  ) => {
+    if (plan && planRank[plan] < planRank[currentPlan]) {
+      return <AppText style={styles.unavailable}>{copy.downgradeBlocked}</AppText>;
     }
-
-    setNotice({ tone: "error", text: copy.setup });
-    setProcessingPackId(null);
+    if (!product) {
+      return <AppText style={styles.unavailable}>{copy.unavailable}</AppText>;
+    }
+    if (!product.purchasable || !providerReady) {
+      return <AppText style={styles.unavailable}>{copy.unavailable}</AppText>;
+    }
+    const processing = processingId === product.id;
+    return (
+      <PremiumPressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: processing }}
+        disabled={processing}
+        onPress={() => void startCheckout(product)}
+        style={styles.buyButton}
+      >
+        {processing ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <AppText style={styles.buyText} forceKurdishFont={isKu} latinRole="bold">
+            {plan === currentPlan ? copy.renew : copy.buy}
+          </AppText>
+        )}
+      </PremiumPressable>
+    );
   };
 
   return (
-    <View style={styles.root}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
+    <View
+      {...({ dir: isRtl ? "rtl" : "ltr" } as { dir: "rtl" | "ltr" })}
+      style={[styles.root, { direction: isRtl ? "rtl" : "ltr" }]}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.topbar}>
           <PremiumPressable
             accessibilityRole="link"
             accessibilityLabel={copy.back}
             onPress={() => router.replace("/")}
-            style={[
-              styles.backButton,
-              { flexDirection: isRtl ? "row-reverse" : "row" },
-            ]}
-            containerStyle={styles.backButtonContainer}
+            style={[styles.backButton, { flexDirection: isRtl ? "row-reverse" : "row" }]}
           >
             <HugeiconsIcon
               icon={isRtl ? ArrowRight02Icon : ArrowLeft02Icon}
@@ -287,11 +335,7 @@ export function SubscriptionScreen() {
               color={colors.foreground}
               strokeWidth={2.4}
             />
-            <AppText
-              style={styles.backText}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
+            <AppText style={styles.backText} forceKurdishFont={isKu} latinRole="bold">
               {copy.back}
             </AppText>
           </PremiumPressable>
@@ -299,113 +343,38 @@ export function SubscriptionScreen() {
         </View>
 
         <View style={styles.hero}>
-          <View style={styles.heroCopy}>
-            <View style={styles.eyebrow}>
-              <HugeiconsIcon
-                icon={Wallet02Icon}
-                size={18}
-                color="#168BD2"
-                strokeWidth={2.5}
-              />
-              <AppText style={styles.eyebrowText} forceLatinFont latinRole="bold">
-                {copy.eyebrow}
-              </AppText>
-            </View>
-            <AppText
-              style={[styles.title, { textAlign: isRtl ? "right" : "left" }]}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isRtl}
-              latinRole="bold"
-            >
-              {copy.title}
-            </AppText>
-            <AppText
-              style={[styles.body, { textAlign: isRtl ? "right" : "left" }]}
-              forceKurdishFont={isKu}
-            >
-              {copy.body}
-            </AppText>
-            <View style={styles.benefits}>
-              {[copy.oneTime, copy.noRenewal, copy.serverBalance].map((item) => (
-                <View
-                  key={item}
-                  style={[
-                    styles.benefit,
-                    { flexDirection: isRtl ? "row-reverse" : "row" },
-                  ]}
-                >
-                  <HugeiconsIcon
-                    icon={CheckmarkCircle02Icon}
-                    size={18}
-                    color="#168BD2"
-                    strokeWidth={2.6}
-                  />
-                  <AppText style={styles.benefitText} forceKurdishFont={isKu}>
-                    {item}
-                  </AppText>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.mascotStage}>
-            <View style={styles.mascotHalo} />
-            <View style={styles.twinoMascot}>
-              <TwinoMascot
-                size={compact ? 148 : 190}
-                mascotId="pingo"
-                pose="winning"
-              />
-            </View>
-            <View style={styles.violetMascot}>
-              <TwinoMascot
-                size={compact ? 112 : 142}
-                mascotId="violet"
-                pose="encouraging"
-              />
-            </View>
-          </View>
+          <AppText style={styles.eyebrow} forceLatinFont latinRole="bold">
+            {copy.eyebrow}
+          </AppText>
+          <AppText
+            style={[styles.title, { textAlign: isRtl ? "right" : "left" }]}
+            forceKurdishFont={isKu}
+            forceLatinFont={!isRtl}
+            latinRole="bold"
+          >
+            {copy.title}
+          </AppText>
+          <AppText
+            style={[styles.body, { textAlign: isRtl ? "right" : "left" }]}
+            forceKurdishFont={isKu}
+          >
+            {copy.body}
+          </AppText>
         </View>
 
         {user ? (
-          <View style={styles.accountRow}>
-            <View>
-              <AppText style={styles.accountLabel} forceKurdishFont={isKu}>
-                {copy.balance}
-              </AppText>
-              <AppText style={styles.accountName} numberOfLines={1}>
-                {profile?.display_name || user.email || "TWINO learner"}
-              </AppText>
-            </View>
-            <View style={styles.balancePill}>
-              <HugeiconsIcon
-                icon={Wallet02Icon}
-                size={21}
-                color="#168BD2"
-                strokeWidth={2.6}
-              />
-              <AppText style={styles.balanceValue} forceLatinFont latinRole="bold">
-                {balance === null ? "—" : balance.toLocaleString()}
-              </AppText>
-            </View>
+          <View style={styles.accountStrip}>
+            <AccountMetric label={copy.balance} value={(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()} styles={styles} isKu={isKu} />
+            <AccountMetric label={copy.currentPlan} value={currentPlan.toUpperCase()} styles={styles} isKu={isKu} />
+            <AccountMetric label={copy.expires} value={formatDate(billingAccount?.subscription.expiresAt ?? null, locale)} styles={styles} isKu={isKu} />
           </View>
         ) : (
           <PremiumPressable
             accessibilityRole="button"
-            onPress={() =>
-              router.push({
-                pathname: "/auth",
-                params: { redirect: "/credits" },
-              })
-            }
+            onPress={() => router.push({ pathname: "/auth", params: { redirect: "/pricing" } })}
             style={styles.signInButton}
-            containerStyle={styles.signInButtonContainer}
           >
-            <AppText
-              style={styles.signInText}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
+            <AppText style={styles.signInText} forceKurdishFont={isKu} latinRole="bold">
               {copy.signIn}
             </AppText>
           </PremiumPressable>
@@ -413,121 +382,111 @@ export function SubscriptionScreen() {
 
         {notice ? (
           <View
+            accessibilityRole="alert"
             style={[
               styles.notice,
               notice.tone === "success" && styles.noticeSuccess,
               notice.tone === "error" && styles.noticeError,
             ]}
-            accessibilityRole="alert"
           >
-            <AppText style={styles.noticeText} forceKurdishFont={isKu}>
-              {notice.text}
-            </AppText>
+            <AppText style={styles.noticeText} forceKurdishFont={isKu}>{notice.text}</AppText>
           </View>
         ) : null}
 
-        <View style={styles.sectionHeader}>
-          <AppText
-            style={styles.sectionTitle}
-            forceKurdishFont={isKu}
-            latinRole="bold"
-          >
-            {copy.packsTitle}
-          </AppText>
-          <AppText style={styles.sectionBody} forceKurdishFont={isKu}>
-            {copy.packsBody}
-          </AppText>
-        </View>
+        <PricingSection title={copy.creditsTitle} body={copy.creditsBody} styles={styles} isKu={isKu}>
+          {loading ? (
+            <View style={styles.loading}><ActivityIndicator color="#168BD2" /></View>
+          ) : creditProducts.length ? (
+            creditProducts.map((product, index) => (
+              <View key={product.id} style={[styles.priceRow, index > 0 && styles.rowDivider]}>
+                <View style={styles.rowMain}>
+                  <AppText style={styles.rowTitle} latinRole="bold">{product.name}</AppText>
+                  <AppText style={styles.rowDescription}>{product.credits?.toLocaleString()} credits{product.description ? ` · ${product.description}` : ""}</AppText>
+                </View>
+                <AppText style={styles.price}>{formatMoney(product.amount, product.currency)}</AppText>
+                {renderProductAction(product)}
+              </View>
+            ))
+          ) : (
+            <View style={styles.emptyRow}>
+              <HugeiconsIcon icon={Wallet02Icon} size={22} color="#168BD2" strokeWidth={2.4} />
+              <AppText style={styles.emptyText} forceKurdishFont={isKu}>{copy.noProducts}</AppText>
+            </View>
+          )}
+        </PricingSection>
 
-        {loading ? (
-          <View style={styles.loading}>
-            <ActivityIndicator color="#168BD2" size="large" />
-          </View>
-        ) : packs.length > 0 ? (
-          <View style={styles.packGrid}>
-            {packs.map((pack) => {
-              const processing = processingPackId === pack.id;
-              return (
-                <View key={pack.id} style={styles.packCard}>
-                  <View style={styles.packIcon}>
-                    <HugeiconsIcon
-                      icon={Wallet02Icon}
-                      size={25}
-                      color="#168BD2"
-                      strokeWidth={2.5}
-                    />
+        <PricingSection title={copy.plansTitle} body={copy.plansBody} styles={styles} isKu={isKu}>
+          {SUBSCRIPTION_PLAN_ORDER.map((plan, index) => {
+            const product = plan === "free" ? undefined : productForPlan(plan);
+            const planData = SUBSCRIPTION_PLAN_DATA[plan];
+            return (
+              <View key={plan} style={[styles.priceRow, index > 0 && styles.rowDivider]}>
+                <View style={styles.planIcon}>
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={21} color={plan === currentPlan ? "#22A06B" : "#168BD2"} strokeWidth={2.5} />
+                </View>
+                <View style={styles.rowMain}>
+                  <View style={styles.planTitleRow}>
+                    <AppText style={styles.rowTitle} latinRole="bold">{copy[plan]}</AppText>
+                    {plan === "pro" || plan === "max" ? (
+                      <AppText style={styles.planTag} forceKurdishFont={isKu} latinRole="bold">
+                        {planCopy.tags[plan]}
+                      </AppText>
+                    ) : null}
+                    {plan === currentPlan ? <AppText style={styles.currentTag}>{copy.active}</AppText> : null}
                   </View>
-                  <AppText style={styles.packName} latinRole="bold">
-                    {pack.name}
+                  <AppText style={styles.rowDescription} forceKurdishFont={isKu}>
+                    {planCopy.descriptions[plan]}
                   </AppText>
-                  <View style={styles.creditRow}>
-                    <AppText
-                      style={styles.creditAmount}
-                      forceLatinFont
-                      latinRole="bold"
-                    >
-                      {pack.creditAmount.toLocaleString()}
-                    </AppText>
-                    <AppText style={styles.creditLabel}>credits</AppText>
-                  </View>
-                  {pack.description ? (
-                    <AppText style={styles.packDescription}>
-                      {pack.description}
+                  <AppText style={styles.creditLine} forceKurdishFont={isKu}>
+                    {planCopy.credits(planData.includedCredits, plan === "free")}
+                  </AppText>
+                  {planData.liveTutorMinutes ? (
+                    <AppText style={styles.liveTutorLine} forceKurdishFont={isKu}>
+                      {planCopy.liveTutor(planData.liveTutorMinutes)}
                     </AppText>
                   ) : null}
-                  <AppText style={styles.price} forceLatinFont latinRole="bold">
-                    {formatIqd(pack.priceIqd)}
-                  </AppText>
-                  <PremiumPressable
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: processing }}
-                    disabled={processing}
-                    onPress={() => void buyPack(pack)}
-                    style={styles.buyButton}
-                  >
-                    {processing ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <AppText
-                        style={styles.buyText}
-                        forceKurdishFont={isKu}
-                        latinRole="bold"
-                      >
-                        {copy.buy}
-                      </AppText>
-                    )}
-                  </PremiumPressable>
+                  <View style={styles.benefitList}>
+                    {planCopy.benefits[plan].map((benefit) => (
+                      <View key={benefit} style={[styles.benefitRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+                        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={15} color="#22A06B" strokeWidth={2.4} />
+                        <AppText style={[styles.benefitText, { textAlign: isRtl ? "right" : "left" }]} forceKurdishFont={isKu}>{benefit}</AppText>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <HugeiconsIcon
-                icon={Wallet02Icon}
-                size={29}
-                color="#168BD2"
-                strokeWidth={2.4}
-              />
-            </View>
-            <AppText
-              style={styles.emptyTitle}
-              forceKurdishFont={isKu}
-              latinRole="bold"
-            >
-              {copy.waiting}
-            </AppText>
-            <AppText style={styles.emptyBody} forceKurdishFont={isKu}>
-              {copy.waitingBody}
-            </AppText>
-          </View>
-        )}
+                <AppText style={styles.price}>{product ? formatMoney(product.amount, product.currency) : `${planData.priceIqd.toLocaleString()} IQD`}</AppText>
+                {plan === "free" ? <View style={styles.actionSpacer} /> : renderProductAction(product, plan)}
+              </View>
+            );
+          })}
+        </PricingSection>
 
         <AppText style={styles.securityNote} forceKurdishFont={isKu}>
-          {copy.secure}
+          {planCopy.walletNote}{"\n"}{planCopy.accessNote}{"\n"}{planCopy.ttsNote}{"\n"}{planCopy.checkoutPaused}{"\n"}
+          {copy.secure}{provider ? ` · ${provider === "wayl" ? "Wayl" : "Rasedi"}` : ""}
         </AppText>
       </ScrollView>
+    </View>
+  );
+}
+
+function AccountMetric({ label, value, styles, isKu }: { label: string; value: string; styles: ReturnType<typeof createStyles>; isKu: boolean }) {
+  return (
+    <View style={styles.metric}>
+      <AppText style={styles.metricLabel} forceKurdishFont={isKu}>{label}</AppText>
+      <AppText style={styles.metricValue} forceLatinFont latinRole="bold" numberOfLines={1}>{value}</AppText>
+    </View>
+  );
+}
+
+function PricingSection({ title, body, children, styles, isKu }: { title: string; body: string; children: React.ReactNode; styles: ReturnType<typeof createStyles>; isKu: boolean }) {
+  return (
+    <View style={styles.sectionWrap}>
+      <View style={styles.sectionHeader}>
+        <AppText style={styles.sectionTitle} forceKurdishFont={isKu} latinRole="bold">{title}</AppText>
+        <AppText style={styles.sectionBody} forceKurdishFont={isKu}>{body}</AppText>
+      </View>
+      <View style={styles.rows}>{children}</View>
     </View>
   );
 }
@@ -538,313 +497,60 @@ function createStyles(
   compact: boolean,
 ) {
   return StyleSheet.create({
-    root: {
-      flex: 1,
-      backgroundColor: isDark ? "#0B1220" : "#F5F8FB",
-    },
+    root: { flex: 1, backgroundColor: colors.background },
     content: {
       width: "100%",
-      maxWidth: 1180,
+      maxWidth: 1040,
       alignSelf: "center",
       paddingHorizontal: compact ? 18 : 32,
       paddingTop: compact ? 18 : 28,
-      paddingBottom: 76,
+      paddingBottom: 72,
+      gap: 22,
     },
-    topbar: {
-      minHeight: 48,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 16,
-      marginBottom: compact ? 20 : 30,
-    },
-    backButtonContainer: { alignSelf: "auto" },
-    backButton: {
-      minHeight: 44,
-      alignItems: "center",
-      gap: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      backgroundColor: colors.surfaceRaised,
-      paddingHorizontal: 12,
-      cursor: "pointer",
-    } as any,
+    topbar: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
+    backButton: { minHeight: 44, alignItems: "center", gap: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, cursor: "pointer" } as any,
     backText: { color: colors.foreground, fontSize: 13 },
-    hero: {
-      minHeight: compact ? 570 : 390,
-      flexDirection: compact ? "column" : "row",
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(255,255,255,0.11)" : "#D7EAF4",
-      borderRadius: compact ? 24 : 32,
-      backgroundColor: isDark ? "#10263A" : "#EAF7FF",
-      marginBottom: 22,
-    },
-    heroCopy: {
-      width: compact ? "100%" : "62%",
-      justifyContent: "center",
-      paddingHorizontal: compact ? 24 : 52,
-      paddingVertical: compact ? 34 : 44,
-      zIndex: 2,
-    },
-    eyebrow: {
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      borderRadius: 10,
-      backgroundColor: isDark ? "rgba(22,139,210,0.18)" : "#D6F0FF",
-      paddingHorizontal: 10,
-      paddingVertical: 7,
-      marginBottom: 18,
-    },
-    eyebrowText: {
-      color: isDark ? "#8DD7FF" : "#0E6FA9",
-      fontSize: 11.5,
-      letterSpacing: 1,
-    },
-    title: {
-      maxWidth: 650,
-      color: colors.foreground,
-      fontSize: compact ? 36 : 50,
-      lineHeight: compact ? 43 : 57,
-      letterSpacing: compact ? -1.1 : -1.7,
-    },
-    body: {
-      maxWidth: 620,
-      color: colors.mutedForeground,
-      fontSize: compact ? 15 : 16.5,
-      lineHeight: compact ? 23 : 26,
-      marginTop: 15,
-    },
-    benefits: { gap: 9, marginTop: 22 },
-    benefit: { alignItems: "center", gap: 9 },
-    benefitText: { color: colors.foreground, fontSize: 13.5, lineHeight: 19 },
-    mascotStage: {
-      width: compact ? "100%" : "38%",
-      minHeight: compact ? 230 : 390,
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative",
-    },
-    mascotHalo: {
-      position: "absolute",
-      width: compact ? 230 : 320,
-      height: compact ? 230 : 320,
-      borderRadius: compact ? 115 : 160,
-      backgroundColor: isDark
-        ? "rgba(91,192,244,0.12)"
-        : "rgba(255,255,255,0.72)",
-    },
-    twinoMascot: {
-      position: "absolute",
-      left: compact ? "23%" : "5%",
-      bottom: compact ? 2 : 44,
-      zIndex: 2,
-    },
-    violetMascot: {
-      position: "absolute",
-      right: compact ? "22%" : "7%",
-      bottom: compact ? 20 : 60,
-      zIndex: 3,
-    },
-    accountRow: {
-      minHeight: 78,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 18,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 18,
-      backgroundColor: colors.surfaceRaised,
-      paddingHorizontal: compact ? 18 : 24,
-      paddingVertical: 14,
-      marginBottom: 18,
-    },
-    accountLabel: { color: colors.mutedForeground, fontSize: 12.5 },
-    accountName: {
-      maxWidth: compact ? 190 : 450,
-      color: colors.foreground,
-      fontSize: 14.5,
-      marginTop: 3,
-    },
-    balancePill: {
-      minHeight: 46,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      borderRadius: 14,
-      backgroundColor: isDark ? "rgba(22,139,210,0.14)" : "#ECF8FE",
-      paddingHorizontal: 15,
-    },
-    balanceValue: {
-      color: isDark ? "#8DD7FF" : "#0E6FA9",
-      fontSize: 18,
-      fontVariant: ["tabular-nums"],
-    },
-    signInButtonContainer: {
-      width: "100%",
-      maxWidth: 430,
-      alignSelf: "center",
-      marginBottom: 18,
-    },
-    signInButton: {
-      minHeight: 52,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 14,
-      borderBottomWidth: 3,
-      borderBottomColor: PRIMARY_ACTION.rim,
-      backgroundColor: PRIMARY_ACTION.face,
-      cursor: "pointer",
-    } as any,
+    hero: { maxWidth: 820, paddingVertical: compact ? 24 : 40 },
+    eyebrow: { color: "#168BD2", fontSize: 12, letterSpacing: 1.2, marginBottom: 14 },
+    title: { color: colors.foreground, fontSize: compact ? 38 : 58, lineHeight: compact ? 45 : 64, letterSpacing: compact ? -1.2 : -2.1 },
+    body: { maxWidth: 700, color: colors.mutedForeground, fontSize: compact ? 15 : 17, lineHeight: compact ? 23 : 27, marginTop: 14 },
+    accountStrip: { flexDirection: "row", flexWrap: "wrap", borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border, paddingVertical: 14 },
+    metric: { minWidth: compact ? "50%" : 210, flex: 1, paddingHorizontal: 12, paddingVertical: 7 },
+    metricLabel: { color: colors.mutedForeground, fontSize: 12 },
+    metricValue: { color: colors.foreground, fontSize: 18, marginTop: 4, fontVariant: ["tabular-nums"] },
+    signInButton: { minHeight: 52, maxWidth: 380, alignItems: "center", justifyContent: "center", borderRadius: 14, borderBottomWidth: 3, borderBottomColor: PRIMARY_ACTION.rim, backgroundColor: PRIMARY_ACTION.face, cursor: "pointer" } as any,
     signInText: { color: "#FFFFFF", fontSize: 14.5 },
-    notice: {
-      borderWidth: 1,
-      borderColor: "#B9DFF3",
-      borderRadius: 14,
-      backgroundColor: isDark ? "rgba(22,139,210,0.12)" : "#EFF9FE",
-      padding: 15,
-      marginBottom: 20,
-    },
-    noticeSuccess: {
-      borderColor: "#86D4A0",
-      backgroundColor: isDark ? "rgba(34,197,94,0.10)" : "#EFFBF3",
-    },
-    noticeError: {
-      borderColor: "#F1B5B5",
-      backgroundColor: isDark ? "rgba(239,68,68,0.10)" : "#FFF5F5",
-    },
+    notice: { borderWidth: 1, borderColor: "#B9DFF3", borderRadius: 14, backgroundColor: isDark ? "rgba(22,139,210,0.12)" : "#EFF9FE", padding: 15 },
+    noticeSuccess: { borderColor: "#86D4A0", backgroundColor: isDark ? "rgba(34,197,94,0.10)" : "#EFFBF3" },
+    noticeError: { borderColor: "#F1B5B5", backgroundColor: isDark ? "rgba(239,68,68,0.10)" : "#FFF5F5" },
     noticeText: { color: colors.foreground, fontSize: 13.5, lineHeight: 20 },
-    sectionHeader: { alignItems: "center", marginTop: 30, marginBottom: 25 },
-    sectionTitle: {
-      color: colors.foreground,
-      fontSize: compact ? 27 : 31,
-      lineHeight: compact ? 34 : 38,
-      textAlign: "center",
-    },
-    sectionBody: {
-      color: colors.mutedForeground,
-      fontSize: 14,
-      lineHeight: 21,
-      textAlign: "center",
-      marginTop: 6,
-    },
-    loading: { minHeight: 220, alignItems: "center", justifyContent: "center" },
-    packGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "center",
-      alignItems: "stretch",
-      gap: 16,
-    },
-    packCard: {
-      width: compact ? "100%" : ("31.8%" as const),
-      minWidth: compact ? 0 : 280,
-      minHeight: 355,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      borderRadius: 22,
-      backgroundColor: colors.surfaceRaised,
-      padding: 24,
-      boxShadow: isDark
-        ? "0 16px 40px rgba(0,0,0,0.16)"
-        : "0 16px 40px rgba(31,70,92,0.07)",
-    } as any,
-    packIcon: {
-      width: 48,
-      height: 48,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 15,
-      backgroundColor: isDark ? "rgba(22,139,210,0.14)" : "#EAF7FE",
-      marginBottom: 18,
-    },
-    packName: { color: colors.foreground, fontSize: 20, lineHeight: 26 },
-    creditRow: {
-      flexDirection: "row",
-      alignItems: "baseline",
-      gap: 7,
-      marginTop: 12,
-    },
-    creditAmount: {
-      color: colors.foreground,
-      fontSize: 36,
-      lineHeight: 42,
-      letterSpacing: -1,
-    },
-    creditLabel: { color: colors.mutedForeground, fontSize: 13 },
-    packDescription: {
-      minHeight: 42,
-      color: colors.mutedForeground,
-      fontSize: 13.5,
-      lineHeight: 20,
-      marginTop: 10,
-    },
-    price: {
-      color: "#168BD2",
-      fontSize: 16,
-      marginTop: "auto",
-      marginBottom: 16,
-    },
-    buyButton: {
-      minHeight: 52,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 14,
-      borderBottomWidth: 3,
-      borderBottomColor: PRIMARY_ACTION.rim,
-      backgroundColor: PRIMARY_ACTION.face,
-      cursor: "pointer",
-    } as any,
-    buyText: { color: "#FFFFFF", fontSize: 14 },
-    emptyState: {
-      maxWidth: 720,
-      width: "100%",
-      minHeight: 245,
-      alignSelf: "center",
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1.5,
-      borderStyle: "dashed",
-      borderColor: colors.border,
-      borderRadius: 22,
-      backgroundColor: colors.surfaceRaised,
-      padding: 28,
-    },
-    emptyIcon: {
-      width: 58,
-      height: 58,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 18,
-      backgroundColor: isDark ? "rgba(22,139,210,0.14)" : "#EAF7FE",
-      marginBottom: 16,
-    },
-    emptyTitle: {
-      color: colors.foreground,
-      fontSize: 20,
-      lineHeight: 26,
-      textAlign: "center",
-    },
-    emptyBody: {
-      maxWidth: 560,
-      color: colors.mutedForeground,
-      fontSize: 14,
-      lineHeight: 21,
-      textAlign: "center",
-      marginTop: 8,
-    },
-    securityNote: {
-      maxWidth: 720,
-      alignSelf: "center",
-      color: colors.mutedForeground,
-      fontSize: 12.5,
-      lineHeight: 19,
-      textAlign: "center",
-      marginTop: 24,
-    },
+    sectionWrap: { gap: 12 },
+    sectionHeader: { paddingHorizontal: 2 },
+    sectionTitle: { color: colors.foreground, fontSize: 25, lineHeight: 32 },
+    sectionBody: { color: colors.mutedForeground, fontSize: 14, lineHeight: 21, marginTop: 3 },
+    rows: { borderWidth: 1, borderColor: colors.border, borderRadius: 18, backgroundColor: colors.surfaceRaised, overflow: "hidden" },
+    priceRow: { minHeight: 92, flexDirection: compact ? "column" : "row", alignItems: compact ? "stretch" : "center", gap: compact ? 10 : 18, paddingHorizontal: compact ? 18 : 22, paddingVertical: 17 },
+    rowDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+    rowMain: { flex: 1, minWidth: 0 },
+    rowTitle: { color: colors.foreground, fontSize: 18, lineHeight: 24 },
+    rowDescription: { color: colors.mutedForeground, fontSize: 13.5, lineHeight: 20, marginTop: 3 },
+    creditLine: { color: "#168BD2", fontSize: 13, lineHeight: 19, fontWeight: "700", marginTop: 5 },
+    liveTutorLine: { color: colors.foreground, fontSize: 12.5, lineHeight: 18, marginTop: 3 },
+    benefitList: { gap: 5, marginTop: 8 },
+    benefitRow: { alignItems: "flex-start", gap: 7 },
+    benefitText: { flex: 1, color: colors.mutedForeground, fontSize: 12.5, lineHeight: 18 },
+    price: { minWidth: compact ? 0 : 128, color: colors.foreground, fontSize: 15, fontWeight: "700", fontVariant: ["tabular-nums"] },
+    buyButton: { minWidth: compact ? 0 : 104, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: PRIMARY_ACTION.face, paddingHorizontal: 16, cursor: "pointer" } as any,
+    buyText: { color: "#FFFFFF", fontSize: 13.5 },
+    unavailable: { minWidth: compact ? 0 : 124, color: colors.mutedForeground, fontSize: 12.5, textAlign: compact ? "left" : "right" },
+    emptyRow: { minHeight: 88, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 22 },
+    emptyText: { flex: 1, color: colors.mutedForeground, fontSize: 14, lineHeight: 21 },
+    loading: { minHeight: 88, alignItems: "center", justifyContent: "center" },
+    planIcon: { width: 30, alignItems: "center" },
+    planTitleRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+    currentTag: { color: "#168353", fontSize: 11, fontWeight: "800", backgroundColor: isDark ? "rgba(34,197,94,0.12)" : "#EAF8EF", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+    planTag: { color: "#168BD2", fontSize: 10.5, letterSpacing: 0.4, backgroundColor: isDark ? "rgba(22,139,210,0.13)" : "#EAF7FE", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+    actionSpacer: { minWidth: compact ? 0 : 104 },
+    securityNote: { alignSelf: "center", color: colors.mutedForeground, fontSize: 12.5, lineHeight: 19, textAlign: "center", marginTop: 4 },
   });
 }

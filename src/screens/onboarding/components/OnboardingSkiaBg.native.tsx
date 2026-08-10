@@ -66,7 +66,7 @@ export function OnboardingSkiaBg({ scrollX }: {
   );
 
   return (
-    <Canvas pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <Canvas style={styles.canvas}>
       <Fill color={theme.isDark ? "#080D12" : "#E9E5DB"} />
       <Circle cx={width / 2} cy={height * 0.44} r={revealRadius}>
         <LinearGradient
@@ -96,3 +96,11 @@ export function OnboardingSkiaBg({ scrollX }: {
     </Canvas>
   );
 }
+
+const styles = StyleSheet.create({
+  canvas: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+  },
+});

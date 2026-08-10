@@ -312,7 +312,7 @@ const s = StyleSheet.create({
     fontSize: 19,
     lineHeight: 27,
     fontWeight: "600",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   replyRail: {
     height: RAIL_H,
@@ -330,7 +330,7 @@ const s = StyleSheet.create({
   avatarText: {
     fontSize: 12,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   options: { gap: 12, marginTop: 8 },
   footer: {

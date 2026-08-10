@@ -249,7 +249,9 @@ export function useGeminiLiveTutor() {
 
   useEffect(() => () => stopAll(), [stopAll]);
 
-  const connectSession = useCallback(async () => {
+  const connectSession = useCallback(async (
+    durationMinutes: 5 | 10 | 15 = 5,
+  ) => {
     if (!configured) {
       setError(
         "Live Voice Tutor is not available right now. Try Role Play or Reading Practice.",
@@ -473,7 +475,7 @@ export function useGeminiLiveTutor() {
               attempt,
             );
           },
-        });
+        }, durationMinutes);
       } catch (err) {
         const msg =
           err instanceof Error
@@ -488,30 +490,17 @@ export function useGeminiLiveTutor() {
 
       console.warn(`[LiveTutor] Connection attempt ${attempt} failed: ${msg}`);
 
-      // Determine if error is transient and we should retry
-      const isTransient = !/sign in|auth|unauthorized|limit|quota|config/i.test(
-        msg,
-      );
-
-      if (isTransient && attempt < 2) {
-        console.log("[LiveTutor] Retrying connection in 1.5 seconds...");
-        setStatus("connecting");
-        void stopMic();
-        sessionRef.current?.disconnect();
-        setTimeout(() => {
-          void attemptConnect(attempt + 1);
-        }, 1500);
-      } else {
-        setError(msg);
-        setSessionActive(false);
-        setSpeaking(false);
-        setStatus("error");
-        void stopMic();
-        sessionRef.current?.disconnect();
-      }
+      // Each purchased block creates one single-use token. A transparent retry
+      // would create and charge a second block, so the learner chooses retry.
+      setError(msg);
+      setSessionActive(false);
+      setSpeaking(false);
+      setStatus("error");
+      void stopMic();
+      sessionRef.current?.disconnect();
     };
 
-    void attemptConnect(1);
+    await attemptConnect(1);
   }, [
     appendAiText,
     configured,
@@ -617,9 +606,11 @@ export function useGeminiLiveTutor() {
     }
   }, [connectSession, interruptAi, startMic, stopMic]);
 
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (
+    durationMinutes: 5 | 10 | 15 = 5,
+  ) => {
     autoLiveRef.current = true;
-    await connectSession();
+    await connectSession(durationMinutes);
   }, [connectSession]);
 
   const signalReady = useCallback(async () => {

@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 45,
     fontWeight: "900",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   revealHint: {
     marginTop: 22,

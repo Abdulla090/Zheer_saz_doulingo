@@ -1,4 +1,6 @@
 import { AppText } from "../../../components/ui/AppText";
+import { SUBSCRIPTION_URL } from "../../../constants/app-meta";
+import { Image, type ImageSource } from "expo-image";
 import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
@@ -9,13 +11,20 @@ import {
 import React, { useMemo } from "react";
 import {
   Platform,
+  Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
 } from "react-native";
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
-import { Battery, Fire, Flag, Gem } from "../../../constants/icons";
+import { useLocaleStore } from "../../../stores/useLocaleStore";
+import { openHttpsUrl } from "../../../utils/safe-link";
+import { LanguageFlag } from "../../onboarding/components/OnboardingFlag";
+
+const DIAMOND_ICON = require("../../../../assets/images/path-stats/diamond.png");
+const STREAK_ICON = require("../../../../assets/images/path-stats/streak.png");
+const CHARGE_ICON = require("../../../../assets/images/path-stats/charge.png");
 
 type StatItem = {
   key: string;
@@ -23,7 +32,10 @@ type StatItem = {
   shortLabel: string;
   value: string;
   accent: string;
-  Icon: React.ComponentType<{ width?: number; height?: number; color?: string; fill?: string }>;
+  imageSource?: ImageSource;
+  iconWidth?: number;
+  iconHeight?: number;
+  targetFlag?: boolean;
 };
 
 export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
@@ -34,6 +46,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dailyXp = useProgressStore((state) => state.dailyXp);
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const streakDays = useProgressStore((state) => state.streakDays);
+  const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
   const currentProgress = useCurrentProgress();
   const isRtl = isKu || isAr;
   const mobileWeb = Platform.OS === "web" && width < 768;
@@ -54,7 +67,9 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         shortLabel: "XP",
         value: totalXp.toLocaleString(),
         accent: "#FF9600",
-        Icon: Gem,
+        imageSource: DIAMOND_ICON,
+        iconWidth: 20,
+        iconHeight: 20,
       },
       {
         key: "streak",
@@ -62,7 +77,9 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         shortLabel: isKu ? "ڕۆژ" : isAr ? "يوم" : "Streak",
         value: streakDays.toLocaleString(),
         accent: "#A5A7AA",
-        Icon: Fire,
+        imageSource: STREAK_ICON,
+        iconWidth: 22,
+        iconHeight: 22,
       },
       {
         key: "goal",
@@ -70,7 +87,9 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         shortLabel: isKu ? "ئامانج" : isAr ? "هدف" : "Goal",
         value: `${dailyXp}/${dailyGoalXp}`,
         accent: "#E97BBE",
-        Icon: Battery,
+        imageSource: CHARGE_ICON,
+        iconWidth: 28,
+        iconHeight: 21,
       },
       {
         key: "lessons",
@@ -78,7 +97,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         shortLabel: isKu ? "وانە" : isAr ? "درس" : "Lessons",
         value: completedLessons.toLocaleString(),
         accent: "#F05B57",
-        Icon: Flag,
+        targetFlag: true,
       },
     ],
     [completedLessons, dailyGoalXp, dailyXp, isAr, isKu, streakDays, t, totalXp],
@@ -96,36 +115,61 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   return (
     <View style={styles.shell}>
       <View
-        style={[styles.row, { flexDirection: isRtl ? "row-reverse" : "row" }]}
+        style={[
+          styles.row,
+          { flexDirection: isRtl ? "row-reverse" : "row" },
+        ]}
         accessibilityRole="summary"
       >
-        {items.map((item, index) => (
-          <View
-            key={item.key}
-            style={[
-              styles.item,
-              index > 0 && styles.divider,
-              isRtl && index > 0 && styles.dividerRtl,
-            ]}
-            accessibilityLabel={`${item.label}: ${item.value}`}
-          >
-            {React.createElement(item.Icon, {
-              width: compact ? 20 : 23,
-              height: compact ? 20 : 23,
-              color: item.accent,
-              fill: item.accent,
-            })}
-            <AppText
-              style={[styles.value, { color: item.accent }]}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isRtl}
-              latinRole="bold"
-              numberOfLines={1}
+        {items.map((item, index) => {
+          const ItemContainer = item.key === "xp" ? Pressable : View;
+          return (
+            <ItemContainer
+              key={item.key}
+              style={[styles.item, index > 0 && styles.divider]}
+              accessibilityLabel={`${item.label}: ${item.value}`}
+              {...(item.key === "xp"
+                ? {
+                    accessibilityRole: "button" as const,
+                    onPress: () => void openHttpsUrl(SUBSCRIPTION_URL),
+                  }
+                : {})}
             >
-              {item.value}
-            </AppText>
-          </View>
-        ))}
+              <AppText
+                style={[styles.value, { color: item.accent }]}
+                forceKurdishFont={isKu}
+                forceLatinFont={!isRtl}
+                latinRole="bold"
+                numberOfLines={1}
+              >
+                {item.value}
+              </AppText>
+              {item.targetFlag ? (
+                <LanguageFlag
+                  code={targetLanguage}
+                  borderColor={
+                    isDark ? "rgba(255,255,255,0.18)" : colors.border
+                  }
+                  width={compact ? 23 : 25}
+                />
+              ) : item.imageSource ? (
+                <Image
+                  source={item.imageSource}
+                  contentFit="contain"
+                  transition={0}
+                  style={{
+                    width: compact
+                      ? Math.max(14, (item.iconWidth ?? 20) - 1)
+                      : item.iconWidth,
+                    height: compact
+                      ? Math.max(14, (item.iconHeight ?? 20) - 1)
+                      : item.iconHeight,
+                  }}
+                />
+              ) : null}
+            </ItemContainer>
+          );
+        })}
       </View>
     </View>
   );
@@ -146,7 +190,7 @@ function createStyles(
     row: {
       alignSelf: "center",
       width: "100%",
-      minHeight: mobileWeb ? 46 : compact ? 52 : 56,
+      minHeight: mobileWeb ? 46 : compact ? 50 : 54,
       alignItems: "center",
       paddingHorizontal: mobileWeb ? 10 : 14,
       marginBottom: mobileWeb ? 4 : 6,
@@ -154,21 +198,16 @@ function createStyles(
     item: {
       flex: 1,
       minWidth: 0,
-      minHeight: mobileWeb ? 38 : compact ? 42 : 46,
+      minHeight: mobileWeb ? 38 : compact ? 40 : 44,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: compact ? 3 : 5,
-      paddingHorizontal: compact ? 2 : 6,
+      gap: compact ? 4 : 6,
+      paddingHorizontal: compact ? 2 : 5,
     },
     divider: {
       borderLeftWidth: StyleSheet.hairlineWidth,
       borderLeftColor: isDark ? "rgba(255,255,255,0.10)" : colors.border,
-    },
-    dividerRtl: {
-      borderLeftWidth: 0,
-      borderRightWidth: StyleSheet.hairlineWidth,
-      borderRightColor: isDark ? "rgba(255,255,255,0.10)" : colors.border,
     },
     value: {
       minWidth: 0,

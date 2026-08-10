@@ -253,6 +253,7 @@ export const NormalPathNode = React.memo(
                   />
                 ) : (
                   <IconComponent
+                    color={resolvedIconColor}
                     fill={resolvedIconColor}
                     stroke={resolvedIconColor}
                     strokeWidth={1}

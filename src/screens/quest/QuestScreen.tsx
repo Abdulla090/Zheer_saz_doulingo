@@ -50,7 +50,7 @@ const QuestProgressBar = ({
     width={width}
     value={value}
     valueColor={valueColor}
-    valueFontFamily="DINNextRoundedMedium"
+    valueFontFamily="Rabar_044"
     valueFontSize={14}
   />;
 };
@@ -398,7 +398,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     fontSize: 24,
     fontWeight: "800",
     color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   timeRow: {
     flexDirection: "row",
@@ -408,17 +408,17 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
   timeText: {
     fontSize: 14,
     color: "#E0F2FE",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   timeTextGray: {
     fontSize: 14,
     color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   timeTextGold: {
     fontSize: 14,
     color: "#D97706",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   zariMascot: {
     width: 90,
@@ -458,7 +458,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     fontSize: 18,
     fontWeight: "800",
     color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flex: 1,
   },
   boysCard: {
@@ -509,12 +509,12 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
   participantName: {
     fontSize: 16,
     color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   participantLessons: {
     fontSize: 14,
     color: colors.mutedForeground,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   actionRow: {
     flexDirection: "row",
@@ -531,7 +531,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
   actionBtnLabel: {
     fontSize: 14,
     color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   cardDivider: {
     height: 1.5,
@@ -548,7 +548,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     fontSize: 18,
     fontWeight: "800",
     color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   dailyGoalsList: {
     gap: 16,
@@ -567,7 +567,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     fontSize: 15,
     fontWeight: "800",
     color: colors.foreground,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   });
 }

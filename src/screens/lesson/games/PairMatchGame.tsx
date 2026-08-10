@@ -359,7 +359,7 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: Duo.hare,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "right",
   },
   boardArea: {

@@ -737,7 +737,7 @@ const ringStyles = StyleSheet.create({
   },
   value: {
     fontWeight: "900",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   tier: {
     fontSize: 9.5,
@@ -792,7 +792,7 @@ function createStyles(
       fontSize: isDesktopWeb ? 36 : compact ? 30 : 34,
       lineHeight: isDesktopWeb ? 44 : compact ? 37 : 42,
       fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
       letterSpacing: -0.6,
     },
     headerActions: {
@@ -850,7 +850,7 @@ function createStyles(
       fontSize: isDesktopWeb ? 28 : compact ? 23 : 26,
       lineHeight: isDesktopWeb ? 34 : compact ? 28 : 31,
       fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     statsXpTotal: {
       color: colors.mutedForeground,
@@ -958,7 +958,7 @@ function createStyles(
       fontSize: isDesktopWeb ? 21 : compact ? 17 : 19,
       lineHeight: isDesktopWeb ? 27 : compact ? 22 : 25,
       fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     featuredBlurb: {
       color: colors.mutedForeground,
@@ -1034,7 +1034,7 @@ function createStyles(
       fontSize: isDesktopWeb ? 15.5 : compact ? 13.5 : 14.5,
       lineHeight: isDesktopWeb ? 20 : compact ? 18 : 19,
       fontWeight: "900",
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     gridArrowRow: {
       marginTop: 6,

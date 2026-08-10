@@ -1,13 +1,47 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
+import {
+  aiBillingErrorResponse,
+  aiBillingResponse,
+  reserveAiCredits,
+  reverseAiCredits,
+  settleAiCredits,
+  type AiCharge,
+  type MeteredAiFeatureKey,
+} from "../_shared/ai-billing.ts";
+import {
+  finalizeAiUsage,
+  startAiUsage,
+  type GeminiUsageMetadata,
+} from "../_shared/ai-usage.ts";
 
 const MAX_REQUEST_BYTES = 8_500_000;
+const MAX_TEXT_CHARS = 12_000;
 const DAILY_REQUEST_LIMIT = 120;
-const ALLOWED_MODELS = new Set([
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-3.1-flash-tts-preview",
+const FEATURE_MODELS: Record<Exclude<MeteredAiFeatureKey, `live_tutor_${number}` | "dynamic_tts_minute">, string> = {
+  ai_teacher_writing: "gemini-3.6-flash",
+  ai_teacher_speaking: "gemini-3.6-flash",
+  reading_pronunciation_evaluation: "gemini-3.6-flash",
+  reading_passage_generation: "gemini-3.5-flash-lite",
+  roleplay_text_response: "gemini-3.5-flash-lite",
+  roleplay_voice_response: "gemini-3.5-flash-lite",
+};
+const ALLOWED_FEATURES = new Set<MeteredAiFeatureKey>([
+  "ai_teacher_writing",
+  "ai_teacher_speaking",
+  "reading_passage_generation",
+  "reading_pronunciation_evaluation",
+  "roleplay_text_response",
+  "roleplay_voice_response",
 ]);
+const FEATURE_MAX_OUTPUT_TOKENS: Record<string, number> = {
+  ai_teacher_writing: 768,
+  ai_teacher_speaking: 768,
+  reading_pronunciation_evaluation: 768,
+  reading_passage_generation: 1_024,
+  roleplay_text_response: 512,
+  roleplay_voice_response: 512,
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,9 +112,6 @@ function sanitizeGenerationConfig(value: unknown, isTts: boolean) {
   const input = value as Record<string, unknown>;
   const output: Record<string, unknown> = {};
 
-  if (typeof input.temperature === "number" && Number.isFinite(input.temperature)) {
-    output.temperature = Math.max(0, Math.min(1, input.temperature));
-  }
   if (typeof input.maxOutputTokens === "number" && Number.isFinite(input.maxOutputTokens)) {
     output.maxOutputTokens = Math.max(1, Math.min(4_096, Math.floor(input.maxOutputTokens)));
   }
@@ -117,8 +148,23 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  const model = typeof input.model === "string" ? input.model : "";
-  if (!ALLOWED_MODELS.has(model)) return json({ error: "Model not allowed" }, 400);
+  const featureKey =
+    typeof input.featureKey === "string" &&
+    ALLOWED_FEATURES.has(input.featureKey as MeteredAiFeatureKey)
+      ? (input.featureKey as MeteredAiFeatureKey)
+      : null;
+  const idempotencyKey =
+    typeof input.idempotencyKey === "string" ? input.idempotencyKey.trim() : "";
+  if (!featureKey || idempotencyKey.length < 8 || idempotencyKey.length > 120) {
+    return json(
+      { code: "INVALID_AI_ACTION", error: "Choose a valid metered AI action." },
+      400,
+    );
+  }
+  const model = FEATURE_MODELS[
+    featureKey as keyof typeof FEATURE_MODELS
+  ];
+  if (!model) return json({ error: "AI feature not available" }, 400);
 
   const userId = ctx.userClaims?.id;
   if (!userId) return json({ error: "Authentication required" }, 401);
@@ -128,6 +174,48 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
     contents = sanitizeContents(input.contents);
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Invalid request" }, 400);
+  }
+
+  const containsAudio = contents.some((content) =>
+    content.parts.some((part) => "inline_data" in part)
+  );
+  const contentTextChars = contents.reduce(
+    (total, content) => total + content.parts.reduce(
+      (partTotal, part) => partTotal + ("text" in part ? part.text.length : 0),
+      0,
+    ),
+    0,
+  );
+  const requiresAudio = featureKey === "reading_pronunciation_evaluation";
+  const forbidsAudio =
+    featureKey === "ai_teacher_writing" ||
+    featureKey === "reading_passage_generation" ||
+    featureKey === "roleplay_text_response" ||
+    featureKey === "roleplay_voice_response";
+  if ((requiresAudio && !containsAudio) || (forbidsAudio && containsAudio)) {
+    return json(
+      {
+        code: "INVALID_AI_PAYLOAD",
+        error: requiresAudio
+          ? "This AI action requires one audio recording."
+          : "This AI action does not accept audio.",
+      },
+      400,
+    );
+  }
+
+  const systemInstruction = input.systemInstruction &&
+      typeof input.systemInstruction === "object"
+    ? input.systemInstruction
+    : null;
+  const serializedSystemInstruction = systemInstruction
+    ? JSON.stringify(systemInstruction)
+    : "";
+  if (contentTextChars + serializedSystemInstruction.length > MAX_TEXT_CHARS) {
+    return json(
+      { code: "AI_TEXT_TOO_LARGE", error: "This AI request is too long." },
+      413,
+    );
   }
 
   const { data: quotaAllowed, error: quotaError } = await ctx.supabaseAdmin.rpc(
@@ -143,15 +231,55 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
   const apiKey = Deno.env.get("GEMINI_API_KEY")?.trim();
   if (!apiKey) return json({ error: "AI service unavailable" }, 503);
 
-  const isTts = model === "gemini-3.1-flash-tts-preview";
-  const body: Record<string, unknown> = {
-    contents,
-    generationConfig: sanitizeGenerationConfig(input.generationConfig, isTts),
-  };
+  let reservation: AiCharge;
+  try {
+    reservation = await reserveAiCredits(ctx.supabaseAdmin, {
+      userId,
+      featureKey,
+      idempotencyKey,
+    });
+  } catch (error) {
+    const failure = aiBillingErrorResponse(error);
+    return json(failure.body, failure.status);
+  }
 
-  if (!isTts && input.systemInstruction && typeof input.systemInstruction === "object") {
-    const serialized = JSON.stringify(input.systemInstruction);
-    if (serialized.length <= 20_000) body.systemInstruction = input.systemInstruction;
+  try {
+    await startAiUsage(ctx.supabaseAdmin, {
+      reservationId: reservation.reservationId,
+      userId,
+      feature: featureKey,
+      model,
+      creditsCharged: reservation.chargedAmount,
+      metadata: { usageSource: "gemini_generate_content" },
+    });
+  } catch (usageError) {
+    console.error("AI usage ledger start failed", {
+      name: usageError instanceof Error ? usageError.name : "UnknownError",
+    });
+    await reverseAiCredits(
+      ctx.supabaseAdmin,
+      userId,
+      reservation.reservationId,
+      "usage_ledger_unavailable",
+    ).catch(() => null);
+    return json(
+      { code: "AI_USAGE_LEDGER_UNAVAILABLE", error: "AI service unavailable" },
+      503,
+    );
+  }
+
+  const isTts = false;
+  const generationConfig = sanitizeGenerationConfig(input.generationConfig, isTts) ?? {};
+  generationConfig.maxOutputTokens = Math.min(
+    typeof generationConfig.maxOutputTokens === "number"
+      ? generationConfig.maxOutputTokens
+      : FEATURE_MAX_OUTPUT_TOKENS[featureKey],
+    FEATURE_MAX_OUTPUT_TOKENS[featureKey],
+  );
+  const body: Record<string, unknown> = { contents, generationConfig };
+
+  if (!isTts && systemInstruction) {
+    body.systemInstruction = systemInstruction;
   }
 
   const controller = new AbortController();
@@ -172,17 +300,123 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
     );
     const payload = (await upstream.json()) as Record<string, unknown>;
     if (!upstream.ok) {
+      let reversed: AiCharge | null = null;
+      try {
+        reversed = await reverseAiCredits(
+          ctx.supabaseAdmin,
+          userId,
+          reservation.reservationId,
+          `gemini_http_${upstream.status}`,
+        );
+      } catch (billingError) {
+        console.error("AI credit reversal failed", {
+          name: billingError instanceof Error ? billingError.name : "UnknownError",
+        });
+      }
       const upstreamError = payload.error as { message?: unknown } | undefined;
+      await finalizeAiUsage(ctx.supabaseAdmin, {
+        reservationId: reservation.reservationId,
+        userId,
+        feature: featureKey,
+        model,
+        creditsCharged: 0,
+        status: "failed",
+        usage: payload.usageMetadata as GeminiUsageMetadata | undefined,
+        metadata: { providerHttpStatus: upstream.status },
+      }).catch((usageError) => {
+        console.error("AI usage ledger finalize failed", {
+          name: usageError instanceof Error ? usageError.name : "UnknownError",
+        });
+      });
       const status = upstream.status === 429 ? 429 : upstream.status === 503 ? 503 : 502;
       return json(
-        { error: typeof upstreamError?.message === "string" ? upstreamError.message : "AI request failed" },
+        {
+          code: "AI_PROVIDER_FAILED",
+          error: typeof upstreamError?.message === "string" ? upstreamError.message : "AI request failed",
+          billing: reversed ? aiBillingResponse(reversed) : aiBillingResponse(reservation),
+        },
         status,
       );
     }
-    return json(payload);
+
+    let settled: AiCharge;
+    try {
+      settled = await settleAiCredits(
+        ctx.supabaseAdmin,
+        userId,
+        reservation.reservationId,
+      );
+    } catch (settlementError) {
+      // The provider already succeeded, so do not refund. Keeping the
+      // reservation open prevents the same request from being run for free.
+      console.error("AI credit settlement failed", {
+        name: settlementError instanceof Error ? settlementError.name : "UnknownError",
+      });
+      await finalizeAiUsage(ctx.supabaseAdmin, {
+        reservationId: reservation.reservationId,
+        userId,
+        feature: featureKey,
+        model,
+        creditsCharged: reservation.chargedAmount,
+        status: "billing_pending",
+        usage: payload.usageMetadata as GeminiUsageMetadata | undefined,
+      }).catch(() => null);
+      return json(
+        {
+          code: "AI_SETTLEMENT_PENDING",
+          error: "Your AI result was created, but billing confirmation is pending.",
+          billing: aiBillingResponse(reservation),
+        },
+        503,
+      );
+    }
+    await finalizeAiUsage(ctx.supabaseAdmin, {
+      reservationId: reservation.reservationId,
+      userId,
+      feature: featureKey,
+      model,
+      creditsCharged: settled.chargedAmount,
+      status: "completed",
+      usage: payload.usageMetadata as GeminiUsageMetadata | undefined,
+    }).catch((usageError) => {
+      console.error("AI usage ledger finalize failed", {
+        name: usageError instanceof Error ? usageError.name : "UnknownError",
+      });
+    });
+    const billing = aiBillingResponse(settled);
+    return json({ ...payload, modelUsed: model, ...billing, billing });
   } catch (error) {
     const timedOut = error instanceof Error && error.name === "AbortError";
-    return json({ error: timedOut ? "AI request timed out" : "AI service unavailable" }, 503);
+    let reversed: AiCharge | null = null;
+    try {
+      reversed = await reverseAiCredits(
+        ctx.supabaseAdmin,
+        userId,
+        reservation.reservationId,
+        timedOut ? "gemini_timeout" : "gemini_network_failure",
+      );
+    } catch (billingError) {
+      console.error("AI credit reversal failed", {
+        name: billingError instanceof Error ? billingError.name : "UnknownError",
+      });
+    }
+    await finalizeAiUsage(ctx.supabaseAdmin, {
+      reservationId: reservation.reservationId,
+      userId,
+      feature: featureKey,
+      model,
+      creditsCharged: 0,
+      status: "failed",
+      metadata: { failure: timedOut ? "timeout" : "network" },
+    }).catch(() => null);
+    return json(
+      {
+        code: timedOut ? "AI_TIMEOUT" : "AI_PROVIDER_UNAVAILABLE",
+        error: timedOut ? "AI request timed out" : "AI service unavailable",
+        billing: reversed ? aiBillingResponse(reversed) : aiBillingResponse(reservation),
+      },
+      503,
+    );
   } finally {
     clearTimeout(timeout);
   }

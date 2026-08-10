@@ -263,7 +263,7 @@ const s = StyleSheet.create({
 
     color: Duo.hare,
 
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
 
     marginTop: 4,
 

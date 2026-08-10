@@ -241,7 +241,7 @@ export function NormalEnglishPathScreen({
             style={{
               color: "#FFFFFF",
               fontSize: 16,
-              fontFamily: "DINNextRoundedBold",
+              fontFamily: "Rabar_044",
             }}
             languageCode={locale}
             forceKurdishFont={locale === "ku"}

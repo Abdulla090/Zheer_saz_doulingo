@@ -18,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   BookOpen02Icon,
@@ -34,6 +35,8 @@ import { AppText } from "../../components/ui/AppText";
 import { DirectionBoundary } from "../../i18n/layout-direction";
 import { useSpeechCapture } from "../../hooks/use-speech-capture";
 import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
+import { useAuth } from "../../context/AuthContext";
+import { aiPrice } from "../../types/entitlements";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
 import {
@@ -58,6 +61,7 @@ import {
   GamesIntroCard,
   GamesPrimaryButton,
   GamesScreenShell,
+  GamesSecondaryButton,
   GamesScrollFade,
   GamesSectionLabel,
   GamesSegmented,
@@ -227,6 +231,7 @@ export default function ReadingPracticeScreen() {
   const formatNumber = (value: number) => String(value);
   const speech = useSpeechCapture("en-US");
   const geminiCapture = useGeminiVoiceCapture();
+  const { billingAccount, refreshBillingAccount } = useAuth();
   const abortSpeech = speech.abort;
   const abortGeminiCapture = geminiCapture.abort;
   const [state, setState] = useState<PracticeState>("setup");
@@ -343,8 +348,10 @@ export default function ReadingPracticeScreen() {
       setParagraphs([]);
       setGenerationError(message);
       setState("setup");
+    } finally {
+      await refreshBillingAccount();
     }
-  }, [difficulty, paragraphCount, wordCount]);
+  }, [difficulty, paragraphCount, refreshBillingAccount, wordCount]);
 
   const handleBuildPractice = useCallback(() => {
     if (sourceMode === "ai") void generatePassage();
@@ -406,8 +413,9 @@ export default function ReadingPracticeScreen() {
       captureBackendRef.current = null;
       stoppingRef.current = false;
       setState("results");
+      await refreshBillingAccount();
     }
-  }, [clearReadingTimers, difficulty, geminiCapture, paragraphs, scrollY, speech]);
+  }, [clearReadingTimers, difficulty, geminiCapture, paragraphs, refreshBillingAccount, scrollY, speech]);
 
   const startReading = useCallback(async () => {
     if (paragraphs.length === 0) return;
@@ -593,14 +601,35 @@ export default function ReadingPracticeScreen() {
           header={glassHeader}
           footer={
             <View style={{ gap: 10 }}>
+              <AppText
+                style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
+                languageCode={locale}
+              >
+                {sourceMode === "ai"
+                  ? `${isKu ? "دروستکردنی دەقی AI" : isAr ? "إنشاء نص AI" : "AI passage generation"}: ${aiPrice(billingAccount?.entitlements, "reading_passage_generation")} ${isKu ? "کرێدیت" : isAr ? "رصيد" : "credits"} · ${isKu ? "باڵانس" : isAr ? "الرصيد" : "Balance"} ${billingAccount?.entitlements.creditBalance ?? 0}`
+                  : isKu
+                    ? "دەقە ئامادەکراوەکان بەخۆڕایین"
+                    : isAr
+                      ? "النصوص المدمجة مجانية"
+                      : "Built-in passages are free"}
+              </AppText>
               {sourceMode === "ai" && generationError ? (
-                <AppText
-                  style={[GamesType.caption, { color: theme.dangerInk, lineHeight: 18 }]}
-                  languageCode={locale}
-                  fullWidth
-                >
-                  {generationError}
-                </AppText>
+                <View style={{ gap: 8 }}>
+                  <AppText
+                    style={[GamesType.caption, { color: theme.dangerInk, lineHeight: 18 }]}
+                    languageCode={locale}
+                    fullWidth
+                  >
+                    {generationError}
+                  </AppText>
+                  {/credit|کرێدیت|رصيد/i.test(generationError) ? (
+                    <GamesSecondaryButton
+                      languageCode={locale}
+                      label={isKu ? "بینینی پلانەکان" : isAr ? "عرض الخطط" : "View plans or top up"}
+                      onPress={() => router.push("/credits")}
+                    />
+                  ) : null}
+                </View>
               ) : null}
               <GamesPrimaryButton
                 label={
@@ -1080,6 +1109,20 @@ export default function ReadingPracticeScreen() {
         ) : (
           <>
             <View style={styles.micWrap}>
+              {state !== "reading" ? (
+                <AppText
+                  style={[GamesType.caption, { fontSize: 11, color: theme.mutedInk, textAlign: "center", maxWidth: 300 }]}
+                  languageCode={locale}
+                >
+                  {speech.available
+                    ? isKu
+                      ? "پشکنینی ناوخۆیی بەخۆڕاییە"
+                      : isAr
+                        ? "التقييم المحلي مجاني"
+                        : "Local scoring is free"
+                    : `${isKu ? "پشکنینی دەنگی Gemini" : isAr ? "تقييم نطق Gemini" : "Gemini pronunciation evaluation"}: ${aiPrice(billingAccount?.entitlements, "reading_pronunciation_evaluation")} ${isKu ? "کرێدیت" : isAr ? "رصيد" : "credits"}`}
+                </AppText>
+              ) : null}
               <MicCaptureOrb
                 listening={state === "reading"}
                 onPress={handleMicPress}
@@ -1260,7 +1303,7 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       fontSize: 22,
       lineHeight: 34,
       color: theme.ink,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     passageTextCompact: {
       fontSize: 20,
@@ -1274,7 +1317,7 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
     wordText: {
       fontSize: 20,
       lineHeight: 32,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     /* Semantic, and only here: this is the one place in the practice set where
        colour genuinely encodes correctness. */

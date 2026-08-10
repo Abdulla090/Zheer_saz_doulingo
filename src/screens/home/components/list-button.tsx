@@ -725,7 +725,7 @@ export const SvgButton = React.memo(
                   languageCode="en"
                   align="center"
                   latinRole="bold"
-                  fontFamilyOverride="DINNextRoundedBold"
+                  fontFamilyOverride="Rabar_044"
                   style={{
                     width: "100%",
                     color: resolvedIconColor,

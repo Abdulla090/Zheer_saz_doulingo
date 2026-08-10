@@ -733,7 +733,7 @@ function useSlangStyles() {
           backgroundColor: "transparent",
           fontSize: 15,
           fontWeight: "600",
-          fontFamily: "DINNextRoundedMedium",
+          fontFamily: "Rabar_044",
           paddingVertical: 0,
         },
       }),

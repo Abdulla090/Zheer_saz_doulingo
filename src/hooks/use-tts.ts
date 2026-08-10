@@ -80,7 +80,10 @@ export function useTTS() {
       onDone?: () => void;
     },
   ) => {
-    const useDeviceTts = options?.provider === "device";
+    // Static lesson playback stays on the free device engine. Dynamic Gemini
+    // TTS has a server price, but remains off here until duration settlement
+    // and trusted static-content caching are enforced end to end.
+    const useDeviceTts = true;
     const primaryLanguage = lang.trim().replace(/_/g, "-").split("-")[0].toLowerCase();
     const speechLocale =
       primaryLanguage === "ar" || primaryLanguage === "ku" || primaryLanguage === "ckb"

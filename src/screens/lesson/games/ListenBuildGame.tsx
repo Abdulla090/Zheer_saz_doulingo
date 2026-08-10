@@ -803,7 +803,7 @@ const s = StyleSheet.create({
   cantListen: {
     fontSize: 15,
     fontWeight: "700",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "center",
   },
 

@@ -264,7 +264,12 @@ export async function sendTutorTurn(
         maxOutputTokens: 200,
       },
     },
-    API_TIMEOUT_MS,
+    {
+      featureKey: input.audioBase64
+        ? "roleplay_voice_response"
+        : "roleplay_text_response",
+      timeoutMs: API_TIMEOUT_MS,
+    },
   );
 
   const text =

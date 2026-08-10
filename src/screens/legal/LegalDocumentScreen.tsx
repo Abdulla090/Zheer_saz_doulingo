@@ -141,14 +141,14 @@ function createStyles(colors: any, isDark: boolean) {
     fontWeight: "800",
     color: colors.foreground,
     textAlign: "center",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   updated: {
     fontSize: 13,
     color: colors.mutedForeground,
     marginTop: 16,
     marginBottom: 8,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   section: {
     marginTop: 20,
@@ -158,14 +158,14 @@ function createStyles(colors: any, isDark: boolean) {
     fontWeight: "800",
     color: colors.foreground,
     marginBottom: 8,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
     color: colors.mutedForeground,
     marginBottom: 10,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   supportBox: {
     marginTop: 28,
@@ -179,14 +179,14 @@ function createStyles(colors: any, isDark: boolean) {
     fontSize: 13,
     fontWeight: "700",
     color: colors.secondary,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   supportEmail: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.foreground,
     marginTop: 4,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   });
 }

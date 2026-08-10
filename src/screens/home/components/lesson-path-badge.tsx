@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   unit: {
     color: "#0F172A",
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   dot: {
     width: 3,
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
   lesson: {
     color: "#334155",
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
 });

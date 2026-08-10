@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { getBillingAccount } from "./billing";
 
 export type CreditTransaction = {
   id: string;
@@ -18,14 +19,11 @@ function validBalance(value: unknown): value is number {
 }
 
 export async function getCreditBalance() {
-  const { data, error } = await supabase.functions.invoke("credits", {
-    body: { action: "balance" },
-  });
-  if (error) throw error;
-  if (!validBalance(data?.balance)) {
+  const account = await getBillingAccount();
+  if (!validBalance(account.wallet.creditBalance)) {
     throw new Error("Invalid credit balance response.");
   }
-  return data.balance;
+  return account.wallet.creditBalance;
 }
 
 export async function getCreditHistory() {
@@ -36,29 +34,4 @@ export async function getCreditHistory() {
   return Array.isArray(data?.transactions)
     ? (data.transactions as CreditTransaction[])
     : [];
-}
-
-export async function spendCredits(input: {
-  amount: number;
-  reason: string;
-  idempotencyKey: string;
-}) {
-  const { data, error } = await supabase.functions.invoke("credits", {
-    body: {
-      action: "spend",
-      amount: input.amount,
-      reason: input.reason,
-      idempotencyKey: input.idempotencyKey,
-    },
-  });
-  if (error) throw error;
-  if (!validBalance(data?.balance)) {
-    throw new Error("Invalid credit spend response.");
-  }
-  return {
-    balance: data.balance,
-    transactionId:
-      typeof data.transactionId === "string" ? data.transactionId : null,
-    duplicate: data.duplicate === true,
-  };
 }

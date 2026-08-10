@@ -1,10 +1,11 @@
+import type { AccountEntitlements } from "../types/entitlements";
+
 /**
  * Which learning paths are available.
  *
- * Street and kids are paused: their content and screens are complete but not
- * shipping yet. Everything gates on this one file so re-enabling a path is a
- * one-line change — set its flag to `true` and the switcher, routing, deep-link
- * coercion, and persisted-preference migration all follow.
+ * Street and Kids are shipping paid paths. Product access is checked separately
+ * with `isPathEntitled`; these flags only describe whether the path exists in
+ * this build.
  *
  * Deliberately not a store: this is a build-time product decision, not user
  * state, so it must not be persisted or made mutable at runtime.
@@ -18,8 +19,8 @@ export type PathMode = "street" | "normal" | "kids";
 
 export const PATH_AVAILABILITY: Record<PathMode, boolean> = {
   normal: true,
-  street: false,
-  kids: false,
+  street: true,
+  kids: true,
 };
 
 /** The path every fallback resolves to. Must always be enabled. */
@@ -28,6 +29,17 @@ export const DEFAULT_PATH_MODE: PathMode = "normal";
 export function isPathEnabled(mode: PathMode | null | undefined): boolean {
   if (!mode) return false;
   return PATH_AVAILABILITY[mode] === true;
+}
+
+export function isPathEntitled(
+  mode: PathMode,
+  entitlements: AccountEntitlements | null | undefined,
+): boolean {
+  if (mode === "normal") return true;
+  if (!entitlements) return false;
+  return mode === "street"
+    ? entitlements.features.street_path
+    : entitlements.features.kids_path;
 }
 
 /**

@@ -2,7 +2,7 @@ import type { LegalDocument } from "./types";
 
 export const termsEn: LegalDocument = {
   title: "Terms of Use",
-  lastUpdated: "May 27, 2026",
+  lastUpdated: "August 10, 2026",
   sections: [
     {
       title: "Agreement",
@@ -18,9 +18,12 @@ export const termsEn: LegalDocument = {
       ],
     },
     {
-      title: "Free app",
+      title: "Optional web purchases",
       paragraphs: [
-        "Twino is currently free. Paid subscriptions are disabled. If we add optional purchases later, store billing rules will apply and these terms will be updated.",
+        "Normal English lessons remain available without a paid plan. When shown as available, signed-in users may buy one-time credit packages or fixed-duration Plus, Pro, and Max plans through Twino's hosted web checkout.",
+        "A paid plan grants premium learning access for its displayed term. When the plan expires, that premium access ends, but unused purchased AI credits remain in the user's wallet and do not expire.",
+        "The checkout page shows the price, currency, product, and payment provider before payment. A purchase is added to your Twino account only after the provider verifies it. Plans do not renew automatically unless checkout clearly says otherwise before you pay.",
+        "Refunds and payment disputes are handled according to applicable law and the payment provider's terms. Contact Twino Support with the payment reference if a verified purchase is missing from your account.",
       ],
     },
     {

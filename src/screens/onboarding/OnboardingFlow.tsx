@@ -17,7 +17,6 @@ import Animated, {
   FadeOutLeft,
   FadeOutRight,
   useSharedValue,
-  useAnimatedScrollHandler,
   withTiming,
   runOnJS,
   useAnimatedStyle,
@@ -44,9 +43,7 @@ const ONBOARDING_SLIDE_EASE = Easing.bezier(0.22, 1, 0.36, 1);
 export function OnboardingFlow() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
-  const scrollRef = useRef<Animated.ScrollView>(null);
-  const pendingIndexRef = useRef<number | null>(null);
+  const pagingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
   const [clientMounted, setClientMounted] = useState(Platform.OS !== "web");
 
@@ -64,7 +61,7 @@ export function OnboardingFlow() {
   const [showLangSelection, setShowLangSelection] = useState(false);
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [isPaging, setIsPaging] = useState(false);
-  const [webDirection, setWebDirection] = useState<1 | -1>(1);
+  const [slideDirection, setSlideDirection] = useState<1 | -1>(1);
 
   const onboardingTheme = useOnboardingTheme();
   const styles = useMemo(
@@ -83,19 +80,12 @@ export function OnboardingFlow() {
     opacity: rootOpacity.value,
   }));
 
-  /*
-   * The ScrollView offset is the single source of truth for `scrollX` on native.
-   * Driving it with a parallel `withTiming` (as this previously did during
-   * programmatic paging) made the Skia background travel on its own 460ms curve
-   * while the slides travelled on the platform's native scroll curve, so the
-   * two drifted apart mid-transition and the background settled on the wrong
-   * page whenever the native animation finished first.
-   */
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = Math.abs(event.contentOffset.x);
+  useEffect(
+    () => () => {
+      if (pagingTimerRef.current) clearTimeout(pagingTimerRef.current);
     },
-  });
+    [],
+  );
 
   const total = STEP_IDS.length;
   const isLast = index === total - 1;
@@ -180,34 +170,22 @@ export function OnboardingFlow() {
     const nextIndex = index + 1;
     const targetX = nextIndex * screenWidth;
 
-    if (isWeb) {
-      setWebDirection(1);
-      // No ScrollView on web, so nothing reports scroll position back —
-      // `scrollX` has to be driven directly to morph the background.
-      scrollX.value = reduceMotion
-        ? targetX
-        : withTiming(targetX, {
-            duration: 320,
-            easing: ONBOARDING_SLIDE_EASE,
-          });
-      setIndex(nextIndex);
-    } else if (reduceMotion) {
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: false });
-      setIndex(nextIndex);
-    } else {
-      /*
-       * Keep the progress ring and CTA copy on the current step until native
-       * paging actually settles. Updating React state before scrollTo finished
-       * made the chrome jump ahead of the slide and read as a dropped frame.
-       */
+    setSlideDirection(1);
+    scrollX.value = reduceMotion
+      ? targetX
+      : withTiming(targetX, {
+          duration: 400,
+          easing: ONBOARDING_SLIDE_EASE,
+        });
+    setIndex(nextIndex);
+    if (!reduceMotion) {
       setIsPaging(true);
-      pendingIndexRef.current = nextIndex;
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: true });
+      if (pagingTimerRef.current) clearTimeout(pagingTimerRef.current);
+      pagingTimerRef.current = setTimeout(() => setIsPaging(false), 420);
     }
   }, [
     finishSlides,
     index,
-    isWeb,
     isLast,
     isPaging,
     reduceMotion,
@@ -220,55 +198,31 @@ export function OnboardingFlow() {
     const previousIndex = index - 1;
     const targetX = previousIndex * screenWidth;
 
-    if (isWeb) {
-      setWebDirection(-1);
-      scrollX.value = reduceMotion
-        ? targetX
-        : withTiming(targetX, {
-            duration: 320,
-            easing: ONBOARDING_SLIDE_EASE,
-          });
-      setIndex(previousIndex);
-    } else if (reduceMotion) {
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: false });
-      setIndex(previousIndex);
-    } else {
+    setSlideDirection(-1);
+    scrollX.value = reduceMotion
+      ? targetX
+      : withTiming(targetX, {
+          duration: 400,
+          easing: ONBOARDING_SLIDE_EASE,
+        });
+    setIndex(previousIndex);
+    if (!reduceMotion) {
       setIsPaging(true);
-      pendingIndexRef.current = previousIndex;
-      scrollRef.current?.scrollTo({ x: targetX, y: 0, animated: true });
+      if (pagingTimerRef.current) clearTimeout(pagingTimerRef.current);
+      pagingTimerRef.current = setTimeout(() => setIsPaging(false), 420);
     }
-  }, [index, isPaging, isWeb, reduceMotion, screenWidth, scrollX]);
-
-  /* Derive discrete index from scroll for dots + button label */
-  const handleMomentumEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { x: number } } }) => {
-      const offsetX = Math.abs(e.nativeEvent.contentOffset.x);
-      const newIndex = Math.min(
-        total - 1,
-        Math.max(0, Math.round(offsetX / screenWidth)),
-      );
-      if (newIndex !== index) {
-        setIndex(newIndex);
-      }
-      pendingIndexRef.current = null;
-      setIsPaging(false);
-      // `scrollX` already tracks the settled offset via `scrollHandler`; the
-      // previous `withTiming` here re-animated it from the position it was
-      // already at, which re-ran the background morph after every swipe.
-    },
-    [index, screenWidth, total],
-  );
+  }, [index, isPaging, reduceMotion, screenWidth, scrollX]);
   const isRtl = locale === "ku" || locale === "ar";
-  const webEntering =
-    webDirection > 0
+  const slideEntering =
+    slideDirection > 0
       ? isRtl
         ? FadeInLeft
         : FadeInRight
       : isRtl
         ? FadeInRight
         : FadeInLeft;
-  const webExiting =
-    webDirection > 0
+  const slideExiting =
+    slideDirection > 0
       ? isRtl
         ? FadeOutRight
         : FadeOutLeft
@@ -324,78 +278,25 @@ export function OnboardingFlow() {
         backLabel={t("onboarding.back")}
       />
       <View style={styles.slideFrame}>
-      {isWeb ? (
         <Animated.View
           key={slides[index].id}
           entering={
             reduceMotion || index === 0
               ? undefined
-              : webEntering.duration(320).easing(ONBOARDING_SLIDE_EASE)
+              : slideEntering.duration(400).easing(ONBOARDING_SLIDE_EASE)
           }
           exiting={
             reduceMotion
               ? undefined
-              : webExiting.duration(210).easing(Easing.in(Easing.quad))
+              : slideExiting.duration(250).easing(Easing.in(Easing.quad))
           }
-          style={styles.webSlide}
+          style={styles.slide}
         >
           <OnboardingSlide
             slide={slides[index]}
             locale={locale}
-            pageIndex={index}
-            pageWidth={screenWidth}
-            scrollX={scrollX}
           />
         </Animated.View>
-      ) : (
-        <Animated.ScrollView
-          ref={scrollRef}
-          horizontal
-          decelerationRate="fast"
-          disableIntervalMomentum
-          snapToAlignment="start"
-          snapToInterval={screenWidth}
-          showsHorizontalScrollIndicator={false}
-          bounces={false}
-          onScroll={scrollHandler}
-          onScrollBeginDrag={() => {
-            pendingIndexRef.current = null;
-            setIsPaging(true);
-          }}
-          onMomentumScrollEnd={handleMomentumEnd}
-          onScrollAnimationEnd={() => {
-            const pendingIndex = pendingIndexRef.current;
-            if (pendingIndex != null) {
-              setIndex(pendingIndex);
-              pendingIndexRef.current = null;
-            }
-            setIsPaging(false);
-          }}
-          scrollEventThrottle={16}
-          style={styles.container}
-          contentContainerStyle={{ flexGrow: 1 }}
-        >
-          {slides.map((slide) => (
-            <View
-              key={slide.id}
-              style={{
-                width: screenWidth,
-                height: "100%",
-                justifyContent: "center",
-                backgroundColor: "transparent",
-              }}
-            >
-              <OnboardingSlide
-                slide={slide}
-                locale={locale}
-                pageIndex={STEP_IDS.indexOf(slide.id as (typeof STEP_IDS)[number])}
-                pageWidth={screenWidth}
-                scrollX={scrollX}
-              />
-            </View>
-          ))}
-        </Animated.ScrollView>
-      )}
       </View>
       <OnboardingFooter
         label={index === 0 ? t("onboarding.getStarted") : t("onboarding.continue")}
@@ -408,6 +309,7 @@ export function OnboardingFlow() {
         secondaryTestID="onboarding-sign-in"
         current={onboardingStepNumber(STEP_IDS[index])}
         total={ONBOARDING_TOTAL_STEPS}
+        entranceKey={slides[index].id}
       />
     </Animated.View>
   );
@@ -419,14 +321,11 @@ const createStyles = (canvas: string) =>
       flex: 1,
       backgroundColor: canvas,
     },
-    container: {
-      flex: 1,
-    },
     slideFrame: {
       flex: 1,
       minHeight: 0,
     },
-    webSlide: {
+    slide: {
       flex: 1,
       width: "100%",
       justifyContent: "center",

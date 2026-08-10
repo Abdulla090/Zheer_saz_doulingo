@@ -3,9 +3,9 @@
 @source "./";
 
 @theme {
-  --font-rd-bold: "DINNextRoundedBold";
-  --font-rd-regular: "DINNextRoundedRegular";
-  --font-rd-medium: "DINNextRoundedMedium";
+  --font-rd-bold: "Rabar_044";
+  --font-rd-regular: "Rabar_044";
+  --font-rd-medium: "Rabar_044";
 }
 
 @layer theme {

@@ -37,9 +37,11 @@ export function useLiveVoiceTutor() {
     void gemini.startSession();
   }, [gemini, openai, provider]);
 
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (
+    durationMinutes: 5 | 10 | 15 = 5,
+  ) => {
     if (provider === "gemini") {
-      await gemini.startSession();
+      await gemini.startSession(durationMinutes);
       return;
     }
     fallbackStartedRef.current = false;

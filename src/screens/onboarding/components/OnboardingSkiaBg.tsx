@@ -45,7 +45,7 @@ export function OnboardingSkiaBg({ scrollX }: {
   }));
 
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View style={styles.background}>
       <Animated.View style={[StyleSheet.absoluteFill, revealStyle]}>
         <LinearGradient
           colors={stops}
@@ -64,6 +64,11 @@ export function OnboardingSkiaBg({ scrollX }: {
 }
 
 const styles = StyleSheet.create({
+  background: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+  },
   glow: {
     position: "absolute",
     width: 360,

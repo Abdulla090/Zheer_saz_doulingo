@@ -2,6 +2,7 @@ import SafeContainer from "../../components/shared/safe-container";
 import { PressableScale } from "../../components/animations/PressableScale";
 import { AppText } from "../../components/ui/AppText";
 import { SUBSCRIPTION_URL } from "../../constants/app-meta";
+import { useAuth } from "../../context/AuthContext";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
@@ -13,63 +14,15 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Image } from "expo-image";
-import React, { useMemo } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useMemo } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const PACKS = {
-  en: [
-    {
-      name: "Starter",
-      description: "A light top-up for occasional AI practice.",
-      tag: "TRY IT",
-    },
-    {
-      name: "Plus",
-      description: "More credits for regular speaking and reading practice.",
-      tag: "POPULAR",
-    },
-    {
-      name: "Max",
-      description: "The largest pack for frequent AI practice.",
-      tag: "BEST VALUE",
-    },
-  ],
-  ku: [
-    {
-      name: "دەستپێک",
-      description: "پاکەتێکی بچووک بۆ ڕاهێنانی AI لە هەندێک کاتدا.",
-      tag: "تاقیبکەرەوە",
-    },
-    {
-      name: "پڵەس",
-      description: "کرێدیتی زیاتر بۆ ڕاهێنانی بەردەوامی قسەکردن و خوێندنەوە.",
-      tag: "بەناوبانگ",
-    },
-    {
-      name: "ماکس",
-      description: "گەورەترین پاکەت بۆ ڕاهێنانی زۆری AI.",
-      tag: "باشترین نرخ",
-    },
-  ],
-  ar: [
-    {
-      name: "المبتدئ",
-      description: "حزمة خفيفة للتدريب بالذكاء الاصطناعي من حين لآخر.",
-      tag: "جرّبها",
-    },
-    {
-      name: "بلس",
-      description: "رصيد أكبر للتدريب المنتظم على التحدث والقراءة.",
-      tag: "الأكثر طلباً",
-    },
-    {
-      name: "ماكس",
-      description: "أكبر حزمة للتدريب المكثف بالذكاء الاصطناعي.",
-      tag: "أفضل قيمة",
-    },
-  ],
-} as const;
+import {
+  getSubscriptionPlanCopy,
+  SUBSCRIPTION_PLAN_DATA,
+  SUBSCRIPTION_PLAN_ORDER,
+} from "../../constants/subscription-plans";
 
 export function SubscriptionScreen() {
   const { isKu, isAr } = useI18n();
@@ -77,30 +30,59 @@ export function SubscriptionScreen() {
   const { colors, isDark } = useThemeColors();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const isRtl = isKu || isAr;
-  const packs = isKu ? PACKS.ku : isAr ? PACKS.ar : PACKS.en;
+  const { billingAccount, refreshBillingAccount } = useAuth();
+  const planLocale = isKu ? "ku" : isAr ? "ar" : "en";
+  const planCopy = getSubscriptionPlanCopy(planLocale);
+  const plans = SUBSCRIPTION_PLAN_ORDER.map((id) => ({
+    id,
+    name: id[0].toUpperCase() + id.slice(1),
+    tag: planCopy.tags[id],
+    description: planCopy.descriptions[id],
+    benefits: planCopy.benefits[id],
+    ...SUBSCRIPTION_PLAN_DATA[id],
+  }));
+  const currentPlan =
+    billingAccount?.subscription.status === "active"
+      ? billingAccount.subscription.plan
+      : "free";
   const copy = isKu
     ? {
-        eyebrow: "پاکەتەکانی کرێدیتی TWINO",
-        title: "پاکەتێک هەڵبژێرە",
-        body: "نرخ و ژمارەی نوێی کرێدیتەکان لە وێبسایت پیشان دەدرێن. هیچ کڕینێک لە ناو ئەپدا ناکرێت.",
+        eyebrow: "کرێدیت و پلانەکانی TWINO",
+        title: "هەژمارەکەت لە هەموو ئامێرەکان یەکە",
+        body: "باڵانس و پلانەکانی Free، Plus، Pro و Max لێرە نوێ دەبنەوە. هەموو پارەدانێک لە وێبسایت ئەنجام دەدرێت.",
         choose: "بینینی لە وێبسایت",
-        note: "کڕینی یەکجار · بێ نوێکردنەوەی خۆکار",
+        note: "پارەدان تەنها لە وێب · پلانە پارەدراوەکان بۆ ٣٠ ڕۆژ",
+        credits: "کرێدیت",
+        plan: "پلانی ئێستا",
+        expiry: "بەسەرچوون",
       }
     : isAr
       ? {
-          eyebrow: "حزم رصيد TWINO",
-          title: "اختر الحزمة المناسبة لك",
-          body: "ستجد أحدث الأسعار وكميات الرصيد على الموقع. لا تتم أي عملية شراء داخل التطبيق.",
+          eyebrow: "رصيد وخطط TWINO",
+          title: "حساب واحد على جميع أجهزتك",
+          body: "يتحدث رصيدك وخطط Free وPlus وPro وMax هنا. تتم جميع عمليات الدفع على الموقع.",
           choose: "عرض على الموقع",
-          note: "شراء لمرة واحدة · بدون تجديد تلقائي",
+          note: "الدفع على الويب فقط · الخطط المدفوعة لمدة 30 يوماً",
+          credits: "الرصيد",
+          plan: "الخطة الحالية",
+          expiry: "الانتهاء",
         }
       : {
-          eyebrow: "TWINO CREDIT PACKS",
-          title: "Choose the pack that fits you",
-          body: "Current prices and credit amounts are shown on our website. No purchase happens inside the app.",
+          eyebrow: "TWINO CREDITS & PLANS",
+          title: "One account on every device",
+          body: "Your balance and Free, Plus, Pro, or Max plan refresh here. Every purchase happens on the website.",
           choose: "View on website",
-          note: "One-time purchase · No automatic renewal",
+          note: "Web checkout only · Paid plans last 30 days",
+          credits: "Credits",
+          plan: "Current plan",
+          expiry: "Expires",
         };
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshBillingAccount();
+    }, [refreshBillingAccount]),
+  );
 
   const openWebsite = async () => {
     const opened = await openHttpsUrl(SUBSCRIPTION_URL);
@@ -149,11 +131,37 @@ export function SubscriptionScreen() {
           </AppText>
         </View>
 
+        <View style={styles.accountStrip}>
+          <View style={styles.accountMetric}>
+            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.credits}</AppText>
+            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+              {(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()}
+            </AppText>
+          </View>
+          <View style={styles.accountMetric}>
+            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.plan}</AppText>
+            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+              {currentPlan.toUpperCase()}
+            </AppText>
+          </View>
+          <View style={styles.accountMetric}>
+            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.expiry}</AppText>
+            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+              {billingAccount?.subscription.expiresAt
+                ? new Date(billingAccount.subscription.expiresAt).toLocaleDateString()
+                : "—"}
+            </AppText>
+          </View>
+        </View>
+
         <View style={styles.packList}>
-          {packs.map((pack, index) => (
+          {plans.map((pack) => {
+            const planKey = pack.id;
+            const isCurrent = currentPlan === planKey;
+            return (
             <View
               key={pack.name}
-              style={[styles.packCard, index === 1 && styles.packCardFeatured]}
+              style={[styles.packCard, isCurrent && styles.packCardFeatured]}
             >
               <View
                 style={[
@@ -197,6 +205,25 @@ export function SubscriptionScreen() {
               >
                 {pack.description}
               </AppText>
+              <AppText style={[styles.packPrice, isRtl && styles.rtlText]} forceLatinFont latinRole="bold">
+                {pack.priceIqd.toLocaleString()} IQD{pack.durationDays ? ` / ${planCopy.duration}` : ""}
+              </AppText>
+              <AppText style={[styles.creditGrant, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
+                {planCopy.credits(pack.includedCredits, pack.id === "free")}
+              </AppText>
+              {pack.liveTutorMinutes ? (
+                <AppText style={[styles.liveTutorEquivalent, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
+                  {planCopy.liveTutor(pack.liveTutorMinutes)}
+                </AppText>
+              ) : null}
+              <View style={styles.benefitList}>
+                {pack.benefits.map((benefit) => (
+                  <View key={benefit} style={[styles.benefitRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} color="#22A06B" strokeWidth={2.3} />
+                    <AppText style={[styles.benefitText, isRtl && styles.rtlText]} forceKurdishFont={isKu}>{benefit}</AppText>
+                  </View>
+                ))}
+              </View>
               <PressableScale
                 accessibilityRole="link"
                 accessibilityLabel={`${copy.choose}: ${pack.name}`}
@@ -218,7 +245,8 @@ export function SubscriptionScreen() {
                 />
               </PressableScale>
             </View>
-          ))}
+            );
+          })}
         </View>
 
         <View
@@ -238,6 +266,10 @@ export function SubscriptionScreen() {
             forceKurdishFont={isKu}
           >
             {copy.note}
+            {"\n"}{planCopy.walletNote}
+            {"\n"}{planCopy.accessNote}
+            {"\n"}{planCopy.ttsNote}
+            {"\n"}{planCopy.checkoutPaused}
           </AppText>
         </View>
       </ScrollView>
@@ -321,6 +353,30 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     packList: {
       gap: 14,
     },
+    accountStrip: {
+      flexDirection: "row",
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.cardBorder,
+      backgroundColor: colors.surface,
+      paddingVertical: 13,
+    },
+    accountMetric: {
+      flex: 1,
+      minWidth: 0,
+      paddingHorizontal: 10,
+    },
+    accountLabel: {
+      color: colors.mutedForeground,
+      fontSize: 11.5,
+      textAlign: "center",
+    },
+    accountValue: {
+      color: colors.foreground,
+      fontSize: 15,
+      textAlign: "center",
+      marginTop: 4,
+    },
     packCard: {
       borderRadius: 24,
       borderWidth: 1.5,
@@ -366,6 +422,31 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.mutedForeground,
       fontSize: 14.5,
       lineHeight: 21,
+    },
+    packPrice: {
+      color: colors.foreground,
+      fontSize: 18,
+      lineHeight: 24,
+    },
+    creditGrant: {
+      color: "#168BD2",
+      fontSize: 13.5,
+      lineHeight: 20,
+      fontWeight: "700",
+    },
+    liveTutorEquivalent: {
+      color: colors.foreground,
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: 4,
+    },
+    benefitList: { gap: 8 },
+    benefitRow: { alignItems: "flex-start", gap: 8 },
+    benefitText: {
+      flex: 1,
+      color: colors.mutedForeground,
+      fontSize: 13,
+      lineHeight: 19,
     },
     chooseButton: {
       minHeight: 50,

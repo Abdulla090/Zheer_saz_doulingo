@@ -1108,7 +1108,7 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       borderColor: colors.border,
       color: colors.foreground,
       fontSize: 15,
-      fontFamily: "DINNextRoundedMedium",
+      fontFamily: "Rabar_044",
     },
     textInputRtl: {
       textAlign: "right",

@@ -170,6 +170,9 @@ export const ListItem = React.memo(
     const xOffset = isRtl ? -rawOffset : rawOffset;
     const isLocked = status === "locked";
     const isCompleted = status === "completed";
+    const LessonNodeIcon = isCompleted
+      ? CompletedCheckIcon
+      : (LESSON_ICON_MAP[item.type] ?? LessonStar);
     const showsActiveStar =
       !isLocked && !isCompleted && (isActiveLesson || item.isCurrent);
     const isGrayInProgress = isActiveLesson && item.sectionTheme === "gray";
@@ -365,7 +368,7 @@ export const ListItem = React.memo(
                   size={metrics.lessonButtonSize}
                   onPress={isLocked && !onSelect ? undefined : handleSelect}
                   variant={buttonColor}
-                  IconComponent={LESSON_ICON_MAP[item.type] ?? LessonStar}
+                  IconComponent={LessonNodeIcon}
                   iconColor={iconColorOverride}
                   accessibilityLabel={
                     isLocked
@@ -385,7 +388,8 @@ export const ListItem = React.memo(
                 size={metrics.lessonButtonSize}
                 onPress={isLocked && !onSelect ? undefined : handleSelect}
                 variant={buttonColor}
-                label={item.pathIndex + 1}
+                IconComponent={isCompleted ? CompletedCheckIcon : undefined}
+                label={isCompleted ? undefined : item.pathIndex + 1}
                 iconColor={iconColorOverride}
                 accessibilityLabel={
                   isLocked

@@ -382,14 +382,17 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# Paid plans are deliberately disabled for the free public release. Requiring
-# a valid user JWT also prevents old unauthenticated simulator calls from
-# reaching these neutralized handlers.
 [functions.rasedi-checkout]
+enabled = true
 verify_jwt = true
+import_map = "./functions/rasedi-checkout/deno.json"
+entrypoint = "./functions/rasedi-checkout/index.ts"
 
 [functions.rasedi-webhook]
-verify_jwt = true
+enabled = true
+verify_jwt = false
+import_map = "./functions/rasedi-webhook/deno.json"
+entrypoint = "./functions/rasedi-webhook/index.ts"
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
@@ -488,3 +491,15 @@ entrypoint = "./functions/credits/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/credits/*.html" ]
+
+[functions.create-checkout]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-checkout/deno.json"
+entrypoint = "./functions/create-checkout/index.ts"
+
+[functions.billing-account]
+enabled = true
+verify_jwt = true
+import_map = "./functions/billing-account/deno.json"
+entrypoint = "./functions/billing-account/index.ts"

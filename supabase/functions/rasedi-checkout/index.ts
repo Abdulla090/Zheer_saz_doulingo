@@ -1,26 +1,5 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import "@supabase/functions-js/edge-runtime.d.ts";
 
-Deno.serve((req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  return new Response(
-    JSON.stringify({
-      code: "SUBSCRIPTIONS_DISABLED",
-      message: "Paid plans are not available in this release.",
-    }),
-    {
-      status: 410,
-      headers: {
-        ...corsHeaders,
-        "Cache-Control": "no-store",
-        "Content-Type": "application/json",
-      },
-    },
-  );
-});
+// Compatibility alias. PAYMENT_PROVIDER controls the adapter; Rasedi remains
+// fail-closed until its real merchant documentation and credentials arrive.
+export { default } from "../_shared/payments/checkout-handler.ts";

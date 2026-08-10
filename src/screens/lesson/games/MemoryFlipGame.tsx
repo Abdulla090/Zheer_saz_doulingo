@@ -478,7 +478,7 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#94A3B8",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "right",
   },
   gridContainer: {
@@ -563,7 +563,7 @@ const s = StyleSheet.create({
     fontSize: 16,
     color: "#1E293B",
     textAlign: "center",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   checkBadge: {
     position: "absolute",

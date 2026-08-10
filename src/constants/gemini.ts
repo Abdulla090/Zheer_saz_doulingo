@@ -13,10 +13,7 @@ export function isGeminiConfigured(): boolean {
 
 /** REST model for speech grading and text generation. */
 export const GEMINI_SPEECH_MODEL =
-  process.env.EXPO_PUBLIC_GEMINI_MODEL?.trim() || "gemini-3.5-flash";
-
-/** Fallback model when the primary hits quota / rate limits. */
-export const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
+  "gemini-3.6-flash";
 
 export function isGeminiLiveConfigured(): boolean {
   return isGeminiConfigured();

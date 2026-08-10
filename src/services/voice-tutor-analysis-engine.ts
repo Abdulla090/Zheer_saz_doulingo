@@ -1,6 +1,4 @@
 import { RealConversationTurn, RealAnalysis, SessionWordState, GrammarError } from "../data/voice-tutor-types";
-import { GEMINI_SPEECH_MODEL } from "../constants/gemini";
-import { generateGeminiContent } from "./gemini-gateway";
 
 // QA test mode flags. Can be toggled via env or runtime.
 let testForceFailAnalysis = false;
@@ -9,10 +7,48 @@ export function setTestForceFailAnalysis(fail: boolean) {
   testForceFailAnalysis = fail;
 }
 
+function localGrammarReview(text: string): GrammarError[] {
+  const rules: { pattern: RegExp; corrected: string; explanation: string }[] = [
+    {
+      pattern: /\bi am agree\b/i,
+      corrected: "I agree.",
+      explanation: "Agree is a verb, so it does not use am here.",
+    },
+    {
+      pattern: /\bhe go\b/i,
+      corrected: "He goes.",
+      explanation: "Use goes with he in the present simple.",
+    },
+    {
+      pattern: /\bshe go\b/i,
+      corrected: "She goes.",
+      explanation: "Use goes with she in the present simple.",
+    },
+    {
+      pattern: /\bi didn't went\b/i,
+      corrected: "I didn't go.",
+      explanation: "After didn't, use the base form of the verb.",
+    },
+    {
+      pattern: /\bmore better\b/i,
+      corrected: "Better.",
+      explanation: "Better is already comparative, so more is unnecessary.",
+    },
+  ];
+
+  return rules
+    .filter((rule) => rule.pattern.test(text))
+    .map((rule) => ({
+      original: text.match(rule.pattern)?.[0] ?? "",
+      corrected: rule.corrected,
+      explanation: rule.explanation,
+    }));
+}
+
 /**
  * Computes a real conversation analysis session summary.
- * Performs a batch Gemini REST call at the end of the session to extract grammar errors,
- * better alternatives, and overall feedback.
+ * Builds the included post-session summary locally from the transcript and
+ * Live-session word signals, so it never creates a second AI charge.
  */
 export async function computeSessionAnalysis(
   turns: RealConversationTurn[],
@@ -78,61 +114,10 @@ export async function computeSessionAnalysis(
     };
   }
 
-  // Build conversation transcript text for Gemini to analyze
-  const transcriptText = turns
-    .map((t) => `${t.sender === "user" ? "Student" : "Tutor"}: ${t.text}`)
-    .join("\n");
-
-  const prompt = `
-You are an expert English language examiner. Analyze the following conversation transcript between a student learning English and their tutor.
-Find all grammatical errors made by the student. Offer a corrected sentence and a short explanation for each error.
-
-Response MUST be a single raw JSON object matching this structure. Do NOT wrap in markdown code blocks:
-{
-  "grammarErrors": [
-    {
-      "original": "I am flying to London for holiday",
-      "corrected": "I am flying to London on vacation",
-      "explanation": "Use 'on vacation' or 'for a holiday' instead of 'for holiday'."
-    }
-  ]
-}
-
-Conversation Transcript:
-${transcriptText}
-`;
-
   try {
-    const data = await generateGeminiContent<any>(
-      GEMINI_SPEECH_MODEL,
-      {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1024,
-        },
-      },
-      12_000,
-    );
-    const responseText =
-      data.candidates?.[0]?.content?.parts
-        ?.map((part: any) => part.text ?? "")
-        .join("")
-        .trim() ?? "";
-
-    if (!responseText) {
-      throw new Error("Gemini returned empty response.");
-    }
-
-    // Clean JSON response
-    const cleanJson = responseText
-      .replace(/^```json/, "")
-      .replace(/^```/, "")
-      .replace(/```$/, "")
-      .trim();
-
-    const parsed = JSON.parse(cleanJson);
-    const grammarErrors: GrammarError[] = Array.isArray(parsed.grammarErrors) ? parsed.grammarErrors : [];
+    // The Live token purchase already covers analysis. Keep the post-session
+    // summary local so opening it never creates a second AI charge.
+    const grammarErrors = localGrammarReview(userTextJoined);
 
     // Calculate pronunciation and fluency scores honestly:
     // 1. Pronunciation is derived directly from the user's real-time vocabulary drill success rate
@@ -167,7 +152,7 @@ ${transcriptText}
       turnCount,
       duration: durationStr,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.warn("[voice-tutor-analysis-engine] Error compiling real analysis:", err);
     return emptyAnalysisWithError("Analysis server is currently unavailable. Please verify your connection.");
   }

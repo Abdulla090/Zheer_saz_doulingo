@@ -7,6 +7,8 @@ import { useSafeBack } from "../../hooks/use-safe-back";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useAuth } from "../../context/AuthContext";
+import { aiPrice } from "../../types/entitlements";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
 import { hapticImpact } from "../../utils/haptics";
 import { isDesktopWebWidth } from "../../constants/web-layout";
@@ -57,6 +59,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 const BRAND_LOGO = require("../../../assets/images/logo-compressed.png");
 
@@ -78,6 +81,8 @@ export function VoiceTutorScreen() {
   const { t, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
   const tutor = useLiveVoiceTutor();
+  const { billingAccount, refreshBillingAccount } = useAuth();
+  const [durationMinutes, setDurationMinutes] = useState<5 | 10 | 15>(5);
   const { colors, isDark } = useThemeColors();
   const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(screenWidth);
   const styles = useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
@@ -172,10 +177,15 @@ export function VoiceTutorScreen() {
     [],
   );
 
-  const handleTutorPress = useCallback(() => {
+  const handleTutorPress = useCallback(async () => {
     if (holdActiveRef.current) return;
+    if (!tutor.sessionActive) {
+      await tutor.startSession(durationMinutes);
+      await refreshBillingAccount();
+      return;
+    }
     tutor.handleMicPress();
-  }, [tutor]);
+  }, [durationMinutes, refreshBillingAccount, tutor]);
 
   const handleTutorLongPress = useCallback(() => {
     holdActiveRef.current = true;
@@ -481,6 +491,43 @@ export function VoiceTutorScreen() {
 
       {/* MAIN VISUAL AREA */}
       <View style={styles.main}>
+        {!tutor.sessionActive ? (
+          <View style={styles.blockPicker}>
+            <AppText style={styles.blockTitle}>
+              {isKu
+                ? "ماوەی وانە هەڵبژێرە"
+                : isAr
+                  ? "اختر مدة الجلسة"
+                  : "Choose a session block"}
+            </AppText>
+            <View style={[styles.blockOptions, isRtl && styles.rtlRow]}>
+              {([5, 10, 15] as const).map((minutes) => {
+                const cost = aiPrice(
+                  billingAccount?.entitlements,
+                  `live_tutor_${minutes}`,
+                );
+                const selected = durationMinutes === minutes;
+                return (
+                  <PressableScale
+                    key={minutes}
+                    onPress={() => setDurationMinutes(minutes)}
+                    style={[styles.blockOption, selected && styles.blockOptionSelected]}
+                  >
+                    <AppText style={[styles.blockMinutes, selected && styles.blockTextSelected]} forceLatinFont latinRole="bold">
+                      {minutes} {isKu ? "خولەک" : isAr ? "دقائق" : "min"}
+                    </AppText>
+                    <AppText style={[styles.blockCredits, selected && styles.blockTextSelected]} forceLatinFont>
+                      {cost} {isKu ? "کرێدیت" : isAr ? "رصيد" : "credits"}
+                    </AppText>
+                  </PressableScale>
+                );
+              })}
+            </View>
+            <AppText style={styles.balanceText}>
+              {isKu ? "باڵانس" : isAr ? "الرصيد" : "Balance"}: {billingAccount?.entitlements.creditBalance ?? 0}
+            </AppText>
+          </View>
+        ) : null}
         <PressableScale
           style={styles.orbContainer}
           onPress={handleTutorPress}
@@ -588,6 +635,16 @@ export function VoiceTutorScreen() {
                       : isAr
                         ? "فتح الإعدادات"
                         : "Open Settings"}
+                  </AppText>
+                </PressableScale>
+              ) : null}
+              {/credit|کرێدیت|رصيد/i.test(tutor.error) ? (
+                <PressableScale
+                  style={styles.creditActionButton}
+                  onPress={() => router.push("/credits")}
+                >
+                  <AppText style={styles.creditActionText}>
+                    {isKu ? "کرێدیت زیاد بکە یان پلان ببینە" : isAr ? "اشحن الرصيد أو اعرض الخطط" : "Top up credits or view plans"}
                   </AppText>
                 </PressableScale>
               ) : null}
@@ -1169,6 +1226,13 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontSize: 13,
       fontWeight: "700",
     },
+    creditActionButton: {
+      borderRadius: 12,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+    },
+    creditActionText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
     topControlRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -1212,6 +1276,41 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: "100%",
       alignSelf: isDesktopWeb ? "center" : "stretch",
     },
+    blockPicker: {
+      width: "100%",
+      maxWidth: 430,
+      alignItems: "center",
+      gap: 9,
+      paddingHorizontal: 18,
+    },
+    blockTitle: {
+      color: colors.foreground,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    blockOptions: {
+      width: "100%",
+      flexDirection: "row",
+      gap: 8,
+    },
+    blockOption: {
+      flex: 1,
+      minHeight: 54,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceRaised,
+    },
+    blockOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    blockMinutes: { color: colors.foreground, fontSize: 14 },
+    blockCredits: { color: colors.mutedForeground, fontSize: 11, marginTop: 2 },
+    blockTextSelected: { color: "#FFFFFF" },
+    balanceText: { color: colors.mutedForeground, fontSize: 12 },
     orbContainer: {
       width: 240,
       height: 240,
@@ -1245,7 +1344,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       color: colors.foreground,
       textAlign: "center",
       lineHeight: 32,
-      fontFamily: "DINNextRoundedRegular",
+      fontFamily: "Rabar_044",
       paddingHorizontal: 20,
     },
     bottomSwipeContainer: {
@@ -1364,7 +1463,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontSize: 22,
       fontWeight: "800",
       color: colors.foreground,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     analysisCloseBtn: {
       width: 36,
@@ -1418,7 +1517,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontWeight: "800",
       color: colors.primary,
       marginTop: 4,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     sectionWrap: {
       width: "100%",
@@ -1430,7 +1529,7 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       color: colors.foreground,
       marginBottom: 16,
       letterSpacing: 0.2,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
     },
     vocabTagsWrap: {
       flexDirection: "row",
@@ -1505,13 +1604,13 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontSize: 15,
       color: "#FFFFFF",
       lineHeight: 22,
-      fontFamily: "DINNextRoundedMedium",
+      fontFamily: "Rabar_044",
     },
     aiBubbleText: {
       fontSize: 15,
       color: colors.foreground,
       lineHeight: 22,
-      fontFamily: "DINNextRoundedMedium",
+      fontFamily: "Rabar_044",
     },
     bubbleTime: {
       fontSize: 11,

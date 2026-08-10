@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#1A2B48",
     marginBottom: 8,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "center",
   },
   body: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 20,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   devError: {
     fontSize: 12,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 16,
     paddingHorizontal: 8,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   btn: {
     backgroundColor: "#2B59F3",
@@ -111,6 +111,6 @@ const styles = StyleSheet.create({
   btnText: {
     color: "#FFF",
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
 });

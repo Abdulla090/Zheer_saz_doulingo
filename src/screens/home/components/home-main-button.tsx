@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { NoteBook } from "../../../constants/icons";
 import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable as Pressable } from "../../../components/ui/ios-pressable";
@@ -9,8 +8,8 @@ import { hapticSelection } from "../../../utils/haptics";
 import { IS_ANDROID } from "../../../utils/native-perf";
 import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
-import React, { useCallback } from "react";
-import { useWindowDimensions, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 
 type HomeMainButtonProps = {
   unitLabel: string;
@@ -21,89 +20,82 @@ type HomeMainButtonProps = {
   pathMode?: LessonPathMode;
 };
 
-/** Solid frosted chip — liquid glass clips/misaligns on small controls over saturated headers. */
-function GuidebookBtn({
+function GuidebookSegment({
   label,
-  isRtl,
-  isKu,
-  compact,
   onPress,
 }: {
   label: string;
-  isRtl: boolean;
-  isKu: boolean;
-  compact: boolean;
   onPress: () => void;
 }) {
-  const direction = isRtl ? rtlText : ltrText;
-
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       android_ripple={{ color: "rgba(255,255,255,0.22)", borderless: false }}
-      style={{
-        flexShrink: 0,
-        alignSelf: "center",
-      }}
+      style={styles.guidebookSegment}
     >
-      <View
-        style={{
-          direction: isRtl ? "rtl" : "ltr",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: compact ? 0 : 6,
-          minHeight: 40,
-          minWidth: compact ? 56 : 112,
-          paddingHorizontal: compact ? 10 : 12,
-          paddingVertical: 8,
-          borderRadius: 14,
-          backgroundColor: "rgba(255,255,255,0.22)",
-          borderLeftWidth: isRtl ? 0 : 1,
-          borderRightWidth: isRtl ? 1 : 0,
-          borderColor: "rgba(0,0,0,0.12)",
-        }}
-      >
-        <NoteBook width={18} height={18} color="#FFFFFF" fill="#FFFFFF" />
-        {!compact ? (
-          <AppText
-            style={{
-              color: "#FFFFFF",
-              fontWeight: "800",
-              fontSize: 13,
-              letterSpacing: 0.2,
-              flexShrink: 0,
-              ...direction,
-            }}
-            forceKurdishFont={isKu}
-            forceLatinFont={!isRtl}
-            numberOfLines={1}
-          >
-            {label}
-          </AppText>
-        ) : null}
-      </View>
+      <NoteBook width={31} height={31} color="#FFFFFF" fill="#FFFFFF" />
     </Pressable>
   );
 }
 
-export const HomeMainButton = React.memo(({
+function UnitCopy({
+  unitLabel,
+  sectionTitle,
+  isRtl,
+  languageCode,
+}: {
+  unitLabel: string;
+  sectionTitle: string;
+  isRtl: boolean;
+  languageCode: string;
+}) {
+  const direction = isRtl ? rtlText : ltrText;
+  return (
+    <View
+      style={[
+        styles.copy,
+        { alignItems: isRtl ? "flex-end" : "flex-start" },
+      ]}
+    >
+      <AppText
+        style={[styles.unitLabel, direction]}
+        languageCode={languageCode}
+        forceKurdishFont={languageCode === "ku"}
+        forceLatinFont={!isRtl}
+        numberOfLines={1}
+        fullWidth
+      >
+        {unitLabel}
+      </AppText>
+      <AppText
+        style={[styles.sectionTitle, direction]}
+        languageCode={languageCode}
+        forceKurdishFont={languageCode === "ku"}
+        forceLatinFont={!isRtl}
+        numberOfLines={2}
+        fullWidth
+      >
+        {sectionTitle}
+      </AppText>
+    </View>
+  );
+}
+
+export const HomeMainButton = React.memo(function HomeMainButton({
   unitLabel,
   sectionTitle,
   faceColor,
   rimColor,
   unitIndex,
   pathMode = "street",
-}: HomeMainButtonProps) => {
+}: HomeMainButtonProps) {
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const { t, isKu, isAr } = useI18n();
+  const { t, locale, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
-  const barWidth = Math.min(width - 44, 620);
-  const guidebookCompact = width < 360;
-  const direction = isRtl ? rtlText : ltrText;
+  const barWidth = Math.min(width - 32, 620);
 
   const openGuidebook = useCallback(() => {
     hapticSelection();
@@ -113,100 +105,114 @@ export const HomeMainButton = React.memo(({
     });
   }, [pathMode, router, unitIndex]);
 
-  return (
-    <View style={{ alignSelf: "center", marginTop: 0, marginBottom: 0, width: barWidth }}>
-      <View
-        style={{
-          borderRadius: 20,
-          borderCurve: "continuous",
-          backgroundColor: faceColor,
-          borderTopWidth: 1,
-          borderLeftWidth: 1,
-          borderRightWidth: 1,
-          borderColor: "rgba(255,255,255,0.22)",
-          borderBottomWidth: 5,
-          borderBottomColor: rimColor,
-          direction: isRtl ? "rtl" : "ltr",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "nowrap",
-          gap: 10,
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 10,
-          minHeight: 78,
-          ...(IS_ANDROID
-            ? {}
-            : crossShadow({
-                color: rimColor,
-                offsetY: 4,
-                blur: 8,
-                opacity: 0.16,
-                elevation: 3,
-              })),
-        }}
-      >
-        <View
-          style={{
-            flex: 1,
-            flexShrink: 1,
-            minWidth: 0,
-            marginRight: isRtl ? 0 : 4,
-            marginLeft: isRtl ? 4 : 0,
-            alignItems: isRtl ? "flex-end" : "flex-start",
-          }}
-        >
-          <View
-            style={{
-              alignSelf: isRtl ? "flex-end" : "flex-start",
-              paddingVertical: 2,
-              marginBottom: 3,
-            }}
-          >
-            <AppText
-              style={{
-                color: "rgba(255,255,255,0.95)",
-                fontSize: 11,
-                fontWeight: "800",
-                letterSpacing: 1.1,
-                textTransform: "uppercase",
-                ...direction,
-              }}
-              forceKurdishFont={isKu}
-              forceLatinFont={!isRtl}
-              numberOfLines={1}
-            >
-              {unitLabel}
-            </AppText>
-          </View>
-          <AppText
-            style={{
-              color: "#FFFFFF",
-              fontSize: 17,
-              fontWeight: "800",
-              lineHeight: 22,
-              width: "100%",
-              ...direction,
-            }}
-            forceKurdishFont={isKu}
-            forceLatinFont={!isRtl}
-            numberOfLines={2}
-          >
-            {sectionTitle}
-          </AppText>
-        </View>
+  const shadow = useMemo(
+    () =>
+      IS_ANDROID
+        ? undefined
+        : crossShadow({
+            color: rimColor,
+            offsetY: 4,
+            blur: 8,
+            opacity: 0.18,
+            elevation: 3,
+          }),
+    [rimColor],
+  );
 
-        <View style={{ flexShrink: 0, flexGrow: 0 }}>
-          <GuidebookBtn
-            label={t("path.guidebook")}
-            isRtl={isRtl}
-            isKu={isKu}
-            compact={guidebookCompact}
-            onPress={openGuidebook}
-          />
-        </View>
+  const guidebook = (
+    <GuidebookSegment label={t("path.guidebook")} onPress={openGuidebook} />
+  );
+  const divider = <View style={styles.divider} />;
+  const copy = (
+    <UnitCopy
+      unitLabel={unitLabel}
+      sectionTitle={sectionTitle}
+      isRtl={isRtl}
+      languageCode={locale}
+    />
+  );
+
+  return (
+    <View style={[styles.shell, { width: barWidth, backgroundColor: rimColor }, shadow]}>
+      <View
+        style={[
+          styles.face,
+          {
+            backgroundColor: faceColor,
+            flexDirection: isRtl ? "row-reverse" : "row",
+          },
+        ]}
+      >
+        {isRtl ? (
+          <>
+            {guidebook}
+            {divider}
+            {copy}
+          </>
+        ) : (
+          <>
+            {copy}
+            {divider}
+            {guidebook}
+          </>
+        )}
       </View>
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  shell: {
+    alignSelf: "center",
+    marginTop: 0,
+    marginBottom: 0,
+    minHeight: 92,
+    paddingBottom: 6,
+    borderRadius: 25,
+    borderCurve: "continuous",
+  },
+  face: {
+    flex: 1,
+    minHeight: 86,
+    borderRadius: 24,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "stretch",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.20)",
+  },
+  copy: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    gap: 4,
+  },
+  unitLabel: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "800",
+  },
+  sectionTitle: {
+    color: "#FFFFFF",
+    fontSize: 19,
+    lineHeight: 25,
+    fontWeight: "900",
+    fontFamily: "Rabar_044",
+  },
+  divider: {
+    width: 2,
+    alignSelf: "stretch",
+    backgroundColor: "rgba(0,0,0,0.15)",
+  },
+  guidebookSegment: {
+    width: 76,
+    minHeight: 84,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

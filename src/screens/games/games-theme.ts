@@ -367,41 +367,41 @@ export const GamesType = {
     fontSize: 34,
     fontWeight: "800" as const,
     letterSpacing: -0.9,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   /** The one-per-screen page title on the intro card. */
   title: {
     fontSize: 24,
     fontWeight: "800" as const,
     letterSpacing: -0.5,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   /** Sticky header title. Smaller than `title` — chrome must not outrank content. */
   header: {
     fontSize: 17,
     fontWeight: "800" as const,
     letterSpacing: -0.2,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   /** Card headings and section titles. */
   section: {
     fontSize: 17,
     fontWeight: "800" as const,
     letterSpacing: -0.3,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   body: {
     fontSize: 15,
     fontWeight: "500" as const,
     letterSpacing: -0.15,
     lineHeight: 21,
-    fontFamily: "DINNextRoundedRegular",
+    fontFamily: "Rabar_044",
   },
   caption: {
     fontSize: 13,
     fontWeight: "600" as const,
     letterSpacing: -0.1,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   /**
    * The mode label above a title. Uppercase + wide tracking makes it read as a
@@ -413,7 +413,7 @@ export const GamesType = {
     fontWeight: "800" as const,
     letterSpacing: 1.4,
     textTransform: "uppercase" as const,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
 } as const;
 

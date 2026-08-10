@@ -502,32 +502,32 @@ export const HomeType = {
     fontSize: 32,
     fontWeight: "800" as const,
     letterSpacing: -0.8,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   heading: {
     fontSize: 22,
     fontWeight: "800" as const,
     letterSpacing: -0.4,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   section: {
     fontSize: 18,
     fontWeight: "800" as const,
     letterSpacing: -0.3,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   body: {
     fontSize: 15,
     fontWeight: "500" as const,
     letterSpacing: -0.15,
     lineHeight: 21,
-    fontFamily: "DINNextRoundedRegular",
+    fontFamily: "Rabar_044",
   },
   caption: {
     fontSize: 13,
     fontWeight: "600" as const,
     letterSpacing: -0.1,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
 } satisfies Record<string, TextStyle>;
 
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     letterSpacing: 1,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     zIndex: 1,
   },
   loginPrimaryLabel: {
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     color: HomePalette.blue,
     fontSize: 13,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     zIndex: 1,
   },
   meshOrbCoral: {

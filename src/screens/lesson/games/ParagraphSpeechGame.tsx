@@ -427,13 +427,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 32,
     color: "#334155",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     ...ltrText,
   },
   wordText: {
     fontSize: 22,
     lineHeight: 32,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     ...ltrText,
   },
   micStage: {
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   skipLink: {
     color: "#64748B",
     fontSize: 16,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "center",
     paddingVertical: 10,
   },

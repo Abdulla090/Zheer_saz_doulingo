@@ -5,6 +5,8 @@ import { useI18n } from "../../hooks/useI18n";
 import { useProgressStore, useCurrentProgress } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { hapticSelection } from "../../utils/haptics";
+import { openHttpsUrl } from "../../utils/safe-link";
+import { SUBSCRIPTION_URL } from "../../constants/app-meta";
 import {
   buildLessonRouteForMode,
   buildLessonRouteFromMeta,
@@ -44,7 +46,7 @@ import {
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import React, { useCallback, useMemo } from "react";
-import { I18nManager, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Alert, I18nManager, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { PressableScale } from "../../components/animations";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
@@ -306,9 +308,20 @@ export function TwinoLearnHomeScreen() {
         <View style={[styles.headerRight, isRtl && styles.headerRightRtl]}>
           <PressableScale
             style={styles.upgradeBtn}
-            onPress={() => {
+            accessibilityRole="link"
+            onPress={async () => {
               hapticSelection();
-              router.push("/subscription");
+              const opened = await openHttpsUrl(SUBSCRIPTION_URL);
+              if (!opened) {
+                Alert.alert(
+                  locale === "ku"
+                    ? "وێبسایت نەکرایەوە"
+                    : locale === "ar"
+                      ? "تعذر فتح الموقع"
+                      : "Could not open website",
+                  SUBSCRIPTION_URL,
+                );
+              }
             }}
             scaleDown={0.9}
           >

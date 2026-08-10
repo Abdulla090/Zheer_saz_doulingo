@@ -180,20 +180,20 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     lineHeight: 14,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     letterSpacing: -0.3,
   },
   cardSub: {
     fontSize: 13,
     lineHeight: 18,
     color: C.gray,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
 });

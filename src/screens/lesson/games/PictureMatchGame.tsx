@@ -378,7 +378,7 @@ const LightType = {
     fontWeight: "800" as const,
     letterSpacing: 0.6,
     color: "#94A3B8",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textTransform: "uppercase" as const,
   },
 };
@@ -420,7 +420,7 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: L.gray,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textAlign: "right",
   },
   boardArea: {

@@ -86,13 +86,12 @@ function InnerLayout() {
             setKurdishFontLoaded(true);
           })
           .catch((err) => {
-            // The bundled DIN family remains available, so this is a
-            // recoverable preference failure rather than an application error.
+            // Rabar 044 is bundled, so this is a recoverable font-load failure.
             // Logging it as an error opens Expo's intrusive error toast over
             // otherwise usable controls in development builds.
             if (__DEV__) {
               console.warn(
-                "Kurdish font preference could not be loaded; using the bundled fallback:",
+                "Rabar 044 could not be loaded; using the bundled fallback:",
                 selectedFont,
                 err,
               );
@@ -118,9 +117,7 @@ function InnerLayout() {
   }, [selectedFont]);
 
   const [fontsLoaded] = useFonts({
-    DINNextRoundedBold: require("../../assets/fonts/DIN_BOLD.ttf"),
-    DINNextRoundedMedium: require("../../assets/fonts/DIN_MEDIUM.ttf"),
-    DINNextRoundedRegular: require("../../assets/fonts/DIN_REGULAR.ttf"),
+    Rabar_044: require("../../assets/fonts/Rabar_044.ttf"),
   });
 
   // Hide the native splash screen as soon as fonts and stores are ready, or after a maximum safety timeout.

@@ -1,26 +1,6 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import "@supabase/functions-js/edge-runtime.d.ts";
+import { createPaymentWebhookHandler } from "../_shared/payments/webhook-handler.ts";
 
-Deno.serve((req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  return new Response(
-    JSON.stringify({
-      code: "SUBSCRIPTIONS_DISABLED",
-      message: "Payment webhooks are disabled for the free release.",
-    }),
-    {
-      status: 410,
-      headers: {
-        ...corsHeaders,
-        "Cache-Control": "no-store",
-        "Content-Type": "application/json",
-      },
-    },
-  );
-});
+// This endpoint is already wired and fail-closed. RasediProvider will begin
+// verifying signatures only after Rasedi supplies its merchant documentation.
+export default createPaymentWebhookHandler("rasedi");

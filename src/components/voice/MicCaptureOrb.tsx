@@ -169,6 +169,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#64748B",
     textAlign: "center",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
 });

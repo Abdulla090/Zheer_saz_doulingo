@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 8,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     textShadowColor: "rgba(0, 0, 0, 0.1)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#F3E8FF",
     textAlign: "center",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
 });

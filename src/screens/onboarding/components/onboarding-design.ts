@@ -45,10 +45,10 @@ export const ONBOARDING_DESIGN = {
   paperShadow: "rgba(15, 23, 42, 0.14)",
 
   displayFont: Platform.select({
-    ios: "DINNextRoundedBold",
-    android: "DINNextRoundedBold",
-    web: "DINNextRoundedBold",
-    default: "DINNextRoundedBold",
+    ios: "Rabar_044",
+    android: "Rabar_044",
+    web: "Rabar_044",
+    default: "Rabar_044",
   }),
 } as const;
 

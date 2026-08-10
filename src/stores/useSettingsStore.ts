@@ -11,12 +11,21 @@ import {
   resolvePathMode,
   type PathMode,
 } from "../constants/path-availability";
+import { isUserSex, type UserSex } from "../constants/user-profile";
 
 const STORAGE_KEY = "twino.app.settings";
 
 /** Canonical home is `constants/path-availability`; re-exported for existing importers. */
 export type { PathMode } from "../constants/path-availability";
 export type AppTheme = "light" | "dark" | "system";
+
+const DEFAULT_APP_THEME: AppTheme = "dark";
+
+function resolveAppTheme(value: unknown): AppTheme {
+  return value === "light" || value === "dark" || value === "system"
+    ? value
+    : DEFAULT_APP_THEME;
+}
 
 interface SettingsState {
   ready: boolean;
@@ -28,6 +37,7 @@ interface SettingsState {
   targetLang: string;
   userName: string;
   userAge: string;
+  userSex: UserSex | null;
   englishLevel: number;
   learningGoal: string;
   tutorVoice: string;
@@ -48,6 +58,7 @@ interface SettingsState {
   setTargetLang: (lang: string) => void;
   setUserName: (name: string) => void;
   setUserAge: (age: string) => void;
+  setUserSex: (sex: UserSex) => void;
   setEnglishLevel: (level: number) => void;
   setLearningGoal: (goal: string) => void;
   setTutorVoice: (voice: string) => void;
@@ -82,11 +93,12 @@ const initialSettings = (() => {
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: DEFAULT_PATH_MODE,
-      theme: "light" as AppTheme,
+      theme: DEFAULT_APP_THEME,
       nativeLang: "ku",
       targetLang: "en",
       userName: "",
       userAge: "",
+      userSex: null,
       englishLevel: 2,
       learningGoal: "conversations",
       tutorVoice: "Aoede",
@@ -108,11 +120,13 @@ const initialSettings = (() => {
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
       pathMode: savedMode,
-      theme: (parsed.theme === "dark" || parsed.theme === "system" ? parsed.theme : "light") as AppTheme,
+      // Dark is the product default, but keep every explicit saved choice.
+      theme: resolveAppTheme(parsed.theme),
       nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
       targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",
       userName: typeof parsed.userName === "string" ? parsed.userName : "",
       userAge: typeof parsed.userAge === "string" ? parsed.userAge : "",
+      userSex: isUserSex(parsed.userSex) ? parsed.userSex : null,
       englishLevel:
         typeof parsed.englishLevel === "number" && [2, 4, 6, 8, 10].includes(parsed.englishLevel)
           ? parsed.englishLevel
@@ -136,11 +150,12 @@ const initialSettings = (() => {
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: DEFAULT_PATH_MODE,
-      theme: "light" as AppTheme,
+      theme: DEFAULT_APP_THEME,
       nativeLang: "ku",
       targetLang: "en",
       userName: "",
       userAge: "",
+      userSex: null,
       englishLevel: 2,
       learningGoal: "conversations",
       tutorVoice: "Aoede",
@@ -201,6 +216,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setUserAge: (userAge) => {
     set({ userAge });
     persist({ userAge });
+  },
+
+  setUserSex: (userSex) => {
+    set({ userSex });
+    persist({ userSex });
   },
 
   setEnglishLevel: (englishLevel) => {
@@ -264,4 +284,3 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     persist({ tutorOnboardingComplete } as any);
   },
 }));
-

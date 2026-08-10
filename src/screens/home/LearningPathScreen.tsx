@@ -15,9 +15,13 @@ import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useAuth } from "../../context/AuthContext";
+import { useI18n } from "../../hooks/useI18n";
+import { AppText } from "../../components/ui/AppText";
+import { PressableScale } from "../../components/animations/PressableScale";
 
 import type { PathMode } from "../../stores/useSettingsStore";
-import { isPathEnabled, resolvePathMode } from "../../constants/path-availability";
+import { isPathEnabled, isPathEntitled, resolvePathMode } from "../../constants/path-availability";
 
 function parseMode(raw: string | string[] | undefined): PathMode | null {
   if (raw == null) return null;
@@ -36,10 +40,13 @@ export function LearningPathScreen({
 }) {
   const params = useLocalSearchParams<{ mode?: string | string[] }>();
   const savedMode = useSettingsStore((s) => s.pathMode);
+  const { billingAccount } = useAuth();
+  const { isKu, isAr } = useI18n();
+  const requestedMode = overrideMode ?? parseMode(params.mode) ?? savedMode;
   // A paused path can still be requested by a stale deep link or an old
   // in-app route, so the resolved mode is always coerced to an enabled one.
   const activeMode = resolvePathMode(
-    overrideMode ?? parseMode(params.mode) ?? savedMode,
+    requestedMode,
   );
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -49,6 +56,9 @@ export function LearningPathScreen({
 
   const streetStatus = useContentPackStore((s) => s.streetStatus);
   const kidsStatus = useContentPackStore((s) => s.kidsStatus);
+  const needsUpgrade =
+    isPathEnabled(requestedMode) &&
+    !isPathEntitled(requestedMode, billingAccount?.entitlements);
 
   const [showPath, setShowPath] = React.useState(() => {
     if (activeMode === "normal") return true;
@@ -83,6 +93,38 @@ export function LearningPathScreen({
       setShowPath(false);
     }
   }, [activeMode, streetStatus, kidsStatus]);
+
+  if (needsUpgrade) {
+    return (
+      <View style={styles.upgradeRoot}>
+        <AppText style={styles.upgradeEyebrow} forceLatinFont latinRole="bold">
+          PLUS
+        </AppText>
+        <AppText style={styles.upgradeTitle} forceKurdishFont={isKu}>
+          {isKu
+            ? "ئەم ڕێڕەوە پلانی Plus یان Pro دەوێت"
+            : isAr
+              ? "يتطلب هذا المسار خطة Plus أو Pro"
+              : "This path needs Plus or Pro"}
+        </AppText>
+        <AppText style={styles.upgradeBody} forceKurdishFont={isKu}>
+          {isKu
+            ? "کرێدیتەکانت بەسەرناچن. پلان و باڵانسەکەت لە وێب ببینە."
+            : isAr
+              ? "رصيدك لا ينتهي. اعرض الخطط والرصيد على الويب."
+              : "Your credits never expire. View plans and your balance on the web."}
+        </AppText>
+        <PressableScale
+          onPress={() => router.push("/credits")}
+          style={styles.upgradeButton}
+        >
+          <AppText style={styles.upgradeButtonText} forceKurdishFont={isKu} latinRole="bold">
+            {isKu ? "بینینی پلانەکان" : isAr ? "عرض الخطط" : "View plans"}
+          </AppText>
+        </PressableScale>
+      </View>
+    );
+  }
 
   // If the selected bundled path is not active, show its activation card.
   if (!showPath) {
@@ -147,5 +189,39 @@ function createStyles(colors: any, isDark: boolean) {
       alignItems: "center",
       paddingHorizontal: 16,
     },
+    upgradeRoot: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      paddingHorizontal: 28,
+      backgroundColor: colors.background,
+    },
+    upgradeEyebrow: { color: "#168BD2", fontSize: 12, letterSpacing: 1.2 },
+    upgradeTitle: {
+      color: colors.foreground,
+      fontSize: 25,
+      lineHeight: 32,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    upgradeBody: {
+      maxWidth: 440,
+      color: colors.mutedForeground,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: "center",
+    },
+    upgradeButton: {
+      minHeight: 50,
+      minWidth: 190,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 15,
+      backgroundColor: "#168BD2",
+      paddingHorizontal: 20,
+      marginTop: 6,
+    },
+    upgradeButtonText: { color: "#FFFFFF", fontSize: 15 },
   });
 }

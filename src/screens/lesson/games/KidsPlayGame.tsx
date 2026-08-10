@@ -608,7 +608,7 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
               {treasureOpen ? (
                 <View style={{ alignItems: "center", gap: 6 }}>
                   <EmojiSticker emoji={question.treasureRevealEmoji ?? "⭐"} size={72} />
-                  <AppText style={{ fontSize: 18, color: L.greenDeep, fontFamily: "DINNextRoundedBold" }}>
+                  <AppText style={{ fontSize: 18, color: L.greenDeep, fontFamily: "Rabar_044" }}>
                     {question.treasureRevealLabel}
                   </AppText>
                 </View>
@@ -709,12 +709,12 @@ const kb = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   bubbleEmoji: { fontSize: 36, lineHeight: 42 },
-  bubbleLabel: { fontSize: 14, color: L.navy, marginTop: 6, fontFamily: "DINNextRoundedBold" },
+  bubbleLabel: { fontSize: 14, color: L.navy, marginTop: 6, fontFamily: "Rabar_044" },
   feedArea: { gap: 12 },
   mascotZone: { alignSelf: "center", width: "100%", maxWidth: 280, marginTop: 8 },
   mascotCard: { alignItems: "center", paddingVertical: 18, gap: 8 },
   mascotEmoji: { fontSize: 56, lineHeight: 64 },
-  mascotHint: { fontSize: 15, color: L.navy, fontFamily: "DINNextRoundedBold", textAlign: "center" },
+  mascotHint: { fontSize: 15, color: L.navy, fontFamily: "Rabar_044", textAlign: "center" },
   shadowArea: { gap: 16 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
   slotRow: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 8 },
@@ -735,14 +735,14 @@ const kb = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   slotEmoji: { fontSize: 32, opacity: 0.35 },
-  slotLabel: { fontSize: 12, fontWeight: "700", color: L.navy, fontFamily: "DINNextRoundedBold" },
+  slotLabel: { fontSize: 12, fontWeight: "700", color: L.navy, fontFamily: "Rabar_044" },
   slotGhost: { opacity: 0.4 },
   pickArea: { marginTop: 4 },
   trickArea: { gap: 16, alignItems: "center" },
   trickCard: { alignItems: "center", padding: 18, gap: 6, width: "100%" },
   trickEmoji: { fontSize: 52, lineHeight: 60 },
-  trickLabel: { fontSize: 20, color: L.navy, fontFamily: "DINNextRoundedBold" },
-  trickSays: { fontSize: 15, color: L.navySoft, textAlign: "center", fontFamily: "DINNextRoundedMedium" },
+  trickLabel: { fontSize: 20, color: L.navy, fontFamily: "Rabar_044" },
+  trickSays: { fontSize: 15, color: L.navySoft, textAlign: "center", fontFamily: "Rabar_044" },
   trickBtns: { flexDirection: "row", gap: 12, width: "100%" },
   yesNoBtn: {
     paddingVertical: 14,
@@ -758,7 +758,7 @@ const kb = StyleSheet.create({
   },
   yesNoText: {
     fontSize: 16,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   speechBubble: {
     backgroundColor: "rgba(26, 43, 72, 0.05)",
@@ -770,10 +770,10 @@ const kb = StyleSheet.create({
   treasureArea: { alignItems: "center", gap: 16, paddingVertical: 8 },
   chestWrap: { alignItems: "center", gap: 8 },
   chestEmoji: { fontSize: 72, lineHeight: 80 },
-  chestHint: { fontSize: 16, color: L.blue, fontFamily: "DINNextRoundedBold" },
+  chestHint: { fontSize: 16, color: L.blue, fontFamily: "Rabar_044" },
   revealWrap: { alignItems: "center", gap: 4, marginTop: 4 },
   revealEmoji: { fontSize: 44 },
-  revealLabel: { fontSize: 18, color: L.navy, fontFamily: "DINNextRoundedBold" },
+  revealLabel: { fontSize: 18, color: L.navy, fontFamily: "Rabar_044" },
   treasureOpts: { width: "100%", gap: 10 },
   audioOpt: {
     flexDirection: "row",
@@ -786,6 +786,6 @@ const kb = StyleSheet.create({
     borderColor: L.border,
   },
   audioEmoji: { fontSize: 28 },
-  audioLabel: { fontSize: 17, fontWeight: "700", color: L.navy, fontFamily: "DINNextRoundedBold" },
+  audioLabel: { fontSize: 17, fontWeight: "700", color: L.navy, fontFamily: "Rabar_044" },
   footer: { marginTop: 8 },
 });

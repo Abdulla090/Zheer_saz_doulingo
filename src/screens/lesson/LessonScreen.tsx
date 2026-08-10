@@ -435,7 +435,7 @@ export default function LessonScreen() {
                         transform="rotate(-90 45 45)"
                       />
                     </Svg>
-                    <AppText style={{ fontSize: 18, color: isKidsMode ? "#3C8400" : "#0F172A", fontFamily: "DINNextRoundedBold" }} forceLatinFont latinRole="bold">
+                    <AppText style={{ fontSize: 18, color: isKidsMode ? "#3C8400" : "#0F172A", fontFamily: "Rabar_044" }} forceLatinFont latinRole="bold">
                       {Math.round((correctN / Math.max(1, questions.length)) * 100)}%
                     </AppText>
                   </View>
@@ -547,7 +547,7 @@ export default function LessonScreen() {
                       color: isKidsMode ? "#3C8400" : L.greenDeep,
                       fontSize: 16,
                       fontWeight: "800",
-                      fontFamily: "DINNextRoundedBold",
+                      fontFamily: "Rabar_044",
                       letterSpacing: 0.4,
                     }}
                     forceLatinFont
@@ -729,7 +729,7 @@ const sL = StyleSheet.create({
     color: L.blue,
     fontSize: 13,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
 
   sheet: {
@@ -785,7 +785,7 @@ const sSum = StyleSheet.create({
     fontSize: 16,
     color: L.gray,
     textAlign: "center",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   statsRow: {
     flexDirection: "row",
@@ -807,13 +807,13 @@ const sSum = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   statLabel: {
     fontSize: 12,
     fontWeight: "600",
     color: L.gray,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
 });
 

@@ -1,17 +1,20 @@
 import React, { useMemo } from "react";
 import {
+  Alert,
   Pressable,
   StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { router } from "expo-router";
 
 import { Gem } from "../constants/icons";
+import { SUBSCRIPTION_URL } from "../constants/app-meta";
 import { useCreditBalance } from "../hooks/useCreditBalance";
 import { useI18n } from "../hooks/useI18n";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { openHttpsUrl } from "../utils/safe-link";
 import { AppText } from "./ui/AppText";
+import { ENABLE_SHOP } from "../constants/feature-flags";
 
 type CreditPacksButtonProps = {
   style?: StyleProp<ViewStyle>;
@@ -21,7 +24,11 @@ export function CreditPacksButton({ style }: CreditPacksButtonProps) {
   const { isKu, isAr } = useI18n();
   const { isDark } = useThemeColors();
   const { balance } = useCreditBalance();
-  const label = isKu ? "پاکەتەکان" : isAr ? "الحزم" : "Packs";
+  const label = ENABLE_SHOP
+    ? isKu ? "پاکەتەکان" : isAr ? "الحزم" : "Packs"
+    : balance === null
+      ? isKu ? "کرێدیت" : isAr ? "الرصيد" : "Credits"
+      : balance.toLocaleString();
   const accessibilityLabel =
     balance === null
       ? isKu
@@ -36,10 +43,24 @@ export function CreditPacksButton({ style }: CreditPacksButtonProps) {
           : `TWINO credits: ${balance}. View credit packs`;
   const styles = useMemo(() => createStyles(isDark), [isDark]);
 
+  const openPricing = async () => {
+    const opened = await openHttpsUrl(SUBSCRIPTION_URL);
+    if (!opened) {
+      Alert.alert(
+        isKu
+          ? "وێبسایت نەکرایەوە"
+          : isAr
+            ? "تعذر فتح الموقع"
+            : "Could not open website",
+        SUBSCRIPTION_URL,
+      );
+    }
+  };
+
   return (
     <Pressable
-      onPress={() => router.push("/subscription")}
-      accessibilityRole="button"
+      onPress={() => void openPricing()}
+      accessibilityRole="link"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
         styles.button,

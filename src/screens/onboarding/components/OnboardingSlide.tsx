@@ -1,14 +1,18 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
 import Animated, {
-  Extrapolation,
+  cancelAnimation,
+  Easing,
   interpolate,
-  type SharedValue,
   useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
 } from "react-native-reanimated";
 
 import { AppText } from "../../../components/ui/AppText";
@@ -32,10 +36,9 @@ export type OnboardingSlideModel = {
 type Props = {
   slide: OnboardingSlideModel;
   locale: string;
-  pageIndex: number;
-  pageWidth: number;
-  scrollX: SharedValue<number>;
 };
+
+const OPENING_EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
 /*
  * A slide is one artwork, one title, one line of support — nothing else.
@@ -49,72 +52,91 @@ type Props = {
 export function OnboardingSlide({
   slide,
   locale,
-  pageIndex,
-  pageWidth,
-  scrollX,
 }: Props) {
   const { width, height } = useWindowDimensions();
   const size = resolveOnboardingSize(width, height);
   const isWide = size === "xl";
   const isRtl = locale === "ku" || locale === "ar";
   const theme = useOnboardingTheme();
+  const reduceMotion = useReducedMotion();
+  const artworkReveal = useSharedValue(reduceMotion ? 1 : 0);
+  const titleReveal = useSharedValue(reduceMotion ? 1 : 0);
+  const subtitleReveal = useSharedValue(reduceMotion ? 1 : 0);
 
   const styles = useMemo(
     () => createStyles(size, isWide, isRtl, theme),
     [isRtl, isWide, size, theme],
   );
 
-  const artworkMotion = useAnimatedStyle(() => {
-    const center = pageIndex * pageWidth;
-    return {
-      opacity: interpolate(
-        scrollX.value,
-        [center - pageWidth, center, center + pageWidth],
-        [0.68, 1, 0.68],
-        Extrapolation.CLAMP,
-      ),
-      transform: [
-        {
-          translateX: interpolate(
-            scrollX.value,
-            [center - pageWidth, center, center + pageWidth],
-            [pageWidth * 0.12, 0, -pageWidth * 0.12],
-            Extrapolation.CLAMP,
-          ),
-        },
-        {
-          scale: interpolate(
-            scrollX.value,
-            [center - pageWidth, center, center + pageWidth],
-            [0.94, 1, 0.94],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
-    };
-  });
+  useEffect(() => {
+    cancelAnimation(artworkReveal);
+    cancelAnimation(titleReveal);
+    cancelAnimation(subtitleReveal);
 
-  const copyMotion = useAnimatedStyle(() => {
-    const center = pageIndex * pageWidth;
-    return {
-      opacity: interpolate(
-        scrollX.value,
-        [center - pageWidth, center, center + pageWidth],
-        [0.55, 1, 0.55],
-        Extrapolation.CLAMP,
-      ),
-      transform: [
-        {
-          translateX: interpolate(
-            scrollX.value,
-            [center - pageWidth, center, center + pageWidth],
-            [pageWidth * 0.07, 0, -pageWidth * 0.07],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
+    if (reduceMotion) {
+      artworkReveal.value = 1;
+      titleReveal.value = 1;
+      subtitleReveal.value = 1;
+      return;
+    }
+
+    artworkReveal.value = 0;
+    titleReveal.value = 0;
+    subtitleReveal.value = 0;
+    artworkReveal.value = withDelay(
+      55,
+      withTiming(1, { duration: 460, easing: OPENING_EASE }),
+    );
+    titleReveal.value = withDelay(
+      420,
+      withTiming(1, { duration: 360, easing: OPENING_EASE }),
+    );
+    subtitleReveal.value = withDelay(
+      610,
+      withTiming(1, { duration: 340, easing: OPENING_EASE }),
+    );
+
+    return () => {
+      cancelAnimation(artworkReveal);
+      cancelAnimation(titleReveal);
+      cancelAnimation(subtitleReveal);
     };
-  });
+  }, [artworkReveal, reduceMotion, slide.id, subtitleReveal, titleReveal]);
+
+  const artworkMotion = useAnimatedStyle(() => ({
+    opacity: artworkReveal.value,
+    transform: [
+      { translateY: interpolate(artworkReveal.value, [0, 1], [20, 0]) },
+      { scale: interpolate(artworkReveal.value, [0, 1], [0.94, 1]) },
+    ],
+  }));
+
+  const titleMotion = useAnimatedStyle(() => ({
+    opacity: titleReveal.value,
+    transform: [
+      {
+        translateX: interpolate(
+          titleReveal.value,
+          [0, 1],
+          [isRtl ? 18 : -18, 0],
+        ),
+      },
+      { translateY: interpolate(titleReveal.value, [0, 1], [8, 0]) },
+    ],
+  }));
+
+  const subtitleMotion = useAnimatedStyle(() => ({
+    opacity: subtitleReveal.value,
+    transform: [
+      {
+        translateX: interpolate(
+          subtitleReveal.value,
+          [0, 1],
+          [isRtl ? 14 : -14, 0],
+        ),
+      },
+    ],
+  }));
 
   const artwork = (
     <Animated.View style={[styles.artwork, artworkMotion]}>
@@ -126,27 +148,31 @@ export function OnboardingSlide({
   );
 
   const copy = (
-    <Animated.View style={[styles.copy, copyMotion]}>
-      <AppText
-        style={isRtl ? styles.titleRtl : styles.title}
-        languageCode={locale}
-        latinRole="bold"
-        align="start"
-        fullWidth
-        accessibilityRole="header"
-      >
-        {slide.title}
-      </AppText>
+    <View style={styles.copy}>
+      <Animated.View style={[styles.copyLine, titleMotion]}>
+        <AppText
+          style={isRtl ? styles.titleRtl : styles.title}
+          languageCode={locale}
+          latinRole="bold"
+          align="start"
+          fullWidth
+          accessibilityRole="header"
+        >
+          {slide.title}
+        </AppText>
+      </Animated.View>
 
-      <AppText
-        style={styles.subtitle}
-        languageCode={locale}
-        align="start"
-        fullWidth
-      >
-        {slide.subtitle}
-      </AppText>
-    </Animated.View>
+      <Animated.View style={[styles.copyLine, subtitleMotion]}>
+        <AppText
+          style={styles.subtitle}
+          languageCode={locale}
+          align="start"
+          fullWidth
+        >
+          {slide.subtitle}
+        </AppText>
+      </Animated.View>
+    </View>
   );
 
   /*
@@ -210,6 +236,9 @@ const createStyles = (
       maxWidth: 520,
       alignItems: "flex-start",
       flexShrink: 0,
+    },
+    copyLine: {
+      width: "100%",
     },
     title: {
       width: "100%",

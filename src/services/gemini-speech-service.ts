@@ -3,6 +3,7 @@ import {
   isGeminiConfigured,
 } from "../constants/gemini";
 import { generateGeminiContent } from "./gemini-gateway";
+import type { AiFeatureKey } from "../types/entitlements";
 import { matchesTarget } from "../utils/speech-match";
 
 export type GeminiSpeechEvaluation = {
@@ -43,13 +44,14 @@ function extractGeminiText(data: GeminiGenerateResponse): string {
 
 async function requestGeminiGenerateContent(
   body: GeminiGenerateBody,
+  featureKey: Exclude<AiFeatureKey, `live_tutor_${number}`>,
   timeoutMs = API_TIMEOUT_MS,
   model?: string,
 ): Promise<GeminiGenerateResponse> {
   return generateGeminiContent<GeminiGenerateResponse>(
     model || GEMINI_SPEECH_MODEL,
     body,
-    timeoutMs,
+    { featureKey, timeoutMs },
   );
 }
 
@@ -135,25 +137,28 @@ export async function evaluateSpeechWithGemini(input: {
     "Set matches to false when unrelated or clearly wrong.",
   ].join("\n");
 
-  const data = await requestGeminiGenerateContent({
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          {
-            inline_data: {
-              mime_type: mimeType,
-              data: input.audioBase64,
+  const data = await requestGeminiGenerateContent(
+    {
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: input.audioBase64,
+              },
             },
-          },
-        ],
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 256,
       },
-    ],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 256,
     },
-  });
+    "reading_pronunciation_evaluation",
+  );
 
   const text = extractGeminiText(data);
   if (!text) throw new Error("Gemini returned an empty response.");
@@ -213,6 +218,7 @@ export async function generateRolePlayResponse(
         maxOutputTokens: 96,
       },
     },
+    "roleplay_voice_response",
     12_000,
   );
 
@@ -240,138 +246,6 @@ export type AiPodcastEpisode = {
   segments: AiPodcastSegment[];
   audioSource?: any;
 };
-
-const AI_PODCAST_TEMPLATE_PROMPTS: Record<AiPodcastTemplateId, string> = {
-  daily_lesson:
-    "Make it a clear daily English lesson with useful vocabulary, examples, and one short recap.",
-  story_mode:
-    "Make it a mini story podcast that teaches English naturally through a simple scene.",
-  exam_coach:
-    "Make it an IELTS/TOEFL style coaching podcast with polished phrases and one practice prompt.",
-  conversation:
-    "Make it a two-host conversational podcast with short back-and-forth lines.",
-  quick_explainer:
-    "Make it a focused explainer podcast: define the topic, give two useful examples, then close with a tiny challenge.",
-  pronunciation_drill:
-    "Make it a pronunciation drill podcast with short repeatable phrases, stress hints, and one final practice line.",
-};
-
-const splitPodcastText = (value: string) =>
-  value
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map((line) => line.replace(/^[-*\d.)\s]+/, "").replace(/\s+/g, " ").trim())
-    .filter((line) => line.length > 0);
-
-function normalizeAiPodcastEpisode(
-  episode: Partial<AiPodcastEpisode>,
-  topic: string,
-  templateId: AiPodcastTemplateId,
-): AiPodcastEpisode {
-  const rawSegments = Array.isArray(episode.segments) ? episode.segments : [];
-  const parsedSegments = rawSegments
-    .flatMap((segment) => {
-      const text =
-        typeof segment?.text === "string"
-          ? segment.text.replace(/\s+/g, " ").trim()
-          : "";
-      return splitPodcastText(text).map((line) => ({
-        text: line,
-        lang: segment?.lang === "ku" ? ("ku" as const) : ("en" as const),
-      }));
-    })
-    .filter((segment) => segment.text.length > 0);
-
-  const fallbackByTemplate: Record<AiPodcastTemplateId, string[]> = {
-    daily_lesson: [
-      `Welcome. Today we will learn useful English for ${topic}.`,
-      `First, listen for simple words you can use immediately.`,
-      `A natural sentence is: I want to talk about ${topic} clearly.`,
-      "Repeat it slowly, then say it again with more confidence.",
-      `Use this topic in one real sentence today: ${topic}.`,
-      "That is your short recap. Listen again and repeat the strongest line.",
-    ],
-    story_mode: [
-      `Imagine a simple scene about ${topic}.`,
-      "One person feels nervous, but they try to speak clearly.",
-      `They use one short sentence connected to ${topic}.`,
-      "The other person understands and answers in friendly English.",
-      "The scene becomes easier because the language is simple.",
-      "Now repeat the story in your own words.",
-    ],
-    exam_coach: [
-      `Today's exam topic is ${topic}.`,
-      "Start with a clear opinion before adding details.",
-      `A strong phrase is: This topic matters because it affects daily life.`,
-      "Add one example, then explain why the example is important.",
-      "Keep your answer organized, calm, and direct.",
-      "Now practice a thirty-second answer using that structure.",
-    ],
-    conversation: [
-      `Host one: Today we are talking about ${topic}.`,
-      "Host two: Good topic. Let's make it practical for English learners.",
-      "Host one: Give me one sentence I can use today.",
-      `Host two: I would like to learn more about ${topic}.`,
-      "Host one: Nice. Short, clear, and easy to repeat.",
-      "Host two: Say it twice, then make your own version.",
-    ],
-    quick_explainer: [
-      `Here is a quick explanation of ${topic}.`,
-      "Think of the topic as one idea you can explain simply.",
-      `Example one: ${topic} can appear in everyday conversations.`,
-      "Example two: you can ask a question to learn more details.",
-      "Your mini challenge is to explain it in one sentence.",
-      "Keep the sentence short, natural, and easy to repeat.",
-    ],
-    pronunciation_drill: [
-      `Let's practice pronunciation with ${topic}.`,
-      "Listen first, then repeat without rushing.",
-      `Say this clearly: I am practicing ${topic} today.`,
-      "Stress the important words and keep your rhythm steady.",
-      "Now repeat the sentence a little faster.",
-      "Finish by saying one new sentence about the same topic.",
-    ],
-  };
-
-  const segments = [...parsedSegments];
-  for (const fallbackLine of fallbackByTemplate[templateId]) {
-    if (segments.length >= 6) break;
-    segments.push({ text: fallbackLine, lang: "en" });
-  }
-
-  return {
-    title:
-      typeof episode.title === "string" && episode.title.trim()
-        ? episode.title.trim().slice(0, 64)
-        : topic,
-    subtitle:
-      typeof episode.subtitle === "string" && episode.subtitle.trim()
-        ? episode.subtitle.trim().slice(0, 96)
-        : "Generated English podcast",
-    segments: segments.slice(0, 10),
-  };
-}
-
-function parseAiPodcastEpisode(
-  text: string,
-  topic: string,
-  templateId: AiPodcastTemplateId,
-): AiPodcastEpisode {
-  const jsonText = extractJsonObject(text);
-  if (jsonText) {
-    try {
-      const parsed = JSON.parse(jsonText) as Partial<AiPodcastEpisode>;
-      return normalizeAiPodcastEpisode(parsed, topic, templateId);
-    } catch {
-      /* fall through */
-    }
-  }
-
-  return normalizeAiPodcastEpisode({
-    title: topic,
-    subtitle: "Generated English podcast",
-    segments: splitPodcastText(text).map((line) => ({ text: line, lang: "en" })),
-  }, topic, templateId);
-}
 
 function decodeBase64(b64: string): Uint8Array {
   if (typeof globalThis.atob === "function") {
@@ -429,29 +303,23 @@ export function pcmBase64ToWavBase64(pcmBase64: string, sampleRate = 24000): str
 }
 
 export async function generateGeminiSpeech(text: string, voiceName = "Aoede"): Promise<string> {
-  const model = "gemini-3.1-flash-tts-preview";
-  const data = await generateGeminiContent<any>(model, {
-    contents: [{ parts: [{ text }] }],
-    generationConfig: {
-      responseModalities: ["AUDIO"],
-      speechConfig: {
-        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
-      },
-    },
-  }, 50_000);
-
-  const base64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!base64) {
-    throw new Error("Gemini TTS did not return audio data.");
-  }
-
-  return base64;
+  void text;
+  void voiceName;
+  throw new Error(
+    "Dynamic cloud TTS is not enabled until duration billing and static-content caching are enforced.",
+  );
 }
 
 export async function generateAiPodcastEpisode(input: {
   topic: string;
   templateId: AiPodcastTemplateId;
 }): Promise<AiPodcastEpisode> {
+  void input;
+  throw new Error(
+    "AI podcast creation is not included in this release. Packaged episodes remain available.",
+  );
+  /* istanbul ignore next -- retained prompt is documentation for a future priced product. */
+  /*
   const topic = input.topic.replace(/\s+/g, " ").trim();
   if (!topic) {
     throw new Error("Podcast topic is required.");
@@ -496,6 +364,7 @@ export async function generateAiPodcastEpisode(input: {
   }
 
   return parseAiPodcastEpisode(text, topic, input.templateId);
+  */
 }
 
 export type ParagraphSpeechEvaluation = {
@@ -580,25 +449,29 @@ export async function evaluateParagraphSpeechWithGemini(
   ].join("\n");
 
   try {
-    const data = await requestGeminiGenerateContent({
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            {
-              inline_data: {
-                mime_type: normalizedMimeType,
-                data: audioBase64,
+    const data = await requestGeminiGenerateContent(
+      {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: normalizedMimeType,
+                  data: audioBase64,
+                },
               },
-            },
-          ],
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: Math.max(2048, Math.min(8192, targetWords.length * 14)),
         },
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: Math.max(2048, Math.min(8192, targetWords.length * 14)),
       },
-    }, 90_000);
+      "reading_pronunciation_evaluation",
+      90_000,
+    );
 
     let text =
       data.candidates?.[0]?.content?.parts
@@ -660,6 +533,7 @@ export async function generateReadingPracticeParagraphs(
         maxOutputTokens,
       },
     },
+    "reading_passage_generation",
     45_000,
     "gemini-3.1-flash-lite",
   );

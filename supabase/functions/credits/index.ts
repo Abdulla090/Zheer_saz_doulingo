@@ -18,10 +18,7 @@ const json = (body: Record<string, unknown>, status = 200) =>
   });
 
 type CreditsBody = {
-  action?: "balance" | "history" | "spend";
-  amount?: unknown;
-  reason?: unknown;
-  idempotencyKey?: unknown;
+  action?: "balance" | "history";
 };
 
 type CreditTransactionRow = {
@@ -32,28 +29,6 @@ type CreditTransactionRow = {
   reason: string | null;
   created_at: string;
 };
-
-function configuredCosts() {
-  const raw = Deno.env.get("CREDIT_SPEND_COSTS_JSON")?.trim();
-  if (!raw) return new Map<string, number>();
-
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return new Map(
-      Object.entries(parsed)
-        .filter(
-          (entry): entry is [string, number] =>
-            /^[a-z][a-z0-9_]{2,63}$/.test(entry[0]) &&
-            typeof entry[1] === "number" &&
-            Number.isSafeInteger(entry[1]) &&
-            entry[1] > 0,
-        )
-        .map(([reason, amount]) => [reason, amount]),
-    );
-  } catch {
-    return new Map<string, number>();
-  }
-}
 
 const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (req.method !== "POST") {
@@ -79,8 +54,8 @@ const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
 
   if (action === "balance") {
     const { data, error } = await admin
-      .from("credit_balances")
-      .select("balance, updated_at")
+      .from("wallets")
+      .select("credit_balance, updated_at")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -93,7 +68,7 @@ const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
     }
 
     return json({
-      balance: data?.balance ?? 0,
+      balance: data?.credit_balance ?? 0,
       updatedAt: data?.updated_at ?? null,
     });
   }
@@ -126,95 +101,13 @@ const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
     });
   }
 
-  if (action !== "spend") {
-    return json({ code: "INVALID_ACTION", message: "Invalid credit action." }, 400);
-  }
-
-  const reason = typeof body.reason === "string" ? body.reason.trim() : "";
-  const requestedAmount =
-    typeof body.amount === "number" && Number.isSafeInteger(body.amount)
-      ? body.amount
-      : -1;
-  const idempotencyKey =
-    typeof body.idempotencyKey === "string" ? body.idempotencyKey.trim() : "";
-  const costs = configuredCosts();
-  const serverAmount = costs.get(reason);
-
-  if (
-    !serverAmount ||
-    requestedAmount !== serverAmount ||
-    idempotencyKey.length < 8 ||
-    idempotencyKey.length > 120
-  ) {
-    return json(
-      {
-        code: "INVALID_SPEND",
-        message: "This credit action is not configured.",
-      },
-      400,
-    );
-  }
-
-  const { data: allowed, error: rateError } = await admin.rpc(
-    "consume_wallet_rate_limit" as never,
+  return json(
     {
-      p_scope: "credit-spend",
-      p_subject: userId,
-      p_limit: 30,
-      p_window_seconds: 60,
-    } as never,
+      code: "INVALID_ACTION",
+      message: "Balances are changed only by verified purchases and AI services.",
+    },
+    400,
   );
-  if (rateError) {
-    console.error("Credit spend rate limit failed", { code: rateError.code });
-    return json(
-      { code: "SPEND_UNAVAILABLE", message: "Credit spending is unavailable." },
-      503,
-    );
-  }
-  if (!allowed) {
-    return json(
-      {
-        code: "RATE_LIMITED",
-        message: "Too many credit requests. Please wait a moment.",
-      },
-      429,
-    );
-  }
-
-  const { data, error } = await admin.rpc(
-    "spend_credits" as never,
-    {
-      p_user_id: userId,
-      p_amount: serverAmount,
-      p_reason: reason,
-      p_idempotency_key: idempotencyKey,
-    } as never,
-  );
-
-  if (error) {
-    if (error.message?.includes("INSUFFICIENT_CREDITS")) {
-      return json(
-        {
-          code: "INSUFFICIENT_CREDITS",
-          message:
-            "You do not have enough credits. Visit the TWINO website to add credits.",
-        },
-        402,
-      );
-    }
-    console.error("Credit spend failed", { code: error.code });
-    return json(
-      { code: "SPEND_UNAVAILABLE", message: "Unable to spend credits." },
-      503,
-    );
-  }
-
-  const result = Array.isArray(data) ? data[0] : data;
-  return json({
-    balance: result?.new_balance ?? 0,
-    transactionId: result?.transaction_id ?? null,
-    duplicate: Boolean(result?.duplicate),
-  });
 });
 
 export default {

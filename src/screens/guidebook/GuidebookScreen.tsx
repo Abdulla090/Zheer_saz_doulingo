@@ -282,6 +282,7 @@ export default function GuidebookScreen() {
           isWide={isWide}
           isRtl={isRtl}
           isKurdish={isKu}
+          languageCode={locale}
           topInset={isWide ? Math.max(insets.top, 18) : insets.top}
           onClose={handleClose}
         />
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
   },
   studyLayout: {
     paddingHorizontal: 16,
-    paddingTop: 18,
+    paddingTop: 10,
   },
   studyLayoutWide: {
     paddingHorizontal: 0,
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     maxWidth: 720,
-    gap: 18,
+    gap: 14,
   },
   unavailable: {
     flex: 1,

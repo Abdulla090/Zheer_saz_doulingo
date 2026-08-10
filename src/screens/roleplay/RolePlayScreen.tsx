@@ -26,9 +26,12 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { AppText } from "../../components/ui/AppText";
+import { useAuth } from "../../context/AuthContext";
+import { aiPrice } from "../../types/entitlements";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import Animated, {
   Easing,
   FadeIn,
@@ -310,11 +313,13 @@ export function RolePlayScreen() {
   const speech = useSpeechCapture("en-US");
   const abortSpeech = speech.abort;
   const { speak: speakTts, stop: stopTts } = useTTS();
+  const { billingAccount, refreshBillingAccount } = useAuth();
 
   const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
   const [status, setStatus] = useState<Status>("idle");
   const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
   const [scrolled, setScrolled] = useState(false);
+  const [creditNotice, setCreditNotice] = useState<string | null>(null);
 
   const statusRef = useRef(status);
   const scenarioRef = useRef(activeScenario);
@@ -390,6 +395,7 @@ export function RolePlayScreen() {
 
     if (isGeminiConfigured()) {
       try {
+        setCreditNotice(null);
         const currentHistory = historyRef.current;
         const r = await generateRolePlayResponse(scenarioRef.current.id, cleanText, currentHistory);
         if (responseRequestIdRef.current !== requestId || statusRef.current !== "thinking") {
@@ -401,6 +407,10 @@ export function RolePlayScreen() {
         return;
       } catch (err) {
         console.warn("Gemini RolePlay failed, falling back to mock:", err);
+        const message = err instanceof Error ? err.message : "";
+        if (/credit|کرێدیت|رصيد/i.test(message)) setCreditNotice(message);
+      } finally {
+        await refreshBillingAccount();
       }
     }
 
@@ -552,11 +562,23 @@ export function RolePlayScreen() {
           />
         }
         footer={
-          <GamesPrimaryButton
-            label={t("rolePlay.start")}
-            languageCode={locale}
-            onPress={startSession}
-          />
+          <View style={{ gap: 10 }}>
+            <AppText
+              style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
+              languageCode={locale}
+            >
+              {isKu
+                ? `هەر وەڵامێکی دەنگی AI: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} کرێدیت · وەڵامی ئامادەکراو بەخۆڕاییە`
+                : locale === "ar"
+                  ? `كل رد صوتي بالذكاء الاصطناعي: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} رصيد · البديل النصي مجاني`
+                  : `Each voice AI response: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} credits · scripted fallback is free`}
+            </AppText>
+            <GamesPrimaryButton
+              label={t("rolePlay.start")}
+              languageCode={locale}
+              onPress={startSession}
+            />
+          </View>
         }
       >
         {/* The intro card doubles as a live preview of the picked scene: the
@@ -731,6 +753,22 @@ export function RolePlayScreen() {
                 ? t("rolePlay.interrupt")
                 : t("rolePlay.tapSpeak")}
         </AppText>
+        <AppText
+          style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
+          languageCode={locale}
+        >
+          {isKu ? "AI" : "AI"}: {aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} · {isKu ? "باڵانس" : locale === "ar" ? "الرصيد" : "Balance"} {billingAccount?.entitlements.creditBalance ?? 0}
+        </AppText>
+        {creditNotice ? (
+          <PressableScale
+            onPress={() => router.push("/credits")}
+            style={{ borderWidth: 1, borderColor: theme.accentBorder, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}
+          >
+            <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>
+              {isKu ? "کرێدیت زیاد بکە یان پلان ببینە" : locale === "ar" ? "اشحن الرصيد أو اعرض الخطط" : "Top up credits or view plans"}
+            </AppText>
+          </PressableScale>
+        ) : null}
       </Animated.View>
 
       {/* Transcript */}

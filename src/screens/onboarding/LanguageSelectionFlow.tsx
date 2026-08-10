@@ -46,6 +46,10 @@ import {
 } from "../../config/languages";
 import { getMascotExpressionSource } from "../../constants/mascot-expressions";
 import type { MascotExpression } from "../../constants/mascot-expressions";
+import {
+  resolveUserAge,
+  type UserSex,
+} from "../../constants/user-profile";
 import { getSkippedUnitsCount } from "../../data/normal-english";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -58,6 +62,10 @@ import {
   OnboardingOptionRow,
 } from "./components/OnboardingOptionRow";
 import { OnboardingQuestion } from "./components/OnboardingQuestion";
+import {
+  OnboardingAgeSlider,
+  OnboardingSexSelector,
+} from "./components/OnboardingProfileControls";
 import { OnboardingSkiaBg } from "./components/OnboardingSkiaBg";
 import {
   useOnboardingMetrics,
@@ -89,7 +97,10 @@ const ONBOARDING_COPY = {
     profileTitle: "What's your name?",
     profileSubtitle: "We'll personalize your learning journey for you.",
     namePlaceholder: "Your Name",
-    agePlaceholder: "Your Age (optional)",
+    ageLabel: "Your age",
+    sexLabel: "Sex",
+    female: "Female",
+    male: "Male",
     nativeLanguageTitle: "What is your native language?",
     targetLanguageTitle: "Which language would you like to learn?",
     levelTitle: (language: string) => `What is your current level in ${language}?`,
@@ -105,7 +116,10 @@ const ONBOARDING_COPY = {
     profileTitle: "ناوت چییە؟",
     profileSubtitle: "ڕێڕەوی فێربوونت بۆ خۆت تایبەت دەکەین.",
     namePlaceholder: "ناوت",
-    agePlaceholder: "تەمەنت (ئارەزوومەندانە)",
+    ageLabel: "تەمەنت",
+    sexLabel: "ڕەگەز",
+    female: "مێ",
+    male: "نێر",
     nativeLanguageTitle: "زمانی دایکت چیە؟",
     targetLanguageTitle: "کام زمان دەتەوێت فێرببیت؟",
     levelTitle: (language: string) => `ئاستت لە ${language} چەندە؟`,
@@ -121,7 +135,10 @@ const ONBOARDING_COPY = {
     profileTitle: "ما اسمك؟",
     profileSubtitle: "سنخصص رحلة التعلم لك.",
     namePlaceholder: "اسمك",
-    agePlaceholder: "عمرك (اختياري)",
+    ageLabel: "عمرك",
+    sexLabel: "الجنس",
+    female: "أنثى",
+    male: "ذكر",
     nativeLanguageTitle: "ما لغتك الأم؟",
     targetLanguageTitle: "أي لغة تريد أن تتعلم؟",
     levelTitle: (language: string) => `ما مستواك الحالي في ${language}؟`,
@@ -137,7 +154,10 @@ const ONBOARDING_COPY = {
     profileTitle: "¿Cómo te llamas?",
     profileSubtitle: "Personalizaremos tu aprendizaje.",
     namePlaceholder: "Tu nombre",
-    agePlaceholder: "Tu edad (opcional)",
+    ageLabel: "Tu edad",
+    sexLabel: "Sexo",
+    female: "Mujer",
+    male: "Hombre",
     nativeLanguageTitle: "¿Cuál es tu idioma nativo?",
     targetLanguageTitle: "¿Qué idioma quieres aprender?",
     levelTitle: (language: string) => `¿Cuál es tu nivel actual en ${language}?`,
@@ -153,7 +173,10 @@ const ONBOARDING_COPY = {
     profileTitle: "Как тебя зовут?",
     profileSubtitle: "Мы настроим обучение под тебя.",
     namePlaceholder: "Твоё имя",
-    agePlaceholder: "Возраст (необязательно)",
+    ageLabel: "Твой возраст",
+    sexLabel: "Пол",
+    female: "Женский",
+    male: "Мужской",
     nativeLanguageTitle: "Какой у тебя родной язык?",
     targetLanguageTitle: "Какой язык ты хочешь учить?",
     levelTitle: (language: string) => `Какой у тебя уровень в ${language}?`,
@@ -328,8 +351,10 @@ export function LanguageSelectionFlow({
   // Stores
   const setUserName = useSettingsStore((s) => s.setUserName);
   const setUserAge = useSettingsStore((s) => s.setUserAge);
+  const setUserSex = useSettingsStore((s) => s.setUserSex);
   const userName = useSettingsStore((s) => s.userName);
   const userAge = useSettingsStore((s) => s.userAge);
+  const userSex = useSettingsStore((s) => s.userSex);
   const selectedMascotId = useSettingsStore((s) => s.selectedMascotId);
   const storedNativeLang = useLocaleStore((s) => s.selectedSourceLanguage);
   const storedTargetLang = useLocaleStore((s) => s.selectedTargetLanguage);
@@ -355,8 +380,9 @@ export function LanguageSelectionFlow({
     learningGoal || "conversations",
   );
   const [name, setName] = useState(userName || "");
-  const [age, setAge] = useState(userAge || "");
-  const [focusedField, setFocusedField] = useState<"name" | "age" | null>(null);
+  const [age, setAge] = useState(() => resolveUserAge(userAge));
+  const [sex, setSex] = useState<UserSex | null>(userSex);
+  const [focusedField, setFocusedField] = useState<"name" | null>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
 
@@ -448,7 +474,7 @@ export function LanguageSelectionFlow({
   );
 
   const handleProfileContinue = useCallback(() => {
-    if (!name.trim()) {
+    if (!name.trim() || !sex) {
       if (Platform.OS !== "web") {
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Error,
@@ -457,11 +483,12 @@ export function LanguageSelectionFlow({
       return;
     }
     Keyboard.dismiss();
-    setUserName(name);
-    setUserAge(age);
+    setUserName(name.trim());
+    setUserAge(String(age));
+    setUserSex(sex);
     hapticSelection();
     moveToStep("level");
-  }, [age, moveToStep, name, setUserAge, setUserName]);
+  }, [age, moveToStep, name, setUserAge, setUserName, setUserSex, sex]);
 
   const handleGoalContinue = useCallback(async () => {
     hapticSelection();
@@ -552,7 +579,7 @@ export function LanguageSelectionFlow({
   // and navigation are separate actions, preventing accidental advancement.
   const showFooter = step !== "generating";
   const continueLabel = step === "goal" ? copy.start : copy.continue;
-  const continueDisabled = step === "profile" && !name.trim();
+  const continueDisabled = step === "profile" && (!name.trim() || !sex);
   const handleCurrentContinue = useCallback(() => {
     if (step === "nativeLanguage") {
       moveToStep("targetLanguage");
@@ -707,20 +734,25 @@ export function LanguageSelectionFlow({
                         theme={theme}
                         styles={styles}
                         textDirectionStyle={textDirectionStyle}
-                        returnKeyType="next"
+                        centered
+                        returnKeyType="done"
+                        onSubmitEditing={() => Keyboard.dismiss()}
                       />
-                      <TextField
-                        testID="onboarding-age"
+                      <OnboardingAgeSlider
                         value={age}
-                        onChangeText={setAge}
-                        placeholder={copy.agePlaceholder}
-                        focused={focusedField === "age"}
-                        onFocus={() => setFocusedField("age")}
-                        onBlur={() => setFocusedField(null)}
+                        onChange={setAge}
+                        label={copy.ageLabel}
+                        locale={selectedNativeLang}
                         theme={theme}
-                        styles={styles}
-                        textDirectionStyle={textDirectionStyle}
-                        keyboardType="numeric"
+                      />
+                      <OnboardingSexSelector
+                        value={sex}
+                        onChange={setSex}
+                        label={copy.sexLabel}
+                        femaleLabel={copy.female}
+                        maleLabel={copy.male}
+                        locale={selectedNativeLang}
+                        theme={theme}
                       />
                     </>
                   ) : null}
@@ -816,6 +848,8 @@ function TextField({
   textDirectionStyle,
   keyboardType,
   returnKeyType,
+  centered = false,
+  onSubmitEditing,
 }: {
   testID: string;
   value: string;
@@ -828,7 +862,9 @@ function TextField({
   styles: ReturnType<typeof createStyles>;
   textDirectionStyle: object;
   keyboardType?: "numeric";
-  returnKeyType?: "next";
+  returnKeyType?: "next" | "done";
+  centered?: boolean;
+  onSubmitEditing?: () => void;
 }) {
   /*
    * `underlineColorAndroid` + a transparent fill are both required, and neither
@@ -841,7 +877,12 @@ function TextField({
     <View style={[styles.inputBox, focused && styles.inputBoxFocused]}>
       <TextInput
         testID={testID}
-        style={[styles.textInput, textDirectionStyle, { outlineStyle: "none" } as any]}
+        style={[
+          styles.textInput,
+          textDirectionStyle,
+          centered && styles.textInputCentered,
+          { outlineStyle: "none" } as any,
+        ]}
         value={value}
         onChangeText={onChangeText}
         onFocus={onFocus}
@@ -852,6 +893,10 @@ function TextField({
         underlineColorAndroid="transparent"
         keyboardType={keyboardType}
         returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        textContentType="name"
+        autoComplete="name"
+        autoCapitalize="words"
       />
     </View>
   );
@@ -1062,13 +1107,16 @@ function createStyles(
       width: "100%",
       fontSize: isCompact ? 17 : 19,
       color: theme.ink,
-      fontFamily: "DINNextRoundedMedium",
+      fontFamily: "Rabar_044",
       textAlign: "left",
       backgroundColor: "transparent",
       // Android gives the control its own vertical padding on top of the box's.
       paddingVertical: 0,
       // The box owns the horizontal inset; the control must not add a second one.
       paddingHorizontal: 0,
+    },
+    textInputCentered: {
+      textAlign: "center",
     },
   });
 }

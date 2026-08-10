@@ -4,6 +4,7 @@ import {
   getGeminiLiveWebSocketUrl,
 } from "../constants/gemini";
 import { supabase } from "../lib/supabase";
+import { createAiIdempotencyKey } from "./gemini-gateway";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getLanguage } from "../config/languages";
@@ -12,6 +13,7 @@ import { LEVEL_CONFIGS } from "../data/voice-tutor-word-banks";
 export type LiveSessionPhase = "intro_ku" | "english";
 
 export type LiveServerMessage = Record<string, unknown>;
+type GeminiLiveUsageMetadata = Record<string, unknown>;
 
 export type LiveSessionCallbacks = {
   onOpen?: () => void;
@@ -28,9 +30,25 @@ export type LiveSessionCallbacks = {
 
 type GeminiLiveTokenResponse = {
   token?: string;
+  durationMinutes?: number;
+  expiresAt?: string;
+  chargedCredits?: number;
+  balance?: number;
+  reservationId?: string;
 };
 
-async function createGeminiLiveToken(): Promise<string> {
+export type GeminiLiveTokenGrant = {
+  token: string;
+  durationMinutes: 5 | 10 | 15;
+  expiresAt: string;
+  chargedCredits: number;
+  balance: number;
+  reservationId: string;
+};
+
+async function createGeminiLiveToken(
+  durationMinutes: 5 | 10 | 15,
+): Promise<GeminiLiveTokenGrant> {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session?.access_token) {
     throw new Error("Sign in to use the AI tutor.");
@@ -39,7 +57,13 @@ async function createGeminiLiveToken(): Promise<string> {
   const { data, error } =
     await supabase.functions.invoke<GeminiLiveTokenResponse>(
       "gemini-live-token",
-      { body: {}, timeout: 12_000 },
+      {
+        body: {
+          durationMinutes,
+          idempotencyKey: createAiIdempotencyKey(`live_tutor_${durationMinutes}`),
+        },
+        timeout: 12_000,
+      },
     );
 
   if (error) {
@@ -76,6 +100,8 @@ async function createGeminiLiveToken(): Promise<string> {
     const userMessage =
       httpStatus === 401
         ? "Sign in to use the AI tutor."
+        : httpStatus === 402
+          ? "Not enough AI credits. Add credits or choose a plan on the Twino website."
         : httpStatus === 429
           ? "Daily AI limit reached. Try again tomorrow."
           : httpStatus === 502 || httpStatus === 503
@@ -84,10 +110,24 @@ async function createGeminiLiveToken(): Promise<string> {
 
     throw new Error(userMessage);
   }
-  if (!data?.token) {
+  if (
+    !data?.token ||
+    data.durationMinutes !== durationMinutes ||
+    typeof data.expiresAt !== "string" ||
+    typeof data.chargedCredits !== "number" ||
+    typeof data.balance !== "number" ||
+    typeof data.reservationId !== "string"
+  ) {
     throw new Error("Could not start AI tutor session.");
   }
-  return data.token;
+  return {
+    token: data.token,
+    durationMinutes,
+    expiresAt: data.expiresAt,
+    chargedCredits: data.chargedCredits,
+    balance: data.balance,
+    reservationId: data.reservationId,
+  };
 }
 
 function getLanguageName(code: string): string {
@@ -288,16 +328,42 @@ export class GeminiLiveSession {
   private setupDone = false;
   private incomingMessageChain: Promise<void> = Promise.resolve();
   private connectionId = 0;
+  private expiryTimeout: ReturnType<typeof setTimeout> | null = null;
+  private tokenGrant: GeminiLiveTokenGrant | null = null;
+  private usageMetadata: GeminiLiveUsageMetadata | null = null;
+  private sessionStartedAtMs: number | null = null;
+  private usageReportTimer: ReturnType<typeof setTimeout> | null = null;
+  private usageFinalized = false;
+  private usageReportChain: Promise<void> = Promise.resolve();
 
-  async connect(callbacks: LiveSessionCallbacks): Promise<void> {
+  async connect(
+    callbacks: LiveSessionCallbacks,
+    durationMinutes: 5 | 10 | 15 = 5,
+  ): Promise<void> {
     this.callbacks = callbacks;
     this.setupDone = false;
+    this.usageMetadata = null;
+    this.sessionStartedAtMs = Date.now();
+    this.usageFinalized = false;
     const connectionId = ++this.connectionId;
     this.incomingMessageChain = Promise.resolve();
 
-    const ephemeralToken = await createGeminiLiveToken();
-    if (connectionId !== this.connectionId) return;
-    const url = getGeminiLiveWebSocketUrl(ephemeralToken);
+    const grant = await createGeminiLiveToken(durationMinutes);
+    this.tokenGrant = grant;
+    if (connectionId !== this.connectionId) {
+      await this.reportLiveUsage("abandoned");
+      return;
+    }
+    const url = getGeminiLiveWebSocketUrl(grant.token);
+
+    if (this.expiryTimeout) clearTimeout(this.expiryTimeout);
+    this.expiryTimeout = setTimeout(() => {
+      if (connectionId !== this.connectionId) return;
+      this.callbacks.onClose?.(
+        `Your ${durationMinutes}-minute Live Tutor block has ended.`,
+      );
+      this.disconnect();
+    }, Math.max(0, Date.parse(grant.expiresAt) - Date.now()));
 
     await new Promise<void>((resolve, reject) => {
       let settled = false;
@@ -339,6 +405,16 @@ export class GeminiLiveSession {
 
         const msg = parseServerMessage(data);
         if (!msg) return;
+
+        const usageMetadata = pick<GeminiLiveUsageMetadata>(
+          msg,
+          "usageMetadata",
+          "usage_metadata",
+        );
+        if (usageMetadata) {
+          this.usageMetadata = usageMetadata;
+          this.scheduleUsageReport();
+        }
 
         const err = pick<{ message?: string }>(msg, "error", "error");
         if (err?.message) {
@@ -424,6 +500,7 @@ export class GeminiLiveSession {
       ws.onclose = (event) => {
         if (!isCurrentConnection()) return;
         this.ws = null;
+        void this.reportLiveUsage(this.setupDone ? "completed" : "abandoned");
         console.warn("WS CLOSE:", event.code, event.reason);
         this.callbacks.onClose?.(event.reason || undefined);
         if (!settled) {
@@ -439,6 +516,51 @@ export class GeminiLiveSession {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(raw));
     }
+  }
+
+  private scheduleUsageReport() {
+    if (this.usageReportTimer || this.usageFinalized) return;
+    this.usageReportTimer = setTimeout(() => {
+      this.usageReportTimer = null;
+      void this.reportLiveUsage("started");
+    }, 5_000);
+  }
+
+  private async reportLiveUsage(
+    status: "started" | "completed" | "abandoned",
+  ): Promise<void> {
+    const grant = this.tokenGrant;
+    if (!grant || (status !== "started" && this.usageFinalized)) return;
+    if (status !== "started") this.usageFinalized = true;
+    if (this.usageReportTimer) {
+      clearTimeout(this.usageReportTimer);
+      this.usageReportTimer = null;
+    }
+    const elapsedSeconds = this.sessionStartedAtMs
+      ? Math.max(0, Math.min(grant.durationMinutes * 60, (Date.now() - this.sessionStartedAtMs) / 1000))
+      : 0;
+    const usageMetadata = this.usageMetadata;
+    const sendReport = async () => {
+      const { error } = await supabase.functions.invoke("gemini-live-token", {
+        body: {
+          action: "usage",
+          reservationId: grant.reservationId,
+          status,
+          usageMetadata,
+          audioDurationSeconds: elapsedSeconds,
+        },
+        timeout: 10_000,
+      });
+      if (error) {
+        console.warn("[GeminiLiveUsage] Usage report failed", {
+          status,
+          message: error.message,
+        });
+      }
+    };
+    const queued = this.usageReportChain.then(sendReport, sendReport);
+    this.usageReportChain = queued.catch(() => undefined);
+    await queued;
   }
 
   private sendSetup() {
@@ -510,10 +632,24 @@ export class GeminiLiveSession {
     });
   }
 
+  getBillingGrant(): Omit<GeminiLiveTokenGrant, "token"> | null {
+    if (!this.tokenGrant) return null;
+    const { token: _token, ...grant } = this.tokenGrant;
+    return grant;
+  }
+
   disconnect() {
+    void this.reportLiveUsage(this.setupDone ? "completed" : "abandoned");
     this.connectionId += 1;
     this.ws?.close();
     this.ws = null;
     this.setupDone = false;
+    // Keep the grant until the async final usage report has captured it.
+    this.tokenGrant = null;
+    this.sessionStartedAtMs = null;
+    if (this.expiryTimeout) {
+      clearTimeout(this.expiryTimeout);
+      this.expiryTimeout = null;
+    }
   }
 }

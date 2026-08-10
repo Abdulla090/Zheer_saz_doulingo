@@ -3,8 +3,18 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import React from "react";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from "react-native-reanimated";
 
 import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
@@ -157,6 +167,7 @@ export function OnboardingFooter({
   onSecondaryPress,
   testID = "onboarding-continue",
   secondaryTestID = "onboarding-secondary",
+  entranceKey,
 }: {
   label: string;
   locale: string;
@@ -170,20 +181,49 @@ export function OnboardingFooter({
   secondaryTestID?: string;
   current?: number;
   total?: number;
+  entranceKey?: string | number;
 }) {
   const { width, height } = useWindowDimensions();
   const size = resolveOnboardingSize(width, height);
   const compact = size === "xs" || size === "sm";
   const theme = useOnboardingTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
+  const reduceMotion = useReducedMotion();
+  const reveal = useSharedValue(reduceMotion || entranceKey == null ? 1 : 0);
+
+  useEffect(() => {
+    cancelAnimation(reveal);
+    if (reduceMotion || entranceKey == null) {
+      reveal.value = 1;
+      return;
+    }
+    reveal.value = 0;
+    reveal.value = withDelay(
+      790,
+      withTiming(1, {
+        duration: 320,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      }),
+    );
+    return () => cancelAnimation(reveal);
+  }, [entranceKey, reduceMotion, reveal]);
+
+  const revealStyle = useAnimatedStyle(() => ({
+    opacity: reveal.value,
+    transform: [
+      { translateY: interpolate(reveal.value, [0, 1], [14, 0]) },
+      { scale: interpolate(reveal.value, [0, 1], [0.985, 1]) },
+    ],
+  }));
 
   return (
-    <View
+    <Animated.View
       style={[
         styles.footer,
         compact && styles.footerCompact,
         { paddingHorizontal: ONBOARDING_GUTTER[size] },
         { paddingBottom: Math.max(bottomInset, Platform.OS === "ios" ? 12 : 10) },
+        revealStyle,
       ]}
     >
       {hint ? (
@@ -238,7 +278,7 @@ export function OnboardingFooter({
           </AppText>
         </IOSPressable>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

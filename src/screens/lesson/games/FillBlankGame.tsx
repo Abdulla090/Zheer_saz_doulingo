@@ -553,7 +553,7 @@ const s = StyleSheet.create({
     fontWeight: "700",
     color: L.navy,
     lineHeight: 28,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     backgroundColor: "transparent",
   },
   /** Normal path reads at display size, matching the reference. */
@@ -561,7 +561,7 @@ const s = StyleSheet.create({
     fontSize: 25,
     lineHeight: 36,
     fontWeight: "600",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   blankContainer: {
     justifyContent: "center",
@@ -609,7 +609,7 @@ const s = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     color: L.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     opacity: 0.35,
   },
   exerciseArea: {

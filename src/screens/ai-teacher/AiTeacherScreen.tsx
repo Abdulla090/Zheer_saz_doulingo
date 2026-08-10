@@ -35,9 +35,11 @@ import {
 } from "../../services/ai-teacher-service";
 import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
 import { appStorage } from "../../lib/app-storage";
+import { useAuth } from "../../context/AuthContext";
+import { aiPrice } from "../../types/entitlements";
 import { hapticImpact, hapticNotification } from "../../utils/haptics";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { PressableScale } from "../../components/animations";
 import { TeacherIcon } from "@hugeicons/core-free-icons";
@@ -172,6 +174,7 @@ export function AiTeacherScreen() {
   const insets = useSafeAreaInsets();
   const { theme, metrics, isWide, isRtl, t, locale, isKu } = useGamesChrome("ai-teacher");
   const styles = useAiTeacherStyles();
+  const { billingAccount, refreshBillingAccount } = useAuth();
   const params = useLocalSearchParams<{ demo?: string }>();
   const isDemo = params.demo === "results";
   const directionStyle = useMemo(
@@ -261,8 +264,9 @@ export function AiTeacherScreen() {
       setPhase("input");
     } finally {
       finishingRef.current = false;
+      await refreshBillingAccount();
     }
-  }, [prompt.id, stopAndGetAudio]);
+  }, [prompt.id, refreshBillingAccount, stopAndGetAudio]);
 
   useEffect(() => {
     let timerInterval: NodeJS.Timeout | null = null;
@@ -311,8 +315,10 @@ export function AiTeacherScreen() {
         caught instanceof Error ? caught.message : "Could not check your English right now.",
       );
       setPhase("input");
+    } finally {
+      await refreshBillingAccount();
     }
-  }, [answer, mode, prompt.id, t]);
+  }, [answer, mode, prompt.id, refreshBillingAccount, t]);
 
   const onSave = useCallback(async () => {
     if (!result) return;
@@ -491,6 +497,23 @@ export function AiTeacherScreen() {
               </AppText>
             </GamesCard>
 
+            <GamesCard style={{ gap: 4 }}>
+              <AppText
+                style={[GamesType.caption, { color: theme.accentInk }, directionStyle]}
+                forceKurdishFont={isKu}
+                latinRole="bold"
+              >
+                {isKu
+                  ? `پشکنینی AI · ${aiPrice(billingAccount?.entitlements, mode === "writing" ? "ai_teacher_writing" : "ai_teacher_speaking")} کرێدیت`
+                  : isRtl
+                    ? `تقييم AI · ${aiPrice(billingAccount?.entitlements, mode === "writing" ? "ai_teacher_writing" : "ai_teacher_speaking")} رصيد`
+                    : `AI evaluation · ${aiPrice(billingAccount?.entitlements, mode === "writing" ? "ai_teacher_writing" : "ai_teacher_speaking")} credits`}
+              </AppText>
+              <AppText style={[GamesType.caption, { color: theme.mutedInk }, directionStyle]}>
+                {isKu ? "باڵانس" : isRtl ? "الرصيد" : "Balance"}: {billingAccount?.entitlements.creditBalance ?? 0}
+              </AppText>
+            </GamesCard>
+
             <View style={{ gap: 10 }}>
               <GamesSectionLabel languageCode={locale}>
                 {t("aiTeacher.yourAnswer")}
@@ -584,6 +607,12 @@ export function AiTeacherScreen() {
                               ? "کردنەوەی ڕێکخستنەکان"
                               : "Open device settings"
                         }
+                      />
+                    ) : /credit|کرێدیت|رصيد/i.test(error || voiceError || "") ? (
+                      <GamesSecondaryButton
+                        languageCode={locale}
+                        onPress={() => router.push("/credits")}
+                        label={isKu ? "بینینی پلانەکان" : isRtl ? "عرض الخطط" : "View plans or top up"}
                       />
                     ) : undefined
                   }
@@ -899,7 +928,7 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       paddingVertical: 0,
       paddingHorizontal: 0,
       fontSize: 16,
-      fontFamily: "DINNextRoundedRegular",
+      fontFamily: "Rabar_044",
       textAlignVertical: "top",
     },
     speakingBlock: {
@@ -923,7 +952,7 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       fontSize: 34,
       lineHeight: 38,
       textAlign: "right",
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
       fontVariant: ["tabular-nums"],
     },
     countdownTrack: {
@@ -964,12 +993,12 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
     overallBand: {
       fontSize: 56,
       lineHeight: 60,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
       fontVariant: ["tabular-nums"],
     },
     scoreMaximum: {
       fontSize: 20,
-      fontFamily: "DINNextRoundedBold",
+      fontFamily: "Rabar_044",
       fontVariant: ["tabular-nums"],
     },
     criterionRow: {

@@ -3,10 +3,7 @@ import type {
   AiTeacherRequest,
   AiTeacherResult,
 } from "../data/ai-teacher-types";
-import {
-  GEMINI_SPEECH_MODEL,
-  GEMINI_FALLBACK_MODEL,
-} from "../constants/gemini";
+import { GEMINI_SPEECH_MODEL } from "../constants/gemini";
 import { AI_TEACHER_PROMPTS } from "../data/ai-teacher-prompts";
 import { generateGeminiContent } from "./gemini-gateway";
 
@@ -145,9 +142,9 @@ export async function evaluateEnglish(
       ...evaluationInstructions(safe.mode),
     ].join("\n");
 
-  async function tryGeminiModel(model: string): Promise<AiTeacherResult | null> {
+  async function requestEvaluation(): Promise<AiTeacherResult | null> {
       const payload = await generateGeminiContent<any>(
-        model,
+        GEMINI_SPEECH_MODEL,
         {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
@@ -155,7 +152,13 @@ export async function evaluateEnglish(
             maxOutputTokens: 1024,
           },
         },
-        FETCH_TIMEOUT_MS,
+        {
+          featureKey:
+            safe.mode === "writing"
+              ? "ai_teacher_writing"
+              : "ai_teacher_speaking",
+          timeoutMs: FETCH_TIMEOUT_MS,
+        },
       );
       const responseText =
         payload.candidates?.[0]?.content?.parts
@@ -166,18 +169,9 @@ export async function evaluateEnglish(
       return parseResult(responseText);
     }
 
-  try {
-    const result = await tryGeminiModel(GEMINI_SPEECH_MODEL);
-    if (result) return result;
-    throw new Error("Twino AI returned an invalid evaluation. Please try again.");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "";
-    if (/quota|limit|429/i.test(message)) {
-      const fallbackResult = await tryGeminiModel(GEMINI_FALLBACK_MODEL);
-      if (fallbackResult) return fallbackResult;
-    }
-    throw err;
-  }
+  const result = await requestEvaluation();
+  if (result) return result;
+  throw new Error("Twino AI returned an invalid evaluation. Please try again.");
 }
 
 export async function evaluateSpokenEnglish(input: {
@@ -216,7 +210,7 @@ export async function evaluateSpokenEnglish(input: {
         maxOutputTokens: 1400,
       },
     },
-    90_000,
+    { featureKey: "ai_teacher_speaking", timeoutMs: 90_000 },
   );
 
   const responseText =

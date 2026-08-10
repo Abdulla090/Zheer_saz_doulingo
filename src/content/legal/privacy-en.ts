@@ -2,19 +2,19 @@ import type { LegalDocument } from "./types";
 
 export const privacyEn: LegalDocument = {
   title: "Privacy Policy",
-  lastUpdated: "July 17, 2026",
+  lastUpdated: "August 10, 2026",
   sections: [
     {
       title: "Overview",
       paragraphs: [
         "Twino English (“Twino”, “we”, “our”) helps Kurdish speakers learn English. This policy explains the data used on your device and by optional account, cloud-sync, and AI features.",
-        "Twino is free in this release. We do not sell personal data or use it for advertising.",
+        "Core lessons remain available without a paid plan. We do not sell personal data or use it for advertising.",
       ],
     },
     {
       title: "Data stored on your device",
       paragraphs: [
-        "The app stores learning progress, XP, streak, language, Kurdish font choice, AI practice history, and app settings on your device.",
+        "The app stores learning progress, XP, streak, language, the bundled Rabar 044 font setting, AI practice history, and app settings on your device.",
         "If you create an account, Twino uses Supabase to store your email address, profile, preferences, avatar choice, and learning progress so they can sync across sessions. Authentication tokens are stored in the device's protected credential storage on iOS and Android.",
         "If you choose a photo while signed in, Twino uploads it to Supabase Storage as your public profile image. Anyone with its public URL can view it. You can use a bundled avatar instead; replacing the photo overwrites the prior upload, and deleting your account removes the uploaded photo. A guest photo stays only on that device.",
       ],
@@ -31,7 +31,8 @@ export const privacyEn: LegalDocument = {
       paragraphs: [
         "Core lesson content is bundled in the app and can be used without an account. Account sync requires an internet connection. Cloud AI features require both an internet connection and a signed-in account so Twino can protect the service from abuse.",
         "Typed answers, transcripts, prompts, and voice audio may be processed by Google Gemini when you choose an AI feature. Account and synced learning data are processed by Supabase.",
-        "The app may load non-essential images from public internet storage. Paid subscriptions and external checkout are disabled in this release.",
+        "For each cloud AI request, Twino stores the feature, Gemini model, token and audio usage, estimated provider cost, credits charged, account identifier, and timestamp in Supabase for billing reconciliation, abuse prevention, and cost analysis.",
+        "The app may load non-essential images from public internet storage. When you choose an optional web purchase, Twino stores the product, amount, currency, provider payment reference, payment status, and resulting credits or plan. The hosted payment provider handles your payment details; Twino does not store full card or wallet credentials.",
       ],
     },
     {

@@ -14,6 +14,6 @@ export const SUPPORT_URL =
 /** Hosted credit-pack page used by native builds. Checkout stays on the web. */
 export const SUBSCRIPTION_URL =
   process.env.EXPO_PUBLIC_SUBSCRIPTION_URL ??
-  "https://twino-six.vercel.app/credits";
+  "https://twino-six.vercel.app/pricing";
 
 export const APP_VERSION = "1.0.0";

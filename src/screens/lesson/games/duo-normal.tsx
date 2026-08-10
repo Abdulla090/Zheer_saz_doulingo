@@ -1286,7 +1286,7 @@ const s = StyleSheet.create({
     fontSize: 21,
     lineHeight: 31,
     fontWeight: "600",
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   bubbleTail: {
     position: "absolute",
@@ -1331,7 +1331,7 @@ const s = StyleSheet.create({
   tierBadge: {
     fontSize: 14,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flexShrink: 0,
   },
 
@@ -1356,14 +1356,14 @@ const s = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 0.8,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   ctaLabelOn: {
     fontSize: 16,
     fontWeight: "800",
     letterSpacing: 0.8,
     color: "#FFFFFF",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
 
   panel: {
@@ -1387,7 +1387,7 @@ const s = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
     letterSpacing: -0.3,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flexShrink: 1,
   },
   panelIcons: {
@@ -1399,13 +1399,13 @@ const s = StyleSheet.create({
   answerLabel: {
     fontSize: 19,
     fontWeight: "800",
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   answerText: {
     fontSize: 19,
     fontWeight: "600",
     lineHeight: 26,
-    fontFamily: "DINNextRoundedMedium",
+    fontFamily: "Rabar_044",
   },
   panelCta: { marginTop: 2 },
 });

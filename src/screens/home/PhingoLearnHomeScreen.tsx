@@ -536,13 +536,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: C.orange,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   statXp: {
     fontSize: 17,
     fontWeight: "700",
     color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   heroStrip: {
     flexDirection: "row",
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: C.gray,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   divider: {
     height: 1,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   pathStripRow: {
     gap: 6,
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
     flex: 1,
   },
   pathStripCount: {
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   linkRowChevron: {
     fontSize: 26,
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: C.blue,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   questList: {
     marginTop: 4,
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: C.navy,
-    fontFamily: "DINNextRoundedBold",
+    fontFamily: "Rabar_044",
   },
   questProgressLabel: {
     ...HomeType.caption,

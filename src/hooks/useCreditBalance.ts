@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "../context/AuthContext";
-import { getCreditBalance } from "../services/credit-wallet";
 
 export function useCreditBalance() {
-  const { user } = useAuth();
+  const { user, billingAccount, refreshBillingAccount } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +15,8 @@ export function useCreditBalance() {
 
     setLoading(true);
     try {
-      const nextBalance = await getCreditBalance();
+      const account = await refreshBillingAccount();
+      const nextBalance = account?.wallet.creditBalance ?? null;
       setBalance(nextBalance);
       return nextBalance;
     } catch {
@@ -26,11 +26,15 @@ export function useCreditBalance() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [refreshBillingAccount, user]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    setBalance(billingAccount?.wallet.creditBalance ?? null);
+  }, [billingAccount]);
+
+  useEffect(() => {
+    if (user && !billingAccount) void refresh();
+  }, [billingAccount, refresh, user]);
 
   return { balance, loading, refresh };
 }

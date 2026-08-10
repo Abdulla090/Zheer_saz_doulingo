@@ -1,4 +1,4 @@
-/** Paid shop / subscriptions — keep hidden until store IAP is production-ready. */
+/** Keep the native tab hidden until web prices and a provider are activated. */
 export const ENABLE_SHOP = false;
 
 /** Content admin panel — on in dev or when EXPO_PUBLIC_ENABLE_ADMIN=true */

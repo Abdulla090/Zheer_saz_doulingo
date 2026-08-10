@@ -3,7 +3,9 @@ import { supabase } from "../lib/supabase";
 import { useProgressStore } from "../stores/useProgressStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { isMascotId } from "../constants/mascots";
+import { getBillingAccount, type BillingAccount } from "../services/billing";
 import type { Session, User } from "@supabase/supabase-js";
+import { AppState } from "react-native";
 
 interface Profile {
   id: string;
@@ -19,7 +21,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  billingAccount: BillingAccount | null;
   loading: boolean;
+  refreshBillingAccount: () => Promise<BillingAccount | null>;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -28,7 +32,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   profile: null,
+  billingAccount: null,
   loading: true,
+  refreshBillingAccount: async () => null,
   signOut: async () => {},
   deleteAccount: async () => {},
 });
@@ -39,12 +45,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [billingAccount, setBillingAccount] = useState<BillingAccount | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Reference to track sync operation so we do not sync during initial load
   const isInitialLoad = useRef(true);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const refreshBillingAccount = useCallback(async () => {
+    try {
+      const account = await getBillingAccount();
+      setBillingAccount(account);
+      const premium =
+        account.subscription.status === "active" &&
+        account.subscription.plan !== "free";
+      useSettingsStore.getState().setIsPremium(premium);
+      useSettingsStore
+        .getState()
+        .setSubscriptionTier(premium ? account.subscription.plan : "free");
+      return account;
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("Billing account refresh failed:", error);
+      }
+      return null;
+    }
+  }, []);
 
   const pushProgressToDatabase = useCallback(async (userId: string, state: any) => {
     try {
@@ -156,12 +183,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const localProgress = useProgressStore.getState();
         await pushProgressToDatabase(loggedUser.id, localProgress);
       }
+
+      // Wallet and plan state are server-owned. Fetch them only after the
+      // shared Supabase session has been restored.
+      await refreshBillingAccount();
     } catch (e) {
       console.error("Error during user login sync:", e);
     } finally {
       isInitialLoad.current = false;
     }
-  }, [pushProgressToDatabase, pushSettingsToDatabase]);
+  }, [pushProgressToDatabase, pushSettingsToDatabase, refreshBillingAccount]);
 
   // Listen for session/auth changes
   useEffect(() => {
@@ -212,6 +243,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, [handleUserLogin]);
+
+  // Returning from hosted web checkout brings the app back to the foreground.
+  // Refresh once on that transition so web and mobile show the same account.
+  useEffect(() => {
+    if (!user) return;
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshBillingAccount();
+    });
+    return () => subscription.remove();
+  }, [refreshBillingAccount, user]);
 
   // Sync local progress changes to Supabase (debounced to protect the DB)
   useEffect(() => {
@@ -268,6 +309,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useSettingsStore.getState().setAvatarUrl("");
     useSettingsStore.getState().setIsPremium(false);
     useSettingsStore.getState().setSubscriptionTier(null);
+    setBillingAccount(null);
   };
 
   const signOut = async () => {
@@ -309,7 +351,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut, deleteAccount }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        profile,
+        billingAccount,
+        loading,
+        refreshBillingAccount,
+        signOut,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

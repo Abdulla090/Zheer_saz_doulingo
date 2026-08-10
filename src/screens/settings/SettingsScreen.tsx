@@ -4,7 +4,6 @@ import {
   CheckmarkCircle02Icon,
   ComputerIcon,
   Delete02Icon,
-  LanguageSkillIcon,
   Logout01Icon,
   Mail01Icon,
   Moon02Icon,
@@ -20,7 +19,6 @@ import {
   Wrench01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import * as Font from "expo-font";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
@@ -29,11 +27,8 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
-  type StyleProp,
-  type TextStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -55,13 +50,10 @@ import {
 import { ENABLE_ADMIN } from "../../constants/feature-flags";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { isDesktopWebWidth } from "../../constants/web-layout";
-import { ALL_RABAR_FONTS } from "../../constants/rabar-fonts";
 import { useAuth } from "../../context/AuthContext";
-import { fontMap } from "../../fontMap";
 import { useI18n } from "../../hooks/useI18n";
 import { useSafeBack } from "../../hooks/use-safe-back";
 import { useThemeColors } from "../../hooks/useThemeColors";
-import { useFontStore } from "../../stores/useFontStore";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
 import { useProgressStore } from "../../stores/useProgressStore";
@@ -102,9 +94,6 @@ const COPY = {
     feelHint: "Physical feedback and audio",
     voice: "Tutor voice",
     voiceHint: "Cycle through the available live tutor voices",
-    type: "Sorani type",
-    typeHint: "Preview each typeface before choosing it",
-    sample: "Learning a language",
     previous: "Previous",
     next: "Next",
     details: "Help and information",
@@ -137,9 +126,6 @@ const COPY = {
     feelHint: "لەرزین و دەنگ",
     voice: "دەنگی ڕاهێنەر",
     voiceHint: "لە نێوان دەنگەکانی ڕاهێنەری ڕاستەوخۆدا بگۆڕە",
-    type: "شێوەنووسی سۆرانی",
-    typeHint: "پێش هەڵبژاردن، هەر فۆنتێک ببینە",
-    sample: "فێربوونی زمان",
     previous: "پێشوو",
     next: "دواتر",
     details: "یارمەتی و زانیاری",
@@ -172,9 +158,6 @@ const COPY = {
     feelHint: "الاهتزاز والصوت",
     voice: "صوت المدرّب",
     voiceHint: "تنقل بين أصوات المدرّب المباشر",
-    type: "خط السورانية",
-    typeHint: "عاين كل خط قبل اختياره",
-    sample: "تعلم اللغة",
     previous: "السابق",
     next: "التالي",
     details: "المساعدة والمعلومات",
@@ -194,27 +177,6 @@ function resolveLocale(locale: string): SettingsLocale {
   if (locale === "ku" || locale === "ar") return locale;
   return "en";
 }
-
-const FontPreviewText = React.memo(
-  ({ font, style, children }: { font: string; style: StyleProp<TextStyle>; children: React.ReactNode }) => {
-    const [loaded, setLoaded] = React.useState(false);
-
-    React.useEffect(() => {
-      if (Font.isLoaded(font)) {
-        setLoaded(true);
-        return;
-      }
-      const fontFile = fontMap[font as keyof typeof fontMap];
-      if (!fontFile) return;
-      Font.loadAsync({ [font]: fontFile })
-        .then(() => setLoaded(true))
-        .catch(() => {});
-    }, [font]);
-
-    return <Text style={[style, loaded ? { fontFamily: font } : null]}>{children}</Text>;
-  },
-);
-FontPreviewText.displayName = "FontPreviewText";
 
 function SettingsSwitch({
   value,
@@ -434,27 +396,23 @@ function CycleSelector({
   hint,
   value,
   countLabel,
-  sample,
   onPrevious,
   onNext,
   copy,
   locale,
   icon,
   styles,
-  font,
 }: {
   title: string;
   hint: string;
   value: string;
   countLabel: string;
-  sample?: string;
   onPrevious: () => void;
   onNext: () => void;
   copy: (typeof COPY)[SettingsLocale];
   locale: string;
   icon: HugeIcon;
   styles: any;
-  font?: string;
 }) {
   return (
     <View style={styles.cycleBlock}>
@@ -486,13 +444,8 @@ function CycleSelector({
           <HugeiconsIcon icon={ArrowLeft01Icon} size={19} color={styles.iconColor.color} strokeWidth={2.3} />
         </PressableScale>
         <View style={styles.cycleValue}>
-          {sample && font ? (
-            <FontPreviewText font={font} style={styles.fontSample}>
-              {sample}
-            </FontPreviewText>
-          ) : null}
           <AppText
-            style={[styles.cycleValueText, sample && styles.cycleValueTextSmall]}
+            style={styles.cycleValueText}
             languageCode={locale}
             align="center"
             latinRole="bold"
@@ -530,8 +483,6 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const isCompact = width < 480;
   const styles = useMemo(() => createStyles(colors, isDark, isCompact, isDesktopWeb), [colors, isDark, isCompact, isDesktopWeb]);
 
-  const selectedFont = useFontStore((state) => state.selectedFont);
-  const setFont = useFontStore((state) => state.setFont);
   const resetProgress = useProgressStore((state) => state.resetProgress);
   const replayOnboarding = useOnboardingStore((state) => state.replayOnboarding);
   const haptics = useSettingsStore((state) => state.hapticsEnabled);
@@ -560,17 +511,12 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   );
 
   const selectedVoiceIndex = Math.max(0, voiceOptions.findIndex((option) => option.id === tutorVoice));
-  const selectedFontIndex = Math.max(0, ALL_RABAR_FONTS.indexOf(selectedFont));
 
   const changeVoice = (delta: number) => {
     const nextIndex = (selectedVoiceIndex + delta + voiceOptions.length) % voiceOptions.length;
     setTutorVoice(voiceOptions[nextIndex].id);
   };
 
-  const changeFont = (delta: number) => {
-    const nextIndex = (selectedFontIndex + delta + ALL_RABAR_FONTS.length) % ALL_RABAR_FONTS.length;
-    setFont(ALL_RABAR_FONTS[nextIndex]);
-  };
 
   const confirmReplayOnboarding = () => {
     confirmAction(
@@ -898,21 +844,6 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 locale={locale}
                 icon={VoiceIcon}
                 styles={styles}
-              />
-              <View style={styles.cycleDivider} />
-              <CycleSelector
-                title={copy.type}
-                hint={copy.typeHint}
-                value={selectedFont.replace("Rabar_", "Rabar ")}
-                countLabel={`${selectedFontIndex + 1}/${ALL_RABAR_FONTS.length}`}
-                sample={copy.sample}
-                onPrevious={() => changeFont(-1)}
-                onNext={() => changeFont(1)}
-                copy={copy}
-                locale={locale}
-                icon={LanguageSkillIcon}
-                styles={styles}
-                font={selectedFont}
               />
             </View>
 
@@ -1473,18 +1404,6 @@ const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDeskto
       color: colors.foreground,
       fontSize: 15,
       lineHeight: 21,
-    },
-    cycleValueTextSmall: {
-      color: colors.mutedForeground,
-      fontSize: 10,
-      lineHeight: 14,
-    },
-    fontSample: {
-      color: colors.foreground,
-      fontSize: 21,
-      lineHeight: 29,
-      textAlign: "center",
-      writingDirection: "rtl",
     },
     cycleDivider: {
       height: 1,

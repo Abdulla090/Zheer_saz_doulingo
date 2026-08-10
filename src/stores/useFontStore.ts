@@ -2,7 +2,7 @@ import { appStorage } from "../lib/app-storage";
 import { create } from "zustand";
 
 const STORAGE_KEY = "selectedFont";
-const DEFAULT_FONT = "Rabar_011";
+export const DEFAULT_FONT = "Rabar_044";
 
 interface FontState {
   selectedFont: string;
@@ -10,14 +10,19 @@ interface FontState {
   setFont: (font: string) => void;
 }
 
-const savedFont = appStorage.getItemSync(STORAGE_KEY) ?? DEFAULT_FONT;
+// The app now uses one bundled typeface. Normalize older installations that
+// still have a previously selected Rabar font persisted on-device.
+if (appStorage.getItemSync(STORAGE_KEY) !== DEFAULT_FONT) {
+  appStorage.setItemSync(STORAGE_KEY, DEFAULT_FONT);
+}
 
 export const useFontStore = create<FontState>((set) => ({
-  selectedFont: savedFont,
+  selectedFont: DEFAULT_FONT,
   ready: true,
-  setFont: (font: string) => {
-    appStorage.setItemSync(STORAGE_KEY, font);
-    set({ selectedFont: font });
+  // Kept as a compatibility no-op for older callers; font changes are no
+  // longer user-configurable.
+  setFont: () => {
+    set({ selectedFont: DEFAULT_FONT });
   },
 }));
 
