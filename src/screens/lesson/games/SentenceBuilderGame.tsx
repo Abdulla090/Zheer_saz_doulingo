@@ -5,13 +5,12 @@
  */
  
 
-import { tileFlyTiming } from "../../../components/animations/motion";
+import { sentenceWordMorphTiming } from "../../../components/animations/motion";
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useWordSpeech } from "./use-word-speech";
-import * as Haptics from "expo-haptics";
 import React, { useCallback, useRef, useState } from "react";
 import {
   Platform,
@@ -66,7 +65,7 @@ type FBState = "idle" | "correct" | "wrong";
 /** Resting width of the landing anchor — just enough to be measurable. */
 const LANDING_ANCHOR_REST_W = 1;
 /** Fallback if reserving the anchor produces no layout event. */
-const ANCHOR_LAYOUT_TIMEOUT_MS = 80;
+const ANCHOR_LAYOUT_TIMEOUT_MS = 32;
 
 type FlySession = {
   id: string;
@@ -124,7 +123,7 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
   });
 
   React.useEffect(() => {
-    flyProgress.value = withTiming(1, tileFlyTiming, (finished) => {
+    flyProgress.value = withTiming(1, sentenceWordMorphTiming, (finished) => {
       if (finished) runOnJS(onFinish)(session.id, session.bankIndex);
     });
   }, [session, onFinish, flyProgress]);
@@ -157,6 +156,8 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
             languageCode={languageCode}
             fitLabel={!isNormal}
             fitLabelLines={2}
+            labelLines={isNormal ? 1 : undefined}
+            duoDepthStyle={isNormal ? "subtle" : "default"}
             fontSize={
               isNormal
                 ? undefined
@@ -211,9 +212,10 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
    * the end of line 1, while the real word, being wider, wrapped to line 2. The
    * tile flew to the end of line 1 and then jumped down on landing.
    *
-   * Widening the anchor to the incoming word's width before measuring hands the
-   * decision back to the flex engine, so wrapping, gaps, padding and RTL are all
-   * resolved by the same layout pass that will place the real tile.
+   * Widening the anchor to the incoming word's full flex footprint (tile plus
+   * end gap) before measuring hands the decision back to the flex engine, so
+   * wrapping, padding and RTL are resolved by the same layout pass that will
+   * place the real tile.
    */
   const [anchorWidth, setAnchorWidth] = useState(LANDING_ANCHOR_REST_W);
   const anchorWidthRef = useRef(LANDING_ANCHOR_REST_W);
@@ -318,9 +320,10 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       commitAddWord(bankIndex);
       // The placed tile now occupies the space the anchor was holding open.
       releaseLandingAnchor();
-      requestAnimationFrame(() => {
-        setFlySessions((prev) => prev.filter((s) => s.id !== id));
-      });
+      // React batches this with the placement above, so the landed tile replaces
+      // the flying one in a single render. Removing the old extra-frame delay
+      // also unlocks the next word immediately after the 145ms morph.
+      setFlySessions((prev) => prev.filter((s) => s.id !== id));
     },
     [commitAddWord, releaseLandingAnchor],
   );
@@ -355,14 +358,26 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           bankCoords.current[bankIndex]?.w ??
           (await measureGameElement(bankRefs.current[bankIndex]))?.w;
         if (measuringBankRef.current !== bankIndex) return;
-        if (bankWidth) await reserveLandingAnchor(bankWidth);
+        // Reserve the tile's outer width, including the same end gap carried by
+        // the real placed cell. Without the gap, flex can keep this invisible
+        // anchor at the edge of row 1 and then wrap the actual tile to row 2.
+        if (bankWidth) await reserveLandingAnchor(bankWidth + TILE_GAP);
         if (measuringBankRef.current !== bankIndex) return;
       }
 
+      const cachedRoot = rootCoords.current;
+      const cachedBank = bankCoords.current[bankIndex];
+      const cachedSlot = slotCoords.current[slotIndex];
       const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
-        measureGameElement(rootRef.current),
-        measureGameElement(bankRefs.current[bankIndex]),
-        measureGameElement(slotRefs.current[slotIndex]),
+        cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
+        cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[bankIndex]),
+        // The normal-path anchor has just reflowed. Always read it again rather
+        // than trusting a coordinate cached before its reserved width changed.
+        isNormal
+          ? measureGameElement(slotRefs.current[slotIndex])
+          : cachedSlot
+            ? Promise.resolve(cachedSlot)
+            : measureGameElement(slotRefs.current[slotIndex]),
       ]);
 
       if (measuringBankRef.current !== bankIndex) return;
@@ -411,23 +426,21 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
   const addWord = (bankIndex: number) => {
     if (fb === "wrong") setFb("idle");
-    if (Platform.OS !== "web") {
-      void Haptics.selectionAsync();
-    }
     void startFlyToSlot(bankIndex);
   };
 
-  const removeFromSlot = (index: number) => {
+  const removePlacedWord = (placed: Placed) => {
     if (fb === "correct") return;
     if (fb === "wrong") setFb("idle");
-    const placed = sentence[index];
-    if (!placed) return;
     setUsedBank((prev) => {
       const next = [...prev];
       next[placed.bankIndex] = false;
       return next;
     });
-    setSentence((p) => p.filter((_, i) => i !== index));
+    // IDs stay attached to their original bank words while array indices move
+    // after a middle removal. This makes first/middle/last deselection exact.
+    setSentence((current) => current.filter((item) => item.id !== placed.id));
+    slotCoords.current = {};
   };
 
   const check = () => {
@@ -575,7 +588,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                           <LightWordTile
                             label={placed.word}
                             state={slotTileState(i)}
-                            onPress={() => removeFromSlot(i)}
+                            onPress={() => removePlacedWord(placed)}
+                            activateOnPressIn={Platform.OS !== "web"}
+                            duoDepthStyle="subtle"
                             languageCode={question.targetLanguage}
                             style={s.duoWordTile}
                           />
@@ -636,7 +651,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                               <LightWordTile
                                 label={placed.word}
                                 state={slotTileState(i)}
-                                onPress={() => removeFromSlot(i)}
+                                onPress={() => removePlacedWord(placed)}
+                                activateOnPressIn={Platform.OS !== "web"}
                                 isKids={pathMode === "kids"}
                                 languageCode={question.targetLanguage}
                                 fitLabel
@@ -704,6 +720,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                           label={w}
                           state={taken ? "ghost" : "idle"}
                           onPress={taken ? undefined : () => addWord(i)}
+                          activateOnPressIn={Platform.OS !== "web"}
+                          duoDepthStyle="subtle"
                           disabled={taken || fb === "correct"}
                           languageCode={question.targetLanguage}
                           style={s.duoWordTile}
@@ -738,6 +756,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                           label={w}
                           state="idle"
                           onPress={() => addWord(i)}
+                          activateOnPressIn={Platform.OS !== "web"}
                           disabled={taken || fb !== "idle"}
                           isKids={pathMode === "kids"}
                           languageCode={question.targetLanguage}

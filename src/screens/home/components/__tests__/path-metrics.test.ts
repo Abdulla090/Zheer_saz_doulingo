@@ -5,34 +5,34 @@ import { getPathMetrics } from "../path-metrics";
 describe("path node metrics", () => {
   it("uses smaller nodes and rows on compact web layouts", () => {
     expect(getPathMetrics("street", true)).toEqual({
-      lessonButtonSize: 50,
-      slotHeight: 78,
+      lessonButtonSize: 48,
+      slotHeight: 74,
     });
     expect(getPathMetrics("normal", true)).toEqual({
-      lessonButtonSize: 68,
-      slotHeight: 66,
+      lessonButtonSize: 64,
+      slotHeight: 62,
     });
     expect(getPathMetrics("kids", true)).toEqual({
-      lessonButtonSize: 52,
-      slotHeight: 80,
+      lessonButtonSize: 50,
+      slotHeight: 76,
     });
   });
 
   it("uses slightly smaller native and desktop metrics", () => {
     expect(getPathMetrics("street")).toEqual({
-      lessonButtonSize: 58,
-      slotHeight: 92,
+      lessonButtonSize: 55,
+      slotHeight: 88,
     });
     // The reference path's own numbers. The slot is shorter than the node
     // because the node's SVG viewBox is mostly padding — the drawn token is
-    // about 73x63 of those 80px, so centring it still leaves a row gap.
+    // about 69x60 of those 76px, so centring it still leaves a row gap.
     expect(getPathMetrics("normal")).toEqual({
-      lessonButtonSize: 80,
-      slotHeight: 78,
+      lessonButtonSize: 76,
+      slotHeight: 74,
     });
     expect(getPathMetrics("kids")).toEqual({
-      lessonButtonSize: 60,
-      slotHeight: 94,
+      lessonButtonSize: 57,
+      slotHeight: 90,
     });
   });
 

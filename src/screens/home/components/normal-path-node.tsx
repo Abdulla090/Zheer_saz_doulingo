@@ -20,6 +20,7 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { Pressable } from "react-native";
 import Animated, {
+  Easing,
   useAnimatedProps,
   useSharedValue,
   withTiming,
@@ -50,7 +51,8 @@ const SVG_VIEWBOX = "-10 -10 120 130";
 const ICON_VB_W = 32;
 const ICON_VB_H = 32;
 
-const PRESS_DURATION_MS = 100;
+const PRESS_IN_MS = 55;
+const PRESS_OUT_MS = 80;
 
 const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
 const AnimatedGroup = Animated.createAnimatedComponent(G);
@@ -146,7 +148,10 @@ export const NormalPathNode = React.memo(
     const handlePressIn = useCallback(() => {
       openedOnPressInRef.current = false;
       if (isLocked) return;
-      cy.value = withTiming(FACE_PRESSED_CY, { duration: PRESS_DURATION_MS });
+      cy.value = withTiming(FACE_PRESSED_CY, {
+        duration: PRESS_IN_MS,
+        easing: Easing.out(Easing.cubic),
+      });
       if (onPress) {
         openedOnPressInRef.current = true;
         onPress();
@@ -155,7 +160,10 @@ export const NormalPathNode = React.memo(
 
     const handlePressOut = useCallback(() => {
       if (isLocked) return;
-      cy.value = withTiming(FACE_BASE_CY, { duration: PRESS_DURATION_MS });
+      cy.value = withTiming(FACE_BASE_CY, {
+        duration: PRESS_OUT_MS,
+        easing: Easing.out(Easing.cubic),
+      });
     }, [cy, isLocked]);
 
     /*

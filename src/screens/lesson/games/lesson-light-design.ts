@@ -38,6 +38,13 @@ export const LightMotion = {
   ease: Easing.out(Easing.cubic),
 } as const;
 
+/** Fast, low-travel response used only by direct-manipulation word games. */
+export const FastWordMotion = {
+  press: { damping: 30, stiffness: 560, mass: 0.34, overshootClamping: true },
+  release: { damping: 28, stiffness: 440, mass: 0.38, overshootClamping: true },
+  colorMs: 130,
+} as const;
+
 export const LightRadius = {
   card: 20,
   tile: 15,

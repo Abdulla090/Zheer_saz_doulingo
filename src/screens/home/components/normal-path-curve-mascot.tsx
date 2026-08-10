@@ -20,7 +20,7 @@ const PEAK_POSES: TwinoPose[] = [
 ];
 
 /** Slight size variation, offset from the pose cycle so it does not sync up. */
-const PEAK_SIZES = [132, 120, 126] as const;
+const PEAK_SIZES = [126, 114, 120] as const;
 
 /**
  * The curve has period 8 (`sin(i · π/4)`), so its extremes land on indexes 2 and
@@ -32,7 +32,7 @@ export function isNormalPathPeak(globalIndex: number) {
   return globalIndex % 4 === 2;
 }
 
-export const NORMAL_CURVE_MASCOT_SIZE = 132;
+export const NORMAL_CURVE_MASCOT_SIZE = 126;
 
 /**
  * Pushed to the far side of the node, 1.8x the curve amplitude out. At a peak

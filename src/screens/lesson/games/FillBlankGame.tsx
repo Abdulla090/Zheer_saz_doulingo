@@ -3,8 +3,7 @@
 import { useI18n } from "../../../hooks/useI18n";
 import React, { useCallback, useRef, useState } from "react";
 import { StyleSheet, View, Platform } from "react-native";
-import * as Haptics from "expo-haptics";
-import { layoutSmooth, tileFlyTiming } from "../../../components/animations/motion";
+import { layoutSmooth, wordTileMorphTiming } from "../../../components/animations/motion";
 import Animated, {
   Easing,
   interpolate,
@@ -63,7 +62,7 @@ function FlyingTile({ session, onFinish, isKids, languageCode }: { session: FlyS
   });
 
   React.useEffect(() => {
-    flyProgress.value = withTiming(1, tileFlyTiming, (finished) => {
+    flyProgress.value = withTiming(1, wordTileMorphTiming, (finished) => {
       if (finished) runOnJS(onFinish)(session.id, session.word);
     });
   }, [session, onFinish, flyProgress]);
@@ -147,14 +146,13 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     speakWord(word, `fill-${word}`);
 
     measuringWordRef.current = word;
-    if (Platform.OS !== "web") {
-      void Haptics.selectionAsync();
-    }
-
+    const cachedRoot = rootCoords.current;
+    const cachedBank = bankCoords.current[word];
+    const cachedTarget = blankCoords.current;
     const [measuredRoot, measuredBank, measuredTarget] = await Promise.all([
-      measureGameElement(rootRef.current),
-      measureGameElement(bankRefs.current[word]),
-      measureGameElement(blankRef.current),
+      cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
+      cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[word]),
+      cachedTarget ? Promise.resolve(cachedTarget) : measureGameElement(blankRef.current),
     ]);
 
     if (measuringWordRef.current !== word) return;
@@ -382,11 +380,9 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                         state={mapOptionState(getState(selected))}
                         onPress={() => {
                           if (revealed) return;
-                          if (Platform.OS !== "web") {
-                            void Haptics.selectionAsync();
-                          }
                           setSelected(null);
                         }}
+                        activateOnPressIn={Platform.OS !== "web"}
                         isKids={pathMode === "kids"}
                         languageCode={question.targetLanguage}
                         style={[
@@ -488,6 +484,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                 label={w}
                 state={isTaken ? "ghost" : mapOptionState(getState(w))}
                 onPress={() => pick(w)}
+                activateOnPressIn={Platform.OS !== "web"}
                 disabled={revealed || isTaken}
                 isKids={pathMode === "kids"}
                 languageCode={question.targetLanguage}

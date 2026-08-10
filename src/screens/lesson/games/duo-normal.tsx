@@ -55,7 +55,7 @@ import { useTTS } from "../../../hooks/use-tts";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { LayoutDirectionProvider, useLayoutDirection } from "../../../i18n/layout-direction";
 import { PRIMARY_ACTION } from "../../../constants/primary-action";
-import { Duo, DuoMotion, LightType } from "./lesson-light-design";
+import { Duo, DuoMotion, FastWordMotion, LightType } from "./lesson-light-design";
 
 /**
  * RTL note (Kurdish Sorani is the primary audience)
@@ -632,11 +632,14 @@ export type DuoTileState = "idle" | "selected" | "correct" | "wrong" | "ghost";
 const STATE_ORDER: DuoTileState[] = ["idle", "selected", "correct", "wrong", "ghost"];
 const RIM = 4;
 const RIM_PRESSED = 2;
+const SUBTLE_RIM = 3;
+const SUBTLE_RIM_PRESSED = 1.5;
 
 /**
  * The core interactive element. Everything about its feel lives here:
  *
- *   press   → rim compresses 4px→2px while the face drops 2px (top edge fixed)
+ *   press   → the default rim compresses 4px→2px while the face drops 2px
+ *             (compact word builders can request the quieter 3px→1.5px edge)
  *   correct → single spring overshoot as the green fills in
  *   wrong   → damped horizontal shake, amplitude decaying 8→5→2
  *
@@ -647,12 +650,14 @@ export function DuoTile({
   tierLabel,
   state = "idle",
   onPress,
+  activateOnPressIn = false,
   disabled,
   languageCode,
   style,
   align = "center",
   fontSize,
   numberOfLines,
+  depthStyle = "default",
   /** Fires the wrong-answer shake from a parent (used on submit). */
   shakeSignal,
 }: {
@@ -660,12 +665,15 @@ export function DuoTile({
   tierLabel?: string;
   state?: DuoTileState;
   onPress?: () => void;
+  activateOnPressIn?: boolean;
   disabled?: boolean;
   languageCode?: string;
   style?: StyleProp<ViewStyle>;
   align?: "center" | "start";
   fontSize?: number;
   numberOfLines?: number;
+  /** A quieter key edge for compact word-building tiles. */
+  depthStyle?: "default" | "subtle";
   shakeSignal?: number;
 }) {
   const theme = useDuoTheme();
@@ -673,17 +681,22 @@ export function DuoTile({
   const uiLanguage = useLocaleStore((st) => st.selectedUiLanguage);
   const ambientDirection = useLayoutDirection();
   const lang = languageCode ?? targetLanguage;
+  const restingRim = depthStyle === "subtle" ? SUBTLE_RIM : RIM;
+  const pressedRim = depthStyle === "subtle" ? SUBTLE_RIM_PRESSED : RIM_PRESSED;
 
   const idx = Math.max(0, STATE_ORDER.indexOf(state));
   const progress = useSharedValue(idx);
-  const depth = useSharedValue(RIM);
+  const depth = useSharedValue(restingRim);
   const drop = useSharedValue(0);
   const pop = useSharedValue(1);
   const shakeX = useSharedValue(0);
   const prevState = React.useRef<DuoTileState>(state);
+  const activatedOnPressInRef = React.useRef(false);
 
   React.useEffect(() => {
-    progress.value = withTiming(idx, { duration: DuoMotion.colorMs });
+    progress.value = withTiming(idx, {
+      duration: activateOnPressIn ? FastWordMotion.colorMs : DuoMotion.colorMs,
+    });
 
     if (state !== prevState.current) {
       if (state === "correct") {
@@ -703,7 +716,7 @@ export function DuoTile({
       }
       prevState.current = state;
     }
-  }, [idx, pop, progress, shakeX, state]);
+  }, [activateOnPressIn, idx, pop, progress, shakeX, state]);
 
   React.useEffect(() => {
     if (!shakeSignal) return;
@@ -787,7 +800,14 @@ export function DuoTile({
   const body = (
     <LayoutDirectionProvider value={ltrBoundary ? "ltr" : ambientDirection}>
       <Animated.View
-        style={[s.tile, align === "start" && s.tileStart, ltrBoundary, style, boxAnim]}
+        style={[
+          s.tile,
+          depthStyle === "subtle" && s.tileSubtle,
+          align === "start" && s.tileStart,
+          ltrBoundary,
+          style,
+          boxAnim,
+        ]}
       >
         {/*
           The ghost slug keeps its label mounted — that is what holds the slot
@@ -836,16 +856,30 @@ export function DuoTile({
   return (
     <Pressable
       onPress={() => {
+        if (activatedOnPressInRef.current) {
+          activatedOnPressInRef.current = false;
+          return;
+        }
         if (Platform.OS !== "web") void Haptics.selectionAsync();
         onPress!();
       }}
       onPressIn={() => {
-        depth.value = withSpring(RIM_PRESSED, DuoMotion.press);
-        drop.value = withSpring(RIM - RIM_PRESSED, DuoMotion.press);
+        activatedOnPressInRef.current = false;
+        const pressMotion = activateOnPressIn ? FastWordMotion.press : DuoMotion.press;
+        depth.value = withSpring(pressedRim, pressMotion);
+        drop.value = withSpring(restingRim - pressedRim, pressMotion);
+        if (activateOnPressIn) {
+          activatedOnPressInRef.current = true;
+          if (Platform.OS !== "web") void Haptics.selectionAsync();
+          onPress!();
+        }
       }}
       onPressOut={() => {
-        depth.value = withSpring(RIM, DuoMotion.release);
-        drop.value = withSpring(0, DuoMotion.release);
+        const releaseMotion = activateOnPressIn
+          ? FastWordMotion.release
+          : DuoMotion.release;
+        depth.value = withSpring(restingRim, releaseMotion);
+        drop.value = withSpring(0, releaseMotion);
       }}
       disabled={disabled}
     >
@@ -1314,6 +1348,9 @@ const s = StyleSheet.create({
     borderBottomWidth: RIM,
     alignItems: "center",
     justifyContent: "center",
+  },
+  tileSubtle: {
+    borderWidth: 1,
   },
   tileStart: {
     alignItems: "flex-start",

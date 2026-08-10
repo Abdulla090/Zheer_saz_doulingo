@@ -12,13 +12,13 @@ const UNIT_POSES: TwinoPose[] = [
   "winning",
 ];
 
-export const KIDS_CURVE_MASCOT_SIZE = 116;
+export const KIDS_CURVE_MASCOT_SIZE = 110;
 /** Show mascot on this lesson row (under the mic node). */
 export const KIDS_CURVE_MASCOT_ROW_INDEX = 2;
 
 const POCKET_SIDE_OFFSET = 0.26;
 const UNIT_UPWARD = [0.38, 0.5, 0.68] as const;
-const UNIT_SIZES = [116, 116, 132] as const;
+const UNIT_SIZES = [110, 110, 126] as const;
 
 function mascotSize(unitIndex: number): number {
   return UNIT_SIZES[unitIndex % UNIT_SIZES.length];

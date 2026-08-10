@@ -120,6 +120,8 @@ type SvgButtonProps = {
   isSelected?: boolean;
   isLocked?: boolean;
   accessibilityLabel?: string;
+  /** Native path nodes can open their lesson callout on touch-down. */
+  activateOnPressIn?: boolean;
 };
 
 /**
@@ -257,6 +259,7 @@ export const SvgButton = React.memo(
     isSelected = false,
     isLocked = false,
     accessibilityLabel,
+    activateOnPressIn = false,
   }: SvgButtonProps) => {
     const colors =
       SVG_BUTTON_COLOR_SETS[variant] || SVG_BUTTON_COLOR_SETS.green;
@@ -264,6 +267,7 @@ export const SvgButton = React.memo(
     const pressProgress = useSharedValue(0);
     const haloProgress = useSharedValue(0);
     const hoverProgress = useSharedValue(0);
+    const activatedOnPressInRef = React.useRef(false);
 
     // Seated token geometry.
     //
@@ -315,10 +319,23 @@ export const SvgButton = React.memo(
 
     const handlePressIn = () => {
       if (isLocked) return;
+      activatedOnPressInRef.current = false;
       pressProgress.value = withTiming(1, {
         duration: 60,
         easing: Easing.out(Easing.quad),
       });
+      if (activateOnPressIn && onPress) {
+        activatedOnPressInRef.current = true;
+        onPress();
+      }
+    };
+
+    const handlePress = () => {
+      if (activatedOnPressInRef.current) {
+        activatedOnPressInRef.current = false;
+        return;
+      }
+      onPress?.();
     };
 
     const handlePressOut = () => {
@@ -426,7 +443,7 @@ export const SvgButton = React.memo(
       <Pressable
         inList
         disabled={!onPress || isLocked}
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onHoverIn={handleHoverIn}

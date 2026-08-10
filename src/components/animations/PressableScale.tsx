@@ -28,6 +28,8 @@ export type PressableScaleProps = {
   onLongPress?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
+  /** Native-only callers can commit on touch-down while retaining press motion. */
+  activateOnPressIn?: boolean;
   delayLongPress?: number;
   style?: StyleProp<ViewStyle>;
   scaleDown?: number;
@@ -81,6 +83,7 @@ export function PressableScale({
   onLongPress,
   onPressIn,
   onPressOut,
+  activateOnPressIn = false,
   delayLongPress,
   style,
   scaleDown = IOS_BUTTON_PRESS_SCALE,
@@ -98,6 +101,12 @@ export function PressableScale({
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+  const activatedOnPressInRef = React.useRef(false);
+
+  const firePress = React.useCallback(() => {
+    if (haptic) fireHaptic(hapticStyle);
+    onPress?.();
+  }, [haptic, hapticStyle, onPress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -132,18 +141,23 @@ export function PressableScale({
       accessibilityState={accessibilityState}
       hitSlop={hitSlop}
       onPressIn={() => {
+        activatedOnPressInRef.current = false;
         onPressIn?.();
         if (reduceMotion) {
           opacity.value = IOS_BUTTON_PRESS_OPACITY;
-          return;
+        } else {
+          scale.value = withTiming(scaleDown, { duration: CSS_PRESS_MS });
+          opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, {
+            duration: CSS_PRESS_MS,
+          });
+          translateY.value = withTiming(IOS_BUTTON_PRESS_Y, {
+            duration: CSS_PRESS_MS,
+          });
         }
-        scale.value = withTiming(scaleDown, { duration: CSS_PRESS_MS });
-        opacity.value = withTiming(IOS_BUTTON_PRESS_OPACITY, {
-          duration: CSS_PRESS_MS,
-        });
-        translateY.value = withTiming(IOS_BUTTON_PRESS_Y, {
-          duration: CSS_PRESS_MS,
-        });
+        if (activateOnPressIn && onPress) {
+          activatedOnPressInRef.current = true;
+          firePress();
+        }
       }}
       onPressOut={() => {
         onPressOut?.();
@@ -156,8 +170,11 @@ export function PressableScale({
         translateY.value = withSpring(0, IOS_BUTTON_RELEASE_SPRING);
       }}
       onPress={() => {
-        if (haptic) fireHaptic(hapticStyle);
-        onPress?.();
+        if (activatedOnPressInRef.current) {
+          activatedOnPressInRef.current = false;
+          return;
+        }
+        firePress();
       }}
       onLongPress={() => {
         if (haptic) fireHaptic(hapticStyle);

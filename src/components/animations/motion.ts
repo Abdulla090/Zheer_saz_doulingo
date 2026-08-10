@@ -107,3 +107,23 @@ export const tileFlyTiming: WithTimingConfig = {
   duration: TILE_FLY_MS,
   easing: Easing.out(Easing.cubic),
 };
+
+/**
+ * Direct-manipulation word games need a shorter hand-off than audio-led games.
+ * The fast start makes the tile leave the finger immediately while the cubic
+ * tail keeps the landing soft instead of snapping into place.
+ */
+export const WORD_TILE_MORPH_MS = 190;
+
+export const wordTileMorphTiming: WithTimingConfig = {
+  duration: WORD_TILE_MORPH_MS,
+  easing: Easing.out(Easing.cubic),
+};
+
+/** Sentence builder: leaves room for measurement and unlocks within 200ms. */
+export const SENTENCE_WORD_MORPH_MS = 145;
+
+export const sentenceWordMorphTiming: WithTimingConfig = {
+  duration: SENTENCE_WORD_MORPH_MS,
+  easing: Easing.out(Easing.cubic),
+};

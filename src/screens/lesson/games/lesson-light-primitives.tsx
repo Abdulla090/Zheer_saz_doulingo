@@ -43,7 +43,7 @@ import Animated, {
 import Svg, { Path, Circle, Line } from "react-native-svg";
 import { useLocalSearchParams } from "expo-router";
 import { useTTS } from "../../../hooks/use-tts";
-import { L, Duo, LightMotion, LightRadius, LightType } from "./lesson-light-design";
+import { FastWordMotion, L, Duo, LightMotion, LightRadius, LightType } from "./lesson-light-design";
 import {
   DuoCheckButton,
   DuoFeedbackPanel,
@@ -811,6 +811,7 @@ export function LightWordTile({
   tierLabel,
   state = "idle",
   onPress,
+  activateOnPressIn = false,
   disabled,
   rtl,
   forceLatinFont,
@@ -821,6 +822,8 @@ export function LightWordTile({
   centerLabel = false,
   fitLabel = false,
   fitLabelLines = 1,
+  labelLines,
+  duoDepthStyle = "default",
   style,
   languageCode,
 }: {
@@ -828,6 +831,8 @@ export function LightWordTile({
   tierLabel?: string;
   state?: TileState;
   onPress?: () => void;
+  /** Commit on touch-down; intended for static native word banks. */
+  activateOnPressIn?: boolean;
   disabled?: boolean;
   rtl?: boolean;
   forceLatinFont?: boolean;
@@ -841,6 +846,10 @@ export function LightWordTile({
   fitLabel?: boolean;
   /** Fixed number of lines available when fitting text inside a tile. */
   fitLabelLines?: 1 | 2 | 3;
+  /** Hard line limit, including while a tile is flying between layouts. */
+  labelLines?: 1 | 2 | 3;
+  /** Normal-path 3D edge treatment. */
+  duoDepthStyle?: "default" | "subtle";
   style?: StyleProp<ViewStyle>;
   languageCode?: string;
 }) {
@@ -858,6 +867,7 @@ export function LightWordTile({
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
   const stateIndex = useSharedValue(0);
+  const activatedOnPressInRef = React.useRef(false);
 
   const STATE_INDEX = React.useMemo(() => ({
     idle: 0,
@@ -874,9 +884,9 @@ export function LightWordTile({
 
   React.useEffect(() => {
     stateIndex.value = withTiming(STATE_INDEX[state] ?? 0, {
-      duration: LightMotion.colorMs,
+      duration: activateOnPressIn ? FastWordMotion.colorMs : LightMotion.colorMs,
     });
-  }, [state, STATE_INDEX]);
+  }, [activateOnPressIn, state, STATE_INDEX]);
 
   const colorMap = React.useMemo(() => {
     const dividerColor = colors.border;
@@ -1004,11 +1014,13 @@ export function LightWordTile({
         tierLabel={tierLabel}
         state={duoState}
         onPress={onPress}
+        activateOnPressIn={activateOnPressIn}
         disabled={disabled}
         languageCode={labelLanguageCode}
         align={wide ? "start" : "center"}
         fontSize={fontSize}
-        numberOfLines={wrapLabel ? 3 : undefined}
+        numberOfLines={labelLines ?? (wrapLabel ? 3 : undefined)}
+        depthStyle={duoDepthStyle}
         style={[wide && { width: "100%" }, style]}
       />
     );
@@ -1144,7 +1156,7 @@ export function LightWordTile({
             fontSize !== undefined && isKidsRoute && { lineHeight: fontSize + 8 },
             state === "ghost" && { opacity: 0 },
           ]}
-          numberOfLines={fitLabel ? fitLabelLines : undefined}
+          numberOfLines={labelLines ?? (fitLabel ? fitLabelLines : undefined)}
           adjustsFontSizeToFit={fitLabel}
           minimumFontScale={fitLabel ? 0.58 : undefined}
         >
@@ -1168,16 +1180,33 @@ export function LightWordTile({
         <Pressable
           style={nativeLtrBoundary}
           onPress={() => {
+            if (activatedOnPressInRef.current) {
+              activatedOnPressInRef.current = false;
+              return;
+            }
             if (Platform.OS !== "web") void Haptics.selectionAsync();
             onPress();
           }}
           onPressIn={() => {
-            scale.value = withSpring(0.97, LightMotion.soft);
-            translateY.value = withSpring(isKidsRoute ? 4 : 0, LightMotion.soft);
+            activatedOnPressInRef.current = false;
+            const pressMotion = activateOnPressIn ? FastWordMotion.press : LightMotion.soft;
+            scale.value = withSpring(activateOnPressIn ? 0.985 : 0.97, pressMotion);
+            translateY.value = withSpring(
+              isKidsRoute ? (activateOnPressIn ? 2 : 4) : 0,
+              pressMotion,
+            );
+            if (activateOnPressIn) {
+              activatedOnPressInRef.current = true;
+              if (Platform.OS !== "web") void Haptics.selectionAsync();
+              onPress();
+            }
           }}
           onPressOut={() => {
-            scale.value = withSpring(1, LightMotion.soft);
-            translateY.value = withSpring(0, LightMotion.soft);
+            const releaseMotion = activateOnPressIn
+              ? FastWordMotion.release
+              : LightMotion.soft;
+            scale.value = withSpring(1, releaseMotion);
+            translateY.value = withSpring(0, releaseMotion);
           }}
           disabled={disabled}
         >

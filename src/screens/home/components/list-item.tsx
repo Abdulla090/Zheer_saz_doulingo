@@ -387,6 +387,7 @@ export const ListItem = React.memo(
                 isSelected={isSelected}
                 size={metrics.lessonButtonSize}
                 onPress={isLocked && !onSelect ? undefined : handleSelect}
+                activateOnPressIn={Platform.OS !== "web"}
                 variant={buttonColor}
                 IconComponent={isCompleted ? CompletedCheckIcon : undefined}
                 label={isCompleted ? undefined : item.pathIndex + 1}

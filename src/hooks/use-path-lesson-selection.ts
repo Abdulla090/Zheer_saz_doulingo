@@ -43,6 +43,36 @@ const POPUP_TOP_CLEARANCE = 16;
 /** Settle time for the scroll before measuring — a moving node measures stale. */
 const SCROLL_SETTLE_MS = 320;
 
+type WindowMeasurement = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+/** Measure both views in the same native round-trip instead of serial hops. */
+function measureNodeAgainstRoot(
+  root: View,
+  node: View,
+  onMeasured: (rootBox: WindowMeasurement, nodeBox: WindowMeasurement) => void,
+) {
+  let rootBox: WindowMeasurement | null = null;
+  let nodeBox: WindowMeasurement | null = null;
+
+  const finish = () => {
+    if (rootBox && nodeBox) onMeasured(rootBox, nodeBox);
+  };
+
+  root.measureInWindow((x, y, width, height) => {
+    rootBox = { x, y, width, height };
+    finish();
+  });
+  node.measureInWindow((x, y, width, height) => {
+    nodeBox = { x, y, width, height };
+    finish();
+  });
+}
+
 export function usePathLessonSelection(
   listRef: RefObject<SectionList<LessonListItem, SectionDataItem> | null>,
   sections: SectionDataItem[],
@@ -100,19 +130,17 @@ export function usePathLessonSelection(
           displayPopupWithAnchor();
           return;
         }
-        currentRoot.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
-          target.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
-            const anchorX = nodeX - rootX + nodeWidth / 2;
-            const nodeTop = nodeY - rootY;
+        measureNodeAgainstRoot(currentRoot, target, (rootBox, nodeBox) => {
+          const anchorX = nodeBox.x - rootBox.x + nodeBox.width / 2;
+          const nodeTop = nodeBox.y - rootBox.y;
 
-            displayPopupWithAnchor({
-              x: anchorX,
-              y: nodeTop + nodeHeight,
-              nodeTop,
-              nodeHeight,
-              rootWidth,
-              rootHeight,
-            });
+          displayPopupWithAnchor({
+            x: anchorX,
+            y: nodeTop + nodeBox.height,
+            nodeTop,
+            nodeHeight: nodeBox.height,
+            rootWidth: rootBox.width,
+            rootHeight: rootBox.height,
           });
         });
       };
@@ -122,66 +150,61 @@ export function usePathLessonSelection(
        *
        * `measureInWindow` is an async hop to the UI thread and back. That thread
        * is also laying out the path's nodes, so each hop costs far more than a
-       * frame under load. This used to measure root+node to choose placement and
-       * then measure root+node again to build the anchor — four serial hops
-       * before anything appeared on screen. The first pass already returns every
-       * value the anchor needs, so the common tap now opens straight from it.
+       * frame under load. Root and node used to be measured one after the other;
+       * starting both together removes one whole native round-trip before the
+       * popup can mount.
        */
-      root.measureInWindow((rootX, rootY, rootWidth, rootHeight) => {
+      measureNodeAgainstRoot(root, node, (rootBox, nodeBox) => {
         if (selectionRequestRef.current !== requestId) return;
 
-        node.measureInWindow((nodeX, nodeY, nodeWidth, nodeHeight) => {
+        const nodeTop = nodeBox.y - rootBox.y;
+        const nodeBottom = nodeTop + nodeBox.height;
+
+        // The popup opens below the node when there is room, and flips above
+        // it when there is not. Only when *neither* direction fits does the
+        // list have to move.
+        const fitsBelow =
+          nodeBottom + POPUP_GAP + POPUP_HEIGHT + POPUP_BOTTOM_CLEARANCE <=
+          rootBox.height;
+        const fitsAbove =
+          nodeTop - POPUP_GAP - POPUP_HEIGHT >= POPUP_TOP_CLEARANCE;
+        const location = findItemLocation(sections, item);
+
+        if (fitsBelow || fitsAbove || !location || !listRef.current) {
+          // Nothing will move, so these coordinates are already final.
+          displayPopupWithAnchor({
+            x: nodeBox.x - rootBox.x + nodeBox.width / 2,
+            y: nodeTop + nodeBox.height,
+            nodeTop,
+            nodeHeight: nodeBox.height,
+            rootWidth: rootBox.width,
+            rootHeight: rootBox.height,
+          });
+          return;
+        }
+
+        /*
+         * Bring the node to the middle of the viewport, then open. Measuring
+         * before the scroll settles would anchor the popup to where the node
+         * *was*, which is exactly the off-screen popup this avoids.
+         */
+        try {
+          listRef.current.scrollToLocation({
+            sectionIndex: location.sectionIndex,
+            itemIndex: location.itemIndex,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        } catch {
+          measureAndShow();
+          return;
+        }
+
+        openTimerRef.current = setTimeout(() => {
+          openTimerRef.current = null;
           if (selectionRequestRef.current !== requestId) return;
-
-          const nodeTop = nodeY - rootY;
-          const nodeBottom = nodeTop + nodeHeight;
-
-          // The popup opens below the node when there is room, and flips above
-          // it when there is not. Only when *neither* direction fits does the
-          // list have to move.
-          const fitsBelow =
-            nodeBottom + POPUP_GAP + POPUP_HEIGHT + POPUP_BOTTOM_CLEARANCE <=
-            rootHeight;
-          const fitsAbove =
-            nodeTop - POPUP_GAP - POPUP_HEIGHT >= POPUP_TOP_CLEARANCE;
-          const location = findItemLocation(sections, item);
-
-          if (fitsBelow || fitsAbove || !location || !listRef.current) {
-            // Nothing will move, so these coordinates are already final.
-            displayPopupWithAnchor({
-              x: nodeX - rootX + nodeWidth / 2,
-              y: nodeTop + nodeHeight,
-              nodeTop,
-              nodeHeight,
-              rootWidth,
-              rootHeight,
-            });
-            return;
-          }
-
-          /*
-           * Bring the node to the middle of the viewport, then open. Measuring
-           * before the scroll settles would anchor the popup to where the node
-           * *was*, which is exactly the off-screen popup this avoids.
-           */
-          try {
-            listRef.current.scrollToLocation({
-              sectionIndex: location.sectionIndex,
-              itemIndex: location.itemIndex,
-              animated: true,
-              viewPosition: 0.5,
-            });
-          } catch {
-            measureAndShow();
-            return;
-          }
-
-          openTimerRef.current = setTimeout(() => {
-            openTimerRef.current = null;
-            if (selectionRequestRef.current !== requestId) return;
-            measureAndShow();
-          }, SCROLL_SETTLE_MS);
-        });
+          measureAndShow();
+        }, SCROLL_SETTLE_MS);
       });
     },
     [listRef, overlayRootRef, sections],

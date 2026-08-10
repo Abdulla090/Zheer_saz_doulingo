@@ -182,8 +182,8 @@ export function PathLessonPopup({
   return (
     <>
       <Animated.View
-        entering={FadeIn.duration(180).easing(Easing.out(Easing.cubic))}
-        exiting={FadeOut.duration(140).easing(Easing.in(Easing.quad))}
+        entering={FadeIn.duration(100).easing(Easing.out(Easing.cubic))}
+        exiting={FadeOut.duration(80).easing(Easing.in(Easing.quad))}
         pointerEvents="none"
         style={[
           StyleSheet.absoluteFill,
@@ -192,8 +192,8 @@ export function PathLessonPopup({
         ]}
       />
       <Animated.View
-        entering={FadeInDown.duration(220).easing(Easing.out(Easing.cubic))}
-        exiting={FadeOutDown.duration(160).easing(Easing.in(Easing.quad))}
+        entering={FadeInDown.duration(135).easing(Easing.out(Easing.cubic))}
+        exiting={FadeOutDown.duration(100).easing(Easing.in(Easing.quad))}
         onTouchStart={(event) => event.stopPropagation()}
         onLayout={(event) => {
           const measured = event.nativeEvent.layout.height;
@@ -263,6 +263,7 @@ export function PathLessonPopup({
 
         <PressableScale
           onPress={isLocked ? undefined : startLesson}
+          activateOnPressIn={Platform.OS !== "web"}
           disabled={isLocked}
           accessibilityRole="button"
           accessibilityLabel={t("home.startLesson")}
