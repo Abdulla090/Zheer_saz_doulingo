@@ -140,6 +140,8 @@ export function useDuoTheme() {
 
         panelOk: Duo.greenBg,
         panelBad: Duo.redBg,
+        panelOkBorder: Duo.greenBorder,
+        panelBadBorder: Duo.redBorder,
         panelOkText: Duo.greenText,
         panelBadText: Duo.redText,
 
@@ -190,10 +192,12 @@ export function useDuoTheme() {
       bubble: colors.surfaceRaised,
       bubbleBorder: colors.border,
 
-      panelOk: "rgba(88,204,2,0.16)",
-      panelBad: "rgba(255,75,75,0.16)",
-      panelOkText: "#A9EE72",
-      panelBadText: "#FFB2B2",
+      panelOk: "#162B1A",
+      panelBad: "#311818",
+      panelOkBorder: "#234A29",
+      panelBadBorder: "#522424",
+      panelOkText: "#58CC02",
+      panelBadText: "#FF4B4B",
 
       ctaOk: Duo.green,
       ctaOkRim: "#3E8F0B",
@@ -629,7 +633,6 @@ export function DuoPrompt({
 
 export type DuoTileState = "idle" | "selected" | "correct" | "wrong" | "ghost";
 
-const STATE_ORDER: DuoTileState[] = ["idle", "selected", "correct", "wrong", "ghost"];
 const RIM = 4;
 const RIM_PRESSED = 2;
 const SUBTLE_RIM = 3;
@@ -684,8 +687,23 @@ export function DuoTile({
   const restingRim = depthStyle === "subtle" ? SUBTLE_RIM : RIM;
   const pressedRim = depthStyle === "subtle" ? SUBTLE_RIM_PRESSED : RIM_PRESSED;
 
-  const idx = Math.max(0, STATE_ORDER.indexOf(state));
-  const progress = useSharedValue(idx);
+  const stateColors = React.useMemo<Record<DuoTileState, { face: string; border: string; rim: string }>>(() => ({
+    idle: { face: theme.tileFace, border: theme.tileBorder, rim: theme.tileRim },
+    selected: { face: theme.selFace, border: theme.selBorder, rim: theme.selRim },
+    correct: { face: theme.okFace, border: theme.okBorder, rim: theme.okRim },
+    wrong: { face: theme.badFace, border: theme.badBorder, rim: theme.badRim },
+    ghost: { face: theme.ghost, border: theme.ghost, rim: theme.ghost },
+  }), [theme]);
+
+  const targetColors = stateColors[state] ?? stateColors.idle;
+  const fromFace = useSharedValue(targetColors.face);
+  const toFace = useSharedValue(targetColors.face);
+  const fromBorder = useSharedValue(targetColors.border);
+  const toBorder = useSharedValue(targetColors.border);
+  const fromRim = useSharedValue(targetColors.rim);
+  const toRim = useSharedValue(targetColors.rim);
+  const colorProgress = useSharedValue(1);
+
   const depth = useSharedValue(restingRim);
   const drop = useSharedValue(0);
   const pop = useSharedValue(1);
@@ -694,11 +712,18 @@ export function DuoTile({
   const activatedOnPressInRef = React.useRef(false);
 
   React.useEffect(() => {
-    progress.value = withTiming(idx, {
-      duration: activateOnPressIn ? FastWordMotion.colorMs : DuoMotion.colorMs,
-    });
-
     if (state !== prevState.current) {
+      fromFace.value = toFace.value;
+      toFace.value = targetColors.face;
+      fromBorder.value = toBorder.value;
+      toBorder.value = targetColors.border;
+      fromRim.value = toRim.value;
+      toRim.value = targetColors.rim;
+      colorProgress.value = 0;
+      colorProgress.value = withTiming(1, {
+        duration: activateOnPressIn ? FastWordMotion.colorMs : DuoMotion.colorMs,
+      });
+
       if (state === "correct") {
         pop.value = withSequence(
           withTiming(1.05, { duration: 130, easing: Easing.out(Easing.quad) }),
@@ -716,7 +741,7 @@ export function DuoTile({
       }
       prevState.current = state;
     }
-  }, [activateOnPressIn, idx, pop, progress, shakeX, state]);
+  }, [activateOnPressIn, pop, shakeX, state, targetColors, fromFace, toFace, fromBorder, toBorder, fromRim, toRim, colorProgress]);
 
   React.useEffect(() => {
     if (!shakeSignal) return;
@@ -732,44 +757,28 @@ export function DuoTile({
 
   React.useEffect(
     () => () => {
-      cancelAnimation(progress);
+      cancelAnimation(colorProgress);
       cancelAnimation(depth);
       cancelAnimation(drop);
       cancelAnimation(pop);
       cancelAnimation(shakeX);
     },
-    [depth, drop, pop, progress, shakeX],
+    [colorProgress, depth, drop, pop, shakeX],
   );
 
-  const faces = [theme.tileFace, theme.selFace, theme.okFace, theme.badFace, theme.ghost];
-  const borders = [
-    theme.tileBorder,
-    theme.selBorder,
-    theme.okBorder,
-    theme.badBorder,
-    theme.ghost,
-  ];
-  const rims = [theme.tileRim, theme.selRim, theme.okRim, theme.badRim, theme.ghost];
-  const range = [0, 1, 2, 3, 4];
-
-  /**
-   * Text colour is resolved in JS, not via `useAnimatedStyle`: `AppText` runs
-   * `StyleSheet.flatten` on its style prop, which strips a Reanimated style and
-   * would leave the label frozen at its first colour. The 200ms surface fade
-   * carries the transition; a hard label swap under it is imperceptible.
-   */
-  const labelColor = [
-    theme.tileText,
-    theme.selText,
-    theme.okText,
-    theme.badText,
-    "transparent",
-  ][idx];
+  const labelColorsMap: Record<DuoTileState, string> = React.useMemo(() => ({
+    idle: theme.tileText,
+    selected: theme.selText,
+    correct: theme.okText,
+    wrong: theme.badText,
+    ghost: "transparent",
+  }), [theme]);
+  const labelColor = labelColorsMap[state] ?? theme.tileText;
 
   const boxAnim = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(progress.value, range, faces),
-    borderColor: interpolateColor(progress.value, range, borders),
-    borderBottomColor: interpolateColor(progress.value, range, rims),
+    backgroundColor: interpolateColor(colorProgress.value, [0, 1], [fromFace.value, toFace.value]),
+    borderColor: interpolateColor(colorProgress.value, [0, 1], [fromBorder.value, toBorder.value]),
+    borderBottomColor: interpolateColor(colorProgress.value, [0, 1], [fromRim.value, toRim.value]),
     borderBottomWidth: depth.value,
     transform: [
       { translateX: shakeX.value },
@@ -1134,17 +1143,33 @@ export function DuoFeedbackPanel({
     transform: [{ translateY: drop.value }],
   }));
 
+  const borderColor = correct ? theme.panelOkBorder : theme.panelBadBorder;
+
   return (
-    <View style={[s.panel, { backgroundColor: bg, paddingBottom: 18 + bottomInset }]}>
+    <View
+      style={[
+        s.panel,
+        {
+          backgroundColor: bg,
+          borderTopColor: borderColor,
+          paddingBottom: 18 + bottomInset,
+        },
+      ]}
+    >
       <Animated.View style={[s.panelTop, rowAnim]}>
         <View style={s.panelTitleRow}>
-          <ResultBadge ok={correct} color={accent} />
-          <AppText
-            languageCode={uiLanguage}
-            style={[s.panelTitle, { color: accent }]}
-          >
-            {title}
-          </AppText>
+          <TwinoMascot size={56} pose={correct ? "correct" : "wrong"} />
+          <View style={{ flex: 1, marginLeft: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <ResultBadge ok={correct} color={accent} />
+              <AppText
+                languageCode={uiLanguage}
+                style={[s.panelTitle, { color: accent }]}
+              >
+                {title}
+              </AppText>
+            </View>
+          </View>
         </View>
 
         <View style={s.panelIcons}>
@@ -1407,6 +1432,14 @@ const s = StyleSheet.create({
     paddingTop: 18,
     paddingHorizontal: 18,
     gap: 14,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 24,
   },
   panelTop: {
     flexDirection: "row",

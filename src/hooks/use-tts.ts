@@ -61,8 +61,12 @@ export function useTTS() {
         window.speechSynthesis?.cancel();
       }
     } else {
-      const mod = await getSpeech();
-      await mod?.stop();
+      try {
+        const mod = await getSpeech();
+        await mod?.stop();
+      } catch {
+        // TTS may already be torn down while the route is leaving.
+      }
     }
     setSpeaking(false);
     setActiveId(null);

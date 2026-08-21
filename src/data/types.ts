@@ -178,10 +178,11 @@ export type LessonBank = {
   topic: string;           // short English topic name, e.g. "Basic Greetings"
   topicKu: string;         // Kurdish, e.g. "سڵاوی سەرەکی"
   topicAr?: string;        // Arabic topic
-  words:         { english: string; kurdish: string; arabic?: string }[];
-  voices:        { prompt: string; target: string; targetKurdish: string; targetArabic?: string; promptAr?: string }[];
-  sentences:     { english: string[]; kurdish: string; arabic?: string }[];
-  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string]; arabicHint?: string; arabicParts?: [string, string]; arabicAnswer?: string; arabicWrongs?: [string, string, string] }[];
+  topicRu?: string;        // Russian topic
+  words:         { english: string; kurdish: string; arabic?: string; russian?: string }[];
+  voices:        { prompt: string; target: string; targetKurdish: string; targetArabic?: string; promptAr?: string; targetRussian?: string; promptRu?: string }[];
+  sentences:     { english: string[]; kurdish: string; arabic?: string; russian?: string }[];
+  fillBlanks:    { parts: [string, string]; hint: string; answer: string; wrongs: [string, string, string]; arabicHint?: string; arabicParts?: [string, string]; arabicAnswer?: string; arabicWrongs?: [string, string, string]; russianHint?: string; russianParts?: [string, string]; russianAnswer?: string; russianWrongs?: [string, string, string] }[];
   conversations: {
     situation:   string;
     theyAsk:     string;
@@ -197,6 +198,13 @@ export type LessonBank = {
     wrong1Ar?:    string;
     wrong2Ar?:    string;
     wrong3Ar?:    string;
+    situationRu?: string;
+    explanationRu?: string;
+    theyAskRu?:   string;
+    correctRu?:   string;
+    wrong1Ru?:    string;
+    wrong2Ru?:    string;
+    wrong3Ru?:    string;
   }[];
   paragraphSpeeches?: {
     mode: "practice" | "quiz";

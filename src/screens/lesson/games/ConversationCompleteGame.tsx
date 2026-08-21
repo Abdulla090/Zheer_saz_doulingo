@@ -155,7 +155,16 @@ export default function ConversationCompleteGame({ question, onAnswer, pathMode 
 
         {/* Their turn: mascot + tappable bubble that replays the line. */}
         <View style={[s.turn, rtlContent && s.turnRtl]}>
-          <TwinoMascot size={68} pose="wave" />
+          <TwinoMascot
+            size={68}
+            pose={
+              selected === null
+                ? "speaking"
+                : selected === question.correctAnswer
+                  ? "correct"
+                  : "wrong"
+            }
+          />
           <Pressable
             onPress={speakPrompt}
             accessibilityRole="button"

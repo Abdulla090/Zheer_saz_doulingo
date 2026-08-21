@@ -2,7 +2,7 @@ import "../utils/web-deprecations-patch";
 import { AppErrorBoundary } from "../components/AppErrorBoundary";
 import { SkiaWebGate } from "../components/animations/skia-gsap-opening/SkiaWebGate";
 import { OfflineBanner } from "../components/OfflineBanner";
-import { initSentry, wrapSentry } from "../lib/sentry";
+import { initSentry, wrapSentry, Sentry } from "../lib/sentry";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { fontMap } from "../fontMap";
 import { useFontStore } from "../stores/useFontStore";
@@ -296,4 +296,4 @@ function RootLayout() {
   );
 }
 
-export default wrapSentry(RootLayout);
+export default Sentry.wrap(RootLayout);

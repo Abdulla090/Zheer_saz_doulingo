@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform, ScrollView, StyleSheet, View } from "react-native";
 
 import { AppText } from "../../components/ui/AppText";
@@ -28,21 +28,25 @@ export function GuidebookNavigator({
   onSelect,
 }: GuidebookNavigatorProps) {
   const { colors } = useThemeColors();
-  const webDirection =
-    Platform.OS === "web"
-      ? ({ dir: isRtl ? "rtl" : "ltr" } as Record<string, string>)
-      : undefined;
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Keep the active chapter dot smoothly in view
+  useEffect(() => {
+    if (!isWide && scrollRef.current && lessons.length > 0) {
+      const itemWidth = 38 + 8; // chapterDot width 38 + gap 8
+      const x = Math.max(0, selectedIndex * itemWidth - 16);
+      scrollRef.current.scrollTo({ x, animated: true });
+    }
+  }, [isWide, selectedIndex, lessons.length]);
 
   if (!isWide) {
     return (
-      <View style={styles.mobileNavigator} {...webDirection}>
+      <View style={styles.mobileNavigator}>
         <ScrollView
+          ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.mobileLessonContent,
-            isRtl && Platform.OS !== "web" && styles.rowReverse,
-          ]}
+          contentContainerStyle={styles.mobileLessonContent}
         >
           {lessons.map((lesson) => {
             const selected = lesson.index === selectedIndex;
@@ -204,6 +208,7 @@ const styles = StyleSheet.create({
   mobileLessonContent: {
     paddingHorizontal: 16,
     gap: 8,
+    flexDirection: "row",
   },
   chapterDot: {
     width: 38,

@@ -170,6 +170,7 @@ export const ListItem = React.memo(
     const xOffset = isRtl ? -rawOffset : rawOffset;
     const isLocked = status === "locked";
     const isCompleted = status === "completed";
+    const isUnavailable = isCompleted;
     const LessonNodeIcon = isCompleted
       ? CompletedCheckIcon
       : (LESSON_ICON_MAP[item.type] ?? LessonStar);
@@ -219,7 +220,7 @@ export const ListItem = React.memo(
     };
     const handleSelect = () => {
       hapticSelection();
-      if (onSelect) {
+      if (onSelect && !isUnavailable) {
         onSelect(nodeRef.current);
         return;
       }
@@ -283,12 +284,12 @@ export const ListItem = React.memo(
           >
             {chestKind ? (
               <IOSPressable
-                disabled={isLocked && !onSelect}
-                onPress={isLocked && !onSelect ? undefined : handleSelect}
+                disabled={isLocked || isUnavailable}
+                onPress={isLocked || isUnavailable ? undefined : handleSelect}
                 accessibilityRole="button"
                 accessibilityLabel={`Unit ${unitNumber} lesson ${lessonNumber}, ${chestKind} chest${isLocked ? ", locked" : isCompleted ? ", completed" : ", current"}`}
                 accessibilityState={{
-                  disabled: isLocked,
+                  disabled: isLocked || isUnavailable,
                   selected: isSelected,
                 }}
                 style={{
@@ -362,11 +363,12 @@ export const ListItem = React.memo(
                 ) : null}
                 <NormalPathNode
                   isLocked={isLocked}
+                  isUnavailable={isUnavailable}
                   isCurrentLesson={showsActiveStar}
                   isCompleted={isCompleted}
                   isSelected={isSelected}
                   size={metrics.lessonButtonSize}
-                  onPress={isLocked && !onSelect ? undefined : handleSelect}
+                  onPress={isLocked || isUnavailable ? undefined : handleSelect}
                   variant={buttonColor}
                   IconComponent={LessonNodeIcon}
                   iconColor={iconColorOverride}
@@ -382,11 +384,12 @@ export const ListItem = React.memo(
             ) : (
               <SvgButton
                 isLocked={isLocked}
+                isUnavailable={isUnavailable}
                 isCurrentLesson={showsActiveStar}
                 isCompleted={isCompleted}
                 isSelected={isSelected}
                 size={metrics.lessonButtonSize}
-                onPress={isLocked && !onSelect ? undefined : handleSelect}
+                onPress={isLocked || isUnavailable ? undefined : handleSelect}
                 activateOnPressIn={Platform.OS !== "web"}
                 variant={buttonColor}
                 IconComponent={isCompleted ? CompletedCheckIcon : undefined}

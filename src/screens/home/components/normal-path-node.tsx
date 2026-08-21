@@ -94,6 +94,7 @@ export type NormalPathNodeProps = {
   isCurrentLesson?: boolean;
   isCompleted?: boolean;
   isLocked?: boolean;
+  isUnavailable?: boolean;
   isSelected?: boolean;
   accessibilityLabel?: string;
 };
@@ -109,6 +110,7 @@ export const NormalPathNode = React.memo(
     isCurrentLesson = false,
     isCompleted = false,
     isLocked = false,
+    isUnavailable = false,
     isSelected = false,
     accessibilityLabel,
   }: NormalPathNodeProps) => {
@@ -147,7 +149,7 @@ export const NormalPathNode = React.memo(
 
     const handlePressIn = useCallback(() => {
       openedOnPressInRef.current = false;
-      if (isLocked) return;
+      if (isLocked || isUnavailable) return;
       cy.value = withTiming(FACE_PRESSED_CY, {
         duration: PRESS_IN_MS,
         easing: Easing.out(Easing.cubic),
@@ -156,15 +158,15 @@ export const NormalPathNode = React.memo(
         openedOnPressInRef.current = true;
         onPress();
       }
-    }, [cy, isLocked, onPress]);
+    }, [cy, isLocked, isUnavailable, onPress]);
 
     const handlePressOut = useCallback(() => {
-      if (isLocked) return;
+      if (isLocked || isUnavailable) return;
       cy.value = withTiming(FACE_BASE_CY, {
         duration: PRESS_OUT_MS,
         easing: Easing.out(Easing.cubic),
       });
-    }, [cy, isLocked]);
+    }, [cy, isLocked, isUnavailable]);
 
     /*
      * Assistive activation (VoiceOver/TalkBack double-tap) reaches `onPress`
@@ -190,16 +192,17 @@ export const NormalPathNode = React.memo(
        * a popup explaining the lock, so `onPress` is still wired when locked.
        */
       <Pressable
-        disabled={!onPress}
+        disabled={!onPress || isLocked || isUnavailable}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handlePress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked, selected: isSelected }}
+        accessibilityState={{ disabled: isLocked || isUnavailable, selected: isSelected }}
         style={{
           width: size,
           height: size,
+          opacity: isUnavailable ? 0.62 : 1,
           transform: [{ translateX: translateX || 0 }],
         }}
       >

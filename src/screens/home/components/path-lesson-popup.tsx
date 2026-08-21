@@ -88,6 +88,7 @@ export function PathLessonPopup({
 
   const { item, sectionTitle } = selection;
   const isLocked = item.status === "locked";
+  const isCompleted = item.status === "completed";
   const isRtl = isKu || isAr;
   const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;
@@ -157,7 +158,7 @@ export function PathLessonPopup({
     : 0;
 
   const startLesson = () => {
-    if (isLocked) return;
+    if (isLocked || isCompleted) return;
     router.push({
       pathname: "/lesson",
       params: {
@@ -262,9 +263,9 @@ export function PathLessonPopup({
         </AppText>
 
         <PressableScale
-          onPress={isLocked ? undefined : startLesson}
+          onPress={isLocked || isCompleted ? undefined : startLesson}
           activateOnPressIn={Platform.OS !== "web"}
-          disabled={isLocked}
+          disabled={isLocked || isCompleted}
           accessibilityRole="button"
           accessibilityLabel={t("home.startLesson")}
           style={[

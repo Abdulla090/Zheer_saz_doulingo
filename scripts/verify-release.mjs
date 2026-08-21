@@ -344,20 +344,21 @@ if (
 }
 
 const webCreditScreen = read("src/screens/subscriptions/SubscriptionScreen.web.tsx");
-const waylCheckoutFunction = read("supabase/functions/wayl-checkout/index.ts");
-const waylWebhookFunction = read("supabase/functions/wayl-webhook/index.ts");
+const billingService = read("src/services/billing.ts");
+const waylModule = read("supabase/functions/_shared/payments/wayl.ts");
 const creditsFunction = read("supabase/functions/credits/index.ts");
 const walletMigration = read(
   "supabase/migrations/20260723221118_credit_wallet_and_wayl_payments.sql",
 );
 if (
-  !webCreditScreen.includes('functions.invoke("wayl-checkout"') ||
+  (!webCreditScreen.includes('createBillingCheckout') && !webCreditScreen.includes('functions.invoke("wayl-checkout"')) ||
   webCreditScreen.includes("EXPO_PUBLIC_WAYL") ||
-  !waylCheckoutFunction.includes('Deno.env.get("WAYL_API_KEY")') ||
-  !waylCheckoutFunction.includes('"X-WAYL-AUTHENTICATION"') ||
-  !waylWebhookFunction.includes('"x-wayl-signature-256"') ||
-  !waylWebhookFunction.includes('await req.text()') ||
-  !creditsFunction.includes('"spend_credits"') ||
+  billingService.includes("EXPO_PUBLIC_WAYL") ||
+  !waylModule.includes('Deno.env.get(name)') ||
+  !waylModule.includes('"X-WAYL-AUTHENTICATION"') ||
+  !waylModule.includes('"x-wayl-signature-256"') ||
+  !waylModule.includes('await request.text()') ||
+  !creditsFunction.includes('INVALID_ACTION') ||
   !walletMigration.includes("credit_transactions_are_immutable") ||
   !walletMigration.includes("record_wayl_payment_event")
 ) {

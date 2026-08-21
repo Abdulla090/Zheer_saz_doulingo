@@ -16,8 +16,8 @@ const UUID_PATTERN =
 export const paymentCorsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "authorization, x-client-info, apikey, content-type, x-region, prefer",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
 };
 
 const json = (body: Record<string, unknown>, status = 200) =>
@@ -483,10 +483,24 @@ const checkout = withSupabase({ auth: "user" }, async (req, ctx) => {
 });
 
 export default {
-  fetch(req: Request) {
+  async fetch(req: Request) {
     if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: paymentCorsHeaders });
+      return new Response("ok", { status: 200, headers: paymentCorsHeaders });
     }
-    return checkout(req);
+    try {
+      const res = await checkout(req);
+      const newHeaders = new Headers(res.headers);
+      Object.entries(paymentCorsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
+      return new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers: newHeaders,
+      });
+    } catch (err) {
+      return Response.json(
+        { code: "SERVER_ERROR", message: err instanceof Error ? err.message : String(err) },
+        { status: 500, headers: paymentCorsHeaders },
+      );
+    }
   },
 };

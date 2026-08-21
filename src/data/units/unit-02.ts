@@ -1,265 +1,355 @@
 import { UnitBank } from "../types";
 
-// Helper to make a minimal but valid LessonBank quickly
-// Unit 2: Daily Talk — 10 unique lessons
+// ── Unit 2: Daily Life, Food & Chilling — 10 unique lessons ──────────────────────────────
 const unit02: UnitBank = [
+
+  // Lesson 0: Morning Routine
   {
-    topic: "Talking About Your Day", topicKu: "قسەکردن لەسەر ڕۆژەکەت",
+    topic: "Mornings", topicKu: "بەیانیان",
     words: [
-      { english: "Rough day",    kurdish: "ڕۆژێکی قورس"        },
-      { english: "Killing it",   kurdish: "زۆر شازت کرد"       },
-      { english: "Long day",     kurdish: "ڕۆژێکی درێژ"        },
-      { english: "Went well",    kurdish: "باش بەڕێوەچوو"      },
-      { english: "Not my day",   kurdish: "ئەمڕۆ ڕۆژی من نییە" },
+      { english: "Sleep in", kurdish: "درەنگ هەستان لە خەو" },
+      { english: "Early bird", kurdish: "کەسێک کە زوو هەڵدەستێت" },
+      { english: "Coffee fix", kurdish: "پێویستی بە قاوە" },
+      { english: "Groggy", kurdish: "خەواڵوو (تازە هەستاوە)" },
+      { english: "Hit the snooze", kurdish: "دواخستنی زەنگی مۆبایل" },
     ],
     voices: [
-      { prompt: "بەقورسی ڕۆژەکەت بڵێ",   target: "Man today was a rough one",        targetKurdish: "کابرا، ئەمڕۆ ڕۆژێکی قورس بوو"             },
-      { prompt: "دەربڕینی دڵخۆشی بە ڕۆژەکەت", target: "Today actually went pretty well!",  targetKurdish: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو!"          },
+      { prompt: "بڵێ دەمەوێت درەنگ هەستم", target: "I'm gonna sleep in tomorrow.", targetKurdish: "سبەی دەمەوێت درەنگ هەستم." },
+      { prompt: "بڵێ پێویستم بە قاوەیە", target: "I desperately need my coffee fix.", targetKurdish: "بە سەختی پێویستم بە قاوەکەمە." },
     ],
     sentences: [
-      { english: ["Man",  "today",  "was",  "a",    "rough", "one"],     kurdish: "کابرا ئەمڕۆ ڕۆژێکی قورس بوو"       },
-      { english: ["Today","actually","went","pretty","well"],             kurdish: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو"    },
+      { english: ["I'm", "gonna", "sleep", "in", "tomorrow"], kurdish: "سبەی دەمەوێت درەنگ هەستم" },
+      { english: ["I", "desperately", "need", "my", "coffee", "fix"], kurdish: "بە سەختی پێویستم بە قاوەکەمە" },
     ],
     fillBlanks: [
-      { parts: ["Today", "went pretty well!"], hint: "ئەمڕۆ بەڕاستی باش بەڕێوەچوو!", answer: "actually", wrongs: ["just", "barely", "nearly"] },
-      { parts: ["Man it's such a", "today!"], hint: "کابرا، ئەمڕۆ ڕۆژێکی زۆر درێژە!", answer: "long day", wrongs: ["good day", "short one", "fine"] },
+      { parts: ["I'm totally", "without my coffee."], hint: "خەواڵوو / سەرلێشێواو", answer: "groggy", wrongs: ["froggy", "jumping", "blue"] },
+      { parts: ["I", "the snooze button three times."], hint: "لێدان (داگرتن)", answer: "hit", wrongs: ["punch", "apple", "cloud"] },
     ],
     conversations: [
-      { situation: "هاوکارێک پرسیار دەکات", theyAsk: "How was your day?", correct: "Honestly, it was a rough one — but I'm pushing through!", wrong1: "My day was fine. Nothing special.", wrong2: "Today was excellent in every way.", wrong3: "I prefer not to discuss my day.", explanation: "'Rough one — but I'm pushing through!' — ڕاستگۆیی + ئومێد" },
+      {
+        situation: "هاوڕێیەکت بەیانی زوو پەیوەندیت پێوە دەکات",
+        theyAsk: "Why do you sound so tired?",
+        correct: "I just woke up, I'm still super groggy.",
+        wrong1: "The bird is eating coffee.",
+        wrong2: "I sleep in the ceiling.",
+        wrong3: "My fix is hitting the tree.",
+        explanation: "وەڵامێکی سروشتی بۆ کەسێک کە تازە لە خەو هەستاوە: 'I just woke up, I'm still super groggy.'",
+      },
     ],
   },
 
+  // Lesson 1: Eating Out
   {
-    topic: "Morning Routine", topicKu: "ڕووتینی بەیانیان",
+    topic: "Getting Food", topicKu: "نانخواردنی دەرەوە",
     words: [
-      { english: "Wake up",      kurdish: "لەخەو هەستان"       },
-      { english: "Hit snooze",   kurdish: "دواخستنی ئالارم"    },
-      { english: "Grab coffee",  kurdish: "خواردنەوەی قاوە"    },
-      { english: "Rushing out",  kurdish: "بەپەلە دەرچوون"     },
-      { english: "Barely made it",kurdish: "بە زەحمەت گەشتمی"  },
+      { english: "Grab a bite", kurdish: "نانخواردنێکی خێرا" },
+      { english: "Starving", kurdish: "زۆر برسی" },
+      { english: "Craving", kurdish: "ئارەزووی خواردنێک (ئیشتیها)" },
+      { english: "Takeout", kurdish: "خواردنی بردنە دەرەوە (سەفەری)" },
+      { english: "Stuffed", kurdish: "تێر (زۆر خواردووە)" },
     ],
     voices: [
-      { prompt: "وەسفی بەیانییەکەت بکە",   target: "I hit snooze like three times this morning",  targetKurdish: "ئەم بەیانییە سێ جار زەنگی مۆبایلەکەمم دواخست" },
-      { prompt: "بگەینە شوێنەکەت",        target: "I barely made it out the door on time",        targetKurdish: "بە زەحمەت لە کاتی خۆیدا توانیم لە دەرگاوە بچمە دەرەوە" },
+      { prompt: "بڵێ با شتێک بخۆین", target: "Let's go grab a bite.", targetKurdish: "با بڕۆین شتێک بخۆین." },
+      { prompt: "بڵێ ئارەزووی پیتزا دەکەم", target: "I'm really craving pizza right now.", targetKurdish: "لە ئێستادا بەڕاستی ئارەزووی پیتزا دەکەم." },
     ],
     sentences: [
-      { english: ["I",    "hit",   "snooze","like",  "three","times"],kurdish: "نزیکەی سێ جار زەنگی مۆبایلەکەم دواخست"  },
-      { english: ["I",    "barely","made",  "it",    "on",  "time"],  kurdish: "بە زەحمەت لە کاتی خۆیدا گەیشتمم"        },
+      { english: ["Let's", "go", "grab", "a", "bite"], kurdish: "با بڕۆین شتێک بخۆین" },
+      { english: ["I'm", "really", "craving", "pizza", "right", "now"], kurdish: "لە ئێستادا بەڕاستی ئارەزووی پیتزا دەکەم" },
     ],
     fillBlanks: [
-      { parts: ["I hit",  "at least three times"],    hint: "لانی کەم سێ جار زەنگی مۆبایلەکەمم دواخست",   answer: "snooze",   wrongs: ["pause", "stop", "sleep"]     },
-      { parts: ["Barely", "it out of the house!"],     hint: "بە زەحمەت لە ماڵەوە دەرچووم!",               answer: "made",     wrongs: ["got", "came", "left"]        },
+      { parts: ["Wanna go", "a bite?"], hint: "گرتن / بردن", answer: "grab", wrongs: ["throw", "jumping", "apple"] },
+      { parts: ["I can't eat anymore, I'm completely", "."], hint: "تێر (پڕبووە)", answer: "stuffed", wrongs: ["pillowed", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "دواکەوتن بەهۆی خەو", theyAsk: "Did you sleep in again?", correct: "Big time. Hit snooze three times and barely made it!", wrong1: "No, I woke up early today.", wrong2: "I always wake up on time.", wrong3: "My alarm did not ring this morning.", explanation: "'Big time. Hit snooze three times!' — ڕوون و سروشتی بۆ دواکەوتن" },
+      {
+        situation: "هاوڕێیەکت دەپرسێت ئایا برسیتە",
+        theyAsk: "Are you hungry? I can make some food.",
+        correct: "Yes please, I am absolutely starving.",
+        wrong1: "I am stuffed with the chair.",
+        wrong2: "Craving the takeout window.",
+        wrong3: "I grab the bite tree.",
+        explanation: "دەربڕینی برسێتی زۆر: 'Yes please, I am absolutely starving.'",
+      },
     ],
   },
 
+  // Lesson 2: Cooking at Home
   {
-    topic: "Quick Replies", topicKu: "وەڵامە خێراکان",
+    topic: "Cooking", topicKu: "چێشتلێنان",
     words: [
-      { english: "Gotcha",       kurdish: "تێگەیشتم"           },
-      { english: "Say what",     kurdish: "چیت وت؟"            },
-      { english: "My bad",       kurdish: "هەڵەی من بوو"       },
-      { english: "For real",     kurdish: "بەجدییەتی؟"         },
-      { english: "True that",    kurdish: "ئەوەیان ڕاستە"      },
+      { english: "Whip up", kurdish: "دروستکردنی خواردن بە خێرایی" },
+      { english: "From scratch", kurdish: "لە سفرەوە دروستکردن" },
+      { english: "Leftovers", kurdish: "خواردنی ماوە (ی پێشوو)" },
+      { english: "Burnt", kurdish: "سوتاو" },
+      { english: "Hit the spot", kurdish: "ڕێک ئەوە بوو کە دەمویست (بەتامبوو)" },
     ],
     voices: [
-      { prompt: "دەربڕینی تێگەیشتن",   target: "Gotcha, got it — no worries",   targetKurdish: "تێگەیشتم، زانیم — کێشە نییە"       },
-      { prompt: "دەربڕینی سەرسوڕمان",  target: "For real though, that's crazy",  targetKurdish: "بەڵام بەجدی، ئەوە شێتانەیە"       },
+      { prompt: "بڵێ شتێک بە خێرایی دروست دەکەم", target: "I'll whip up something quick.", targetKurdish: "خواردنێک بە خێرایی دروست دەکەم." },
+      { prompt: "بڵێ خواردنەکە زۆر بەتام بوو", target: "Man, that really hit the spot.", targetKurdish: "کابرا، ئەوە بەڕاستی ڕێک ئەوە بوو کە دەمویست." },
     ],
     sentences: [
-      { english: ["Gotcha","got",  "it",   "no",    "worries"],     kurdish: "تێگەیشتم، زانیم، کێشە نییە"           },
-      { english: ["For",   "real","though","that's","crazy"],       kurdish: "بەڵام بەجدی، ئەوە شێتانەیە"            },
+      { english: ["I'll", "whip", "up", "something", "quick"], kurdish: "خواردنێک بە خێرایی دروست دەکەم" },
+      { english: ["Man", "that", "really", "hit", "the", "spot"], kurdish: "ئەوە بەڕاستی ڕێک ئەوە بوو کە دەمویست" },
     ],
     fillBlanks: [
-      { parts: ["",     ", I totally get it!"],    hint: "گیرا، بەتەواوی تێدەگەم!",           answer: "Gotcha",  wrongs: ["Sure", "Okay", "Right"]      },
-      { parts: ["My",   "for forgetting that!"],   hint: "هەڵەی من بوو کە ئەوەم بیرچوو!",         answer: "bad",     wrongs: ["fault", "mistake", "error"]   },
+      { parts: ["Did you make this from", "?"], hint: "سفرەوە / بنچینە", answer: "scratch", wrongs: ["itch", "jumping", "apple"] },
+      { parts: ["We can just eat", "from last night."], hint: "خواردنی ماوە", answer: "leftovers", wrongs: ["rightovers", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "کاتێک هەڵەیەک دەکەیت", theyAsk: "Hey you forgot to send me that file!", correct: "Oh my bad! Sending it right now, one sec.", wrong1: "I will send it tomorrow morning.", wrong2: "Which file are you referring to?", wrong3: "I did not forget. Check your inbox.", explanation: "'Oh my bad! Sending it right now' — دانپەدان + چارەسەرێکی خێرا" },
+      {
+        situation: "هاوڕێیەکت خواردنێکی خۆشی بۆ دروستکردویت",
+        theyAsk: "How was the burger I made?",
+        correct: "It was amazing, it really hit the spot.",
+        wrong1: "The spot is burnt the leftovers.",
+        wrong2: "I whip up the car.",
+        wrong3: "Scratch the burger window.",
+        explanation: "وەسفکردنی خواردنێکی خۆش: 'It was amazing, it really hit the spot.'",
+      },
     ],
   },
 
+  // Lesson 3: Drinks & Coffee
   {
-    topic: "Asking for Directions", topicKu: "پرسیارکردن دەربارەی ئاراستەکان",
+    topic: "Coffee & Drinks", topicKu: "قاوە و خواردنەوە",
     words: [
-      { english: "Head straight",  kurdish: "ڕاستەوخۆ بڕۆ"      },
-      { english: "Take a left",    kurdish: "بەرەو چەپ بپێچەوە"  },
-      { english: "You can't miss", kurdish: "مەحاڵە نەیبینیت"    },
-      { english: "Around the corner",kurdish: "لەولای پێچەکەیە"  },
-      { english: "Just follow",    kurdish: "تەنها دوای کەوە"    },
+      { english: "On the rocks", kurdish: "بە سەهۆڵەوە" },
+      { english: "A round", kurdish: "یەک دەورە (خواردنەوە بۆ هەمووان)" },
+      { english: "Watered down", kurdish: "ئاوەڵە (بێتام بووە بەهۆی ئاوەوە)" },
+      { english: "Boozy", kurdish: "کحولی (مەستکەر)" },
+      { english: "Chug", kurdish: "بە یەک جار خواردنەوە (نۆش)" },
     ],
     voices: [
-      { prompt: "داوای ئاراستە بکە",     target: "Excuse me, where's the nearest pharmacy?", targetKurdish: "ببوورە، نزیکترین دەرمانخانە لە کوێیە؟"},
-      { prompt: "ئاراستە پیشان بدە",     target: "Head straight then take a left — you can't miss it!", targetKurdish: "ڕاستەوخۆ بڕۆ و دواتر بەرەو چەپ بپێچەوە — مەحاڵە نەیبینیت!" },
+      { prompt: "داوای خواردنەوەیەک بە سەهۆڵ بکە", target: "I'll take an iced coffee, on the rocks.", targetKurdish: "قاوەیەکی سارد دەخۆمەوە، بە سەهۆڵەوە." },
+      { prompt: "بڵێ من دەورەیەک دەکڕم", target: "The next round is on me.", targetKurdish: "دەورەی داهاتوو لەسەر منە." },
     ],
     sentences: [
-      { english: ["Head",   "straight","then","take","a",  "left"],    kurdish: "ڕاستەوخۆ بڕۆ پاشان بەرەو چەپ بپێچەوە"},
-      { english: ["You",    "can't",   "miss","it,", "it's","right there"],kurdish: "مەحاڵە نەیبینیت، هەر لەوێیە"      },
+      { english: ["I'll", "take", "an", "iced", "coffee", "on", "the", "rocks"], kurdish: "قاوەیەکی سارد دەخۆمەوە، بە سەهۆڵەوە" },
+      { english: ["The", "next", "round", "is", "on", "me"], kurdish: "دەورەی داهاتوو لەسەر منە" },
     ],
     fillBlanks: [
-      { parts: ["Head",    "and then turn left"],    hint: "ڕاستەوخۆ بڕۆ پاشان بەرەو چەپ بپێچەوە",   answer: "straight", wrongs: ["forward", "ahead", "through"]  },
-      { parts: ["It's",    "the corner — easy!"],     hint: "لەولای پێچەکەیە — زۆر ئاسانە!",             answer: "around",   wrongs: ["beside", "past", "near"]      },
+      { parts: ["This coffee is completely", "down."], hint: "ئاو تێکراو / لاواز", answer: "watered", wrongs: ["fired", "jumping", "apple"] },
+      { parts: ["Just", "the whole thing right now!"], hint: "بە یەک جار خواردنەوە", answer: "chug", wrongs: ["hug", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "کەسێک ونە و ڕێگامان دەپرسێت", theyAsk: "Hey, is there a coffee shop near here?", correct: "Yeah! Head straight, take the first left — it's right around the corner!", wrong1: "I do not know. I am not from here.", wrong2: "There might be one somewhere downtown.", wrong3: "You should use a maps application.", explanation: "'Head straight, take the first left — right around the corner!' — ئاراستەی ڕۆژانە و ڕوون" },
+      {
+        situation: "لە قاوەخانەیەکیت و خواردنەوەیەک داوا دەکەیت",
+        theyAsk: "How would you like your drink?",
+        correct: "Just on the rocks, please.",
+        wrong1: "I will chug the round.",
+        wrong2: "Make it watered down table.",
+        wrong3: "Boozy rock for my dog.",
+        explanation: "داواکردنی خواردنەوە بە سەهۆڵ: 'Just on the rocks, please.'",
+      },
     ],
   },
 
+  // Lesson 4: Working Out
   {
-    topic: "Talking About Food", topicKu: "قسەکردن لەسەر خواردن",
+    topic: "The Gym", topicKu: "وەرزش و هۆڵی لەشجوانی",
     words: [
-      { english: "I'm starving",   kurdish: "لە برسا دەمەرم"     },
-      { english: "That hits",      kurdish: "ئەوە زۆر شازە"      },
-      { english: "Worth it",       kurdish: "هەقی خۆیەتی"        },
-      { english: "Must try",       kurdish: "دەبێت تاقی بکەیتەوە"},
-      { english: "So spicy",       kurdish: "زۆر تیژە"           },
+      { english: "Pumped", kurdish: "پەرۆش / ماسولکە پڕبوو" },
+      { english: "Shredded", kurdish: "لەشڕێک و ماسولکەدار" },
+      { english: "Sore", kurdish: "ئازار (پاش وەرزش)" },
+      { english: "Spot me", kurdish: "چاودێریم بکە (لە کاتی بەرزکردنەوەدا)" },
+      { english: "Cardio", kurdish: "وەرزشی دڵ (ڕاکردن)" },
     ],
     voices: [
-      { prompt: "وەسفی خواردنێک بکە",  target: "This is literally the best thing I've ever eaten!", targetKurdish: "بەڕاستی ئەمە باشترین شتە کە تا ئێستا خواردوومە!" },
-      { prompt: "پێشنیاری بکە",        target: "You absolutely have to try this place",             targetKurdish: "بەدڵنیاییەوە دەبێت ئەم شوێنە تاقی بکەیتەوە"      },
+      { prompt: "بڵێ پێویستم بە کەسێکە چاودێریم بکات", target: "Hey, can you spot me on this set?", targetKurdish: "دەتوانیت چاودێریم بکەیت لەم سێتەدا؟" },
+      { prompt: "بڵێ قاچەکانم ئازاریان هەیە", target: "My legs are so sore today.", targetKurdish: "ئەمڕۆ قاچەکانم زۆر ئازاریان هەیە." },
     ],
     sentences: [
-      { english: ["This","is",  "literally","the","best","I've","eaten"],kurdish: "بەڕاستی ئەمە باشترین شتە کە تا ئێستا خواردوومە"},
-      { english: ["You", "have","to",       "try","this","place"],       kurdish: "دەبێت ئەم شوێنە تاقی بکەیتەوە"       },
+      { english: ["Hey", "can", "you", "spot", "me", "on", "this", "set"], kurdish: "دەتوانیت چاودێریم بکەیت لەم سێتەدا؟" },
+      { english: ["My", "legs", "are", "so", "sore", "today"], kurdish: "ئەمڕۆ قاچەکانم زۆر ئازاریان هەیە" },
     ],
     fillBlanks: [
-      { parts: ["I'm",  "— when's lunch?!"],           hint: "زۆر برسییمە — کاتی نانی نیوەڕۆ کەیە؟!",   answer: "starving",  wrongs: ["hungry", "dying", "empty"]   },
-      { parts: ["This", "place is absolutely worth it!"], hint: "ئەم شوێنە بەتەواوی هەقی خۆیەتی!", answer: "local", wrongs: ["street", "random", "unknown"] },
+      { parts: ["He works out every day, he is completely", "."], hint: "لەشڕێک (دڕاو)", answer: "shredded", wrongs: ["papered", "jumping", "apple"] },
+      { parts: ["I hate doing", "on the treadmill."], hint: "وەرزشی دڵ / ڕاکردن", answer: "cardio", wrongs: ["radio", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک خواردنێکی تام کردووە", theyAsk: "How's the pasta?", correct: "Bro, it literally hits different — you HAVE to try this!", wrong1: "The pasta is acceptable but nothing special.", wrong2: "I would not order it again.", wrong3: "It tastes similar to other restaurants.", explanation: "'It hits different — you HAVE to try this!' — پێشنیارێکی بەپەرۆش" },
+      {
+        situation: "لە هۆڵی وەرزشیت و قورسایی بەرز دەکەیتەوە",
+        theyAsk: "You need help with that weight?",
+        correct: "Yeah, can you spot me?",
+        wrong1: "The weight is sore shredded.",
+        wrong2: "I am pumped the cardio.",
+        wrong3: "Spot the dog outside.",
+        explanation: "داوای یارمەتی لە کاتی قورسایی بەرزکردنەوە: 'Yeah, can you spot me?'",
+      },
     ],
   },
 
+  // Lesson 5: Chilling at Home
   {
-    topic: "At Work / School", topicKu: "لە کار / لە قوتابخانە",
+    topic: "Relaxing", topicKu: "پشوودان لە ماڵەوە",
     words: [
-      { english: "Deadline",       kurdish: "دوا مۆڵەت"          },
-      { english: "Behind on",      kurdish: "دواکەوتووم لە"      },
-      { english: "On it",          kurdish: "لەسەریم"            },
-      { english: "Wrap it up",     kurdish: "تەواوی بکە"         },
-      { english: "Run by you",     kurdish: "پێت پیشان بدەم"     },
+      { english: "Binge-watch", kurdish: "سەیرکردنی زنجیرەیەک بەسەریەکەوە" },
+      { english: "Couch potato", kurdish: "کەسێکی تەمبەڵ (هەر دادەنیشێت)" },
+      { english: "Unwind", kurdish: "حەساندنەوە (لابردنی سترێس)" },
+      { english: "Low-key", kurdish: "ئارام / بە بێدەنگی" },
+      { english: "Doze off", kurdish: "خەو لێکەوتن (بێ مەبەست)" },
     ],
     voices: [
-      { prompt: "دواکەوتنت باس بکە",    target: "I'm kind of behind on this deadline",     targetKurdish: "کەمێک دواکەوتووم لەم کاتی دیاریکراوەدا" },
-      { prompt: "داوای سەرنج بکە",      target: "Let me run this by you real quick",       targetKurdish: "با بە خێرایی ئەوەت پێ پیشان بدەم" },
+      { prompt: "بڵێ دەمەوێت لە ماڵەوە بمێنمەوە", target: "I'm just gonna keep it low-key tonight.", targetKurdish: "ئەمشەو تەنها بە ئارامی لە ماڵەوە دەمێنمەوە." },
+      { prompt: "بڵێ زنجیرەیەکم بەسەریەکەوە سەیرکرد", target: "I binge-watched the whole show.", targetKurdish: "تەواوی زنجیرەکەم بەسەریەکەوە سەیرکرد." },
     ],
     sentences: [
-      { english: ["I'm",  "kind",  "of",    "behind","on",  "this"],  kurdish: "کەمێک لە کاتی دیاریکراو دواکەوتووم"   },
-      { english: ["Let",  "me",    "run",   "this",  "by", "you"],    kurdish: "با ئەمەت پێ پیشان بدەم" },
+      { english: ["I'm", "just", "gonna", "keep", "it", "low-key", "tonight"], kurdish: "ئەمشەو تەنها بە ئارامی لە ماڵەوە دەمێنمەوە" },
+      { english: ["I", "binge-watched", "the", "whole", "show"], kurdish: "تەواوی زنجیرەکەم بەسەریەکەوە سەیرکرد" },
     ],
     fillBlanks: [
-      { parts: ["I'm",   "on the deadline — need help!"],   hint: "لە کاتی دیاریکراو دواکەوتووم — پێویستم بە یارمەتییە!", answer: "behind",  wrongs: ["late", "slow", "stuck"]      },
-      { parts: ["Just",  "this for me real quick!"],         hint: "تەنها بە خێرایی بۆم کۆتایی پێ بهێنە!",              answer: "wrap up", wrongs: ["finish", "do", "solve"]       },
+      { parts: ["I was so tired, I started to", "off on the couch."], hint: "خەولێکەوتن (کورت)", answer: "doze", wrongs: ["froze", "jumping", "apple"] },
+      { parts: ["After work, I just need to", "and relax."], hint: "حەساندنەوە / کردنەوە", answer: "unwind", wrongs: ["wind", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "هاوکارێک داوای یارمەتی دەکات", theyAsk: "Hey, can I run something by you?", correct: "Of course, I'm on it — what's up?", wrong1: "I am too busy right now.", wrong2: "Please send me an email instead.", wrong3: "What is the topic you wish to discuss?", explanation: "'Of course, I'm on it — what's up?' — ئامادەیی خێرا و سروشتی" },
+      {
+        situation: "هاوڕێیەکت دەپرسێت ئەمشەو چی دەکەیت",
+        theyAsk: "Are you going to the party tonight?",
+        correct: "Nah, I'm just gonna keep it low-key at home.",
+        wrong1: "The potato is jumping couch.",
+        wrong2: "I unwind the party door.",
+        wrong3: "Binge-watch the music club.",
+        explanation: "مانەوە لە ماڵەوە بە ئارامی: 'Nah, I'm just gonna keep it low-key at home.'",
+      },
     ],
   },
 
+  // Lesson 6: Technology & Phones
   {
-    topic: "Shopping & Money", topicKu: "بازاڕکردن و پارە",
+    topic: "Tech & Phones", topicKu: "تەکنەلۆژیا و مۆبایل",
     words: [
-      { english: "On sale",       kurdish: "داشکاندنی بۆ کراوە" },
-      { english: "Broke",         kurdish: "پوولم پێ نییە"      },
-      { english: "Treat yourself",kurdish: "پاداشتی خۆت بکە"    },
-      { english: "Good deal",     kurdish: "مامەڵەیەکی باش"     },
-      { english: "Splurge",       kurdish: "پارەی زیاد خەرجرد"  },
+      { english: "Dying", kurdish: "شەحنەکەیم خەریکە تەواو دەبێت" },
+      { english: "Glitching", kurdish: "هەڵەی تێدایە (تێکچووە)" },
+      { english: "Ghosting", kurdish: "وەڵامنەدانەوەی نامە" },
+      { english: "Leave on read", kurdish: "خوێندنەوەی نامە بێ وەڵامدانەوە" },
+      { english: "Scroll", kurdish: "هێنانەخوارەوەی شاشە (سەیرکردن)" },
     ],
     voices: [
-      { prompt: "بڵێ کە پارەت نییە",     target: "I'm totally broke until payday",   targetKurdish: "تا ڕۆژی وەرگرتنی مووچە بەتەواوی پوولم پێ نییە" },
-      { prompt: "داوای پاداشتکردنی خۆی لێبکە", target: "Honestly just treat yourself, it's on sale!", targetKurdish: "بەڕاستی پاداشتی خۆت بکە، ئەوە داشکاندنی بۆ کراوە!"},
+      { prompt: "بڵێ مۆبایلەکەم شەحنی نامێنێت", target: "My phone is dying, I need a charger.", targetKurdish: "مۆبایلەکەم شەحنی خەریکە تەواو دەبێت، پێویستم بە بارگاویکەرێکە." },
+      { prompt: "بڵێ نامەکەی خوێندەوە و وەڵامی نەدایەوە", target: "He completely left me on read.", targetKurdish: "بە تەواوی نامەکەی خوێندەوە و وەڵامی نەدامەوە." },
     ],
     sentences: [
-      { english: ["I'm",  "totally","broke","until","payday"],              kurdish: "تا ڕۆژی وەرگرتنی مووچە بەتەواوی پوولم پێ نییە" },
-      { english: ["Just", "treat",  "yourself","it's","on","sale"],          kurdish: "پاداشتی خۆت بکە ئەوە داشکاندنی بۆ کراوە"       },
+      { english: ["My", "phone", "is", "dying", "I", "need", "a", "charger"], kurdish: "مۆبایلەکەم شەحنی خەریکە تەواو دەبێت، پێویستم بە بارگاویکەرێکە" },
+      { english: ["He", "completely", "left", "me", "on", "read"], kurdish: "بە تەواوی نامەکەی خوێندەوە و وەڵامی نەدامەوە" },
     ],
     fillBlanks: [
-      { parts: ["I'm so", "right now — can't spend a thing!"], hint: "لەم ساتەدا زۆر بێپارەم — ناتوانم هیچ خەرج بکەم!", answer: "broke",   wrongs: ["poor", "done", "spent"]     },
-      { parts: ["That's a really", "deal!"], hint: "ئەوە بەڕاستی مامەڵەیەکی باشە!", answer: "good", wrongs: ["great", "nice", "amazing"] },
+      { parts: ["My app keeps", "out and closing."], hint: "تێکچوون / هەڵە", answer: "glitching", wrongs: ["stitching", "jumping", "apple"] },
+      { parts: ["Why is she", "me? She won't reply."], hint: "وەڵامنەدانەوە وەک خێوەت", answer: "ghosting", wrongs: ["hosting", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "کەسێک دوودڵە لە کڕین", theyAsk: "I really want those shoes but they're expensive.", correct: "They're on sale NOW though — honestly just treat yourself!", wrong1: "You should save money and not buy them.", wrong2: "Expensive shoes are never worth it.", wrong3: "I do not care about shoes.", explanation: "'They're on sale — just treat yourself!' — هاندان بە شێوەیەکی گەرم" },
+      {
+        situation: "مۆبایلەکەت شەحنی خەریکە تەواو دەبێت",
+        theyAsk: "Can you send me that picture?",
+        correct: "In a minute, my phone is dying right now.",
+        wrong1: "The phone is ghosting the tree.",
+        wrong2: "I scroll the charger up.",
+        wrong3: "Read the dying battery.",
+        explanation: "ئاگادارکردنەوەی کەسێک کە مۆبایلەکەت شەحنی کەمە: 'In a minute, my phone is dying right now.'",
+      },
     ],
   },
 
+  // Lesson 7: Weather & Outside
   {
-    topic: "Talking About Health", topicKu: "قسەکردن دەربارەی تەندروستی",
+    topic: "Weather", topicKu: "کەشوهەوا",
     words: [
-      { english: "Under the weather",kurdish: "کەمێک نەخۆشم"       },
-      { english: "Burning up",       kurdish: "تاوم زۆرە"          },
-      { english: "Wiped out",        kurdish: "شەکەت بووم"         },
-      { english: "Take it easy",     kurdish: "پشوو بدە"           },
-      { english: "Pushing through",  kurdish: "بەردەوامم"          },
+      { english: "Freezing", kurdish: "زۆر سارد (بەستەڵەک)" },
+      { english: "Boiling", kurdish: "زۆر گەرم (کوڵاو)" },
+      { english: "Pouring", kurdish: "بارانی زۆر (لێزمە)" },
+      { english: "Breezy", kurdish: "باوبۆرانێکی کەم (فێنک)" },
+      { english: "Gloomy", kurdish: "تاریک و هەوراوی (دڵتەنگ)" },
     ],
     voices: [
-      { prompt: "باری تەندروستیت باس بکە", target: "I've been feeling really under the weather",  targetKurdish: "بەڕاستی هەست دەکەم سەرمام بووە و تەندروستیم باش نییە" },
-      { prompt: "ئامۆژگاری بدە",         target: "Hey, take it easy — don't push too hard",    targetKurdish: "ئەی، کەمێک پشوو بدە — زۆر لە خۆت مەکە"  },
+      { prompt: "بڵێ دەرەوە زۆر ساردە", target: "It is absolutely freezing outside.", targetKurdish: "لە دەرەوە بەتەواوی بەستەڵەکە." },
+      { prompt: "بڵێ بارانێکی زۆر دەبارێت", target: "It's pouring down rain right now.", targetKurdish: "ئێستا لێزمەی بارانە." },
     ],
     sentences: [
-      { english: ["I've", "been",    "feeling","under","the",  "weather"], kurdish: "هەست بە باشی ناکەم و تەندروستیم باش نییە" },
-      { english: ["Just", "take",    "it",     "easy", "today"],           kurdish: "ئەمڕۆ تەنها پشوو بدە"    },
+      { english: ["It", "is", "absolutely", "freezing", "outside"], kurdish: "لە دەرەوە بەتەواوی بەستەڵەکە" },
+      { english: ["It's", "pouring", "down", "rain", "right", "now"], kurdish: "ئێستا لێزمەی بارانە" },
     ],
     fillBlanks: [
-      { parts: ["I'm feeling under the", "today"], hint: "ئەمڕۆ تەندروستیم باش نییە", answer: "weather", wrongs: ["sky", "sun", "air"] },
-      { parts: ["I'm totally","out today!"], hint: "ئەمڕۆ بەتەواوی شەکەت بووم!", answer: "wiped",   wrongs: ["burned", "stressed", "gone"] },
+      { parts: ["Turn on the AC, it's", "in here!"], hint: "زۆر گەرم (کوڵاو)", answer: "boiling", wrongs: ["oiling", "jumping", "apple"] },
+      { parts: ["The sky is so gray and", "today."], hint: "تاریک و هەوراوی", answer: "gloomy", wrongs: ["roomy", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک نەخۆشی پێوە دیارە", theyAsk: "You look tired today, you okay?", correct: "Honestly not great — been a bit under the weather. Trying to push through.", wrong1: "I feel wonderful today. Thanks!", wrong2: "I am completely fine. No worries.", wrong3: "I stayed up gaming all night.", explanation: "'Under the weather. Trying to push through.' — ئیدیۆمی سروشتی بۆ نەخۆشی" },
+      {
+        situation: "دەتەوێت بچیتە دەرەوە بەڵام بارانێکی زۆرە",
+        theyAsk: "Are we still going for a walk?",
+        correct: "Look outside, it's completely pouring!",
+        wrong1: "The freezing is a hot day.",
+        wrong2: "I am boiling the rain.",
+        wrong3: "The walk is a breezy door.",
+        explanation: "وەسفکردنی بارانی زۆر: 'Look outside, it's completely pouring!'",
+      },
     ],
   },
 
+  // Lesson 8: Sleep & Tiredness
   {
-    topic: "Transport & Commute", topicKu: "گواستنەوە و هاتوچۆ",
+    topic: "Sleeping", topicKu: "خەو و ماندوێتی",
     words: [
-      { english: "Stuck in traffic",  kurdish: "گیرخواردن لە قەرەباڵغیدا"},
-      { english: "Take the subway",   kurdish: "مەترۆکە بەکاربهێنە"  },
-      { english: "Uber it",           kurdish: "تەکسی بگرە"          },
-      { english: "It's packed",       kurdish: "زۆر قەرەباڵغە"       },
-      { english: "Next stop",         kurdish: "وێستگەی داهاتوو"     },
+      { english: "Out cold", kurdish: "خەوی قووڵ (وەک بێهۆش)" },
+      { english: "Toss and turn", kurdish: "سوڕانەوە لەناو جێگە (خەونەچوون)" },
+      { english: "Crash", kurdish: "خەوتنی خێرا لە ماندوێتی" },
+      { english: "Nap", kurdish: "خەوێکی کورت (خەوی ڕۆژ)" },
+      { english: "Sleep on it", kurdish: "بیرکردنەوە تا بەیانی (دواخستنی بڕیار)" },
     ],
     voices: [
-      { prompt: "باسکردنی قەرەباڵغی",    target: "I'm stuck in traffic — gonna be late!",   targetKurdish: "لە قەرەباڵغیدا گیرم خواردووە — دوا دەکەوم!" },
-      { prompt: "پێشنیار بکە",           target: "Just take the subway, way faster",         targetKurdish: "تەنها مەترۆکە بەکاربهێنە، زۆر خێراترە" },
+      { prompt: "بڵێ دەمەوێت بخەوم", target: "I'm just gonna crash on the couch.", targetKurdish: "تەنها لەسەر قەنەفەکە دەخەوم (لە ماندوێتیا)." },
+      { prompt: "بڵێ با تا بەیانی بیری لێبکەمەوە", target: "Let me sleep on it and tell you tomorrow.", targetKurdish: "با تا بەیانی بیری لێبکەمەوە و سبەی پێت دەڵێم." },
     ],
     sentences: [
-      { english: ["I'm", "stuck",  "in",  "traffic", "gonna","be","late"],  kurdish: "لە قەرەباڵغیدا گیرم خواردووە، دوا دەکەوم" },
-      { english: ["Just","take",   "the", "subway",   "way",  "faster"],    kurdish: "تەنها چارەسەرەکە مەترۆیە، خێراترە" },
+      { english: ["I'm", "just", "gonna", "crash", "on", "the", "couch"], kurdish: "تەنها لەسەر قەنەفەکە دەخەوم" },
+      { english: ["Let", "me", "sleep", "on", "it", "and", "tell", "you", "tomorrow"], kurdish: "با تا بەیانی بیری لێبکەمەوە و سبەی پێت دەڵێم" },
     ],
     fillBlanks: [
-      { parts: ["I'm",  "in traffic right now!"],   hint: "هەر ئێستا لە قەرەباڵغیدا گیرم خواردووە!",     answer: "stuck",    wrongs: ["trapped", "lost", "slow"]     },
-      { parts: ["The",  "is absolutely packed!"],    hint: "مەترۆکە بەتەواوی پڕ بووە لە خەڵک!",          answer: "subway",   wrongs: ["bus", "train", "road"]        },
+      { parts: ["He was so tired, he was out", "as soon as he lay down."], hint: "سارد (واتا خەوی قووڵ)", answer: "cold", wrongs: ["hot", "jumping", "apple"] },
+      { parts: ["I couldn't sleep, I was just", "and turning all night."], hint: "فڕێدان (سوڕانەوە)", answer: "tossing", wrongs: ["bossing", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "هاوڕێیەک چاوەڕێت دەکات", theyAsk: "Where are you?? I'm at the restaurant!", correct: "Stuck in traffic — just gonna Uber it, be there in 10!", wrong1: "I am already at the restaurant.", wrong2: "I cannot come tonight. Sorry.", wrong3: "Please wait thirty more minutes.", explanation: "'Stuck in traffic — Uber it, be there in 10!' — کورت و ڕوون بۆ دواکەوتن" },
+      {
+        situation: "بڕیارێکی گرنگ دەدەیت",
+        theyAsk: "Do you want to accept the job offer?",
+        correct: "I'm not sure yet. Let me sleep on it.",
+        wrong1: "I crash the couch cold.",
+        wrong2: "The job is tossing and turning.",
+        wrong3: "I take a nap on the offer.",
+        explanation: "دواخستنی بڕیار بۆ ڕۆژی دواتر: 'I'm not sure yet. Let me sleep on it.'",
+      },
     ],
   },
 
+  // Lesson 9: Moods & Feelings
   {
-    topic: "Talking About the Weekend", topicKu: "قسەکردن لەسەر کاتی پشوو",
+    topic: "Moods", topicKu: "میزاج و هەستەکان",
     words: [
-      { english: "Slept in",       kurdish: "درەنگ لەخەو هەستام"  },
-      { english: "Lazy day",       kurdish: "ڕۆژێکی تەمبەڵانە"    },
-      { english: "Recharged",      kurdish: "وزەم بۆ گەڕایەوە"    },
-      { english: "Much needed",    kurdish: "زۆر پێویست بوو"      },
-      { english: "Flew by",        kurdish: "زۆر خێرا تێپەڕی"     },
+      { english: "Bummed out", kurdish: "دڵتەنگ و بێتاقەت" },
+      { english: "Fired up", kurdish: "زۆر پەرۆش و بەجۆش" },
+      { english: "Hangry", kurdish: "توڕە بەهۆی برسێتییەوە" },
+      { english: "On edge", kurdish: "شڵەژاو و سترێساوی" },
+      { english: "Vibing", kurdish: "لە کەشێکی ئارام و خۆشدا" },
     ],
     voices: [
-      { prompt: "باسی پشووەکەت بکە",   target: "I slept in till noon — it was amazing",    targetKurdish: "تا نیوەڕۆ خەوتم — زۆر شاز بوو"    },
-      { prompt: "خێرایی کاتەکە باس بکە", target: "The weekend flew by way too fast",         targetKurdish: "کۆتایی هەفتەکە زۆر بە خێرایی تێپەڕی" },
+      { prompt: "بڵێ زۆر پەرۆشم بۆ ئەمە", target: "I am absolutely fired up for this.", targetKurdish: "بەتەواوی بۆ ئەمە بەجۆش و پەرۆشم." },
+      { prompt: "بڵێ کەمێک بێتاقەتم", target: "I'm honestly a little bummed out.", targetKurdish: "بەڕاستی کەمێک بێتاقەتم." },
     ],
     sentences: [
-      { english: ["I",    "slept", "in",   "till",  "noon",  "it","was","amazing"],  kurdish: "تا نیوەڕۆ خەوتم، زۆر خۆش بوو"    },
-      { english: ["The",  "weekend","flew","by",    "way",   "too","fast"],           kurdish: "کۆتایی هەفتەکە زۆر بە خێرایی تێپەڕی" },
+      { english: ["I", "am", "absolutely", "fired", "up", "for", "this"], kurdish: "بەتەواوی بۆ ئەمە بەجۆش و پەرۆشم" },
+      { english: ["I'm", "honestly", "a", "little", "bummed", "out"], kurdish: "بەڕاستی کەمێک بێتاقەتم" },
     ],
     fillBlanks: [
-      { parts: ["I slept", "till noon this weekend!"],    hint: "ئەم کۆتایی هەفتەیە تا نیوەڕۆ خەوتم!",  answer: "in",      wrongs: ["out", "well", "hard"]        },
-      { parts: ["It was", "what I needed!"], hint: "ئەوە ڕێک ئەوە بوو کە پێویستم بوو!", answer: "exactly", wrongs: ["just", "precisely", "really"] },
+      { parts: ["Feed him, he gets really", "when he doesn't eat."], hint: "برسی + توڕە", answer: "hangry", wrongs: ["angry", "jumping", "apple"] },
+      { parts: ["She's been on", "all day because of the test."], hint: "لێوار (شڵەژاو)", answer: "edge", wrongs: ["ledge", "cloud", "shoe"] },
     ],
     conversations: [
-      { situation: "کاتی نزیکبوونەوە لە هاوکاران", theyAsk: "Good weekend?", correct: "So good — slept in, recharged, did nothing. Honestly much needed!", wrong1: "My weekend was extremely busy.", wrong2: "I worked all weekend on a project.", wrong3: "Weekends are not important to me.", explanation: "'Slept in, recharged, did nothing. Much needed!' — کورت و سەردەمی" },
+      {
+        situation: "یارییەکی گرنگ دەستپێدەکات",
+        theyAsk: "Are you ready for the championship game?",
+        correct: "Oh yeah, I am completely fired up!",
+        wrong1: "The game is bummed out.",
+        wrong2: "I am hangry for the ball.",
+        wrong3: "I edge the television.",
+        explanation: "دەربڕینی پەرۆشی زۆر: 'Oh yeah, I am completely fired up!'",
+      },
     ],
   },
 ];

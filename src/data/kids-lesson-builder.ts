@@ -1,5 +1,6 @@
 import type { GameQuestion, KidsPlayQuestion } from "./types";
 import type { KidsGameStep, KidsChoice } from "./kids-games";
+import { getKidsVoiceImage } from "./kids-image-assets";
 
 function shuffle<T>(arr: T[], seed: number): T[] {
   const a = [...arr];
@@ -23,7 +24,12 @@ function kidsPlay(
   return { type: "kids_play", xp, ...partial };
 }
 
-export function kidsStepToQuestion(step: KidsGameStep, seed: number): GameQuestion {
+export function kidsStepToQuestion(
+  step: KidsGameStep,
+  seed: number,
+  unitIndex = -1,
+  lessonIndex = -1,
+): GameQuestion {
   switch (step.kind) {
     case "scene":
       return kidsPlay({
@@ -113,7 +119,8 @@ export function kidsStepToQuestion(step: KidsGameStep, seed: number): GameQuesti
         prompt: step.prompt,
         targetWord: step.target,
         targetKurdish: step.targetKurdish,
-        imageRequire: step.imageRequire,
+        imageRequire:
+          getKidsVoiceImage(step.target, unitIndex, lessonIndex) ?? step.imageRequire,
         xp: 20,
       };
     case "treasure": {
@@ -156,5 +163,7 @@ export function buildKidsFlowQuestions(
   lessonIndex: number,
 ): GameQuestion[] {
   const base = unitIndex * 997 + lessonIndex * 137;
-  return steps.map((step, i) => kidsStepToQuestion(step, base + i));
+  return steps.map((step, i) =>
+    kidsStepToQuestion(step, base + i, unitIndex, lessonIndex),
+  );
 }

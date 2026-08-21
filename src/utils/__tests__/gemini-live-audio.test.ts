@@ -181,7 +181,14 @@ describe("LivePcmPlayer turn draining", () => {
     const wavBase64 = writeAsStringAsync.mock.calls[0]?.[1] as string;
     const wav = decodeBase64(wavBase64);
 
-    expect(Array.from(wav.slice(44))).toEqual([0x01, 0x02, 0x7d, 0x7e]);
+    const pcm = wav.slice(44);
+    const leadInBytes = 24_000 * 2 * 0.14;
+    expect(Array.from(pcm.slice(leadInBytes, leadInBytes + 4))).toEqual([
+      0x01,
+      0x02,
+      0x7d,
+      0x7e,
+    ]);
     player.destroy();
   });
 

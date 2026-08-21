@@ -10,6 +10,7 @@ import {
 
 /**
  * TabScreenChrome wraps each tab screen.
+ * Tab screens render instantly — no opening overlay.
  * Navigation owns the transition so tab screens do not animate twice.
  */
 export function TabScreenChrome({

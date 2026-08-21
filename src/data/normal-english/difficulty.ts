@@ -77,6 +77,17 @@ function similarity(candidate: string, correct: string): number {
   return tokenOverlap * 0.56 + wordCountMatch * 0.27 + charCountMatch * 0.17;
 }
 
+function compareByAnswerSimilarity(
+  a: string,
+  b: string,
+  correct: string,
+  seed: number,
+): number {
+  const scoreDelta = similarity(b, correct) - similarity(a, correct);
+  if (Math.abs(scoreDelta) > 0.0001) return scoreDelta;
+  return stableNoise(a, seed) - stableNoise(b, seed);
+}
+
 function uniqueCandidates(candidates: string[], correct: string): string[] {
   const correctKey = normalizedKey(correct);
   const seen = new Set<string>([correctKey]);
@@ -104,16 +115,14 @@ export function selectProgressiveDistractors({
   seed: number;
 }): string[] {
   const closePool = uniqueCandidates(closeCandidates, correct).sort((a, b) => {
-    const scoreDelta = similarity(b, correct) - similarity(a, correct);
-    if (Math.abs(scoreDelta) > 0.0001) return scoreDelta;
-    return stableNoise(a, seed) - stableNoise(b, seed);
+    return compareByAnswerSimilarity(a, b, correct, seed);
   });
   const chosen = closePool.slice(0, Math.min(closeCount, total));
 
   const fallbackPool = uniqueCandidates(
     [...fallbackCandidates, ...closePool],
     correct,
-  ).sort((a, b) => stableNoise(a, seed + 41) - stableNoise(b, seed + 41));
+  ).sort((a, b) => compareByAnswerSimilarity(a, b, correct, seed + 41));
 
   for (const candidate of fallbackPool) {
     if (chosen.some((item) => normalizedKey(item) === normalizedKey(candidate))) continue;
@@ -294,6 +303,29 @@ function contrastingConversationVariants(correct: string): string[] {
   return uniqueCandidates(variants, correct);
 }
 
+export function buildConversationDistractors(
+  entry: {
+    correct: string;
+    wrong1: string;
+    wrong2: string;
+    wrong3: string;
+  },
+  count: number,
+  seed = 0,
+): string[] {
+  const generated = [
+    ...incompleteConversationVariants(entry.correct),
+    ...contrastingConversationVariants(entry.correct),
+  ];
+
+  return uniqueCandidates(
+    [...generated, entry.wrong1, entry.wrong2, entry.wrong3],
+    entry.correct,
+  )
+    .sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed))
+    .slice(0, count);
+}
+
 export function buildProgressiveConversationChoices(
   entry: {
     correct: string;
@@ -303,15 +335,27 @@ export function buildProgressiveConversationChoices(
   },
   closeCount: number,
 ): { options: string[]; optionTiers: Record<string, AnswerTier> } {
-  const nearMisses = uniqueCandidates(
+  const incomplete = incompleteConversationVariants(entry.correct);
+  const primaryPartial = incomplete[0];
+  const remainingNearMisses = uniqueCandidates(
     [
-      ...incompleteConversationVariants(entry.correct),
       ...contrastingConversationVariants(entry.correct),
+      ...incomplete.slice(1),
     ],
     entry.correct,
+  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, closeCount * 53));
+  const nearMisses = uniqueCandidates(
+    [primaryPartial, ...remainingNearMisses].filter(Boolean),
+    entry.correct,
   ).slice(0, closeCount);
+  const nearMissKeys = new Set(nearMisses.map(normalizedKey));
+  const balancedRemainder = buildConversationDistractors(
+    entry,
+    6,
+    closeCount * 97,
+  ).filter((candidate) => !nearMissKeys.has(normalizedKey(candidate)));
   const candidates = uniqueCandidates(
-    [...nearMisses, entry.wrong1, entry.wrong2, entry.wrong3],
+    [...nearMisses, ...balancedRemainder, entry.wrong1, entry.wrong2, entry.wrong3],
     entry.correct,
   ).slice(0, 3);
   const options = [entry.correct, ...candidates];

@@ -95,15 +95,15 @@ export function OnboardingFlow() {
       (typeof STEP_IDS)[number],
       { title: string; subtitle: string }
     > = {
-      welcome: {
+      "welcome": {
         title: t("onboarding.welcomeTitle"),
         subtitle: t("onboarding.welcomeSubtitle"),
       },
-      practice: {
+      "practice": {
         title: t("onboarding.practiceTitle"),
         subtitle: t("onboarding.practiceSubtitle"),
       },
-      progress: {
+      "progress": {
         title: t("onboarding.progressTitle"),
         subtitle: t("onboarding.progressSubtitle"),
       },

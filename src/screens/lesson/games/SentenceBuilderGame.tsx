@@ -1,9 +1,9 @@
 /* eslint-disable */
 /**
  * SentenceBuilderGame — Premium light UI ("Order the words").
- * Word tiles morph from the bank into answer slots via a Reanimated fly transition.
+ * Word tiles morph bidirectionally between the bank and answer slots via Reanimated FLIP transitions.
+ * Features 60fps real-time interactive drag-and-drop sliding reorder with live sibling gap opening.
  */
- 
 
 import { sentenceWordMorphTiming } from "../../../components/animations/motion";
 import { AppText } from "../../../components/ui/AppText";
@@ -11,7 +11,7 @@ import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useWordSpeech } from "./use-word-speech";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -20,19 +20,25 @@ import {
   View,
   type View as RNView,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import Animated, {
   Easing,
   interpolate,
+  LinearTransition,
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
+  withSpring,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 
 import { SentenceBuilderQuestion } from "../../../data/lesson-content";
 import type { LessonPathMode } from "../../../data/lesson-content";
-import { L, Duo } from "./lesson-light-design";
+import { L, Duo, DuoMotion } from "./lesson-light-design";
 import {
   LightCheckButton,
   LightGameHeading,
@@ -56,11 +62,15 @@ import {
   ROW_STRIDE,
   TILE_GAP,
   estimateRailCount,
+  estimateTileWidth,
   linesFromHeight,
+  resolveHoverTarget,
+  resolveSiblingOffset,
 } from "./duo-answer-rails";
 
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
+type FlyDirection = "forward" | "reverse";
 
 /** Resting width of the landing anchor — just enough to be measurable. */
 const LANDING_ANCHOR_REST_W = 1;
@@ -69,9 +79,10 @@ const ANCHOR_LAYOUT_TIMEOUT_MS = 32;
 
 type FlySession = {
   id: string;
+  direction: FlyDirection;
   bankIndex: number;
   word: string;
-  slotIndex: number;
+  slotIndex?: number;
   fromX: number;
   fromY: number;
   fromW: number;
@@ -88,27 +99,54 @@ type Props = {
   pathMode?: LessonPathMode;
 };
 
-/*
- * Duolingo answer-area geometry lives in `duo-answer-rails` — see the note there
- * about why line boxes are pinned rather than content-sized.
- */
-
-function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { session: FlySession; onFinish: (id: string, bankIndex: number) => void; isKids?: boolean; isNormal?: boolean; languageCode?: string }) {
-  const flyProgress = useSharedValue(0);
+/** Apple / Duolingo Max tier — critically damped, crisp response, zero childish wobble */
+const PremiumSlideMotion = {
+  siblingSpring: { damping: 32, stiffness: 520, mass: 0.3, overshootClamping: true },
+  releaseSnap: { damping: 34, stiffness: 580, mass: 0.28, overshootClamping: true },
   /*
-   * Resize by transform, never by layout.
-   *
-   * Animating `width`/`height` re-ran the tile's text layout on every frame of
-   * the flight. With `fitLabelLines={2}` the label is allowed to wrap, so a
-   * word that fit on one line in the bank broke onto two — or clipped — partway
-   * through and snapped back only once it landed at its final size.
-   *
-   * Holding the box at its source size lays the text out exactly once, looking
-   * identical to the bank tile it left, and scale carries it to the destination
-   * size. Glyphs scale like an image instead of reflowing.
+   * Gap-closing glide when a word leaves the row and the survivors reflow.
+   * 220ms matches the fly duration, so a word travelling to the bank and the
+   * words closing behind it read as one movement rather than two speeds.
    */
-  const scaleToX = session.fromW > 0 ? session.toW / session.fromW : 1;
-  const scaleToY = session.fromH > 0 ? session.toH / session.fromH : 1;
+  layoutGlide:
+    Platform.OS === "web"
+      ? LinearTransition.duration(220)
+      : LinearTransition.duration(220).easing(Easing.out(Easing.cubic)),
+} as const;
+
+/*
+ * FlyingTile handles bidirectional morphing (Bank -> Answer Slot and Answer Slot -> Bank Ghost).
+ *
+ * The inner tile is rendered at the LARGER of `fromW` and `toW` so text always
+ * has enough room and never truncates with "..." mid-flight. A compensating
+ * inverse-scale keeps the visible footprint at exactly `fromW × fromH` at p=0
+ * and `toW × toH` at p=1.
+ */
+function FlyingTile({
+  session,
+  onFinish,
+  isKids,
+  isNormal,
+  languageCode,
+}: {
+  session: FlySession;
+  onFinish: (id: string, bankIndex: number, direction: FlyDirection) => void;
+  isKids?: boolean;
+  isNormal?: boolean;
+  languageCode?: string;
+}) {
+  const flyProgress = useSharedValue(0);
+
+  // Use the larger dimension so text is never clipped during the flight.
+  const renderW = Math.max(session.fromW, session.toW);
+  const renderH = Math.max(session.fromH, session.toH);
+
+  // At p=0 the visible shell must be fromW × fromH;
+  // at p=1 it must be toW × toH.
+  const scaleXFrom = session.fromW > 0 ? session.fromW / renderW : 1;
+  const scaleXTo   = session.toW   > 0 ? session.toW   / renderW : 1;
+  const scaleYFrom = session.fromH > 0 ? session.fromH / renderH : 1;
+  const scaleYTo   = session.toH   > 0 ? session.toH   / renderH : 1;
 
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
@@ -116,15 +154,15 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
       transform: [
         { translateX: interpolate(p, [0, 1], [session.fromX, session.toX]) },
         { translateY: interpolate(p, [0, 1], [session.fromY, session.toY]) },
-        { scaleX: interpolate(p, [0, 1], [1, scaleToX]) },
-        { scaleY: interpolate(p, [0, 1], [1, scaleToY]) },
+        { scaleX: interpolate(p, [0, 1], [scaleXFrom, scaleXTo]) },
+        { scaleY: interpolate(p, [0, 1], [scaleYFrom, scaleYTo]) },
       ],
     };
   });
 
   React.useEffect(() => {
     flyProgress.value = withTiming(1, sentenceWordMorphTiming, (finished) => {
-      if (finished) runOnJS(onFinish)(session.id, session.bankIndex);
+      if (finished) runOnJS(onFinish)(session.id, session.bankIndex, session.direction);
     });
   }, [session, onFinish, flyProgress]);
 
@@ -136,13 +174,8 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
       <Animated.View
         style={[
           {
-            width: session.fromW,
-            height: session.fromH,
-            /*
-             * The measured coordinates are top-left based, so the scale has to
-             * pivot there too. Left at the default centre, the tile would drift
-             * by half the size difference and miss its slot.
-             */
+            width: renderW,
+            height: renderH,
             transformOrigin: "top left",
           },
           flyStyle,
@@ -151,12 +184,16 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
         <View style={s.flyTileFill}>
           <LightWordTile
             label={session.word}
-            state="pending"
+            state="idle"
             isKids={isKids}
             languageCode={languageCode}
+            // A flying label is a single visual object.  Never let the text
+            // engine reflow it into a second line while the shell is being
+            // transformed; the final answer layout decides wrapping only
+            // after the flight has completed.
             fitLabel={!isNormal}
-            fitLabelLines={2}
-            labelLines={isNormal ? 1 : undefined}
+            fitLabelLines={1}
+            labelLines={1}
             duoDepthStyle={isNormal ? "subtle" : "default"}
             fontSize={
               isNormal
@@ -171,6 +208,255 @@ function FlyingTile({ session, onFinish, isKids, isNormal, languageCode }: { ses
   );
 }
 
+/**
+ * Real-time Draggable Placed Word.
+ * Displaces sibling words dynamically in real time when dragged past 50% midpoint.
+ */
+function RealtimeDraggablePlacedWord({
+  placed,
+  index,
+  skipLayoutGlide,
+  sentenceWords,
+  cellWidths,
+  tileState,
+  targetLanguage,
+  isNormal,
+  isKids,
+  isRtl,
+  activeDragIndex,
+  dragTranslationX,
+  dragTranslationY,
+  hoverTargetIndex,
+  onRemove,
+  onReorder,
+  slotRef,
+  onLayout,
+}: {
+  placed: Placed;
+  index: number;
+  skipLayoutGlide?: boolean;
+  sentenceWords: string[];
+  /** Measured outer width of every placed cell, indexed by slot. */
+  cellWidths: SharedValue<number[]>;
+  tileState: LightTileState;
+  targetLanguage?: string;
+  isNormal?: boolean;
+  isKids?: boolean;
+  isRtl?: boolean;
+  activeDragIndex: SharedValue<number>;
+  dragTranslationX: SharedValue<number>;
+  dragTranslationY: SharedValue<number>;
+  hoverTargetIndex: SharedValue<number>;
+  onRemove: (placed: Placed, index: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  slotRef: (el: RNView | null) => void;
+  onLayout: () => void;
+}) {
+  const isDragging = useSharedValue(0);
+  /**
+   * How far this tile is pushed aside to open a gap for the dragged word.
+   *
+   * This has to be its own shared value rather than a `withSpring` written
+   * inline in `useAnimatedStyle`. That style worklet re-runs on every frame a
+   * drag is in progress (it reads `dragTranslationX`), and each run started a
+   * *new* spring from the current position — so the displacement never settled
+   * and the neighbours visibly stuttered sideways. Here the spring is created
+   * once, only when the target actually changes.
+   */
+  const siblingOffset = useSharedValue(0);
+  const totalCount = sentenceWords.length;
+
+  const triggerHaptic = useCallback(() => {
+    if (Platform.OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, []);
+
+  const handleCommitReorder = useCallback(
+    (fromIdx: number, toIdx: number) => {
+      triggerHaptic();
+      onReorder(fromIdx, toIdx);
+    },
+    [onReorder, triggerHaptic],
+  );
+
+  const panGesture = Gesture.Pan()
+    .minDistance(6)
+    .activeOffsetX([-6, 6])
+    .onStart(() => {
+      activeDragIndex.value = index;
+      hoverTargetIndex.value = index;
+      dragTranslationX.value = 0;
+      dragTranslationY.value = 0;
+      isDragging.value = withTiming(1, { duration: 80, easing: Easing.out(Easing.quad) });
+    })
+    .onUpdate((e) => {
+      dragTranslationX.value = e.translationX;
+      dragTranslationY.value = e.translationY * 0.3;
+
+      // Normalise to reading order before measuring: under RTL a rightward drag
+      // moves the word *earlier* in the sentence.
+      const delta = isRtl ? -e.translationX : e.translationX;
+      const newHover = resolveHoverTarget(
+        index,
+        delta,
+        cellWidths.value,
+        sentenceWords,
+        totalCount,
+      );
+
+      if (hoverTargetIndex.value !== newHover) {
+        hoverTargetIndex.value = newHover;
+        runOnJS(triggerHaptic)();
+      }
+    })
+    .onEnd(() => {
+      const fromIdx = activeDragIndex.value;
+      const toIdx = hoverTargetIndex.value;
+
+      isDragging.value = withTiming(0, { duration: 60, easing: Easing.out(Easing.quad) });
+      activeDragIndex.value = -1;
+      hoverTargetIndex.value = -1;
+
+      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+        // The tile is ALREADY physically at the destination slot under the user's finger.
+        // Set dragTranslation directly to 0 so when React re-renders at the new slot,
+        // it lands instantly in place with zero redundant animation from the beginning!
+        dragTranslationX.value = 0;
+        dragTranslationY.value = 0;
+        runOnJS(handleCommitReorder)(fromIdx, toIdx);
+      } else {
+        dragTranslationX.value = withSpring(0, PremiumSlideMotion.releaseSnap);
+        dragTranslationY.value = withSpring(0, PremiumSlideMotion.releaseSnap);
+      }
+    })
+    .onFinalize(() => {
+      activeDragIndex.value = -1;
+      hoverTargetIndex.value = -1;
+      dragTranslationX.value = withSpring(0, PremiumSlideMotion.releaseSnap);
+      dragTranslationY.value = withSpring(0, PremiumSlideMotion.releaseSnap);
+    });
+
+  /*
+   * The gap this tile has to open, recomputed only when the drag state changes
+   * — not every frame. Widths come from real layout, so the gap is exactly the
+   * space the dragged word will occupy; the old estimate-by-character-count
+   * left neighbours short or over-shifted, which read as random jitter.
+   */
+  useAnimatedReaction(
+    () => {
+      const dragIdx = activeDragIndex.value;
+      if (dragIdx === -1 || dragIdx === index) return 0;
+      const gap =
+        (cellWidths.value[dragIdx] ??
+          estimateTileWidth(sentenceWords[dragIdx] ?? "")) + TILE_GAP;
+      return resolveSiblingOffset(
+        index,
+        dragIdx,
+        hoverTargetIndex.value,
+        gap,
+        isRtl === true,
+      );
+    },
+    (target, previous) => {
+      if (target === previous) return;
+      if (activeDragIndex.value === -1) {
+        /*
+         * The drag just ended. A committed reorder re-renders every tile at the
+         * index it is already sitting at, so springing the offset back to 0 here
+         * would fight the layout transition doing the same distance on a
+         * different curve — that double-move is what read as a wobble/overlap.
+         */
+        siblingOffset.value = 0;
+        return;
+      }
+      siblingOffset.value = withSpring(target, PremiumSlideMotion.siblingSpring);
+    },
+    [index, isRtl, sentenceWords],
+  );
+
+  const animatedStyle = useAnimatedStyle(() => {
+    if (activeDragIndex.value === index) {
+      // Active dragged tile: elevated, follows the finger
+      return {
+        transform: [
+          { translateX: dragTranslationX.value },
+          { translateY: dragTranslationY.value },
+          { scale: interpolate(isDragging.value, [0, 1], [1, 1.04]) },
+        ],
+        zIndex: 100,
+        opacity: 1,
+        elevation: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: interpolate(isDragging.value, [0, 1], [0, 0.16]),
+        shadowRadius: 10,
+      };
+    }
+
+    // Sibling / resting tile: one settled spring, driven by the reaction above.
+    return {
+      transform: [
+        { translateX: siblingOffset.value },
+        { translateY: 0 },
+        { scale: 1 },
+      ],
+      zIndex: 1,
+      opacity: 1,
+      elevation: 0,
+      shadowOpacity: 0,
+    };
+  });
+
+  return (
+    <Animated.View
+      layout={skipLayoutGlide ? undefined : PremiumSlideMotion.layoutGlide}
+      style={[
+        isNormal ? s.duoPlacedCell : s.slotCell,
+        animatedStyle,
+      ]}
+    >
+      <View
+        ref={slotRef}
+        onLayout={onLayout}
+        collapsable={false}
+        /*
+         * Normal-path cells are intrinsically sized by their word.  A flex: 1
+         * wrapper here makes the auto-width flex row redistribute short words
+         * (and, on some native layouts, measure them as zero-width), while the
+         * cell's end margin still reserves TILE_GAP.  That mismatch is the
+         * source of the occasional short-word overlap.  Keep the fixed-width
+         * legacy slots stretched, but let the normal row retain its measured
+         * footprint.
+         */
+        style={isNormal ? undefined : { flex: 1 }}
+      >
+        <GestureDetector gesture={panGesture}>
+          <View style={isNormal ? undefined : { flex: 1 }}>
+            <LightWordTile
+              label={placed.word}
+              state={tileState}
+              onPress={() => onRemove(placed, index)}
+              activateOnPressIn={false}
+              duoDepthStyle={isNormal ? "subtle" : "default"}
+              isKids={isKids}
+              languageCode={targetLanguage}
+              fitLabel={!isNormal}
+              fitLabelLines={2}
+              fontSize={
+                isNormal
+                  ? undefined
+                  : placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14
+              }
+              style={isNormal ? s.duoWordTile : s.slotWordTile}
+            />
+          </View>
+        </GestureDetector>
+      </View>
+    </Animated.View>
+  );
+}
+
 export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
@@ -178,7 +464,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const compact = width < 390;
   const isNormal = pathMode === "normal";
   const targetDirection = getLanguageDirection(question.targetLanguage);
+  const isRtl = targetDirection === "rtl";
   const { speakWord, stop, language: targetLanguage } = useWordSpeech(question.targetLanguage);
+
   const fullSentence = React.useMemo(
     () => question.correctWords.join(" "),
     [question.correctWords],
@@ -199,24 +487,21 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   );
   const [fb, setFb] = useState<FBState>("idle");
   const [flySessions, setFlySessions] = useState<FlySession[]>([]);
-  /** Lines the placed words actually occupy — drives how many rails are drawn. */
   const [placedLines, setPlacedLines] = useState(1);
-  /** Usable width of the answer area, used to pre-compute the rail count. */
   const [answerWidth, setAnswerWidth] = useState(0);
 
-  /*
-   * Width the landing anchor reserves for the word currently in flight.
-   *
-   * The anchor marks where the next word will sit. At its 1px resting width it
-   * always fits on the current line — so with a nearly-full line it measured at
-   * the end of line 1, while the real word, being wider, wrapped to line 2. The
-   * tile flew to the end of line 1 and then jumped down on landing.
-   *
-   * Widening the anchor to the incoming word's full flex footprint (tile plus
-   * end gap) before measuring hands the decision back to the flex engine, so
-   * wrapping, padding and RTL are resolved by the same layout pass that will
-   * place the real tile.
+  // Real-time Shared Drag Values
+  const activeDragIndex = useSharedValue<number>(-1);
+  const dragTranslationX = useSharedValue<number>(0);
+  const dragTranslationY = useSharedValue<number>(0);
+  const hoverTargetIndex = useSharedValue<number>(-1);
+  /**
+   * Real measured width of each placed cell, mirrored onto the UI thread so the
+   * drag worklets displace neighbours by the exact space the dragged word takes.
+   * Fed by the same `measureInWindow` calls that already populate `slotCoords`.
    */
+  const cellWidths = useSharedValue<number[]>([]);
+
   const [anchorWidth, setAnchorWidth] = useState(LANDING_ANCHOR_REST_W);
   const anchorWidthRef = useRef(LANDING_ANCHOR_REST_W);
   const anchorLayoutWaiterRef = useRef<(() => void) | null>(null);
@@ -229,11 +514,9 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     }
   }, []);
 
-  /** Reserve `width` on the anchor and resolve once that layout has landed. */
   const reserveLandingAnchor = useCallback(
     (width: number) =>
       new Promise<void>((resolve) => {
-        // Already the right width: no layout event would fire, so don't wait.
         if (Math.abs(anchorWidthRef.current - width) < 0.5) {
           resolve();
           return;
@@ -241,7 +524,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
         anchorWidthRef.current = width;
         anchorLayoutWaiterRef.current = resolve;
         setAnchorWidth(width);
-        // A layout pass that produces no change still has to unblock the tap.
         setTimeout(() => {
           if (anchorLayoutWaiterRef.current === resolve) {
             anchorLayoutWaiterRef.current = null;
@@ -261,18 +543,41 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const completedRef = useRef(false);
   const wrongSentRef = useRef(false);
   const measuringBankRef = useRef<number | null>(null);
+  /**
+   * Word-bank taps arrive faster than React can commit the first FLIP. Keep a
+   * small JS-side queue so every distinct touch-down is accepted immediately,
+   * then drain it in visual order as each flight finishes.
+   */
+  const pendingAddQueueRef = useRef<number[]>([]);
+  const addFlightActiveRef = useRef(false);
+  const reservedAddCountRef = useRef(0);
+  const sentenceCountRef = useRef(0);
+  const usedBankRef = useRef<boolean[]>([]);
+  const processQueuedAddsRef = useRef<() => void>(() => {});
   
   const rootRef = useRef<RNView>(null);
   const bankRefs = useRef<(RNView | null)[]>([]);
   const slotRefs = useRef<(RNView | null)[]>([]);
 
-  // Coordinate caching refs to execute fly animations synchronously on click
   const rootCoords = useRef<{ x: number; y: number } | null>(null);
   const bankCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
   const slotCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
 
-  const shakeX = useSharedValue(0);
+  /** Records a placed cell's geometry for both the fly measurement and the drag worklets. */
+  const recordSlotLayout = useCallback(
+    (index: number) => {
+      slotRefs.current[index]?.measureInWindow((x, y, w, h) => {
+        slotCoords.current[index] = { x, y, w, h };
+        if (Math.abs((cellWidths.value[index] ?? -1) - w) < 0.5) return;
+        const next = [...cellWidths.value];
+        next[index] = w;
+        cellWidths.value = next;
+      });
+    },
+    [cellWidths],
+  );
 
+  const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeX.value }],
   }));
@@ -285,44 +590,55 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     setFlySessions([]);
     setPlacedLines(1);
     slotN.current = 0;
+    pendingAddQueueRef.current = [];
+    addFlightActiveRef.current = false;
+    reservedAddCountRef.current = 0;
+    sentenceCountRef.current = 0;
+    usedBankRef.current = shuffledWordBank.map(() => false);
     completedRef.current = false;
     wrongSentRef.current = false;
     measuringBankRef.current = null;
     bankCoords.current = {};
     slotCoords.current = {};
-    // A tap abandoned mid-measure would otherwise leave the anchor widened.
+    cellWidths.value = [];
+    activeDragIndex.value = -1;
+    hoverTargetIndex.value = -1;
     anchorLayoutWaiterRef.current = null;
     releaseLandingAnchor();
-  }, [shuffledWordBank, stop, releaseLandingAnchor]);
+  }, [shuffledWordBank, stop, releaseLandingAnchor, activeDragIndex, hoverTargetIndex, cellWidths]);
 
   React.useEffect(() => () => {
     void stop();
   }, [stop]);
 
   const slotCount = question.correctWords.length;
+  const sentenceWords = useMemo(() => sentence.map((p) => p.word), [sentence]);
 
   const commitAddWord = useCallback(
     (bankIndex: number) => {
       const w = shuffledWordBank[bankIndex];
       const id = `s${slotN.current++}`;
-      setUsedBank((prev) => {
-        const next = [...prev];
-        next[bankIndex] = true;
-        return next;
-      });
+      sentenceCountRef.current += 1;
+      reservedAddCountRef.current = Math.max(0, reservedAddCountRef.current - 1);
       setSentence((p) => [...p, { word: w, id, bankIndex }]);
     },
     [shuffledWordBank],
   );
 
   const finishFly = useCallback(
-    (id: string, bankIndex: number) => {
-      commitAddWord(bankIndex);
-      // The placed tile now occupies the space the anchor was holding open.
-      releaseLandingAnchor();
-      // React batches this with the placement above, so the landed tile replaces
-      // the flying one in a single render. Removing the old extra-frame delay
-      // also unlocks the next word immediately after the 145ms morph.
+    (id: string, bankIndex: number, direction: FlyDirection) => {
+      if (direction === "forward") {
+        commitAddWord(bankIndex);
+        releaseLandingAnchor();
+        addFlightActiveRef.current = false;
+      } else {
+        setUsedBank((prev) => {
+          const next = [...prev];
+          next[bankIndex] = false;
+          usedBankRef.current[bankIndex] = false;
+          return next;
+        });
+      }
       setFlySessions((prev) => prev.filter((s) => s.id !== id));
     },
     [commitAddWord, releaseLandingAnchor],
@@ -331,36 +647,24 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
   const startFlyToSlot = useCallback(
     async (bankIndex: number) => {
       if (fb === "correct") return;
-      if (usedBank[bankIndex]) return;
-      if (flySessions.length > 0 || measuringBankRef.current !== null) return;
-      
-      const slotIndex = sentence.length;
+      /*
+       * `addWord` reserves this bank entry before calling us. The queue owns
+       * serialization, so the next slot is derived from the committed count,
+       * not from render state which can be one or more taps behind.
+       */
+      const slotIndex = sentenceCountRef.current;
       if (slotIndex >= slotCount) return;
 
       const word = shuffledWordBank[bankIndex];
-      /*
-       * Speak here rather than in `addWord`: the guards above have already
-       * rejected taps on used tiles, taps during a flight and taps past the
-       * last slot, so this fires once per word that actually gets placed.
-       * Speaking on every raw tap would stutter under fast tapping.
-       */
       speakWord(word, `builder-word-${bankIndex}`);
       measuringBankRef.current = bankIndex;
 
-      /*
-       * Reserve the incoming word's width on the anchor *before* measuring it,
-       * so the anchor has already wrapped to line 2 if that is where the word
-       * belongs. Only the normal path wraps — street and kids fly into fixed
-       * slots laid out in a non-wrapping row.
-       */
       if (isNormal) {
         const bankWidth =
           bankCoords.current[bankIndex]?.w ??
           (await measureGameElement(bankRefs.current[bankIndex]))?.w;
+        // A reset (new question) or an abort clears the lock — drop the stale flight.
         if (measuringBankRef.current !== bankIndex) return;
-        // Reserve the tile's outer width, including the same end gap carried by
-        // the real placed cell. Without the gap, flex can keep this invisible
-        // anchor at the edge of row 1 and then wrap the actual tile to row 2.
         if (bankWidth) await reserveLandingAnchor(bankWidth + TILE_GAP);
         if (measuringBankRef.current !== bankIndex) return;
       }
@@ -371,8 +675,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
         cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
         cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[bankIndex]),
-        // The normal-path anchor has just reflowed. Always read it again rather
-        // than trusting a coordinate cached before its reserved width changed.
         isNormal
           ? measureGameElement(slotRefs.current[slotIndex])
           : cachedSlot
@@ -385,25 +687,20 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       const root = measuredRoot ?? rootCoords.current;
       const bank = measuredBank ?? bankCoords.current[bankIndex];
       const slot = measuredSlot ?? slotCoords.current[slotIndex];
-      measuringBankRef.current = null;
 
-      // If coordinates are not cached yet, fallback to synchronous add
       if (!root || !bank || !slot) {
+        measuringBankRef.current = null;
         releaseLandingAnchor();
         commitAddWord(bankIndex);
+        addFlightActiveRef.current = false;
         return;
       }
-
-      setUsedBank((prev) => {
-        const next = [...prev];
-        next[bankIndex] = true;
-        return next;
-      });
 
       setFlySessions((prev) => [
         ...prev,
         {
           id: Math.random().toString(),
+          direction: "forward",
           bankIndex,
           word,
           slotIndex,
@@ -413,38 +710,176 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           fromH: bank.h,
           toX: slot.x - root.x,
           toY: slot.y - root.y,
-          // Normal path words keep their own width end to end — the landing
-          // anchor is a zero-width marker, so resizing to it would collapse the
-          // tile mid-flight. Street/kids fly into fixed-size slots.
           toW: isNormal ? bank.w : slot.w,
           toH: isNormal ? bank.h : slot.h,
         },
       ]);
+      // Released only after the session exists, so the `flySessions` guard above
+      // takes over without a window where neither lock is held.
+      measuringBankRef.current = null;
     },
-    [fb, usedBank, sentence.length, flySessions.length, slotCount, shuffledWordBank, commitAddWord, isNormal, speakWord, reserveLandingAnchor, releaseLandingAnchor],
+    [fb, slotCount, shuffledWordBank, commitAddWord, isNormal, speakWord, reserveLandingAnchor, releaseLandingAnchor],
   );
 
-  const addWord = (bankIndex: number) => {
-    if (fb === "wrong") setFb("idle");
-    void startFlyToSlot(bankIndex);
-  };
+  const processQueuedAdds = useCallback(() => {
+    if (
+      fb === "correct" ||
+      addFlightActiveRef.current ||
+      flySessions.length > 0 ||
+      measuringBankRef.current !== null
+    ) return;
+    if (sentenceCountRef.current >= slotCount) {
+      pendingAddQueueRef.current = [];
+      reservedAddCountRef.current = 0;
+      return;
+    }
 
-  const removePlacedWord = (placed: Placed) => {
-    if (fb === "correct") return;
-    if (fb === "wrong") setFb("idle");
-    setUsedBank((prev) => {
+    const nextBankIndex = pendingAddQueueRef.current.shift();
+    if (nextBankIndex === undefined) return;
+
+    addFlightActiveRef.current = true;
+    void startFlyToSlot(nextBankIndex);
+  }, [fb, flySessions.length, slotCount, startFlyToSlot]);
+
+  React.useEffect(() => {
+    processQueuedAddsRef.current = processQueuedAdds;
+  }, [processQueuedAdds]);
+
+  /*
+   * Wait for the committed sentence render before measuring the next slot.
+   * Running the next flight directly from `finishFly` can read the previous
+   * anchor because React has not committed `setSentence` yet.
+   */
+  React.useEffect(() => {
+    if (flySessions.length === 0 && !addFlightActiveRef.current) {
+      processQueuedAdds();
+    }
+  }, [flySessions.length, sentence.length, processQueuedAdds]);
+
+  const startFlyToBank = useCallback(
+    async (placed: Placed, slotIndex: number) => {
+      if (fb === "correct") return;
+      // Same serialization as the forward flight: `slotCoords` is wiped below, so
+      // a second tap mid-measure would read a stale slot and fly from nowhere.
+      if (
+        flySessions.length > 0 ||
+        measuringBankRef.current !== null ||
+        addFlightActiveRef.current ||
+        pendingAddQueueRef.current.length > 0
+      ) return;
+      if (fb === "wrong") setFb("idle");
+
+      const bankIndex = placed.bankIndex;
+      measuringBankRef.current = bankIndex;
+
+      const cachedRoot = rootCoords.current;
+      const cachedBank = bankCoords.current[bankIndex];
+      const cachedSlot = slotCoords.current[slotIndex];
+
+      const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
+        cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
+        cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[bankIndex]),
+        cachedSlot ? Promise.resolve(cachedSlot) : measureGameElement(slotRefs.current[slotIndex]),
+      ]);
+
+      if (measuringBankRef.current !== bankIndex) return;
+
+      const root = measuredRoot ?? rootCoords.current;
+      const bank = measuredBank ?? bankCoords.current[bankIndex];
+      const slot = measuredSlot ?? slotCoords.current[slotIndex];
+
+      // The answer slot is removed immediately so a queued bank tap can target
+      // the newly opened position without waiting for the reverse FLIP to end.
+      // Keep the imperative count in lock-step with that optimistic removal;
+      // render state may not commit until after the next rapid touch.
+      sentenceCountRef.current = Math.max(0, sentenceCountRef.current - 1);
+      setSentence((current) => current.filter((item) => item.id !== placed.id));
+      slotCoords.current = {};
+      cellWidths.value = [];
+
+      if (!root || !bank || !slot) {
+        measuringBankRef.current = null;
+        setUsedBank((prev) => {
+          const next = [...prev];
+          next[bankIndex] = false;
+          usedBankRef.current[bankIndex] = false;
+          return next;
+        });
+        return;
+      }
+
+      setFlySessions((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(),
+          direction: "reverse",
+          bankIndex,
+          word: placed.word,
+          slotIndex,
+          fromX: slot.x - root.x,
+          fromY: slot.y - root.y,
+          fromW: slot.w || bank.w,
+          fromH: slot.h || bank.h,
+          toX: bank.x - root.x,
+          toY: bank.y - root.y,
+          toW: bank.w,
+          toH: bank.h,
+        },
+      ]);
+      measuringBankRef.current = null;
+    },
+    [fb, flySessions.length, cellWidths],
+  );
+
+  const lastDroppedIdRef = useRef<string | null>(null);
+
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    setSentence((prev) => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+        return prev;
+      }
       const next = [...prev];
-      next[placed.bankIndex] = false;
+      const [moved] = next.splice(fromIndex, 1);
+      if (moved) {
+        lastDroppedIdRef.current = moved.id;
+      }
+      next.splice(toIndex, 0, moved!);
       return next;
     });
-    // IDs stay attached to their original bank words while array indices move
-    // after a middle removal. This makes first/middle/last deselection exact.
-    setSentence((current) => current.filter((item) => item.id !== placed.id));
-    slotCoords.current = {};
-  };
+  }, []);
+
+  React.useEffect(() => {
+    // Suppress the layout glide for exactly one render after a reorder. Clearing
+    // here (not on a timer) is enough: the `layout` prop is read at commit, and
+    // this runs right after it, so the next removal keeps its gap-closing glide.
+    lastDroppedIdRef.current = null;
+  }, [sentence]);
+
+  const addWord = useCallback((bankIndex: number) => {
+    if (fb === "correct" || usedBankRef.current[bankIndex]) return;
+    if (sentenceCountRef.current + reservedAddCountRef.current >= slotCount) return;
+
+    if (fb === "wrong") setFb("idle");
+    usedBankRef.current[bankIndex] = true;
+    reservedAddCountRef.current += 1;
+    pendingAddQueueRef.current.push(bankIndex);
+    setUsedBank((prev) => {
+      const next = [...prev];
+      next[bankIndex] = true;
+      return next;
+    });
+    processQueuedAddsRef.current();
+  }, [fb, slotCount]);
 
   const check = () => {
-    if (!sentence.length || flySessions.length > 0 || fb !== "idle") return;
+    if (
+      !sentence.length ||
+      flySessions.length > 0 ||
+      measuringBankRef.current !== null ||
+      addFlightActiveRef.current ||
+      pendingAddQueueRef.current.length > 0 ||
+      fb !== "idle"
+    ) return;
     const placed = sentence.map((p) => p.word);
     const ok =
       placed.join(" ").toLowerCase() ===
@@ -465,12 +900,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       }
     } else if (!completedRef.current) {
       completedRef.current = true;
-      /*
-       * The `fb !== "idle"` guard above means a correct check runs once, so the
-       * sentence is never queued twice. It is also the newest device request,
-       * which makes `useTTS` cancel any word audio still playing from the last
-       * tap instead of letting the two overlap.
-       */
       speakWord(fullSentence, "builder-sentence");
       onAnswer(true);
     }
@@ -480,16 +909,17 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     if (index >= sentence.length) return "ghost";
     if (fb === "correct") return "correct";
     if (fb === "wrong") return "wrong";
-    return "pending";
+    return "idle";
   };
 
-  const canCheck = sentence.length + flySessions.length > 0 && fb !== "correct";
+  const canCheck =
+    sentence.length > 0 &&
+    flySessions.length === 0 &&
+    measuringBankRef.current === null &&
+    !addFlightActiveRef.current &&
+    pendingAddQueueRef.current.length === 0 &&
+    fb !== "correct";
 
-  /*
-   * Rails are sized for the *whole* answer up front so the area never grows a
-   * rail mid-solve, then `placedLines` (measured) can only push it higher — an
-   * under-estimate corrects itself the moment the words actually wrap.
-   */
   const answerRails = Math.max(
     MIN_RAILS,
     placedLines,
@@ -535,12 +965,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
             <Animated.View style={[s.slotsWrap, isNormal && s.slotsWrapDuo, shakeStyle]}>
               {isNormal ? (
-                /*
-                 * Duolingo answer area: two full-width rails with the chosen
-                 * words resting on the top one. Words keep their natural width
-                 * and wrap, so long words are never squeezed — the rails are
-                 * decoration behind a normal wrapping row, not a grid.
-                 */
                 <View
                   style={[s.duoAnswerArea, { height: answerRails * ROW_STRIDE }]}
                   onLayout={(e) => setAnswerWidth(e.nativeEvent.layout.width)}
@@ -568,38 +992,36 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                   >
                     {sentence.map((placed, i) => {
                       const hideWhileFlying = flySessions.some(
-                        (f) => f.slotIndex === i && f.bankIndex === placed.bankIndex,
+                        (f) => f.direction === "forward" && f.slotIndex === i && f.bankIndex === placed.bankIndex,
                       );
                       if (hideWhileFlying) return null;
                       return (
-                        <View
+                        <RealtimeDraggablePlacedWord
                           key={placed.id}
-                          ref={(r) => {
+                          placed={placed}
+                          index={i}
+                          skipLayoutGlide={lastDroppedIdRef.current !== null}
+                          sentenceWords={sentenceWords}
+                          cellWidths={cellWidths}
+                          tileState={slotTileState(i)}
+                          targetLanguage={question.targetLanguage}
+                          isNormal={true}
+                          isKids={false}
+                          isRtl={isRtl}
+                          activeDragIndex={activeDragIndex}
+                          dragTranslationX={dragTranslationX}
+                          dragTranslationY={dragTranslationY}
+                          hoverTargetIndex={hoverTargetIndex}
+                          onRemove={startFlyToBank}
+                          onReorder={handleReorder}
+                          slotRef={(r) => {
                             slotRefs.current[i] = r;
                           }}
-                          onLayout={() => {
-                            slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                              slotCoords.current[i] = { x, y, w, h };
-                            });
-                          }}
-                          collapsable={false}
-                          style={s.duoPlacedCell}
-                        >
-                          <LightWordTile
-                            label={placed.word}
-                            state={slotTileState(i)}
-                            onPress={() => removePlacedWord(placed)}
-                            activateOnPressIn={Platform.OS !== "web"}
-                            duoDepthStyle="subtle"
-                            languageCode={question.targetLanguage}
-                            style={s.duoWordTile}
-                          />
-                        </View>
+                          onLayout={() => recordSlotLayout(i)}
+                        />
                       );
                     })}
-                    {/* Measurement anchor for the next incoming word. Widened
-                        to that word's width while it flies, so flexWrap decides
-                        the landing line before the flight is aimed. */}
+                    {/* Measurement anchor for the next incoming word */}
                     <View
                       ref={(r) => {
                         slotRefs.current[sentence.length] = r;
@@ -624,58 +1046,57 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                     Platform.OS !== "web" ? { direction: targetDirection } : undefined,
                   ]}
                 >
-                  {(() => {
-                    const slotsArray = Array.from({ length: slotCount }).map((_, i) => i);
-                    return slotsArray.map((i) => {
-                      const placed = sentence[i];
-                      const hideWhileFlying = placed !== undefined && flySessions.some(s => s.slotIndex === i && s.bankIndex === placed.bankIndex);
+                  {Array.from({ length: slotCount }).map((_, i) => {
+                    const placed = sentence[i];
+                    const hideWhileFlying = placed !== undefined && flySessions.some(s => s.direction === "forward" && s.slotIndex === i && s.bankIndex === placed.bankIndex);
 
-                      return (
-                        <View
-                          key={`slot-${i}`}
-                          ref={(r) => {
-                            slotRefs.current[i] = r;
-                          }}
-                          onLayout={() => {
-                            slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                              slotCoords.current[i] = { x, y, w, h };
-                            });
-                          }}
-                          collapsable={false}
-                          style={s.slotCell}
-                        >
-                          {placed && !hideWhileFlying ? (
-                            <Animated.View
-                              collapsable={false}
-                            >
-                              <LightWordTile
-                                label={placed.word}
-                                state={slotTileState(i)}
-                                onPress={() => removePlacedWord(placed)}
-                                activateOnPressIn={Platform.OS !== "web"}
-                                isKids={pathMode === "kids"}
-                                languageCode={question.targetLanguage}
-                                fitLabel
-                                fitLabelLines={2}
-                                fontSize={placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14}
-                                style={s.slotWordTile}
-                              />
-                            </Animated.View>
-                          ) : (
-                            <View
-                              style={[
-                                pathMode === "kids" ? s.emptySlot : s.emptySlotDuo,
-                                isDark && {
-                                  backgroundColor: colors.muted,
-                                  borderColor: colors.border,
-                                },
-                              ]}
-                            />
-                          )}
-                        </View>
-                      );
-                    });
-                  })()}
+                    return (
+                      <View
+                        key={`slot-${i}`}
+                        ref={(r) => {
+                          slotRefs.current[i] = r;
+                        }}
+                        onLayout={() => recordSlotLayout(i)}
+                        collapsable={false}
+                        style={s.slotCell}
+                      >
+                        {placed && !hideWhileFlying ? (
+                          <RealtimeDraggablePlacedWord
+                            placed={placed}
+                            index={i}
+                            skipLayoutGlide={lastDroppedIdRef.current !== null}
+                            sentenceWords={sentenceWords}
+                            cellWidths={cellWidths}
+                            tileState={slotTileState(i)}
+                            targetLanguage={question.targetLanguage}
+                            isNormal={false}
+                            isKids={pathMode === "kids"}
+                            isRtl={isRtl}
+                            activeDragIndex={activeDragIndex}
+                            dragTranslationX={dragTranslationX}
+                            dragTranslationY={dragTranslationY}
+                            hoverTargetIndex={hoverTargetIndex}
+                            onRemove={startFlyToBank}
+                            onReorder={handleReorder}
+                            slotRef={(r) => {
+                              slotRefs.current[i] = r;
+                            }}
+                            onLayout={() => recordSlotLayout(i)}
+                          />
+                        ) : (
+                          <View
+                            style={[
+                              pathMode === "kids" ? s.emptySlot : s.emptySlotDuo,
+                              isDark && {
+                                backgroundColor: colors.muted,
+                                borderColor: colors.border,
+                              },
+                            ]}
+                          />
+                        )}
+                      </View>
+                    );
+                  })}
                 </Animated.View>
               )}
             </Animated.View>
@@ -692,44 +1113,10 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                 Platform.OS !== "web" ? { direction: targetDirection } : undefined,
               ]}
             >
-              {(() => {
-                const bankItemsArray = shuffledWordBank.map((w, i) => ({ w, i }));
-                return bankItemsArray.map(({ w, i }) => {
-                  const taken = usedBank[i];
+              {shuffledWordBank.map((w, i) => {
+                const taken = usedBank[i];
 
-                  if (isNormal) {
-                    /*
-                     * The lifted word leaves a grey slug of the *same* size
-                     * behind, so the bank never reflows while a word is in the
-                     * answer area — the remaining tiles stay exactly where the
-                     * user last saw them.
-                     */
-                    return (
-                      <View
-                        key={`bank-${i}`}
-                        ref={(el) => { bankRefs.current[i] = el; }}
-                        onLayout={() => {
-                          bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                            bankCoords.current[i] = { x, y, w, h };
-                          });
-                        }}
-                        collapsable={false}
-                        style={s.bankCellDuo}
-                      >
-                        <LightWordTile
-                          label={w}
-                          state={taken ? "ghost" : "idle"}
-                          onPress={taken ? undefined : () => addWord(i)}
-                          activateOnPressIn={Platform.OS !== "web"}
-                          duoDepthStyle="subtle"
-                          disabled={taken || fb === "correct"}
-                          languageCode={question.targetLanguage}
-                          style={s.duoWordTile}
-                        />
-                      </View>
-                    );
-                  }
-
+                if (isNormal) {
                   return (
                     <View
                       key={`bank-${i}`}
@@ -740,35 +1127,60 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                         });
                       }}
                       collapsable={false}
-                      style={s.bankCell}
+                      style={s.bankCellDuo}
                     >
-                      <View
-                        style={[
-                          s.bankPlaceholder,
-                          isDark && {
-                            backgroundColor: colors.muted,
-                            borderColor: colors.border,
-                          },
-                        ]}
+                      <LightWordTile
+                        label={w}
+                        state={taken ? "ghost" : "idle"}
+                        onPress={taken ? undefined : () => addWord(i)}
+                        activateOnPressIn
+                        duoDepthStyle="subtle"
+                        disabled={taken || fb === "correct"}
+                        languageCode={question.targetLanguage}
+                        style={s.duoWordTile}
                       />
-                      <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
-                        <LightWordTile
-                          label={w}
-                          state="idle"
-                          onPress={() => addWord(i)}
-                          activateOnPressIn={Platform.OS !== "web"}
-                          disabled={taken || fb !== "idle"}
-                          isKids={pathMode === "kids"}
-                          languageCode={question.targetLanguage}
-                          fitLabel
-                          fontSize={w.length > 10 ? 13 : 15}
-                          style={[s.wordTile, compact && s.wordTileCompact]}
-                        />
-                      </View>
                     </View>
                   );
-                });
-              })()}
+                }
+
+                return (
+                  <View
+                    key={`bank-${i}`}
+                    ref={(el) => { bankRefs.current[i] = el; }}
+                    onLayout={() => {
+                      bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                        bankCoords.current[i] = { x, y, w, h };
+                      });
+                    }}
+                    collapsable={false}
+                    style={s.bankCell}
+                  >
+                    <View
+                      style={[
+                        s.bankPlaceholder,
+                        isDark && {
+                          backgroundColor: colors.muted,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    />
+                    <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
+                      <LightWordTile
+                        label={w}
+                        state="idle"
+                        onPress={() => addWord(i)}
+                        activateOnPressIn
+                        disabled={taken || fb !== "idle"}
+                        isKids={pathMode === "kids"}
+                        languageCode={question.targetLanguage}
+                        fitLabel
+                        fontSize={w.length > 10 ? 13 : 15}
+                        style={[s.wordTile, compact && s.wordTileCompact]}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
             </Animated.View>
           </View>
         </ScrollView>
@@ -782,7 +1194,14 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             collapsable={false}
           >
             {flySessions.map(session => (
-              <FlyingTile key={session.id} session={session} onFinish={finishFly} isKids={pathMode === "kids"} isNormal={isNormal} languageCode={question.targetLanguage} />
+              <FlyingTile
+                key={session.id}
+                session={session}
+                onFinish={finishFly}
+                isKids={pathMode === "kids"}
+                isNormal={isNormal}
+                languageCode={question.targetLanguage}
+              />
             ))}
           </Animated.View>
         ) : null}
@@ -864,9 +1283,6 @@ const s = StyleSheet.create({
     borderColor: L.slotDash,
     backgroundColor: L.bgSoft,
   },
-  bankTileHidden: {
-    opacity: 0,
-  },
   slotsWrap: {
     minHeight: 118,
     paddingTop: 16,
@@ -887,14 +1303,12 @@ const s = StyleSheet.create({
     alignContent: "flex-start",
     justifyContent: "flex-start",
   },
-  /*
-   * Fixed height + bottom margin is what guarantees a wrapped flex line is
-   * exactly ROW_STRIDE tall, which is what keeps every line on its rail.
-   */
   duoPlacedCell: {
     height: ROW_H,
     marginEnd: TILE_GAP,
     marginBottom: ROW_GAP,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   duoLandingAnchor: {
     height: ROW_H,
@@ -916,8 +1330,6 @@ const s = StyleSheet.create({
   bankDuo: {
     paddingTop: 4,
     paddingBottom: 4,
-    // Duolingo left-aligns the bank: a half-full last row starts at the edge
-    // rather than floating in the middle.
     justifyContent: "flex-start",
     alignContent: "flex-start",
   },
@@ -979,15 +1391,6 @@ const s = StyleSheet.create({
     backgroundColor: Duo.border,
     marginHorizontal: 8,
     borderRadius: 1,
-  },
-  slotNumber: {
-    color: L.grayLight,
-    fontSize: 13,
-    lineHeight: 16,
-  },
-  emptySlotTarget: {
-    borderColor: L.blue,
-    backgroundColor: "#EEF4FF",
   },
   flyLayer: {
     bottom: 0,

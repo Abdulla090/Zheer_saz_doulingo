@@ -1,8 +1,8 @@
 import type { LessonBank } from "../types";
 
-type Phrase = { en: string; ku: string; ar?: string };
-type Speak = { prompt: string; target: string; targetKurdish: string; promptAr?: string; targetArabic?: string };
-type Sentence = { english: string[]; kurdish: string; arabic?: string };
+type Phrase = { en: string; ku: string; ar?: string; ru?: string };
+type Speak = { prompt: string; target: string; targetKurdish: string; promptAr?: string; targetArabic?: string; promptRu?: string; targetRussian?: string };
+type Sentence = { english: string[]; kurdish: string; arabic?: string; russian?: string };
 type Fill = {
   parts: [string, string];
   hint: string;
@@ -12,6 +12,10 @@ type Fill = {
   arabicParts?: [string, string];
   arabicAnswer?: string;
   arabicWrongs?: [string, string, string];
+  russianHint?: string;
+  russianParts?: [string, string];
+  russianAnswer?: string;
+  russianWrongs?: [string, string, string];
 };
 type Convo = {
   situation: string;
@@ -28,6 +32,13 @@ type Convo = {
   wrong1Ar?: string;
   wrong2Ar?: string;
   wrong3Ar?: string;
+  situationRu?: string;
+  explanationRu?: string;
+  theyAskRu?: string;
+  correctRu?: string;
+  wrong1Ru?: string;
+  wrong2Ru?: string;
+  wrong3Ru?: string;
 };
 
 function splitSentence(en: string): string[] {
@@ -36,10 +47,11 @@ function splitSentence(en: string): string[] {
 
 function toSpeaks(phrases: Phrase[]): Speak[] {
   return phrases.map((p) => ({
-    prompt: `ئەم ڕستەیە بە ئینگلیزی بڵێ:`,
+    prompt: `چۆن دەڵێیت بە ئینگلیزی:`,
     target: p.en,
     targetKurdish: p.ku,
-    ...(p.ar ? { promptAr: `قل هذه الجملة بالإنجليزية:`, targetArabic: p.ar } : {}),
+    ...(p.ar ? { promptAr: `كيف تقول بالإنجليزية:`, targetArabic: p.ar } : {}),
+    ...(p.ru ? { promptRu: `Как сказать по-английски:`, targetRussian: p.ru } : {}),
   }));
 }
 
@@ -48,6 +60,7 @@ function toSentences(phrases: Phrase[]): Sentence[] {
     english: splitSentence(p.en),
     kurdish: p.ku,
     ...(p.ar ? { arabic: p.ar } : {}),
+    ...(p.ru ? { russian: p.ru } : {}),
   }));
 }
 
@@ -68,6 +81,8 @@ export function fill(
   hint: string,
   arabicHint?: string,
   arBlank?: { sentence: string; answer: string; wrongs: [string, string, string] },
+  russianHint?: string,
+  ruBlank?: { sentence: string; answer: string; wrongs: [string, string, string] }
 ): Fill {
   const [before = "", after = ""] = blanked.split("___");
   const base: Fill = {
@@ -76,15 +91,29 @@ export function fill(
     answer,
     wrongs,
     ...(arabicHint ? { arabicHint } : {}),
+    ...(russianHint ? { russianHint } : {}),
   };
-  if (!arBlank) return base;
-  const [arBefore = "", arAfter = ""] = arBlank.sentence.split("___");
-  return {
-    ...base,
-    arabicParts: [arBefore, arAfter],
-    arabicAnswer: arBlank.answer,
-    arabicWrongs: arBlank.wrongs,
-  };
+
+  let res = { ...base };
+  if (arBlank) {
+    const [arBefore = "", arAfter = ""] = arBlank.sentence.split("___");
+    res = {
+      ...res,
+      arabicParts: [arBefore, arAfter],
+      arabicAnswer: arBlank.answer,
+      arabicWrongs: arBlank.wrongs,
+    };
+  }
+  if (ruBlank) {
+    const [ruBefore = "", ruAfter = ""] = ruBlank.sentence.split("___");
+    res = {
+      ...res,
+      russianParts: [ruBefore, ruAfter],
+      russianAnswer: ruBlank.answer,
+      russianWrongs: ruBlank.wrongs,
+    };
+  }
+  return res;
 }
 
 /**
@@ -96,14 +125,22 @@ export function fill(
  * same topic. When a pool is omitted the slot falls back to a *disjoint* slice
  * of `phrases` rather than repeating the first three entries everywhere.
  */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9' ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function buildLesson(
   topic: string,
   topicKu: string,
   phrases: Phrase[],
   extras?: {
-    /** Sentences for the speaking game — distinct from `phrases`. */
+    /** Sentences for the speaking game - distinct from `phrases`. */
     speakPhrases?: Phrase[];
-    /** Sentences for the sentence-builder game — distinct from the above. */
+    /** Sentences for the sentence-builder game - distinct from the above. */
     sentencePhrases?: Phrase[];
     /** Fully authored overrides, used as-is when present. */
     speak?: Speak[];
@@ -112,20 +149,52 @@ export function buildLesson(
     convos?: Convo[];
   },
   topicAr?: string,
+  topicRu?: string,
 ): LessonBank {
-  const speakPool = extras?.speakPhrases ?? phrases.slice(0, 3);
-  const sentencePool =
-    extras?.sentencePhrases ??
-    (phrases.length >= 6 ? phrases.slice(3, 6) : phrases.slice(0, 3));
+  const hasAuthoredSpeak = Boolean(extras?.speak || extras?.speakPhrases);
+  const hasAuthoredSentence = Boolean(extras?.sentences || extras?.sentencePhrases);
+
+  let wordPool = phrases;
+  let speakPool = extras?.speakPhrases ?? [];
+  let sentencePool = extras?.sentencePhrases ?? [];
+
+  if (!hasAuthoredSpeak && !hasAuthoredSentence) {
+    if (phrases.length >= 6) {
+      wordPool = phrases.slice(0, 2);
+      speakPool = phrases.slice(2, 4);
+      sentencePool = phrases.slice(4, 6);
+    } else {
+      wordPool = phrases;
+      speakPool = phrases.slice(0, 1);
+      sentencePool = phrases.slice(1, 2);
+    }
+  } else if (!hasAuthoredSpeak) {
+    speakPool = phrases.slice(0, 2);
+  } else if (!hasAuthoredSentence) {
+    sentencePool = phrases.slice(0, 2);
+  }
+
+  const finalVoices = extras?.speak ?? toSpeaks(speakPool);
+  const finalSentences = extras?.sentences ?? toSentences(sentencePool);
+  const finalFills = extras?.fills ?? [];
+
+  const usedInOtherSlots = new Set<string>();
+  finalVoices.forEach((v) => usedInOtherSlots.add(normalizeText(v.target)));
+  finalSentences.forEach((s) => usedInOtherSlots.add(normalizeText(s.english.join(" "))));
+  finalFills.forEach((f) => usedInOtherSlots.add(normalizeText(`${f.parts[0]}${f.answer}${f.parts[1]}`)));
+
+  const filteredWords = wordPool.filter((p) => !usedInOtherSlots.has(normalizeText(p.en)));
+  const finalWordPool = filteredWords.length >= 2 ? filteredWords : wordPool;
 
   return {
     topic,
     topicKu,
     ...(topicAr ? { topicAr } : {}),
-    words: phrases.map((p) => ({ english: p.en, kurdish: p.ku, ...(p.ar ? { arabic: p.ar } : {}) })),
-    voices: extras?.speak ?? toSpeaks(speakPool),
-    sentences: extras?.sentences ?? toSentences(sentencePool),
-    fillBlanks: extras?.fills ?? [],
+    ...(topicRu ? { topicRu } : {}),
+    words: finalWordPool.map((p) => ({ english: p.en, kurdish: p.ku, ...(p.ar ? { arabic: p.ar } : {}), ...(p.ru ? { russian: p.ru } : {}) })),
+    voices: finalVoices,
+    sentences: finalSentences,
+    fillBlanks: finalFills,
     conversations: extras?.convos ?? [],
   };
 }

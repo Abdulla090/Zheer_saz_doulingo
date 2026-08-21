@@ -6,7 +6,16 @@ type SafeExitRouter<T> = {
 /** Replace a feature route with its owning tab without popping parent navigators. */
 export function replaceWithFallback<T>(router: SafeExitRouter<T>, fallback: T) {
   try {
-    router.replace(fallback);
+    const result = router.replace(fallback);
+    if (result && typeof (result as PromiseLike<unknown>).then === "function") {
+      void Promise.resolve(result).catch(() => {
+        try {
+          void router.navigate(fallback);
+        } catch {
+          // Navigation must never escape into the app-wide error boundary.
+        }
+      });
+    }
   } catch {
     try {
       router.navigate(fallback);

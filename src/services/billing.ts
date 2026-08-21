@@ -50,53 +50,95 @@ function safeInteger(value: unknown, minimum = 0): value is number {
 }
 
 export async function getBillingAccount(): Promise<BillingAccount> {
-  const { data, error } = await supabase.functions.invoke("billing-account", {
-    body: {},
-  });
-  if (error) throw error;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      return {
+        wallet: { creditBalance: 0, updatedAt: null },
+        subscription: {
+          plan: "free",
+          status: "active",
+          startsAt: null,
+          expiresAt: null,
+          provider: null,
+          updatedAt: null,
+        },
+        entitlements: fallbackEntitlements("free", 0, null),
+      };
+    }
 
-  const balance = data?.wallet?.creditBalance;
-  const plan = data?.subscription?.plan;
-  const status = data?.subscription?.status;
-  const rawEntitlements = data?.entitlements;
-  if (
-    !safeInteger(balance) ||
-    !["free", "plus", "pro", "max"].includes(plan) ||
-    !["active", "expired", "cancelled"].includes(status) ||
-    !rawEntitlements ||
-    !safeInteger(rawEntitlements.creditBalance)
-  ) {
-    throw new Error("Invalid billing account response.");
+    const { data, error } = await supabase.functions.invoke("billing-account", {
+      body: {},
+    });
+    if (error) throw error;
+
+    const balance = data?.wallet?.creditBalance;
+    const plan = data?.subscription?.plan;
+    const status = data?.subscription?.status;
+    const rawEntitlements = data?.entitlements;
+    if (
+      !safeInteger(balance) ||
+      !["free", "plus", "pro", "max"].includes(plan) ||
+      !["active", "expired", "cancelled"].includes(status) ||
+      !rawEntitlements ||
+      !safeInteger(rawEntitlements.creditBalance)
+    ) {
+      throw new Error("Invalid billing account response.");
+    }
+
+    return data as BillingAccount;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn("getBillingAccount fallback applied:", error instanceof Error ? error.message : error);
+    }
+    return {
+      wallet: { creditBalance: 0, updatedAt: null },
+      subscription: {
+        plan: "free",
+        status: "active",
+        startsAt: null,
+        expiresAt: null,
+        provider: null,
+        updatedAt: null,
+      },
+      entitlements: fallbackEntitlements("free", 0, null),
+    };
   }
-
-  return data as BillingAccount;
 }
 
 export async function getBillingCatalog() {
-  const { data, error } = await supabase.functions.invoke("create-checkout", {
-    body: { action: "catalog" },
-  });
-  if (error) throw error;
+  try {
+    const { data, error } = await supabase.functions.invoke("create-checkout", {
+      body: { action: "catalog" },
+    });
+    if (error) throw error;
 
-  const products = Array.isArray(data?.products)
-    ? data.products.filter(
-        (product: BillingProduct) =>
-          typeof product?.id === "string" &&
-          typeof product?.name === "string" &&
-          ["credits", "subscription"].includes(product?.productType) &&
-          safeInteger(product?.amount, 1) &&
-          safeInteger(product?.includedCredits),
-      )
-    : [];
+    const products = Array.isArray(data?.products)
+      ? data.products.filter(
+          (product: BillingProduct) =>
+            typeof product?.id === "string" &&
+            typeof product?.name === "string" &&
+            ["credits", "subscription"].includes(product?.productType) &&
+            safeInteger(product?.amount, 1) &&
+            safeInteger(product?.includedCredits),
+        )
+      : [];
 
-  return {
-    provider:
-      data?.provider === "wayl" || data?.provider === "rasedi"
-        ? data.provider
-        : null,
-    providerReady: data?.providerReady === true,
-    products: products as BillingProduct[],
-  };
+    return {
+      provider:
+        data?.provider === "wayl" || data?.provider === "rasedi"
+          ? data.provider
+          : null,
+      providerReady: data?.providerReady === true,
+      products: products as BillingProduct[],
+    };
+  } catch {
+    return {
+      provider: null,
+      providerReady: false,
+      products: [] as BillingProduct[],
+    };
+  }
 }
 
 export function fallbackEntitlements(

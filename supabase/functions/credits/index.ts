@@ -110,11 +110,24 @@ const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
   );
 });
 
-export default {
-  fetch(req: Request) {
-    if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: corsHeaders });
-    }
-    return credits(req);
-  },
-};
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 200, headers: corsHeaders });
+  }
+
+  try {
+    const res = await credits(req);
+    const newHeaders = new Headers(res.headers);
+    Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: newHeaders,
+    });
+  } catch (err) {
+    return Response.json(
+      { code: "SERVER_ERROR", message: err instanceof Error ? err.message : String(err) },
+      { status: 500, headers: corsHeaders },
+    );
+  }
+});

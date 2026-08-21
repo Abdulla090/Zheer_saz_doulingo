@@ -120,10 +120,18 @@ export const wordTileMorphTiming: WithTimingConfig = {
   easing: Easing.out(Easing.cubic),
 };
 
-/** Sentence builder: leaves room for measurement and unlocks within 200ms. */
-export const SENTENCE_WORD_MORPH_MS = 145;
+/**
+ * Sentence builder — word flying from the bank into the answer row.
+ *
+ * `Easing.out` spends almost the whole distance in its first frames, so at 145ms
+ * the tile did not read as moving at all: it blinked out of the bank and settled
+ * in the slot. An in-out curve leaves and arrives at zero velocity, which is what
+ * makes the same short trip read as one continuous glide (the Duolingo feel).
+ * Kept just under 210ms because the next tap is locked until the tile lands.
+ */
+export const SENTENCE_WORD_MORPH_MS = 200;
 
 export const sentenceWordMorphTiming: WithTimingConfig = {
   duration: SENTENCE_WORD_MORPH_MS,
-  easing: Easing.out(Easing.cubic),
+  easing: Easing.inOut(Easing.quad),
 };

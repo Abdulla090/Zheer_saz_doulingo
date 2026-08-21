@@ -58,6 +58,7 @@ import { useLocaleStore } from "../../stores/useLocaleStore";
 import { useOnboardingStore } from "../../stores/useOnboardingStore";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import type { PathMode } from "../../constants/path-availability";
 import { confirmAction } from "../../utils/confirm-action";
 import { openHttpsUrl, openMailto } from "../../utils/safe-link";
 
@@ -79,6 +80,11 @@ const COPY = {
     subtitle: "Tune the app to the way you learn",
     appearance: "Appearance",
     appearanceHint: "Screen and color mode",
+    path: "Learning path",
+    pathHint: "Choose the course you want on your home path",
+    streetPath: "Street",
+    normalPath: "Normal",
+    kidsPath: "Kids",
     light: "Light",
     dark: "Dark",
     system: "System",
@@ -111,6 +117,11 @@ const COPY = {
     subtitle: "شێوازی ئەپەکە بە دڵی خۆت ڕێک بخە",
     appearance: "ڕووکار",
     appearanceHint: "ڕووناکی و ڕەنگی شاشە",
+    path: "ڕێڕەوی فێربوون",
+    pathHint: "ئەو کۆرسە هەڵبژێرە کە لە ڕێڕەوی ماڵەوە دەیەوێت",
+    streetPath: "شەقام",
+    normalPath: "ئاسایی",
+    kidsPath: "منداڵان",
     light: "ڕووناک",
     dark: "تاریک",
     system: "سیستەم",
@@ -143,6 +154,11 @@ const COPY = {
     subtitle: "اضبط التطبيق بالطريقة التي تناسب تعلمك",
     appearance: "المظهر",
     appearanceHint: "إضاءة الشاشة ونمط الألوان",
+    path: "مسار التعلم",
+    pathHint: "اختر الدورة التي تريدها في مسارك الرئيسي",
+    streetPath: "الشارع",
+    normalPath: "العادي",
+    kidsPath: "الأطفال",
     light: "فاتح",
     dark: "داكن",
     system: "النظام",
@@ -489,10 +505,12 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const sounds = useSettingsStore((state) => state.soundsEnabled);
   const theme = useSettingsStore((state) => state.theme);
   const tutorVoice = useSettingsStore((state) => state.tutorVoice);
+  const pathMode = useSettingsStore((state) => state.pathMode);
   const setHaptics = useSettingsStore((state) => state.setHapticsEnabled);
   const setSounds = useSettingsStore((state) => state.setSoundsEnabled);
   const setTheme = useSettingsStore((state) => state.setTheme);
   const setTutorVoice = useSettingsStore((state) => state.setTutorVoice);
+  const setPathMode = useSettingsStore((state) => state.setPathMode);
   const targetLang = useLocaleStore((state) => state.selectedTargetLanguage);
   const nativeLang = useLocaleStore((state) => state.selectedSourceLanguage);
   const uiLanguage = useLocaleStore((state) => state.selectedUiLanguage);
@@ -683,6 +701,30 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   </PressableScale>
                 );
               })}
+            </View>
+          </View>
+
+          <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
+            <SectionHeading title={copy.path} hint={copy.pathHint} locale={locale} styles={styles} />
+            <View style={styles.choiceWrap}>
+              {([
+                ["street", copy.streetPath],
+                ["normal", copy.normalPath],
+                ["kids", copy.kidsPath],
+              ] as const).map(([mode, label]) => (
+                <ChoiceChip
+                  key={mode}
+                  label={label}
+                  selected={pathMode === mode}
+                  onPress={() => {
+                    const nextMode = mode as PathMode;
+                    setPathMode(nextMode);
+                    router.replace({ pathname: "/dashboard", params: { mode: nextMode } });
+                  }}
+                  languageCode={locale}
+                  styles={styles}
+                />
+              ))}
             </View>
           </View>
 

@@ -138,7 +138,7 @@ export class LivePcmPlayer {
    */
   private static WATCHDOG_INTERVAL_MS = 100;
 
-  private static DRAIN_CONFIRMATION_MS = 220;
+  private static DRAIN_CONFIRMATION_MS = 100;
 
   /**
    * Silence padding around each turn. Switching the native audio route from
@@ -460,10 +460,14 @@ export class LivePcmPlayer {
         // The native Android bridge expects the record form even though the
         // public AudioSource type also permits a bare string.
         playlist.add({ uri });
-        // No skipTo() here. ExoPlayer auto-advances while it is still playing,
-        // and if the queue had already run dry the watchdog detects the parked
-        // player from live properties and advances it. Guessing from a cached
-        // status event is what previously dropped the rest of the turn.
+        if (
+          !playlist.playing &&
+          playlist.duration > 0 &&
+          playlist.currentTime >= playlist.duration - 0.05 &&
+          playlist.currentIndex < playlist.trackCount - 1
+        ) {
+          playlist.skipTo(playlist.currentIndex + 1);
+        }
       }
       this.requestPlayback();
       this.ensureWatchdog();
@@ -569,7 +573,19 @@ export class LivePcmPlayer {
     this.drainCandidateSince = 0;
     if (!this.queueDrained) {
       this.markQueueActive();
-      this.requestPlayback();
+      const playlist = this.playlist;
+      if (
+        this.turnComplete &&
+        playlist &&
+        !playlist.playing &&
+        playlist.duration > 0 &&
+        playlist.currentTime >= playlist.duration - 0.05 &&
+        playlist.currentIndex >= playlist.trackCount - 1
+      ) {
+        this.considerDrain();
+      } else {
+        this.requestPlayback();
+      }
     }
     this.ensureWatchdog();
   }

@@ -5,6 +5,7 @@ import {
   ArrowRight02Icon,
   BookOpen01Icon,
   BubbleChatIcon,
+  Certificate01Icon,
   FireIcon,
   HeadphonesIcon,
   Idea01Icon,
@@ -581,6 +582,92 @@ export function GamesScreen() {
                 icon={forwardIcon}
                 size={20}
                 color={isDark ? "#0B0B0F" : "#FFFFFF"}
+                strokeWidth={2.6}
+              />
+            </View>
+          </PremiumPressable>
+
+          {/* IELTS & DET Exam Center Entry Card */}
+          <PremiumPressable
+            onPress={() => router.push("/exam-center" as never)}
+            containerStyle={[styles.featuredContainer, { marginTop: 12 }]}
+            style={[
+              styles.featuredCard,
+              isRtl && styles.rowReverse,
+              {
+                backgroundColor: colors.surfaceRaised,
+                borderColor: isDark ? "rgba(59, 130, 246, 0.35)" : "#BFDBFE",
+                ...crossShadow({
+                  color: isDark ? "#000000" : "#3B82F6",
+                  offsetY: 8,
+                  blur: 20,
+                  opacity: isDark ? 0.3 : 0.1,
+                }),
+              },
+            ]}
+            pressScale={0.985}
+          >
+            <View
+              style={[
+                styles.featuredGlyph,
+                { backgroundColor: isDark ? "rgba(59, 130, 246, 0.18)" : "#EFF6FF", borderColor: isDark ? "rgba(59, 130, 246, 0.32)" : "#BFDBFE" },
+              ]}
+            >
+              <HugeiconsIcon icon={Certificate01Icon} size={compact ? 28 : 32} color="#3B82F6" strokeWidth={2.2} />
+            </View>
+
+            <DirectionBoundary
+              direction={isRtl ? "rtl" : "ltr"}
+              style={styles.featuredCopy}
+            >
+              <View
+                style={[
+                  styles.featuredPill,
+                  isRtl && styles.rowReverse,
+                  { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#DBEAFE" },
+                ]}
+              >
+                <HugeiconsIcon icon={Mortarboard02Icon} size={11} color="#3B82F6" strokeWidth={2.3} />
+                <AppText
+                  style={[styles.featuredPillText, { color: "#3B82F6" }]}
+                  languageCode={locale}
+                  forceKurdishFont={isRtl}
+                  numberOfLines={1}
+                >
+                  {isKu ? "ناوەندی تاقیکردنەوەکان" : locale === "ar" ? "مركز الاختبارات" : "IELTS & DET Center"}
+                </AppText>
+              </View>
+
+              <AppText
+                style={styles.featuredTitle}
+                languageCode={locale}
+                align="start"
+                forceKurdishFont={isRtl}
+                fullWidth
+                numberOfLines={1}
+              >
+                {isKu ? "ئامادەکاری و تاقیکردنەوەی IELTS و DET" : locale === "ar" ? "تحضير واختبارات IELTS وDET" : "IELTS & DET Exam Center"}
+              </AppText>
+              <AppText
+                style={styles.featuredBlurb}
+                languageCode={locale}
+                align="start"
+                forceKurdishFont={isRtl}
+                fullWidth
+                numberOfLines={1}
+              >
+                {isKu ? "ئامادەکاری پێشکەوتوو و تاقیکردنەوەی ساختەی هاوشێوەی فەرمی" : locale === "ar" ? "تحضير متقدم واختبارات تجريبية واقعية" : "Preparation course & realistic full mock exams"}
+              </AppText>
+            </DirectionBoundary>
+
+            <View
+              style={[styles.featuredAction, { backgroundColor: "#3B82F6" }]}
+              pointerEvents="none"
+            >
+              <HugeiconsIcon
+                icon={forwardIcon}
+                size={20}
+                color="#FFFFFF"
                 strokeWidth={2.6}
               />
             </View>

@@ -37,7 +37,7 @@ describe("guidebook language context", () => {
 
     expect(russian?.sourceLanguage).toBe("ku");
     expect(russian?.targetLanguage).toBe("ru");
-    expect(english?.lessons[0]?.words[0]?.english).toBe("Hello");
+    expect(english?.lessons[0]?.words[0]?.english).toBe(ALL_UNITS[0][0].words[0].english);
     expect(russian?.lessons[0]?.words[0]?.english).toBe("Привет");
     expect(russian?.lessons[0]?.words[0]?.english).toMatch(/[А-Яа-яЁё]/);
   });

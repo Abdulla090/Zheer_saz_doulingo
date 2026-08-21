@@ -28,4 +28,17 @@ describe("replaceWithFallback", () => {
     ).not.toThrow();
     expect(router.navigate).toHaveBeenCalledWith("/(tabs)/more");
   });
+
+  it("falls back when replace rejects asynchronously", async () => {
+    const router = {
+      replace: jest.fn(() => Promise.reject(new Error("replace failed"))),
+      navigate: jest.fn(),
+    };
+
+    replaceWithFallback(router as any, "/path");
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(router.navigate).toHaveBeenCalledWith("/path");
+  });
 });

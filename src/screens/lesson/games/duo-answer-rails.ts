@@ -65,3 +65,74 @@ export function estimateRailCount(words: string[], contentWidth: number): number
 export function linesFromHeight(height: number): number {
   return Math.max(1, Math.round(height / ROW_STRIDE));
 }
+
+/**
+ * Fallback tile width, used only until a cell has reported its real layout.
+ * Same glyph metric as `estimateRailCount`, kept separate because this one sizes
+ * a single tile rather than packing a line.
+ */
+export function estimateTileWidth(word: string): number {
+  "worklet";
+  return Math.max(54, Math.min(220, 32 + word.length * 11.2));
+}
+
+/**
+ * Which slot a dragged tile has moved onto, from how far it travelled.
+ *
+ * `delta` is normalised to reading order (positive = later in the sentence), so
+ * RTL needs no special case here — only the caller flips the sign of the raw
+ * gesture translation. A neighbour is taken over once the drag passes its
+ * midpoint, which is what makes the gap open under the finger rather than a
+ * whole tile-width late.
+ */
+export function resolveHoverTarget(
+  index: number,
+  delta: number,
+  widths: number[],
+  words: string[],
+  count: number,
+): number {
+  "worklet";
+  const step = delta > 0 ? 1 : -1;
+  const distance = Math.abs(delta);
+  /*
+   * Reorder only after the dragged tile's centre has crossed the neighbour's
+   * centre.  The old calculation used `neighbourWidth / 2` alone, which made
+   * a short tile reorder after a tiny movement while its own footprint still
+   * overlapped the neighbour.  Including both tile widths and the reserved
+   * inter-tile gap keeps the live sibling displacement collision-free.
+   */
+  const draggedWidth = widths[index] ?? estimateTileWidth(words[index] ?? "");
+  let hover = index;
+  let accumulated = 0;
+  for (let target = index + step; target >= 0 && target < count; target += step) {
+    const w = widths[target] ?? estimateTileWidth(words[target] ?? "");
+    const midpoint = accumulated + draggedWidth * 0.5 + TILE_GAP + w * 0.5;
+    if (distance <= midpoint) break;
+    hover = target;
+    accumulated += w + TILE_GAP;
+  }
+  return hover;
+}
+
+/**
+ * Signed `translateX` a resting tile needs so the row opens a gap at `hoverIdx`.
+ *
+ * `translateX` is physical and is never mirrored by the layout engine, so RTL has
+ * to flip the sign explicitly: "shift towards the start of the sentence" is left
+ * under LTR and right under RTL.
+ */
+export function resolveSiblingOffset(
+  index: number,
+  dragIdx: number,
+  hoverIdx: number,
+  gap: number,
+  isRtl: boolean,
+): number {
+  "worklet";
+  if (dragIdx === -1 || dragIdx === index) return 0;
+  const dir = isRtl ? -1 : 1;
+  if (index > dragIdx && hoverIdx >= index) return -gap * dir;
+  if (index < dragIdx && hoverIdx <= index) return gap * dir;
+  return 0;
+}

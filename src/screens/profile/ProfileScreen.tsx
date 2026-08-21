@@ -35,7 +35,7 @@ import { IOSPressable as TouchableOpacity } from "../../components/ui/ios-pressa
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import { CreditPacksButton } from "../../components/CreditPacksButton";
-import { getMascot } from "../../constants/mascots";
+import { TwinoMascot } from "../../components/mascot/TwinoMascot";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../hooks/useI18n";
@@ -521,15 +521,9 @@ export default function ProfileScreen() {
       );
     }
 
-    const mascot = getMascot(selectedMascotId);
     return (
-      <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
-        <ExpoImage
-          source={mascot.source}
-          style={{ width: size - 8, height: size - 8 }}
-          contentFit="contain"
-          transition={180}
-        />
+      <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2, overflow: "hidden" }]}>
+        <TwinoMascot size={size} pose="happy" />
       </View>
     );
   };

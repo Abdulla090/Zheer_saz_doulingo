@@ -13,6 +13,8 @@
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kuvzssufoaynscdgejwe.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnpzc3Vmb2F5bnNjZGdlandlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNzgzNjUsImV4cCI6MjA5ODg1NDM2NX0.ly7Mc8MBDML4dH8LtbsU806zUQSjj-AqiV1h5J_WpP0",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -22,8 +24,13 @@
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kuvzssufoaynscdgejwe.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnpzc3Vmb2F5bnNjZGdlandlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNzgzNjUsImV4cCI6MjA5ODg1NDM2NX0.ly7Mc8MBDML4dH8LtbsU806zUQSjj-AqiV1h5J_WpP0",
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
         "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://4dc39c4aba10e1db5d882acf9da5353e@o4511752296464384.ingest.de.sentry.io/4511752323137616",
+        "SENTRY_ORG": "twino-jj",
+        "SENTRY_PROJECT": "twino-mobile",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "android": {
@@ -36,8 +43,13 @@
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kuvzssufoaynscdgejwe.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1dnpzc3Vmb2F5bnNjZGdlandlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNzgzNjUsImV4cCI6MjA5ODg1NDM2NX0.ly7Mc8MBDML4dH8LtbsU806zUQSjj-AqiV1h5J_WpP0",
         "EXPO_PUBLIC_GEMINI_MODEL": "gemini-3.5-flash",
-        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview"
+        "EXPO_PUBLIC_GEMINI_LIVE_MODEL": "gemini-3.1-flash-live-preview",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://4dc39c4aba10e1db5d882acf9da5353e@o4511752296464384.ingest.de.sentry.io/4511752323137616",
+        "SENTRY_ORG": "twino-jj",
+        "SENTRY_PROJECT": "twino-mobile"
       },
       "android": {
         "buildType": "app-bundle"

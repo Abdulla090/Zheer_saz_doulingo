@@ -22,6 +22,10 @@ web-build/
 .git/
 .agents/
 agent/
+.claude/
+.vercel/
+.expo-web-test/
+supabase/
 
 # iOS & Android native folders (EAS builds from source)
 ios/

@@ -39,8 +39,28 @@ const typography = Buffer.from(`
   </svg>
 `);
 
-await sharp(source)
-  .resize(1024, 500, { fit: "cover", position: "center" })
+import { existsSync } from "node:fs";
+
+const featureBg = existsSync(source)
+  ? await sharp(source).resize(1024, 500, { fit: "cover", position: "center" }).toBuffer()
+  : await sharp(Buffer.from(`
+      <svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="fbg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#FFF9EE"/>
+            <stop offset="0.55" stop-color="#F8F8FF"/>
+            <stop offset="1" stop-color="#EEF2FF"/>
+          </linearGradient>
+        </defs>
+        <rect width="1024" height="500" fill="url(#fbg)"/>
+        <circle cx="920" cy="100" r="220" fill="#FF684E" opacity="0.12"/>
+        <circle cx="80" cy="450" r="180" fill="#3157F6" opacity="0.08"/>
+      </svg>
+    `))
+    .png()
+    .toBuffer();
+
+await sharp(featureBg)
   .composite([{ input: typography, left: 0, top: 0 }])
   .png({ compressionLevel: 9, adaptiveFiltering: true })
   .toFile(output);

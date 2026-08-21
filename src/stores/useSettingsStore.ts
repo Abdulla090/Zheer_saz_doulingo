@@ -104,6 +104,7 @@ const initialSettings = (() => {
       tutorVoice: "Aoede",
       avatarUrl: "",
       selectedMascotId: DEFAULT_MASCOT_ID,
+      customMascot: null,
       isPremium: false,
       subscriptionTier: null,
       knownWords: [],

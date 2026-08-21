@@ -154,6 +154,16 @@
     outline-offset: 3px;
   }
 
+  /*
+   * React Native Web turns every Pressable into a focusable bare <div>, and
+   * WebKit matches :focus-visible on those after a plain tap — so tapping a
+   * lesson word tile left an orange ring parked under the finger. Native
+   * controls and anything that declares a role keep their keyboard ring.
+   */
+  div:not([role]):focus-visible {
+    outline: none;
+  }
+
   /* Text selection should be visible, but use the product accent. */
   ::selection {
     background: rgba(255, 107, 74, 0.2);

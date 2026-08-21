@@ -119,6 +119,7 @@ type SvgButtonProps = {
   isCompleted?: boolean;
   isSelected?: boolean;
   isLocked?: boolean;
+  isUnavailable?: boolean;
   accessibilityLabel?: string;
   /** Native path nodes can open their lesson callout on touch-down. */
   activateOnPressIn?: boolean;
@@ -258,6 +259,7 @@ export const SvgButton = React.memo(
     isCompleted = false,
     isSelected = false,
     isLocked = false,
+    isUnavailable = false,
     accessibilityLabel,
     activateOnPressIn = false,
   }: SvgButtonProps) => {
@@ -442,7 +444,7 @@ export const SvgButton = React.memo(
     return (
       <Pressable
         inList
-        disabled={!onPress || isLocked}
+        disabled={!onPress || isLocked || isUnavailable}
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -452,9 +454,9 @@ export const SvgButton = React.memo(
         pressScale={1}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked, selected: isSelected }}
+        accessibilityState={{ disabled: isLocked || isUnavailable, selected: isSelected }}
         style={[
-          { width, height: totalHeight },
+            { width, height: totalHeight, opacity: isUnavailable ? 0.62 : 1 },
           translateX ? { transform: [{ translateX }] } : undefined,
         ]}
       >

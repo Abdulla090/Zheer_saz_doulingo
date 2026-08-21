@@ -738,17 +738,22 @@ const sL = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
+    zIndex: 999,
+    elevation: 24,
   },
   sheetDesktop: {
     width: "100%",
     maxWidth: 640,
     marginHorizontal: "auto",
     paddingHorizontal: 10,
+    zIndex: 999,
   },
   /** Normal path: edge-to-edge panel, no card inset. */
   sheetFlush: {
     paddingHorizontal: 0,
     paddingBottom: 0,
+    zIndex: 999,
+    elevation: 24,
   },
 });
 

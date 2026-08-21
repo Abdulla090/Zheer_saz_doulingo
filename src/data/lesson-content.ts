@@ -14,12 +14,13 @@
 //   2× SentenceBuilder · 2× FillBlank · 2× ConversationPick
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { buildConversationOptionTiers } from "../utils/answer-tier";
 import { getUnitsForPath } from "./content-access";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getWord3DImage, getWordsWithDistinctImages } from "../utils/kids-assets";
+import { getKidsVoiceImage } from "./kids-image-assets";
 import {
+  buildConversationDistractors,
   buildFillDistractors,
   buildProgressiveConversationChoices,
   buildSentenceNearMisses,
@@ -93,6 +94,7 @@ export type { LessonPathMode } from "./types";
 function lessonEnglishPool(lesson: LessonBank): string[] {
   return [
     ...lesson.words.map((w) => w.english),
+    ...lesson.voices.map((voice) => voice.target),
     ...lesson.sentences.map((s) => s.english.join(" ")),
   ];
 }
@@ -224,6 +226,14 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       if (fallbackField === "topicKu" && obj.topicAr) return obj.topicAr;
     }
     
+    if (lang === "ru") {
+      if (fallbackField === "prompt" && obj.promptRu) return obj.promptRu;
+      if (fallbackField === "targetKurdish" && obj.targetRussian) return obj.targetRussian;
+      if (fallbackField === "situation" && obj.situationRu) return obj.situationRu;
+      if (fallbackField === "explanation" && obj.explanationRu) return obj.explanationRu;
+      if (fallbackField === "topicKu" && obj.topicRu) return obj.topicRu;
+    }
+
     // 2. Direct language key check
     if (lang === "en") {
       if (obj.english) {
@@ -274,6 +284,15 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       if (obj.topicAr) return obj.topicAr;
     }
     
+    if (lang === "ru") {
+      if (obj.russian) {
+        if (Array.isArray(obj.russian)) return obj.russian.join(" ");
+        return obj.russian;
+      }
+      if (obj.targetRussian) return obj.targetRussian;
+      if (obj.topicRu) return obj.topicRu;
+    }
+
     // 2. Default fallback to English (the original curriculum's native structure)
     if (lang === "en" && obj.english) {
       if (Array.isArray(obj.english)) return obj.english.join(" ");
@@ -301,6 +320,14 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       if (obj.targetArabic) return obj.targetArabic.split(" ");
     }
     
+    if (lang === "ru") {
+      if (obj.russian) {
+        if (Array.isArray(obj.russian)) return obj.russian;
+        return obj.russian.split(" ");
+      }
+      if (obj.targetRussian) return obj.targetRussian.split(" ");
+    }
+
     if (lang === "en" && obj.english) {
       if (Array.isArray(obj.english)) return obj.english;
       return obj.english.split(" ");
@@ -320,17 +347,20 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       english: getTargetStr(w, targetLang),
       kurdish: getNativeStr(w, nativeLang, "kurdish"),
       arabic: w.arabic,
+      russian: w.russian,
     })),
     voices: lesson.voices.map((v) => ({
       prompt: getNativeStr(v, nativeLang, "prompt"),
       target: getTargetStr(v, targetLang),
       targetKurdish: getNativeStr(v, nativeLang, "targetKurdish"),
       targetArabic: v.targetArabic,
+      targetRussian: v.targetRussian,
     })),
     sentences: lesson.sentences.map((s) => ({
       english: getTargetArr(s, targetLang),
       kurdish: getNativeStr(s, nativeLang, "kurdish"),
       arabic: s.arabic,
+      russian: s.russian,
     })),
 
     fillBlanks: lesson.fillBlanks.map((f) => {
@@ -339,6 +369,7 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
         if (dictAnswer != null) return dictAnswer;
 
         if (targetLang === "ar" && f.arabicAnswer) return f.arabicAnswer;
+        if (targetLang === "ru" && f.russianAnswer) return f.russianAnswer;
         return f.answer;
       };
 
@@ -354,6 +385,7 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
         }
 
         if (targetLang === "ar" && f.arabicParts) return f.arabicParts;
+        if (targetLang === "ru" && f.russianParts) return f.russianParts;
         return f.parts;
       };
 
@@ -368,6 +400,7 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
         }
 
         if (targetLang === "ar" && f.arabicWrongs) return f.arabicWrongs;
+        if (targetLang === "ru" && f.russianWrongs) return f.russianWrongs;
         return f.wrongs;
       };
 
@@ -384,20 +417,21 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     }),
 
     conversations: lesson.conversations.map((c) => {
-      const getC = (field: string, arField: string) => {
+      const getC = (field: string, arField: string, ruField: string) => {
         const val = (c as any)[field];
         const dictVal = getTranslatedValue({ [field]: val }, field, targetLang);
         if (dictVal != null) return dictVal;
 
         if (targetLang === "ar" && (c as any)[arField]) return (c as any)[arField];
+        if (targetLang === "ru" && (c as any)[ruField]) return (c as any)[ruField];
         return val;
       };
       
-      const targetTheyAsk = getC("theyAsk", "theyAskAr");
-      const targetCorrect = getC("correct", "correctAr");
-      const targetWrong1 = getC("wrong1", "wrong1Ar");
-      const targetWrong2 = getC("wrong2", "wrong2Ar");
-      const targetWrong3 = getC("wrong3", "wrong3Ar");
+      const targetTheyAsk = getC("theyAsk", "theyAskAr", "theyAskRu");
+      const targetCorrect = getC("correct", "correctAr", "correctRu");
+      const targetWrong1 = getC("wrong1", "wrong1Ar", "wrong1Ru");
+      const targetWrong2 = getC("wrong2", "wrong2Ar", "wrong2Ru");
+      const targetWrong3 = getC("wrong3", "wrong3Ar", "wrong3Ru");
       
       return {
         ...c,
@@ -479,20 +513,13 @@ function buildLessonQuestionsFromBank(
 
   const pushWordMc = (wordIndex: number, optionSeed: number) => {
     const mcWord = pick(words, wordIndex);
-    const mcWrongs = normalDifficulty
-      ? selectProgressiveDistractors({
-          correct: mcWord.english,
-          closeCandidates: words.map((word) => word.english),
-          fallbackCandidates: learnedWordPhrases,
-          closeCount: normalDifficulty.closeDistractorCount,
-          seed: optionSeed,
-        })
-      : pickLessonWrongs(
-          words.map((w) => w.english),
-          mcWord.english,
-          3,
-          optionSeed,
-        );
+    const mcWrongs = selectProgressiveDistractors({
+      correct: mcWord.english,
+      closeCandidates: words.map((word) => word.english),
+      fallbackCandidates: [...lessonPool, ...learnedWordPhrases],
+      closeCount: normalDifficulty?.closeDistractorCount ?? 3,
+      seed: optionSeed,
+    });
     const mcKind = isNormal ? "how_to_say" : "what_is_word";
     questions.push({
       type: "multiple_choice",
@@ -636,14 +663,29 @@ function buildLessonQuestionsFromBank(
     }
 
     // 8. Voice Games (3×)
+    const authoredVoices: VoiceQuestion[] = voices.map((v) => ({
+      type: "voice" as const,
+      prompt: v.prompt,
+      targetWord: v.target,
+      targetKurdish: v.targetKurdish,
+      imageRequire: getKidsVoiceImage(v.target, unitIndex, lessonIndex),
+      xp: 20,
+    }));
     const allVoices: VoiceQuestion[] = [
-      ...voices.map(v => ({ type: "voice" as const, prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 })),
+      ...authoredVoices,
       ...words.map(w => ({ type: "voice" as const, prompt: getPromptText("say_word", nativeLang, targetLang, w.kurdish), targetWord: w.english, targetKurdish: w.kurdish, xp: 20 })),
       ...sentences.map(s => ({ type: "voice" as const, prompt: getPromptText("say_word", nativeLang, targetLang, s.kurdish), targetWord: s.english.join(" "), targetKurdish: s.kurdish, xp: 20 })),
     ];
-    
-    const shuffledVoices = shuffle(allVoices, seed + 50);
-    for (let i = 0; i < 3; i++) {
+
+    // Always include the authored image prompt when this lesson has one; the
+    // remaining voice drills can still rotate through words and sentences.
+    const imageVoice = authoredVoices.find((voice) => voice.imageRequire);
+    const shuffledVoices = shuffle(
+      imageVoice ? allVoices.filter((voice) => voice !== imageVoice) : allVoices,
+      seed + 50,
+    );
+    if (imageVoice) questions.push(imageVoice);
+    for (let i = 0; i < (imageVoice ? 2 : 3); i++) {
       questions.push(pick(shuffledVoices, i));
     }
 
@@ -703,13 +745,21 @@ function buildLessonQuestionsFromBank(
 
   // 3. Voice (2×)
   for (let i = 0; i < 2; i++) {
-    const v = pick(voices, i);
-    questions.push({ type: "voice", prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 });
+    const v = voices.length > 0 ? pick(voices, i) : null;
+    if (v) {
+      questions.push({ type: "voice", prompt: v.prompt, targetWord: v.target, targetKurdish: v.targetKurdish, xp: 20 });
+    } else {
+      pushWordMc(10 + i, seed + 60 + i);
+    }
   }
 
   // 4. Sentence Builder (2×)
   for (let i = 0; i < 2; i++) {
-    const s = pick(sentences, i);
+    const s = sentences.length > 0 ? pick(sentences, i) : null;
+    if (!s) {
+      pushWordMc(12 + i, seed + 20 + i);
+      continue;
+    }
     const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
     const extra = normalDifficulty
       ? selectSentenceBuilderExtras(
@@ -736,35 +786,41 @@ function buildLessonQuestionsFromBank(
 
   // 5. Listen & Build (1×) — same sentence pool, audio-only prompt.
   if (sentences.length > 0) {
-    const s = pick(sentences, 2);
-    const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-    const extra = normalDifficulty
-      ? selectSentenceBuilderExtras(
-          learnedSingleWords,
-          s.english,
-          normalDifficulty.sentenceExtraCount,
-          seed + 30,
-        )
-      : pickLessonWrongs(
-          lessonWords,
-          "",
-          2,
-          seed + 30,
-          (d) => !sentSet.has(d.toLowerCase()),
-        );
-    questions.push({
-      type: "listen_build",
-      sentence: s.english.join(" "),
-      wordBank: shuffle([...s.english, ...extra], seed + 30),
-      correctWords: s.english,
-      translation: s.kurdish,
-      xp: 25,
-    });
+    const s = pick(sentences, 2) ?? pick(sentences, 0);
+    if (s) {
+      const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
+      const extra = normalDifficulty
+        ? selectSentenceBuilderExtras(
+            learnedSingleWords,
+            s.english,
+            normalDifficulty.sentenceExtraCount,
+            seed + 30,
+          )
+        : pickLessonWrongs(
+            lessonWords,
+            "",
+            2,
+            seed + 30,
+            (d) => !sentSet.has(d.toLowerCase()),
+          );
+      questions.push({
+        type: "listen_build",
+        sentence: s.english.join(" "),
+        wordBank: shuffle([...s.english, ...extra], seed + 30),
+        correctWords: s.english,
+        translation: s.kurdish,
+        xp: 25,
+      });
+    }
   }
 
   // 6. Fill Blank (2×)
   for (let i = 0; i < 2; i++) {
-    const f = pick(fills, i);
+    const f = fills.length > 0 ? pick(fills, i) : null;
+    if (!f) {
+      pushWordMc(14 + i, seed + 40 + i);
+      continue;
+    }
     const fillWrongs = normalDifficulty
       ? buildFillDistractors(
           f.answer,
@@ -806,7 +862,12 @@ function buildLessonQuestionsFromBank(
        * scenario whose wrongs collapse to nothing falls back to a word MC,
        * since a one-option drill is unanswerable.
        */
-      const completeOptions = [...new Set([c.correct, c.wrong1, c.wrong2].filter(Boolean))];
+      const completeDistractors = buildConversationDistractors(
+        c,
+        2,
+        seed + 60,
+      );
+      const completeOptions = [...new Set([c.correct, ...completeDistractors].filter(Boolean))];
       if (completeOptions.length < 2) {
         pushWordMc(6 + i, seed + 50 + i);
         continue;
@@ -822,21 +883,18 @@ function buildLessonQuestionsFromBank(
       continue;
     }
 
-    const progressiveConversation = normalDifficulty
-      ? buildProgressiveConversationChoices(
-          c,
-          normalDifficulty.closeDistractorCount,
-        )
-      : null;
+    const progressiveConversation = buildProgressiveConversationChoices(
+      c,
+      normalDifficulty?.closeDistractorCount ?? 2,
+    );
     questions.push({
       type: "conversation_pick",
       situation: c.situation,
       theyAsk: c.theyAsk,
       correctAnswer: c.correct,
-      optionTiers:
-        progressiveConversation?.optionTiers ?? buildConversationOptionTiers(c),
+      optionTiers: progressiveConversation.optionTiers,
       options: shuffle(
-        progressiveConversation?.options ?? [c.correct, c.wrong1, c.wrong2, c.wrong3],
+        progressiveConversation.options,
         seed + 50 + i,
       ),
       explanation: c.explanation,

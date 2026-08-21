@@ -1,4 +1,6 @@
 import { SubscriptionScreen } from "../screens/subscriptions/SubscriptionScreen";
+import React from "react";
+import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 /**
  * Standalone credit page.
@@ -7,5 +9,9 @@ import { SubscriptionScreen } from "../screens/subscriptions/SubscriptionScreen"
  * informational screen, which has no purchase button, URL, or WebView.
  */
 export default function CreditsRoute() {
-  return <SubscriptionScreen />;
+  return (
+    <ScreenOpeningShell variant="subscription" screenKey="credits" firstTimeOnly={true}>
+      <SubscriptionScreen />
+    </ScreenOpeningShell>
+  );
 }

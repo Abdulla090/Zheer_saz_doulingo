@@ -94,14 +94,17 @@ describe("normal English lesson difficulty", () => {
           if (
             question.type !== "multiple_choice" &&
             question.type !== "fill_blank" &&
-            question.type !== "conversation_pick"
+            question.type !== "conversation_pick" &&
+            question.type !== "conversation_complete"
           ) {
             return;
           }
 
           const optionKeys = question.options.map(normalized);
-          expect(question.options).toHaveLength(4);
-          expect(new Set(optionKeys).size).toBe(4);
+          if (question.type !== "conversation_complete") {
+            expect(question.options).toHaveLength(4);
+          }
+          expect(new Set(optionKeys).size).toBe(question.options.length);
           expect(optionKeys).toContain(normalized(question.correctAnswer));
 
           if (question.type === "conversation_pick") {
@@ -109,6 +112,7 @@ describe("normal English lesson difficulty", () => {
               [...question.options].sort(),
             );
           }
+
         });
       }
     }

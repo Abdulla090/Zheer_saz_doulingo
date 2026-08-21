@@ -1641,7 +1641,12 @@ export function LessonLiquidFeedback({
     );
   }
 
-  const duoBg = isPassing ? Duo.greenBg : Duo.redBg;
+  const duoBg = isDark
+    ? isPassing ? "#162B1A" : "#311818"
+    : isPassing ? Duo.greenBg : Duo.redBg;
+  const duoBorder = isDark
+    ? isPassing ? "#234A29" : "#522424"
+    : isPassing ? Duo.greenBorder : Duo.redBorder;
   const duoTitleColor = isPassing ? Duo.greenText : Duo.redText;
   const duoBtnBg = isPassing ? Duo.green : Duo.red;
   const duoBtnDark = isPassing ? Duo.greenDark : Duo.redDark;
@@ -1650,31 +1655,39 @@ export function LessonLiquidFeedback({
     <View
       style={[
         lh.duoFeedbackWrap,
-        { backgroundColor: isDark ? colors.surfaceRaised : duoBg },
+        {
+          backgroundColor: duoBg,
+          borderTopColor: duoBorder,
+        },
       ]}
     >
-      <View style={[lh.feedbackTextCol, { paddingHorizontal: 20, paddingTop: 20 }]}>
-        <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
-          {isPassing ? (
-            <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-              <Path d="M9 12l2 2 4-4" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-              <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
-            </Svg>
-          ) : (
-            <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-              <Path d="M18 6L6 18M6 6l12 12" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-              <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
-            </Svg>
-          )}
-          <AppText style={[lh.feedbackTitle, { color: isDark ? (isPassing ? "#A7F3D0" : "#FECACA") : duoTitleColor, textAlign: rtl ? "right" : "left" }]}>
-            {title}
-          </AppText>
+      <View style={[lh.feedbackTextCol, { paddingHorizontal: 20, paddingTop: 16 }]}>
+        <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 12 }}>
+          <TwinoMascot size={58} pose={isPassing ? "correct" : "wrong"} />
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: rtl ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
+              {isPassing ? (
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                  <Path d="M9 12l2 2 4-4" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+                  <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
+                </Svg>
+              ) : (
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                  <Path d="M18 6L6 18M6 6l12 12" stroke={duoTitleColor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+                  <Circle cx="12" cy="12" r="10" stroke={duoTitleColor} strokeWidth={2.5} fill="none" />
+                </Svg>
+              )}
+              <AppText style={[lh.feedbackTitle, { color: isDark ? (isPassing ? "#A7F3D0" : "#FECACA") : duoTitleColor, textAlign: rtl ? "right" : "left" }]}>
+                {title}
+              </AppText>
+            </View>
+            {subtitle ? (
+              <AppText style={[lh.feedbackSub, { color: isDark ? colors.mutedForeground : duoTitleColor, textAlign: rtl ? "right" : "left", marginTop: 4 }]}>
+                {subtitle}
+              </AppText>
+            ) : null}
+          </View>
         </View>
-        {subtitle ? (
-          <AppText style={[lh.feedbackSub, { color: isDark ? colors.mutedForeground : duoTitleColor, textAlign: rtl ? "right" : "left", marginTop: 4 }]}>
-            {subtitle}
-          </AppText>
-        ) : null}
       </View>
 
       <View style={{ paddingHorizontal: 20, paddingBottom: 20, paddingTop: 14 }}>
@@ -2394,6 +2407,12 @@ function createLessonStyles(
   duoFeedbackWrap: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 24,
   },
   duoFeedbackBtn: {
     height: 52,
