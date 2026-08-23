@@ -134,7 +134,10 @@
     "@react-native/dev-middleware": {
       "ws": "7.5.11"
     },
+    "metro-config": "0.84.5",
+    "metro-transform-worker": "0.84.5",
     "metro": {
+      ".": "0.84.5",
       "ws": "7.5.11"
     },
     "react-devtools-core": {

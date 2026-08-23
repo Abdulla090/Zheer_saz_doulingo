@@ -17,8 +17,6 @@ import {
 
 const DAILY_SESSION_LIMIT = 40;
 const LIVE_MODEL = "gemini-3.1-flash-live-preview";
-const OWNER_MAX_USER_ID = "dee3b9a3-88fe-40e5-b249-ca37d6eba542";
-const OWNER_MAX_CREDIT_BALANCE = 1_000_000_000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -53,7 +51,6 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
   if (!userId) {
     return json({ error: "Authentication required" }, 401);
   }
-  const ownerMaxAccess = userId === OWNER_MAX_USER_ID;
 
   let input: Record<string, unknown>;
   try {
@@ -80,9 +77,6 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
 
     if (!UUID_PATTERN.test(reservationId)) {
       return json({ code: "INVALID_USAGE_REPORT", error: "Invalid usage report." }, 400);
-    }
-    if (ownerMaxAccess) {
-      return json({ recorded: true, status, usage: null });
     }
 
     const { data: reservationData, error: reservationError } = await ctx.supabaseAdmin
@@ -164,60 +158,6 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
   const apiKey = Deno.env.get("GEMINI_API_KEY")?.trim();
   if (!apiKey) {
     return json({ error: "AI service unavailable" }, 503);
-  }
-
-  if (ownerMaxAccess) {
-    const now = Date.now();
-    const expireTime = new Date(now + durationMinutes * 60 * 1000);
-    const newSessionExpireTime = new Date(now + 60 * 1000);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-    try {
-      const upstream = await fetch(
-        "https://generativelanguage.googleapis.com/v1alpha/auth_tokens",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            expireTime: expireTime.toISOString(),
-            newSessionExpireTime: newSessionExpireTime.toISOString(),
-            uses: 1,
-          }),
-          signal: controller.signal,
-        },
-      );
-      const token = (await upstream.json()) as { name?: unknown };
-      if (!upstream.ok || typeof token.name !== "string" || !token.name) {
-        console.error("Gemini Live owner token request failed", {
-          status: upstream.status,
-        });
-        return json(
-          { code: "AI_PROVIDER_FAILED", error: "AI voice service unavailable" },
-          upstream.status === 429 ? 429 : 502,
-        );
-      }
-      return json({
-        token: token.name,
-        durationMinutes,
-        expiresAt: expireTime.toISOString(),
-        chargedCredits: 0,
-        balance: OWNER_MAX_CREDIT_BALANCE,
-        reservationId: crypto.randomUUID(),
-      });
-    } catch (error) {
-      console.error("Gemini Live owner token request failed", {
-        name: error instanceof Error ? error.name : "UnknownError",
-      });
-      return json(
-        { code: "AI_PROVIDER_UNAVAILABLE", error: "AI voice service unavailable" },
-        502,
-      );
-    } finally {
-      clearTimeout(timeout);
-    }
   }
 
   let reservation: AiCharge;

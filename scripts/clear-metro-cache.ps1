@@ -1,6 +1,9 @@
 # Clears Metro / Expo caches (project + %TEMP%) — fixes EMFILE on Windows.
 $ErrorActionPreference = "SilentlyContinue"
 
+# Allocate 8GB heap to prevent out-of-memory during long sessions
+$env:NODE_OPTIONS = "--max-old-space-size=8192"
+
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $temp = [System.IO.Path]::GetTempPath()
 

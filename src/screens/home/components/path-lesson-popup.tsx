@@ -7,7 +7,7 @@ import { useThemeColors } from "../../../hooks/useThemeColors";
 import { crossShadow } from "../../../utils/shadows";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -186,11 +186,13 @@ export function PathLessonPopup({
         entering={FadeIn.duration(100).easing(Easing.out(Easing.cubic))}
         exiting={FadeOut.duration(80).easing(Easing.in(Easing.quad))}
         pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          styles.scrim,
-          isLocked && styles.lockedScrim,
-        ]}
+        style={[StyleSheet.absoluteFill, styles.scrim, isLocked && styles.lockedScrim]}
+      />
+      <Pressable
+        onPress={onDismiss}
+        accessibilityRole="button"
+        accessibilityLabel={t("common.close")}
+        style={styles.dismissTarget}
       />
       <Animated.View
         entering={FadeInDown.duration(135).easing(Easing.out(Easing.cubic))}
@@ -298,11 +300,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15,23,42,0.12)",
     zIndex: 30,
   },
+  dismissTarget: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 31,
+  },
   lockedScrim: {
     backgroundColor: "rgba(15,23,42,0.18)",
   },
   card: {
     position: "absolute",
+    // Popup coordinates come from physical window measurements. Keep this
+    // overlay LTR so React Native does not mirror `left` in RTL languages.
+    ...(Platform.OS !== "web" ? ({ direction: "ltr" } as const) : {}),
     zIndex: 40,
     borderRadius: 20,
     borderCurve: "continuous",

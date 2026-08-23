@@ -7,6 +7,9 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "android": {
         "buildType": "apk"
       },
@@ -21,6 +24,9 @@
     "preview": {
       "channel": "preview",
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "EAS_GRADLE_CACHE": "1",
         "EAS_USE_CACHE": "1",

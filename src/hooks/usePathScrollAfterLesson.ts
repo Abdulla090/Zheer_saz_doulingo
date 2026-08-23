@@ -16,9 +16,7 @@ export function usePathScrollAfterLesson(
 
   useFocusEffect(
     useCallback(() => {
-      if (scrollRequest !== pathMode) return;
-
-      consumeScrollRequest();
+      if (scrollRequest === pathMode) consumeScrollRequest();
       const timer = setTimeout(() => {
         scrollPathToCurrentLesson(listRef, sections, true);
       }, 200);

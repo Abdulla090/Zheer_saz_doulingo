@@ -19,6 +19,7 @@ import {
 } from "../../data/list-items";
 import { usePathScrollAfterLesson } from "../../hooks/usePathScrollAfterLesson";
 import { usePathLessonSelection } from "../../hooks/use-path-lesson-selection";
+import { scrollPathToCurrentLesson } from "../../utils/path-scroll";
 import { useCurrentProgress } from "../../stores/useProgressStore";
 import {
   getSkippedUnitsCount,
@@ -370,6 +371,26 @@ export function NormalEnglishPathScreen({
     }
   }).current;
 
+  const onScrollToIndexFailed = useCallback(
+    (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+      const offset = Math.max(0, info.highestMeasuredFrameIndex * (info.averageItemLength || 80));
+      listRef.current?.getScrollResponder()?.scrollTo({
+        y: offset,
+        animated: true,
+      });
+      setTimeout(() => {
+        try {
+          if (visibleSections.length > 0) {
+            scrollPathToCurrentLesson(listRef, visibleSections, true);
+          }
+        } catch {
+          // Ignore fallback errors
+        }
+      }, 100);
+    },
+    [visibleSections],
+  );
+
   if (localizedSections.length === 0) {
     const targetName = getLanguage(targetLanguage)?.nativeName ?? targetLanguage;
     const emptyCopy = locale === "ku"
@@ -434,6 +455,7 @@ export function NormalEnglishPathScreen({
           onScroll={onScroll}
           onScrollBeginDrag={dismissLesson}
           onTouchMove={dismissLesson}
+          onScrollToIndexFailed={onScrollToIndexFailed}
           scrollEventThrottle={16}
           style={darkStyles.list}
           contentContainerStyle={[

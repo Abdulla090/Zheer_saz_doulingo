@@ -28,6 +28,10 @@
       },
       "infoPlist": {
         "CADisableMinimumFrameDuration": true,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        },
         "NSSpeechRecognitionUsageDescription": "Allow Twino English to transcribe your speech for lessons and AI feedback.",
         "NSMicrophoneUsageDescription": "Allow Twino English to use the microphone for speaking practice.",
         "NSPhotoLibraryUsageDescription": "Allow Twino to choose a profile photo from your photo library."
@@ -61,7 +65,7 @@
       ]
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/real-app-icon.png"
     },
     "plugins": [

@@ -5,7 +5,7 @@
  * Features 60fps real-time interactive drag-and-drop sliding reorder with live sibling gap opening.
  */
 
-import { sentenceWordMorphTiming } from "../../../components/animations/motion";
+import { wordTileMorphTiming } from "../../../components/animations/motion";
 import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
@@ -76,6 +76,22 @@ type FlyDirection = "forward" | "reverse";
 const LANDING_ANCHOR_REST_W = 1;
 /** Fallback if reserving the anchor produces no layout event. */
 const ANCHOR_LAYOUT_TIMEOUT_MS = 32;
+/**
+ * A flight that has not finished within this window has lost its completion
+ * callback (dropped layout event, interrupted Reanimated timing). The watchdog
+ * releases its locks so taps and Check can never be wedged permanently.
+ */
+const FLY_WATCHDOG_MS = 3000;
+
+/** True when every coordinate is a usable number — NaN geometry never flies. */
+const isUsablePoint = (p: { x: number; y: number } | null | undefined): p is { x: number; y: number } =>
+  !!p && Number.isFinite(p.x) && Number.isFinite(p.y);
+const isUsableCoords = (
+  p: { x: number; y: number; w: number; h: number } | null | undefined,
+): boolean =>
+  isUsablePoint(p) &&
+  Number.isFinite(p!.w) &&
+  Number.isFinite(p!.h);
 
 type FlySession = {
   id: string;
@@ -83,6 +99,8 @@ type FlySession = {
   bankIndex: number;
   word: string;
   slotIndex?: number;
+  /** Wall-clock start, used by the watchdog to recover lost flights. */
+  startedAt: number;
   fromX: number;
   fromY: number;
   fromW: number;
@@ -100,19 +118,22 @@ type Props = {
 };
 
 /** Apple / Duolingo Max tier — critically damped, crisp response, zero childish wobble */
-const PremiumSlideMotion = {
-  siblingSpring: { damping: 32, stiffness: 520, mass: 0.3, overshootClamping: true },
-  releaseSnap: { damping: 34, stiffness: 580, mass: 0.28, overshootClamping: true },
-  /*
-   * Gap-closing glide when a word leaves the row and the survivors reflow.
-   * 220ms matches the fly duration, so a word travelling to the bank and the
-   * words closing behind it read as one movement rather than two speeds.
-   */
-  layoutGlide:
-    Platform.OS === "web"
-      ? LinearTransition.duration(220)
-      : LinearTransition.duration(220).easing(Easing.out(Easing.cubic)),
-} as const;
+/*
+ * Kept as separate constants, deliberately not one object.
+ *
+ * Worklets below reference the spring configs by name, and the Babel worklet
+ * transform captures the whole referenced binding into the worklet closure.
+ * If those bindings lived on a single object together with `layoutGlide`,
+ * every gesture/animation sent to the UI thread would try to serialize the
+ * LinearTransition too and crash with
+ * "[Worklets] Cannot copy value of type `LinearTransition`".
+ */
+const PremiumSiblingSpring = { damping: 26, stiffness: 640, mass: 0.22, overshootClamping: true };
+const PremiumReleaseSnap = { damping: 28, stiffness: 720, mass: 0.18, overshootClamping: true };
+const PremiumLayoutGlide =
+  Platform.OS === "web"
+    ? LinearTransition.duration(180)
+    : LinearTransition.duration(180).easing(Easing.out(Easing.cubic));
 
 /*
  * FlyingTile handles bidirectional morphing (Bank -> Answer Slot and Answer Slot -> Bank Ghost).
@@ -137,9 +158,17 @@ function FlyingTile({
 }) {
   const flyProgress = useSharedValue(0);
 
-  // Use the larger dimension so text is never clipped during the flight.
-  const renderW = Math.max(session.fromW, session.toW);
-  const renderH = Math.max(session.fromH, session.toH);
+  /*
+   * Larger of both endpoints plus slack. The shell is still scaled to match
+   * the endpoint footprints exactly (scaleXFrom/scaleXTo below compensate for
+   * the extra room), while the slack guarantees the label always lays out on a
+   * single line mid-flight — its last letter never wraps to a second line and
+   * the text is never ellipsized ("wor…").
+   */
+  const FLY_SLACK_W = 18;
+  const FLY_SLACK_H = 8;
+  const renderW = Math.max(session.fromW, session.toW) + FLY_SLACK_W;
+  const renderH = Math.max(session.fromH, session.toH) + FLY_SLACK_H;
 
   // At p=0 the visible shell must be fromW × fromH;
   // at p=1 it must be toW × toH.
@@ -161,7 +190,7 @@ function FlyingTile({
   });
 
   React.useEffect(() => {
-    flyProgress.value = withTiming(1, sentenceWordMorphTiming, (finished) => {
+    flyProgress.value = withTiming(1, wordTileMorphTiming, (finished) => {
       if (finished) runOnJS(onFinish)(session.id, session.bankIndex, session.direction);
     });
   }, [session, onFinish, flyProgress]);
@@ -187,10 +216,9 @@ function FlyingTile({
             state="idle"
             isKids={isKids}
             languageCode={languageCode}
-            // A flying label is a single visual object.  Never let the text
-            // engine reflow it into a second line while the shell is being
-            // transformed; the final answer layout decides wrapping only
-            // after the flight has completed.
+            // One strict line. With the slack built into the shell above there
+            // is always room for it, so the word can neither wrap its last
+            // letter onto a second line nor truncate with "..." mid-flight.
             fitLabel={!isNormal}
             fitLabelLines={1}
             labelLines={1}
@@ -209,13 +237,19 @@ function FlyingTile({
 }
 
 /**
- * Real-time Draggable Placed Word.
- * Displaces sibling words dynamically in real time when dragged past 50% midpoint.
+ * Draggable placed word.
+ *
+ * Real-time displacement: siblings spring open an exact gap (real measured
+ * widths) as the dragged tile passes their midpoint. On release EVERY transform
+ * is dropped atomically on the UI thread (the style simply switches branch —
+ * no JS roundtrip), so there is exactly one clean baseline frame before React
+ * commits the reorder and LinearTransition glides all tiles to their new spots
+ * as a single coordinated movement. Layout and transforms are never mixed in a
+ * painted frame, so nothing can flash, double-move or overlap.
  */
 function RealtimeDraggablePlacedWord({
   placed,
   index,
-  skipLayoutGlide,
   sentenceWords,
   cellWidths,
   tileState,
@@ -234,7 +268,6 @@ function RealtimeDraggablePlacedWord({
 }: {
   placed: Placed;
   index: number;
-  skipLayoutGlide?: boolean;
   sentenceWords: string[];
   /** Measured outer width of every placed cell, indexed by slot. */
   cellWidths: SharedValue<number[]>;
@@ -253,18 +286,53 @@ function RealtimeDraggablePlacedWord({
   onLayout: () => void;
 }) {
   const isDragging = useSharedValue(0);
+  const totalCount = sentenceWords.length;
+
   /**
    * How far this tile is pushed aside to open a gap for the dragged word.
-   *
-   * This has to be its own shared value rather than a `withSpring` written
-   * inline in `useAnimatedStyle`. That style worklet re-runs on every frame a
-   * drag is in progress (it reads `dragTranslationX`), and each run started a
-   * *new* spring from the current position — so the displacement never settled
-   * and the neighbours visibly stuttered sideways. Here the spring is created
-   * once, only when the target actually changes.
+   * Own shared value rather than an inline `withSpring` — the style worklet
+   * re-runs every frame of a drag, and an inline spring would restart from
+   * the current position each frame, so neighbours stutter and never settle.
    */
   const siblingOffset = useSharedValue(0);
-  const totalCount = sentenceWords.length;
+
+  /*
+   * Recomputed only when the drag state changes — not every frame. The offset
+   * matches the slot stride, so after the reorder commits, `layout + offset`
+   * already equals the tile's final position; zeroing it at release is a
+   * visual no-op instead of a second movement.
+   */
+  useAnimatedReaction(
+    () => {
+      const dragIdx = activeDragIndex.value;
+      if (dragIdx === -1 || dragIdx === index) return 0;
+      const gap =
+        (cellWidths.value[dragIdx] ??
+          estimateTileWidth(sentenceWords[dragIdx] ?? "")) + TILE_GAP;
+      return resolveSiblingOffset(
+        index,
+        dragIdx,
+        hoverTargetIndex.value,
+        gap,
+        isRtl === true,
+      );
+    },
+    (target, previous) => {
+      if (target === previous) return;
+      if (activeDragIndex.value === -1) {
+        /*
+         * Drag ended. This runs on the UI thread in the same event as the
+         * style branch switch, so the gap closes in exactly the frame the
+         * dragged tile rejoins the row — one clean baseline before the
+         * committed reorder glides everyone to their new spots.
+         */
+        siblingOffset.value = 0;
+        return;
+      }
+      siblingOffset.value = withSpring(target, PremiumSiblingSpring);
+    },
+    [index, isRtl, sentenceWords],
+  );
 
   const triggerHaptic = useCallback(() => {
     if (Platform.OS !== "web") {
@@ -315,65 +383,24 @@ function RealtimeDraggablePlacedWord({
       const toIdx = hoverTargetIndex.value;
 
       isDragging.value = withTiming(0, { duration: 60, easing: Easing.out(Easing.quad) });
+
+      /*
+       * Atomic release, all on the UI thread: the animated style switches to
+       * its resting branch and the reaction closes the gaps in THIS frame.
+       * Transforms and layout are therefore never painted mixed — the reorder
+       * glide that follows starts from one clean baseline.
+       */
       activeDragIndex.value = -1;
       hoverTargetIndex.value = -1;
 
       if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-        // The tile is ALREADY physically at the destination slot under the user's finger.
-        // Set dragTranslation directly to 0 so when React re-renders at the new slot,
-        // it lands instantly in place with zero redundant animation from the beginning!
-        dragTranslationX.value = 0;
-        dragTranslationY.value = 0;
         runOnJS(handleCommitReorder)(fromIdx, toIdx);
-      } else {
-        dragTranslationX.value = withSpring(0, PremiumSlideMotion.releaseSnap);
-        dragTranslationY.value = withSpring(0, PremiumSlideMotion.releaseSnap);
       }
     })
     .onFinalize(() => {
       activeDragIndex.value = -1;
       hoverTargetIndex.value = -1;
-      dragTranslationX.value = withSpring(0, PremiumSlideMotion.releaseSnap);
-      dragTranslationY.value = withSpring(0, PremiumSlideMotion.releaseSnap);
     });
-
-  /*
-   * The gap this tile has to open, recomputed only when the drag state changes
-   * — not every frame. Widths come from real layout, so the gap is exactly the
-   * space the dragged word will occupy; the old estimate-by-character-count
-   * left neighbours short or over-shifted, which read as random jitter.
-   */
-  useAnimatedReaction(
-    () => {
-      const dragIdx = activeDragIndex.value;
-      if (dragIdx === -1 || dragIdx === index) return 0;
-      const gap =
-        (cellWidths.value[dragIdx] ??
-          estimateTileWidth(sentenceWords[dragIdx] ?? "")) + TILE_GAP;
-      return resolveSiblingOffset(
-        index,
-        dragIdx,
-        hoverTargetIndex.value,
-        gap,
-        isRtl === true,
-      );
-    },
-    (target, previous) => {
-      if (target === previous) return;
-      if (activeDragIndex.value === -1) {
-        /*
-         * The drag just ended. A committed reorder re-renders every tile at the
-         * index it is already sitting at, so springing the offset back to 0 here
-         * would fight the layout transition doing the same distance on a
-         * different curve — that double-move is what read as a wobble/overlap.
-         */
-        siblingOffset.value = 0;
-        return;
-      }
-      siblingOffset.value = withSpring(target, PremiumSlideMotion.siblingSpring);
-    },
-    [index, isRtl, sentenceWords],
-  );
 
   const animatedStyle = useAnimatedStyle(() => {
     if (activeDragIndex.value === index) {
@@ -410,7 +437,7 @@ function RealtimeDraggablePlacedWord({
 
   return (
     <Animated.View
-      layout={skipLayoutGlide ? undefined : PremiumSlideMotion.layoutGlide}
+      layout={PremiumLayoutGlide}
       style={[
         isNormal ? s.duoPlacedCell : s.slotCell,
         animatedStyle,
@@ -603,9 +630,11 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     cellWidths.value = [];
     activeDragIndex.value = -1;
     hoverTargetIndex.value = -1;
+    dragTranslationX.value = 0;
+    dragTranslationY.value = 0;
     anchorLayoutWaiterRef.current = null;
     releaseLandingAnchor();
-  }, [shuffledWordBank, stop, releaseLandingAnchor, activeDragIndex, hoverTargetIndex, cellWidths]);
+  }, [shuffledWordBank, stop, releaseLandingAnchor, activeDragIndex, hoverTargetIndex, cellWidths, dragTranslationX, dragTranslationY]);
 
   React.useEffect(() => () => {
     void stop();
@@ -688,7 +717,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       const bank = measuredBank ?? bankCoords.current[bankIndex];
       const slot = measuredSlot ?? slotCoords.current[slotIndex];
 
-      if (!root || !bank || !slot) {
+      if (!isUsablePoint(root) || !isUsableCoords(bank) || !isUsableCoords(slot)) {
         measuringBankRef.current = null;
         releaseLandingAnchor();
         commitAddWord(bankIndex);
@@ -704,6 +733,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           bankIndex,
           word,
           slotIndex,
+          startedAt: Date.now(),
           fromX: bank.x - root.x,
           fromY: bank.y - root.y,
           fromW: bank.w,
@@ -756,6 +786,41 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     }
   }, [flySessions.length, sentence.length, processQueuedAdds]);
 
+  const flySessionsRef = useRef<FlySession[]>([]);
+  React.useEffect(() => {
+    flySessionsRef.current = flySessions;
+  }, [flySessions]);
+
+  /*
+   * Self-healing watchdog. If a flight ever loses its completion callback
+   * (dropped layout event, interrupted Reanimated timing), the locks above
+   * would silently disable every tap and the Check button forever — the
+   * "dead screen" failure mode. Instead: expire the stale session, release
+   * the locks, and place (or restore) the word instantly. Normal flights
+   * finish in ~220ms, so 3s only ever trips on a genuinely lost flight.
+   */
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const stuck = flySessionsRef.current.filter(
+        (f) => now - f.startedAt > FLY_WATCHDOG_MS,
+      );
+      if (stuck.length === 0) return;
+      for (const f of stuck) {
+        if (f.direction === "forward") {
+          // The word never landed — commit it directly so it can't vanish.
+          commitAddWord(f.bankIndex);
+        }
+      }
+      flySessionsRef.current = [];
+      setFlySessions([]);
+      measuringBankRef.current = null;
+      addFlightActiveRef.current = false;
+      releaseLandingAnchor();
+    }, 500);
+    return () => clearInterval(timer);
+  }, [commitAddWord, releaseLandingAnchor]);
+
   const startFlyToBank = useCallback(
     async (placed: Placed, slotIndex: number) => {
       if (fb === "correct") return;
@@ -797,7 +862,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       slotCoords.current = {};
       cellWidths.value = [];
 
-      if (!root || !bank || !slot) {
+      if (!isUsablePoint(root) || !isUsableCoords(bank) || !isUsableCoords(slot)) {
         measuringBankRef.current = null;
         setUsedBank((prev) => {
           const next = [...prev];
@@ -816,6 +881,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
           bankIndex,
           word: placed.word,
           slotIndex,
+          startedAt: Date.now(),
           fromX: slot.x - root.x,
           fromY: slot.y - root.y,
           fromW: slot.w || bank.w,
@@ -831,8 +897,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     [fb, flySessions.length, cellWidths],
   );
 
-  const lastDroppedIdRef = useRef<string | null>(null);
-
   const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
     setSentence((prev) => {
       if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
@@ -840,20 +904,10 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
       }
       const next = [...prev];
       const [moved] = next.splice(fromIndex, 1);
-      if (moved) {
-        lastDroppedIdRef.current = moved.id;
-      }
       next.splice(toIndex, 0, moved!);
       return next;
     });
   }, []);
-
-  React.useEffect(() => {
-    // Suppress the layout glide for exactly one render after a reorder. Clearing
-    // here (not on a timer) is enough: the `layout` prop is read at commit, and
-    // this runs right after it, so the next removal keeps its gap-closing glide.
-    lastDroppedIdRef.current = null;
-  }, [sentence]);
 
   const addWord = useCallback((bankIndex: number) => {
     if (fb === "correct" || usedBankRef.current[bankIndex]) return;
@@ -1000,7 +1054,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                           key={placed.id}
                           placed={placed}
                           index={i}
-                          skipLayoutGlide={lastDroppedIdRef.current !== null}
                           sentenceWords={sentenceWords}
                           cellWidths={cellWidths}
                           tileState={slotTileState(i)}
@@ -1064,7 +1117,6 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                           <RealtimeDraggablePlacedWord
                             placed={placed}
                             index={i}
-                            skipLayoutGlide={lastDroppedIdRef.current !== null}
                             sentenceWords={sentenceWords}
                             cellWidths={cellWidths}
                             tileState={slotTileState(i)}

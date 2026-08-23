@@ -49,20 +49,44 @@ export function scrollPathToCurrentLesson(
   if (!location || !listRef.current) return;
 
   const runScroll = () => {
-    listRef.current?.scrollToLocation({
-      sectionIndex: location.sectionIndex,
-      itemIndex: location.itemIndex,
-      animated,
-      viewOffset: LESSON_ROW_HEIGHT * 1.5,
-      viewPosition: 0.25,
-    });
+    try {
+      listRef.current?.scrollToLocation({
+        sectionIndex: location.sectionIndex,
+        itemIndex: location.itemIndex,
+        animated,
+        viewOffset: LESSON_ROW_HEIGHT * 1.5,
+        viewPosition: 0.25,
+      });
+    } catch {
+      // Fallback: estimate scroll offset if section/item is outside rendered window
+      try {
+        let totalItemsBefore = 0;
+        for (let s = 0; s < location.sectionIndex; s++) {
+          totalItemsBefore += (sections[s]?.data?.length || 0) + 1; // +1 for section header
+        }
+        totalItemsBefore += location.itemIndex;
+        const estimatedOffset = Math.max(0, totalItemsBefore * LESSON_ROW_HEIGHT - LESSON_ROW_HEIGHT);
+        listRef.current?.getScrollResponder()?.scrollTo({
+          y: estimatedOffset,
+          animated,
+        });
+      } catch {
+        // Safe no-op if list is unmounted or layout not ready
+      }
+    }
   };
 
   requestAnimationFrame(() => {
     try {
       runScroll();
     } catch {
-      setTimeout(runScroll, 120);
+      setTimeout(() => {
+        try {
+          runScroll();
+        } catch {
+          // Never throw unhandled error from async timers
+        }
+      }, 120);
     }
   });
 }

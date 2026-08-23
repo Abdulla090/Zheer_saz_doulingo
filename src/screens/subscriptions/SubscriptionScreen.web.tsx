@@ -319,7 +319,7 @@ export function SubscriptionScreen() {
   return (
     <View
       {...({ dir: isRtl ? "rtl" : "ltr" } as { dir: "rtl" | "ltr" })}
-      style={[styles.root, { direction: isRtl ? "rtl" : "ltr" }]}
+      style={styles.root}
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.topbar}>

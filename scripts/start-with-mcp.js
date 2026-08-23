@@ -1,4 +1,5 @@
 process.env.EXPO_UNSTABLE_MCP_SERVER = "1";
+process.env.NODE_OPTIONS = (process.env.NODE_OPTIONS || "") + " --max-old-space-size=8192";
 
 const { spawn } = require("child_process");
 

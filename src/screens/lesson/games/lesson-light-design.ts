@@ -32,16 +32,16 @@ export const L = {
 } as const;
 
 export const LightMotion = {
-  press: { damping: 28, stiffness: 380, mass: 0.38, overshootClamping: true },
-  soft: { damping: 26, stiffness: 300, mass: 0.45, overshootClamping: true },
+  press: { damping: 26, stiffness: 520, mass: 0.3, overshootClamping: true },
+  soft: { damping: 24, stiffness: 480, mass: 0.3, overshootClamping: true },
   colorMs: 180,
   ease: Easing.out(Easing.cubic),
 } as const;
 
 /** Fast, low-travel response used only by direct-manipulation word games. */
 export const FastWordMotion = {
-  press: { damping: 30, stiffness: 560, mass: 0.34, overshootClamping: true },
-  release: { damping: 28, stiffness: 440, mass: 0.38, overshootClamping: true },
+  press: { damping: 26, stiffness: 720, mass: 0.22, overshootClamping: true },
+  release: { damping: 26, stiffness: 620, mass: 0.24, overshootClamping: true },
   colorMs: 130,
 } as const;
 
@@ -129,9 +129,9 @@ export const Duo = {
  */
 export const DuoMotion = {
   /** Tile / button press — fast, no bounce back. */
-  press:    { damping: 30, stiffness: 520, mass: 0.5, overshootClamping: true },
+  press:    { damping: 26, stiffness: 680, mass: 0.3, overshootClamping: true },
   /** Release — slightly softer so the rim re-inflates smoothly. */
-  release:  { damping: 22, stiffness: 380, mass: 0.55, overshootClamping: true },
+  release:  { damping: 24, stiffness: 560, mass: 0.32, overshootClamping: true },
   /** Reward pop on a correct reveal — one gentle overshoot. */
   pop:      { damping: 12, stiffness: 320, mass: 0.5, overshootClamping: false },
   /** Feedback sheet slide-in. */

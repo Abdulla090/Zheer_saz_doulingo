@@ -282,7 +282,7 @@ function createStyles(theme: OnboardingTheme) {
       maxWidth: 420,
       height: 48,
       justifyContent: "center",
-      direction: "ltr",
+      ...(Platform.OS !== "web" ? ({ direction: "ltr" } as const) : {}),
     },
     track: {
       position: "absolute",
@@ -324,7 +324,7 @@ function createStyles(theme: OnboardingTheme) {
       width: "88%",
       maxWidth: 420,
       flexDirection: "row",
-      direction: "ltr",
+      ...(Platform.OS !== "web" ? ({ direction: "ltr" } as const) : {}),
       justifyContent: "space-between",
       marginTop: -8,
     },

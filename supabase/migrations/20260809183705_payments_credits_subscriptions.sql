@@ -160,6 +160,14 @@ alter table public.subscriptions
   add column if not exists created_at timestamptz,
   add column if not exists updated_at timestamptz;
 
+-- Legacy launch schemas used plan_id; the new plan column is authoritative.
+-- Keep the old column for compatibility but allow it to be empty.
+alter table public.subscriptions
+  alter column plan_id drop not null;
+
+alter table public.subscriptions
+  alter column amount drop not null;
+
 update public.subscriptions
 set plan = case lower(coalesce(plan, 'free'))
       when 'plus' then 'plus'

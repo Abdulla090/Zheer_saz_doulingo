@@ -19,6 +19,8 @@ if (Platform.OS === "web") {
     "props.pointerEvents is deprecated. Use style.pointerEvents",
     "[Reanimated] Reading from `value` during component render",
     "Blocked aria-hidden on an element",
+    "Invalid style property of \"direction\"",
+    "Did you mean \"writingDirection\"?",
   ];
 
   const originalWarn = console.warn;
@@ -67,6 +69,12 @@ if (Platform.OS === "web") {
         const style = styles[key];
         if (style && typeof style === "object") {
           const newStyle = { ...style };
+
+          // Strip invalid 'direction' style property on web
+          if (newStyle.direction !== undefined) {
+            delete newStyle.direction;
+          }
+
           let hasShadow = false;
           let shadowColor = newStyle.shadowColor || "#000";
           let shadowOffsetX = 0;
@@ -117,41 +125,49 @@ if (Platform.OS === "web") {
       mutated = true;
     }
 
-    // Convert inline shadow props in style
+    // Convert inline shadow props or strip direction in style
     if (props.style) {
       const flatStyle = StyleSheet.flatten(props.style);
-      if (
-        flatStyle &&
-        (flatStyle.shadowColor !== undefined ||
+      if (flatStyle) {
+        let needsStylePatch =
+          flatStyle.direction !== undefined ||
+          flatStyle.shadowColor !== undefined ||
           flatStyle.shadowOpacity !== undefined ||
           flatStyle.shadowOffset !== undefined ||
-          flatStyle.shadowRadius !== undefined)
-      ) {
-        if (!mutated) {
-          newProps = { ...newProps };
-          mutated = true;
-        }
-        const newStyle = { ...flatStyle };
-        let shadowColor = newStyle.shadowColor || "#000";
-        let shadowOffsetX = 0;
-        let shadowOffsetY = 0;
-        if (newStyle.shadowOffset) {
-          shadowOffsetX = newStyle.shadowOffset.width || 0;
-          shadowOffsetY = newStyle.shadowOffset.height || 0;
-          delete newStyle.shadowOffset;
-        }
-        let shadowRadius = newStyle.shadowRadius || 0;
-        let shadowOpacity = newStyle.shadowOpacity || 0;
+          flatStyle.shadowRadius !== undefined;
 
-        delete newStyle.shadowColor;
-        delete newStyle.shadowRadius;
-        delete newStyle.shadowOpacity;
+        if (needsStylePatch) {
+          if (!mutated) {
+            newProps = { ...newProps };
+            mutated = true;
+          }
+          const newStyle = { ...flatStyle };
 
-        if (shadowOpacity > 0) {
-          const rgba = convertColorToRgba(shadowColor, shadowOpacity);
-          newStyle.boxShadow = `${shadowOffsetX}px ${shadowOffsetY}px ${shadowRadius * 2}px 0px ${rgba}`;
+          if (newStyle.direction !== undefined) {
+            delete newStyle.direction;
+          }
+
+          let shadowColor = newStyle.shadowColor || "#000";
+          let shadowOffsetX = 0;
+          let shadowOffsetY = 0;
+          if (newStyle.shadowOffset) {
+            shadowOffsetX = newStyle.shadowOffset.width || 0;
+            shadowOffsetY = newStyle.shadowOffset.height || 0;
+            delete newStyle.shadowOffset;
+          }
+          let shadowRadius = newStyle.shadowRadius || 0;
+          let shadowOpacity = newStyle.shadowOpacity || 0;
+
+          delete newStyle.shadowColor;
+          delete newStyle.shadowRadius;
+          delete newStyle.shadowOpacity;
+
+          if (shadowOpacity > 0) {
+            const rgba = convertColorToRgba(shadowColor, shadowOpacity);
+            newStyle.boxShadow = `${shadowOffsetX}px ${shadowOffsetY}px ${shadowRadius * 2}px 0px ${rgba}`;
+          }
+          newProps.style = newStyle;
         }
-        newProps.style = newStyle;
       }
     }
     return newProps;

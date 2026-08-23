@@ -774,7 +774,6 @@ export function LiquidWordChip({
             lwc.label,
             { fontSize },
             rtl && {
-              direction: "rtl",
               writingDirection: "rtl",
               textAlign: resolvePlatformTextAlign(Platform.OS, "rtl", "right"),
             },

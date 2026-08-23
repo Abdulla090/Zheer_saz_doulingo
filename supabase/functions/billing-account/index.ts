@@ -1,34 +1,6 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 
-const OWNER_MAX_USER_ID = "dee3b9a3-88fe-40e5-b249-ca37d6eba542";
-const OWNER_MAX_CREDIT_BALANCE = 1_000_000_000;
-const FREE_AI_PRICES = {
-  live_tutor_5: 0,
-  live_tutor_10: 0,
-  live_tutor_15: 0,
-  ai_teacher_writing: 0,
-  ai_teacher_speaking: 0,
-  reading_passage_generation: 0,
-  reading_pronunciation_evaluation: 0,
-  roleplay_text_response: 0,
-  roleplay_voice_response: 0,
-  dynamic_tts_minute: 0,
-};
-
-const MAX_FEATURES = {
-  normal_path: true,
-  street_path: true,
-  kids_path: true,
-  exam_preview: true,
-  exam_enhanced: true,
-  exam_full: true,
-  mock_exam_preview: true,
-  mock_exam_full: true,
-  advanced_ai_features: true,
-  advanced_ai_evaluation: true,
-};
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -50,27 +22,6 @@ const account = withSupabase({ auth: "user" }, async (req, ctx) => {
   const userId = ctx.userClaims?.id;
   if (!userId) {
     return json({ code: "AUTH_REQUIRED", message: "Sign in to continue." }, 401);
-  }
-  if (userId === OWNER_MAX_USER_ID) {
-    const now = new Date().toISOString();
-    return json({
-      wallet: { creditBalance: OWNER_MAX_CREDIT_BALANCE, updatedAt: now },
-      subscription: {
-        plan: "max",
-        status: "active",
-        startsAt: now,
-        expiresAt: null,
-        provider: "owner_override",
-        updatedAt: now,
-      },
-      entitlements: {
-        currentPlan: "max",
-        expiresAt: null,
-        features: MAX_FEATURES,
-        creditBalance: OWNER_MAX_CREDIT_BALANCE,
-        aiPrices: FREE_AI_PRICES,
-      },
-    });
   }
   // deno-lint-ignore no-explicit-any
   const admin = ctx.supabaseAdmin as any;

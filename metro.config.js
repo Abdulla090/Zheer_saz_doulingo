@@ -106,7 +106,7 @@ const metroConfig = withUniwindConfig(config, {
 });
 
 metroConfig.cacheStores = [new FileStore({ root: transformCacheRoot })];
-metroConfig.maxWorkers = config.maxWorkers;
+metroConfig.maxWorkers = isWindows ? 2 : Math.min(4, require("os").cpus().length);
 metroConfig.transformer = {
   ...metroConfig.transformer,
   babelTransformerPath: config.transformer.babelTransformerPath,

@@ -57,7 +57,7 @@ export function PathModeTabs({
     (next: PathMode) => {
       setPathMode(next);
       router.replace({
-        pathname: "/dashboard",
+        pathname: "/(tabs)",
         params: { mode: next },
       });
     },

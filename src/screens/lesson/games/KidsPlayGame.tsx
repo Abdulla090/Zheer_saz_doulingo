@@ -405,7 +405,15 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
   };
 
   const renderChoicesGrid = (floating?: boolean) => (
-    <View {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})} style={[kb.grid, floating && kb.bubbleRow, { flexDirection: "row", direction: targetDirection }]}>
+    <View
+      {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+      style={[
+        kb.grid,
+        floating && kb.bubbleRow,
+        { flexDirection: "row" },
+        Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+      ]}
+    >
       {question.choices.map((c, i) =>
         floating ? (
           <FloatingBubble
@@ -493,7 +501,14 @@ export default function KidsPlayGame({ question, onAnswer, pathMode }: Props) {
 
       {question.variant === "shadow" ? (
         <View style={kb.shadowArea}>
-          <View {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})} style={[kb.chipRow, { flexDirection: "row", direction: targetDirection }]}>
+          <View
+            {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
+            style={[
+              kb.chipRow,
+              { flexDirection: "row" },
+              Platform.OS !== "web" ? { direction: targetDirection } : undefined,
+            ]}
+          >
             {question.choices.map((c) => {
               const used = Object.values(shadowPicks).includes(c.id);
               return (

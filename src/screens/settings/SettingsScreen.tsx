@@ -719,7 +719,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                   onPress={() => {
                     const nextMode = mode as PathMode;
                     setPathMode(nextMode);
-                    router.replace({ pathname: "/dashboard", params: { mode: nextMode } });
+                    router.replace({ pathname: "/(tabs)", params: { mode: nextMode } });
                   }}
                   languageCode={locale}
                   styles={styles}
