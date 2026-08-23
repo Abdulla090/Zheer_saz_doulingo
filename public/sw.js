@@ -1,4 +1,4 @@
-const CACHE_VERSION = "twino-pwa-v2";
+const CACHE_VERSION = "twino-pwa-v3";
 const APP_SHELL = ["/", "/manifest.json", "/pwa-192.png", "/pwa-512.png"];
 
 self.addEventListener("install", (event) => {
