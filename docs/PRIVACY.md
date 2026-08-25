@@ -29,10 +29,10 @@ Typed answers, transcripts, and prompts may also be sent to Google Gemini when y
 
 ## Your choices
 
-You can deny microphone access and continue using non-voice lessons. Delete your account and synced data from **Settings → Your Account → Delete Account**. You can clear remaining local data through system settings or uninstall the app. If the in-app deletion option is unavailable, email **support@twino.app** from the account email address.
+You can deny microphone access and continue using non-voice lessons. Delete your account and synced data from **Settings → Your Account → Delete Account**. You can clear remaining local data through system settings or uninstall the app. If the in-app deletion option is unavailable, email **abdullaazizb58@gmail.com** from the account email address.
 
 ## Contact
 
-**support@twino.app**
+**abdullaazizb58@gmail.com**
 
 For the full policy text, open **Twino → Profile → Settings → Privacy Policy**.

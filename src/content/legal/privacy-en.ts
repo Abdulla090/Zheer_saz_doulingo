@@ -45,8 +45,8 @@ export const privacyEn: LegalDocument = {
       title: "Your choices",
       paragraphs: [
         "You can deny microphone permission and continue using non-voice lessons. You can also use core lessons without creating an account.",
-        "You can permanently delete your Twino account and synced data in Settings → Your Account → Delete Account. You can clear remaining local app data through system settings or by uninstalling the app. If the in-app option is unavailable, contact support@twino.app from the account email address.",
-        "For privacy questions or data requests, contact support@twino.app.",
+        "You can permanently delete your Twino account and synced data in Settings → Your Account → Delete Account. You can clear remaining local app data through system settings or by uninstalling the app. If the in-app option is unavailable, contact abdullaazizb58@gmail.com from the account email address.",
+        "For privacy questions or data requests, contact abdullaazizb58@gmail.com.",
       ],
     },
     {

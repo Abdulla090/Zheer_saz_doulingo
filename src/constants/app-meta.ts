@@ -1,5 +1,5 @@
 /** Public contact for store listings and in-app legal screens. */
-export const SUPPORT_EMAIL = "support@twino.app";
+export const SUPPORT_EMAIL = "abdullaazizb58@gmail.com";
 
 /** Optional hosted policy URL (GitHub Pages, website). In-app text is always available. */
 export const PRIVACY_POLICY_URL =

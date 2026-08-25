@@ -19,7 +19,7 @@ function fail(msg) {
 }
 
 function read(rel) {
-  return readFileSync(join(root, rel), "utf8");
+  return readFileSync(join(root, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 // Routes
@@ -442,7 +442,7 @@ for (const disclosure of [
   "Google Gemini",
   "recorded audio",
   "public profile image",
-  "support@twino.app",
+  "abdullaazizb58@gmail.com",
 ]) {
   if (!privacyPolicy.includes(disclosure)) {
     fail(`Privacy policy missing production disclosure: ${disclosure}`);
