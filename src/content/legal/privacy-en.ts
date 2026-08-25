@@ -7,7 +7,7 @@ export const privacyEn: LegalDocument = {
     {
       title: "Overview",
       paragraphs: [
-        "Twino English (“Twino”, “we”, “our”) helps Kurdish speakers learn English. This policy explains the data used on your device and by optional account, cloud-sync, and AI features.",
+        "Twino (“Twino”, “we”, “our”) helps learners master languages through interactive lessons, speaking practice, and AI tutoring. This policy explains the data used on your device and by optional account, cloud-sync, and AI features.",
         "Core lessons remain available without a paid plan. We do not sell personal data or use it for advertising.",
       ],
     },

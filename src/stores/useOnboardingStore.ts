@@ -1,6 +1,5 @@
 import { appStorage } from "../lib/app-storage";
 import { router } from "expo-router";
-import { Platform } from "react-native";
 import { create } from "zustand";
 
 const STORAGE_KEY = "twino.onboarding.completed";
@@ -16,12 +15,9 @@ interface OnboardingState {
 }
 
 const savedOnboardingValue = appStorage.getItemSync(STORAGE_KEY);
-// Native installs open directly into the app. An explicit `false` is only
-// written when the user chooses "Show onboarding again" from Settings.
-const savedOnboarding =
-  Platform.OS === "web"
-    ? savedOnboardingValue === "true"
-    : savedOnboardingValue !== "false";
+// Show onboarding on every platform until the user completes it.
+// Only an explicit "true" means the flow was finished.
+const savedOnboarding = savedOnboardingValue === "true";
 
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   ready: true,

@@ -1,8 +1,8 @@
-# Twino English — Privacy Policy
+# Twino — Privacy Policy
 
-**Last updated:** July 17, 2026
+**Last updated:** August 10, 2026
 
-Twino English helps Kurdish speakers learn English. This document mirrors the in-app Privacy Policy (Settings → Privacy Policy).
+Twino helps learners worldwide master languages through interactive lessons, speaking practice, and AI tutoring. This document mirrors the in-app Privacy Policy (Settings → Privacy Policy).
 
 ## Summary
 

@@ -40,14 +40,14 @@ const normalUnit03: UnitBank = [
       { english: "There seems to be a mistake", kurdish: "وادیارە هەڵەیەک ڕوویداوە", arabic: "يبين اكو غلط" },
       { english: "It falls short of",    kurdish: "لە ئاستی پێویستدا نییە بۆ...", arabic: "ما يوصل للمستوى المطلوب" },
       { english: "I expected better",    kurdish: "چاوەڕوانی شتی باشترم دەکرد", arabic: "كنت اتوقع احسن" },
-      { english: "Look into this matter", kurdish: "بەدواداچوون بۆ ئەم بابەتە", arabic: "تدور على الموضوع هذا" },
+      { english: "Look into this matter", kurdish: "بەدواداچوون بۆ ئەم بابەتە", arabic: "تتابع هالموضوع / تشوف هالموضوع" },
     ],
     voices: [
       { prompt: "دەربڕینی ناڕەزایی نەرم", target: "I'm not entirely satisfied with the quality of this product.", targetKurdish: "بەتەواوی ڕازی نیم لە کوالێتی ئەم بەرهەمە.", promptAr: "تعبر عن عدم رضاك بلطف", targetArabic: "مو راضي بالكامل عن جودة هالمنتج." },
       { prompt: "ئاماژەدان بە هەڵەیەک", target: "There seems to be a mistake on my bill.", targetKurdish: "وادیارە هەڵەیەک لە پسووڵەی پارەکەمدا ڕوویداوە.", promptAr: "تشير لوجود غلط", targetArabic: "يبين اكو غلط بالفاتورة مالتي." },
     ],
     sentences: [
-      { english: ["Could", "you", "please", "look", "into", "this", "matter"], kurdish: "تکایە دەتوانیت بەدواداچوون بۆ ئەم بابەتە بکەیت؟", arabic: "تكدر بلا زحمة تدور على الموضوع هذا؟" },
+      { english: ["Could", "you", "please", "look", "into", "this", "matter"], kurdish: "تکایە دەتوانیت بەدواداچوون بۆ ئەم بابەتە بکەیت؟", arabic: "تكدر بلا زحمة تتابع هالموضوع؟" },
       { english: ["The", "service", "falls", "short", "of", "my", "expectations"], kurdish: "خزمەتگوزارییەکە لە ئاست چاوەڕوانییەکانی مندا نییە", arabic: "الخدمة ما توصل لمستوى توقعاتي" },
     ],
     fillBlanks: [
@@ -92,7 +92,7 @@ const normalUnit03: UnitBank = [
     words: [
       { english: "If I were in your shoes", kurdish: "ئەگەر لە جێگەی تۆ بوومایە", arabic: "لو اني مكانك" },
       { english: "What if we",           kurdish: "چی دەبێت ئەگەر ئێمە", arabic: "شنو لو سوينا" },
-      { english: "Suppose that",         kurdish: "گریمانەی ئەوە بکە کە", arabic: "فرض انو" },
+      { english: "Suppose that",         kurdish: "گریمانەی ئەوە بکە کە", arabic: "افرض انو" },
       { english: "In a perfect world",   kurdish: "لە جیهانێکی بێگەرددا (ئەگەر هەموو شتێک ڕێک بووایە)", arabic: "بعالم مثالي" },
       { english: "Worst-case scenario",  kurdish: "خراپترین ئەگەری پێشبینیکراو", arabic: "اسوأ شي ممكن يصير" },
     ],
@@ -102,7 +102,7 @@ const normalUnit03: UnitBank = [
     ],
     sentences: [
       { english: ["What", "if", "we", "tried", "a", "different", "approach"], kurdish: "چی دەبێت ئەگەر ڕێگەیەکی جیاواز تاقی بکەینەوە؟", arabic: "شنو لو جربنا طريقة مختلفة؟" },
-      { english: ["Suppose", "that", "they", "reject", "our", "offer"], kurdish: "گریمانەی ئەوە بکە کە ئەوان پێشنیارەکەمان ڕەتدەکەنەوە", arabic: "فرض انهم يرفضون عرضنا." },
+      { english: ["Suppose", "that", "they", "reject", "our", "offer"], kurdish: "گریمانەی ئەوە بکە کە ئەوان پێشنیارەکەمان ڕەتدەکەنەوە", arabic: "افرض انهم يرفضون عرضنا." },
     ],
     fillBlanks: [
       { parts: ["If I were in your", ", I wouldn't worry so much."], hint: "ئەگەر لە جێگەی تۆ بوومایە، ئەوەندە خەمی لێ نەدەخوارد.", answer: "shoes", wrongs: ["place", "position", "mind"], arabicHint: "لو اني مكانك، چان ما قلقت هواية.", arabicParts: ["لو اني","، چان ما قلقت هواية."], arabicAnswer: "مكانك", arabicWrongs: ["موقعك","منصبك","عقلك"] },
@@ -241,7 +241,7 @@ const normalUnit03: UnitBank = [
     ],
     fillBlanks: [
       { parts: ["It's hard to keep", "with all the tech news."], hint: "قورسە ئاگاداری (بەدواداچوون بۆ) هەموو هەواڵەکانی تەکنەلۆژیا بکەیت.", answer: "up", wrongs: ["on", "in", "down"], arabicHint: "صعب تتابع كل اخبار التكنولوجيا.", arabicParts: ["صعب","كل اخبار التكنولوجيا."], arabicAnswer: "تتابع", arabicWrongs: ["تشغل","تدخل","تنزل"] },
-      { parts: ["According", "recent reports, housing prices dropped."], hint: "بەپێی ڕاپۆرتەکانی ئەم دواییە، نرخی خانوو دابەزیوە.", answer: "to", wrongs: ["by", "with", "from"], arabicHint: "حسب التقارير الاخيرة، نزلت اسعار البيوت.", arabicParts: ["","للتقارير الاخيرة، نزلت اسعار البيوت."], arabicAnswer: "حسب", arabicWrongs: ["بواسطة","وية","من"] },
+      { parts: ["According", "recent reports, housing prices dropped."], hint: "بەپێی ڕاپۆرتەکانی ئەم دواییە، نرخی خانوو دابەزیوە.", answer: "to", wrongs: ["by", "with", "from"], arabicHint: "حسب التقارير الاخيرة، نزلت اسعار البيوت.", arabicParts: ["","التقارير الاخيرة، نزلت اسعار البيوت."], arabicAnswer: "حسب", arabicWrongs: ["بواسطة","وية","من"] },
     ],
     conversations: [
       { situation: "قسەکردن لەگەڵ هاوکارێک سەبارەت بە ڕووداوێکی نوێ", theyAsk: "I haven't checked my phone all day. Has anything happened?", correct: "Did you hear about the big merger? It's all over the news! According to reports, it's going to change the whole industry.", wrong1: "Yes, big company buy another.", wrong2: "News say merger is happen.", wrong3: "I saw on TV about company.", explanation: "'It's all over the news' و 'According to reports' دەستەواژەی زۆر باون بۆ باسکردنی ڕووداوە گەرمەکانی ڕۆژ", situationAr: "التحدث مع زميل حول حدث جديد", explanationAr: "'إنه في كل الأخبار' (It's all over the news) و 'وفقًا للتقارير' (According to reports) تعبيرات شائعة جدًا لمناقشة الأحداث الجارية." },
