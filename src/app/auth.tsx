@@ -51,6 +51,128 @@ function getRecoveryRedirectUrl() {
   return "twino://auth?mode=recovery";
 }
 
+function getHumanReadableAuthError(error: any, isKu: boolean): string {
+  if (!error) {
+    return isKu ? "هەڵەیەک ڕوویدا، تکایە دووبارە هەوڵبدەرەوە." : "Something went wrong. Please try again.";
+  }
+
+  let errorStr = "";
+  let statusCode = error?.status || error?.statusCode;
+
+  if (typeof error === "string") {
+    errorStr = error;
+  } else if (error?.message && typeof error.message === "string") {
+    errorStr = error.message;
+  } else if (error?.error_description && typeof error.error_description === "string") {
+    errorStr = error.error_description;
+  } else {
+    try {
+      errorStr = JSON.stringify(error);
+    } catch {
+      errorStr = "";
+    }
+  }
+
+  // Parse error string if it contains embedded JSON
+  if (errorStr.trim().startsWith("{") && errorStr.includes("status")) {
+    try {
+      const parsed = JSON.parse(errorStr);
+      if (parsed.status) statusCode = parsed.status;
+      if (parsed.message) errorStr = parsed.message;
+    } catch {}
+  }
+
+  const lower = errorStr.toLowerCase();
+
+  if (
+    statusCode === 500 ||
+    lower.includes("500") ||
+    lower.includes("internal server error") ||
+    lower.includes("unexpected_failure") ||
+    lower.includes("authretryablefetcherror")
+  ) {
+    return isKu
+      ? "کێشەیەکی کاتی لە سێرڤەر ڕوویدا. تکایە کەمێکی تر دووبارە هەوڵبدەرەوە."
+      : "A temporary server error occurred. Please try again shortly.";
+  }
+
+  if (
+    lower.includes("already registered") ||
+    lower.includes("already_exists") ||
+    lower.includes("user already exists")
+  ) {
+    return isKu
+      ? "ئەم ناونیشانی ئیمەیڵە پێشتر تۆمارکراوە. تکایە بچۆ ژوورەوە."
+      : "This email is already registered. Please sign in instead.";
+  }
+
+  if (
+    lower.includes("invalid login credentials") ||
+    lower.includes("invalid_credentials") ||
+    lower.includes("invalid_grant")
+  ) {
+    return isKu
+      ? "ئیمەیڵ یان تێپەڕەوشەکە هەڵەیە. تکایە دڵنیابەرەوە."
+      : "Invalid email or password. Please check your credentials.";
+  }
+
+  if (
+    lower.includes("email not confirmed") ||
+    lower.includes("email_not_confirmed")
+  ) {
+    return isKu
+      ? "تکایە سەرەتا ئیمەیڵەکەت لە ڕێگەی ئەو بەستەرەی بۆت هاتووە پشتڕاست بکەرەوە."
+      : "Please confirm your email address before signing in.";
+  }
+
+  if (
+    lower.includes("rate limit") ||
+    lower.includes("too many requests") ||
+    lower.includes("over_email_send_rate_limit")
+  ) {
+    return isKu
+      ? "داواکاری زۆر نێردراوە. تکایە چەند خولەکێک چاوەڕێ بکە و دووبارە هەوڵبدەرەوە."
+      : "Too many requests. Please wait a few minutes and try again.";
+  }
+
+  if (
+    lower.includes("username") &&
+    (lower.includes("unique") || lower.includes("taken") || lower.includes("already"))
+  ) {
+    return isKu
+      ? "ئەم ناوی بەکارهێنەرە پێشتر بەکارهاتووە. تکایە ناوێکی تر هەڵبژێرە."
+      : "This username is already taken. Please choose a different one.";
+  }
+
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch") ||
+    lower.includes("connection") ||
+    lower.includes("failed to fetch")
+  ) {
+    return isKu
+      ? "کێشەی پەیوەندی هەیە. تکایە هێڵی ئینتەرنێتەکەت بپشکنە."
+      : "Network connection error. Please check your internet and try again.";
+  }
+
+  if (
+    lower.includes("password") &&
+    (lower.includes("short") || lower.includes("least"))
+  ) {
+    return isKu
+      ? "تێپەڕەوشە دەبێت لانیکەم ٨ پیت بێت و پیت و ژمارەی تێدا بێت."
+      : "Password must be at least 8 characters with letters and numbers.";
+  }
+
+  if (!isKu && errorStr && !errorStr.startsWith("{")) {
+    return errorStr;
+  }
+
+  return isKu
+    ? "هەڵەیەک ڕوویدا، تکایە دووبارە هەوڵبدەرەوە."
+    : "Something went wrong. Please try again.";
+}
+
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -250,9 +372,7 @@ export default function AuthScreen() {
         setTimeout(() => router.replace((redirect as any) || "/more"), 700);
       }
     } catch (error: any) {
-      const message =
-        error?.message ||
-        (isKu ? "هەڵەیەک ڕوویدا" : "Something went wrong. Please try again.");
+      const message = getHumanReadableAuthError(error, isKu);
       setErrorMessage(message);
       showModal(
         isKu ? "نەتوانرا بەردەوام بێت" : "Could not continue",
@@ -292,11 +412,7 @@ export default function AuthScreen() {
           : "Use the code or secure link in your inbox to reset your password. Check spam if it does not arrive.",
       );
     } catch (error: any) {
-      const message =
-        error?.message ||
-        (isKu
-          ? "نەتوانرا ئیمەیڵی گۆڕینی تێپەڕەوشە بنێردرێت"
-          : "We could not send the reset email. Try again shortly.");
+      const message = getHumanReadableAuthError(error, isKu);
       setErrorMessage(message);
       showModal(
         isKu ? "ناردن سەرکەوتوو نەبوو" : "Email not sent",
@@ -342,11 +458,7 @@ export default function AuthScreen() {
       setConfirmPassword("");
       setTimeout(() => router.replace((redirect as any) || "/more"), 1000);
     } catch (error: any) {
-      const message =
-        error?.message ||
-        (isKu
-          ? "نەتوانرا تێپەڕەوشەکە بگۆڕدرێت"
-          : "We could not update your password. Request a new reset link.");
+      const message = getHumanReadableAuthError(error, isKu);
       setErrorMessage(message);
       showModal(
         isKu ? "گۆڕین سەرکەوتوو نەبوو" : "Password not updated",
