@@ -16,7 +16,8 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { isDesktopWebWidth } from "../../constants/web-layout";
+import { useWindowDimensions, Platform, Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getSubscriptionPlanCopy,
@@ -27,8 +28,10 @@ import {
 export function SubscriptionScreen() {
   const { isKu, isAr } = useI18n();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && isDesktopWebWidth(width);
   const { colors, isDark } = useThemeColors();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(() => createStyles(colors, isDark, isDesktop), [colors, isDark, isDesktop]);
   const isRtl = isKu || isAr;
   const { billingAccount, refreshBillingAccount } = useAuth();
   const planLocale = isKu ? "ku" : isAr ? "ar" : "en";
@@ -279,7 +282,7 @@ export function SubscriptionScreen() {
 
 type ThemeColors = ReturnType<typeof useThemeColors>["colors"];
 
-function createStyles(colors: ThemeColors, isDark: boolean) {
+function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
   return StyleSheet.create({
     root: {
       flex: 1,
@@ -287,9 +290,12 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     content: {
       flexGrow: 1,
-      paddingHorizontal: 24,
-      paddingTop: 32,
-      gap: 18,
+      paddingHorizontal: isDesktop ? 32 : 24,
+      paddingTop: isDesktop ? 36 : 32,
+      maxWidth: isDesktop ? 1080 : "100%",
+      width: "100%",
+      alignSelf: isDesktop ? "center" : "stretch",
+      gap: 20,
     },
     hero: {
       alignItems: "center",
@@ -297,8 +303,8 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       borderWidth: 1,
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
-      paddingHorizontal: 24,
-      paddingVertical: 30,
+      paddingHorizontal: isDesktop ? 36 : 24,
+      paddingVertical: isDesktop ? 36 : 30,
       overflow: "hidden",
     },
     badge: {
@@ -315,24 +321,24 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       letterSpacing: 1.1,
     },
     mascot: {
-      width: 150,
-      height: 150,
+      width: isDesktop ? 160 : 150,
+      height: isDesktop ? 160 : 150,
       marginTop: 8,
       marginBottom: 8,
     },
     title: {
       color: colors.foreground,
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isDesktop ? 32 : 28,
+      lineHeight: isDesktop ? 40 : 35,
       fontWeight: "800",
       textAlign: "center",
     },
     body: {
-      maxWidth: 520,
+      maxWidth: 600,
       marginTop: 10,
       color: colors.mutedForeground,
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isDesktop ? 16.5 : 16,
+      lineHeight: 25,
       textAlign: "center",
     },
     notice: {
@@ -340,18 +346,20 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       borderWidth: 1,
       borderColor: isDark ? "rgba(69,180,240,0.28)" : "#CDEBFA",
       backgroundColor: isDark ? "rgba(22,139,210,0.09)" : "#F5FBFE",
-      padding: 16,
-      gap: 10,
+      padding: 18,
+      gap: 12,
       alignItems: "center",
     },
     noticeBody: {
       flex: 1,
       color: colors.mutedForeground,
       fontSize: 14,
-      lineHeight: 21,
+      lineHeight: 22,
     },
     packList: {
-      gap: 14,
+      flexDirection: isDesktop ? "row" : "column",
+      flexWrap: isDesktop ? "wrap" : "nowrap",
+      gap: 16,
     },
     accountStrip: {
       flexDirection: "row",
@@ -359,7 +367,7 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
       borderWidth: 1,
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
-      paddingVertical: 13,
+      paddingVertical: 14,
     },
     accountMetric: {
       flex: 1,
@@ -368,21 +376,23 @@ function createStyles(colors: ThemeColors, isDark: boolean) {
     },
     accountLabel: {
       color: colors.mutedForeground,
-      fontSize: 11.5,
+      fontSize: 12,
       textAlign: "center",
     },
     accountValue: {
       color: colors.foreground,
-      fontSize: 15,
+      fontSize: 16,
       textAlign: "center",
       marginTop: 4,
     },
     packCard: {
+      width: isDesktop ? "48.5%" : "100%",
+      flexGrow: isDesktop ? 1 : 0,
       borderRadius: 24,
       borderWidth: 1.5,
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
-      padding: 18,
+      padding: isDesktop ? 22 : 18,
       gap: 14,
     },
     packCardFeatured: {

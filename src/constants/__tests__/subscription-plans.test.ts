@@ -18,15 +18,15 @@ describe("subscription and AI credit catalog", () => {
     });
   });
 
-  it("labels Pro and Max without claiming future exams are live", () => {
+  it("labels Pro and Max with clear value tags and 30-day allowance copy", () => {
     const copy = getSubscriptionPlanCopy("en");
     expect(copy.tags.pro).toBe("MOST POPULAR");
     expect(copy.tags.max).toBe("BEST VALUE");
     expect(copy.walletNote).toBe(
-      "Unused AI credits never expire, even after your plan ends.",
+      "AI credits are valid for 30 days. Renew to receive a fresh monthly allowance.",
     );
-    expect(copy.benefits.plus.join(" ")).toContain("Coming Soon");
-    expect(copy.benefits.max.join(" ")).toContain("Coming Soon");
+    expect(copy.benefits.plus.join(" ")).toContain("IELTS & DET Preparation Preview");
+    expect(copy.benefits.max.join(" ")).toContain("Unlimited AI Teacher");
   });
 
   it("locks paid paths on Free and reserves full exam access for Max", () => {
