@@ -255,11 +255,21 @@ export default function AuthScreen() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setAuthMode("recovery");
         setCheckingRecovery(false);
         setErrorMessage(null);
+      } else if (event === "SIGNED_IN" && session) {
+        if (Platform.OS === "web" && typeof window !== "undefined" && window.location.hash.includes("type=signup")) {
+          showModal(
+            isKu ? "ئەکاونتەکەت پشتڕاستکرایەوە" : "Account verified",
+            isKu
+              ? "بە سەرکەوتوویی چوویتە ژوورەوە."
+              : "Your account is verified and you are signed in.",
+          );
+          setTimeout(() => router.replace((redirect as any) || "/more"), 1200);
+        }
       }
     });
 
