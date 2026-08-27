@@ -44,11 +44,18 @@ function getInitialMode(mode?: string): AuthMode {
   return "signIn";
 }
 
+const PRODUCTION_WEB_URL = "https://twino-six.vercel.app";
+
+function getAuthRedirectUrl(mode?: string) {
+  const origin =
+    Platform.OS === "web" && typeof window !== "undefined"
+      ? window.location.origin
+      : PRODUCTION_WEB_URL;
+  return mode ? `${origin}/auth?mode=${mode}` : `${origin}/auth`;
+}
+
 function getRecoveryRedirectUrl() {
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    return `${window.location.origin}/auth?mode=recovery`;
-  }
-  return "twino://auth?mode=recovery";
+  return getAuthRedirectUrl("recovery");
 }
 
 function getHumanReadableAuthError(error: any, isKu: boolean): string {
@@ -327,6 +334,7 @@ export default function AuthScreen() {
           email: normalizedEmail,
           password,
           options: {
+            emailRedirectTo: getAuthRedirectUrl(),
             data: {
               username: username.toLowerCase().trim(),
               display_name: displayName.trim(),
