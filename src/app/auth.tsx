@@ -51,7 +51,7 @@ function getAuthRedirectUrl(mode?: string) {
     Platform.OS === "web" && typeof window !== "undefined"
       ? window.location.origin
       : PRODUCTION_WEB_URL;
-  return mode ? `${origin}/auth?mode=${mode}` : `${origin}/auth`;
+  return mode ? `${origin}/auth?mode=${mode}` : `${origin}/`;
 }
 
 function getRecoveryRedirectUrl() {
