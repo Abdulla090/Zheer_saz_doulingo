@@ -294,12 +294,30 @@ function contrastingConversationVariants(correct: string): string[] {
     break;
   }
 
-  const quoted = correct.replace(/[.!?]+$/, "");
-  if (normalizedTokens(quoted).length >= 4) {
-    variants.push(`Do you mean, “${quoted}”?`);
+  const lower = correct.toLowerCase().trim();
+  if (/^yes\b/i.test(lower)) {
+    variants.push("No, thank you. Maybe another time.");
+    variants.push("I'm not sure yet, let me think about it.");
+  } else if (/^no\b/i.test(lower)) {
+    variants.push("Yes, please! That would be great.");
+    variants.push("Sure, I would really appreciate that.");
+  } else if (/^(sure|of course|definitely|absolutely)\b/i.test(lower)) {
+    variants.push("I'm sorry, but I won't be able to right now.");
+    variants.push("I wish I could, but I'm currently busy.");
+  } else if (/^(i think|in my opinion|i believe)\b/i.test(lower)) {
+    variants.push("I see what you mean, though I feel differently.");
+    variants.push("I'm not entirely sure that's the best option.");
+  } else if (/^(sorry|excuse me|pardon)\b/i.test(lower)) {
+    variants.push("No worries at all, take your time.");
+    variants.push("That's totally fine, don't worry about it.");
+  } else if (/^(thank you|thanks)\b/i.test(lower)) {
+    variants.push("You're very welcome! Let me know if you need anything.");
+  } else {
+    variants.push("Actually, that might not work out as planned.");
+    variants.push("Let me check on that and get back to you shortly.");
+    variants.push("I'm not quite sure yet. Could we come back to that?");
   }
 
-  variants.push("I'm not sure yet. Could we come back to that?");
   return uniqueCandidates(variants, correct);
 }
 
@@ -313,17 +331,33 @@ export function buildConversationDistractors(
   count: number,
   seed = 0,
 ): string[] {
-  const generated = [
-    ...incompleteConversationVariants(entry.correct),
-    ...contrastingConversationVariants(entry.correct),
-  ];
+  const words = entry.correct.split(/\s+/).filter(Boolean);
+  const sentenceMisses = words.length >= 3 ? buildSentenceNearMisses(words) : [];
+  const contrasting = contrastingConversationVariants(entry.correct);
+  const incomplete = incompleteConversationVariants(entry.correct);
 
-  return uniqueCandidates(
-    [...generated, entry.wrong1, entry.wrong2, entry.wrong3],
+  const fullLengthPool = uniqueCandidates(
+    [...sentenceMisses, ...contrasting, entry.wrong1, entry.wrong2, entry.wrong3],
     entry.correct,
-  )
-    .sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed))
-    .slice(0, count);
+  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
+
+  const allPool = uniqueCandidates(
+    [...sentenceMisses, ...contrasting, ...incomplete, entry.wrong1, entry.wrong2, entry.wrong3],
+    entry.correct,
+  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
+
+  const chosen: string[] = [];
+  if (words.length >= 4 && fullLengthPool.length > 0) {
+    chosen.push(fullLengthPool[0]);
+  }
+
+  for (const candidate of allPool) {
+    if (chosen.includes(candidate)) continue;
+    chosen.push(candidate);
+    if (chosen.length >= count) break;
+  }
+
+  return chosen.slice(0, count);
 }
 
 export function buildProgressiveConversationChoices(
@@ -335,12 +369,16 @@ export function buildProgressiveConversationChoices(
   },
   closeCount: number,
 ): { options: string[]; optionTiers: Record<string, AnswerTier> } {
+  const words = entry.correct.split(/\s+/).filter(Boolean);
+  const sentenceMisses = words.length >= 3 ? buildSentenceNearMisses(words) : [];
+  const contrasting = contrastingConversationVariants(entry.correct);
   const incomplete = incompleteConversationVariants(entry.correct);
-  const primaryPartial = incomplete[0];
+  const primaryPartial = sentenceMisses[0] || incomplete[0] || contrasting[0];
   const remainingNearMisses = uniqueCandidates(
     [
-      ...contrastingConversationVariants(entry.correct),
-      ...incomplete.slice(1),
+      ...sentenceMisses.slice(1),
+      ...contrasting,
+      ...incomplete,
     ],
     entry.correct,
   ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, closeCount * 53));
