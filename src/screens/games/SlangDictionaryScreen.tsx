@@ -457,34 +457,39 @@ export function SlangDictionaryScreen() {
         scrolled={scrolled}
       />
 
-      <FlashList
-        data={filteredSlang}
-        keyExtractor={(item) => item.id}
-        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
-        scrollEventThrottle={16}
-        renderItem={({ item }) => (
-          <SlangItemRow
-            item={item}
-            isExpanded={expandedId === item.id}
-            isItemSpeaking={speaking && activeId === item.id}
-            onToggleExpand={toggleExpand}
-            onSpeak={handleSpeak}
-            t={t}
-            speaking={speaking}
-            activeId={activeId}
-            locale={locale}
-          />
-        )}
-        extraData={{ expandedId, activeId, speaking }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: isWide ? 32 : metrics.gutter,
-          paddingTop: isWide ? 24 : metrics.sectionGap,
-          paddingBottom: insets.bottom + (isWide ? 56 : 28),
-          maxWidth: isWide ? 960 : undefined,
+      <View
+        style={{
+          flex: 1,
           width: "100%",
-          alignSelf: isWide ? "center" : undefined,
+          maxWidth: isWide ? 780 : undefined,
+          alignSelf: "center",
         }}
+      >
+        <FlashList
+          data={filteredSlang}
+          keyExtractor={(item) => item.id}
+          onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
+          scrollEventThrottle={16}
+          renderItem={({ item }) => (
+            <SlangItemRow
+              item={item}
+              isExpanded={expandedId === item.id}
+              isItemSpeaking={speaking && activeId === item.id}
+              onToggleExpand={toggleExpand}
+              onSpeak={handleSpeak}
+              t={t}
+              speaking={speaking}
+              activeId={activeId}
+              locale={locale}
+            />
+          )}
+          extraData={{ expandedId, activeId, speaking }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: isWide ? 20 : metrics.gutter,
+            paddingTop: isWide ? 20 : metrics.sectionGap,
+            paddingBottom: insets.bottom + (isWide ? 56 : 28),
+          }}
         ListHeaderComponent={
           <>
             {/*
@@ -631,6 +636,7 @@ export function SlangDictionaryScreen() {
           />
         }
       />
+      </View>
     </View>
   );
 }

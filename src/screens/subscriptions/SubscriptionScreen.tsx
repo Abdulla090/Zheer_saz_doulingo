@@ -106,174 +106,176 @@ export function SubscriptionScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: tabBarScrollPadding(insets.bottom) },
+          { paddingBottom: tabBarScrollPadding(insets.bottom) + (isDesktop ? 32 : 16) },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <View style={styles.badge}>
-            <AppText style={styles.badgeText} languageCode="en">
-              {copy.eyebrow}
+        <View style={styles.centerColumn}>
+          <View style={styles.hero}>
+            <View style={styles.badge}>
+              <AppText style={styles.badgeText} languageCode="en">
+                {copy.eyebrow}
+              </AppText>
+            </View>
+
+            <Image
+              source={require("../../../assets/images/mascots/pet-violet.webp")}
+              style={styles.mascot}
+              contentFit="contain"
+              accessibilityLabel={
+                isKu ? "هاوڕێی مۆری TWINO" : "TWINO violet learning companion"
+              }
+            />
+
+            <AppText style={styles.title} forceKurdishFont={isKu}>
+              {copy.title}
+            </AppText>
+            <AppText style={styles.body} forceKurdishFont={isKu}>
+              {copy.body}
             </AppText>
           </View>
 
-          <Image
-            source={require("../../../assets/images/mascots/pet-violet.webp")}
-            style={styles.mascot}
-            contentFit="contain"
-            accessibilityLabel={
-              isKu ? "هاوڕێی مۆری TWINO" : "TWINO violet learning companion"
-            }
-          />
-
-          <AppText style={styles.title} forceKurdishFont={isKu}>
-            {copy.title}
-          </AppText>
-          <AppText style={styles.body} forceKurdishFont={isKu}>
-            {copy.body}
-          </AppText>
-        </View>
-
-        <View style={styles.accountStrip}>
-          <View style={styles.accountMetric}>
-            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.credits}</AppText>
-            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
-              {(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()}
-            </AppText>
+          <View style={styles.accountStrip}>
+            <View style={styles.accountMetric}>
+              <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.credits}</AppText>
+              <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+                {(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()}
+              </AppText>
+            </View>
+            <View style={styles.accountMetric}>
+              <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.plan}</AppText>
+              <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+                {currentPlan.toUpperCase()}
+              </AppText>
+            </View>
+            <View style={styles.accountMetric}>
+              <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.expiry}</AppText>
+              <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
+                {billingAccount?.subscription.expiresAt
+                  ? new Date(billingAccount.subscription.expiresAt).toLocaleDateString()
+                  : "—"}
+              </AppText>
+            </View>
           </View>
-          <View style={styles.accountMetric}>
-            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.plan}</AppText>
-            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
-              {currentPlan.toUpperCase()}
-            </AppText>
-          </View>
-          <View style={styles.accountMetric}>
-            <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.expiry}</AppText>
-            <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
-              {billingAccount?.subscription.expiresAt
-                ? new Date(billingAccount.subscription.expiresAt).toLocaleDateString()
-                : "—"}
-            </AppText>
-          </View>
-        </View>
 
-        <View style={styles.packList}>
-          {plans.map((pack) => {
-            const planKey = pack.id;
-            const isCurrent = currentPlan === planKey;
-            return (
-            <View
-              key={pack.name}
-              style={[styles.packCard, isCurrent && styles.packCardFeatured]}
-            >
+          <View style={styles.packList}>
+            {plans.map((pack) => {
+              const planKey = pack.id;
+              const isCurrent = currentPlan === planKey;
+              return (
               <View
-                style={[
-                  styles.packTop,
-                  { flexDirection: isRtl ? "row-reverse" : "row" },
-                ]}
+                key={pack.name}
+                style={[styles.packCard, isCurrent && styles.packCardFeatured]}
               >
-                <View style={styles.packIcon}>
+                <View
+                  style={[
+                    styles.packTop,
+                    { flexDirection: isRtl ? "row-reverse" : "row" },
+                  ]}
+                >
+                  <View style={styles.packIcon}>
+                    <HugeiconsIcon
+                      icon={Wallet02Icon}
+                      size={24}
+                      color="#168BD2"
+                      strokeWidth={2.4}
+                    />
+                  </View>
+                  <View style={styles.packCopy}>
+                    <AppText
+                      style={[styles.packTag, isRtl && styles.rtlText]}
+                      forceKurdishFont={isKu}
+                    >
+                      {pack.tag}
+                    </AppText>
+                    <AppText
+                      style={[styles.packName, isRtl && styles.rtlText]}
+                      forceKurdishFont={isKu}
+                      latinRole="bold"
+                    >
+                      {pack.name}
+                    </AppText>
+                  </View>
                   <HugeiconsIcon
-                    icon={Wallet02Icon}
-                    size={24}
-                    color="#168BD2"
-                    strokeWidth={2.4}
+                    icon={CheckmarkCircle02Icon}
+                    size={23}
+                    color="#22A06B"
+                    strokeWidth={2.3}
                   />
                 </View>
-                <View style={styles.packCopy}>
-                  <AppText
-                    style={[styles.packTag, isRtl && styles.rtlText]}
-                    forceKurdishFont={isKu}
-                  >
-                    {pack.tag}
+                <AppText
+                  style={[styles.packDescription, isRtl && styles.rtlText]}
+                  forceKurdishFont={isKu}
+                >
+                  {pack.description}
+                </AppText>
+                <AppText style={[styles.packPrice, isRtl && styles.rtlText]} forceLatinFont latinRole="bold">
+                  {pack.priceIqd.toLocaleString()} IQD{pack.durationDays ? ` / ${planCopy.duration}` : ""}
+                </AppText>
+                <AppText style={[styles.creditGrant, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
+                  {planCopy.credits(pack.includedCredits, pack.id === "free")}
+                </AppText>
+                {pack.liveTutorMinutes ? (
+                  <AppText style={[styles.liveTutorEquivalent, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
+                    {planCopy.liveTutor(pack.liveTutorMinutes)}
                   </AppText>
+                ) : null}
+                <View style={styles.benefitList}>
+                  {pack.benefits.map((benefit) => (
+                    <View key={benefit} style={[styles.benefitRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
+                      <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} color="#22A06B" strokeWidth={2.3} />
+                      <AppText style={[styles.benefitText, isRtl && styles.rtlText]} forceKurdishFont={isKu}>{benefit}</AppText>
+                    </View>
+                  ))}
+                </View>
+                <PressableScale
+                  accessibilityRole="link"
+                  accessibilityLabel={`${copy.choose}: ${pack.name}`}
+                  onPress={() => void openWebsite()}
+                  style={styles.chooseButton}
+                >
                   <AppText
-                    style={[styles.packName, isRtl && styles.rtlText]}
+                    style={styles.chooseText}
                     forceKurdishFont={isKu}
                     latinRole="bold"
                   >
-                    {pack.name}
+                    {copy.choose}
                   </AppText>
-                </View>
-                <HugeiconsIcon
-                  icon={CheckmarkCircle02Icon}
-                  size={23}
-                  color="#22A06B"
-                  strokeWidth={2.3}
-                />
+                  <HugeiconsIcon
+                    icon={ArrowUpRight01Icon}
+                    size={19}
+                    color="#FFFFFF"
+                    strokeWidth={2.5}
+                  />
+                </PressableScale>
               </View>
-              <AppText
-                style={[styles.packDescription, isRtl && styles.rtlText]}
-                forceKurdishFont={isKu}
-              >
-                {pack.description}
-              </AppText>
-              <AppText style={[styles.packPrice, isRtl && styles.rtlText]} forceLatinFont latinRole="bold">
-                {pack.priceIqd.toLocaleString()} IQD{pack.durationDays ? ` / ${planCopy.duration}` : ""}
-              </AppText>
-              <AppText style={[styles.creditGrant, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
-                {planCopy.credits(pack.includedCredits, pack.id === "free")}
-              </AppText>
-              {pack.liveTutorMinutes ? (
-                <AppText style={[styles.liveTutorEquivalent, isRtl && styles.rtlText]} forceKurdishFont={isKu}>
-                  {planCopy.liveTutor(pack.liveTutorMinutes)}
-                </AppText>
-              ) : null}
-              <View style={styles.benefitList}>
-                {pack.benefits.map((benefit) => (
-                  <View key={benefit} style={[styles.benefitRow, { flexDirection: isRtl ? "row-reverse" : "row" }]}>
-                    <HugeiconsIcon icon={CheckmarkCircle02Icon} size={17} color="#22A06B" strokeWidth={2.3} />
-                    <AppText style={[styles.benefitText, isRtl && styles.rtlText]} forceKurdishFont={isKu}>{benefit}</AppText>
-                  </View>
-                ))}
-              </View>
-              <PressableScale
-                accessibilityRole="link"
-                accessibilityLabel={`${copy.choose}: ${pack.name}`}
-                onPress={() => void openWebsite()}
-                style={styles.chooseButton}
-              >
-                <AppText
-                  style={styles.chooseText}
-                  forceKurdishFont={isKu}
-                  latinRole="bold"
-                >
-                  {copy.choose}
-                </AppText>
-                <HugeiconsIcon
-                  icon={ArrowUpRight01Icon}
-                  size={19}
-                  color="#FFFFFF"
-                  strokeWidth={2.5}
-                />
-              </PressableScale>
-            </View>
-            );
-          })}
-        </View>
+              );
+            })}
+          </View>
 
-        <View
-          style={[
-            styles.notice,
-            { flexDirection: isRtl ? "row-reverse" : "row" },
-          ]}
-        >
-          <HugeiconsIcon
-            icon={CheckmarkCircle02Icon}
-            size={20}
-            color="#168BD2"
-            strokeWidth={2.4}
-          />
-          <AppText
-            style={[styles.noticeBody, isRtl && styles.rtlText]}
-            forceKurdishFont={isKu}
+          <View
+            style={[
+              styles.notice,
+              { flexDirection: isRtl ? "row-reverse" : "row" },
+            ]}
           >
-            {copy.note}
-            {"\n"}{planCopy.walletNote}
-            {"\n"}{planCopy.accessNote}
-            {"\n"}{planCopy.ttsNote}
-            {"\n"}{planCopy.checkoutPaused}
-          </AppText>
+            <HugeiconsIcon
+              icon={CheckmarkCircle02Icon}
+              size={20}
+              color="#168BD2"
+              strokeWidth={2.4}
+            />
+            <AppText
+              style={[styles.noticeBody, isRtl && styles.rtlText]}
+              forceKurdishFont={isKu}
+            >
+              {copy.note}
+              {"\n"}{planCopy.walletNote}
+              {"\n"}{planCopy.accessNote}
+              {"\n"}{planCopy.ttsNote}
+              {"\n"}{planCopy.checkoutPaused}
+            </AppText>
+          </View>
         </View>
       </ScrollView>
     </SafeContainer>
@@ -290,21 +292,23 @@ function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
     },
     content: {
       flexGrow: 1,
-      paddingHorizontal: isDesktop ? 32 : 24,
-      paddingTop: isDesktop ? 36 : 32,
-      maxWidth: isDesktop ? 1080 : "100%",
+      alignItems: "center",
+      paddingHorizontal: isDesktop ? 32 : 16,
+      paddingTop: isDesktop ? 32 : 20,
+    },
+    centerColumn: {
       width: "100%",
-      alignSelf: isDesktop ? "center" : "stretch",
-      gap: 20,
+      maxWidth: isDesktop ? 860 : undefined,
+      gap: 18,
     },
     hero: {
       alignItems: "center",
-      borderRadius: 30,
+      borderRadius: 28,
       borderWidth: 1,
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
-      paddingHorizontal: isDesktop ? 36 : 24,
-      paddingVertical: isDesktop ? 36 : 30,
+      paddingHorizontal: isDesktop ? 32 : 20,
+      paddingVertical: isDesktop ? 32 : 24,
       overflow: "hidden",
     },
     badge: {
@@ -321,24 +325,24 @@ function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
       letterSpacing: 1.1,
     },
     mascot: {
-      width: isDesktop ? 160 : 150,
-      height: isDesktop ? 160 : 150,
-      marginTop: 8,
-      marginBottom: 8,
+      width: isDesktop ? 140 : 130,
+      height: isDesktop ? 140 : 130,
+      marginTop: 6,
+      marginBottom: 6,
     },
     title: {
       color: colors.foreground,
-      fontSize: isDesktop ? 32 : 28,
-      lineHeight: isDesktop ? 40 : 35,
+      fontSize: isDesktop ? 28 : 24,
+      lineHeight: isDesktop ? 36 : 32,
       fontWeight: "800",
       textAlign: "center",
     },
     body: {
-      maxWidth: 600,
-      marginTop: 10,
+      maxWidth: 560,
+      marginTop: 8,
       color: colors.mutedForeground,
-      fontSize: isDesktop ? 16.5 : 16,
-      lineHeight: 25,
+      fontSize: isDesktop ? 15.5 : 14.5,
+      lineHeight: 23,
       textAlign: "center",
     },
     notice: {
@@ -346,15 +350,15 @@ function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
       borderWidth: 1,
       borderColor: isDark ? "rgba(69,180,240,0.28)" : "#CDEBFA",
       backgroundColor: isDark ? "rgba(22,139,210,0.09)" : "#F5FBFE",
-      padding: 18,
+      padding: 16,
       gap: 12,
       alignItems: "center",
     },
     noticeBody: {
       flex: 1,
       color: colors.mutedForeground,
-      fontSize: 14,
-      lineHeight: 22,
+      fontSize: 13.5,
+      lineHeight: 21,
     },
     packList: {
       flexDirection: isDesktop ? "row" : "column",
@@ -368,11 +372,14 @@ function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
       paddingVertical: 14,
+      paddingHorizontal: 8,
     },
     accountMetric: {
       flex: 1,
       minWidth: 0,
-      paddingHorizontal: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 8,
     },
     accountLabel: {
       color: colors.mutedForeground,
@@ -386,13 +393,13 @@ function createStyles(colors: ThemeColors, isDark: boolean, isDesktop = false) {
       marginTop: 4,
     },
     packCard: {
-      width: isDesktop ? "48.5%" : "100%",
+      width: isDesktop ? "48.8%" : "100%",
       flexGrow: isDesktop ? 1 : 0,
-      borderRadius: 24,
+      borderRadius: 22,
       borderWidth: 1.5,
       borderColor: colors.cardBorder,
       backgroundColor: colors.surface,
-      padding: isDesktop ? 22 : 18,
+      padding: isDesktop ? 20 : 18,
       gap: 14,
     },
     packCardFeatured: {

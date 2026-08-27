@@ -362,8 +362,8 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     backgroundColor: colors.background,
   },
   safeHeader: {
-    paddingHorizontal: isDesktopWeb ? 32 : 20,
-    maxWidth: isDesktopWeb ? 960 : "100%",
+    paddingHorizontal: isDesktopWeb ? 24 : 20,
+    maxWidth: isDesktopWeb ? 780 : "100%",
     width: "100%",
     alignSelf: isDesktopWeb ? "center" : "stretch",
     backgroundColor: "#0F172A",
@@ -440,10 +440,10 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     marginTop: 8,
   },
   scrollContent: {
-    paddingHorizontal: isDesktopWeb ? 32 : 20,
+    paddingHorizontal: isDesktopWeb ? 24 : 20,
     paddingTop: 16,
     paddingBottom: 40,
-    maxWidth: isDesktopWeb ? 960 : "100%",
+    maxWidth: isDesktopWeb ? 780 : "100%",
     width: "100%",
     alignSelf: isDesktopWeb ? "center" : "stretch",
   },

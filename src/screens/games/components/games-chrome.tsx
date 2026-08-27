@@ -150,10 +150,10 @@ export function GamesGlassHeader({
           styles.headerRow,
           {
             height: metrics.headerHeight,
-            maxWidth: isDesktop ? 960 : "100%",
+            maxWidth: isDesktop ? 780 : "100%",
             width: "100%",
             alignSelf: "center",
-            paddingHorizontal: isDesktop ? 32 : 14,
+            paddingHorizontal: isDesktop ? 20 : 14,
           },
         ]}
       >

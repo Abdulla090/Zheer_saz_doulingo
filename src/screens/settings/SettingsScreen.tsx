@@ -623,28 +623,30 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
 
   return (
     <View style={styles.root}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 14) }]}>
-        <PressableScale
-          accessibilityRole="button"
-          accessibilityLabel={isRtl ? "گەڕانەوە" : "Back"}
-          onPress={safeBack}
-          scaleDown={0.9}
-          style={styles.backButton}
-        >
-          <HugeiconsIcon
-            icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
-            size={22}
-            color={colors.foreground}
-            strokeWidth={2.5}
-          />
-        </PressableScale>
-        <View style={styles.headerCopy}>
-          <AppText style={styles.title} languageCode={locale} align="start" latinRole="bold">
-            {t("settings.title")}
-          </AppText>
-          <AppText style={styles.headerSubtitle} languageCode={locale} align="start">
-            {copy.subtitle}
-          </AppText>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 14) + (isDesktopWeb ? 8 : 0) }]}>
+        <View style={styles.headerInner}>
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel={isRtl ? "گەڕانەوە" : "Back"}
+            onPress={safeBack}
+            scaleDown={0.9}
+            style={styles.backButton}
+          >
+            <HugeiconsIcon
+              icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+              size={22}
+              color={colors.foreground}
+              strokeWidth={2.5}
+            />
+          </PressableScale>
+          <View style={styles.headerCopy}>
+            <AppText style={styles.title} languageCode={locale} align="start" latinRole="bold">
+              {t("settings.title")}
+            </AppText>
+            <AppText style={styles.headerSubtitle} languageCode={locale} align="start">
+              {copy.subtitle}
+            </AppText>
+          </View>
         </View>
       </View>
 
@@ -1076,17 +1078,20 @@ const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDeskto
       flex: 1,
     },
     header: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 14,
-      paddingHorizontal: isDesktopWeb ? 32 : 20,
-      paddingBottom: 18,
-      maxWidth: isDesktopWeb ? 960 : "100%",
       width: "100%",
-      alignSelf: isDesktopWeb ? "center" : "stretch",
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
       backgroundColor: colors.background,
+    },
+    headerInner: {
+      width: "100%",
+      maxWidth: isDesktopWeb ? 780 : 760,
+      alignSelf: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      paddingHorizontal: isDesktopWeb ? 24 : 20,
+      paddingBottom: 16,
     },
     backButton: {
       width: 44,
@@ -1104,8 +1109,8 @@ const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDeskto
       gap: 2,
     },
     title: {
-      fontSize: isDesktopWeb ? 32 : 28,
-      lineHeight: isDesktopWeb ? 38 : 34,
+      fontSize: isDesktopWeb ? 30 : 28,
+      lineHeight: isDesktopWeb ? 36 : 34,
       color: colors.foreground,
       letterSpacing: -0.5,
     },
@@ -1116,11 +1121,11 @@ const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDeskto
     },
     content: {
       width: "100%",
-      maxWidth: isDesktopWeb ? 960 : 760,
+      maxWidth: isDesktopWeb ? 780 : 760,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 32 : 20,
-      paddingTop: isDesktopWeb ? 28 : 20,
-      gap: isDesktopWeb ? 32 : 34,
+      paddingHorizontal: isDesktopWeb ? 24 : 20,
+      paddingTop: isDesktopWeb ? 24 : 20,
+      gap: isDesktopWeb ? 28 : 34,
     },
     desktopSectionGrid: {
       flexDirection: "row",

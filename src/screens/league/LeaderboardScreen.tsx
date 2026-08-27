@@ -642,135 +642,140 @@ export const LeaderboardScreen = () => {
 
   return (
     <View style={screenStyles.root}>
-      <View
-        style={[
-          screenStyles.header,
-          { paddingTop: Math.max(insets.top, 16) + (isDesktopWeb ? 16 : 8) },
-        ]}
-      >
+      <View style={screenStyles.centerColumn}>
         <View
           style={[
-            screenStyles.headerRow,
-            { flexDirection: isRtl ? "row-reverse" : "row" },
+            screenStyles.header,
+            { paddingTop: Math.max(insets.top, 16) + (isDesktopWeb ? 16 : 8) },
           ]}
         >
-          {isStandalone ? (
-            <IOSPressable
-              onPress={safeBack}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-              style={screenStyles.backButton}
-            >
-              <HugeiconsIcon
-                icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
-                size={22}
-                color={colors.foreground}
-                strokeWidth={2.2}
-              />
-            </IOSPressable>
-          ) : null}
+          <View
+            style={[
+              screenStyles.headerRow,
+              { flexDirection: isRtl ? "row-reverse" : "row" },
+            ]}
+          >
+            {isStandalone ? (
+              <IOSPressable
+                onPress={safeBack}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+                style={screenStyles.backButton}
+              >
+                <HugeiconsIcon
+                  icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+                  size={22}
+                  color={colors.foreground}
+                  strokeWidth={2.2}
+                />
+              </IOSPressable>
+            ) : null}
 
-          <View style={screenStyles.trophyTile}>
-            <HugeiconsIcon
-              icon={Trophy}
-              size={isDesktopWeb ? 30 : 27}
-              color={colors.warning}
-              strokeWidth={2.35}
-            />
-          </View>
-          <View style={screenStyles.titleCopy}>
-            <AppText
-              languageCode={locale}
-              align="start"
-              latinRole="bold"
-              style={screenStyles.title}
-            >
-              {t("league.title")}
-            </AppText>
-            <AppText
-              languageCode={locale}
-              align="start"
-              style={screenStyles.subtitle}
-            >
-              {t("league.subtitle")}
-            </AppText>
+            <View style={screenStyles.trophyTile}>
+              <HugeiconsIcon
+                icon={Trophy}
+                size={isDesktopWeb ? 30 : 27}
+                color={colors.warning}
+                strokeWidth={2.35}
+              />
+            </View>
+            <View style={screenStyles.titleCopy}>
+              <AppText
+                languageCode={locale}
+                align="start"
+                latinRole="bold"
+                style={screenStyles.title}
+              >
+                {t("league.title")}
+              </AppText>
+              <AppText
+                languageCode={locale}
+                align="start"
+                style={screenStyles.subtitle}
+              >
+                {t("league.subtitle")}
+              </AppText>
+            </View>
           </View>
         </View>
-      </View>
 
-      {loading ? (
-        <LoadingSkeleton styles={screenStyles} />
-      ) : (
-        <LegendList
-          data={remainingEntries}
-          keyExtractor={keyExtractor}
-          renderItem={renderListItem}
-          recycleItems
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={colors.warning}
-              colors={[colors.warning]}
-            />
-          }
-          contentContainerStyle={{
-            paddingBottom: tabBarScrollPadding(insets.bottom) + (isDesktopWeb ? 48 : 24),
-          }}
-          ListHeaderComponent={listHeader}
-          ListEmptyComponent={
-            entries.length === 0 ? (
-              <View style={screenStyles.emptyState}>
-                <View style={screenStyles.emptyIcon}>
-                  <HugeiconsIcon
-                    icon={Trophy}
-                    size={29}
-                    color={colors.mutedForeground}
-                    strokeWidth={1.9}
-                  />
+        {loading ? (
+          <LoadingSkeleton styles={screenStyles} />
+        ) : (
+          <LegendList
+            data={remainingEntries}
+            keyExtractor={keyExtractor}
+            renderItem={renderListItem}
+            recycleItems
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.warning}
+                colors={[colors.warning]}
+              />
+            }
+            contentContainerStyle={{
+              paddingBottom: tabBarScrollPadding(insets.bottom) + (isDesktopWeb ? 48 : 24),
+            }}
+            ListHeaderComponent={listHeader}
+            ListEmptyComponent={
+              entries.length === 0 ? (
+                <View style={screenStyles.emptyState}>
+                  <View style={screenStyles.emptyIcon}>
+                    <HugeiconsIcon
+                      icon={Trophy}
+                      size={29}
+                      color={colors.mutedForeground}
+                      strokeWidth={1.9}
+                    />
+                  </View>
+                  <AppText
+                    languageCode={locale}
+                    align="center"
+                    latinRole="bold"
+                    style={screenStyles.emptyTitle}
+                  >
+                    {emptyTitle}
+                  </AppText>
+                  <AppText
+                    languageCode={locale}
+                    align="center"
+                    style={screenStyles.emptyBody}
+                  >
+                    {emptyBody}
+                  </AppText>
                 </View>
-                <AppText
-                  languageCode={locale}
-                  align="center"
-                  latinRole="bold"
-                  style={screenStyles.emptyTitle}
-                >
-                  {emptyTitle}
-                </AppText>
-                <AppText
-                  languageCode={locale}
-                  align="center"
-                  style={screenStyles.emptyBody}
-                >
-                  {emptyBody}
-                </AppText>
-              </View>
-            ) : null
-          }
-        />
-      )}
+              ) : null
+            }
+          />
+        )}
+      </View>
       <BottomScrollFade />
     </View>
   );
 };
 
 function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
-  const contentWidth = isDesktopWeb ? 920 : "100%";
   const mutedFill = isDark ? "rgba(255,255,255,0.055)" : colors.muted;
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
-    header: {
-      width: contentWidth,
-      maxWidth: 920,
+    centerColumn: {
+      flex: 1,
+      width: "100%",
+      maxWidth: isDesktopWeb ? 780 : undefined,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 32 : 20,
-      paddingBottom: isDesktopWeb ? 18 : 12,
+    },
+    header: {
+      width: "100%",
+      paddingHorizontal: isDesktopWeb ? 24 : 20,
+      paddingBottom: isDesktopWeb ? 16 : 12,
     },
     headerRow: {
-      minHeight: isDesktopWeb ? 90 : 82,
+      minHeight: isDesktopWeb ? 84 : 82,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
@@ -786,9 +791,9 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
       borderColor: colors.border,
     },
     trophyTile: {
-      width: isDesktopWeb ? 60 : 54,
-      height: isDesktopWeb ? 60 : 54,
-      borderRadius: isDesktopWeb ? 19 : 17,
+      width: isDesktopWeb ? 58 : 54,
+      height: isDesktopWeb ? 58 : 54,
+      borderRadius: isDesktopWeb ? 18 : 17,
       borderWidth: 1,
       borderColor: isDark ? "rgba(251,191,36,0.46)" : "rgba(217,119,6,0.35)",
       backgroundColor: colors.warningBg,
@@ -798,19 +803,17 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
     titleCopy: { flex: 1, minWidth: 0, gap: 2 },
     title: {
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 32 : 27,
-      lineHeight: isDesktopWeb ? 40 : 36,
+      fontSize: isDesktopWeb ? 30 : 27,
+      lineHeight: isDesktopWeb ? 38 : 36,
     },
     subtitle: {
       color: colors.mutedForeground,
-      fontSize: isDesktopWeb ? 14 : 12,
-      lineHeight: isDesktopWeb ? 20 : 18,
+      fontSize: isDesktopWeb ? 13 : 12,
+      lineHeight: isDesktopWeb ? 19 : 18,
     },
     listHeader: {
-      width: contentWidth,
-      maxWidth: 920,
-      alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 32 : 14,
+      width: "100%",
+      paddingHorizontal: isDesktopWeb ? 24 : 14,
     },
     periodControl: {
       position: "relative",
@@ -924,10 +927,8 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
     rankingTitle: { color: colors.foreground, fontSize: isDesktopWeb ? 17 : 15 },
     rankingPeriod: { color: colors.mutedForeground, fontSize: isDesktopWeb ? 12 : 11 },
     rowSlot: {
-      width: contentWidth,
-      maxWidth: 920,
-      alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 32 : 14,
+      width: "100%",
+      paddingHorizontal: isDesktopWeb ? 24 : 14,
     },
     rankingRow: {
       minHeight: isDesktopWeb ? 76 : 72,
@@ -971,10 +972,8 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
       fontSize: 14,
     },
     skeletonWrap: {
-      width: contentWidth,
-      maxWidth: 920,
-      alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 32 : 14,
+      width: "100%",
+      paddingHorizontal: isDesktopWeb ? 24 : 14,
     },
     skeletonSegment: {
       height: 50,
