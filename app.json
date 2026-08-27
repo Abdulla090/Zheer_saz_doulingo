@@ -84,7 +84,7 @@
       ]
     },
     "web": {
-      "output": "single",
+      "output": "static",
       "favicon": "./assets/images/real-app-icon.png"
     },
     "plugins": [
