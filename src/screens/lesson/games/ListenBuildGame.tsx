@@ -512,7 +512,6 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
 
               <View style={s.mascotCol}>
                 <TwinoMascot size={112} pose="headset" />
-                <View style={s.mascotShadow} />
               </View>
             </View>
 
@@ -711,13 +710,6 @@ const s = StyleSheet.create({
   mascotCol: {
     width: 112,
     alignItems: "center",
-  },
-  mascotShadow: {
-    width: 56,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "rgba(0,0,0,0.07)",
-    marginTop: -4,
   },
   bubbleWrap: { flex: 1, minWidth: 0 },
   bubble: {

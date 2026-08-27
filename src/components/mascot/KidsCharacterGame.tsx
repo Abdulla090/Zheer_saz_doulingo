@@ -418,12 +418,11 @@ export function KidsCharacterGame({
 
       {/* Character + speech bubble */}
       <View style={styles.stage}>
-        {/* Mascot Area with Floor Shadow */}
+        {/* Mascot Area */}
         <View style={styles.mascotArea}>
           <Animated.View style={[styles.mascotWrap, mascotStyle]}>
             <Image source={MASCOT} style={styles.mascot} resizeMode="contain" />
           </Animated.View>
-          <Animated.View style={[styles.mascotShadow, shadowStyle]} />
         </View>
 
         {/* Speech Bubble Container with Droplets */}
@@ -631,15 +630,6 @@ const styles = StyleSheet.create({
   mascot: {
     width: "100%",
     height: "100%",
-  },
-  mascotShadow: {
-    position: "absolute",
-    bottom: -4,
-    width: 70,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(0,0,0,0.06)",
-    zIndex: 1,
   },
   droplet1: {
     position: "absolute",

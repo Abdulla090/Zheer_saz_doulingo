@@ -530,7 +530,6 @@ export function LightQuestionPrompt({
           >
             <RiveMascot size={kidsMascotSize} pose="wave" />
           </Animated.View>
-          <Animated.View style={[lh.kidsMascotShadow, shadowStyle]} />
         </View>
 
         {/* Speech Bubble */}
@@ -595,7 +594,6 @@ export function LightQuestionPrompt({
         >
           <TwinoMascot size={normalMascotSize} pose={pose} />
         </Animated.View>
-        <Animated.View style={[lh.normalMascotShadow, shadowStyle]} />
       </View>
 
       {/* Speech Bubble */}
@@ -2467,15 +2465,6 @@ function createLessonStyles(
     width: "100%",
     height: "100%",
   },
-  kidsMascotShadow: {
-    position: "absolute",
-    bottom: -4,
-    width: 86,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(0,0,0,0.06)",
-    zIndex: 1,
-  },
   kidsDroplet1: {
     position: "absolute",
     right: 8,
@@ -2657,15 +2646,6 @@ function createLessonStyles(
     zIndex: 2,
     alignItems: "center",
     justifyContent: "center",
-  },
-  normalMascotShadow: {
-    position: "absolute",
-    bottom: 2,
-    width: 66,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(0,0,0,0.06)",
-    zIndex: 1,
   },
   normalBubble: {
     flex: 1,

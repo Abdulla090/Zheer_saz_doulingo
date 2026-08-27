@@ -564,7 +564,6 @@ export function DuoPrompt({
     <View style={s.promptRow}>
       <View style={{ width: mascotSize, alignItems: "center" }}>
         <TwinoMascot size={mascotSize} pose={pose} />
-        <View style={s.mascotShadow} />
       </View>
 
       <Animated.View style={[s.bubbleWrap, bubbleAnim]}>
@@ -1317,13 +1316,6 @@ const s = StyleSheet.create({
      * the main reason short phrases wrapped onto three lines.
      */
     gap: PROMPT_GAP,
-  },
-  mascotShadow: {
-    width: 52,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(0,0,0,0.07)",
-    marginTop: -4,
   },
   bubbleWrap: { flex: 1, minWidth: 0 },
   bubble: {
