@@ -273,6 +273,18 @@ export default function AuthScreen() {
       }
     });
 
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      if (window.location.hash.includes("error_code=otp_expired") || window.location.hash.includes("error=access_denied")) {
+        showModal(
+          isKu ? "بەستەرەکە بەسەرچووە" : "Link expired",
+          isKu
+            ? "ئەم بەستەرەی پشتڕاستکردنەوە بەسەرچووە یان پێشتر بەکارهاتووە. تکایە لە خوارەوە ئیمەیڵەکەت بنووسە بۆ ناردنی بەستەرێکی نوێ."
+            : "This confirmation link is invalid or has expired. Please request a new one.",
+          "error",
+        );
+      }
+    }
+
     if (authMode === "recovery") {
       void supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
