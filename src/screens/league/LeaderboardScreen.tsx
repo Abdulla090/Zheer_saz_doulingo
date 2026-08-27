@@ -1,4 +1,6 @@
 import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
   BookOpen02Icon,
   CrownIcon,
   Trophy,
@@ -10,6 +12,7 @@ import {
   type LegendListRenderItemProps,
 } from "@legendapp/list/react-native";
 import { Image } from "expo-image";
+import { usePathname } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +25,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PressableScale } from "../../components/animations";
+import { IOSPressable } from "../../components/ui/ios-pressable";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
 import { tabBarScrollPadding } from "../../constants/layout";
@@ -29,6 +33,7 @@ import { getMascot } from "../../constants/mascots";
 import { isDesktopWebWidth } from "../../constants/web-layout";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../hooks/useI18n";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import { supabase } from "../../lib/supabase";
 import { useSettingsStore } from "../../stores/useSettingsStore";
@@ -356,6 +361,10 @@ export const LeaderboardScreen = () => {
     void loadLeaderboard(period, true);
   }, [loadLeaderboard, period]);
 
+  const pathname = usePathname();
+  const isStandalone = pathname === "/league";
+  const safeBack = useSafeBack("/(tabs)/dashboard");
+
   const podium = entries.slice(0, 3);
   const winner = podium.find((entry) => entry.rank === 1) ?? podium[0];
   const second = podium.find((entry) => entry.rank === 2);
@@ -368,20 +377,105 @@ export const LeaderboardScreen = () => {
     ({ item }: LegendListRenderItemProps<LeaderboardEntry>) => {
       const isMe = item.userId === user?.id;
       const level = Math.max(1, Math.floor(item.totalXp / 120) + 1);
+      const isWinnerBadge = item.rank <= 3;
+      const rankBadgeColor =
+        item.rank === 1
+          ? colors.warning
+          : item.rank === 2
+          ? "#AAB4C2"
+          : item.rank === 3
+          ? "#B9835A"
+          : colors.mutedForeground;
+
       return (
         <View style={screenStyles.rowSlot}>
           <View
-            {...PHYSICAL_LTR_PROPS}
             style={[
               screenStyles.rankingRow,
               isMe && screenStyles.currentUserRow,
+              { flexDirection: isRtl ? "row-reverse" : "row" },
             ]}
           >
+            {/* Rank badge */}
+            <View
+              style={[
+                screenStyles.rankBadgeWrap,
+                isWinnerBadge && {
+                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : colors.surfaceRaised,
+                  borderColor: rankBadgeColor,
+                  borderWidth: 1.5,
+                },
+              ]}
+            >
+              <AppText
+                forceLatinFont
+                latinRole="bold"
+                style={[
+                  screenStyles.rowRank,
+                  isWinnerBadge && { color: rankBadgeColor, fontSize: 15 },
+                ]}
+              >
+                {item.rank}
+              </AppText>
+            </View>
+
+            {/* Avatar & Identity */}
+            <View
+              style={[
+                screenStyles.rowIdentity,
+                { flexDirection: isRtl ? "row-reverse" : "row" },
+              ]}
+            >
+              <LeaderboardAvatar
+                item={item}
+                currentUserId={user?.id}
+                localAvatarUrl={localAvatarUrl}
+                localMascotId={localMascotId}
+                size={isDesktopWeb ? 48 : 42}
+                ringColor={isMe ? colors.warning : colors.border}
+                backgroundColor={colors.surfaceRaised}
+              />
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <AppText
+                  languageCode={locale}
+                  numberOfLines={1}
+                  align="start"
+                  latinRole="bold"
+                  style={screenStyles.rowName}
+                >
+                  {getDisplayName(item, user?.id, localUserName)}
+                </AppText>
+                <View
+                  style={{
+                    flexDirection: isRtl ? "row-reverse" : "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <HugeiconsIcon
+                    icon={BookOpen02Icon}
+                    size={12}
+                    color={colors.mutedForeground}
+                    strokeWidth={1.9}
+                  />
+                  <AppText languageCode={locale} style={screenStyles.rowLevel}>
+                    {t("league.level")} {level}
+                  </AppText>
+                </View>
+              </View>
+            </View>
+
+            {/* XP Column */}
             <View style={screenStyles.rowXpColumn}>
-              <View style={screenStyles.rowMetric}>
+              <View
+                style={[
+                  screenStyles.rowMetric,
+                  { justifyContent: isRtl ? "flex-start" : "flex-end" },
+                ]}
+              >
                 <HugeiconsIcon
                   icon={ZapIcon}
-                  size={15}
+                  size={isDesktopWeb ? 16 : 14}
                   color={colors.warning}
                   strokeWidth={2.8}
                 />
@@ -393,47 +487,7 @@ export const LeaderboardScreen = () => {
                   {formatXp(item.periodXp)} XP
                 </AppText>
               </View>
-              <View style={screenStyles.rowMetric}>
-                <HugeiconsIcon
-                  icon={BookOpen02Icon}
-                  size={13}
-                  color={colors.mutedForeground}
-                  strokeWidth={1.9}
-                />
-                <AppText languageCode={locale} style={screenStyles.rowLevel}>
-                  {t("league.level")} {level}
-                </AppText>
-              </View>
             </View>
-
-            <View style={screenStyles.rowIdentity}>
-              <AppText
-                languageCode={locale}
-                numberOfLines={1}
-                align="end"
-                latinRole="bold"
-                style={screenStyles.rowName}
-              >
-                {getDisplayName(item, user?.id, localUserName)}
-              </AppText>
-              <LeaderboardAvatar
-                item={item}
-                currentUserId={user?.id}
-                localAvatarUrl={localAvatarUrl}
-                localMascotId={localMascotId}
-                size={44}
-                ringColor={isMe ? colors.warning : colors.border}
-                backgroundColor={colors.surfaceRaised}
-              />
-            </View>
-
-            <AppText
-              forceLatinFont
-              latinRole="bold"
-              style={screenStyles.rowRank}
-            >
-              {item.rank}
-            </AppText>
           </View>
         </View>
       );
@@ -443,6 +497,9 @@ export const LeaderboardScreen = () => {
       colors.mutedForeground,
       colors.surfaceRaised,
       colors.warning,
+      isDark,
+      isDesktopWeb,
+      isRtl,
       localAvatarUrl,
       localMascotId,
       localUserName,
@@ -455,17 +512,14 @@ export const LeaderboardScreen = () => {
 
   const listHeader = (
     <View style={screenStyles.listHeader}>
-      <View {...PHYSICAL_LTR_PROPS} style={screenStyles.periodControl}>
+      <View style={screenStyles.periodControl}>
         {periodOptions.map((option) => {
           const selected = option.id === period;
           return (
             <PressableScale
               key={option.id}
+              scaleDown={0.96}
               onPress={() => onPeriodChange(option.id)}
-              scaleDown={0.985}
-              accessibilityRole="tab"
-              accessibilityLabel={option.label}
-              accessibilityState={{ selected, busy: selected && periodLoading }}
               style={[
                 screenStyles.periodButton,
                 selected && screenStyles.periodButtonSelected,
@@ -548,7 +602,12 @@ export const LeaderboardScreen = () => {
           </View>
 
           {remainingEntries.length ? (
-            <View {...PHYSICAL_LTR_PROPS} style={screenStyles.rankingHeading}>
+            <View
+              style={[
+                screenStyles.rankingHeading,
+                { flexDirection: isRtl ? "row-reverse" : "row" },
+              ]}
+            >
               <AppText
                 languageCode={locale}
                 latinRole="bold"
@@ -586,14 +645,36 @@ export const LeaderboardScreen = () => {
       <View
         style={[
           screenStyles.header,
-          { paddingTop: Math.max(insets.top, 16) + 8 },
+          { paddingTop: Math.max(insets.top, 16) + (isDesktopWeb ? 16 : 8) },
         ]}
       >
-        <View {...PHYSICAL_LTR_PROPS} style={screenStyles.headerRow}>
+        <View
+          style={[
+            screenStyles.headerRow,
+            { flexDirection: isRtl ? "row-reverse" : "row" },
+          ]}
+        >
+          {isStandalone ? (
+            <IOSPressable
+              onPress={safeBack}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              style={screenStyles.backButton}
+            >
+              <HugeiconsIcon
+                icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+                size={22}
+                color={colors.foreground}
+                strokeWidth={2.2}
+              />
+            </IOSPressable>
+          ) : null}
+
           <View style={screenStyles.trophyTile}>
             <HugeiconsIcon
               icon={Trophy}
-              size={27}
+              size={isDesktopWeb ? 30 : 27}
               color={colors.warning}
               strokeWidth={2.35}
             />
@@ -601,7 +682,7 @@ export const LeaderboardScreen = () => {
           <View style={screenStyles.titleCopy}>
             <AppText
               languageCode={locale}
-              align="end"
+              align="start"
               latinRole="bold"
               style={screenStyles.title}
             >
@@ -609,7 +690,7 @@ export const LeaderboardScreen = () => {
             </AppText>
             <AppText
               languageCode={locale}
-              align="end"
+              align="start"
               style={screenStyles.subtitle}
             >
               {t("league.subtitle")}
@@ -636,7 +717,7 @@ export const LeaderboardScreen = () => {
             />
           }
           contentContainerStyle={{
-            paddingBottom: tabBarScrollPadding(insets.bottom) + 24,
+            paddingBottom: tabBarScrollPadding(insets.bottom) + (isDesktopWeb ? 48 : 24),
           }}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
@@ -676,104 +757,119 @@ export const LeaderboardScreen = () => {
 };
 
 function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
-  const contentWidth = isDesktopWeb ? 820 : "100%";
+  const contentWidth = isDesktopWeb ? 920 : "100%";
   const mutedFill = isDark ? "rgba(255,255,255,0.055)" : colors.muted;
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     header: {
       width: contentWidth,
-      maxWidth: 820,
+      maxWidth: 920,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 28 : 20,
-      paddingBottom: 12,
+      paddingHorizontal: isDesktopWeb ? 32 : 20,
+      paddingBottom: isDesktopWeb ? 18 : 12,
     },
     headerRow: {
-      minHeight: 82,
+      minHeight: isDesktopWeb ? 90 : 82,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
     },
+    backButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
     trophyTile: {
-      width: 54,
-      height: 54,
-      borderRadius: 17,
+      width: isDesktopWeb ? 60 : 54,
+      height: isDesktopWeb ? 60 : 54,
+      borderRadius: isDesktopWeb ? 19 : 17,
       borderWidth: 1,
       borderColor: isDark ? "rgba(251,191,36,0.46)" : "rgba(217,119,6,0.35)",
       backgroundColor: colors.warningBg,
       alignItems: "center",
       justifyContent: "center",
     },
-    titleCopy: { flex: 1, minWidth: 0 },
+    titleCopy: { flex: 1, minWidth: 0, gap: 2 },
     title: {
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 31 : 27,
+      fontSize: isDesktopWeb ? 32 : 27,
       lineHeight: isDesktopWeb ? 40 : 36,
     },
     subtitle: {
-      marginTop: 3,
       color: colors.mutedForeground,
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: isDesktopWeb ? 14 : 12,
+      lineHeight: isDesktopWeb ? 20 : 18,
     },
     listHeader: {
       width: contentWidth,
-      maxWidth: 820,
+      maxWidth: 920,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 28 : 14,
+      paddingHorizontal: isDesktopWeb ? 32 : 14,
     },
     periodControl: {
       position: "relative",
-      height: 50,
-      padding: 4,
+      height: isDesktopWeb ? 54 : 50,
+      padding: isDesktopWeb ? 5 : 4,
       flexDirection: "row",
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 16,
+      borderRadius: isDesktopWeb ? 18 : 16,
       backgroundColor: colors.surface,
       overflow: "hidden",
     },
     periodButton: {
       flex: 1,
-      height: 40,
-      borderRadius: 12,
+      height: isDesktopWeb ? 44 : 40,
+      borderRadius: isDesktopWeb ? 14 : 12,
       alignItems: "center",
       justifyContent: "center",
     },
     periodButtonSelected: { backgroundColor: colors.warningBg },
-    periodLabel: { color: colors.mutedForeground, fontSize: 12 },
+    periodLabel: { color: colors.mutedForeground, fontSize: isDesktopWeb ? 13 : 12 },
     periodLabelSelected: { color: colors.warning },
     periodSpinner: { position: "absolute", top: 15, right: 10 },
     podiumStage: {
       position: "relative",
-      height: isDesktopWeb ? 278 : 248,
+      height: isDesktopWeb ? 290 : 248,
       marginTop: 18,
       justifyContent: "flex-end",
+      borderRadius: isDesktopWeb ? 24 : 0,
+      borderWidth: isDesktopWeb ? 1 : 0,
+      borderColor: colors.border,
+      backgroundColor: isDesktopWeb ? (isDark ? "rgba(255,255,255,0.025)" : colors.surface) : "transparent",
+      paddingHorizontal: isDesktopWeb ? 24 : 0,
+      paddingVertical: isDesktopWeb ? 14 : 0,
     },
     stageLine: {
       position: "absolute",
-      left: 8,
-      right: 8,
-      bottom: 8,
+      left: isDesktopWeb ? 20 : 8,
+      right: isDesktopWeb ? 20 : 8,
+      bottom: isDesktopWeb ? 14 : 8,
       height: 1,
       backgroundColor: colors.border,
     },
     podiumRow: {
       flexDirection: "row",
       alignItems: "flex-end",
-      paddingHorizontal: isDesktopWeb ? 24 : 0,
+      paddingHorizontal: isDesktopWeb ? 16 : 0,
       paddingBottom: 9,
     },
     sideSlot: {
       flex: 1,
       minWidth: 0,
-      height: isDesktopWeb ? 190 : 168,
+      height: isDesktopWeb ? 200 : 168,
       justifyContent: "flex-end",
     },
     winnerSlot: {
       flex: 1.08,
       minWidth: 0,
-      height: isDesktopWeb ? 246 : 220,
+      height: isDesktopWeb ? 258 : 220,
       justifyContent: "flex-end",
     },
     podiumPerson: {
@@ -783,15 +879,15 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
       paddingBottom: 18,
     },
     winnerPerson: {
-      paddingTop: 30,
+      paddingTop: isDesktopWeb ? 34 : 30,
       paddingBottom: 26,
       borderBottomWidth: 3,
       borderBottomColor: colors.warning,
     },
-    crown: { position: "absolute", top: -2 },
+    crown: { position: "absolute", top: isDesktopWeb ? -4 : -2 },
     placeBadge: {
-      width: 32,
-      height: 32,
+      width: isDesktopWeb ? 34 : 32,
+      height: isDesktopWeb ? 34 : 32,
       marginTop: -8,
       borderRadius: 10,
       borderWidth: 1.5,
@@ -805,10 +901,10 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
       marginTop: 10,
       paddingHorizontal: 2,
       color: colors.foreground,
-      fontSize: isDesktopWeb ? 14 : 12,
+      fontSize: isDesktopWeb ? 15 : 12,
       lineHeight: 18,
     },
-    winnerName: { fontSize: isDesktopWeb ? 16 : 14 },
+    winnerName: { fontSize: isDesktopWeb ? 17 : 14 },
     podiumXpLine: {
       marginTop: 7,
       flexDirection: "row",
@@ -816,58 +912,69 @@ function createStyles(colors: any, isDark: boolean, isDesktopWeb = false) {
       justifyContent: "center",
       gap: 4,
     },
-    podiumXp: { color: colors.foreground, fontSize: isDesktopWeb ? 13 : 11 },
+    podiumXp: { color: colors.foreground, fontSize: isDesktopWeb ? 14 : 11 },
     winnerXp: { color: colors.warning, fontSize: isDesktopWeb ? 16 : 14 },
     rankingHeading: {
-      marginTop: 12,
+      marginTop: 16,
       paddingHorizontal: 4,
       paddingBottom: 10,
-      flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    rankingTitle: { color: colors.foreground, fontSize: 15 },
-    rankingPeriod: { color: colors.mutedForeground, fontSize: 11 },
+    rankingTitle: { color: colors.foreground, fontSize: isDesktopWeb ? 17 : 15 },
+    rankingPeriod: { color: colors.mutedForeground, fontSize: isDesktopWeb ? 12 : 11 },
     rowSlot: {
       width: contentWidth,
-      maxWidth: 820,
+      maxWidth: 920,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 28 : 14,
+      paddingHorizontal: isDesktopWeb ? 32 : 14,
     },
     rankingRow: {
-      minHeight: 72,
-      paddingHorizontal: 8,
-      flexDirection: "row",
+      minHeight: isDesktopWeb ? 76 : 72,
+      paddingHorizontal: isDesktopWeb ? 16 : 8,
       alignItems: "center",
       gap: isDesktopWeb ? 16 : 10,
+      borderRadius: isDesktopWeb ? 16 : 0,
+      borderWidth: isDesktopWeb ? 1 : 0,
+      borderColor: isDesktopWeb ? colors.border : "transparent",
+      backgroundColor: isDesktopWeb ? (isDark ? "rgba(255,255,255,0.02)" : colors.surface) : "transparent",
+      marginBottom: isDesktopWeb ? 10 : 0,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    currentUserRow: { backgroundColor: colors.warningBg },
-    rowXpColumn: { width: isDesktopWeb ? 126 : 92, flexShrink: 0, gap: 5 },
+    currentUserRow: {
+      backgroundColor: colors.warningBg,
+      borderColor: colors.warning,
+      borderWidth: isDesktopWeb ? 1.5 : 1,
+    },
+    rankBadgeWrap: {
+      width: isDesktopWeb ? 36 : 30,
+      height: isDesktopWeb ? 36 : 30,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowXpColumn: { width: isDesktopWeb ? 130 : 92, flexShrink: 0, gap: 5 },
     rowMetric: { flexDirection: "row", alignItems: "center", gap: 5 },
-    rowXp: { color: colors.foreground, fontSize: isDesktopWeb ? 14 : 12 },
-    rowLevel: { color: colors.mutedForeground, fontSize: 10 },
+    rowXp: { color: colors.foreground, fontSize: isDesktopWeb ? 15 : 12 },
+    rowLevel: { color: colors.mutedForeground, fontSize: isDesktopWeb ? 11 : 10 },
     rowIdentity: {
       flex: 1,
       minWidth: 0,
-      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "flex-end",
-      gap: 9,
+      gap: isDesktopWeb ? 12 : 9,
     },
-    rowName: { flexShrink: 1, color: colors.foreground, fontSize: 13 },
+    rowName: { flexShrink: 1, color: colors.foreground, fontSize: isDesktopWeb ? 14 : 13 },
     rowRank: {
-      width: 24,
       color: colors.mutedForeground,
       textAlign: "center",
       fontSize: 14,
     },
     skeletonWrap: {
       width: contentWidth,
-      maxWidth: 820,
+      maxWidth: 920,
       alignSelf: "center",
-      paddingHorizontal: isDesktopWeb ? 28 : 14,
+      paddingHorizontal: isDesktopWeb ? 32 : 14,
     },
     skeletonSegment: {
       height: 50,

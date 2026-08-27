@@ -106,7 +106,9 @@ export function GamesGlassHeader({
   titleLanguageCode?: string;
 }) {
   const theme = useGamesTheme();
-  const metrics = useGamesMetrics(false);
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && isDesktopWebWidth(width);
+  const metrics = useGamesMetrics(false, isDesktop);
   const insets = useSafeAreaInsets();
   const { isKu, locale } = useI18n();
   const isRtl = isKu || locale === "ar";
@@ -143,7 +145,18 @@ export function GamesGlassHeader({
         />
       )}
 
-      <View style={[styles.headerRow, { height: metrics.headerHeight }]}>
+      <View
+        style={[
+          styles.headerRow,
+          {
+            height: metrics.headerHeight,
+            maxWidth: isDesktop ? 960 : "100%",
+            width: "100%",
+            alignSelf: "center",
+            paddingHorizontal: isDesktop ? 32 : 14,
+          },
+        ]}
+      >
         <GamesIconButton
           icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
           onPress={onBack}

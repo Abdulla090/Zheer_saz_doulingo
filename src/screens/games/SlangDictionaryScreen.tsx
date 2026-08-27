@@ -377,11 +377,11 @@ const SlangItemRow = React.memo(function SlangItemRow({
 });
 
 export function SlangDictionaryScreen() {
-  const styles = useSlangStyles();
   const insets = useSafeAreaInsets();
   const safeBack = useSafeBack("/(tabs)/play");
   const { t, locale } = useI18n();
-  const { theme, hue, metrics } = useGamesChrome("slang");
+  const { theme, hue, metrics, isWide } = useGamesChrome("slang");
+  const styles = useSlangStyles(isWide);
   const { speak, stop, speaking, activeId } = useTTS();
 
   const isRtl = locale === "ku" || locale === "ar";
@@ -478,30 +478,29 @@ export function SlangDictionaryScreen() {
         extraData={{ expandedId, activeId, speaking }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: metrics.gutter,
-          paddingTop: metrics.sectionGap,
-          paddingBottom: insets.bottom + 28,
+          paddingHorizontal: isWide ? 32 : metrics.gutter,
+          paddingTop: isWide ? 24 : metrics.sectionGap,
+          paddingBottom: insets.bottom + (isWide ? 56 : 28),
+          maxWidth: isWide ? 960 : undefined,
+          width: "100%",
+          alignSelf: isWide ? "center" : undefined,
         }}
         ListHeaderComponent={
           <>
             {/*
-              Slang of the Day. This used to be a solid-orange card, which under
-              the shared system would read as one enormous button — accent fill
-              is reserved for things you can press. It gets its prominence from
-              elevation, scale and position instead, which is a stronger
-              isolation cue anyway and costs no affordance clarity.
+              Slang of the Day.
             */}
-            <GamesCard raised style={{ marginBottom: 18 }}>
+            <GamesCard raised style={{ marginBottom: isWide ? 24 : 18, padding: isWide ? 24 : 16 }}>
               <View style={styles.spotlightTopRow}>
                 <View style={[styles.spotlightBadge, { backgroundColor: hue.wash, borderColor: hue.border }]}>
                   <HugeiconsIcon
                     icon={BookOpen01Icon}
-                    size={13}
+                    size={14}
                     color={hue.ink}
                     strokeWidth={2.2}
                   />
                   <AppText
-                    style={[GamesType.eyebrow, { fontSize: 10, color: hue.ink }]}
+                    style={[GamesType.eyebrow, { fontSize: 11, color: hue.ink }]}
                     languageCode={locale}
                     align="center"
                   >
@@ -514,7 +513,7 @@ export function SlangDictionaryScreen() {
               <View style={styles.spotlightMain}>
                 <View style={{ flex: 1, alignItems: "stretch" }}>
                   <AppText
-                    style={[GamesType.display, { fontSize: 28, color: theme.ink }]}
+                    style={[GamesType.display, { fontSize: isWide ? 32 : 28, color: theme.ink }]}
                     languageCode="en"
                     align="start"
                     fullWidth
@@ -525,7 +524,7 @@ export function SlangDictionaryScreen() {
                   <AppText
                     style={[
                       GamesType.body,
-                      { fontSize: 15, fontWeight: "700", color: theme.mutedInk, marginTop: 2 },
+                      { fontSize: 15, fontWeight: "700", color: theme.mutedInk, marginTop: 4 },
                     ]}
                     languageCode="ku"
                     align="start"
@@ -535,7 +534,7 @@ export function SlangDictionaryScreen() {
                   </AppText>
                 </View>
                 <SpeakButton
-                  size={52}
+                  size={isWide ? 58 : 52}
                   active={spotlightSpeaking}
                   onPress={() =>
                     handleSpeak(slangOfTheDay.phrase, `spotlight_${slangOfTheDay.id}`)
@@ -546,7 +545,7 @@ export function SlangDictionaryScreen() {
               </View>
 
               <AppText
-                style={[GamesType.body, { color: theme.ink, lineHeight: 22, marginTop: 10 }]}
+                style={[GamesType.body, { color: theme.ink, lineHeight: 24, marginTop: 12, fontSize: isWide ? 16 : 14 }]}
                 languageCode="ku"
                 align="start"
               >
@@ -636,9 +635,9 @@ export function SlangDictionaryScreen() {
   );
 }
 
-function useSlangStyles() {
+function useSlangStyles(isWide = false) {
   const theme = useGamesTheme();
-  const metrics = useGamesMetrics(false);
+  const metrics = useGamesMetrics(false, isWide);
 
   return useMemo(
     () =>
@@ -661,9 +660,6 @@ function useSlangStyles() {
           alignItems: "center",
           gap: 8,
         },
-        // Stretch, never shrink-wrap: a shrink-wrapped Text hugs the *layout*
-        // start edge, which puts English on the right under a Kurdish UI no
-        // matter what `textAlign` says. Full width lets alignment decide.
         phraseCol: {
           width: "100%",
           alignItems: "stretch",
@@ -675,22 +671,22 @@ function useSlangStyles() {
         },
         dialogueBox: {
           backgroundColor: theme.surfaceSunken,
-          borderRadius: metrics.radiusChip,
+          borderRadius: isWide ? 16 : metrics.radiusChip,
           borderWidth: 1,
           borderColor: theme.border,
-          padding: 12,
+          padding: isWide ? 16 : 12,
           gap: 12,
           marginTop: 4,
         },
         dialogueLine: {
           flexDirection: "row",
           alignItems: "flex-start",
-          gap: 10,
+          gap: 12,
         },
         dialogueMarker: {
-          width: 24,
-          height: 24,
-          borderRadius: 12,
+          width: 26,
+          height: 26,
+          borderRadius: 13,
           backgroundColor: theme.surfaceRaised,
           borderWidth: 1,
           borderColor: theme.border,
@@ -709,9 +705,9 @@ function useSlangStyles() {
           flexDirection: "row",
           alignItems: "center",
           alignSelf: "flex-start",
-          paddingHorizontal: 10,
-          paddingVertical: 5,
-          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 10,
           borderWidth: 1,
           gap: 6,
         },
@@ -719,14 +715,14 @@ function useSlangStyles() {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 12,
+          gap: 16,
         },
         searchContainer: {
           flexDirection: "row",
           alignItems: "center",
-          borderRadius: metrics.radiusControl,
-          height: 50,
-          marginBottom: 12,
+          borderRadius: isWide ? 16 : metrics.radiusControl,
+          height: isWide ? 54 : 50,
+          marginBottom: isWide ? 16 : 12,
         },
         searchInput: {
           flex: 1,
@@ -737,6 +733,6 @@ function useSlangStyles() {
           paddingVertical: 0,
         },
       }),
-    [theme, metrics],
+    [theme, metrics, isWide],
   );
 }
