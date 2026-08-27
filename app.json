@@ -3,6 +3,12 @@
     "name": "TWINO",
     "slug": "twino",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9a50c2c3-e5b5-47df-80e9-7bedd8697de7"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/real-app-icon.png",
     "scheme": "twino",
