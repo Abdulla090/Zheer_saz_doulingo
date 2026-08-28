@@ -107,7 +107,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
 
   const shakeX = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
+    transform: [{ translateY: shakeX.value }],
   }));
 
   const flyIdCounter = useRef(0);
@@ -188,10 +188,20 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
     const ok = selected === question.correctAnswer;
 
     if (!ok) {
+      // Keep error feedback on the selected tile, never the sentence layout.
       shakeX.value = withSequence(
-        withTiming(-8, { duration: 36 }),
-        withTiming(8, { duration: 36 }),
-        withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
+        withTiming(-2, { duration: 20 }),
+        withTiming(2, { duration: 20 }),
+        withTiming(-1, { duration: 20 }),
+        withTiming(1, { duration: 20 }),
+        withTiming(0, { duration: 20, easing: Easing.out(Easing.quad) }),
+      );
+    } else {
+      // A restrained, single vertical lift on the selected tile.
+      shakeX.value = withSequence(
+        withTiming(0, { duration: 40 }),
+        withTiming(-3, { duration: 90, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 120, easing: Easing.out(Easing.cubic) }),
       );
     }
 
@@ -348,8 +358,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
           {question.kurdishHint}
         </LightQuestionPrompt>
 
-        <Animated.View style={shakeStyle}>
-          <LightSurfaceCard>
+        <LightSurfaceCard>
           <Animated.View layout={layoutSmooth} style={s.sentenceRow}>
             <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.sentenceLeadRow}>
               {leadTokens.map((word, i) => (
@@ -374,7 +383,7 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
                 }}
               >
                   {selected && !flySession ? (
-                    <Animated.View layout={layoutSmooth}>
+                    <Animated.View layout={layoutSmooth} style={shakeStyle}>
                       <LightWordTile
                         label={selected}
                         state={mapOptionState(getState(selected))}
@@ -458,7 +467,6 @@ export default function FillBlankGame({ question, onAnswer, pathMode, questionIn
             </DirectionalView>
           </Animated.View>
         </LightSurfaceCard>
-        </Animated.View>
       </View>
 
       <DirectionalView languageCode={question.targetLanguage ?? "en"} style={s.chipsWrap}>

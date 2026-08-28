@@ -95,8 +95,9 @@ export default function VoiceGame({ question, onAnswer, pathMode }: Props) {
   const restartListeningRef = useRef<(() => void) | null>(null);
 
   const shakeX = useSharedValue(0);
+  const bounceY = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
+    transform: [{ translateX: shakeX.value }, { translateY: bounceY.value }],
   }));
 
   React.useEffect(() => {

@@ -83,6 +83,16 @@ export function PathLessonPopup({
   const { t, isKu, isAr } = useI18n();
   const { colors } = useThemeColors();
   const [cardHeight, setCardHeight] = useState(ESTIMATED_CARD_HEIGHT);
+  const mountTimeRef = React.useRef(Date.now());
+
+  React.useEffect(() => {
+    mountTimeRef.current = Date.now();
+  }, [selection?.item.id]);
+
+  const handleDismiss = React.useCallback(() => {
+    if (Date.now() - mountTimeRef.current < 200) return;
+    onDismiss();
+  }, [onDismiss]);
 
   if (!selection) return null;
 
@@ -189,7 +199,7 @@ export function PathLessonPopup({
         style={[StyleSheet.absoluteFill, styles.scrim, isLocked && styles.lockedScrim]}
       />
       <Pressable
-        onPress={onDismiss}
+        onPress={handleDismiss}
         accessibilityRole="button"
         accessibilityLabel={t("common.close")}
         style={styles.dismissTarget}
@@ -198,6 +208,7 @@ export function PathLessonPopup({
         entering={FadeInDown.duration(135).easing(Easing.out(Easing.cubic))}
         exiting={FadeOutDown.duration(100).easing(Easing.in(Easing.quad))}
         onTouchStart={(event) => event.stopPropagation()}
+        {...(Platform.OS === "web" ? { onClick: (event: any) => event.stopPropagation() } : {})}
         onLayout={(event) => {
           const measured = event.nativeEvent.layout.height;
           if (Math.abs(measured - cardHeight) > 0.5) setCardHeight(measured);

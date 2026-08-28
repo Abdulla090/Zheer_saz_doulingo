@@ -30,6 +30,7 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withSequence,
   withSpring,
   withTiming,
@@ -130,6 +131,7 @@ type Props = {
  */
 const PremiumSiblingSpring = { damping: 26, stiffness: 640, mass: 0.22, overshootClamping: true };
 const PremiumReleaseSnap = { damping: 28, stiffness: 720, mass: 0.18, overshootClamping: true };
+const WORD_JUMP_STAGGER = 60; // ms between each word's jump
 const PremiumLayoutGlide =
   Platform.OS === "web"
     ? LinearTransition.duration(180)
@@ -265,6 +267,8 @@ function RealtimeDraggablePlacedWord({
   onReorder,
   slotRef,
   onLayout,
+  jumpTrigger,
+  jumpDelay,
 }: {
   placed: Placed;
   index: number;
@@ -284,6 +288,10 @@ function RealtimeDraggablePlacedWord({
   onReorder: (fromIndex: number, toIndex: number) => void;
   slotRef: (el: RNView | null) => void;
   onLayout: () => void;
+  /** Increments on correct answer; triggers per-word sequential jump. */
+  jumpTrigger: number;
+  /** Stagger delay in ms before this word's jump fires. */
+  jumpDelay: number;
 }) {
   const isDragging = useSharedValue(0);
   const totalCount = sentenceWords.length;
@@ -402,6 +410,19 @@ function RealtimeDraggablePlacedWord({
       hoverTargetIndex.value = -1;
     });
 
+  const jumpY = useSharedValue(0);
+  React.useEffect(() => {
+    if (jumpTrigger <= 0) return;
+    // One restrained lift per word, staggered in reading order.
+    jumpY.value = withDelay(
+      jumpDelay,
+      withSequence(
+        withTiming(-3, { duration: 80, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 120, easing: Easing.out(Easing.cubic) }),
+      ),
+    );
+  }, [jumpTrigger, jumpDelay, jumpY]);
+
   const animatedStyle = useAnimatedStyle(() => {
     if (activeDragIndex.value === index) {
       // Active dragged tile: elevated, follows the finger
@@ -425,7 +446,7 @@ function RealtimeDraggablePlacedWord({
     return {
       transform: [
         { translateX: siblingOffset.value },
-        { translateY: 0 },
+        { translateY: jumpY.value },
         { scale: 1 },
       ],
       zIndex: 1,
@@ -529,6 +550,13 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
    */
   const cellWidths = useSharedValue<number[]>([]);
 
+  const wrongShakeX = useSharedValue(0);
+  const wrongShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: wrongShakeX.value }],
+  }));
+
+  const [jumpTriggerJS, setJumpTriggerJS] = useState(0);
+
   const [anchorWidth, setAnchorWidth] = useState(LANDING_ANCHOR_REST_W);
   const anchorWidthRef = useRef(LANDING_ANCHOR_REST_W);
   const anchorLayoutWaiterRef = useRef<(() => void) | null>(null);
@@ -604,11 +632,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     [cellWidths],
   );
 
-  const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
-  }));
-
+  
   React.useEffect(() => {
     void stop();
     setSentence([]);
@@ -941,12 +965,13 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     setFb(ok ? "correct" : "wrong");
 
     if (!ok) {
-      shakeX.value = withSequence(
-        withTiming(-8, { duration: 36 }),
-        withTiming(8, { duration: 36 }),
-        withTiming(-4, { duration: 30 }),
-        withTiming(4, { duration: 30 }),
-        withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
+      // Subtle shake for wrong answer
+      wrongShakeX.value = withSequence(
+        withTiming(-2, { duration: 20 }),
+        withTiming(2, { duration: 20 }),
+        withTiming(-1, { duration: 20 }),
+        withTiming(1, { duration: 20 }),
+        withTiming(0, { duration: 20, easing: Easing.out(Easing.quad) }),
       );
       if (!wrongSentRef.current) {
         wrongSentRef.current = true;
@@ -955,6 +980,11 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
     } else if (!completedRef.current) {
       completedRef.current = true;
       speakWord(fullSentence, "builder-sentence");
+
+      // Sequential per-word jump: each tile lifts one by one in reading
+      // order with a short stagger — quick enough to read as one wave.
+      setJumpTriggerJS((n) => n + 1);
+
       onAnswer(true);
     }
   };
@@ -1017,7 +1047,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               {question.kurdishSentence}
             </LightQuestionPrompt>
 
-            <Animated.View style={[s.slotsWrap, isNormal && s.slotsWrapDuo, shakeStyle]}>
+            <Animated.View style={[s.slotsWrap, isNormal && s.slotsWrapDuo, wrongShakeStyle]}>
               {isNormal ? (
                 <View
                   style={[s.duoAnswerArea, { height: answerRails * ROW_STRIDE }]}
@@ -1071,6 +1101,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                             slotRefs.current[i] = r;
                           }}
                           onLayout={() => recordSlotLayout(i)}
+                          jumpTrigger={jumpTriggerJS}
+                          jumpDelay={i * WORD_JUMP_STAGGER}
                         />
                       );
                     })}
@@ -1134,6 +1166,8 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
                               slotRefs.current[i] = r;
                             }}
                             onLayout={() => recordSlotLayout(i)}
+                            jumpTrigger={jumpTriggerJS}
+                            jumpDelay={i * 60}
                           />
                         ) : (
                           <View

@@ -288,7 +288,6 @@ export function KidsEnglishPathScreen({
     <View
       ref={overlayRootRef}
       style={{ flex: 1, backgroundColor: colors.background }}
-      onTouchStart={dismissLesson}
     >
       {!isDark && <KidsMeshBackground />}
       <View
@@ -316,7 +315,6 @@ export function KidsEnglishPathScreen({
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
           onScrollBeginDrag={dismissLesson}
-          onTouchMove={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
           scrollEventThrottle={16}
           style={styles.list}

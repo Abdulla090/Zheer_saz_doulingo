@@ -134,31 +134,13 @@ export const NormalPathNode = React.memo(
       transform: [{ translateY: cy.value - FACE_BASE_CY }],
     }));
 
-    /*
-     * Open on touch-down, not on release.
-     *
-     * `Pressable`'s `onPress` fires when the finger lifts, so the popup used to
-     * wait out however long the node was held — the press animation runs in
-     * 100ms, but a normal tap is held far longer, which is the delay that read
-     * as lag. Firing here lets the popup and the 3D press play together.
-     *
-     * The face still animates when locked; only the dispatch is suppressed, so
-     * a locked node stays physical under the finger.
-     */
-    const openedOnPressInRef = useRef(false);
-
     const handlePressIn = useCallback(() => {
-      openedOnPressInRef.current = false;
       if (isLocked || isUnavailable) return;
       cy.value = withTiming(FACE_PRESSED_CY, {
         duration: PRESS_IN_MS,
         easing: Easing.out(Easing.cubic),
       });
-      if (onPress) {
-        openedOnPressInRef.current = true;
-        onPress();
-      }
-    }, [cy, isLocked, isUnavailable, onPress]);
+    }, [cy, isLocked, isUnavailable]);
 
     const handlePressOut = useCallback(() => {
       if (isLocked || isUnavailable) return;
@@ -168,18 +150,10 @@ export const NormalPathNode = React.memo(
       });
     }, [cy, isLocked, isUnavailable]);
 
-    /*
-     * Assistive activation (VoiceOver/TalkBack double-tap) reaches `onPress`
-     * without ever going through `onPressIn`, so this stays wired — it just
-     * stands down when touch-down already did the work.
-     */
     const handlePress = useCallback(() => {
-      if (openedOnPressInRef.current) {
-        openedOnPressInRef.current = false;
-        return;
-      }
+      if (isLocked || isUnavailable) return;
       onPress?.();
-    }, [onPress]);
+    }, [isLocked, isUnavailable, onPress]);
 
     return (
       /*

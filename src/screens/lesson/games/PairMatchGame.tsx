@@ -83,6 +83,15 @@ const MatchChip = memo(function MatchChip({
     }
   }, [state, shakeX]);
 
+  const textLength = label ? label.trim().length : 0;
+  const computedFontSize = useMemo(() => {
+    if (textLength > 36) return isKids ? 12 : 11.5;
+    if (textLength > 24) return isKids ? 13.5 : 13;
+    if (textLength > 16) return isKids ? 15 : 14.5;
+    if (textLength > 9) return isKids ? 17 : 16;
+    return isKids ? 19 : 17.5;
+  }, [textLength, isKids]);
+
   return (
     <Animated.View style={[wrapStyle, s.chipWrap]}>
       <LightWordTile
@@ -95,11 +104,10 @@ const MatchChip = memo(function MatchChip({
         languageCode={languageCode}
         wrapLabel
         centerLabel
-        // Normal path wraps instead of shrinking — the tile grows to the text.
-        fitLabel={!isNormal}
-        fitLabelLines={3}
+        fitLabel
+        fitLabelLines={4}
         isKids={isKids}
-        fontSize={isNormal ? undefined : isKids ? 19 : 17}
+        fontSize={computedFontSize}
         style={isNormal ? s.pairTileDuo : s.pairTile}
       />
     </Animated.View>
@@ -373,39 +381,43 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-    gap: 16,
+    marginBottom: 8,
+    gap: 12,
   },
   colLabel: {
     flex: 1,
-    maxWidth: 164,
+    maxWidth: 200,
     textAlign: "center",
   },
   board: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 16,
+    gap: 12,
     alignItems: "flex-start",
     flex: 1,
   },
   column: {
     flex: 1,
-    maxWidth: 164,
+    maxWidth: 200,
     gap: 8,
-    alignItems: "center",
+    alignItems: "stretch",
   },
   pairTile: {
     width: "100%",
-    minHeight: 104,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 24,
+    minHeight: 80,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   pairTileDuo: {
     width: "100%",
-    minHeight: 78,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    minHeight: 68,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   bottomSpacer: {
     flexGrow: 0,

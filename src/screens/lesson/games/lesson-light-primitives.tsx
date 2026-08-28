@@ -843,9 +843,9 @@ export function LightWordTile({
   /** Shrink a word to fit inside a fixed-size tile. */
   fitLabel?: boolean;
   /** Fixed number of lines available when fitting text inside a tile. */
-  fitLabelLines?: 1 | 2 | 3;
+  fitLabelLines?: number;
   /** Hard line limit, including while a tile is flying between layouts. */
-  labelLines?: 1 | 2 | 3;
+  labelLines?: number;
   /** Normal-path 3D edge treatment. */
   duoDepthStyle?: "default" | "subtle";
   style?: StyleProp<ViewStyle>;
@@ -1017,7 +1017,9 @@ export function LightWordTile({
         languageCode={labelLanguageCode}
         align={wide ? "start" : "center"}
         fontSize={fontSize}
-        numberOfLines={labelLines ?? (wrapLabel ? 3 : undefined)}
+        numberOfLines={labelLines ?? (fitLabel ? fitLabelLines : wrapLabel ? 4 : undefined)}
+        adjustsFontSizeToFit={fitLabel}
+        minimumFontScale={fitLabel ? 0.65 : undefined}
         depthStyle={duoDepthStyle}
         style={[wide && { width: "100%" }, style]}
       />
@@ -1150,13 +1152,13 @@ export function LightWordTile({
                           : (isKidsRoute ? L.navy : colors.foreground),
             },
             isKidsRoute && { fontFamily: "Rabar_044", fontSize: fontSize ?? 16 },
-            fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: fontSize + 8 },
-            fontSize !== undefined && isKidsRoute && { lineHeight: fontSize + 8 },
+            fontSize !== undefined && !isKidsRoute && { fontSize, lineHeight: Math.round(fontSize * 1.35) },
+            fontSize !== undefined && isKidsRoute && { lineHeight: Math.round(fontSize * 1.35) },
             state === "ghost" && { opacity: 0 },
           ]}
-          numberOfLines={labelLines ?? (fitLabel ? fitLabelLines : undefined)}
+          numberOfLines={labelLines ?? (fitLabel ? fitLabelLines : wrapLabel ? 4 : undefined)}
           adjustsFontSizeToFit={fitLabel}
-          minimumFontScale={fitLabel ? 0.58 : undefined}
+          minimumFontScale={fitLabel ? 0.65 : undefined}
         >
           {label}
         </AppText>

@@ -285,7 +285,6 @@ export const StreetEnglishPathScreen = ({
     <View
       ref={overlayRootRef}
       style={{ flex: 1, backgroundColor: colors.background }}
-      onTouchStart={dismissLesson}
     >
       {!isDark && <HomeMeshBackground />}
       <View
@@ -313,7 +312,6 @@ export const StreetEnglishPathScreen = ({
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
           onScrollBeginDrag={dismissLesson}
-          onTouchMove={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
           scrollEventThrottle={16}
           style={styles.list}

@@ -659,6 +659,8 @@ export function DuoTile({
   align = "center",
   fontSize,
   numberOfLines,
+  adjustsFontSizeToFit,
+  minimumFontScale,
   depthStyle = "default",
   /** Fires the wrong-answer shake from a parent (used on submit). */
   shakeSignal,
@@ -674,6 +676,8 @@ export function DuoTile({
   align?: "center" | "start";
   fontSize?: number;
   numberOfLines?: number;
+  adjustsFontSizeToFit?: boolean;
+  minimumFontScale?: number;
   /** A quieter key edge for compact word-building tiles. */
   depthStyle?: "default" | "subtle";
   shakeSignal?: number;
@@ -724,18 +728,27 @@ export function DuoTile({
       });
 
       if (state === "correct") {
+        // Professional Duolingo-style jump for correct answer
+        drop.value = withSequence(
+          withTiming(0, { duration: 80 }),
+          withTiming(-4, { duration: 100 }),
+          withTiming(4, { duration: 100 }),
+          withTiming(-1, { duration: 100 }),
+          withTiming(1, { duration: 100 }),
+          withTiming(0, { duration: 100 }),
+        );
         pop.value = withSequence(
-          withTiming(1.05, { duration: 130, easing: Easing.out(Easing.quad) }),
+          withTiming(1.03, { duration: 100, easing: Easing.out(Easing.quad) }),
           withSpring(1, DuoMotion.pop),
         );
       } else if (state === "wrong") {
+        // Subtle shake for wrong answer
         shakeX.value = withSequence(
-          withTiming(-8, { duration: 52 }),
-          withTiming(8, { duration: 62 }),
-          withTiming(-5, { duration: 58 }),
-          withTiming(5, { duration: 54 }),
-          withTiming(-2, { duration: 46 }),
-          withTiming(0, { duration: 44, easing: Easing.out(Easing.quad) }),
+          withTiming(-2, { duration: 20 }),
+          withTiming(2, { duration: 20 }),
+          withTiming(-1, { duration: 20 }),
+          withTiming(1, { duration: 20 }),
+          withTiming(0, { duration: 20, easing: Easing.out(Easing.quad) }),
         );
       }
       prevState.current = state;
@@ -744,13 +757,13 @@ export function DuoTile({
 
   React.useEffect(() => {
     if (!shakeSignal) return;
+    // Subtle shake for wrong answer
     shakeX.value = withSequence(
-      withTiming(-8, { duration: 52 }),
-      withTiming(8, { duration: 62 }),
-      withTiming(-5, { duration: 58 }),
-      withTiming(5, { duration: 54 }),
-      withTiming(-2, { duration: 46 }),
-      withTiming(0, { duration: 44, easing: Easing.out(Easing.quad) }),
+      withTiming(-2, { duration: 20 }),
+      withTiming(2, { duration: 20 }),
+      withTiming(-1, { duration: 20 }),
+      withTiming(1, { duration: 20 }),
+      withTiming(0, { duration: 20, easing: Easing.out(Easing.quad) }),
     );
   }, [shakeSignal, shakeX]);
 
@@ -843,11 +856,16 @@ export function DuoTile({
           <AppText
             languageCode={lang}
             align={align}
-            fullWidth={align === "start"}
+            fullWidth={align === "start" || align === "center"}
             numberOfLines={numberOfLines}
+            adjustsFontSizeToFit={adjustsFontSizeToFit}
+            minimumFontScale={minimumFontScale}
             style={[
               LightType.tile,
-              fontSize !== undefined && { fontSize, lineHeight: fontSize + 7 },
+              fontSize !== undefined && {
+                fontSize,
+                lineHeight: Math.round(fontSize * 1.35),
+              },
               { color: labelColor },
               state === "ghost" && { opacity: 0 },
             ]}

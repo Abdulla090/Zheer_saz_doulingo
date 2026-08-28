@@ -423,7 +423,6 @@ export function NormalEnglishPathScreen({
     <View
       ref={overlayRootRef}
       style={{ flex: 1, backgroundColor: colors.background }}
-      onTouchStart={dismissLesson}
     >
       <View
         style={[
@@ -454,7 +453,6 @@ export function NormalEnglishPathScreen({
           {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
           onScroll={onScroll}
           onScrollBeginDrag={dismissLesson}
-          onTouchMove={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
           scrollEventThrottle={16}
           style={darkStyles.list}
