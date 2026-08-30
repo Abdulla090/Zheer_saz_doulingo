@@ -24,7 +24,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { InteractionManager, Platform, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -155,9 +155,23 @@ function InnerLayout() {
   useEffect(() => {
     if (ready) {
       void syncHomeWidget();
-      void fetchRemoteCurriculum("street");
-      void fetchRemoteCurriculum("normal");
-      void fetchRemoteCurriculum("kids");
+      const task = InteractionManager.runAfterInteractions(() => {
+        // Fetch active curriculum first
+        void fetchRemoteCurriculum("normal").then(() => {
+          if (typeof globalThis.requestIdleCallback === "function") {
+            globalThis.requestIdleCallback(() => {
+              void fetchRemoteCurriculum("street");
+              void fetchRemoteCurriculum("kids");
+            });
+          } else {
+            setTimeout(() => {
+              void fetchRemoteCurriculum("street");
+              void fetchRemoteCurriculum("kids");
+            }, 1200);
+          }
+        });
+      });
+      return () => task.cancel();
     }
   }, [ready]);
 

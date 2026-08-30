@@ -55,40 +55,66 @@ function buildTutorSystem(
 ): string {
   const nativeName = getLanguageName(nativeLang);
   const targetName = getLanguageName(targetLang);
-  const onboardingComplete = useSettingsStore.getState().tutorOnboardingComplete;
+  const settings = useSettingsStore.getState();
+  const onboardingComplete = settings.tutorOnboardingComplete;
+  const name = settings.userName?.trim() || "Student";
+  const sex = settings.userSex || "";
+  const learningGoal = settings.learningGoal || "conversations";
 
   const levelMapping: Record<number, { cefr: string; pace: string; vocab: string; feedback: string; desc: string }> = {
-    1: { cefr: "Pre-A1", pace: "very slowly, with long pauses between words", vocab: "greetings, numbers, colors, family words", feedback: nativeName, desc: "Greetings, numbers, colors, family words" },
-    2: { cefr: "A1", pace: "very slowly", vocab: "everyday nouns/verbs", feedback: nativeName, desc: "Everyday nouns/verbs" },
-    3: { cefr: "A1+", pace: "slowly", vocab: "daily routine vocabulary", feedback: nativeName, desc: "Daily routine vocab" },
-    4: { cefr: "A2", pace: "slowly", vocab: "common objects, feelings", feedback: targetName, desc: "Common objects, feelings" },
-    5: { cefr: "A2+", pace: "moderately slowly", vocab: "shopping, travel, work basics", feedback: targetName, desc: "Shopping, travel, work basics" },
-    6: { cefr: "B1", pace: "normal pace", vocab: "opinions, descriptions", feedback: targetName, desc: "Opinions, descriptions" },
-    7: { cefr: "B1+", pace: "natural conversational speed", vocab: "idiomatic everyday phrases", feedback: targetName, desc: "Idiomatic everyday phrases" },
-    8: { cefr: "B2", pace: "natural conversational speed", vocab: "abstract topics (news, work, plans)", feedback: targetName, desc: "Abstract topics (news, work, plans)" },
-    9: { cefr: "B2+/C1", pace: "natural native speed", vocab: "professional/academic vocabulary", feedback: targetName, desc: "Professional/academic vocab" },
-    10: { cefr: "C1/C2", pace: "fast natural native speed", vocab: "native-like range", feedback: targetName, desc: "Near-native conversation" },
+    1: { cefr: "Pre-A1", pace: "very slowly and clearly, with simple single-clause sentences", vocab: "greetings, numbers, colors, family words", feedback: nativeName, desc: "Greetings, numbers, colors, family words" },
+    2: { cefr: "A1", pace: "very slowly, with short 3-6 word sentences", vocab: "everyday nouns/verbs", feedback: nativeName, desc: "Everyday nouns/verbs" },
+    3: { cefr: "A1+", pace: "slowly and simply", vocab: "daily routine vocabulary, basic feelings", feedback: nativeName, desc: "Daily routine vocab" },
+    4: { cefr: "A2", pace: "slowly and clearly", vocab: "common objects, activities, simple conjunctions", feedback: targetName, desc: "Common objects, feelings" },
+    5: { cefr: "A2+", pace: "moderately slowly, relaxed natural pace", vocab: "shopping, travel, work basics, daily phrasal verbs", feedback: targetName, desc: "Shopping, travel, work basics" },
+    6: { cefr: "B1", pace: "normal conversational pace", vocab: "opinions, descriptions, connected everyday thoughts", feedback: targetName, desc: "Opinions, descriptions" },
+    7: { cefr: "B1+", pace: "natural conversational speed", vocab: "idiomatic everyday phrases, explanations", feedback: targetName, desc: "Idiomatic everyday phrases" },
+    8: { cefr: "B2", pace: "fluent conversational speed", vocab: "abstract topics, news, work, plans, hypotheticals", feedback: targetName, desc: "Abstract topics (news, work, plans)" },
+    9: { cefr: "B2+/C1", pace: "natural native speed", vocab: "professional/academic vocabulary, nuanced ideas", feedback: targetName, desc: "Professional/academic vocab" },
+    10: { cefr: "C1/C2", pace: "fast natural native speed", vocab: "native-like range, subtle humor, idioms", feedback: targetName, desc: "Near-native conversation" },
   };
 
   const currentLevel = levelMapping[englishLevel] || levelMapping[5];
   
-  const ageGroup = userAge && parseInt(userAge, 10) < 13 
-    ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
-    : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
+  const parsedAge = userAge ? parseInt(userAge, 10) : null;
+  const isChild = parsedAge !== null && !isNaN(parsedAge) && parsedAge < 13;
+  const isTeen = parsedAge !== null && !isNaN(parsedAge) && parsedAge >= 13 && parsedAge < 18;
+
+  const ageContext = isChild
+    ? `Child (${userAge} years old). Speak with playful, warm, highly encouraging energy. Talk about school, pets, cartoons, hobbies, games, and toys.`
+    : isTeen
+      ? `Teenager (${userAge} years old). Upbeat, modern conversational topics (music, sports, gaming, tech, school life).`
+      : userAge
+        ? `Adult (${userAge} years old). Everyday life, culture, work, travel, personal interests, and opinions.`
+        : "Adult/General Learner.";
+
+  const genderContext = sex ? `Sex/Gender: ${sex}.` : "";
 
   const systemRules = [
-    `You are Twino — a disciplined private English tutor speaking with a ${nativeName}-speaking student.`,
-    `The learner's age group is: ${ageGroup}`,
-    `Your tone is calm, friendly, encouraging, and modern.`,
-    `Never sound robotic, never over-explain, never repeat yourself unnecessarily.`,
+    `You are Twino — a warm, disciplined native English conversation partner and speech coach speaking with a ${nativeName}-speaking student named ${name}.`,
+    ``,
+    `=== LEARNER PROFILE & CONTEXT ===`,
+    `- Name: ${name} (Address the student naturally by name)`,
+    `- Age: ${ageContext}`,
+    genderContext ? `- ${genderContext}` : "",
+    `- Target Level: Level ${englishLevel}/10 (${currentLevel.cefr}) - ${currentLevel.desc}`,
+    `- Goal: ${learningGoal}`,
+    `- Native Language: ${nativeName}`,
+    `- Target Language: ${targetName}`,
+    ``,
+    `STRICT LEVEL ADAPTATION:`,
+    `- Tailor your vocabulary, sentence length, and pacing strictly to Level ${englishLevel} (${currentLevel.cefr}).`,
+    `- Speak ${currentLevel.pace}.`,
+    `- Use ${currentLevel.vocab}.`,
     ``,
     `STRICT RULES FOR EVERY TURN:`,
-    `- Keep every turn to 1–3 short sentences. Never lecture.`,
-    `- Ask ONE question, then STOP and wait for the student's answer. Never stack questions.`,
+    `- Guide the learner to speak how native speakers naturally speak, prioritizing authentic collocations, everyday expressions, and smooth flow over dry grammar lectures.`,
+    `- Keep every turn to 1–3 short spoken sentences. Never lecture.`,
+    `- When the learner makes an unnatural phrasing mistake or awkward literal translation, briefly recast it with the native way ("Native speakers say...", "You can say..."), then continue the conversation.`,
+    `- Ask ONE question or make one thoughtful observation, then STOP and wait for the student's answer. Never stack questions.`,
     `- No filler phrases. Acknowledge briefly ("Good.", "Nice try.", "Almost!") and move on.`,
-    `- Corrections are always short: state the fixed sentence once, no grammar essays.`,
     `- Never break character to explain what you are doing.`,
-  ];
+  ].filter(Boolean);
 
   if (!onboardingComplete) {
     systemRules.push(

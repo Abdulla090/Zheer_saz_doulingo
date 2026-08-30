@@ -37,11 +37,13 @@ export interface SessionWordState {
   wordsSinceLastConversation: number;
 }
 
-/** A single grammar error detected in the user's speech. */
+/** A single speech/grammar improvement or native phrasing suggestion. */
 export interface GrammarError {
   original: string;
   corrected: string;
   explanation: string;
+  category?: "natural_phrasing" | "word_choice" | "grammar" | "collocation";
+  nativeTip?: string;
 }
 
 /** A real conversation turn captured during a live session. */

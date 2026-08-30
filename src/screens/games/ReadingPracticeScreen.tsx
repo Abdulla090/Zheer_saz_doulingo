@@ -298,7 +298,7 @@ export default function ReadingPracticeScreen() {
   }, [difficulty]);
 
   const resetScrollPosition = useCallback(() => {
-    const start = Math.max(80, readingViewportHeight - 180);
+    const start = Math.max(24, Math.round(readingViewportHeight * 0.16));
     scrollY.value = start;
   }, [readingViewportHeight, scrollY]);
 
@@ -428,7 +428,7 @@ export default function ReadingPracticeScreen() {
     setEvaluation(null);
     resetScrollPosition();
 
-    const start = Math.max(80, readingViewportHeight - 180);
+    const start = Math.max(24, Math.round(readingViewportHeight * 0.16));
     const expectedDurationMs =
       (Math.max(1, targetWords.length) / (TARGET_WPM[difficulty] * SPEED_RATE[speed])) * 60_000;
     const duration = Math.min(
@@ -495,7 +495,7 @@ export default function ReadingPracticeScreen() {
     }, MAX_READING_SECONDS * 1000);
 
     scrollY.value = start;
-    scrollY.value = withTiming(-textHeight - 80, {
+    scrollY.value = withTiming(-textHeight - 60, {
       duration,
       easing: Easing.linear,
     });
@@ -547,7 +547,7 @@ export default function ReadingPracticeScreen() {
               key={item.key}
               style={[
                 teleprompterTextStyle,
-                { marginBottom: item.isLastInParagraph ? 22 : 14 },
+                { marginBottom: item.isLastInParagraph ? 32 : 18 },
               ]}
               forceLatinFont
               languageCode="en"
@@ -1273,7 +1273,7 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
     },
 
     teleprompter: {
-      minHeight: 430,
+      minHeight: 460,
       borderRadius: metrics.radiusCard,
       overflow: "hidden",
       backgroundColor: theme.surface,
@@ -1285,29 +1285,32 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       overflow: "visible",
     },
     teleprompterCompact: {
-      minHeight: 470,
+      minHeight: 490,
     },
     teleprompterMask: {
       flex: 1,
       overflow: "hidden",
     },
     passageWrap: {
-      paddingHorizontal: 22,
-      paddingVertical: 150,
+      paddingHorizontal: 26,
+      paddingTop: 16,
+      paddingBottom: 100,
     },
     previewScrollContent: {
-      paddingHorizontal: 20,
-      paddingVertical: 24,
+      paddingHorizontal: 24,
+      paddingVertical: 28,
     },
     passageText: {
       fontSize: 22,
-      lineHeight: 34,
+      lineHeight: 38,
+      letterSpacing: 0.3,
       color: theme.ink,
       fontFamily: "Rabar_044",
     },
     passageTextCompact: {
       fontSize: 20,
-      lineHeight: 29,
+      lineHeight: 34,
+      letterSpacing: 0.2,
     },
     wordWrap: {
       flexDirection: "row",
@@ -1315,8 +1318,9 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       paddingHorizontal: 2,
     },
     wordText: {
-      fontSize: 20,
-      lineHeight: 32,
+      fontSize: 21,
+      lineHeight: 36,
+      letterSpacing: 0.2,
       fontFamily: "Rabar_044",
     },
     /* Semantic, and only here: this is the one place in the practice set where
@@ -1336,14 +1340,14 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       top: 0,
       left: 0,
       right: 0,
-      height: 92,
+      height: 48,
     },
     gradientBottom: {
       position: "absolute",
       bottom: 0,
       left: 0,
       right: 0,
-      height: 92,
+      height: 64,
     },
 
     scoreHeader: {

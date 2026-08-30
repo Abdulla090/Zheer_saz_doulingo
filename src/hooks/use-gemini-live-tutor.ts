@@ -168,10 +168,11 @@ export function useGeminiLiveTutor() {
     if (transcriptFlushRef.current) {
       clearTimeout(transcriptFlushRef.current);
     }
+    // Responsive frame-rate debounce for real-time text streaming
     transcriptFlushRef.current = setTimeout(() => {
       transcriptFlushRef.current = null;
       setTranscript(aiTurnTextRef.current);
-    }, 80);
+    }, 16);
   }, []);
 
   const recordUserTurn = useCallback((text: string) => {
@@ -221,6 +222,14 @@ export function useGeminiLiveTutor() {
       },
     ]);
   }, []);
+
+  const commitUserTurn = useCallback(() => {
+    const text = userTurnTextRef.current.trim();
+    if (text) {
+      recordUserTurn(text);
+      userTurnTextRef.current = "";
+    }
+  }, [recordUserTurn]);
 
   const stopAll = useCallback(() => {
     sessionTokenRef.current += 1;
@@ -336,6 +345,7 @@ export function useGeminiLiveTutor() {
           onAudio: (pcm) => {
             if (!isCurrentSession()) return;
             if (ignoreCurrentAiAudioRef.current) return;
+            commitUserTurn();
             if (!temporarilyPausedRef.current) {
               micMutedRef.current = true;
               if (micActiveRef.current) {
@@ -353,9 +363,11 @@ export function useGeminiLiveTutor() {
             const next = text.trim();
             if (!next) return;
             const current = userTurnTextRef.current;
-            userTurnTextRef.current = next.startsWith(current)
+            const merged = next.startsWith(current)
               ? next
               : `${current} ${next}`.trim();
+            userTurnTextRef.current = merged;
+            setTranscript(merged);
           },
           onOutputTranscription: (text) => {
             if (!isCurrentSession()) return;
@@ -366,11 +378,7 @@ export function useGeminiLiveTutor() {
             const ignoredTurn = ignoreCurrentAiAudioRef.current;
             ignoreCurrentAiAudioRef.current = false;
             flushTranscript();
-            const userResponseText = userTurnTextRef.current.trim();
-            if (userResponseText) {
-              recordUserTurn(userResponseText);
-              userTurnTextRef.current = "";
-            }
+            commitUserTurn();
 
             const aiResponseText = aiTurnTextRef.current.trim();
             aiTurnTextRef.current = "";
@@ -470,6 +478,22 @@ export function useGeminiLiveTutor() {
           },
           onClose: (reason) => {
             if (!isCurrentSession()) return;
+            const lower = (reason || "").toLowerCase();
+            const isDurationComplete =
+              lower.includes("goaway") ||
+              lower.includes("session duration") ||
+              lower.includes("block has ended") ||
+              lower.includes("limit reached") ||
+              lower.includes("completed");
+
+            if (isDurationComplete) {
+              setSessionActive(false);
+              setSpeaking(false);
+              setStatus("idle");
+              void stopMic();
+              return;
+            }
+
             handleConnectionError(
               reason || "Gemini Live connection closed.",
               attempt,
@@ -487,6 +511,23 @@ export function useGeminiLiveTutor() {
 
     const handleConnectionError = (msg: string, attempt: number) => {
       if (!isCurrentSession()) return;
+
+      const lower = msg.toLowerCase();
+      const isDurationComplete =
+        lower.includes("goaway") ||
+        lower.includes("session duration") ||
+        lower.includes("block has ended") ||
+        lower.includes("limit reached") ||
+        lower.includes("completed");
+
+      if (isDurationComplete) {
+        setSessionActive(false);
+        setSpeaking(false);
+        setStatus("idle");
+        void stopMic();
+        sessionRef.current?.disconnect();
+        return;
+      }
 
       console.warn(`[LiveTutor] Connection attempt ${attempt} failed: ${msg}`);
 
@@ -619,11 +660,44 @@ export function useGeminiLiveTutor() {
 
   // Runs full transcript analysis and saves results to storage
   const runAnalysis = useCallback(async () => {
-    if (turns.length === 0) return;
+    let currentTurns = [...turns];
+    const pendingUser = userTurnTextRef.current.trim();
+    if (pendingUser) {
+      const userTurn: RealConversationTurn = {
+        id: `user-${Date.now()}`,
+        sender: "user",
+        text: pendingUser,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        targetWord: activeWordRef.current || undefined,
+      };
+      currentTurns = [...currentTurns, userTurn];
+      setTurns(currentTurns);
+      userTurnTextRef.current = "";
+    }
+    const pendingAi = aiTurnTextRef.current.trim();
+    if (pendingAi) {
+      const aiTurn: RealConversationTurn = {
+        id: `ai-${Date.now()}`,
+        sender: "ai",
+        text: pendingAi,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      currentTurns = [...currentTurns, aiTurn];
+      setTurns(currentTurns);
+      aiTurnTextRef.current = "";
+    }
+
+    if (currentTurns.length === 0) return;
     setAnalysisLoading(true);
     try {
       const result = await computeSessionAnalysis(
-        turns,
+        currentTurns,
         sessionWords,
         sessionStartTimeRef.current,
       );

@@ -83,7 +83,7 @@ export function PathLessonPopup({
   const { t, isKu, isAr } = useI18n();
   const { colors } = useThemeColors();
   const [cardHeight, setCardHeight] = useState(ESTIMATED_CARD_HEIGHT);
-  const mountTimeRef = React.useRef(Date.now());
+  const mountTimeRef = React.useRef(0);
 
   React.useEffect(() => {
     mountTimeRef.current = Date.now();

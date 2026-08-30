@@ -349,15 +349,9 @@ export async function startMicPcmStream(
   const audioCtx = new AudioContextClass({ sampleRate });
   const source = audioCtx.createMediaStreamSource(stream);
 
-  // Use 2048 buffer size, 1 input channel, 1 output channel
-  const processor = audioCtx.createScriptProcessor(2048, 1, 1);
+  let disconnectNode: () => void = () => {};
 
-  source.connect(processor);
-  processor.connect(audioCtx.destination);
-
-  processor.onaudioprocess = (e) => {
-    const inputData = e.inputBuffer.getChannelData(0);
-
+  const processFloat32Data = (inputData: Float32Array) => {
     // Calculate RMS to filter background noise
     let sum = 0;
     for (let i = 0; i < inputData.length; i++) {
@@ -383,10 +377,69 @@ export async function startMicPcmStream(
     onData(b64);
   };
 
+  if (
+    typeof audioCtx.audioWorklet !== "undefined" &&
+    typeof Blob !== "undefined" &&
+    typeof URL !== "undefined"
+  ) {
+    try {
+      const workletCode = `
+class PcmCaptureProcessor extends AudioWorkletProcessor {
+  process(inputs) {
+    const input = inputs[0];
+    if (input && input[0]) {
+      this.port.postMessage(input[0]);
+    }
+    return true;
+  }
+}
+registerProcessor('pcm-capture-processor', PcmCaptureProcessor);
+`;
+      const blob = new Blob([workletCode], { type: "application/javascript" });
+      const blobUrl = URL.createObjectURL(blob);
+      await audioCtx.audioWorklet.addModule(blobUrl);
+      URL.revokeObjectURL(blobUrl);
+
+      const workletNode = new AudioWorkletNode(audioCtx, "pcm-capture-processor");
+      workletNode.port.onmessage = (e: MessageEvent) => {
+        if (e.data instanceof Float32Array) {
+          processFloat32Data(e.data);
+        }
+      };
+      source.connect(workletNode);
+      workletNode.connect(audioCtx.destination);
+      disconnectNode = () => {
+        workletNode.disconnect();
+      };
+    } catch {
+      // Fallback if audioWorklet module registration fails in sandbox
+      const processor = audioCtx.createScriptProcessor(2048, 1, 1);
+      processor.onaudioprocess = (e: any) => {
+        processFloat32Data(e.inputBuffer.getChannelData(0));
+      };
+      source.connect(processor);
+      processor.connect(audioCtx.destination);
+      disconnectNode = () => {
+        processor.disconnect();
+      };
+    }
+  } else {
+    // Fallback for older browsers
+    const processor = audioCtx.createScriptProcessor(2048, 1, 1);
+    processor.onaudioprocess = (e: any) => {
+      processFloat32Data(e.inputBuffer.getChannelData(0));
+    };
+    source.connect(processor);
+    processor.connect(audioCtx.destination);
+    disconnectNode = () => {
+      processor.disconnect();
+    };
+  }
+
   return {
     stop: () => {
       try {
-        processor.disconnect();
+        disconnectNode();
         source.disconnect();
         stream.getTracks().forEach((track) => track.stop());
         void audioCtx.close();

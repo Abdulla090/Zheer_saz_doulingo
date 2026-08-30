@@ -314,6 +314,8 @@ export function NormalEnglishPathScreen({
     scrollYRef.current = e.nativeEvent.contentOffset.y;
   }, []);
 
+  const selectedLessonId = selectedLesson?.item.id;
+
   const renderItem = useCallback(
     ({
       item,
@@ -325,7 +327,7 @@ export function NormalEnglishPathScreen({
         unitLessonCount={section.data.length}
         pathMode="normal"
         isActiveLesson={item.pathIndex === normalNextLessonPathIndex}
-        isSelected={selectedLesson?.item.id === item.id}
+        isSelected={selectedLessonId === item.id}
         // A unit counts as reached once its first lesson is unlocked, which
         // covers both "working through it" and "already finished it".
         isUnitReached={
@@ -339,7 +341,7 @@ export function NormalEnglishPathScreen({
     [
       normalNextLessonPathIndex,
       selectLesson,
-      selectedLesson?.item.id,
+      selectedLessonId,
       pathLayoutWidth,
     ],
   );

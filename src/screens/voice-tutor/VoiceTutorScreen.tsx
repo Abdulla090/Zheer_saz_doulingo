@@ -36,8 +36,44 @@ import {
   ArrowDown01Icon,
   ArrowUp01Icon,
   Cancel01Icon,
+  CheckmarkCircle01Icon,
   RefreshIcon,
+  SparklesIcon,
 } from "@hugeicons/core-free-icons";
+
+function getCategoryMeta(category?: string, isKu?: boolean, isAr?: boolean) {
+  switch (category) {
+    case "natural_phrasing":
+      return {
+        label: isKu ? "دەستەواژەی ڕەسەن" : isAr ? "تعبير طبيعي" : "NATURAL PHRASING",
+        color: "#10B981",
+        bgColor: "rgba(16, 185, 129, 0.10)",
+        borderColor: "rgba(16, 185, 129, 0.22)",
+      };
+    case "collocation":
+      return {
+        label: isKu ? "پەیوەندی وشەکان" : isAr ? "تلازم لفظي" : "NATIVE COLLOCATION",
+        color: "#6366F1",
+        bgColor: "rgba(99, 102, 241, 0.10)",
+        borderColor: "rgba(99, 102, 241, 0.22)",
+      };
+    case "word_choice":
+      return {
+        label: isKu ? "هەڵبژاردنی وشە" : isAr ? "اختيار الكلمات" : "WORD CHOICE",
+        color: "#06B6D4",
+        bgColor: "rgba(6, 182, 212, 0.10)",
+        borderColor: "rgba(6, 182, 212, 0.22)",
+      };
+    case "grammar":
+    default:
+      return {
+        label: isKu ? "ڕێزمانی قسەکردن" : isAr ? "قواعد التحدث" : "STRUCTURE",
+        color: "#F59E0B",
+        bgColor: "rgba(245, 158, 11, 0.10)",
+        borderColor: "rgba(245, 158, 11, 0.22)",
+      };
+  }
+}
 
 import React, {
   useCallback,
@@ -573,6 +609,18 @@ export function VoiceTutorScreen() {
             >
               ...
             </AppText>
+          ) : tutor.listening && tutor.transcript ? (
+            <AppText
+              style={[
+                styles.transcriptText,
+                { color: colors.foreground },
+              ]}
+              languageCode={liveTranscriptLanguage}
+              align="start"
+              fullWidth
+            >
+              {tutor.transcript}
+            </AppText>
           ) : tutor.paused ? (
             <AppText
               style={[
@@ -638,7 +686,7 @@ export function VoiceTutorScreen() {
                   </AppText>
                 </PressableScale>
               ) : null}
-              {/credit|کرێدیت|رصيد/i.test(tutor.error) ? (
+              {/credit|کرێدیت|رصيد|402|balance/i.test(tutor.error) ? (
                 <PressableScale
                   style={styles.creditActionButton}
                   onPress={() => router.push("/credits")}
@@ -932,7 +980,7 @@ export function VoiceTutorScreen() {
                               ]}
                               forceLatinFont
                             >
-                              {w} {isMastered ? "✓" : "✗"}
+                              {w}
                             </AppText>
                           </View>
                         );
@@ -1070,103 +1118,195 @@ export function VoiceTutorScreen() {
                 </View>
               </View>
 
-              {/* LINGUISTIC MISTAKES & RECOMMENDATIONS */}
-              {analysisData.grammarErrors.length > 0 && (
-                <View style={styles.sectionWrap}>
-                  <AppText
-                    style={[styles.sectionHeading, isRtl && styles.rtlText]}
-                  >
-                    {isKu
-                      ? "پێشنیارەکانی باشترکردن"
-                      : "Weak Phrases & Improvements"}
-                  </AppText>
-                  {analysisData.grammarErrors.map((error, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.recommendationCard,
-                        isRtl && { alignItems: "flex-end" },
-                      ]}
+              {/* NATIVE SPEECH & IMPROVEMENTS */}
+              <View style={styles.sectionWrap}>
+                <View style={[styles.sectionHeaderRow, isRtl && styles.rtlRow]}>
+                  <View style={{ flex: 1 }}>
+                    <AppText
+                      style={[styles.sectionHeading, isRtl && styles.rtlText]}
                     >
-                      <View style={styles.recOriginal}>
-                        <View
-                          style={[
-                            styles.recBadge,
-                            isRtl && styles.recBadgeRtl,
-                            { backgroundColor: "rgba(239, 68, 68, 0.1)" },
-                          ]}
-                        >
-                          <AppText
-                            style={[
-                              styles.recBadgeText,
-                              isRtl && styles.rtlText,
-                              { color: colors.error },
-                            ]}
-                          >
-                            {isKu ? "وتت" : "YOU SAID"}
-                          </AppText>
-                        </View>
-                        <AppText
-                          style={[
-                            styles.recOriginalText,
-                            isRtl && styles.rtlText,
-                          ]}
-                          forceLatinFont
-                        >
-                          {`"${error.original}"`}
-                        </AppText>
-                      </View>
+                      {isKu
+                        ? "چۆنیەتی وتنی ڕەسەن و پێشنیارەکان"
+                        : isAr
+                          ? "التحسينات والتحدث كمتحدث أصلي"
+                          : "Native Speech & Improvements"}
+                    </AppText>
+                    <AppText
+                      style={[styles.sectionSubheading, isRtl && styles.rtlText]}
+                    >
+                      {isKu
+                        ? "ئەم دەستەواژانە بە شێوازی قسەکردنی خەڵکی ڕەسەن (Native) بڵێ"
+                        : isAr
+                          ? "كيف يعبر المتحدثون الأصليون عن هذه العبارات"
+                          : "How native speakers naturally phrase and express these"}
+                    </AppText>
+                  </View>
+                </View>
 
-                      <View style={styles.recBetter}>
-                        <View
-                          style={[
-                            styles.recBadge,
-                            isRtl && styles.recBadgeRtl,
-                            { backgroundColor: "rgba(34, 197, 94, 0.1)" },
-                          ]}
-                        >
-                          <AppText
+                {analysisData.grammarErrors.length > 0 ? (
+                  analysisData.grammarErrors.map((error, idx) => {
+                    const meta = getCategoryMeta(error.category, isKu, isAr);
+                    return (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.recommendationCard,
+                          isRtl && { alignItems: "stretch" },
+                        ]}
+                      >
+                        {/* Card Top: Category Pill + Index */}
+                        <View style={[styles.recCardHeader, isRtl && styles.rtlRow]}>
+                          <View
                             style={[
-                              styles.recBadgeText,
-                              isRtl && styles.rtlText,
-                              { color: "#10B981" },
-                            ]}
-                          >
-                            {isKu ? "باشتر وایە" : "SUGGESTION"}
-                          </AppText>
-                        </View>
-                        <AppText
-                          style={[
-                            styles.recBetterText,
-                            isRtl && styles.rtlText,
-                          ]}
-                          forceLatinFont
-                        >
-                          {error.corrected}
-                        </AppText>
-                      </View>
-
-                      {error.explanation ? (
-                        <View style={{ marginTop: 4 }}>
-                          <AppText
-                            style={[
+                              styles.categoryBadge,
                               {
-                                fontSize: 12,
-                                color: colors.mutedForeground,
-                                lineHeight: 18,
+                                backgroundColor: meta.bgColor,
+                                borderColor: meta.borderColor,
                               },
+                            ]}
+                          >
+                            <HugeiconsIcon icon={SparklesIcon} size={12} color={meta.color} />
+                            <AppText
+                              style={[
+                                styles.categoryBadgeText,
+                                { color: meta.color },
+                                isRtl && styles.rtlText,
+                              ]}
+                            >
+                              {meta.label}
+                            </AppText>
+                          </View>
+                          <AppText style={styles.recIndexText} forceLatinFont>
+                            #{idx + 1}
+                          </AppText>
+                        </View>
+
+                        {/* User Spoken Original */}
+                        <View
+                          style={[
+                            styles.recOriginalBox,
+                            isRtl && { alignItems: "flex-end" },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.recBadge,
+                              isRtl && styles.recBadgeRtl,
+                              {
+                                backgroundColor: "rgba(239, 68, 68, 0.08)",
+                                borderColor: "rgba(239, 68, 68, 0.2)",
+                              },
+                            ]}
+                          >
+                            <AppText
+                              style={[
+                                styles.recBadgeText,
+                                isRtl && styles.rtlText,
+                                { color: colors.error },
+                              ]}
+                            >
+                              {isKu ? "وتت" : isAr ? "قلت" : "YOU SAID"}
+                            </AppText>
+                          </View>
+                          <AppText
+                            style={[
+                              styles.recOriginalText,
                               isRtl && styles.rtlText,
                             ]}
                             forceLatinFont
                           >
-                            {error.explanation}
+                            {`"${error.original}"`}
                           </AppText>
                         </View>
-                      ) : null}
+
+                        {/* Native Way to Say It */}
+                        <View
+                          style={[
+                            styles.recBetterBox,
+                            isRtl && { alignItems: "flex-end" },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.recBadge,
+                              isRtl && styles.recBadgeRtl,
+                              {
+                                backgroundColor: "rgba(16, 185, 129, 0.10)",
+                                borderColor: "rgba(16, 185, 129, 0.25)",
+                              },
+                            ]}
+                          >
+                            <AppText
+                              style={[
+                                styles.recBadgeText,
+                                isRtl && styles.rtlText,
+                                { color: "#10B981" },
+                              ]}
+                            >
+                              {isKu
+                                ? "باشتر وایە بڵێیت (ڕەسەن)"
+                                : isAr
+                                  ? "قل هذا كمتحدث أصلي"
+                                  : "SAY THIS INSTEAD (NATIVE)"}
+                            </AppText>
+                          </View>
+                          <AppText
+                            style={[
+                              styles.recBetterText,
+                              isRtl && styles.rtlText,
+                            ]}
+                            forceLatinFont
+                          >
+                            {error.corrected}
+                          </AppText>
+                        </View>
+
+                        {/* Native Insight / Explanation */}
+                        {error.explanation ? (
+                          <View
+                            style={[
+                              styles.recInsightBox,
+                              isRtl && { alignItems: "flex-end" },
+                            ]}
+                          >
+                            <AppText
+                              style={[
+                                styles.recInsightText,
+                                isRtl && styles.rtlText,
+                              ]}
+                              forceLatinFont
+                            >
+                              {error.explanation}
+                            </AppText>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })
+                ) : (
+                  <View style={styles.cleanFlowCard}>
+                    <View style={styles.cleanFlowIconWrap}>
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#10B981" />
                     </View>
-                  ))}
-                </View>
-              )}
+                    <View style={{ flex: 1, gap: 3 }}>
+                      <AppText style={[styles.cleanFlowTitle, isRtl && styles.rtlText]}>
+                        {isKu
+                          ? "قسەکردنی ڕەوان و ڕەسەن!"
+                          : isAr
+                            ? "تحدث بطلاقة وسلاسة!"
+                            : "Fluent Native Flow!"}
+                      </AppText>
+                      <AppText style={[styles.cleanFlowDesc, isRtl && styles.rtlText]}>
+                        {isKu
+                          ? "هیچ هەڵەیەکی دەستەواژەیی یان قسەکردنی نائاسایی لەم گفتوگۆیەدا نەدۆزرایەوە."
+                          : isAr
+                            ? "لم يتم العثور على أخطاء لغوية غير طبيعية في هذه المحادثة."
+                            : "No unnatural phrasing or speech errors were detected in this conversation."}
+                      </AppText>
+                    </View>
+                  </View>
+                )}
+              </View>
             </ScrollView>
           )}
         </View>
@@ -1523,11 +1663,18 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: "100%",
       marginBottom: 28,
     },
+    sectionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      marginBottom: 12,
+    },
     sectionHeading: {
       fontSize: 15,
       fontWeight: "800",
       color: colors.foreground,
-      marginBottom: 16,
+      marginBottom: 4,
       letterSpacing: 0.2,
       fontFamily: "Rabar_044",
     },
@@ -1621,35 +1768,84 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
     bubbleTimeRtl: {
       alignSelf: "flex-start",
     },
+    sectionSubheading: {
+      fontSize: 13,
+      color: colors.mutedForeground,
+      marginBottom: 16,
+      lineHeight: 18,
+      fontFamily: "Rabar_044",
+    },
     recommendationCard: {
       width: "100%",
       backgroundColor: colors.surface,
-      borderRadius: 24,
-      padding: 20,
+      borderRadius: 20,
+      padding: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      gap: 16,
-      marginBottom: 12,
+      gap: 12,
+      marginBottom: 14,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.2 : 0.04,
+      shadowRadius: 8,
+      elevation: 2,
     },
-    recOriginal: {
+    recCardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       width: "100%",
+      paddingBottom: 2,
+    },
+    categoryBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 9,
+      paddingVertical: 3,
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    categoryBadgeText: {
+      fontSize: 10.5,
+      fontWeight: "800",
+      letterSpacing: 0.6,
+    },
+    recIndexText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.mutedForeground,
+    },
+    recOriginalBox: {
+      width: "100%",
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.06)" : "rgba(239, 68, 68, 0.03)",
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: "rgba(239, 68, 68, 0.15)",
       gap: 6,
     },
-    recBetter: {
+    recBetterBox: {
       width: "100%",
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.06)" : "rgba(16, 185, 129, 0.03)",
+      borderRadius: 14,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: "rgba(16, 185, 129, 0.18)",
       gap: 6,
     },
     recBadge: {
       alignSelf: "flex-start",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
       borderRadius: 6,
+      borderWidth: 1,
     },
     recBadgeRtl: {
       alignSelf: "flex-end",
     },
     recBadgeText: {
-      fontSize: 11,
+      fontSize: 10.5,
       fontWeight: "800",
       letterSpacing: 0.8,
     },
@@ -1660,9 +1856,56 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       lineHeight: 20,
     },
     recBetterText: {
-      fontSize: 14,
+      fontSize: 14.5,
       color: "#10B981",
       fontWeight: "700",
       lineHeight: 20,
+    },
+    recInsightBox: {
+      width: "100%",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
+      gap: 4,
+    },
+    recInsightText: {
+      fontSize: 12,
+      color: colors.foreground,
+      lineHeight: 18,
+      fontWeight: "500",
+    },
+    cleanFlowCard: {
+      width: "100%",
+      backgroundColor: isDark ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)",
+      borderRadius: 20,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: "rgba(16, 185, 129, 0.2)",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+    },
+    cleanFlowIconWrap: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: "rgba(16, 185, 129, 0.14)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    cleanFlowTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.foreground,
+      fontFamily: "Rabar_044",
+    },
+    cleanFlowDesc: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+      lineHeight: 17,
+      fontFamily: "Rabar_044",
     },
   });

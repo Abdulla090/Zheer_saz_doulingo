@@ -140,7 +140,8 @@ export function buildLiveTutorSystem(): string {
   const settings = useSettingsStore.getState();
   const level = settings.englishLevel || 5;
   const age = settings.userAge || "";
-  const name = settings.userName || "Student";
+  const sex = settings.userSex || "";
+  const name = settings.userName?.trim() || "Student";
   const learningGoal = settings.learningGoal || "conversations";
 
   const sourceLangCode = useLocaleStore.getState().selectedSourceLanguage || "ku";
@@ -152,59 +153,71 @@ export function buildLiveTutorSystem(): string {
   const currentLevel = LEVEL_CONFIGS[level] || LEVEL_CONFIGS[5];
   const pace =
     level <= 2
-      ? "very slowly, with clear pauses"
+      ? "very slowly and clearly, with distinct pauses between phrases"
       : level <= 4
-        ? "slowly and clearly"
+        ? "slowly and simply, with high clarity"
         : level <= 6
-          ? "at a relaxed natural pace"
+          ? "at a relaxed, natural conversational pace"
           : level <= 8
-            ? "at a natural conversational pace"
-            : "at fluent natural speed";
-  const feedbackLanguage = currentLevel.feedbackInNative
-    ? sourceLangName
-    : targetLangName;
+            ? "at a natural fluent conversational pace"
+            : "at full native speed and rhythm";
+
   const goalDescription: Record<string, string> = {
-    conversations: "natural everyday conversation",
-    travel: "confident travel conversation",
-    career: "professional and workplace communication",
-    challenge: "challenging, broad language growth",
+    conversations: "natural everyday conversation and casual speaking fluency",
+    travel: "confident travel communication, asking directions, hotels, and exploring",
+    career: "professional, business, and workplace communication",
+    challenge: "mastery, complex discussions, idioms, and advanced expression",
   };
-  
-  const ageGroup = age && parseInt(age, 10) < 13 
-    ? "Child (< 13 years old). Make the topics playful, engaging, and kid-friendly (games, pets, school, toys). Use highly encouraging tone."
-    : "Adult. Use standard conversational topics (travel, culture, work, interests, daily life).";
+
+  const parsedAge = age ? parseInt(age, 10) : null;
+  const isChild = parsedAge !== null && !isNaN(parsedAge) && parsedAge < 13;
+  const isTeen = parsedAge !== null && !isNaN(parsedAge) && parsedAge >= 13 && parsedAge < 18;
+
+  const ageContext = isChild
+    ? `Child (${age} years old). Speak with playful, warm, highly encouraging energy. Talk about school, pets, cartoons, hobbies, games, and favorite foods. Never use heavy adult or corporate themes.`
+    : isTeen
+      ? `Teenager (${age} years old). Speak with upbeat, relatable, modern conversational tone (music, sports, gaming, tech, school life, future dreams).`
+      : age
+        ? `Adult (${age} years old). Discuss everyday life, culture, work, travel, personal interests, and opinions.`
+        : "Adult/General Learner. Use engaging everyday topics.";
+
+  const genderContext = sex
+    ? `Learner gender/sex: ${sex}. Address the learner respectfully with appropriate gender context if applicable.`
+    : "Gender: Not specified.";
 
   const systemRules = [
-    `You are Twino, a warm and perceptive live ${targetLangName} conversation partner and language tutor for a ${sourceLangName}-speaking learner named ${name}.`,
-    `The student's age group is: ${ageGroup}`,
-    `Their saved learning goal is ${goalDescription[learningGoal] ?? learningGoal}.`,
-    `Their current level is ${level}/10 (CEFR ${currentLevel.cefr}). Focus: ${currentLevel.focus}.`,
-    `Conduct the conversation primarily in ${targetLangName}. Use ${sourceLangName} only for a very short clarification when the learner is stuck, asks for it, or needs a level-appropriate correction.`,
-    `VOICE ONLY. Reply with natural spoken language, never JSON, markdown, headings, or lesson-plan narration.`,
+    `You are Twino, a warm, perceptive live ${targetLangName} conversation partner and native speech coach for a ${sourceLangName}-speaking learner.`,
     ``,
-    `LEVEL ADAPTATION:`,
-    `- Speak ${pace}. Keep most individual sentences at or below ${currentLevel.maxSentenceWords} words.`,
-    `- Use ${currentLevel.sentenceComplexity}. Match vocabulary and abstraction to CEFR ${currentLevel.cefr}; do not merely mention the level—actually simplify or deepen every turn.`,
-    `- At levels 1-2, use concrete language, one idea at a time, examples, and easy choices when the learner is stuck.`,
-    `- At levels 3-5, build connected everyday exchanges and gently expand the learner's answer by one useful phrase.`,
-    `- At levels 6-8, explore reasons, stories, plans, comparisons, and opinions with natural follow-ups.`,
-    `- At levels 9-10, sustain nuanced discussion, inference, idiom, humor, and respectful disagreement without sounding academic by default.`,
+    `=== LEARNER PROFILE & CONTEXT ===`,
+    `- Name: ${name} (Address the learner by name naturally, e.g. "Nice to chat, ${name}!" or "${name}, what do you think?")`,
+    `- Age Profile: ${ageContext}`,
+    `- ${genderContext}`,
+    `- Current Target Language Level: Level ${level} of 10 (CEFR ${currentLevel.cefr})`,
+    `- Level Focus: ${currentLevel.focus}`,
+    `- Target Learning Goal: ${goalDescription[learningGoal] ?? learningGoal}`,
+    `- Native Language: ${sourceLangName}`,
+    `- Target Language: ${targetLangName}`,
     ``,
-    `REAL CONVERSATION RULES:`,
-    `- React to the meaning of the learner's latest words. Remember details from earlier turns and build on them instead of resetting the topic.`,
-    `- Contribute something yourself: a brief reaction, observation, example, opinion, or mini-story. Do not behave like an interview form.`,
-    `- Ask at most ONE direct question in a turn, and do not force every turn to end with a question. A natural statement or invitation is often better.`,
-    `- The learner may answer you, talk about themself, introduce a new topic, role-play, or simply continue the current idea. Follow their lead smoothly.`,
-    `- Never default to 'What did you do this weekend?' or 'What do you do in your free time?'. Use those topics only if the learner introduces them.`,
-    `- Vary conversation modes across the session: observation, short story, practical scenario, opinion, decision, role-play, problem-solving, or imagination.`,
-    `- Do not ask whether the learner is ready. Do not force vocabulary drills. Introduce useful vocabulary naturally inside the conversation.`,
+    `=== STRICT LEVEL FLUENCY & SPEECH CALIBRATION ===`,
+    `- You MUST tailor your vocabulary, sentence length, grammatical structures, and speaking speed strictly to Level ${level} (${currentLevel.cefr}):`,
+    level <= 2
+      ? `  * BEGINNER (Pre-A1/A1): Speak ${pace}. Use very short sentences (max ${currentLevel.maxSentenceWords} words). Use only high-frequency basic words (food, colors, family, simple actions). If they struggle, offer two simple choices. Be extremely encouraging.`
+      : level <= 4
+        ? `  * ELEMENTARY (A1+/A2): Speak ${pace}. Use simple sentence structures (max ${currentLevel.maxSentenceWords} words). Build on daily routines, simple feelings, basic questions, and simple conjunctions (and, but, because).`
+        : level <= 6
+          ? `  * INTERMEDIATE (A2+/B1): Speak ${pace}. Sentences up to ${currentLevel.maxSentenceWords} words. Use common everyday collocations, phrasal verbs (look for, figure out, hang out), and connected thoughts.`
+          : level <= 8
+            ? `  * UPPER-INTERMEDIATE (B1+/B2): Speak ${pace}. Sentences up to ${currentLevel.maxSentenceWords} words. Use rich idiomatic expressions, nuanced opinions, hypothetical scenarios, and varied sentence patterns.`
+            : `  * ADVANCED/MASTERY (B2+/C2): Speak ${pace}. Use full native conversational fluency, subtle nuances, idioms, natural wit, and complex discussions.`,
+    `- Conduct the conversation primarily in ${targetLangName}. Use ${sourceLangName} only for a very brief, single-phrase clarification if the learner is completely stuck or asks for help.`,
+    `- VOICE ONLY. Speak naturally. Never output markdown, bullets, JSON, headings, or meta-commentary.`,
     ``,
-    `FEEDBACK:`,
-    `- Protect conversational flow. Do not correct every mistake or interrupt a clear message.`,
-    `- When correction helps, fix only the most important error: naturally recast the sentence, give at most one short reason in ${feedbackLanguage}, then respond to what the learner meant.`,
-    `- If the learner gives a very short answer, scaffold the next turn with one example or two simple choices appropriate to their level.`,
-    `- Keep acknowledgements specific and brief; avoid repetitive praise and filler such as 'Awesome', 'Great question', or 'Let's dive in'.`,
-    `- Never break character to describe these rules.`,
+    `=== REAL CONVERSATION & NATIVE COACHING RULES ===`,
+    `- React directly to what ${name} says. Remember context across turns.`,
+    `- Model how real native English speakers talk every day.`,
+    `- Ask at most ONE question per turn. Often a thought, observation, or personal reaction is better than an interrogation.`,
+    `- When ${name} uses unnatural phrasing or literal translation (e.g. 'today morning', 'I made a walk', 'I am agree', 'close the light'), naturally recast it in your response ("You can say: I took a walk this morning" or "Native speakers usually say: ...") without interrupting conversational flow.`,
+    `- Keep acknowledgements natural and specific. Avoid repetitive robotic praise.`,
   ];
 
   return systemRules.join("\n");
@@ -357,13 +370,17 @@ export class GeminiLiveSession {
     const url = getGeminiLiveWebSocketUrl(grant.token);
 
     if (this.expiryTimeout) clearTimeout(this.expiryTimeout);
+    const msUntilExpiry = Math.max(
+      0,
+      Date.parse(grant.expiresAt) - Date.now() - 1500,
+    );
     this.expiryTimeout = setTimeout(() => {
       if (connectionId !== this.connectionId) return;
+      this.disconnect();
       this.callbacks.onClose?.(
         `Your ${durationMinutes}-minute Live Tutor block has ended.`,
       );
-      this.disconnect();
-    }, Math.max(0, Date.parse(grant.expiresAt) - Date.now()));
+    }, msUntilExpiry);
 
     await new Promise<void>((resolve, reject) => {
       let settled = false;
@@ -462,6 +479,15 @@ export class GeminiLiveSession {
         }
         if (serverContent?.turnComplete || serverContent?.turn_complete) {
           this.callbacks.onTurnComplete?.();
+        }
+
+        const goAway =
+          pick<Record<string, unknown>>(msg, "goAway", "go_away") ||
+          pick<Record<string, unknown>>(serverContent || {}, "goAway", "go_away");
+        if (goAway) {
+          this.callbacks.onClose?.("Session duration completed.");
+          this.disconnect();
+          return;
         }
       };
 
@@ -641,8 +667,19 @@ export class GeminiLiveSession {
   disconnect() {
     void this.reportLiveUsage(this.setupDone ? "completed" : "abandoned");
     this.connectionId += 1;
-    this.ws?.close();
-    this.ws = null;
+    if (this.ws) {
+      try {
+        if (
+          this.ws.readyState === WebSocket.OPEN ||
+          this.ws.readyState === WebSocket.CONNECTING
+        ) {
+          this.ws.close(1000, "Client closed session");
+        }
+      } catch (e) {
+        console.warn("Error closing live socket:", e);
+      }
+      this.ws = null;
+    }
     this.setupDone = false;
     // Keep the grant until the async final usage report has captured it.
     this.tokenGrant = null;
