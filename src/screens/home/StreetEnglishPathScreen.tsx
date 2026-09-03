@@ -21,13 +21,14 @@ import {
 } from "../../data/path-unit-titles";
 import { useI18n } from "../../hooks/useI18n";
 import { HomeMeshBackground } from "../../components/ui/ios-liquid-home";
-import { PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import {
+  PATH_LIST_REMOVE_CLIPPED,
+  PATH_LIST_TUNING,
+} from "../../utils/native-perf";
 import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AppText } from "../../components/ui/AppText";
 import { PressableScale } from "../../components/animations/PressableScale";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   SectionList,
   SectionListRenderItemInfo,
@@ -39,8 +40,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { ListFooter } from "./components/list-footer";
-import { ListItem } from "./components/list-item";
+import { ListItem, type ListItemSelectHandler } from "./components/list-item";
 import { ListSectionHeader } from "./components/list-section-header";
+import { createPathItemLayout } from "./components/path-item-layout";
+import {
+  STREET_SECTION_HEADER_HEIGHT,
+  getPathMetrics,
+  isCompactWebPath,
+} from "./components/path-metrics";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
 
@@ -51,6 +58,9 @@ import {
 } from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
+
+/** Mirrors `styles.listContainer.paddingTop`, which `getItemLayout` must include. */
+const LIST_CONTENT_PADDING_TOP = 8;
 
 export const StreetEnglishPathScreen = ({
   topChromeHeight = PATH_TOP_CHROME_HEIGHT,
@@ -69,10 +79,6 @@ export const StreetEnglishPathScreen = ({
     Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
-  const scrollYRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const maxScrollYRef = useRef(0);
   const nextLessonPathIndex = useCurrentProgress().nextLessonPathIndex;
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [activeSectionTheme, setActiveSectionTheme] =
@@ -183,35 +189,39 @@ export const StreetEnglishPathScreen = ({
     );
   }, [isDark, activeSectionTheme]);
 
-  const recalcMaxScroll = useCallback(() => {
-    maxScrollYRef.current = Math.max(
-      0,
-      contentHeightRef.current - viewportHeightRef.current,
-    );
-  }, []);
+  /*
+   * Fixed row and header heights, so the list can be told where every cell sits
+   * rather than laying each one out to find the next. See
+   * `path-item-layout` for why this is the single biggest scroll win here.
+   */
+  const rowHeight = getPathMetrics(
+    "street",
+    isCompactWebPath(pathLayoutWidth),
+  ).slotHeight;
 
-  const onListLayout = useCallback(
-    (event: { nativeEvent: { layout: { height: number } } }) => {
-      viewportHeightRef.current = event.nativeEvent.layout.height;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
+  const getItemLayout = useMemo(
+    () =>
+      createPathItemLayout({
+        sections: visibleSections,
+        rowHeight,
+        sectionHeaderHeight: STREET_SECTION_HEADER_HEIGHT,
+        contentPaddingTop: LIST_CONTENT_PADDING_TOP,
+      }),
+    [visibleSections, rowHeight],
   );
 
-  const onContentSizeChange = useCallback(
-    (_width: number, height: number) => {
-      contentHeightRef.current = height;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
+  /*
+   * One handler for the whole list; each row reports its own identity back.
+   * A per-row arrow changes identity on every parent render and defeats
+   * `React.memo` on every row at once.
+   */
+  const handleSelectLesson = useCallback<ListItemSelectHandler>(
+    (item, sectionTitle, node, unitLessonCount) =>
+      selectLesson(item, sectionTitle, node, unitLessonCount),
+    [selectLesson],
   );
 
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollYRef.current = event.nativeEvent.contentOffset.y;
-    },
-    [],
-  );
+  const selectedLessonId = selectedLesson?.item.id;
 
   const renderItem = useCallback(
     ({
@@ -224,13 +234,12 @@ export const StreetEnglishPathScreen = ({
         unitLessonCount={section.data.length}
         pathMode="street"
         isActiveLesson={item.pathIndex === nextLessonPathIndex}
-        isSelected={selectedLesson?.item.id === item.id}
-        onSelect={(node) =>
-          selectLesson(item, section.title, node, section.data.length)
-        }
+        isSelected={selectedLessonId === item.id}
+        sectionTitle={section.title}
+        onSelect={handleSelectLesson}
       />
     ),
-    [nextLessonPathIndex, pathLayoutWidth, selectLesson, selectedLesson?.item.id],
+    [nextLessonPathIndex, pathLayoutWidth, handleSelectLesson, selectedLessonId],
   );
 
   const renderSectionHeader = useCallback(
@@ -308,12 +317,9 @@ export const StreetEnglishPathScreen = ({
           renderItem={renderItem}
           ref={listRef}
           renderSectionHeader={renderSectionHeader}
-          onLayout={onListLayout}
-          {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
-          onScroll={onScroll}
+          getItemLayout={getItemLayout}
           onScrollBeginDrag={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
-          scrollEventThrottle={16}
           style={styles.list}
           ListFooterComponent={renderFooter}
           contentContainerStyle={[
@@ -321,11 +327,12 @@ export const StreetEnglishPathScreen = ({
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
           ]}
           stickySectionHeadersEnabled={false}
-          initialNumToRender={10}
-          maxToRenderPerBatch={8}
-          windowSize={5}
+          // Virtualization budget scales with the device, as on the normal path.
+          initialNumToRender={PATH_LIST_TUNING.initialNumToRender}
+          maxToRenderPerBatch={PATH_LIST_TUNING.maxToRenderPerBatch}
+          windowSize={PATH_LIST_TUNING.windowSize}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          updateCellsBatchingPeriod={50}
+          updateCellsBatchingPeriod={PATH_LIST_TUNING.updateCellsBatchingPeriod}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />

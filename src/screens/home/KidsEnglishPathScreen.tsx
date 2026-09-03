@@ -32,8 +32,6 @@ import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AppText } from "../../components/ui/AppText";
 import { PressableScale } from "../../components/animations/PressableScale";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   SectionList,
   SectionListRenderItemInfo,
@@ -45,9 +43,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
 import { HomeMainButton } from "./components/home-main-button";
 import { KidsPathListRow } from "./components/kids-path-list-row";
+import type { ListItemSelectHandler } from "./components/list-item";
+import { createPathItemLayout } from "./components/path-item-layout";
+import {
+  KIDS_ROW_HEIGHT,
+  KIDS_SECTION_HEADER_HEIGHT,
+} from "./components/path-metrics";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
-import { IS_ANDROID, PATH_LIST_REMOVE_CLIPPED } from "../../utils/native-perf";
+import {
+  IS_ANDROID,
+  PATH_LIST_REMOVE_CLIPPED,
+  PATH_LIST_TUNING,
+} from "../../utils/native-perf";
 import {
   isDesktopWebWidth,
   WEB_DESKTOP_PATH_WIDTH,
@@ -56,6 +64,9 @@ import {
 import { ListFooter } from "./components/list-footer";
 
 const keyExtractor = (item: { id: string }) => `${item.id}`;
+
+/** Mirrors `styles.listContainer.paddingTop`, which `getItemLayout` must include. */
+const LIST_CONTENT_PADDING_TOP = 8;
 
 export function KidsEnglishPathScreen({
   topChromeHeight = PATH_TOP_CHROME_HEIGHT,
@@ -74,10 +85,6 @@ export function KidsEnglishPathScreen({
     Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
-  const scrollYRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const maxScrollYRef = useRef(0);
 
   const { kidsNextLessonPathIndex } = useCurrentProgress();
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
@@ -189,35 +196,33 @@ export function KidsEnglishPathScreen({
     );
   }, [isDark, activeSectionTheme]);
 
-  const recalcMaxScroll = useCallback(() => {
-    maxScrollYRef.current = Math.max(
-      0,
-      contentHeightRef.current - viewportHeightRef.current,
-    );
-  }, []);
-
-  const onListLayout = useCallback(
-    (event: { nativeEvent: { layout: { height: number } } }) => {
-      viewportHeightRef.current = event.nativeEvent.layout.height;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
+  /*
+   * Fixed row heights, so the list is told where each cell sits rather than
+   * measuring its way down. This path passes no `renderSectionHeader`, so its
+   * section header cells take no space.
+   */
+  const getItemLayout = useMemo(
+    () =>
+      createPathItemLayout({
+        sections: visibleSections,
+        rowHeight: KIDS_ROW_HEIGHT,
+        sectionHeaderHeight: KIDS_SECTION_HEADER_HEIGHT,
+        contentPaddingTop: LIST_CONTENT_PADDING_TOP,
+      }),
+    [visibleSections],
   );
 
-  const onContentSizeChange = useCallback(
-    (_width: number, height: number) => {
-      contentHeightRef.current = height;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
+  /*
+   * One handler for the whole list; each row reports its own identity back, so
+   * this stays referentially stable and `React.memo` on the rows can bail out.
+   */
+  const handleSelectLesson = useCallback<ListItemSelectHandler>(
+    (item, sectionTitle, node, unitLessonCount) =>
+      selectLesson(item, sectionTitle, node, unitLessonCount),
+    [selectLesson],
   );
 
-  const onScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollYRef.current = event.nativeEvent.contentOffset.y;
-    },
-    [],
-  );
+  const selectedLessonId = selectedLesson?.item.id;
 
   const renderItem = useCallback(
     ({
@@ -229,16 +234,15 @@ export function KidsEnglishPathScreen({
         screenWidth={pathLayoutWidth}
         unitLessonCount={section.data.length}
         isActiveLesson={item.pathIndex === kidsNextLessonPathIndex}
-        isSelected={selectedLesson?.item.id === item.id}
-        onSelect={(node) =>
-          selectLesson(item, section.title, node, section.data.length)
-        }
+        isSelected={selectedLessonId === item.id}
+        sectionTitle={section.title}
+        onSelect={handleSelectLesson}
       />
     ),
     [
       kidsNextLessonPathIndex,
-      selectLesson,
-      selectedLesson?.item.id,
+      handleSelectLesson,
+      selectedLessonId,
       pathLayoutWidth,
     ],
   );
@@ -311,23 +315,21 @@ export function KidsEnglishPathScreen({
           renderItem={renderItem}
           ListFooterComponent={renderFooter}
           ref={listRef}
-          onLayout={onListLayout}
-          {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
-          onScroll={onScroll}
+          getItemLayout={getItemLayout}
           onScrollBeginDrag={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
-          scrollEventThrottle={16}
           style={styles.list}
           contentContainerStyle={[
             styles.listContainer,
             { paddingBottom: tabBarScrollPadding(insets.bottom) },
           ]}
           stickySectionHeadersEnabled={false}
-          initialNumToRender={10}
-          maxToRenderPerBatch={8}
-          windowSize={5}
+          // Virtualization budget scales with the device, as on the other paths.
+          initialNumToRender={PATH_LIST_TUNING.initialNumToRender}
+          maxToRenderPerBatch={PATH_LIST_TUNING.maxToRenderPerBatch}
+          windowSize={PATH_LIST_TUNING.windowSize}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          updateCellsBatchingPeriod={50}
+          updateCellsBatchingPeriod={PATH_LIST_TUNING.updateCellsBatchingPeriod}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />

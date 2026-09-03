@@ -261,10 +261,19 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   },
 }));
 
+/*
+ * Progress for the active language pair.
+ *
+ * Every subscription here is a selector on purpose. `useLocaleStore()` with no
+ * selector subscribes the caller to the whole locale store, so an unrelated
+ * field changing — the UI language, the ready flag — re-rendered the path
+ * screens and, through them, every mounted row.
+ */
 export function useCurrentProgress() {
-  const localeState = useLocaleStore();
-  const langPair = `${localeState.selectedSourceLanguage}-${localeState.selectedTargetLanguage}`;
-  
+  const sourceLanguage = useLocaleStore((s) => s.selectedSourceLanguage);
+  const targetLanguage = useLocaleStore((s) => s.selectedTargetLanguage);
+  const langPair = `${sourceLanguage}-${targetLanguage}`;
+
   const pathIndexes = useProgressStore((s) => s.pathIndexes);
   const normalPathIndexes = useProgressStore((s) => s.normalPathIndexes);
   const kidsPathIndexes = useProgressStore((s) => s.kidsPathIndexes);

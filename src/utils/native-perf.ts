@@ -106,3 +106,18 @@ export const PATH_LIST_TUNING = IS_LOW_END_DEVICE
       windowSize: 5,
       updateCellsBatchingPeriod: 50,
     };
+
+/*
+ * The normal path keeps a tighter window than the other paths. Each of its rows
+ * carries a full react-native-svg tree (the street and kids rows are plain
+ * Views), so every extra viewport of mounted rows is several more SVG mounts
+ * paid during a fling — the dominant scroll cost on that screen. With exact
+ * `getItemLayout` a smaller window costs nothing visually; rows render at the
+ * same offsets either way.
+ */
+export const NORMAL_PATH_LIST_TUNING = IS_LOW_END_DEVICE
+  ? PATH_LIST_TUNING
+  : {
+      ...PATH_LIST_TUNING,
+      windowSize: 4,
+    };

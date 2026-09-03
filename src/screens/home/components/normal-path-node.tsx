@@ -15,9 +15,20 @@
  * Street and kids paths keep the View + LinearGradient `SvgButton`; only the
  * normal path renders this. Locked and completed states are additions to the
  * reference, which has neither — they are load-bearing here.
+ *
+ * ── Static vs. pressable split ──
+ *
+ * Locked, completed and unavailable rows can never be pressed, so their press
+ * travel can never run — yet they used to carry the same Reanimated shared
+ * values, view adapters and animated-props mappings as the live rows. Those are
+ * per-row mount and memory cost on the JS thread, paid again every time the
+ * virtualized list recycles a cell during a fling. Since they are nearly every
+ * row on the path, non-pressable rows now render a plain SVG tree with no
+ * animation machinery at all; only pressable rows (the current lesson and each
+ * unit's discoverable first lesson) keep the animated press.
  */
 
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Pressable } from "react-native";
 import Animated, {
   Easing,
@@ -99,7 +110,126 @@ export type NormalPathNodeProps = {
   accessibilityLabel?: string;
 };
 
+/**
+ * The metallic gold ramp, shared verbatim by both branches so a completed row
+ * looks identical whether it rendered static or pressable a moment before.
+ */
+function GoldGradientDef({ gradientId }: { gradientId: string }) {
+  return (
+    <Defs>
+      <SvgLinearGradient
+        id={gradientId}
+        x1="16%"
+        y1="2%"
+        x2="82%"
+        y2="100%"
+      >
+        <Stop offset="0%" stopColor="#FFF2B5" />
+        <Stop offset="18%" stopColor="#FFE681" />
+        <Stop offset="65%" stopColor="#FFC72C" />
+        <Stop offset="90%" stopColor="#E3A300" />
+        <Stop offset="100%" stopColor="#C97800" />
+      </SvgLinearGradient>
+    </Defs>
+  );
+}
+
 export const NormalPathNode = React.memo(
+  (props: NormalPathNodeProps) => {
+    const { onPress, isLocked = false, isUnavailable = false } = props;
+    const canPress = Boolean(onPress) && !isLocked && !isUnavailable;
+
+    if (!canPress) return <StaticNormalPathNode {...props} />;
+    return <PressableNormalPathNode {...props} />;
+  },
+);
+
+NormalPathNode.displayName = "NormalPathNode";
+
+/**
+ * Locked, completed and unavailable rows. A disabled `Pressable` still exposes
+ * the same accessibility semantics, but the drawing is inert: plain elements,
+ * no shared values, nothing for Reanimated to attach per frame.
+ */
+function StaticNormalPathNode({
+  size = 80,
+  translateX,
+  variant = "green",
+  IconComponent = LessonStar,
+  iconColor,
+  isCompleted = false,
+  isLocked = false,
+  isUnavailable = false,
+  isSelected = false,
+  accessibilityLabel,
+}: NormalPathNodeProps) {
+  const goldGradientId = React.useId().replace(/:/g, "");
+  const colors = useMemo(() => nodeColors(variant), [variant]);
+  const usesMetallicGold = isCompleted || variant === "gold";
+  const resolvedIconColor =
+    iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
+
+  return (
+    <Pressable
+      disabled
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: true, selected: isSelected }}
+      style={{
+        width: size,
+        height: size,
+        opacity: isUnavailable ? 0.62 : 1,
+        transform: [{ translateX: translateX || 0 }],
+      }}
+    >
+      <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
+        {usesMetallicGold ? (
+          <GoldGradientDef gradientId={goldGradientId} />
+        ) : null}
+
+        <Ellipse
+          cx={BUTTON_CENTER_X}
+          cy={RIM_CY}
+          rx={RX}
+          ry={RY}
+          fill={colors.rim}
+        />
+
+        <Ellipse
+          cx={BUTTON_CENTER_X}
+          cy={FACE_BASE_CY}
+          rx={RX}
+          ry={RY}
+          fill={usesMetallicGold ? `url(#${goldGradientId})` : colors.face}
+          stroke={usesMetallicGold ? "#FFE681" : undefined}
+          strokeWidth={usesMetallicGold ? 1.25 : 0}
+        />
+
+        <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
+          <G
+            transform={`scale(${ICON_SCALE}) translate(${-ICON_VB_W / 2} ${-ICON_VB_H / 2})`}
+          >
+            <IconComponent
+              color={resolvedIconColor}
+              fill={resolvedIconColor}
+              stroke={resolvedIconColor}
+              strokeWidth={1}
+              width={ICON_VB_W}
+              height={ICON_VB_H}
+            />
+          </G>
+        </G>
+      </Svg>
+    </Pressable>
+  );
+}
+
+/**
+ * The current lesson and each unit's discoverable first lesson — the rows that
+ * can actually be pressed. The face ellipse travels down into the rim on press
+ * and the icon rides the same displacement, exactly as in the reference.
+ */
+const PressableNormalPathNode = React.memo(
   ({
     size = 80,
     onPress,
@@ -182,21 +312,7 @@ export const NormalPathNode = React.memo(
       >
         <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
           {usesMetallicGold ? (
-            <Defs>
-              <SvgLinearGradient
-                id={goldGradientId}
-                x1="16%"
-                y1="2%"
-                x2="82%"
-                y2="100%"
-              >
-                <Stop offset="0%" stopColor="#FFF2B5" />
-                <Stop offset="18%" stopColor="#FFE681" />
-                <Stop offset="65%" stopColor="#FFC72C" />
-                <Stop offset="90%" stopColor="#E3A300" />
-                <Stop offset="100%" stopColor="#C97800" />
-              </SvgLinearGradient>
-            </Defs>
+            <GoldGradientDef gradientId={goldGradientId} />
           ) : null}
 
           {/* 1. Rim — static, and the part left exposed below the face reads as
@@ -255,4 +371,4 @@ export const NormalPathNode = React.memo(
   },
 );
 
-NormalPathNode.displayName = "NormalPathNode";
+PressableNormalPathNode.displayName = "PressableNormalPathNode";

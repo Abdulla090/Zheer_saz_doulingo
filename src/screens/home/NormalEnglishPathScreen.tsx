@@ -5,12 +5,10 @@
  */
 
 import { AppText } from "../../components/ui/AppText";
-import { BUTTON_FACE_RIM_COLORS } from "../../constants/button-theme-colors";
 import { tabBarScrollPadding } from "../../constants/layout";
 import type {
   LessonListItem,
   SectionDataItem,
-  SectionTheme,
 } from "../../data/list-items";
 import { getUnitsForPath } from "../../data/content-access";
 import {
@@ -36,7 +34,7 @@ import {
 } from "../../data/path-unit-titles";
 import { useI18n } from "../../hooks/useI18n";
 import { ltrText, rtlText } from "../lesson/games/game-text";
-import { PATH_LIST_REMOVE_CLIPPED, PATH_LIST_TUNING } from "../../utils/native-perf";
+import { PATH_LIST_REMOVE_CLIPPED, NORMAL_PATH_LIST_TUNING } from "../../utils/native-perf";
 import { shadeHex } from "../../utils/color-shade";
 import {
   SVG_BUTTON_COLOR_SETS,
@@ -52,8 +50,6 @@ import React, {
   useEffect,
 } from "react";
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   SectionList,
   SectionListRenderItemInfo,
@@ -64,7 +60,13 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeMainButton } from "./components/home-main-button";
 import { PATH_TOP_CHROME_HEIGHT } from "./components/PathModeTabs";
-import { ListItem } from "./components/list-item";
+import { ListItem, type ListItemSelectHandler } from "./components/list-item";
+import { createPathItemLayout } from "./components/path-item-layout";
+import {
+  NORMAL_SECTION_HEADER_HEIGHT,
+  getPathMetrics,
+  isCompactWebPath,
+} from "./components/path-metrics";
 import { PathStatsBar } from "./components/path-stats-bar";
 import { PathLessonPopup } from "./components/path-lesson-popup";
 import { useThemeColors } from "../../hooks/useThemeColors";
@@ -74,6 +76,9 @@ import {
 } from "../../constants/web-layout";
 
 const keyExtractor = (item: { id: string }) => `ne-${item.id}`;
+
+/** Mirrors `darkStyles.listContent.paddingTop`, which `getItemLayout` must include. */
+const LIST_CONTENT_PADDING_TOP = 4;
 
 const NormalSectionHeader = React.memo(
   ({
@@ -124,10 +129,6 @@ export function NormalEnglishPathScreen({
     Platform.OS === "web" && isDesktopWebWidth(windowWidth) ? 24 : 0;
   const listRef = useRef<SectionList<LessonListItem, SectionDataItem>>(null);
   const overlayRootRef = useRef<View>(null);
-  const scrollYRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const maxScrollYRef = useRef(0);
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 50,
     minimumViewTime: 100,
@@ -136,9 +137,13 @@ export function NormalEnglishPathScreen({
   const { normalNextLessonPathIndex } = useCurrentProgress();
   const englishLevel = useSettingsStore((s) => s.englishLevel);
   const targetLanguage = useLocaleStore((s) => s.selectedTargetLanguage);
+  /*
+   * Only the unit *index* is tracked while scrolling. The banner's colour is
+   * derived from that index against `localizedSections` further down, so the
+   * theme does not need its own state — keeping one meant every unit boundary
+   * scheduled two renders of the whole screen instead of one.
+   */
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
-  const [activeSectionTheme, setActiveSectionTheme] =
-    useState<SectionTheme>("blue");
 
   const localizedSections = useMemo(() => {
     const units = getUnitsForPath("normal");
@@ -276,7 +281,17 @@ export function NormalEnglishPathScreen({
      * Dark mode darkens both stops: the node colours are tuned for a white
      * canvas and read as glare on a dark one.
      */
-    const theme = localizedSections[activeSectionIndex]?.displayTheme;
+    /*
+     * `activeSectionIndex` holds the unit's *global* index (`unitIndex` already
+     * includes the skipped units), so it must be matched by identity here —
+     * using it as an array subscript desynced the two whenever an English
+     * level skipped units, and the banner wore a later unit's colour. The
+     * title lookup in `activeSectionDisplay` stays keyed by the global index,
+     * which is what the unit-title table expects.
+     */
+    const theme = localizedSections.find(
+      (section) => section.unitIndex === activeSectionIndex,
+    )?.displayTheme;
     const set =
       (theme && SVG_BUTTON_COLOR_SETS[theme as SvgButtonVariant]) ||
       SVG_BUTTON_COLOR_SETS.orange;
@@ -287,34 +302,47 @@ export function NormalEnglishPathScreen({
     return set;
   }, [isDark, localizedSections, activeSectionIndex]);
 
-  const recalcMaxScroll = useCallback(() => {
-    maxScrollYRef.current = Math.max(
-      0,
-      contentHeightRef.current - viewportHeightRef.current,
-    );
-  }, []);
+  /*
+   * Every row and every unit header is a fixed height on this path, so the list
+   * can be told where each cell sits instead of measuring its way there.
+   *
+   * Without this the SectionList lays out each cell before it can place the
+   * next, and a fling outruns that measurement pass: the list falls back to an
+   * average-length estimate, then corrects itself as the real heights arrive.
+   * It also makes `scrollToLocation` land exactly on rows that have never been
+   * rendered, which is what `onScrollToIndexFailed` existed to paper over.
+   */
+  const rowHeight = getPathMetrics(
+    "normal",
+    isCompactWebPath(pathLayoutWidth),
+  ).slotHeight;
 
-  const onListLayout = useCallback(
-    (e: { nativeEvent: { layout: { height: number } } }) => {
-      viewportHeightRef.current = e.nativeEvent.layout.height;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
+  const getItemLayout = useMemo(
+    () =>
+      createPathItemLayout({
+        sections: visibleSections,
+        rowHeight,
+        sectionHeaderHeight: NORMAL_SECTION_HEADER_HEIGHT,
+        contentPaddingTop: LIST_CONTENT_PADDING_TOP,
+      }),
+    [visibleSections, rowHeight],
   );
-
-  const onContentSizeChange = useCallback(
-    (_: number, h: number) => {
-      contentHeightRef.current = h;
-      recalcMaxScroll();
-    },
-    [recalcMaxScroll],
-  );
-
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollYRef.current = e.nativeEvent.contentOffset.y;
-  }, []);
 
   const selectedLessonId = selectedLesson?.item.id;
+
+  /*
+   * One handler for the whole list.
+   *
+   * Each row reports its own identity back through the callback, so this stays
+   * referentially stable across renders. Previously `renderItem` built a fresh
+   * arrow per row, which changed one prop on every row of the list and left
+   * `React.memo` on `ListItem` with nothing to bail out on.
+   */
+  const handleSelectLesson = useCallback<ListItemSelectHandler>(
+    (item, sectionTitle, node, unitLessonCount) =>
+      selectLesson(item, sectionTitle, node, unitLessonCount),
+    [selectLesson],
+  );
 
   const renderItem = useCallback(
     ({
@@ -333,14 +361,13 @@ export function NormalEnglishPathScreen({
         isUnitReached={
           normalNextLessonPathIndex >= (section.data[0]?.pathIndex ?? 0)
         }
-        onSelect={(node) =>
-          selectLesson(item, section.title, node, section.data.length)
-        }
+        sectionTitle={section.title}
+        onSelect={handleSelectLesson}
       />
     ),
     [
       normalNextLessonPathIndex,
-      selectLesson,
+      handleSelectLesson,
       selectedLessonId,
       pathLayoutWidth,
     ],
@@ -361,15 +388,9 @@ export function NormalEnglishPathScreen({
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     const firstVisible = viewableItems?.[0]?.section;
     const nextIndex = firstVisible?.unitIndex;
-    const nextTheme = firstVisible?.displayTheme;
 
     if (typeof nextIndex === "number" && nextIndex >= 0) {
       setActiveSectionIndex((prev) => (prev === nextIndex ? prev : nextIndex));
-    }
-    if (typeof nextTheme === "string" && nextTheme in BUTTON_FACE_RIM_COLORS) {
-      setActiveSectionTheme((prev) =>
-        prev === nextTheme ? prev : (nextTheme as SectionTheme),
-      );
     }
   }).current;
 
@@ -451,12 +472,9 @@ export function NormalEnglishPathScreen({
           ListFooterComponent={renderFooter}
           ref={listRef}
           renderSectionHeader={renderSectionHeader}
-          onLayout={onListLayout}
-          {...(Platform.OS !== "web" ? { onContentSizeChange } : {})}
-          onScroll={onScroll}
+          getItemLayout={getItemLayout}
           onScrollBeginDrag={dismissLesson}
           onScrollToIndexFailed={onScrollToIndexFailed}
-          scrollEventThrottle={16}
           style={darkStyles.list}
           contentContainerStyle={[
             darkStyles.listContent,
@@ -464,12 +482,14 @@ export function NormalEnglishPathScreen({
           ]}
           stickySectionHeadersEnabled={false}
           // Virtualization budget scales with the device: old hardware wins more
-          // from a small render window than from any single visual effect.
-          initialNumToRender={PATH_LIST_TUNING.initialNumToRender}
-          maxToRenderPerBatch={PATH_LIST_TUNING.maxToRenderPerBatch}
-          windowSize={PATH_LIST_TUNING.windowSize}
+          // from a small render window than from any single visual effect. The
+          // normal path keeps a tighter window than the others because each of
+          // its rows is a full SVG tree — see `NORMAL_PATH_LIST_TUNING`.
+          initialNumToRender={NORMAL_PATH_LIST_TUNING.initialNumToRender}
+          maxToRenderPerBatch={NORMAL_PATH_LIST_TUNING.maxToRenderPerBatch}
+          windowSize={NORMAL_PATH_LIST_TUNING.windowSize}
           removeClippedSubviews={PATH_LIST_REMOVE_CLIPPED}
-          updateCellsBatchingPeriod={PATH_LIST_TUNING.updateCellsBatchingPeriod}
+          updateCellsBatchingPeriod={NORMAL_PATH_LIST_TUNING.updateCellsBatchingPeriod}
           viewabilityConfig={viewabilityConfig}
           onViewableItemsChanged={onViewableItemsChanged}
         />

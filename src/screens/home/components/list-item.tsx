@@ -25,7 +25,6 @@ import {
   SvgButtonVariant,
 } from "./list-button";
 import { NormalPathNode } from "./normal-path-node";
-import { LessonProgressRing } from "./lesson-progress-ring";
 import { getPathMetrics } from "./path-metrics";
 import { NormalPathCurveMascot } from "./normal-path-curve-mascot";
 import { mascotForUnit, unitMascotSlot } from "./path-unit-mascots";
@@ -44,8 +43,21 @@ const LESSON_ICON_MAP = {
   cup: LessonStar,
 } as const;
 
-/** Ring geometry from the reference — 94px ring centred on an 80px node. */
-const PROGRESS_RING_SIZE_RATIO = 94 / 80;
+/**
+ * Called when a row is chosen, with everything the path screen needs to open
+ * its lesson popup.
+ *
+ * The row passes its own `item`, unit title and lesson count back rather than
+ * having the parent close over them per row: a per-row closure changes
+ * identity on every parent render, which defeats `React.memo` on every row of
+ * the list at once.
+ */
+export type ListItemSelectHandler = (
+  item: LessonListItem,
+  sectionTitle: string,
+  node: View | null,
+  unitLessonCount: number,
+) => void;
 
 export type UnitChestKind = "silver" | "gold";
 
@@ -101,7 +113,9 @@ type ListItemProps = {
    * through should stay in colour.
    */
   isUnitReached?: boolean;
-  onSelect?: (node: View | null) => void;
+  /** Title of the unit this row belongs to, forwarded to `onSelect`. */
+  sectionTitle?: string;
+  onSelect?: ListItemSelectHandler;
 };
 
 export const ListItem = React.memo(
@@ -113,6 +127,7 @@ export const ListItem = React.memo(
     isActiveLesson = false,
     isSelected = false,
     isUnitReached = true,
+    sectionTitle = "",
     onSelect,
   }: ListItemProps) => {
     const router = useRouter();
@@ -135,8 +150,21 @@ export const ListItem = React.memo(
     const LessonNodeIcon = isCompleted
       ? CompletedCheckIcon
       : (LESSON_ICON_MAP[item.type] ?? LessonStar);
+    /*
+     * Exactly one row per path is "you are here". Every unit's first lesson
+     * also carries `isCurrent` by design — `resolveUnitLessonStatus` keeps
+     * locked units discoverable through it — but letting that flag mint active
+     * stars multiplies always-on animations across the list. On the normal
+     * path each star is an SVG group animated every frame, one per visible
+     * unit: dozens of permanent redraws while scrolling. So the normal path
+     * reserves the full "current lesson" treatment for the learner's actual
+     * next lesson; preview lessons stay coloured and pressable, they just
+     * don't wear the star.
+     */
     const showsActiveStar =
-      !isLocked && !isCompleted && (isActiveLesson || item.isCurrent);
+      !isLocked &&
+      !isCompleted &&
+      (isActiveLesson || (item.isCurrent && pathMode !== "normal"));
     const isGrayInProgress = isActiveLesson && item.sectionTheme === "gray";
     const buttonColor = resolveButtonVariant(item);
     const iconColorOverride = isCompleted
@@ -181,7 +209,7 @@ export const ListItem = React.memo(
     const handleSelect = () => {
       hapticSelection();
       if (onSelect && !isUnavailable) {
-        onSelect(nodeRef.current);
+        onSelect(item, sectionTitle, nodeRef.current, unitLessonCount);
         return;
       }
       handleNavigate();
@@ -297,26 +325,6 @@ export const ListItem = React.memo(
               </IOSPressable>
             ) : isNormalPath ? (
               <>
-                {showsActiveStar ? (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <LessonProgressRing
-                      size={Math.round(
-                        metrics.lessonButtonSize * PROGRESS_RING_SIZE_RATIO,
-                      )}
-                      progressSegments={item.progressSegments}
-                      activeColor={
-                        SVG_BUTTON_COLOR_SETS[buttonColor]?.face ?? "#B87BEF"
-                      }
-                    />
-                  </View>
-                ) : null}
                 <NormalPathNode
                   isLocked={isLocked}
                   isUnavailable={isUnavailable}

@@ -6,7 +6,7 @@ import {
   KIDS_CURVE_MASCOT_ROW_INDEX,
   KidsPathCurveMascot,
 } from "./kids-path-curve-mascot";
-import { ListItem } from "./list-item";
+import { ListItem, type ListItemSelectHandler } from "./list-item";
 import { getPathCurveOffset } from "./path-curve";
 
 const KIDS_ROW_HEIGHT = 74;
@@ -18,7 +18,8 @@ type Props = {
   unitLessonCount: number;
   isActiveLesson?: boolean;
   isSelected?: boolean;
-  onSelect?: (node: View | null) => void;
+  sectionTitle?: string;
+  onSelect?: ListItemSelectHandler;
 };
 
 export const KidsPathListRow = React.memo(function KidsPathListRow({
@@ -27,6 +28,7 @@ export const KidsPathListRow = React.memo(function KidsPathListRow({
   unitLessonCount,
   isActiveLesson = false,
   isSelected = false,
+  sectionTitle = "",
   onSelect,
 }: Props) {
   const showMascot = item.sectionItemIndex === KIDS_CURVE_MASCOT_ROW_INDEX;
@@ -60,6 +62,7 @@ export const KidsPathListRow = React.memo(function KidsPathListRow({
         pathMode="kids"
         isActiveLesson={isActiveLesson}
         isSelected={isSelected}
+        sectionTitle={sectionTitle}
         onSelect={onSelect}
       />
     </View>
