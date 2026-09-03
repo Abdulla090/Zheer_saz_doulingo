@@ -72,3 +72,14 @@ goat-expo-skill-fixed/
 .vercel
 .env*
 .codex-export-check/
+
+# Unused image assets kept locally (source art, not bundled by Metro —
+# zero references in src/ or app config). Untracked so clones stay lean;
+# the files remain on disk here and in git history.
+assets/images/path-backgrounds/
+assets/images/3d/
+assets/images/MASCOTS.png
+assets/images/mascots/allmascot pets.png
+assets/twino_trophy.png
+assets/twino_blobs.png
+assets/images/games/ui/voice-tutor.png
