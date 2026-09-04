@@ -43,7 +43,7 @@ export default function GuidebookScreen() {
     unit?: string | string[];
     mode?: string | string[];
   }>();
-  const safeBack = useSafeBack("/path");
+  const safeBack = useSafeBack("/guidebook");
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { locale, isKu, isAr } = useI18n();

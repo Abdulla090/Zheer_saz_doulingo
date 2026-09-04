@@ -6,6 +6,7 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   testMatch: ["**/__tests__/**/*.test.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
   moduleNameMapper: {
+    "\\.css$": "<rootDir>/jest.setup.js",
     "^@/(.*)$": "<rootDir>/src/$1",
   },
 };

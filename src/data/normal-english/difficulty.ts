@@ -38,7 +38,7 @@ export function getNormalLessonDifficulty(
 function normalizedTokens(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9']+/g, " ")
+    .replace(/[^\p{L}\p{N}']+/gu, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -295,6 +295,60 @@ function contrastingConversationVariants(correct: string): string[] {
   }
 
   const lower = correct.toLowerCase().trim();
+  const isArabic = /[\u0600-\u06FF]/.test(correct);
+  if (isArabic) {
+    if (/^(نعم|أجل|أي|طبعاً)/.test(lower)) {
+      variants.push("لا، شكراً لك. ربما في وقت آخر.");
+      variants.push("لست متأكداً بعد، دعني أفكر في الأمر.");
+    } else if (/^(لا|كلا)/.test(lower)) {
+      variants.push("نعم، من فضلك! سيكون ذلك رائعاً.");
+      variants.push("أكيد، سأكون ممتناً جداً لذلك.");
+    } else if (/^(بالتأكيد|طبعاً|أكيد|تماماً)/.test(lower)) {
+      variants.push("أعتذر، لكنني لن أتمكن من ذلك الآن.");
+      variants.push("أتمنى لو أستطيع، لكنني مشغول حالياً.");
+    } else if (/^(أعتقد|أظن|في رأيي|برأيي)/.test(lower)) {
+      variants.push("أفهم وجهة نظرك، لكن لدي رأي مختلف.");
+      variants.push("لست واثقاً تماماً من أن هذا هو الخيار الأنسب.");
+    } else if (/^(آسف|عذراً|المعذرة)/.test(lower)) {
+      variants.push("لا عليك، خذ وقتك بالكامل.");
+      variants.push("كل شيء على ما يرام، لا تقلق أبداً.");
+    } else if (/^(شكراً|أشكرك)/.test(lower)) {
+      variants.push("على الرحب والسعة! أخبرني إن احتجت أي مساعدة.");
+    } else {
+      variants.push("في الحقيقة، قد لا تنجح الخطة كما توقعنا.");
+      variants.push("دعني أتحقق من هذا الأمر وسأجيبك قريباً.");
+      variants.push("لست متأكداً تماماً، هل يمكننا مراجعة ذلك لاحقاً؟");
+    }
+    return uniqueCandidates(variants, correct);
+  }
+
+  const isRussian = /[А-Яа-яЁё]/.test(correct);
+  if (isRussian) {
+    if (/^(да|конечно|ага)/i.test(lower)) {
+      variants.push("Нет, спасибо. Может быть, в другой раз.");
+      variants.push("Я пока не уверен, дайте мне подумать.");
+    } else if (/^(нет|неа)/i.test(lower)) {
+      variants.push("Да, пожалуйста! Это было бы замечательно.");
+      variants.push("Конечно, я был бы очень признателен.");
+    } else if (/^(конечно|безусловно|определенно|точно)/i.test(lower)) {
+      variants.push("Прошу прощения, но сейчас я не смогу.");
+      variants.push("Хотелось бы, но я сейчас сильно занят.");
+    } else if (/^(я думаю|по моему мнению|я считаю|на мой взгляд|по-моему)/i.test(lower)) {
+      variants.push("Я понимаю вашу мысль, хотя смотрю на это иначе.");
+      variants.push("Я не вполне уверен, что это оптимальный вариант.");
+    } else if (/^(извините|прошу прощения|простите)/i.test(lower)) {
+      variants.push("Ничего страшного, не торопитесь.");
+      variants.push("Все в порядке, не переживайте.");
+    } else if (/^(спасибо|благодарю)/i.test(lower)) {
+      variants.push("Пожалуйста! Дайте знать, если вам что-нибудь понадобится.");
+    } else {
+      variants.push("Честно говоря, все может пойти не совсем по плану.");
+      variants.push("Позвольте мне уточнить этот вопрос, и я скоро вам отвечу.");
+      variants.push("Я пока не совсем уверен. Можем ли мы вернуться к этому позже?");
+    }
+    return uniqueCandidates(variants, correct);
+  }
+
   if (/^yes\b/i.test(lower)) {
     variants.push("No, thank you. Maybe another time.");
     variants.push("I'm not sure yet, let me think about it.");
@@ -331,20 +385,27 @@ export function buildConversationDistractors(
   count: number,
   seed = 0,
 ): string[] {
+  const isArabic = /[\u0600-\u06FF]/.test(entry.correct);
+  const isRussian = /[А-Яа-яЁё]/.test(entry.correct);
+  const filterLang = (candidates: string[]) => {
+    if (isArabic || isRussian) {
+      return candidates.filter((c) => !/[a-zA-Z]{2,}/.test(c));
+    }
+    return candidates;
+  };
+
   const words = entry.correct.split(/\s+/).filter(Boolean);
   const sentenceMisses = words.length >= 3 ? buildSentenceNearMisses(words) : [];
   const contrasting = contrastingConversationVariants(entry.correct);
   const incomplete = incompleteConversationVariants(entry.correct);
 
-  const fullLengthPool = uniqueCandidates(
-    [...sentenceMisses, ...contrasting, entry.wrong1, entry.wrong2, entry.wrong3],
-    entry.correct,
-  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
+  const rawFull = [...sentenceMisses, ...contrasting, entry.wrong1, entry.wrong2, entry.wrong3];
+  const fullLengthPool = filterLang(uniqueCandidates(rawFull, entry.correct))
+    .sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
 
-  const allPool = uniqueCandidates(
-    [...sentenceMisses, ...contrasting, ...incomplete, entry.wrong1, entry.wrong2, entry.wrong3],
-    entry.correct,
-  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
+  const rawAll = [...sentenceMisses, ...contrasting, ...incomplete, entry.wrong1, entry.wrong2, entry.wrong3];
+  const allPool = filterLang(uniqueCandidates(rawAll, entry.correct))
+    .sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, seed));
 
   const chosen: string[] = [];
   if (words.length >= 4 && fullLengthPool.length > 0) {
@@ -355,6 +416,21 @@ export function buildConversationDistractors(
     if (chosen.includes(candidate)) continue;
     chosen.push(candidate);
     if (chosen.length >= count) break;
+  }
+
+  if (isArabic && chosen.length < count) {
+    const arabicFallbacks = [
+      "في الحقيقة، قد لا تسير الأمور كما خططنا لها.",
+      "دعني أتحقق من هذا وسأعود إليك قريباً.",
+      "لست متأكداً تماماً بعد، هل يمكننا التحدث لاحقاً؟",
+      "أظن أن هناك فكرة أخرى أفضل.",
+    ];
+    for (const fb of arabicFallbacks) {
+      if (fb !== entry.correct && !chosen.includes(fb)) {
+        chosen.push(fb);
+        if (chosen.length >= count) break;
+      }
+    }
   }
 
   return chosen.slice(0, count);
@@ -369,33 +445,55 @@ export function buildProgressiveConversationChoices(
   },
   closeCount: number,
 ): { options: string[]; optionTiers: Record<string, AnswerTier> } {
+  const isArabic = /[\u0600-\u06FF]/.test(entry.correct);
+  const filterLang = (candidates: string[]) => {
+    if (!isArabic) return candidates;
+    return candidates.filter((c) => !/[a-zA-Z]{2,}/.test(c));
+  };
+
   const words = entry.correct.split(/\s+/).filter(Boolean);
   const sentenceMisses = words.length >= 3 ? buildSentenceNearMisses(words) : [];
   const contrasting = contrastingConversationVariants(entry.correct);
   const incomplete = incompleteConversationVariants(entry.correct);
   const primaryPartial = sentenceMisses[0] || incomplete[0] || contrasting[0];
-  const remainingNearMisses = uniqueCandidates(
+  const remainingNearMisses = filterLang(uniqueCandidates(
     [
       ...sentenceMisses.slice(1),
       ...contrasting,
       ...incomplete,
     ],
     entry.correct,
-  ).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, closeCount * 53));
-  const nearMisses = uniqueCandidates(
+  )).sort((a, b) => compareByAnswerSimilarity(a, b, entry.correct, closeCount * 53));
+  const nearMisses = filterLang(uniqueCandidates(
     [primaryPartial, ...remainingNearMisses].filter(Boolean),
     entry.correct,
-  ).slice(0, closeCount);
+  )).slice(0, closeCount);
   const nearMissKeys = new Set(nearMisses.map(normalizedKey));
-  const balancedRemainder = buildConversationDistractors(
+  const balancedRemainder = filterLang(buildConversationDistractors(
     entry,
     6,
     closeCount * 97,
-  ).filter((candidate) => !nearMissKeys.has(normalizedKey(candidate)));
-  const candidates = uniqueCandidates(
+  )).filter((candidate) => !nearMissKeys.has(normalizedKey(candidate)));
+  const candidates = filterLang(uniqueCandidates(
     [...nearMisses, ...balancedRemainder, entry.wrong1, entry.wrong2, entry.wrong3],
     entry.correct,
-  ).slice(0, 3);
+  )).slice(0, 3);
+
+  if (isArabic && candidates.length < 3) {
+    const arabicFallbacks = [
+      "في الحقيقة، قد لا تنجح الخطة كما توقعنا.",
+      "دعني أتحقق من هذا وسأعود إليك قريباً.",
+      "لست متأكداً تماماً، هل يمكننا مراجعة ذلك لاحقاً؟",
+      "أرى أن هناك خياراً آخر أفضل.",
+    ];
+    for (const fb of arabicFallbacks) {
+      if (fb !== entry.correct && !candidates.includes(fb)) {
+        candidates.push(fb);
+        if (candidates.length >= 3) break;
+      }
+    }
+  }
+
   const options = [entry.correct, ...candidates];
   const optionTiers: Record<string, AnswerTier> = {
     [entry.correct]: "great",

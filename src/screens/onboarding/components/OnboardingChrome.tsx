@@ -3,21 +3,15 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import React, { useEffect } from "react";
+import React from "react";
 import { Platform, StyleSheet, useWindowDimensions, View } from "react-native";
-import Animated, {
-  cancelAnimation,
-  Easing,
-  interpolate,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from "react-native-reanimated";
 
 import { AppText } from "../../../components/ui/AppText";
 import { IOSPressable } from "../../../components/ui/ios-pressable";
+import {
+  LoginPrimaryButton,
+  LoginPrimaryButtonLabel,
+} from "../../../components/ui/LoginPrimaryButton";
 import { OnboardingProgressRing } from "./OnboardingProgressRing";
 import {
   ONBOARDING_GUTTER,
@@ -183,47 +177,21 @@ export function OnboardingFooter({
   total?: number;
   entranceKey?: string | number;
 }) {
+  const isKu = locale === "ku";
+  const isRtl = isKu || locale === "ar";
   const { width, height } = useWindowDimensions();
   const size = resolveOnboardingSize(width, height);
   const compact = size === "xs" || size === "sm";
   const theme = useOnboardingTheme();
   const styles = React.useMemo(() => createStyles(theme), [theme]);
-  const reduceMotion = useReducedMotion();
-  const reveal = useSharedValue(reduceMotion || entranceKey == null ? 1 : 0);
-
-  useEffect(() => {
-    cancelAnimation(reveal);
-    if (reduceMotion || entranceKey == null) {
-      reveal.value = 1;
-      return;
-    }
-    reveal.value = 0;
-    reveal.value = withDelay(
-      790,
-      withTiming(1, {
-        duration: 320,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
-      }),
-    );
-    return () => cancelAnimation(reveal);
-  }, [entranceKey, reduceMotion, reveal]);
-
-  const revealStyle = useAnimatedStyle(() => ({
-    opacity: reveal.value,
-    transform: [
-      { translateY: interpolate(reveal.value, [0, 1], [14, 0]) },
-      { scale: interpolate(reveal.value, [0, 1], [0.985, 1]) },
-    ],
-  }));
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.footer,
         compact && styles.footerCompact,
         { paddingHorizontal: ONBOARDING_GUTTER[size] },
         { paddingBottom: Math.max(bottomInset, Platform.OS === "ios" ? 12 : 10) },
-        revealStyle,
       ]}
     >
       {hint ? (
@@ -237,26 +205,20 @@ export function OnboardingFooter({
         </AppText>
       ) : null}
 
-      <IOSPressable
+      <LoginPrimaryButton
         testID={testID}
-        accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityState={{ disabled }}
         disabled={disabled}
         onPress={onPress}
-        pressScale={0.985}
-        style={[styles.primaryButton, disabled && styles.primaryButtonDisabled]}
       >
-        <AppText
-          style={styles.primaryButtonLabel}
+        <LoginPrimaryButtonLabel
           languageCode={locale}
-          latinRole="bold"
-          align="center"
-          numberOfLines={1}
+          forceLatinFont={!isRtl && locale === "en"}
+          forceKurdishFont={isKu}
         >
           {label}
-        </AppText>
-      </IOSPressable>
+        </LoginPrimaryButtonLabel>
+      </LoginPrimaryButton>
 
       {secondaryLabel && onSecondaryPress ? (
         <IOSPressable
@@ -273,12 +235,14 @@ export function OnboardingFooter({
             latinRole="bold"
             align="center"
             numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
           >
             {secondaryLabel}
           </AppText>
         </IOSPressable>
       ) : null}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -353,28 +317,6 @@ function createStyles(theme: OnboardingTheme) {
       fontSize: 12,
       lineHeight: 16,
       paddingHorizontal: 16,
-    },
-    primaryButton: {
-      width: "100%",
-      minHeight: 59,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 18,
-      paddingTop: 2,
-      borderRadius: 14,
-      borderCurve: "continuous",
-      borderBottomWidth: 5,
-      borderBottomColor: theme.accentPressed,
-      backgroundColor: theme.accent,
-    },
-    primaryButtonDisabled: {
-      opacity: 0.46,
-    },
-    primaryButtonLabel: {
-      color: theme.onAccent,
-      fontSize: 17,
-      lineHeight: 22,
-      letterSpacing: -0.15,
     },
     secondaryControl: {
       // 44pt of touch height even though the label is 20pt tall.

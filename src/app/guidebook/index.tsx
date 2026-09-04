@@ -10,7 +10,7 @@ import { ScreenOpeningShell } from "../../components/animations/skia-gsap-openin
  */
 export default function GuidebookHubRoute() {
   return (
-    <ScreenOpeningShell variant="guidebook" screenKey="guidebook" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="guidebook" screenKey="guidebook" firstTimeOnly={false}>
       <GuidebookHubScreen />
     </ScreenOpeningShell>
   );

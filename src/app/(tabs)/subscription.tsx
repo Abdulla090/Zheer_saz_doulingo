@@ -3,7 +3,7 @@ import { SubscriptionScreen } from "../../screens/subscriptions/SubscriptionScre
 
 export default function SubscriptionRoute() {
   return (
-    <TabScreenChrome>
+    <TabScreenChrome openingVariant="subscription">
       <SubscriptionScreen />
     </TabScreenChrome>
   );

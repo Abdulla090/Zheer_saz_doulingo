@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 export default function VoiceTutorRoute() {
   return (
-    <ScreenOpeningShell variant="ai" screenKey="voice-tutor" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="ai" screenKey="voice-tutor" firstTimeOnly={false}>
       <VoiceTutorScreen />
     </ScreenOpeningShell>
   );

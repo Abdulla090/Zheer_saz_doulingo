@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 export default function AiTeacherRoute() {
   return (
-    <ScreenOpeningShell variant="ai" screenKey="ai-teacher" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="ai" screenKey="ai-teacher" firstTimeOnly={false}>
       <AiTeacherScreen />
     </ScreenOpeningShell>
   );

@@ -37,7 +37,12 @@
     "aiVoiceSubtitle": "مدرس صوتي في الوقت الفعلي يستمع ويجيب ويساعدك على التحدث بشكل طبيعي.",
     "aiVoiceCta": "ابدأ الصوت المباشر",
     "aiVoiceNote": "مقدمة كردية ← تدريب إنجليزي",
-    "lessonPanelTitle": "حافظ على نشاط مسارك"
+    "lessonPanelTitle": "حافظ على نشاط مسارك",
+    "course": "دورة",
+    "myCourses": "دوراتي",
+    "addCourse": "دورة",
+    "courseComingSoon": "قريباً",
+    "switchCourse": "تغيير الدورة"
   },
   "games": {
     "title": "تدريب",

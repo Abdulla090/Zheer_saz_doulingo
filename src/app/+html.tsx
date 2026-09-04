@@ -63,14 +63,17 @@ export default function Root({ children }: PropsWithChildren) {
                 touch-action: pan-x pan-y;
                 -webkit-text-size-adjust: 100%;
                 -ms-text-size-adjust: 100%;
+                background-color: #10161C;
               }
               body {
                 margin: 0;
                 padding: 0;
                 overflow: hidden;
+                background-color: #10161C;
               }
               #root {
                 display: flex;
+                background-color: #10161C;
               }
             `,
           }}

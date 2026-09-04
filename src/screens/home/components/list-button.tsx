@@ -319,20 +319,24 @@ export const SvgButton = React.memo(
       return () => cancelAnimation(haloProgress);
     }, [haloProgress, showHalo]);
 
+    /*
+     * The press travel runs for locked and unavailable rows too — their only
+     * press feedback — while the action itself stays gated below.
+     */
     const handlePressIn = () => {
-      if (isLocked) return;
       activatedOnPressInRef.current = false;
       pressProgress.value = withTiming(1, {
         duration: 60,
         easing: Easing.out(Easing.quad),
       });
-      if (activateOnPressIn && onPress) {
+      if (activateOnPressIn && onPress && !isLocked && !isUnavailable) {
         activatedOnPressInRef.current = true;
         onPress();
       }
     };
 
     const handlePress = () => {
+      if (isLocked || isUnavailable) return;
       if (activatedOnPressInRef.current) {
         activatedOnPressInRef.current = false;
         return;
@@ -341,7 +345,6 @@ export const SvgButton = React.memo(
     };
 
     const handlePressOut = () => {
-      if (isLocked) return;
       pressProgress.value = withSpring(0, {
         stiffness: 520,
         damping: 28,
@@ -352,7 +355,7 @@ export const SvgButton = React.memo(
     };
 
     const handleHoverIn = () => {
-      if (isLocked) return;
+      if (isLocked || isUnavailable) return;
       hoverProgress.value = withTiming(1, {
         duration: 140,
         easing: Easing.out(Easing.cubic),
@@ -444,7 +447,7 @@ export const SvgButton = React.memo(
     return (
       <Pressable
         inList
-        disabled={!onPress || isLocked || isUnavailable}
+        disabled={!onPress}
         onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}

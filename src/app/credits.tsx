@@ -10,7 +10,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
  */
 export default function CreditsRoute() {
   return (
-    <ScreenOpeningShell variant="subscription" screenKey="credits" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="subscription" screenKey="credits" firstTimeOnly={false}>
       <SubscriptionScreen />
     </ScreenOpeningShell>
   );

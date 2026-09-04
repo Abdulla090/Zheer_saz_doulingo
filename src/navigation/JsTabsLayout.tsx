@@ -11,6 +11,7 @@ import { BlurTargetView } from "expo-blur";
 import { router, Tabs, usePathname } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Platform, useWindowDimensions, View } from "react-native";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 const WARM_TAB_ROUTES = ["/play", "/dashboard", "/more"] as const;
 
@@ -42,6 +43,7 @@ function useWarmTabRoutes() {
 
 function JsTabsLayoutInner() {
   useWarmTabRoutes();
+  const { colors } = useThemeColors();
   const blurTargetRef = useRef<View | null>(null);
   const pathname = usePathname();
   const { width } = useWindowDimensions();
@@ -64,14 +66,15 @@ function JsTabsLayoutInner() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: "#000000",
-        tabBarInactiveTintColor: "#8E95A3",
+        tabBarActiveTintColor: colors.foreground,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        sceneStyle: { backgroundColor: colors.background },
         animation: "fade",
         transitionSpec: {
           animation: "timing",
-          config: { duration: 140 },
+          config: { duration: 160 },
         },
-        freezeOnBlur: true,
+        freezeOnBlur: false,
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: "transparent" }} />
         ),

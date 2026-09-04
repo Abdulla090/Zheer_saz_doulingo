@@ -55,8 +55,9 @@ for (const route of tabRoutes) {
 
 for (const route of stackRoutes) {
   const file = join(root, `src/app/${route}.tsx`);
-  if (!existsSync(file)) {
-    fail(`Missing stack route file src/app/${route}.tsx`);
+  const indexFile = join(root, `src/app/${route}/index.tsx`);
+  if (!existsSync(file) && !existsSync(indexFile)) {
+    fail(`Missing stack route file src/app/${route}.tsx or src/app/${route}/index.tsx`);
   } else {
     ok(`Stack route file exists: /${route}`);
   }

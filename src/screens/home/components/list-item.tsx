@@ -20,12 +20,12 @@ import { getPathCurveOffset } from "./path-curve";
 import { CompletedCheckIcon } from "./completed-check-icon";
 import {
   SVG_BUTTON_COLOR_SETS,
-  CurrentLessonIcon,
   SvgButton,
   SvgButtonVariant,
 } from "./list-button";
 import { NormalPathNode } from "./normal-path-node";
 import { getPathMetrics } from "./path-metrics";
+import { TintableChest } from "./tintable-chest";
 import { NormalPathCurveMascot } from "./normal-path-curve-mascot";
 import { mascotForUnit, unitMascotSlot } from "./path-unit-mascots";
 import { hapticSelection } from "../../../utils/haptics";
@@ -179,6 +179,19 @@ export const ListItem = React.memo(
       unitLessonCount,
     );
     const RewardChest = chestKind === "gold" ? ChestUnlocked : Chest;
+    /*
+     * When the learner's next lesson IS the chest, the chest itself carries the
+     * "you are here" state: it is recoloured to the unit's own face colour and
+     * wears no bouncing star — the star exists to mark a plain node, and on the
+     * chest it only covered the artwork.
+     */
+    const isCurrentChestLesson = Boolean(chestKind) && showsActiveStar;
+    const unitChestColor =
+      lessonColorTheme(item) in SVG_BUTTON_COLOR_SETS
+        ? SVG_BUTTON_COLOR_SETS[
+            lessonColorTheme(item) as SvgButtonVariant
+          ].face
+        : SVG_BUTTON_COLOR_SETS.blue.face;
     /** The one branch below that renders `NormalPathNode`. */
     const isNormalPathNode = isNormalPath && !chestKind;
 
@@ -207,6 +220,12 @@ export const ListItem = React.memo(
       });
     };
     const handleSelect = () => {
+      /*
+       * Locked and completed rows still play their press animation — the
+       * handler below is wired into every node for exactly that — but the
+       * press is feedback only: no popup, no navigation, no haptic.
+       */
+      if (isLocked || isUnavailable) return;
       hapticSelection();
       if (onSelect && !isUnavailable) {
         onSelect(item, sectionTitle, nodeRef.current, unitLessonCount);
@@ -268,8 +287,10 @@ export const ListItem = React.memo(
           >
             {chestKind ? (
               <IOSPressable
-                disabled={isLocked || isUnavailable}
-                onPress={isLocked || isUnavailable ? undefined : handleSelect}
+                inList
+                // Not `disabled`: locked and completed chests also dim on
+                // press — feedback without action, matching the lesson nodes.
+                onPress={handleSelect}
                 accessibilityRole="button"
                 accessibilityLabel={`Unit ${unitNumber} lesson ${lessonNumber}, ${chestKind} chest${isLocked ? ", locked" : isCompleted ? ", completed" : ", current"}`}
                 accessibilityState={{
@@ -283,23 +304,19 @@ export const ListItem = React.memo(
                   justifyContent: "center",
                 }}
               >
-                <RewardChest
-                  width={metrics.lessonButtonSize}
-                  height={metrics.lessonButtonSize}
-                />
-                {showsActiveStar && !isLocked ? (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      top: Math.round(metrics.lessonButtonSize * 0.31),
-                    }}
-                  >
-                    <CurrentLessonIcon
-                      size={Math.round(metrics.lessonButtonSize * 0.4)}
-                    />
-                  </View>
-                ) : isCompleted ? (
+                {isCurrentChestLesson ? (
+                  <TintableChest
+                    width={metrics.lessonButtonSize}
+                    height={metrics.lessonButtonSize}
+                    color={unitChestColor}
+                  />
+                ) : (
+                  <RewardChest
+                    width={metrics.lessonButtonSize}
+                    height={metrics.lessonButtonSize}
+                  />
+                )}
+                {isCompleted ? (
                   <View
                     pointerEvents="none"
                     style={{
@@ -332,7 +349,7 @@ export const ListItem = React.memo(
                   isCompleted={isCompleted}
                   isSelected={isSelected}
                   size={metrics.lessonButtonSize}
-                  onPress={isLocked || isUnavailable ? undefined : handleSelect}
+                  onPress={handleSelect}
                   variant={buttonColor}
                   IconComponent={LessonNodeIcon}
                   iconColor={iconColorOverride}
@@ -353,7 +370,7 @@ export const ListItem = React.memo(
                 isCompleted={isCompleted}
                 isSelected={isSelected}
                 size={metrics.lessonButtonSize}
-                onPress={isLocked || isUnavailable ? undefined : handleSelect}
+                onPress={handleSelect}
                 activateOnPressIn={Platform.OS !== "web"}
                 variant={buttonColor}
                 IconComponent={isCompleted ? CompletedCheckIcon : undefined}

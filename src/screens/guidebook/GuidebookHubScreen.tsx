@@ -1,5 +1,7 @@
 import {
   Activity01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
   BookAIcon,
   BoxIcon,
   Cancel01Icon,
@@ -9,12 +11,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
 import { AppText } from "../../components/ui/AppText";
 import { IOSPressable } from "../../components/ui/ios-pressable";
@@ -37,10 +34,10 @@ import { getGuidebookAccent } from "./guidebook-theme";
 /*
  * Guidebook hub — the screen the path's guidebook button opens.
  *
- * Four reference sections in a strict two-column grid: Letters, Nouns, Verbs
- * and the unit's Everyday Talking guide (the original guide screen, now at
- * `/guidebook/everyday-talking`, which receives the `unit`/`mode` params this
- * screen was opened with).
+ * Four reference sections as large full-width cards in a single column:
+ * Letters, Nouns, Verbs and the unit's Everyday Talking guide (the original
+ * guide screen, now at `/guidebook/everyday-talking`, which receives the
+ * `unit`/`mode` params this screen was opened with).
  *
  * Design follows the guide screen's language — hairline toolbar, quiet
  * surfaces, accent used sparingly — with one accent hue per section so the
@@ -127,10 +124,10 @@ export default function GuidebookHubScreen() {
     lessons?: string | string[];
   }>();
   const router = useRouter();
-  const safeBack = useSafeBack("/path");
+  const safeBack = useSafeBack("/(tabs)");
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const { locale, isKu } = useI18n();
+  const { locale, isKu, isAr } = useI18n();
+  const isRtl = isKu || isAr;
   const { colors } = useThemeColors();
   const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
   const copy = useMemo(() => getGuidebookSectionsCopy(locale), [locale]);
@@ -198,84 +195,84 @@ export default function GuidebookHubScreen() {
     [lessonsCount, modeParam, router, unitParam],
   );
 
-  const gridWidth = Math.min(width, HUB_MAX_WIDTH) - PAGE_PADDING * 2;
-  const cardWidth = (gridWidth - CARD_GAP) / 2;
-
-  const renderCard = (section: SectionCard, index: number) => {
+  const renderCard = (section: SectionCard) => {
     const accent = getGuidebookAccent(section.accentTheme);
     const isPressed = pressedKey === section.key;
+    const ForwardIcon = isRtl ? ArrowLeft01Icon : ArrowRight01Icon;
 
     return (
-      <View
+      <IOSPressable
         key={section.key}
-        style={{ width: cardWidth }}
+        onPress={() => openSection(section)}
+        onPressIn={() => setPressedKey(section.key)}
+        onPressOut={() => setPressedKey(null)}
+        accessibilityRole="button"
+        accessibilityLabel={`${section.title(copy)} — ${section.count(copy, counts)}`}
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.surfaceRaised,
+            borderColor: colors.border,
+            transform: [{ scale: isPressed ? 0.982 : 1 }],
+            opacity: isPressed ? 0.93 : 1,
+          },
+        ]}
       >
-        <IOSPressable
-          onPress={() => openSection(section)}
-          onPressIn={() => setPressedKey(section.key)}
-          onPressOut={() => setPressedKey(null)}
-          accessibilityRole="button"
-          accessibilityLabel={`${section.title(copy)} — ${section.count(copy, counts)}`}
-          style={[
-            styles.card,
-            {
-              backgroundColor: colors.surfaceRaised,
-              borderColor: colors.border,
-              transform: [{ scale: isPressed ? 0.977 : 1 }],
-              opacity: isPressed ? 0.92 : 1,
-            },
-          ]}
-        >
-          <View style={styles.cardTop}>
-            <View style={[styles.iconTile, { backgroundColor: accent.tint }]}>
-              <HugeiconsIcon
-                icon={section.icon}
-                size={24}
-                color={accent.strong}
-                strokeWidth={1.9}
-              />
-            </View>
+        <View style={styles.cardTop}>
+          <View style={[styles.iconTile, { backgroundColor: accent.tint }]}>
+            <HugeiconsIcon
+              icon={section.icon}
+              size={24}
+              color={accent.strong}
+              strokeWidth={1.9}
+            />
           </View>
+          <HugeiconsIcon
+            icon={ForwardIcon}
+            size={20}
+            color={colors.mutedForeground}
+            strokeWidth={2}
+          />
+        </View>
 
-          <View style={styles.cardText}>
+        <View style={styles.cardText}>
+          <AppText
+            style={[styles.cardTitle, { color: colors.foreground }]}
+            languageCode={locale}
+            forceKurdishFont={isKu}
+            align="start"
+            fullWidth
+            numberOfLines={1}
+          >
+            {section.title(copy)}
+          </AppText>
+
+          <AppText
+            style={[styles.cardSubtitle, { color: colors.mutedForeground }]}
+            languageCode={locale}
+            forceKurdishFont={isKu}
+            align="start"
+            fullWidth
+            numberOfLines={2}
+          >
+            {section.subtitle(copy)}
+          </AppText>
+
+          {section.hasCount(counts) ? (
             <AppText
-              style={[styles.cardTitle, { color: colors.foreground }]}
+              style={[styles.cardCount, { color: accent.strong }]}
               languageCode={locale}
               forceKurdishFont={isKu}
+              forceLatinFont={!isKu}
               align="start"
               fullWidth
               numberOfLines={1}
             >
-              {section.title(copy)}
+              {section.count(copy, counts)}
             </AppText>
-
-            <AppText
-              style={[styles.cardSubtitle, { color: colors.mutedForeground }]}
-              languageCode={locale}
-              forceKurdishFont={isKu}
-              align="start"
-              fullWidth
-              numberOfLines={2}
-            >
-              {section.subtitle(copy)}
-            </AppText>
-
-            {section.hasCount(counts) ? (
-              <AppText
-                style={[styles.cardCount, { color: accent.strong }]}
-                languageCode={locale}
-                forceKurdishFont={isKu}
-                forceLatinFont={!isKu}
-                align="start"
-                fullWidth
-                numberOfLines={1}
-              >
-                {section.count(copy, counts)}
-              </AppText>
-            ) : null}
-          </View>
-        </IOSPressable>
-      </View>
+          ) : null}
+        </View>
+      </IOSPressable>
     );
   };
 
@@ -370,39 +367,39 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: CARD_GAP,
     paddingTop: 12,
   },
   card: {
-    aspectRatio: 0.94,
+    aspectRatio: 1.8,
+    justifyContent: "space-between",
     borderRadius: CARD_RADIUS,
     borderCurve: "continuous",
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 16,
+    padding: 18,
   },
-  cardTop: { minHeight: 46 },
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   iconTile: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
   },
   cardText: {
-    flex: 1,
-    justifyContent: "flex-end",
-    gap: 3,
-    marginTop: 12,
+    gap: 4,
   },
   cardTitle: {
-    fontSize: 17,
-    lineHeight: 22,
+    fontSize: 19,
+    lineHeight: 25,
     fontWeight: "800",
     letterSpacing: -0.2,
   },
-  cardSubtitle: { fontSize: 12.5, lineHeight: 17, fontWeight: "500" },
-  cardCount: { fontSize: 12, lineHeight: 16, fontWeight: "800", marginTop: 3 },
+  cardSubtitle: { fontSize: 13, lineHeight: 18, fontWeight: "500" },
+  cardCount: { fontSize: 13, lineHeight: 16, fontWeight: "800" },
 });

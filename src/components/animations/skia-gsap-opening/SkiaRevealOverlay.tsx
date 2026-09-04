@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo } from "react";
-import { StyleSheet, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -21,7 +21,7 @@ type Props = {
 /** Web reveal — Reanimated orbs + gradient (avoids Skia/Metro web resolution issues). */
 export function SkiaRevealOverlay({ variant, playKey, onComplete }: Props) {
   const { width, height } = useWindowDimensions();
-  const theme = OPENING_THEMES[variant];
+  const theme = OPENING_THEMES[variant] ?? OPENING_THEMES.general;
   const maxDim = Math.max(width, height, 1);
 
   const veilOpacity = useSharedValue(1);
@@ -146,5 +146,10 @@ const styles = StyleSheet.create({
   },
   orb: {
     position: "absolute",
+    ...Platform.select({
+      web: {
+        filter: "blur(48px)",
+      } as any,
+    }),
   },
 });

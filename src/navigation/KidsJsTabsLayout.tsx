@@ -8,8 +8,10 @@ import { pathnameHidesTabBar } from "../constants/tab-navigation";
 import { Tabs, usePathname } from "expo-router";
 import React from "react";
 import { View } from "react-native";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 function KidsJsTabsLayoutInner() {
+  const { colors } = useThemeColors();
   const pathname = usePathname();
   const { hidden: contextHidden } = useTabBarVisibility();
   const hideTabBar = contextHidden || pathnameHidesTabBar(pathname);
@@ -20,6 +22,7 @@ function KidsJsTabsLayoutInner() {
       tabBar={(props) => <KidsCustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: colors.background },
         tabBarShowLabel: false,
         tabBarActiveTintColor: "#4CAF50", // Kid-friendly green
         tabBarInactiveTintColor: "#9E9E9E",

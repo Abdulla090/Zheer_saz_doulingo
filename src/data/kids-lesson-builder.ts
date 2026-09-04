@@ -1,6 +1,7 @@
 import type { GameQuestion, KidsPlayQuestion } from "./types";
 import type { KidsGameStep, KidsChoice } from "./kids-games";
 import { getKidsVoiceImage } from "./kids-image-assets";
+import { useLocaleStore } from "../stores/useLocaleStore";
 
 function shuffle<T>(arr: T[], seed: number): T[] {
   const a = [...arr];
@@ -13,8 +14,11 @@ function shuffle<T>(arr: T[], seed: number): T[] {
   return a;
 }
 
-function shuffleChoices(choices: KidsChoice[], seed: number): KidsChoice[] {
-  return shuffle(choices, seed);
+function shuffleChoices(choices: KidsChoice[], seed: number, isArabic = false): KidsChoice[] {
+  const mapped = isArabic
+    ? choices.map((c) => (c.arabicLabel ? { ...c, label: c.arabicLabel } : c))
+    : choices;
+  return shuffle(mapped, seed);
 }
 
 function kidsPlay(
@@ -30,39 +34,42 @@ export function kidsStepToQuestion(
   unitIndex = -1,
   lessonIndex = -1,
 ): GameQuestion {
+  const targetLang = useLocaleStore.getState().selectedTargetLanguage;
+  const isArabicTarget = targetLang === "ar";
+
   switch (step.kind) {
     case "scene":
       return kidsPlay({
         variant: "scene",
         scene: step.scene,
-        prompt: step.prompt,
-        promptLang: "en",
+        prompt: isArabicTarget && step.promptAr ? step.promptAr : step.prompt,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.correctId,
-        choices: shuffleChoices(step.choices, seed),
+        choices: shuffleChoices(step.choices, seed, isArabicTarget),
       });
     case "bubble":
       return kidsPlay({
         variant: "bubble",
-        prompt: step.prompt,
-        promptLang: "en",
+        prompt: isArabicTarget && step.promptAr ? step.promptAr : step.prompt,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.correctId,
-        choices: shuffleChoices(step.choices, seed + 1),
+        choices: shuffleChoices(step.choices, seed + 1, isArabicTarget),
       });
     case "feed":
       return kidsPlay({
         variant: "feed",
         mascotEmoji: step.mascotEmoji,
-        prompt: step.prompt,
-        promptLang: "en",
+        prompt: isArabicTarget && step.promptAr ? step.promptAr : step.prompt,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.correctId,
-        choices: shuffleChoices(step.choices, seed + 2),
+        choices: shuffleChoices(step.choices, seed + 2, isArabicTarget),
       });
     case "shadow": {
-      const items = shuffleChoices(step.items, seed + 3);
+      const items = shuffleChoices(step.items, seed + 3, isArabicTarget);
       return kidsPlay({
         variant: "shadow",
-        prompt: step.prompt,
-        promptLang: "en",
+        prompt: isArabicTarget && step.promptAr ? step.promptAr : step.prompt,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: "shadow",
         choices: items,
         shadowSlotIds: shuffle(
@@ -74,51 +81,52 @@ export function kidsStepToQuestion(
     case "native":
       return kidsPlay({
         variant: "pick",
-        prompt: step.kurdishPrompt,
-        promptLang: "ku",
+        prompt: isArabicTarget && step.arabicPrompt ? step.arabicPrompt : step.kurdishPrompt,
+        promptLang: isArabicTarget ? "ar" : "ku",
         correctId: step.correctId,
-        choices: shuffleChoices(step.choices, seed + 5),
+        choices: shuffleChoices(step.choices, seed + 5, isArabicTarget),
       });
     case "simon":
       return kidsPlay({
         variant: "pick",
-        prompt: step.phrase,
-        promptLang: "en",
+        prompt: isArabicTarget && step.phraseAr ? step.phraseAr : step.phrase,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.correctId,
-        choices: shuffleChoices(step.choices, seed + 6),
+        choices: shuffleChoices(step.choices, seed + 6, isArabicTarget),
       });
     case "train": {
-      const extras = step.extraWords ?? ["the", "a", "is"];
+      const trainWords = isArabicTarget && step.arabicWords ? step.arabicWords : step.words;
+      const extras = step.extraWords ?? (isArabicTarget ? ["في", "هو", "الـ"] : ["the", "a", "is"]);
       const bank = shuffle(
-        [...step.words, ...extras.filter((w) => !step.words.includes(w))],
+        [...trainWords, ...extras.filter((w) => !trainWords.includes(w))],
         seed + 7,
       );
       return {
         type: "sentence_builder",
-        kurdishSentence: step.kurdishHint,
+        kurdishSentence: isArabicTarget && step.arabicHint ? step.arabicHint : step.kurdishHint,
         wordBank: bank,
-        correctWords: [...step.words],
+        correctWords: [...trainWords],
         xp: 20,
       };
     }
     case "trick":
       return kidsPlay({
         variant: "yes_no",
-        prompt: `Does "${step.spokenWord}" match?`,
-        promptLang: "en",
+        prompt: isArabicTarget ? `هل كلمة "${step.spokenWord}" تطابق؟` : `Does "${step.spokenWord}" match?`,
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.matches ? "yes" : "no",
         choices: [],
         shownEmoji: step.showEmoji,
-        shownLabel: step.showLabel,
+        shownLabel: isArabicTarget && step.showLabelAr ? step.showLabelAr : step.showLabel,
         spokenWord: step.spokenWord,
         matches: step.matches,
       });
     case "echo":
       return {
         type: "voice",
-        prompt: step.prompt,
-        targetWord: step.target,
-        targetKurdish: step.targetKurdish,
+        prompt: isArabicTarget ? "كرر بالصوت:" : step.prompt,
+        targetWord: isArabicTarget && step.targetArabic ? step.targetArabic : step.target,
+        targetKurdish: isArabicTarget && step.targetArabic ? step.targetArabic : step.targetKurdish,
         imageRequire:
           getKidsVoiceImage(step.target, unitIndex, lessonIndex) ?? step.imageRequire,
         xp: 20,
@@ -134,15 +142,16 @@ export function kidsStepToQuestion(
               { id: "_w2", emoji: "❓", label: "?" },
             ],
         seed + 8,
+        isArabicTarget,
       ).slice(0, 3);
       return kidsPlay({
         variant: "treasure",
-        prompt: "Tap the chest, then pick the matching word!",
-        promptLang: "en",
+        prompt: isArabicTarget ? "المس الصندوق واكتشف الكلمة المطابقة!" : "Tap the chest, then pick the matching word!",
+        promptLang: isArabicTarget ? "ar" : "en",
         correctId: step.correctId,
         choices: options,
         treasureRevealEmoji: reveal.emoji,
-        treasureRevealLabel: reveal.label,
+        treasureRevealLabel: isArabicTarget && reveal.arabicLabel ? reveal.arabicLabel : reveal.label,
       });
     }
     default:

@@ -5,10 +5,9 @@ import type { LessonPathMode } from "../../../data/lesson-content";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import {
-  useCurrentProgress,
   useProgressStore,
 } from "../../../stores/useProgressStore";
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -21,6 +20,7 @@ import { isDesktopWebWidth } from "../../../constants/web-layout";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
 import { openHttpsUrl } from "../../../utils/safe-link";
 import { LanguageFlag } from "../../onboarding/components/OnboardingFlag";
+import { DuolingoCourseDropdown } from "./DuolingoCourseDropdown";
 
 const DIAMOND_ICON = require("../../../../assets/images/path-stats/diamond.png");
 const STREAK_ICON = require("../../../../assets/images/path-stats/streak.png");
@@ -35,7 +35,6 @@ type StatItem = {
   imageSource?: ImageSource;
   iconWidth?: number;
   iconHeight?: number;
-  targetFlag?: boolean;
 };
 
 export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
@@ -47,30 +46,19 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const streakDays = useProgressStore((state) => state.streakDays);
   const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
-  const currentProgress = useCurrentProgress();
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const isRtl = isKu || isAr;
   const mobileWeb = Platform.OS === "web" && width < 768;
   const compact = width < 370 || mobileWeb;
 
-  const completedLessons =
-    pathMode === "normal"
-      ? currentProgress.normalNextLessonPathIndex
-      : pathMode === "kids"
-        ? currentProgress.kidsNextLessonPathIndex
-        : currentProgress.nextLessonPathIndex;
+  const handleFlagPress = useCallback(() => {
+    setIsDropdownOpen((prev) => !prev);
+  }, []);
 
   const items = useMemo<StatItem[]>(
     () => [
-      {
-        key: "xp",
-        label: t("games.xpEarned"),
-        shortLabel: "XP",
-        value: totalXp.toLocaleString(),
-        accent: "#FF9600",
-        imageSource: DIAMOND_ICON,
-        iconWidth: 20,
-        iconHeight: 20,
-      },
       {
         key: "streak",
         label: t("games.dayStreak"),
@@ -82,6 +70,16 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         iconHeight: 22,
       },
       {
+        key: "xp",
+        label: t("games.xpEarned"),
+        shortLabel: "XP",
+        value: totalXp.toLocaleString(),
+        accent: "#FF9600",
+        imageSource: DIAMOND_ICON,
+        iconWidth: 20,
+        iconHeight: 20,
+      },
+      {
         key: "goal",
         label: t("home.dailyGoal"),
         shortLabel: isKu ? "ئامانج" : isAr ? "هدف" : "Goal",
@@ -91,26 +89,20 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         iconWidth: 28,
         iconHeight: 21,
       },
-      {
-        key: "lessons",
-        label: t("home.lessonsComplete"),
-        shortLabel: isKu ? "وانە" : isAr ? "درس" : "Lessons",
-        value: completedLessons.toLocaleString(),
-        accent: "#F05B57",
-        targetFlag: true,
-      },
     ],
-    [completedLessons, dailyGoalXp, dailyXp, isAr, isKu, streakDays, t, totalXp],
+    [dailyGoalXp, dailyXp, isAr, isKu, streakDays, t, totalXp],
   );
 
   const styles = useMemo(
-    () => createStyles(colors, isDark, compact, mobileWeb),
-    [colors, compact, isDark, mobileWeb],
+    () => createStyles(colors, isDark, compact, mobileWeb, isRtl),
+    [colors, compact, isDark, mobileWeb, isRtl],
   );
 
   if (Platform.OS === "web" && isDesktopWebWidth(width)) {
     return null;
   }
+
+  const dropdownTop = mobileWeb ? 50 : compact ? 54 : 60;
 
   return (
     <View style={styles.shell}>
@@ -121,56 +113,87 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         ]}
         accessibilityRole="summary"
       >
-        {items.map((item, index) => {
-          const ItemContainer = item.key === "xp" ? Pressable : View;
-          return (
-            <ItemContainer
-              key={item.key}
-              style={[styles.item, index > 0 && styles.divider]}
-              accessibilityLabel={`${item.label}: ${item.value}`}
-              {...(item.key === "xp"
-                ? {
-                    accessibilityRole: "button" as const,
-                    onPress: () => void openHttpsUrl(SUBSCRIPTION_URL),
-                  }
-                : {})}
-            >
-              <AppText
-                style={[styles.value, { color: item.accent }]}
-                forceKurdishFont={isKu}
-                forceLatinFont={!isRtl}
-                latinRole="bold"
-                numberOfLines={1}
+        {/* Duolingo-style Target Language Flag Button at the leading corner */}
+        <Pressable
+          onPress={handleFlagPress}
+          style={({ pressed }) => [
+            styles.flagButton,
+            isDropdownOpen && styles.flagButtonActive,
+            pressed && { transform: [{ scale: 0.94 }] },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={t("home.switchCourse") ?? "Switch target language"}
+        >
+          <LanguageFlag
+            code={targetLanguage}
+            borderColor={
+              isDropdownOpen
+                ? "#1CB0F6"
+                : isDark
+                  ? "rgba(255,255,255,0.22)"
+                  : colors.border
+            }
+            width={compact ? 25 : 28}
+          />
+        </Pressable>
+
+        {/* Stats Items Container */}
+        <View
+          style={[
+            styles.statsContainer,
+            { flexDirection: isRtl ? "row-reverse" : "row" },
+          ]}
+        >
+          {items.map((item, index) => {
+            const ItemContainer = item.key === "xp" ? Pressable : View;
+            return (
+              <ItemContainer
+                key={item.key}
+                style={[styles.item, index > 0 && styles.divider]}
+                accessibilityLabel={`${item.label}: ${item.value}`}
+                {...(item.key === "xp"
+                  ? {
+                      accessibilityRole: "button" as const,
+                      onPress: () => void openHttpsUrl(SUBSCRIPTION_URL),
+                    }
+                  : {})}
               >
-                {item.value}
-              </AppText>
-              {item.targetFlag ? (
-                <LanguageFlag
-                  code={targetLanguage}
-                  borderColor={
-                    isDark ? "rgba(255,255,255,0.18)" : colors.border
-                  }
-                  width={compact ? 23 : 25}
-                />
-              ) : item.imageSource ? (
-                <Image
-                  source={item.imageSource}
-                  contentFit="contain"
-                  transition={0}
-                  style={{
-                    width: compact
-                      ? Math.max(14, (item.iconWidth ?? 20) - 1)
-                      : item.iconWidth,
-                    height: compact
-                      ? Math.max(14, (item.iconHeight ?? 20) - 1)
-                      : item.iconHeight,
-                  }}
-                />
-              ) : null}
-            </ItemContainer>
-          );
-        })}
+                <AppText
+                  style={[styles.value, { color: item.accent }]}
+                  forceKurdishFont={isKu}
+                  forceLatinFont={!isRtl}
+                  latinRole="bold"
+                  numberOfLines={1}
+                >
+                  {item.value}
+                </AppText>
+                {item.imageSource ? (
+                  <Image
+                    source={item.imageSource}
+                    contentFit="contain"
+                    transition={0}
+                    style={{
+                      width: compact
+                        ? Math.max(14, (item.iconWidth ?? 20) - 1)
+                        : item.iconWidth,
+                      height: compact
+                        ? Math.max(14, (item.iconHeight ?? 20) - 1)
+                        : item.iconHeight,
+                    }}
+                  />
+                ) : null}
+              </ItemContainer>
+            );
+          })}
+        </View>
       </View>
+
+      {/* Duolingo Course Dropdown Slider */}
+      <DuolingoCourseDropdown
+        visible={isDropdownOpen}
+        onClose={() => setIsDropdownOpen(false)}
+        topOffset={dropdownTop}
+      />
     </View>
   );
 }
@@ -180,12 +203,15 @@ function createStyles(
   isDark: boolean,
   compact: boolean,
   mobileWeb: boolean,
+  isRtl: boolean,
 ) {
   return StyleSheet.create({
     shell: {
       alignSelf: "center",
       width: "100%",
       maxWidth: 640,
+      zIndex: 100,
+      position: "relative",
     },
     row: {
       alignSelf: "center",
@@ -194,6 +220,34 @@ function createStyles(
       alignItems: "center",
       paddingHorizontal: mobileWeb ? 10 : 14,
       marginBottom: mobileWeb ? 4 : 6,
+      zIndex: 102,
+    },
+    flagButton: {
+      paddingHorizontal: compact ? 6 : 8,
+      paddingVertical: compact ? 4 : 5,
+      borderRadius: 12,
+      borderCurve: "continuous",
+      backgroundColor: isDark ? "#24272E" : "#FFFFFF",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.14)" : "#E2E8F0",
+      borderBottomWidth: 3,
+      borderBottomColor: isDark ? "#181A20" : "#CBD5E1",
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: isRtl ? 0 : 8,
+      marginLeft: isRtl ? 8 : 0,
+      zIndex: 105,
+    },
+    flagButtonActive: {
+      borderColor: "#1CB0F6",
+      borderBottomColor: "#1899D6",
+      backgroundColor: isDark ? "rgba(28, 176, 246, 0.15)" : "#EBF8FE",
+    },
+    statsContainer: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     item: {
       flex: 1,

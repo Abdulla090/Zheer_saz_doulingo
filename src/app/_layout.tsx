@@ -18,10 +18,16 @@ import { fetchRemoteCurriculum } from "../services/curriculum-loader";
 import { applyUiLanguageDirection, useLocaleStore } from "../stores/useLocaleStore";
 import { getLanguageDirection } from "../i18n/direction";
 import { LayoutDirectionProvider } from "../i18n/layout-direction";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { useFonts } from "expo-font";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { InteractionManager, Platform, StyleSheet, Text, View } from "react-native";
@@ -61,6 +67,7 @@ function applyGlobalFont(kurdishFontFamily: string) {
 function InnerLayout() {
   useAndroidImmersiveChrome();
 
+  const { colors, isDark } = useThemeColors();
   const { selectedFont, ready: fontStoreReady } = useFontStore();
   const progressReady = useProgressStore((s) => s.ready);
   const settingsReady = useSettingsStore((s) => s.ready);
@@ -183,6 +190,18 @@ function InnerLayout() {
 
   const isRTL = getLanguageDirection(uiLanguage) === "rtl";
 
+  const navTheme = React.useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.background,
+        card: colors.background,
+      },
+    };
+  }, [isDark, colors.background]);
+
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
@@ -199,18 +218,20 @@ function InnerLayout() {
         <LayoutDirectionProvider value={isRTL ? "rtl" : "ltr"}>
         <GestureHandlerRootView
           style={[
-            { flex: 1 },
+            { flex: 1, backgroundColor: colors.background },
             Platform.OS !== "web" && { direction: isRTL ? "rtl" : "ltr" },
             rnWebVars as any,
           ]}
         >
           <SkiaWebGate>
           <AppErrorBoundary>
+            <ThemeProvider value={navTheme}>
             <BottomSheetModalProvider>
               <Stack
                 screenOptions={{
                   headerShown: false,
                   animation: "fade",
+                  contentStyle: { backgroundColor: colors.background },
                 }}
               >
                   <Stack.Screen name="(tabs)" />
@@ -218,14 +239,24 @@ function InnerLayout() {
                     name="roleplay"
                     options={{ presentation: "fullScreenModal", animation: "fade" }}
                   />
-                  <Stack.Screen name="lesson" />
-                  <Stack.Screen name="guidebook" options={{ animation: "fade" }} />
+                  <Stack.Screen
+                    name="lesson"
+                    options={{ presentation: "fullScreenModal", animation: "fade" }}
+                  />
+                  <Stack.Screen name="guidebook/index" />
+                  <Stack.Screen name="guidebook/everyday-talking" />
+                  <Stack.Screen name="guidebook/letters" />
+                  <Stack.Screen name="guidebook/nouns" />
+                  <Stack.Screen name="guidebook/verbs" />
+                  <Stack.Screen name="exam-center/index" />
+                  <Stack.Screen name="exam-center/[examId]/index" />
                   <Stack.Screen name="ai-teacher" />
                   <Stack.Screen name="voice-tutor" />
-                  <Stack.Screen name="path" options={{ animation: "fade" }} />
+                  <Stack.Screen name="path" />
                   <Stack.Screen name="podcast" />
                   <Stack.Screen name="slang" />
                   <Stack.Screen name="reading-practice" />
+                  <Stack.Screen name="course-details" />
                   <Stack.Screen name="quest" />
                   <Stack.Screen name="league" />
                   <Stack.Screen name="privacy-policy" />
@@ -239,6 +270,7 @@ function InnerLayout() {
                   <Stack.Screen name="onboarding" />
               </Stack>
             </BottomSheetModalProvider>
+            </ThemeProvider>
           </AppErrorBoundary>
           </SkiaWebGate>
         </GestureHandlerRootView>

@@ -70,54 +70,58 @@ const RICH_IMAGE_OVERRIDES: Partial<Record<number, number>> = {
  * Returns -1 if no high-quality matching image is available.
  */
 export function getImageKey(englishWord: string): number {
+  if (!englishWord) return -1;
   const word = englishWord.toLowerCase().trim();
+  // Strip common Arabic definite article "ال" for matching
+  const stripped = word.replace(/^ال/, "").trim();
+  const has = (...terms: string[]) => terms.some((t) => word === t || stripped === t);
 
   // 0: dog
-  if (word === "dog" || word === "dogs" || word === "puppy") return 0;
+  if (has("dog", "dogs", "puppy", "كلب", "چلب", "جرو", "كلاب", "چلاب")) return 0;
   // 1: cat
-  if (word === "cat" || word === "cats" || word === "kitten") return 1;
+  if (has("cat", "cats", "kitten", "قطة", "بزونة", "قط", "قطط", "بزازين", "هريرة")) return 1;
   // 2: bird
-  if (word === "bird" || word === "birds" || word === "parrot") return 2;
+  if (has("bird", "birds", "parrot", "طير", "طائر", "عصفور", "طيور", "عصافير", "ببغاء")) return 2;
   // 3: fish
-  if (word === "fish" || word === "fishes") return 3;
+  if (has("fish", "fishes", "سمكة", "سمچة", "سمك", "اسماك", "أسماك")) return 3;
   // 4: rabbit
-  if (word === "rabbit" || word === "rabbits" || word === "bunny") return 4;
+  if (has("rabbit", "rabbits", "bunny", "أرنب", "ارنب", "أرانب", "ارانب")) return 4;
   
   // 5: zebra
-  if (word === "zebra" || word === "zebras") return 5;
+  if (has("zebra", "zebras", "حمار وحشي", "حمار الوحش", "حمار_وحشي")) return 5;
   // 6: elephant
-  if (word === "elephant" || word === "elephants") return 6;
+  if (has("elephant", "elephants", "فيل", "فيلة", "فيول")) return 6;
   // 7: monkey
-  if (word === "monkey" || word === "monkeys") return 7;
+  if (has("monkey", "monkeys", "قرد", "قرود", "شادي")) return 7;
   // 8: apple
-  if (word === "apple" || word === "apples" || word === "red") return 8;
+  if (has("apple", "apples", "red", "تفاحة", "تفاح", "احمر", "أحمر", "حمراء")) return 8;
   // 9: banana
-  if (word === "banana" || word === "bananas" || word === "yellow") return 9;
+  if (has("banana", "bananas", "yellow", "موزة", "موز", "اصفر", "أصفر", "صفراء")) return 9;
   // 10: cake
-  if (word === "cake" || word === "cakes") return 10;
+  if (has("cake", "cakes", "كعكة", "كيك", "كيكة")) return 10;
   // 11: cookie
-  if (word === "cookie" || word === "cookies") return 11;
+  if (has("cookie", "cookies", "بسكويت", "بسكوت", "كوكيز", "كعك")) return 11;
   // 12: balloon
-  if (word === "balloon" || word === "balloons" || word === "blue") return 12;
+  if (has("balloon", "balloons", "blue", "نفاخة", "بالون", "بالونة", "ازرق", "أزرق", "زرقاء")) return 12;
   // 13: baby
-  if (word === "baby" || word === "babies") return 13;
+  if (has("baby", "babies", "طفل", "رضيع", "بيبي", "اطفال", "أطفال")) return 13;
   // 14: star
-  if (word === "star" || word === "stars") return 14;
+  if (has("star", "stars", "نجمة", "نجم", "نجوم")) return 14;
   // 15: car
-  if (word === "car" || word === "cars" || word === "toy") return 15;
+  if (has("car", "cars", "toy", "سيارة", "سيارات", "لعبة", "لعبه")) return 15;
   // 16: milk
-  if (word === "milk") return 16;
+  if (has("milk", "حليب", "لبن")) return 16;
 
   // 17: lion
-  if (word === "lion" || word === "lions") return 17;
+  if (has("lion", "lions", "أسد", "اسد", "اسود", "أسود")) return 17;
   // 18: tiger
-  if (word === "tiger" || word === "tigers") return 18;
+  if (has("tiger", "tigers", "نمر", "نمور")) return 18;
   // 19: bear
-  if (word === "bear" || word === "bears") return 19;
+  if (has("bear", "bears", "دب", "دببة")) return 19;
   // 20: duck
-  if (word === "duck" || word === "ducks") return 20;
+  if (has("duck", "ducks", "بطة", "بط", "بطات")) return 20;
   // 21: chicken
-  if (word === "chicken" || word === "chickens") return 21;
+  if (has("chicken", "chickens", "دجاجة", "دجاج", "دياية")) return 21;
 
   // No high-quality matching image
   return -1;
@@ -136,14 +140,17 @@ export function getWord3DImage(englishWord: string): number {
  * Returns at most `max` words, each with a unique visual.
  */
 export function getWordsWithDistinctImages(
-  words: { english: string; kurdish: string }[],
+  words: { english: string; kurdish: string; arabic?: string }[],
   max: number = 4
-): { english: string; kurdish: string }[] {
+): { english: string; kurdish: string; arabic?: string }[] {
   const usedKeys = new Set<number>();
-  const result: { english: string; kurdish: string }[] = [];
+  const result: { english: string; kurdish: string; arabic?: string }[] = [];
 
   for (const w of words) {
-    const key = getImageKey(w.english);
+    let key = getImageKey(w.english);
+    if (key === -1 && w.arabic) {
+      key = getImageKey(w.arabic);
+    }
     if (key !== -1 && !usedKeys.has(key)) {
       usedKeys.add(key);
       result.push(w);

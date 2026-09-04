@@ -1,53 +1,74 @@
 /* eslint-disable */
 /**
- * ListenBuildGame — "Tap what you hear".
+ * ListenBuildGame — "Tap what you hear" (Voice Sentence Builder).
  *
- * A sentence builder whose prompt is audio only: the sentence is never rendered
- * as text (that would give the answer away), so the bubble holds two playback
- * controls instead — normal speed and a slow replay. Everything below the prompt
- * is the same rail-based answer area as `SentenceBuilderGame`, and the geometry
- * comes from the shared `duo-answer-rails` module so both games wrap identically.
+ * The audio counterpart to SentenceBuilderGame: the sentence is never rendered as
+ * text in the prompt (that would give the answer away), so the prompt area holds
+ * Duolingo-style audio playback controls (normal speed and slow turtle replay)
+ * alongside the Twino headset mascot.
+ *
+ * Below the audio prompt, all mechanics, animations, and physics are 100% identical
+ * to SentenceBuilderGame:
+ * - 60fps real-time interactive drag-and-drop sliding reorder with live sibling gap opening
+ * - Bidirectional morph flying animation (bank -> answer slot, and slot -> bank ghost)
+ * - FLIP transition with inverse-scale compensation (text never wraps or truncates mid-flight)
+ * - Rapid tap queueing with self-healing watchdog timer
+ * - Landing anchor reservation for seamless layout glide
+ * - Word bank ghost placeholders and tap-to-speak audio
+ * - Sequential per-word victory jump stagger upon correct answer
+ * - Subtle wrong answer shake with tactile haptics
  */
 
-import { tileFlyTiming } from "../../../components/animations/motion";
+import { wordTileMorphTiming } from "../../../components/animations/motion";
+import { AppText } from "../../../components/ui/AppText";
 import { getLanguageDirection } from "../../../i18n/direction";
 import { useI18n } from "../../../hooks/useI18n";
 import { useThemeColors } from "../../../hooks/useThemeColors";
 import { useWordSpeech } from "./use-word-speech";
-import * as Haptics from "expo-haptics";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
   type View as RNView,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import * as Haptics from "expo-haptics";
 import Animated, {
-  Easing,
   cancelAnimation,
+  Easing,
   interpolate,
+  LinearTransition,
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import Svg, { Path } from "react-native-svg";
 
-import { AppText } from "../../../components/ui/AppText";
 import { TwinoMascot } from "../../../components/mascot/TwinoMascot";
 import type { ListenBuildQuestion, LessonPathMode } from "../../../data/types";
-import { Duo, DuoMotion } from "./lesson-light-design";
+import { L, Duo, DuoMotion } from "./lesson-light-design";
 import {
   LightCheckButton,
   LightGameHeading,
   LightWordTile,
   type LightTileState,
 } from "./lesson-light-primitives";
-import { GameFooter, GameHeader, GameRoot } from "./GameAnimatedShell";
+import {
+  GameFooter,
+  GameHeader,
+  GameRoot,
+} from "./GameAnimatedShell";
 import { measureGameElement } from "./game-layout-measure";
 import {
   MIN_RAILS,
@@ -59,17 +80,48 @@ import {
   ROW_STRIDE,
   TILE_GAP,
   estimateRailCount,
+  estimateTileWidth,
   linesFromHeight,
+  resolveHoverTarget,
+  resolveSiblingOffset,
 } from "./duo-answer-rails";
 
 type Placed = { word: string; id: string; bankIndex: number };
 type FBState = "idle" | "correct" | "wrong";
+type FlyDirection = "forward" | "reverse";
+
+/** Resting width of the landing anchor — just enough to be measurable. */
+const LANDING_ANCHOR_REST_W = 1;
+/** Fallback if reserving the anchor produces no layout event. */
+const ANCHOR_LAYOUT_TIMEOUT_MS = 32;
+/**
+ * A flight that has not finished within this window has lost its completion
+ * callback (dropped layout event, interrupted Reanimated timing). The watchdog
+ * releases its locks so taps and Check can never be wedged permanently.
+ */
+const FLY_WATCHDOG_MS = 3000;
+
+/** Slow replay rate — slow enough to separate words, not so slow it distorts. */
+const SLOW_RATE = 0.45;
+
+/** True when every coordinate is a usable number — NaN geometry never flies. */
+const isUsablePoint = (p: { x: number; y: number } | null | undefined): p is { x: number; y: number } =>
+  !!p && Number.isFinite(p.x) && Number.isFinite(p.y);
+const isUsableCoords = (
+  p: { x: number; y: number; w: number; h: number } | null | undefined,
+): boolean =>
+  isUsablePoint(p) &&
+  Number.isFinite(p!.w) &&
+  Number.isFinite(p!.h);
 
 type FlySession = {
   id: string;
+  direction: FlyDirection;
   bankIndex: number;
   word: string;
-  slotIndex: number;
+  slotIndex?: number;
+  /** Wall-clock start, used by the watchdog to recover lost flights. */
+  startedAt: number;
   fromX: number;
   fromY: number;
   fromW: number;
@@ -86,10 +138,16 @@ type Props = {
   pathMode?: LessonPathMode;
 };
 
-/** Slow replay rate — slow enough to separate words, not so slow it distorts. */
-const SLOW_RATE = 0.45;
+/** Apple / Duolingo Max tier — critically damped, crisp response, zero childish wobble */
+const PremiumSiblingSpring = { damping: 26, stiffness: 640, mass: 0.22, overshootClamping: true };
+const PremiumReleaseSnap = { damping: 28, stiffness: 720, mass: 0.18, overshootClamping: true };
+const WORD_JUMP_STAGGER = 60; // ms between each word's jump
+const PremiumLayoutGlide =
+  Platform.OS === "web"
+    ? LinearTransition.duration(180)
+    : LinearTransition.duration(180).easing(Easing.out(Easing.cubic));
 
-function SpeakerGlyph({ color, size = 34 }: { color: string; size?: number }) {
+function SpeakerGlyph({ color, size = 32 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M4 9v6h4l5 4V5L8 9H4z" fill={color} />
@@ -104,7 +162,7 @@ function SpeakerGlyph({ color, size = 34 }: { color: string; size?: number }) {
 }
 
 /** Turtle — Duolingo's universal "play it slowly" affordance. */
-function TurtleGlyph({ color, size = 34 }: { color: string; size?: number }) {
+function TurtleGlyph({ color, size = 32 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -123,30 +181,58 @@ function TurtleGlyph({ color, size = 34 }: { color: string; size?: number }) {
   );
 }
 
-/** One audio control inside the prompt bubble. */
+/** Interactive tactile audio button with spring press pop and live playing wave ring. */
 function AudioButton({
   onPress,
   slow,
   disabled,
   label,
+  isPlaying,
 }: {
   onPress: () => void;
   slow?: boolean;
   disabled?: boolean;
   label: string;
+  isPlaying?: boolean;
 }) {
   const scale = useSharedValue(1);
-  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const pulseWave = useSharedValue(0);
 
-  React.useEffect(() => () => cancelAnimation(scale), [scale]);
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const pulseRingStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: interpolate(pulseWave.value, [0, 1], [0.95, 1.35]) }],
+      opacity: interpolate(pulseWave.value, [0, 0.4, 1], [0, 0.45, 0]),
+    };
+  });
+
+  React.useEffect(() => {
+    if (isPlaying) {
+      pulseWave.value = withRepeat(
+        withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) }),
+        -1,
+        false,
+      );
+    } else {
+      pulseWave.value = withTiming(0, { duration: 150 });
+    }
+  }, [isPlaying, pulseWave]);
+
+  React.useEffect(() => () => {
+    cancelAnimation(scale);
+    cancelAnimation(pulseWave);
+  }, [scale, pulseWave]);
 
   return (
     <Pressable
       onPress={() => {
         if (disabled) return;
-        if (Platform.OS !== "web") void Haptics.selectionAsync();
+        if (Platform.OS !== "web") void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         scale.value = withSequence(
-          withTiming(1.18, { duration: 110, easing: Easing.out(Easing.quad) }),
+          withTiming(1.15, { duration: 90, easing: Easing.out(Easing.quad) }),
           withSpring(1, DuoMotion.pop),
         );
         onPress();
@@ -156,43 +242,73 @@ function AudioButton({
       disabled={disabled}
       style={[s.audioBtn, slow && s.audioBtnSlow]}
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          s.audioPulseRing,
+          { borderColor: slow ? "#F59E0B" : Duo.accent },
+          pulseRingStyle,
+        ]}
+      />
       <Animated.View style={anim}>
         {slow ? (
-          <TurtleGlyph color={Duo.accent} />
+          <TurtleGlyph color="#F59E0B" size={32} />
         ) : (
-          <SpeakerGlyph color={Duo.accent} />
+          <SpeakerGlyph color={Duo.accent} size={34} />
         )}
       </Animated.View>
     </Pressable>
   );
 }
 
+/**
+ * FlyingTile handles bidirectional morphing (Bank -> Answer Slot and Answer Slot -> Bank Ghost).
+ *
+ * The inner tile is rendered at the LARGER of `fromW` and `toW` so text always
+ * has enough room and never truncates with "..." mid-flight. A compensating
+ * inverse-scale keeps the visible footprint at exactly `fromW × fromH` at p=0
+ * and `toW × toH` at p=1.
+ */
 function FlyingTile({
   session,
   onFinish,
+  isKids,
+  isNormal,
   languageCode,
 }: {
   session: FlySession;
-  onFinish: (id: string, bankIndex: number) => void;
+  onFinish: (id: string, bankIndex: number, direction: FlyDirection) => void;
+  isKids?: boolean;
+  isNormal?: boolean;
   languageCode?: string;
 }) {
   const flyProgress = useSharedValue(0);
+
+  const FLY_SLACK_W = 18;
+  const FLY_SLACK_H = 8;
+  const renderW = Math.max(session.fromW, session.toW) + FLY_SLACK_W;
+  const renderH = Math.max(session.fromH, session.toH) + FLY_SLACK_H;
+
+  const scaleXFrom = session.fromW > 0 ? session.fromW / renderW : 1;
+  const scaleXTo   = session.toW   > 0 ? session.toW   / renderW : 1;
+  const scaleYFrom = session.fromH > 0 ? session.fromH / renderH : 1;
+  const scaleYTo   = session.toH   > 0 ? session.toH   / renderH : 1;
+
   const flyStyle = useAnimatedStyle(() => {
     const p = flyProgress.value;
     return {
-      width: interpolate(p, [0, 1], [session.fromW, session.toW]),
-      height: interpolate(p, [0, 1], [session.fromH, session.toH]),
       transform: [
         { translateX: interpolate(p, [0, 1], [session.fromX, session.toX]) },
         { translateY: interpolate(p, [0, 1], [session.fromY, session.toY]) },
+        { scaleX: interpolate(p, [0, 1], [scaleXFrom, scaleXTo]) },
+        { scaleY: interpolate(p, [0, 1], [scaleYFrom, scaleYTo]) },
       ],
-      opacity: 1,
     };
   });
 
   React.useEffect(() => {
-    flyProgress.value = withTiming(1, tileFlyTiming, (finished) => {
-      if (finished) runOnJS(onFinish)(session.id, session.bankIndex);
+    flyProgress.value = withTiming(1, wordTileMorphTiming, (finished) => {
+      if (finished) runOnJS(onFinish)(session.id, session.bankIndex, session.direction);
     });
   }, [session, onFinish, flyProgress]);
 
@@ -201,18 +317,35 @@ function FlyingTile({
       {...(Platform.OS === "web" ? ({ dir: getLanguageDirection(languageCode) } as any) : {})}
       style={[
         s.flySessionLayer,
-        Platform.OS !== "web"
-          ? { direction: getLanguageDirection(languageCode) }
-          : undefined,
+        Platform.OS !== "web" ? { direction: getLanguageDirection(languageCode) } : undefined,
       ]}
     >
-      <Animated.View style={flyStyle}>
+      <Animated.View
+        style={[
+          {
+            width: renderW,
+            height: renderH,
+            transformOrigin: "top left",
+          },
+          flyStyle,
+        ]}
+      >
         <View style={s.flyTileFill}>
           <LightWordTile
             label={session.word}
-            state="pending"
+            state="idle"
+            isKids={isKids}
             languageCode={languageCode}
-            style={s.flyWordTile}
+            fitLabel={!isNormal}
+            fitLabelLines={1}
+            labelLines={1}
+            duoDepthStyle={isNormal ? "subtle" : "default"}
+            fontSize={
+              isNormal
+                ? undefined
+                : session.word.length > 12 ? 10 : session.word.length > 9 ? 11 : 14
+            }
+            style={isNormal ? s.flyWordTileDuo : s.flyWordTile}
           />
         </View>
       </Animated.View>
@@ -220,14 +353,249 @@ function FlyingTile({
   );
 }
 
+/**
+ * Draggable placed word.
+ *
+ * Real-time displacement: siblings spring open an exact gap (real measured
+ * widths) as the dragged tile passes their midpoint. On release EVERY transform
+ * is dropped atomically on the UI thread, allowing LinearTransition to glide
+ * all tiles to their new spots as a single coordinated movement.
+ */
+function RealtimeDraggablePlacedWord({
+  placed,
+  index,
+  sentenceWords,
+  cellWidths,
+  tileState,
+  targetLanguage,
+  isNormal,
+  isKids,
+  isRtl,
+  activeDragIndex,
+  dragTranslationX,
+  dragTranslationY,
+  hoverTargetIndex,
+  onRemove,
+  onReorder,
+  slotRef,
+  onLayout,
+  jumpTrigger,
+  jumpDelay,
+}: {
+  placed: Placed;
+  index: number;
+  sentenceWords: string[];
+  /** Measured outer width of every placed cell, indexed by slot. */
+  cellWidths: SharedValue<number[]>;
+  tileState: LightTileState;
+  targetLanguage?: string;
+  isNormal?: boolean;
+  isKids?: boolean;
+  isRtl?: boolean;
+  activeDragIndex: SharedValue<number>;
+  dragTranslationX: SharedValue<number>;
+  dragTranslationY: SharedValue<number>;
+  hoverTargetIndex: SharedValue<number>;
+  onRemove: (placed: Placed, index: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  slotRef: (el: RNView | null) => void;
+  onLayout: () => void;
+  /** Increments on correct answer; triggers per-word sequential jump. */
+  jumpTrigger: number;
+  /** Stagger delay in ms before this word's jump fires. */
+  jumpDelay: number;
+}) {
+  const isDragging = useSharedValue(0);
+  const totalCount = sentenceWords.length;
+  const siblingOffset = useSharedValue(0);
+
+  useAnimatedReaction(
+    () => {
+      const dragIdx = activeDragIndex.value;
+      if (dragIdx === -1 || dragIdx === index) return 0;
+      const gap =
+        (cellWidths.value[dragIdx] ??
+          estimateTileWidth(sentenceWords[dragIdx] ?? "")) + TILE_GAP;
+      return resolveSiblingOffset(
+        index,
+        dragIdx,
+        hoverTargetIndex.value,
+        gap,
+        isRtl === true,
+      );
+    },
+    (target, previous) => {
+      if (target === previous) return;
+      if (activeDragIndex.value === -1) {
+        siblingOffset.value = 0;
+        return;
+      }
+      siblingOffset.value = withSpring(target, PremiumSiblingSpring);
+    },
+    [index, isRtl, sentenceWords],
+  );
+
+  const triggerHaptic = useCallback(() => {
+    if (Platform.OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, []);
+
+  const handleCommitReorder = useCallback(
+    (fromIdx: number, toIdx: number) => {
+      triggerHaptic();
+      onReorder(fromIdx, toIdx);
+    },
+    [onReorder, triggerHaptic],
+  );
+
+  const panGesture = Gesture.Pan()
+    .minDistance(6)
+    .activeOffsetX([-6, 6])
+    .onStart(() => {
+      activeDragIndex.value = index;
+      hoverTargetIndex.value = index;
+      dragTranslationX.value = 0;
+      dragTranslationY.value = 0;
+      isDragging.value = withTiming(1, { duration: 80, easing: Easing.out(Easing.quad) });
+    })
+    .onUpdate((e) => {
+      dragTranslationX.value = e.translationX;
+      dragTranslationY.value = e.translationY * 0.3;
+
+      const delta = isRtl ? -e.translationX : e.translationX;
+      const newHover = resolveHoverTarget(
+        index,
+        delta,
+        cellWidths.value,
+        sentenceWords,
+        totalCount,
+      );
+
+      if (hoverTargetIndex.value !== newHover) {
+        hoverTargetIndex.value = newHover;
+        runOnJS(triggerHaptic)();
+      }
+    })
+    .onEnd(() => {
+      const fromIdx = activeDragIndex.value;
+      const toIdx = hoverTargetIndex.value;
+
+      isDragging.value = withTiming(0, { duration: 60, easing: Easing.out(Easing.quad) });
+
+      activeDragIndex.value = -1;
+      hoverTargetIndex.value = -1;
+
+      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+        runOnJS(handleCommitReorder)(fromIdx, toIdx);
+      }
+    })
+    .onFinalize(() => {
+      activeDragIndex.value = -1;
+      hoverTargetIndex.value = -1;
+    });
+
+  const jumpY = useSharedValue(0);
+  React.useEffect(() => {
+    if (jumpTrigger <= 0) return;
+    jumpY.value = withDelay(
+      jumpDelay,
+      withSequence(
+        withTiming(-3, { duration: 80, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 120, easing: Easing.out(Easing.cubic) }),
+      ),
+    );
+  }, [jumpTrigger, jumpDelay, jumpY]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    if (activeDragIndex.value === index) {
+      return {
+        transform: [
+          { translateX: dragTranslationX.value },
+          { translateY: dragTranslationY.value },
+          { scale: interpolate(isDragging.value, [0, 1], [1, 1.04]) },
+        ],
+        zIndex: 100,
+        opacity: 1,
+        elevation: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: interpolate(isDragging.value, [0, 1], [0, 0.16]),
+        shadowRadius: 10,
+      };
+    }
+
+    return {
+      transform: [
+        { translateX: siblingOffset.value },
+        { translateY: jumpY.value },
+        { scale: 1 },
+      ],
+      zIndex: 1,
+      opacity: 1,
+      elevation: 0,
+      shadowOpacity: 0,
+    };
+  });
+
+  return (
+    <Animated.View
+      layout={PremiumLayoutGlide}
+      style={[
+        isNormal ? s.duoPlacedCell : s.slotCell,
+        animatedStyle,
+      ]}
+    >
+      <View
+        ref={slotRef}
+        onLayout={onLayout}
+        collapsable={false}
+        style={isNormal ? undefined : { flex: 1 }}
+      >
+        <GestureDetector gesture={panGesture}>
+          <View style={isNormal ? undefined : { flex: 1 }}>
+            <LightWordTile
+              label={placed.word}
+              state={tileState}
+              onPress={() => onRemove(placed, index)}
+              activateOnPressIn={false}
+              duoDepthStyle={isNormal ? "subtle" : "default"}
+              isKids={isKids}
+              languageCode={targetLanguage}
+              fitLabel={!isNormal}
+              fitLabelLines={2}
+              fontSize={
+                isNormal
+                  ? undefined
+                  : placed.word.length > 12 ? 10 : placed.word.length > 9 ? 11 : 14
+              }
+              style={isNormal ? s.duoWordTile : s.slotWordTile}
+            />
+          </View>
+        </GestureDetector>
+      </View>
+    </Animated.View>
+  );
+}
+
 export default function ListenBuildGame({ question, onAnswer, pathMode }: Props) {
   const { t } = useI18n();
   const { colors, isDark } = useThemeColors();
+  const { width } = useWindowDimensions();
+  const compact = width < 390;
+  const isNormal = pathMode === "normal" || !pathMode;
   const targetDirection = getLanguageDirection(question.targetLanguage);
-  const speechLanguage = question.targetLanguage ?? "en";
-  const { speak, speakWord } = useWordSpeech(speechLanguage);
+  const isRtl = targetDirection === "rtl";
 
-  const shuffledWordBank = React.useMemo(() => {
+  const speechLanguage = question.targetLanguage ?? "en";
+  const { speak, speakWord, stop, speaking } = useWordSpeech(speechLanguage);
+
+  const fullSentence = useMemo(
+    () => (question.sentence?.trim() || question.correctWords.join(" ")),
+    [question.sentence, question.correctWords],
+  );
+
+  const shuffledWordBank = useMemo(() => {
     const bank = [...question.wordBank];
     for (let i = bank.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -237,18 +605,76 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
   }, [question.wordBank]);
 
   const [sentence, setSentence] = useState<Placed[]>([]);
-  const [usedBank, setUsedBank] = useState(() => shuffledWordBank.map(() => false));
+  const [usedBank, setUsedBank] = useState(() =>
+    shuffledWordBank.map(() => false),
+  );
   const [fb, setFb] = useState<FBState>("idle");
   const [flySessions, setFlySessions] = useState<FlySession[]>([]);
   const [placedLines, setPlacedLines] = useState(1);
   const [answerWidth, setAnswerWidth] = useState(0);
-  /** Set once the learner opts out of audio, which reveals the sentence as text. */
-  const [audioGivenUp, setAudioGivenUp] = useState(false);
+  const [activeSpeechMode, setActiveSpeechMode] = useState<"normal" | "slow" | null>(null);
+
+  // Real-time Shared Drag Values
+  const activeDragIndex = useSharedValue<number>(-1);
+  const dragTranslationX = useSharedValue<number>(0);
+  const dragTranslationY = useSharedValue<number>(0);
+  const hoverTargetIndex = useSharedValue<number>(-1);
+  const cellWidths = useSharedValue<number[]>([]);
+
+  const wrongShakeX = useSharedValue(0);
+  const wrongShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: wrongShakeX.value }],
+  }));
+
+  const [jumpTriggerJS, setJumpTriggerJS] = useState(0);
+
+  const [anchorWidth, setAnchorWidth] = useState(LANDING_ANCHOR_REST_W);
+  const anchorWidthRef = useRef(LANDING_ANCHOR_REST_W);
+  const anchorLayoutWaiterRef = useRef<(() => void) | null>(null);
+
+  const resolveAnchorLayout = useCallback(() => {
+    const waiter = anchorLayoutWaiterRef.current;
+    if (waiter) {
+      anchorLayoutWaiterRef.current = null;
+      waiter();
+    }
+  }, []);
+
+  const reserveLandingAnchor = useCallback(
+    (targetW: number) =>
+      new Promise<void>((resolve) => {
+        if (Math.abs(anchorWidthRef.current - targetW) < 0.5) {
+          resolve();
+          return;
+        }
+        anchorWidthRef.current = targetW;
+        anchorLayoutWaiterRef.current = resolve;
+        setAnchorWidth(targetW);
+        setTimeout(() => {
+          if (anchorLayoutWaiterRef.current === resolve) {
+            anchorLayoutWaiterRef.current = null;
+            resolve();
+          }
+        }, ANCHOR_LAYOUT_TIMEOUT_MS);
+      }),
+    [],
+  );
+
+  const releaseLandingAnchor = useCallback(() => {
+    anchorWidthRef.current = LANDING_ANCHOR_REST_W;
+    setAnchorWidth(LANDING_ANCHOR_REST_W);
+  }, []);
 
   const slotN = useRef(0);
   const completedRef = useRef(false);
   const wrongSentRef = useRef(false);
   const measuringBankRef = useRef<number | null>(null);
+  const pendingAddQueueRef = useRef<number[]>([]);
+  const addFlightActiveRef = useRef(false);
+  const reservedAddCountRef = useRef(0);
+  const sentenceCountRef = useRef(0);
+  const usedBankRef = useRef<boolean[]>([]);
+  const processQueuedAddsRef = useRef<() => void>(() => {});
   const autoPlayedRef = useRef(false);
 
   const rootRef = useRef<RNView>(null);
@@ -256,96 +682,142 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
   const slotRefs = useRef<(RNView | null)[]>([]);
 
   const rootCoords = useRef<{ x: number; y: number } | null>(null);
-  const bankCoords = useRef<{ [k: number]: { x: number; y: number; w: number; h: number } }>({});
-  const slotCoords = useRef<{ [k: number]: { x: number; y: number; w: number; h: number } }>({});
+  const bankCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
+  const slotCoords = useRef<{ [key: number]: { x: number; y: number; w: number; h: number } }>({});
 
-  const shakeX = useSharedValue(0);
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
-  }));
+  const recordSlotLayout = useCallback(
+    (index: number) => {
+      slotRefs.current[index]?.measureInWindow((x, y, w, h) => {
+        slotCoords.current[index] = { x, y, w, h };
+        if (Math.abs((cellWidths.value[index] ?? -1) - w) < 0.5) return;
+        const next = [...cellWidths.value];
+        next[index] = w;
+        cellWidths.value = next;
+      });
+    },
+    [cellWidths],
+  );
 
   const playAudio = useCallback(
     (slow?: boolean) => {
-      speak(question.sentence, speechLanguage, undefined, {
+      setActiveSpeechMode(slow ? "slow" : "normal");
+      speak(fullSentence, speechLanguage, undefined, {
         provider: "device",
         ...(slow ? { rate: SLOW_RATE } : {}),
+        onDone: () => setActiveSpeechMode(null),
       });
     },
-    [question.sentence, speak, speechLanguage],
+    [fullSentence, speak, speechLanguage],
   );
 
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+
+  // Auto-play speech on question mount
   React.useEffect(() => {
+    if (autoPlayedRef.current) return;
+    autoPlayedRef.current = true;
+    const timer = setTimeout(() => playAudio(false), 380);
+    return () => clearTimeout(timer);
+  }, [playAudio]);
+
+  React.useEffect(() => {
+    void stopRef.current();
     setSentence([]);
     setUsedBank(shuffledWordBank.map(() => false));
     setFb("idle");
     setFlySessions([]);
     setPlacedLines(1);
-    setAudioGivenUp(false);
     slotN.current = 0;
+    pendingAddQueueRef.current = [];
+    addFlightActiveRef.current = false;
+    reservedAddCountRef.current = 0;
+    sentenceCountRef.current = 0;
+    usedBankRef.current = shuffledWordBank.map(() => false);
     completedRef.current = false;
     wrongSentRef.current = false;
     measuringBankRef.current = null;
     autoPlayedRef.current = false;
+    setActiveSpeechMode(null);
     bankCoords.current = {};
     slotCoords.current = {};
-  }, [shuffledWordBank]);
+    cellWidths.value = [];
+    activeDragIndex.value = -1;
+    hoverTargetIndex.value = -1;
+    dragTranslationX.value = 0;
+    dragTranslationY.value = 0;
+    anchorLayoutWaiterRef.current = null;
+    releaseLandingAnchor();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shuffledWordBank, releaseLandingAnchor]);
 
-  /* The exercise is unanswerable until the sentence has been heard once. */
-  React.useEffect(() => {
-    if (autoPlayedRef.current) return;
-    autoPlayedRef.current = true;
-    const timer = setTimeout(() => playAudio(false), 350);
-    return () => clearTimeout(timer);
-  }, [playAudio]);
-
-  React.useEffect(() => () => cancelAnimation(shakeX), [shakeX]);
+  React.useEffect(() => () => {
+    void stopRef.current();
+  }, []);
 
   const slotCount = question.correctWords.length;
+  const sentenceWords = useMemo(() => sentence.map((p) => p.word), [sentence]);
 
   const commitAddWord = useCallback(
     (bankIndex: number) => {
       const w = shuffledWordBank[bankIndex];
       const id = `s${slotN.current++}`;
-      setUsedBank((prev) => {
-        const next = [...prev];
-        next[bankIndex] = true;
-        return next;
-      });
+      sentenceCountRef.current += 1;
+      reservedAddCountRef.current = Math.max(0, reservedAddCountRef.current - 1);
       setSentence((p) => [...p, { word: w, id, bankIndex }]);
     },
     [shuffledWordBank],
   );
 
   const finishFly = useCallback(
-    (id: string, bankIndex: number) => {
-      commitAddWord(bankIndex);
-      requestAnimationFrame(() => {
-        setFlySessions((prev) => prev.filter((x) => x.id !== id));
-      });
+    (id: string, bankIndex: number, direction: FlyDirection) => {
+      if (direction === "forward") {
+        commitAddWord(bankIndex);
+        releaseLandingAnchor();
+        addFlightActiveRef.current = false;
+      } else {
+        setUsedBank((prev) => {
+          const next = [...prev];
+          next[bankIndex] = false;
+          usedBankRef.current[bankIndex] = false;
+          return next;
+        });
+      }
+      setFlySessions((prev) => prev.filter((s) => s.id !== id));
     },
-    [commitAddWord],
+    [commitAddWord, releaseLandingAnchor],
   );
 
   const startFlyToSlot = useCallback(
     async (bankIndex: number) => {
       if (fb === "correct") return;
-      if (usedBank[bankIndex]) return;
-      if (flySessions.length > 0 || measuringBankRef.current !== null) return;
-
-      const slotIndex = sentence.length;
+      const slotIndex = sentenceCountRef.current;
       if (slotIndex >= slotCount) return;
 
       const word = shuffledWordBank[bankIndex];
-      // The guards above already reject taps on a used tile, taps during a
-      // flight and taps past the last slot, so this fires once per placed word.
-      // The word is printed on the tile face, so reading it aloud gives nothing
-      // away that the learner cannot already see.
-      speakWord(word, `listen-build-word-${bankIndex}`);
+      speakWord(word, `listen-builder-word-${bankIndex}`);
       measuringBankRef.current = bankIndex;
+
+      if (isNormal) {
+        const bankWidth =
+          bankCoords.current[bankIndex]?.w ??
+          (await measureGameElement(bankRefs.current[bankIndex]))?.w;
+        if (measuringBankRef.current !== bankIndex) return;
+        if (bankWidth) await reserveLandingAnchor(bankWidth + TILE_GAP);
+        if (measuringBankRef.current !== bankIndex) return;
+      }
+
+      const cachedRoot = rootCoords.current;
+      const cachedBank = bankCoords.current[bankIndex];
+      const cachedSlot = slotCoords.current[slotIndex];
       const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
-        measureGameElement(rootRef.current),
-        measureGameElement(bankRefs.current[bankIndex]),
-        measureGameElement(slotRefs.current[slotIndex]),
+        cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
+        cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[bankIndex]),
+        isNormal
+          ? measureGameElement(slotRefs.current[slotIndex])
+          : cachedSlot
+            ? Promise.resolve(cachedSlot)
+            : measureGameElement(slotRefs.current[slotIndex]),
       ]);
 
       if (measuringBankRef.current !== bankIndex) return;
@@ -353,72 +825,203 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
       const root = measuredRoot ?? rootCoords.current;
       const bank = measuredBank ?? bankCoords.current[bankIndex];
       const slot = measuredSlot ?? slotCoords.current[slotIndex];
-      measuringBankRef.current = null;
 
-      if (!root || !bank || !slot) {
+      if (!isUsablePoint(root) || !isUsableCoords(bank) || !isUsableCoords(slot)) {
+        measuringBankRef.current = null;
+        releaseLandingAnchor();
         commitAddWord(bankIndex);
+        addFlightActiveRef.current = false;
         return;
       }
-
-      setUsedBank((prev) => {
-        const next = [...prev];
-        next[bankIndex] = true;
-        return next;
-      });
 
       setFlySessions((prev) => [
         ...prev,
         {
           id: Math.random().toString(),
+          direction: "forward",
           bankIndex,
           word,
           slotIndex,
+          startedAt: Date.now(),
           fromX: bank.x - root.x,
           fromY: bank.y - root.y,
           fromW: bank.w,
           fromH: bank.h,
           toX: slot.x - root.x,
           toY: slot.y - root.y,
-          // The landing anchor is a zero-width marker, so the tile keeps its own
-          // width end to end rather than collapsing into it mid-flight.
+          toW: isNormal ? bank.w : slot.w,
+          toH: isNormal ? bank.h : slot.h,
+        },
+      ]);
+      measuringBankRef.current = null;
+    },
+    [fb, slotCount, shuffledWordBank, commitAddWord, isNormal, speakWord, reserveLandingAnchor, releaseLandingAnchor],
+  );
+
+  const processQueuedAdds = useCallback(() => {
+    if (
+      fb === "correct" ||
+      addFlightActiveRef.current ||
+      flySessions.length > 0 ||
+      measuringBankRef.current !== null
+    ) return;
+    if (sentenceCountRef.current >= slotCount) {
+      pendingAddQueueRef.current = [];
+      reservedAddCountRef.current = 0;
+      return;
+    }
+
+    const nextBankIndex = pendingAddQueueRef.current.shift();
+    if (nextBankIndex === undefined) return;
+
+    addFlightActiveRef.current = true;
+    void startFlyToSlot(nextBankIndex);
+  }, [fb, flySessions.length, slotCount, startFlyToSlot]);
+
+  React.useEffect(() => {
+    processQueuedAddsRef.current = processQueuedAdds;
+  }, [processQueuedAdds]);
+
+  React.useEffect(() => {
+    if (flySessions.length === 0 && !addFlightActiveRef.current) {
+      processQueuedAdds();
+    }
+  }, [flySessions.length, sentence.length, processQueuedAdds]);
+
+  const flySessionsRef = useRef<FlySession[]>([]);
+  React.useEffect(() => {
+    flySessionsRef.current = flySessions;
+  }, [flySessions]);
+
+  // Watchdog timer to recover interrupted animations
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const stuck = flySessionsRef.current.filter(
+        (f) => now - f.startedAt > FLY_WATCHDOG_MS,
+      );
+      if (stuck.length === 0) return;
+      for (const f of stuck) {
+        if (f.direction === "forward") {
+          commitAddWord(f.bankIndex);
+        }
+      }
+      flySessionsRef.current = [];
+      setFlySessions([]);
+      measuringBankRef.current = null;
+      addFlightActiveRef.current = false;
+      releaseLandingAnchor();
+    }, 500);
+    return () => clearInterval(timer);
+  }, [commitAddWord, releaseLandingAnchor]);
+
+  const startFlyToBank = useCallback(
+    async (placed: Placed, slotIndex: number) => {
+      if (fb === "correct") return;
+      if (
+        flySessions.length > 0 ||
+        measuringBankRef.current !== null ||
+        addFlightActiveRef.current ||
+        pendingAddQueueRef.current.length > 0
+      ) return;
+      if (fb === "wrong") setFb("idle");
+
+      const bankIndex = placed.bankIndex;
+      measuringBankRef.current = bankIndex;
+
+      const cachedRoot = rootCoords.current;
+      const cachedBank = bankCoords.current[bankIndex];
+      const cachedSlot = slotCoords.current[slotIndex];
+
+      const [measuredRoot, measuredBank, measuredSlot] = await Promise.all([
+        cachedRoot ? Promise.resolve(cachedRoot) : measureGameElement(rootRef.current),
+        cachedBank ? Promise.resolve(cachedBank) : measureGameElement(bankRefs.current[bankIndex]),
+        cachedSlot ? Promise.resolve(cachedSlot) : measureGameElement(slotRefs.current[slotIndex]),
+      ]);
+
+      if (measuringBankRef.current !== bankIndex) return;
+
+      const root = measuredRoot ?? rootCoords.current;
+      const bank = measuredBank ?? bankCoords.current[bankIndex];
+      const slot = measuredSlot ?? slotCoords.current[slotIndex];
+
+      sentenceCountRef.current = Math.max(0, sentenceCountRef.current - 1);
+      setSentence((current) => current.filter((item) => item.id !== placed.id));
+      slotCoords.current = {};
+      cellWidths.value = [];
+
+      if (!isUsablePoint(root) || !isUsableCoords(bank) || !isUsableCoords(slot)) {
+        measuringBankRef.current = null;
+        setUsedBank((prev) => {
+          const next = [...prev];
+          next[bankIndex] = false;
+          usedBankRef.current[bankIndex] = false;
+          return next;
+        });
+        return;
+      }
+
+      setFlySessions((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(),
+          direction: "reverse",
+          bankIndex,
+          word: placed.word,
+          slotIndex,
+          startedAt: Date.now(),
+          fromX: slot.x - root.x,
+          fromY: slot.y - root.y,
+          fromW: slot.w || bank.w,
+          fromH: slot.h || bank.h,
+          toX: bank.x - root.x,
+          toY: bank.y - root.y,
           toW: bank.w,
           toH: bank.h,
         },
       ]);
+      measuringBankRef.current = null;
     },
-    [
-      fb,
-      usedBank,
-      sentence.length,
-      flySessions.length,
-      slotCount,
-      shuffledWordBank,
-      commitAddWord,
-      speakWord,
-    ],
+    [fb, flySessions.length, cellWidths],
   );
 
-  const addWord = (bankIndex: number) => {
-    if (fb === "wrong") setFb("idle");
-    if (Platform.OS !== "web") void Haptics.selectionAsync();
-    void startFlyToSlot(bankIndex);
-  };
-
-  const removeFromSlot = (index: number) => {
-    if (fb === "correct") return;
-    if (fb === "wrong") setFb("idle");
-    const placed = sentence[index];
-    if (!placed) return;
-    setUsedBank((prev) => {
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    setSentence((prev) => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+        return prev;
+      }
       const next = [...prev];
-      next[placed.bankIndex] = false;
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved!);
       return next;
     });
-    setSentence((p) => p.filter((_, i) => i !== index));
-  };
+  }, []);
+
+  const addWord = useCallback((bankIndex: number) => {
+    if (fb === "correct" || usedBankRef.current[bankIndex]) return;
+    if (sentenceCountRef.current + reservedAddCountRef.current >= slotCount) return;
+
+    if (fb === "wrong") setFb("idle");
+    usedBankRef.current[bankIndex] = true;
+    reservedAddCountRef.current += 1;
+    pendingAddQueueRef.current.push(bankIndex);
+    setUsedBank((prev) => {
+      const next = [...prev];
+      next[bankIndex] = true;
+      return next;
+    });
+    processQueuedAddsRef.current();
+  }, [fb, slotCount]);
 
   const check = () => {
-    if (!sentence.length || flySessions.length > 0 || fb !== "idle") return;
+    if (
+      !sentence.length ||
+      flySessions.length > 0 ||
+      measuringBankRef.current !== null ||
+      addFlightActiveRef.current ||
+      pendingAddQueueRef.current.length > 0 ||
+      fb !== "idle"
+    ) return;
     const placed = sentence.map((p) => p.word);
     const ok =
       placed.join(" ").toLowerCase() ===
@@ -426,12 +1029,12 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
     setFb(ok ? "correct" : "wrong");
 
     if (!ok) {
-      shakeX.value = withSequence(
-        withTiming(-8, { duration: 36 }),
-        withTiming(8, { duration: 36 }),
-        withTiming(-4, { duration: 30 }),
-        withTiming(4, { duration: 30 }),
-        withTiming(0, { duration: 40, easing: Easing.out(Easing.quad) }),
+      wrongShakeX.value = withSequence(
+        withTiming(-2, { duration: 20 }),
+        withTiming(2, { duration: 20 }),
+        withTiming(-1, { duration: 20 }),
+        withTiming(1, { duration: 20 }),
+        withTiming(0, { duration: 20, easing: Easing.out(Easing.quad) }),
       );
       if (!wrongSentRef.current) {
         wrongSentRef.current = true;
@@ -439,6 +1042,10 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
       }
     } else if (!completedRef.current) {
       completedRef.current = true;
+      speakWord(fullSentence, "listen-builder-success");
+
+      setJumpTriggerJS((n) => n + 1);
+
       onAnswer(true);
     }
   };
@@ -447,10 +1054,16 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
     if (index >= sentence.length) return "ghost";
     if (fb === "correct") return "correct";
     if (fb === "wrong") return "wrong";
-    return "pending";
+    return "idle";
   };
 
-  const canCheck = sentence.length + flySessions.length > 0 && fb !== "correct";
+  const canCheck =
+    sentence.length > 0 &&
+    flySessions.length === 0 &&
+    measuringBankRef.current === null &&
+    !addFlightActiveRef.current &&
+    pendingAddQueueRef.current.length === 0 &&
+    fb !== "correct";
 
   const answerRails = Math.max(
     MIN_RAILS,
@@ -480,14 +1093,15 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
           keyboardShouldPersistTaps="handled"
         >
           <GameHeader>
-            <LightGameHeading title={t("lessons.listenBuild")} />
+            <LightGameHeading
+              title={t("lessons.listenBuild") || "Listen and build the sentence"}
+            />
           </GameHeader>
 
           <View style={s.exerciseArea}>
             {/*
-              Audio-only prompt. The mascot sits after the bubble in source
-              order so an RTL UI mirrors it to the physical right, matching the
-              reference design; the audio controls stay on the physical left.
+              Audio-only prompt card: Big Audio Play + Slow Turtle Play + Headset Mascot.
+              Never renders written sentence text to preserve pure listening mastery.
             */}
             <View style={s.promptRow}>
               <View style={s.bubbleWrap}>
@@ -499,13 +1113,15 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
                 >
                   <AudioButton
                     onPress={() => playAudio(false)}
-                    label={t("lessons.listenLabel")}
+                    label={t("lessons.listenLabel") || "Listen"}
+                    isPlaying={speaking && activeSpeechMode === "normal"}
                   />
                   <View style={[s.audioSplit, { backgroundColor: bubbleBorder }]} />
                   <AudioButton
                     onPress={() => playAudio(true)}
                     slow
-                    label={t("lessons.listenSlow")}
+                    label={t("lessons.listenSlow") || "Listen slowly"}
+                    isPlaying={speaking && activeSpeechMode === "slow"}
                   />
                 </View>
               </View>
@@ -515,157 +1131,250 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
               </View>
             </View>
 
-            <Animated.View style={[s.slotsWrap, shakeStyle]}>
-              <View
-                style={[s.answerArea, { height: answerRails * ROW_STRIDE }]}
-                onLayout={(e) => setAnswerWidth(e.nativeEvent.layout.width)}
-              >
-                {Array.from({ length: answerRails }).map((_, i) => (
-                  <View
-                    key={`rail-${i}`}
-                    pointerEvents="none"
+            {/* Answer Slots Area with Rails and 60fps Drag & Drop */}
+            <Animated.View style={[s.slotsWrap, isNormal && s.slotsWrapDuo, wrongShakeStyle]}>
+              {isNormal ? (
+                <View
+                  style={[s.duoAnswerArea, { height: answerRails * ROW_STRIDE }]}
+                  onLayout={(e) => setAnswerWidth(e.nativeEvent.layout.width)}
+                >
+                  {Array.from({ length: answerRails }).map((_, i) => (
+                    <View
+                      key={`rail-${i}`}
+                      pointerEvents="none"
+                      style={[
+                        s.duoRail,
+                        { top: i * ROW_STRIDE + ROW_H + RAIL_DROP, backgroundColor: railColor },
+                      ]}
+                    />
+                  ))}
+                  <Animated.View
+                    {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
                     style={[
-                      s.rail,
-                      {
-                        top: i * ROW_STRIDE + ROW_H + RAIL_DROP,
-                        backgroundColor: railColor,
-                      },
+                      s.duoPlacedRow,
+                      { flexDirection: "row" },
+                      Platform.OS !== "web" ? { direction: targetDirection } : undefined,
                     ]}
-                  />
-                ))}
+                    onLayout={(e) =>
+                      setPlacedLines(linesFromHeight(e.nativeEvent.layout.height))
+                    }
+                  >
+                    {sentence.map((placed, i) => {
+                      const hideWhileFlying = flySessions.some(
+                        (f) => f.direction === "forward" && f.slotIndex === i && f.bankIndex === placed.bankIndex,
+                      );
+                      if (hideWhileFlying) return null;
+                      return (
+                        <RealtimeDraggablePlacedWord
+                          key={placed.id}
+                          placed={placed}
+                          index={i}
+                          sentenceWords={sentenceWords}
+                          cellWidths={cellWidths}
+                          tileState={slotTileState(i)}
+                          targetLanguage={question.targetLanguage}
+                          isNormal={true}
+                          isKids={false}
+                          isRtl={isRtl}
+                          activeDragIndex={activeDragIndex}
+                          dragTranslationX={dragTranslationX}
+                          dragTranslationY={dragTranslationY}
+                          hoverTargetIndex={hoverTargetIndex}
+                          onRemove={startFlyToBank}
+                          onReorder={handleReorder}
+                          slotRef={(r) => {
+                            slotRefs.current[i] = r;
+                          }}
+                          onLayout={() => recordSlotLayout(i)}
+                          jumpTrigger={jumpTriggerJS}
+                          jumpDelay={i * WORD_JUMP_STAGGER}
+                        />
+                      );
+                    })}
+                    {/* Measurement anchor for the next incoming word */}
+                    <View
+                      ref={(r) => {
+                        slotRefs.current[sentence.length] = r;
+                      }}
+                      onLayout={() => {
+                        slotRefs.current[sentence.length]?.measureInWindow((x, y, w, h) => {
+                          slotCoords.current[sentence.length] = { x, y, w, h };
+                          resolveAnchorLayout();
+                        });
+                      }}
+                      collapsable={false}
+                      style={[s.duoLandingAnchor, { width: anchorWidth }]}
+                    />
+                  </Animated.View>
+                </View>
+              ) : (
                 <Animated.View
                   {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
                   style={[
-                    s.placedRow,
+                    s.slotsRow,
                     { flexDirection: "row" },
                     Platform.OS !== "web" ? { direction: targetDirection } : undefined,
                   ]}
-                  onLayout={(e) =>
-                    setPlacedLines(linesFromHeight(e.nativeEvent.layout.height))
-                  }
                 >
-                  {sentence.map((placed, i) => {
-                    const hideWhileFlying = flySessions.some(
-                      (f) => f.slotIndex === i && f.bankIndex === placed.bankIndex,
+                  {Array.from({ length: slotCount }).map((_, i) => {
+                    const placed = sentence[i];
+                    const hideWhileFlying = placed !== undefined && flySessions.some(
+                      (s) => s.direction === "forward" && s.slotIndex === i && s.bankIndex === placed.bankIndex,
                     );
-                    if (hideWhileFlying) return null;
+
                     return (
                       <View
-                        key={placed.id}
+                        key={`slot-${i}`}
                         ref={(r) => {
                           slotRefs.current[i] = r;
                         }}
-                        onLayout={() => {
-                          slotRefs.current[i]?.measureInWindow((x, y, w, h) => {
-                            slotCoords.current[i] = { x, y, w, h };
-                          });
-                        }}
+                        onLayout={() => recordSlotLayout(i)}
                         collapsable={false}
-                        style={s.placedCell}
+                        style={s.slotCell}
                       >
-                        <LightWordTile
-                          label={placed.word}
-                          state={slotTileState(i)}
-                          onPress={() => removeFromSlot(i)}
-                          languageCode={question.targetLanguage}
-                          style={s.wordTile}
-                        />
+                        {placed && !hideWhileFlying ? (
+                          <RealtimeDraggablePlacedWord
+                            placed={placed}
+                            index={i}
+                            sentenceWords={sentenceWords}
+                            cellWidths={cellWidths}
+                            tileState={slotTileState(i)}
+                            targetLanguage={question.targetLanguage}
+                            isNormal={false}
+                            isKids={pathMode === "kids"}
+                            isRtl={isRtl}
+                            activeDragIndex={activeDragIndex}
+                            dragTranslationX={dragTranslationX}
+                            dragTranslationY={dragTranslationY}
+                            hoverTargetIndex={hoverTargetIndex}
+                            onRemove={startFlyToBank}
+                            onReorder={handleReorder}
+                            slotRef={(r) => {
+                              slotRefs.current[i] = r;
+                            }}
+                            onLayout={() => recordSlotLayout(i)}
+                            jumpTrigger={jumpTriggerJS}
+                            jumpDelay={i * 60}
+                          />
+                        ) : (
+                          <View
+                            style={[
+                              pathMode === "kids" ? s.emptySlot : s.emptySlotDuo,
+                              isDark && {
+                                backgroundColor: colors.muted,
+                                borderColor: colors.border,
+                              },
+                            ]}
+                          />
+                        )}
                       </View>
                     );
                   })}
-                  {/* Measurement anchor for the next incoming word. */}
-                  <View
-                    ref={(r) => {
-                      slotRefs.current[sentence.length] = r;
-                    }}
-                    onLayout={() => {
-                      slotRefs.current[sentence.length]?.measureInWindow((x, y, w, h) => {
-                        slotCoords.current[sentence.length] = { x, y, w, h };
-                      });
-                    }}
-                    collapsable={false}
-                    style={s.landingAnchor}
-                  />
                 </Animated.View>
-              </View>
+              )}
             </Animated.View>
 
-            <View style={s.bankSpacer} />
+            <View style={s.wordBankSpacer} />
+            {!isNormal ? <View style={s.bankDivider} /> : null}
 
+            {/* Word Bank with Ghost Placeholders and Tap Queue */}
             <Animated.View
               {...(Platform.OS === "web" ? ({ dir: targetDirection } as any) : {})}
               style={[
                 s.bank,
+                isNormal && s.bankDuo,
                 { flexDirection: "row" },
                 Platform.OS !== "web" ? { direction: targetDirection } : undefined,
               ]}
             >
               {shuffledWordBank.map((w, i) => {
                 const taken = usedBank[i];
+
+                if (isNormal) {
+                  return (
+                    <View
+                      key={`bank-${i}`}
+                      ref={(el) => { bankRefs.current[i] = el; }}
+                      onLayout={() => {
+                        bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                          bankCoords.current[i] = { x, y, w, h };
+                        });
+                      }}
+                      collapsable={false}
+                      style={s.bankCellDuo}
+                    >
+                      <LightWordTile
+                        label={w}
+                        state={taken ? "ghost" : "idle"}
+                        onPress={taken ? undefined : () => addWord(i)}
+                        activateOnPressIn
+                        duoDepthStyle="subtle"
+                        disabled={taken || fb === "correct"}
+                        languageCode={question.targetLanguage}
+                        style={s.duoWordTile}
+                      />
+                    </View>
+                  );
+                }
+
                 return (
                   <View
                     key={`bank-${i}`}
-                    ref={(el) => {
-                      bankRefs.current[i] = el;
-                    }}
+                    ref={(el) => { bankRefs.current[i] = el; }}
                     onLayout={() => {
-                      bankRefs.current[i]?.measureInWindow((x, y, bw, bh) => {
-                        bankCoords.current[i] = { x, y, w: bw, h: bh };
+                      bankRefs.current[i]?.measureInWindow((x, y, w, h) => {
+                        bankCoords.current[i] = { x, y, w, h };
                       });
                     }}
                     collapsable={false}
                     style={s.bankCell}
                   >
-                    <LightWordTile
-                      label={w}
-                      state={taken ? "ghost" : "idle"}
-                      onPress={taken ? undefined : () => addWord(i)}
-                      disabled={taken || fb === "correct"}
-                      languageCode={question.targetLanguage}
-                      style={s.wordTile}
+                    <View
+                      style={[
+                        s.bankPlaceholder,
+                        isDark && {
+                          backgroundColor: colors.muted,
+                          borderColor: colors.border,
+                        },
+                      ]}
                     />
+                    <View style={{ zIndex: 10, opacity: taken ? 0 : 1 }} pointerEvents={taken ? "none" : "auto"}>
+                      <LightWordTile
+                        label={w}
+                        state="idle"
+                        onPress={() => addWord(i)}
+                        activateOnPressIn
+                        disabled={taken || fb !== "idle"}
+                        isKids={pathMode === "kids"}
+                        languageCode={question.targetLanguage}
+                        fitLabel
+                        fontSize={w.length > 10 ? 13 : 15}
+                        style={[s.wordTile, compact && s.wordTileCompact]}
+                      />
+                    </View>
                   </View>
                 );
               })}
             </Animated.View>
-
-            {/*
-              Escape hatch for a muted phone or a noisy room: it reveals the
-              sentence as text so the exercise stays completable, and is hidden
-              once the answer is in — at that point the text is no longer a hint.
-            */}
-            {fb === "idle" ? (
-              <Pressable
-                onPress={() => setAudioGivenUp(true)}
-                accessibilityRole="button"
-                style={s.cantListenWrap}
-              >
-                <AppText style={[s.cantListen, { color: colors.mutedForeground }]}>
-                  {audioGivenUp ? question.sentence : t("lessons.cantListenNow")}
-                </AppText>
-              </Pressable>
-            ) : null}
           </View>
         </ScrollView>
       </View>
 
-      <View
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          pointerEvents: "none",
-        }}
-      >
+      {/* Bidirectional Morph Flying Layer */}
+      <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none" }}>
         {flySessions.length > 0 ? (
-          <Animated.View pointerEvents="none" style={s.flyLayer} collapsable={false}>
+          <Animated.View
+            pointerEvents="none"
+            style={s.flyLayer}
+            collapsable={false}
+          >
             {flySessions.map((session) => (
               <FlyingTile
                 key={session.id}
                 session={session}
                 onFinish={finishFly}
+                isKids={pathMode === "kids"}
+                isNormal={isNormal}
                 languageCode={question.targetLanguage}
               />
             ))}
@@ -674,11 +1383,19 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
       </View>
 
       <GameFooter delay={200}>
-        <View style={s.footerWrap}>
+        <View
+          style={[
+            s.footerWrap,
+            { backgroundColor: colors.background, borderTopColor: colors.border },
+            pathMode === "kids" && { backgroundColor: "transparent", borderTopWidth: 0 },
+            isNormal && s.footerWrapDuo,
+          ]}
+        >
           <LightCheckButton
-            label={t("lessons.check")}
+            label={t("lessons.check") || "Check"}
             onPress={check}
             disabled={!canCheck}
+            variant={pathMode === "kids" ? "kids" : "default"}
           />
         </View>
       </GameFooter>
@@ -687,7 +1404,9 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1 },
+  root: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -695,110 +1414,203 @@ const s = StyleSheet.create({
     paddingBottom: 24,
     gap: 24,
   },
-  exerciseArea: { flex: 1 },
-  footerWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 14,
+  exerciseArea: {
+    flex: 1,
   },
-
   promptRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 12,
+    paddingBottom: 4,
   },
   mascotCol: {
     width: 112,
     alignItems: "center",
   },
-  bubbleWrap: { flex: 1, minWidth: 0 },
+  bubbleWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
   bubble: {
     borderWidth: 2,
-    borderRadius: 18,
+    borderRadius: 20,
     flexDirection: "row",
     alignItems: "stretch",
     alignSelf: "flex-start",
     minHeight: 92,
+    overflow: "hidden",
   },
   audioBtn: {
-    width: 78,
+    width: 82,
+    minHeight: 92,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   audioBtnSlow: {
-    width: 70,
+    width: 72,
+  },
+  audioPulseRing: {
+    position: "absolute",
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2,
   },
   audioSplit: {
     width: 2,
     marginVertical: 0,
   },
-
-  slotsWrap: {
-    paddingTop: 26,
+  footerWrap: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 8,
+    backgroundColor: L.bg,
+    borderTopWidth: 1,
+    borderTopColor: L.border,
   },
-  answerArea: {
+  footerWrapDuo: {
+    borderTopWidth: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+  },
+  bank: {
+    flexWrap: "wrap",
+    justifyContent: "center",
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  wordBankSpacer: {
+    flex: 1,
+    minHeight: 56,
+  },
+  bankCell: {
+    position: "relative",
+    marginHorizontal: 4,
+    marginVertical: 5,
+  },
+  bankPlaceholder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: L.slotDash,
+    backgroundColor: L.bgSoft,
+  },
+  slotsWrap: {
+    minHeight: 118,
+    paddingTop: 16,
+    paddingBottom: 6,
+  },
+  slotsWrapDuo: {
+    minHeight: 0,
+    paddingTop: 26,
+    paddingBottom: 0,
+  },
+  duoAnswerArea: {
     width: "100%",
     position: "relative",
   },
-  placedRow: {
+  duoPlacedRow: {
     flexWrap: "wrap",
     alignItems: "flex-start",
     alignContent: "flex-start",
     justifyContent: "flex-start",
   },
-  placedCell: {
+  duoPlacedCell: {
     height: ROW_H,
     marginEnd: TILE_GAP,
     marginBottom: ROW_GAP,
+    flexGrow: 0,
+    flexShrink: 0,
   },
-  landingAnchor: {
-    width: 1,
+  duoLandingAnchor: {
     height: ROW_H,
     marginBottom: ROW_GAP,
   },
-  rail: {
+  duoRail: {
     position: "absolute",
     left: 0,
     right: 0,
     height: RAIL_H,
     borderRadius: RAIL_RADIUS,
   },
-
-  bankSpacer: {
-    flex: 1,
-    minHeight: 40,
-  },
-  bank: {
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-    alignContent: "flex-start",
-    paddingTop: 4,
-    paddingBottom: 4,
-  },
-  bankCell: {
-    height: ROW_H,
-    marginEnd: TILE_GAP,
-    marginBottom: 8,
-  },
-  wordTile: {
+  duoWordTile: {
     height: ROW_H,
     minHeight: ROW_H,
     paddingHorizontal: 15,
     paddingVertical: 0,
   },
-
-  cantListenWrap: {
-    paddingTop: 14,
-    paddingBottom: 2,
+  bankDuo: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    justifyContent: "flex-start",
+    alignContent: "flex-start",
+  },
+  bankCellDuo: {
+    height: ROW_H,
+    marginEnd: TILE_GAP,
+    marginBottom: 8,
+  },
+  slotsRow: {
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+  },
+  slotCell: {
+    width: 74,
+    height: 48,
+    marginHorizontal: 2,
+    marginVertical: 5,
+  },
+  wordTile: {
+    minHeight: 42,
+    maxWidth: 156,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  wordTileCompact: {
+    maxWidth: 128,
+  },
+  slotWordTile: {
+    width: 74,
+    height: 48,
+    minHeight: 48,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  emptySlot: {
+    width: 74,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: L.slotDash,
+    backgroundColor: L.bgSoft,
     alignItems: "center",
+    justifyContent: "center",
   },
-  cantListen: {
-    fontSize: 15,
-    fontWeight: "700",
-    fontFamily: "Rabar_044",
-    textAlign: "center",
+  emptySlotDuo: {
+    width: 74,
+    height: 48,
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: 2,
+    borderBottomColor: Duo.border,
+    backgroundColor: "transparent",
   },
-
+  bankDivider: {
+    height: 2,
+    backgroundColor: Duo.border,
+    marginHorizontal: 8,
+    borderRadius: 1,
+  },
   flyLayer: {
     bottom: 0,
     zIndex: 40,
@@ -816,6 +1628,14 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   flyWordTile: {
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  flyWordTileDuo: {
     width: "100%",
     height: "100%",
     minHeight: 0,

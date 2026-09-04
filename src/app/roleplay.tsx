@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 export default function RolePlayRoute() {
   return (
-    <ScreenOpeningShell variant="ai" screenKey="roleplay" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="ai" screenKey="roleplay" firstTimeOnly={false}>
       <RolePlayScreen />
     </ScreenOpeningShell>
   );

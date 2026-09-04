@@ -1,8 +1,28 @@
+import type { LessonPathMode } from "../data/lesson-content";
 import type { LessonListItem, SectionDataItem } from "../data/list-items";
 import type { RefObject } from "react";
 import type { SectionList } from "react-native";
+import {
+  getPathMetrics,
+  KIDS_ROW_HEIGHT,
+} from "../screens/home/components/path-metrics";
 
-const LESSON_ROW_HEIGHT = 66;
+/**
+ * Headroom above the anchored current lesson when auto-scrolling. Fixed pixels
+ * so the landing position stays exactly as shipped across all paths.
+ */
+const SCROLL_VIEW_OFFSET = 99;
+
+/**
+ * Outer row height per path, for the fallback offset estimate only — the
+ * estimate must match what each list's `getItemLayout` reports. Kids rows are
+ * wrapped in a `minHeight: 108` container, so the node slot height alone would
+ * undershoot.
+ */
+function rowHeightForPath(pathMode: LessonPathMode): number {
+  if (pathMode === "kids") return KIDS_ROW_HEIGHT;
+  return getPathMetrics(pathMode).slotHeight;
+}
 
 export function findCurrentLessonLocation(
   sections: SectionDataItem[],
@@ -44,6 +64,7 @@ export function scrollPathToCurrentLesson(
   listRef: RefObject<SectionList<LessonListItem, SectionDataItem> | null>,
   sections: SectionDataItem[],
   animated = true,
+  pathMode: LessonPathMode = "street",
 ) {
   const location = findCurrentLessonLocation(sections);
   if (!location || !listRef.current) return;
@@ -54,18 +75,19 @@ export function scrollPathToCurrentLesson(
         sectionIndex: location.sectionIndex,
         itemIndex: location.itemIndex,
         animated,
-        viewOffset: LESSON_ROW_HEIGHT * 1.5,
+        viewOffset: SCROLL_VIEW_OFFSET,
         viewPosition: 0.25,
       });
     } catch {
       // Fallback: estimate scroll offset if section/item is outside rendered window
       try {
+        const rowHeight = rowHeightForPath(pathMode);
         let totalItemsBefore = 0;
         for (let s = 0; s < location.sectionIndex; s++) {
           totalItemsBefore += (sections[s]?.data?.length || 0) + 1; // +1 for section header
         }
         totalItemsBefore += location.itemIndex;
-        const estimatedOffset = Math.max(0, totalItemsBefore * LESSON_ROW_HEIGHT - LESSON_ROW_HEIGHT);
+        const estimatedOffset = Math.max(0, totalItemsBefore * rowHeight - rowHeight);
         listRef.current?.getScrollResponder()?.scrollTo({
           y: estimatedOffset,
           animated,

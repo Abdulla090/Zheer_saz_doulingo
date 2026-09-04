@@ -35,6 +35,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PressableScale } from "../../components/animations";
 import { AppText } from "../../components/ui/AppText";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
+import { GsapEnterBlock } from "../../components/animations/skia-gsap-opening";
 import {
   SOURCE_LANGUAGES,
   TARGET_LANGUAGES,
@@ -659,358 +660,372 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
             { paddingBottom: tabBarScrollPadding(insets.bottom) + 24 },
           ]}
         >
-          <View style={styles.featurePanel}>
-            <View style={styles.featureHeader}>
-              <View style={styles.featureIcon}>
-                <HugeiconsIcon icon={PaintBrush01Icon} size={19} color={colors.onPrimary} strokeWidth={2.1} />
+          <GsapEnterBlock index={0}>
+            <View style={styles.featurePanel}>
+              <View style={styles.featureHeader}>
+                <View style={styles.featureIcon}>
+                  <HugeiconsIcon icon={PaintBrush01Icon} size={19} color={colors.onPrimary} strokeWidth={2.1} />
+                </View>
+                <View style={styles.featureCopy}>
+                  <AppText style={styles.featureTitle} languageCode={locale} align="start" latinRole="bold">
+                    {copy.appearance}
+                  </AppText>
+                  <AppText style={styles.featureHint} languageCode={locale} align="start">
+                    {copy.appearanceHint}
+                  </AppText>
+                </View>
               </View>
-              <View style={styles.featureCopy}>
-                <AppText style={styles.featureTitle} languageCode={locale} align="start" latinRole="bold">
-                  {copy.appearance}
-                </AppText>
-                <AppText style={styles.featureHint} languageCode={locale} align="start">
-                  {copy.appearanceHint}
-                </AppText>
-              </View>
-            </View>
-            <View style={styles.themeRail}>
-              {themeOptions.map((option) => {
-                const selected = theme === option.id;
-                return (
-                  <PressableScale
-                    key={option.id}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={option.label}
-                    onPress={() => setTheme(option.id)}
-                    scaleDown={0.94}
-                    style={[styles.themeOption, selected && styles.themeOptionSelected]}
-                  >
-                    <HugeiconsIcon
-                      icon={option.icon}
-                      size={18}
-                      color={selected ? colors.onPrimary : styles.featureMuted.color}
-                      strokeWidth={2.1}
-                    />
-                    <AppText
-                      style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}
-                      languageCode={locale}
-                      align="center"
-                      latinRole="bold"
+              <View style={styles.themeRail}>
+                {themeOptions.map((option) => {
+                  const selected = theme === option.id;
+                  return (
+                    <PressableScale
+                      key={option.id}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selected }}
+                      accessibilityLabel={option.label}
+                      onPress={() => setTheme(option.id)}
+                      scaleDown={0.94}
+                      style={[styles.themeOption, selected && styles.themeOptionSelected]}
                     >
-                      {option.label}
-                    </AppText>
-                  </PressableScale>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-            <SectionHeading title={copy.path} hint={copy.pathHint} locale={locale} styles={styles} />
-            <View style={styles.choiceWrap}>
-              {([
-                ["street", copy.streetPath],
-                ["normal", copy.normalPath],
-                ["kids", copy.kidsPath],
-              ] as const).map(([mode, label]) => (
-                <ChoiceChip
-                  key={mode}
-                  label={label}
-                  selected={pathMode === mode}
-                  onPress={() => {
-                    const nextMode = mode as PathMode;
-                    setPathMode(nextMode);
-                    router.replace({ pathname: "/(tabs)", params: { mode: nextMode } });
-                  }}
-                  languageCode={locale}
-                  styles={styles}
-                />
-              ))}
-            </View>
-          </View>
-
-          <View style={isDesktopWeb ? styles.desktopSectionGrid : styles.mobileSectionStack}>
-            <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-              <SectionHeading
-                title={copy.languageRoute}
-                hint={copy.languageHint}
-                locale={locale}
-                styles={styles}
-              />
-              <View style={styles.routeSummary}>
-                <View style={styles.routeNode}>
-                  <AppText style={styles.routeLabel} languageCode={locale} align="start">
-                    {copy.source}
-                  </AppText>
-                  <AppText style={styles.routeValue} languageCode={nativeLang} align="start" latinRole="bold">
-                    {SOURCE_LANGUAGES.find((language) => language.id === nativeLang)?.nativeName ?? nativeLang}
-                  </AppText>
-                </View>
-                <View style={styles.routeLine}>
-                  <View style={styles.routeDot} />
-                  <View style={styles.routeStroke} />
-                  <HugeiconsIcon
-                    icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
-                    size={17}
-                    color={colors.primary}
-                    strokeWidth={2.4}
-                  />
-                </View>
-                <View style={styles.routeNode}>
-                  <AppText style={styles.routeLabel} languageCode={locale} align="start">
-                    {copy.target}
-                  </AppText>
-                  <AppText style={styles.routeValue} languageCode={targetLang} align="start" latinRole="bold">
-                    {TARGET_LANGUAGES.find((language) => language.id === targetLang)?.nativeName ?? targetLang}
-                  </AppText>
-                </View>
-              </View>
-
-              <View style={styles.languageControls}>
-                <View style={styles.choiceGroup}>
-                  <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
-                    {copy.interfaceLanguage}
-                  </AppText>
-                  <View style={styles.choiceWrap}>
-                    {UI_LANGUAGES.map((language) => (
-                      <ChoiceChip
-                        key={language.id}
-                        label={language.nativeName}
-                        selected={uiLanguage === language.id}
-                        onPress={() => setUiLanguage(language.id)}
-                        languageCode={language.id}
-                        styles={styles}
+                      <HugeiconsIcon
+                        icon={option.icon}
+                        size={18}
+                        color={selected ? colors.onPrimary : styles.featureMuted.color}
+                        strokeWidth={2.1}
                       />
-                    ))}
-                  </View>
-                </View>
-
-                <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
-                  <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
-                    {copy.source}
-                  </AppText>
-                  <View style={styles.choiceWrap}>
-                    {SOURCE_LANGUAGES.map((language) => (
-                      <ChoiceChip
-                        key={language.id}
-                        label={language.nativeName}
-                        selected={nativeLang === language.id}
-                        onPress={() => {
-                          const nextTarget = getTargetLanguagesForSource(language.id).some(
-                            (target) => target.id === targetLang,
-                          )
-                            ? targetLang
-                            : getTargetLanguagesForSource(language.id)[0]?.id;
-                          if (nextTarget) setLanguagePair(language.id, nextTarget);
-                        }}
-                        languageCode={language.id}
-                        styles={styles}
-                      />
-                    ))}
-                  </View>
-                </View>
-
-                <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
-                  <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
-                    {copy.target}
-                  </AppText>
-                  <View style={styles.choiceWrap}>
-                    {TARGET_LANGUAGE_CATALOG.map((language) => {
-                      const selectable = language.supportedAsTarget;
-                      return (
-                        <ChoiceChip
-                          key={language.id}
-                          label={language.nativeName}
-                          selected={targetLang === language.id}
-                          onPress={() => {
-                            if (!selectable) {
-                              Alert.alert(copy.notReadyTitle, copy.notReadyBody);
-                              return;
-                            }
-                            setLanguagePair(nativeLang, language.id);
-                          }}
-                          languageCode={language.id}
-                          styles={styles}
-                          disabled={false}
-                          statusLabel={language.curriculumReady ? undefined : copy.preview}
-                        />
-                      );
-                    })}
-                  </View>
-                </View>
+                      <AppText
+                        style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}
+                        languageCode={locale}
+                        align="center"
+                        latinRole="bold"
+                      >
+                        {option.label}
+                      </AppText>
+                    </PressableScale>
+                  );
+                })}
               </View>
             </View>
+          </GsapEnterBlock>
 
+          <GsapEnterBlock index={1}>
             <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-              <SectionHeading title={copy.feel} hint={copy.feelHint} locale={locale} styles={styles} />
-              <View style={styles.controlGroup}>
-                <ControlRow
-                  icon={TouchInteraction01Icon}
-                  title={t("settings.haptics")}
-                  locale={locale}
-                  styles={styles}
-                  control={
-                    <SettingsSwitch
-                      label={t("settings.haptics")}
-                      value={haptics}
-                      onValueChange={setHaptics}
-                      activeColor={colors.primary}
-                    />
-                  }
-                />
-                <ControlRow
-                  icon={VolumeHighIcon}
-                  title={t("settings.sounds")}
-                  locale={locale}
-                  styles={styles}
-                  control={
-                    <SettingsSwitch
-                      label={t("settings.sounds")}
-                      value={sounds}
-                      onValueChange={setSounds}
-                      activeColor={colors.primary}
-                    />
-                  }
-                />
-              </View>
-            </View>
-
-            <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-              <CycleSelector
-                title={copy.voice}
-                hint={copy.voiceHint}
-                value={voiceOptions[selectedVoiceIndex].label}
-                countLabel={`${selectedVoiceIndex + 1}/${voiceOptions.length}`}
-                onPrevious={() => changeVoice(-1)}
-                onNext={() => changeVoice(1)}
-                copy={copy}
-                locale={locale}
-                icon={VoiceIcon}
-                styles={styles}
-              />
-            </View>
-
-            <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-              <SectionHeading title={copy.details} locale={locale} styles={styles} />
-              <View style={styles.flatList}>
-                {!isKidsMode && ENABLE_ADMIN ? (
-                  <ActionRow
-                    icon={Wrench01Icon}
-                    title={copy.admin}
-                    onPress={() => router.push("/admin" as never)}
-                    locale={locale}
-                    isRtl={isRtl}
-                    styles={styles}
-                  />
-                ) : null}
-                {PRIVACY_POLICY_URL ? (
-                  <ActionRow
-                    icon={Shield01Icon}
-                    title={copy.privacyWeb}
-                    onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
-                    locale={locale}
-                    isRtl={isRtl}
-                    styles={styles}
-                  />
-                ) : null}
-                {LEGAL_LINKS.map((link) => (
-                  <ActionRow
-                    key={link.route}
-                    icon={Shield01Icon}
-                    title={t(link.labelKey)}
-                    onPress={() => router.push(link.route)}
-                    locale={locale}
-                    isRtl={isRtl}
+              <SectionHeading title={copy.path} hint={copy.pathHint} locale={locale} styles={styles} />
+              <View style={styles.choiceWrap}>
+                {([
+                  ["street", copy.streetPath],
+                  ["normal", copy.normalPath],
+                  ["kids", copy.kidsPath],
+                ] as const).map(([mode, label]) => (
+                  <ChoiceChip
+                    key={mode}
+                    label={label}
+                    selected={pathMode === mode}
+                    onPress={() => {
+                      const nextMode = mode as PathMode;
+                      setPathMode(nextMode);
+                      router.replace({ pathname: "/(tabs)", params: { mode: nextMode } });
+                    }}
+                    languageCode={locale}
                     styles={styles}
                   />
                 ))}
-                <ActionRow
-                  icon={Mail01Icon}
-                  title={t("settings.support")}
-                  subtitle={SUPPORT_EMAIL}
-                  onPress={() => void openMailto(SUPPORT_EMAIL)}
-                  locale={locale}
-                  isRtl={isRtl}
-                  styles={styles}
-                  last
-                />
               </View>
             </View>
+          </GsapEnterBlock>
 
-            {!isKidsMode ? (
-              <View style={[styles.section, isDesktopWeb && styles.desktopGridCardFull]}>
-                <SectionHeading title={copy.account} locale={locale} styles={styles} />
-                <View style={styles.accountIdentity}>
-                  <View style={styles.accountMark}>
-                    <HugeiconsIcon icon={UserIcon} size={20} color={colors.onPrimary} strokeWidth={2.1} />
-                  </View>
-                  <View style={styles.rowCopy}>
-                    <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
-                      {user?.email ?? copy.signIn}
+          <View style={isDesktopWeb ? styles.desktopSectionGrid : styles.mobileSectionStack}>
+            <GsapEnterBlock index={2}>
+              <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
+                <SectionHeading
+                  title={copy.languageRoute}
+                  hint={copy.languageHint}
+                  locale={locale}
+                  styles={styles}
+                />
+                <View style={styles.routeSummary}>
+                  <View style={styles.routeNode}>
+                    <AppText style={styles.routeLabel} languageCode={locale} align="start">
+                      {copy.source}
                     </AppText>
-                    <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
-                      {t("settings.version")} {APP_VERSION}
+                    <AppText style={styles.routeValue} languageCode={nativeLang} align="start" latinRole="bold">
+                      {SOURCE_LANGUAGES.find((language) => language.id === nativeLang)?.nativeName ?? nativeLang}
+                    </AppText>
+                  </View>
+                  <View style={styles.routeLine}>
+                    <View style={styles.routeDot} />
+                    <View style={styles.routeStroke} />
+                    <HugeiconsIcon
+                      icon={isRtl ? ArrowLeft01Icon : ArrowRight01Icon}
+                      size={17}
+                      color={colors.primary}
+                      strokeWidth={2.4}
+                    />
+                  </View>
+                  <View style={styles.routeNode}>
+                    <AppText style={styles.routeLabel} languageCode={locale} align="start">
+                      {copy.target}
+                    </AppText>
+                    <AppText style={styles.routeValue} languageCode={targetLang} align="start" latinRole="bold">
+                      {TARGET_LANGUAGES.find((language) => language.id === targetLang)?.nativeName ?? targetLang}
                     </AppText>
                   </View>
                 </View>
 
-                {!user ? (
-                  <PressableScale
-                    accessibilityRole="button"
-                    accessibilityLabel={copy.signIn}
-                    onPress={() => router.push("/auth")}
-                    scaleDown={0.97}
-                    style={styles.primaryAction}
-                  >
-                    <AppText style={styles.primaryActionText} languageCode={locale} align="center" latinRole="bold">
-                      {copy.signIn}
+                <View style={styles.languageControls}>
+                  <View style={styles.choiceGroup}>
+                    <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                      {copy.interfaceLanguage}
                     </AppText>
-                  </PressableScale>
-                ) : null}
+                    <View style={styles.choiceWrap}>
+                      {UI_LANGUAGES.map((language) => (
+                        <ChoiceChip
+                          key={language.id}
+                          label={language.nativeName}
+                          selected={uiLanguage === language.id}
+                          onPress={() => setUiLanguage(language.id)}
+                          languageCode={language.id}
+                          styles={styles}
+                        />
+                      ))}
+                    </View>
+                  </View>
 
-                <View style={styles.flatList}>
-                  {user ? (
-                    <>
-                      <ActionRow
-                        icon={Logout01Icon}
-                        title={copy.signOut}
-                        onPress={confirmSignOut}
-                        locale={locale}
-                        isRtl={isRtl}
-                        styles={styles}
-                      />
-                      <ActionRow
-                        icon={Delete02Icon}
-                        title={isDeletingAccount ? copy.deleting : copy.deleteAccount}
-                        onPress={confirmDeleteAccount}
-                        locale={locale}
-                        isRtl={isRtl}
-                        styles={styles}
-                        destructive
-                      />
-                    </>
-                  ) : null}
-                  <ActionRow
-                    icon={RefreshIcon}
-                    title={copy.replay}
-                    onPress={confirmReplayOnboarding}
+                  <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
+                    <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                      {copy.source}
+                    </AppText>
+                    <View style={styles.choiceWrap}>
+                      {SOURCE_LANGUAGES.map((language) => (
+                        <ChoiceChip
+                          key={language.id}
+                          label={language.nativeName}
+                          selected={nativeLang === language.id}
+                          onPress={() => {
+                            const nextTarget = getTargetLanguagesForSource(language.id).some(
+                              (target) => target.id === targetLang,
+                            )
+                              ? targetLang
+                              : getTargetLanguagesForSource(language.id)[0]?.id;
+                            if (nextTarget) setLanguagePair(language.id, nextTarget);
+                          }}
+                          languageCode={language.id}
+                          styles={styles}
+                        />
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={[styles.choiceGroup, styles.choiceGroupDivider]}>
+                    <AppText style={styles.choiceLabel} languageCode={locale} align="start" latinRole="bold">
+                      {copy.target}
+                    </AppText>
+                    <View style={styles.choiceWrap}>
+                      {TARGET_LANGUAGE_CATALOG.map((language) => {
+                        const selectable = language.supportedAsTarget;
+                        return (
+                          <ChoiceChip
+                            key={language.id}
+                            label={language.nativeName}
+                            selected={targetLang === language.id}
+                            onPress={() => {
+                              if (!selectable) {
+                                Alert.alert(copy.notReadyTitle, copy.notReadyBody);
+                                return;
+                              }
+                              setLanguagePair(nativeLang, language.id);
+                            }}
+                            languageCode={language.id}
+                            styles={styles}
+                            disabled={false}
+                            statusLabel={language.curriculumReady ? undefined : copy.preview}
+                          />
+                        );
+                      })}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </GsapEnterBlock>
+
+            <GsapEnterBlock index={3}>
+              <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
+                <SectionHeading title={copy.feel} hint={copy.feelHint} locale={locale} styles={styles} />
+                <View style={styles.controlGroup}>
+                  <ControlRow
+                    icon={TouchInteraction01Icon}
+                    title={t("settings.haptics")}
                     locale={locale}
-                    isRtl={isRtl}
                     styles={styles}
+                    control={
+                      <SettingsSwitch
+                        label={t("settings.haptics")}
+                        value={haptics}
+                        onValueChange={setHaptics}
+                        activeColor={colors.primary}
+                      />
+                    }
                   />
+                  <ControlRow
+                    icon={VolumeHighIcon}
+                    title={t("settings.sounds")}
+                    locale={locale}
+                    styles={styles}
+                    control={
+                      <SettingsSwitch
+                        label={t("settings.sounds")}
+                        value={sounds}
+                        onValueChange={setSounds}
+                        activeColor={colors.primary}
+                      />
+                    }
+                  />
+                </View>
+              </View>
+            </GsapEnterBlock>
+
+            <GsapEnterBlock index={4}>
+              <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
+                <CycleSelector
+                  title={copy.voice}
+                  hint={copy.voiceHint}
+                  value={voiceOptions[selectedVoiceIndex].label}
+                  countLabel={`${selectedVoiceIndex + 1}/${voiceOptions.length}`}
+                  onPrevious={() => changeVoice(-1)}
+                  onNext={() => changeVoice(1)}
+                  copy={copy}
+                  locale={locale}
+                  icon={VoiceIcon}
+                  styles={styles}
+                />
+              </View>
+            </GsapEnterBlock>
+
+            <GsapEnterBlock index={5}>
+              <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
+                <SectionHeading title={copy.details} locale={locale} styles={styles} />
+                <View style={styles.flatList}>
+                  {!isKidsMode && ENABLE_ADMIN ? (
+                    <ActionRow
+                      icon={Wrench01Icon}
+                      title={copy.admin}
+                      onPress={() => router.push("/admin" as never)}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                    />
+                  ) : null}
+                  {PRIVACY_POLICY_URL ? (
+                    <ActionRow
+                      icon={Shield01Icon}
+                      title={copy.privacyWeb}
+                      onPress={() => void openHttpsUrl(PRIVACY_POLICY_URL)}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                    />
+                  ) : null}
+                  {LEGAL_LINKS.map((link) => (
+                    <ActionRow
+                      key={link.route}
+                      icon={Shield01Icon}
+                      title={t(link.labelKey)}
+                      onPress={() => router.push(link.route)}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                    />
+                  ))}
                   <ActionRow
-                    icon={RotateLeft01Icon}
-                    title={copy.reset}
-                    onPress={confirmReset}
+                    icon={Mail01Icon}
+                    title={t("settings.support")}
+                    subtitle={SUPPORT_EMAIL}
+                    onPress={() => void openMailto(SUPPORT_EMAIL)}
                     locale={locale}
                     isRtl={isRtl}
                     styles={styles}
-                    destructive
                     last
                   />
                 </View>
               </View>
+            </GsapEnterBlock>
+
+            {!isKidsMode ? (
+              <GsapEnterBlock index={6}>
+                <View style={[styles.section, isDesktopWeb && styles.desktopGridCardFull]}>
+                  <SectionHeading title={copy.account} locale={locale} styles={styles} />
+                  <View style={styles.accountIdentity}>
+                    <View style={styles.accountMark}>
+                      <HugeiconsIcon icon={UserIcon} size={20} color={colors.onPrimary} strokeWidth={2.1} />
+                    </View>
+                    <View style={styles.rowCopy}>
+                      <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
+                        {user?.email ?? copy.signIn}
+                      </AppText>
+                      <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
+                        {t("settings.version")} {APP_VERSION}
+                      </AppText>
+                    </View>
+                  </View>
+
+                  {!user ? (
+                    <PressableScale
+                      accessibilityRole="button"
+                      accessibilityLabel={copy.signIn}
+                      onPress={() => router.push("/auth")}
+                      scaleDown={0.97}
+                      style={styles.primaryAction}
+                    >
+                      <AppText style={styles.primaryActionText} languageCode={locale} align="center" latinRole="bold">
+                        {copy.signIn}
+                      </AppText>
+                    </PressableScale>
+                  ) : null}
+
+                  <View style={styles.flatList}>
+                    {user ? (
+                      <>
+                        <ActionRow
+                          icon={Logout01Icon}
+                          title={copy.signOut}
+                          onPress={confirmSignOut}
+                          locale={locale}
+                          isRtl={isRtl}
+                          styles={styles}
+                        />
+                        <ActionRow
+                          icon={Delete02Icon}
+                          title={isDeletingAccount ? copy.deleting : copy.deleteAccount}
+                          onPress={confirmDeleteAccount}
+                          locale={locale}
+                          isRtl={isRtl}
+                          styles={styles}
+                          destructive
+                        />
+                      </>
+                    ) : null}
+                    <ActionRow
+                      icon={RefreshIcon}
+                      title={copy.replay}
+                      onPress={confirmReplayOnboarding}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                    />
+                    <ActionRow
+                      icon={RotateLeft01Icon}
+                      title={copy.reset}
+                      onPress={confirmReset}
+                      locale={locale}
+                      isRtl={isRtl}
+                      styles={styles}
+                      destructive
+                      last
+                    />
+                  </View>
+                </View>
+              </GsapEnterBlock>
             ) : null}
           </View>
 

@@ -51,9 +51,6 @@ export const IS_HIGH_END_DEVICE = IS_NATIVE && !IS_LOW_END_DEVICE;
 /** Android release builds struggle with clip + SVG in virtualized lists, but with fixed heights it works great on all platforms. */
 export const PATH_LIST_REMOVE_CLIPPED = true;
 
-/** Path nodes: skip SVG gradient defs on Android (url(#id) often fails in APK). */
-export const PATH_NODE_SIMPLE_SHINE = IS_ANDROID;
-
 /** Skip expensive native elevation shadow pass in path list for Android. */
 export const PATH_SKIP_NODE_SHADOW = IS_ANDROID;
 

@@ -3,7 +3,7 @@ import { LearningPathScreen } from "../../screens/home/LearningPathScreen";
 
 export default function HomeIndex() {
   return (
-    <TabScreenChrome lazy={false} openingVariant="path">
+    <TabScreenChrome openingVariant="home">
       <LearningPathScreen topChromeHeight={8} />
     </TabScreenChrome>
   );

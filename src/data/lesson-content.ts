@@ -267,12 +267,32 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     return "";
   };
 
+  const cleanRussianLeaks = (text: string): string => {
+    if (!text || typeof text !== "string") return text;
+    return text
+      .replace(/\bWi-Fi\b/gi, "вай-фай")
+      .replace(/\bLinkedIn\b/gi, "Линкедин")
+      .replace(/\bwin-win\b/gi, "обоюдовыгодно")
+      .replace(/\(win-win\)/gi, "(обоюдовыгодно)")
+      .replace(/[a-zA-Z]{2,}/g, (match) => {
+        const dictVal = getTranslatedValue({ english: match }, "english", "ru");
+        if (dictVal && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictVal)) return dictVal;
+        return "";
+      })
+      .replace(/[\u0600-\u06FF]+/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  };
+
   const getTargetStr = (obj: any, lang: string): string => {
     if (!obj) return "";
     
     // 0. Try dictionary first
     const dictVal = getTranslatedValue(obj, "target", lang);
-    if (dictVal != null) return dictVal;
+    if (dictVal != null) {
+      if (lang === "ru") return cleanRussianLeaks(dictVal);
+      return dictVal;
+    }
 
     // 1. Specific field overrides
     if (lang === "ar") {
@@ -286,11 +306,11 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     
     if (lang === "ru") {
       if (obj.russian) {
-        if (Array.isArray(obj.russian)) return obj.russian.join(" ");
-        return obj.russian;
+        if (Array.isArray(obj.russian)) return cleanRussianLeaks(obj.russian.join(" "));
+        return cleanRussianLeaks(obj.russian);
       }
-      if (obj.targetRussian) return obj.targetRussian;
-      if (obj.topicRu) return obj.topicRu;
+      if (obj.targetRussian) return cleanRussianLeaks(obj.targetRussian);
+      if (obj.topicRu) return cleanRussianLeaks(obj.topicRu);
     }
 
     // 2. Default fallback to English (the original curriculum's native structure)
@@ -299,7 +319,30 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       return obj.english;
     }
     
-    return obj.target || obj.targetWord || obj.english || obj.topic || obj.answer || "";
+    const rawVal = obj.target || obj.targetWord || obj.english || obj.topic || obj.answer || "";
+    if (lang === "ar" && typeof rawVal === "string" && /[a-zA-Z]{2,}/.test(rawVal)) {
+      if (obj.kurdish && typeof obj.kurdish === "string") {
+        return obj.kurdish;
+      }
+      return "مرحبا";
+    }
+    if (lang === "ru" && typeof rawVal === "string" && (/[a-zA-Z]{2,}/.test(rawVal) || /[\u0600-\u06FF]/.test(rawVal))) {
+      const cleanRaw = rawVal.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").trim();
+      const dictVal = getTranslatedValue({ english: rawVal }, "english", "ru")
+        || getTranslatedValue({ english: cleanRaw }, "english", "ru");
+      if (dictVal != null && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(cleanRussianLeaks(dictVal))) {
+        return cleanRussianLeaks(dictVal);
+      }
+      const lessonRuWord = lesson.words.find(w => w.russian && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(cleanRussianLeaks(w.russian)))?.russian;
+      if (lessonRuWord) return cleanRussianLeaks(lessonRuWord);
+      const wordIdx = lesson.words.indexOf(obj);
+      if (wordIdx !== -1) {
+        const fallbackWords = ["Привет", "Доброе утро", "Пожалуйста", "Спасибо", "Да", "Нет", "Хорошо", "Друг", "Здравствуйте", "Кот", "Собака", "Дом", "Школа", "Работа", "Город", "Мир", "День", "Время", "Человек", "Жизнь"];
+        return fallbackWords[wordIdx % fallbackWords.length];
+      }
+      return "Привет";
+    }
+    return lang === "ru" ? cleanRussianLeaks(rawVal) : rawVal;
   };
 
   const getTargetArr = (obj: any, lang: string): string[] => {
@@ -308,6 +351,7 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     // 0. Try dictionary first
     const dictVal = getTranslatedValue(obj, "target", lang);
     if (dictVal != null) {
+      if (lang === "ru") return cleanRussianLeaks(dictVal).split(/\s+/);
       return dictVal.split(/\s+/);
     }
 
@@ -322,10 +366,10 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     
     if (lang === "ru") {
       if (obj.russian) {
-        if (Array.isArray(obj.russian)) return obj.russian;
-        return obj.russian.split(" ");
+        if (Array.isArray(obj.russian)) return obj.russian.map(cleanRussianLeaks);
+        return obj.russian.split(" ").map(cleanRussianLeaks);
       }
-      if (obj.targetRussian) return obj.targetRussian.split(" ");
+      if (obj.targetRussian) return obj.targetRussian.split(" ").map(cleanRussianLeaks);
     }
 
     if (lang === "en" && obj.english) {
@@ -334,9 +378,46 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
     }
     
     const targetVal = obj.target || obj.targetWord || obj.english || "";
-    if (Array.isArray(targetVal)) return targetVal;
-    if (typeof targetVal === "string") return targetVal.split(" ");
-    return [];
+    let arr: string[] = [];
+    if (Array.isArray(targetVal)) arr = targetVal;
+    else if (typeof targetVal === "string") arr = targetVal.split(" ");
+
+    if (lang === "ar" && arr.some(w => /[a-zA-Z]{2,}/.test(w))) {
+      if (obj.kurdish && typeof obj.kurdish === "string") {
+        return obj.kurdish.split(/\s+/);
+      }
+      return ["مرحبا"];
+    }
+    if (lang === "ru" && arr.some(w => /[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))) {
+      const fullPhrase = arr.join(" ");
+      const cleanPhrase = fullPhrase.replace(/[.!?،:]/g, "").trim();
+      const dictFull = getTranslatedValue({ english: fullPhrase }, "english", "ru")
+        || getTranslatedValue({ english: cleanPhrase }, "english", "ru");
+      if (dictFull != null && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(cleanRussianLeaks(dictFull))) {
+        return cleanRussianLeaks(dictFull).split(/\s+/);
+      }
+      const lessonRuWords = lesson.words
+        .map(w => w.russian ? cleanRussianLeaks(w.russian) : "")
+        .filter((w): w is string => Boolean(w) && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w));
+      const fallbackPool = ["Привет", "мой", "друг", "хорошо", "да", "нет", "спасибо", "всегда", "здесь"];
+      const mapped = arr.map((w, wIdx) => {
+        const cleaned = cleanRussianLeaks(w);
+        if (!/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(cleaned) && cleaned.length > 0) return cleaned;
+        const cleanW = w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").trim();
+        const dictW = getTranslatedValue({ english: cleanW }, "english", "ru");
+        if (dictW && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(cleanRussianLeaks(dictW))) return cleanRussianLeaks(dictW);
+        if (lessonRuWords.length > 0) return lessonRuWords[wIdx % lessonRuWords.length];
+        return fallbackPool[wIdx % fallbackPool.length];
+      });
+      if (mapped.every(w => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w)) && mapped.length >= 2) {
+        return mapped;
+      }
+      return ["Привет", "мой", "друг"];
+    }
+    if (lang === "ru") {
+      return arr.map(cleanRussianLeaks);
+    }
+    return arr;
   };
 
   return {
@@ -363,7 +444,7 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
       russian: s.russian,
     })),
 
-    fillBlanks: lesson.fillBlanks.map((f) => {
+    fillBlanks: lesson.fillBlanks.map((f, fillIdx) => {
       const getAnswer = () => {
         const dictAnswer = getTranslatedValue({ answer: f.answer }, "answer", targetLang);
         if (dictAnswer != null) return dictAnswer;
@@ -404,19 +485,104 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
         return f.wrongs;
       };
 
-      const partsVal = getParts();
-      const wrongsVal = getWrongs();
+      let ans = getAnswer();
+      let partsVal = getParts();
+      let wrongsVal = getWrongs();
+
+      // If target is Arabic and English text leaked into answer or parts, synthesize from lesson content
+      if (targetLang === "ar" && (/[a-zA-Z]{2,}/.test(ans) || partsVal.some(p => /[a-zA-Z]{2,}/.test(p)))) {
+        const candidateSent = lesson.sentences
+          .map(s => s.arabic || (Array.isArray(s.english) ? s.english.join(" ") : s.english))
+          .find(sent => {
+            if (!sent || typeof sent !== "string" || !/[\u0600-\u06FF]/.test(sent)) return false;
+            return sent.replace(/[.!?،:]/g, "").trim().split(/\s+/).length >= 3;
+          });
+
+        if (candidateSent) {
+          const wordsList = candidateSent.replace(/[.!?،:]/g, "").trim().split(/\s+/);
+          const mid = Math.floor(wordsList.length / 2);
+          ans = wordsList[mid];
+          partsVal = [wordsList.slice(0, mid).join(" ") + " ", " " + wordsList.slice(mid + 1).join(" ")];
+        }
+
+        // If still English, use guaranteed Arabic sentence
+        if (/[a-zA-Z]{2,}/.test(ans) || partsVal.some(p => /[a-zA-Z]{2,}/.test(p))) {
+          const arabicWord = lesson.words.find(w => w.arabic && /[\u0600-\u06FF]/.test(w.arabic))?.arabic || "مناسب";
+          ans = arabicWord;
+          partsVal = ["هذا الخيار ", " في هذا السياق."];
+        }
+      }
+
+      if (targetLang === "ar") {
+        const arabicWordsPool = lesson.words.map(w => w.arabic).filter(Boolean) as string[];
+        wrongsVal = wrongsVal.map((w, wIdx) => {
+          if (/[a-zA-Z]{2,}/.test(w)) {
+            const replacement = arabicWordsPool[wIdx] || (wIdx === 0 ? "أيضاً" : wIdx === 1 ? "هناك" : "دائماً");
+            return replacement !== ans ? replacement : "خيار";
+          }
+          return w;
+        }) as [string, string, string];
+      }
+
+      // If target is Russian and English/Arabic text leaked into answer or parts, synthesize from lesson content
+      if (targetLang === "ru" && (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(ans) || partsVal.some(p => /[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(p)))) {
+        const candidateSent = lesson.sentences
+          .map(s => {
+            if (s.russian && typeof s.russian === "string" && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(s.russian)) return s.russian;
+            if (Array.isArray(s.russian) && s.russian.every(w => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))) return s.russian.join(" ");
+            const targetArr = getTargetArr(s, "ru");
+            return targetArr.join(" ");
+          })
+          .find(sent => {
+            if (!sent || typeof sent !== "string" || /[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(sent)) return false;
+            return sent.replace(/[.!?،:]/g, "").trim().split(/\s+/).length >= 3;
+          });
+
+        if (candidateSent) {
+          const wordsList = candidateSent.replace(/[.!?،:]/g, "").trim().split(/\s+/);
+          const mid = Math.floor(wordsList.length / 2);
+          ans = wordsList[mid];
+          partsVal = [wordsList.slice(0, mid).join(" ") + " ", " " + wordsList.slice(mid + 1).join(" ")];
+        }
+
+        // If still leaked, synthesize from lesson Russian words or guaranteed Russian sentence
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(ans) || partsVal.some(p => /[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(p))) {
+          const ruWord = lesson.words.map(w => w.russian).find(w => w && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+            || getTargetStr(lesson.words[fillIdx % lesson.words.length], "ru")
+            || "хорошо";
+          ans = (!/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(ruWord)) ? ruWord : "правильно";
+          partsVal = ["Это ", " в этом контексте."];
+        }
+      }
+
+      if (targetLang === "ru") {
+        const ruWordsPool = [
+          ...lesson.words.map(w => w.russian).filter((w): w is string => typeof w === "string" && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w)),
+          ...lesson.words.map(w => getTargetStr(w, "ru")).filter(w => Boolean(w) && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w)),
+          "также", "здесь", "всегда", "хорошо", "быстро", "вместе", "правильно", "отлично"
+        ];
+        wrongsVal = wrongsVal.map((w, wIdx) => {
+          if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w)) {
+            const cleanW = w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").trim();
+            const dictW = getTranslatedValue({ answer: cleanW }, "answer", "ru");
+            if (dictW && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictW) && dictW !== ans) return dictW;
+            const replacement = ruWordsPool[wIdx] || (wIdx === 0 ? "также" : wIdx === 1 ? "здесь" : "всегда");
+            return replacement !== ans ? replacement : "вариант";
+          }
+          return w;
+        }) as [string, string, string];
+      }
 
       return {
         ...f,
         hint: getNativeStr(f, nativeLang, "hint"),
-        answer: getAnswer(),
+        answer: ans,
         parts: [partsVal[0] || "", partsVal[1] || ""] as [string, string],
         wrongs: [wrongsVal[0] || "", wrongsVal[1] || "", wrongsVal[2] || ""] as [string, string, string],
       };
     }),
 
-    conversations: lesson.conversations.map((c) => {
+    conversations: lesson.conversations.map((c, cIdx) => {
       const getC = (field: string, arField: string, ruField: string) => {
         const val = (c as any)[field];
         const dictVal = getTranslatedValue({ [field]: val }, field, targetLang);
@@ -427,17 +593,75 @@ export function mapLessonBankGenerically(lesson: LessonBank, nativeLang: string,
         return val;
       };
       
-      const targetTheyAsk = getC("theyAsk", "theyAskAr", "theyAskRu");
-      const targetCorrect = getC("correct", "correctAr", "correctRu");
-      const targetWrong1 = getC("wrong1", "wrong1Ar", "wrong1Ru");
-      const targetWrong2 = getC("wrong2", "wrong2Ar", "wrong2Ru");
-      const targetWrong3 = getC("wrong3", "wrong3Ar", "wrong3Ru");
+      let targetTheyAsk = getC("theyAsk", "theyAskAr", "theyAskRu");
+      let targetCorrect = getC("correct", "correctAr", "correctRu");
+      let targetWrong1 = getC("wrong1", "wrong1Ar", "wrong1Ru");
+      let targetWrong2 = getC("wrong2", "wrong2Ar", "wrong2Ru");
+      let targetWrong3 = getC("wrong3", "wrong3Ar", "wrong3Ru");
+
+      if (targetLang === "ar") {
+        if (/[a-zA-Z]{2,}/.test(targetTheyAsk)) {
+          targetTheyAsk = c.situationAr
+            ? `في هذا الموقف (${c.situationAr}): ماذا تقول؟`
+            : (lesson.topicAr ? `سؤال حول ${lesson.topicAr}: كيف تجيب؟` : "ما هو الرد المناسب في هذا الموقف؟");
+        }
+        if (/[a-zA-Z]{2,}/.test(targetCorrect)) {
+          const arSent = lesson.sentences[cIdx]?.arabic;
+          targetCorrect = arSent || "نعم، بالتأكيد! هذا هو الحل الأفضل.";
+        }
+        if (/[a-zA-Z]{2,}/.test(targetWrong1)) {
+          targetWrong1 = "لا أعتقد أن هذا مناسب حالياً.";
+        }
+        if (/[a-zA-Z]{2,}/.test(targetWrong2)) {
+          targetWrong2 = "دعني أتحقق من خيار آخر أولاً.";
+        }
+        if (/[a-zA-Z]{2,}/.test(targetWrong3)) {
+          targetWrong3 = "لست متأكداً، قد لا تنجح هذه الفكرة.";
+        }
+      }
+
+      if (targetLang === "ru") {
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(targetTheyAsk)) {
+          const dictAsk = getTranslatedValue({ theyAsk: c.theyAsk }, "theyAsk", "ru");
+          if (dictAsk && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictAsk)) {
+            targetTheyAsk = dictAsk;
+          } else {
+            targetTheyAsk = (c as any).situationRu
+              ? `В этой ситуации (${(c as any).situationRu}): что вы скажете?`
+              : ((lesson as any).topicRu ? `Вопрос о теме ${(lesson as any).topicRu}: как ответить?` : "Какой ответ подходит в этой ситуации?");
+          }
+        }
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(targetCorrect)) {
+          const dictCorrect = getTranslatedValue({ correct: c.correct }, "correct", "ru");
+          const ruSent = lesson.sentences[cIdx]?.russian;
+          if (dictCorrect && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictCorrect)) {
+            targetCorrect = dictCorrect;
+          } else if (ruSent && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(Array.isArray(ruSent) ? ruSent.join(" ") : ruSent)) {
+            targetCorrect = Array.isArray(ruSent) ? ruSent.join(" ") : ruSent;
+          } else {
+            const synSent = getTargetArr(lesson.sentences[cIdx] || lesson.sentences[0], "ru").join(" ");
+            targetCorrect = (synSent && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(synSent)) ? synSent : "Да, конечно! Это отличный вариант.";
+          }
+        }
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(targetWrong1)) {
+          const dictW1 = getTranslatedValue({ wrong1: c.wrong1 }, "wrong1", "ru");
+          targetWrong1 = (dictW1 && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictW1)) ? dictW1 : "Я так не думаю, это не подходит.";
+        }
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(targetWrong2)) {
+          const dictW2 = getTranslatedValue({ wrong2: c.wrong2 }, "wrong2", "ru");
+          targetWrong2 = (dictW2 && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictW2)) ? dictW2 : "Давайте выберем другой вариант.";
+        }
+        if (/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(targetWrong3)) {
+          const dictW3 = getTranslatedValue({ wrong3: c.wrong3 }, "wrong3", "ru");
+          targetWrong3 = (dictW3 && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(dictW3)) ? dictW3 : "Я не уверена, может быть не стоит.";
+        }
+      }
       
       return {
         ...c,
         situation: getNativeStr(c, nativeLang, "situation"),
-        theyAsk: targetLang === "en" ? c.theyAsk : targetCorrect,
-        correct: targetLang === "en" ? c.correct : targetTheyAsk,
+        theyAsk: targetTheyAsk,
+        correct: targetCorrect,
         wrong1: targetWrong1,
         wrong2: targetWrong2,
         wrong3: targetWrong3,
@@ -488,7 +712,9 @@ function buildLessonQuestionsFromBank(
   const convos    = shuffle(lesson.conversations, seed + 4);
   const lessonPool = lessonEnglishPool(lesson);
   const lessonWords = lessonSingleWordPool(lesson);
-  const learnedLessons = (rawUnit?.slice(0, lessonIndex + 1) ?? [rawLesson]);
+  const learnedLessons = (rawUnit?.slice(0, lessonIndex + 1) ?? [rawLesson]).map(
+    (item) => mapLessonBankGenerically(item, nativeLang, targetLang),
+  );
   const learnedWordPhrases = learnedLessons.flatMap((item) =>
     item.words.map((word) => word.english),
   );
@@ -499,7 +725,7 @@ function buildLessonQuestionsFromBank(
     const seen = new Set<string>();
     return [...learnedWordPhrases, ...learnedSentences].flatMap((phrase) =>
       phrase.split(/\s+/).filter((token) => {
-        const key = token.toLowerCase().replace(/[^a-z']/g, "");
+        const key = token.toLowerCase().replace(/[^\p{L}\p{N}']/gu, "");
         if (!key || seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -513,13 +739,33 @@ function buildLessonQuestionsFromBank(
 
   const pushWordMc = (wordIndex: number, optionSeed: number) => {
     const mcWord = pick(words, wordIndex);
+    const filterLeaks = (list: string[]) => {
+      if (targetLang === "ar") {
+        return list.filter((item) => !/[a-zA-Z]{2,}/.test(item));
+      }
+      if (targetLang === "ru") {
+        return list.filter((item) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(item));
+      }
+      return list;
+    };
+    const cleanClose = filterLeaks(words.map((word) => word.english));
+    const cleanFallback = filterLeaks([...lessonPool, ...learnedWordPhrases]);
     const mcWrongs = selectProgressiveDistractors({
       correct: mcWord.english,
-      closeCandidates: words.map((word) => word.english),
-      fallbackCandidates: [...lessonPool, ...learnedWordPhrases],
+      closeCandidates: cleanClose.length > 0 ? cleanClose : [mcWord.english],
+      fallbackCandidates: cleanFallback,
       closeCount: normalDifficulty?.closeDistractorCount ?? 3,
       seed: optionSeed,
     });
+    const finalWrongs = filterLeaks(mcWrongs);
+    if (targetLang === "ru" && finalWrongs.length < 3) {
+      const fallbackRu = ["Привет", "Да", "Нет", "Хорошо", "Спасибо", "Друг", "Здесь", "Сейчас", "Всегда"]
+        .filter(w => w !== mcWord.english && !finalWrongs.includes(w));
+      for (const fb of fallbackRu) {
+        finalWrongs.push(fb);
+        if (finalWrongs.length >= 3) break;
+      }
+    }
     const mcKind = isNormal ? "how_to_say" : "what_is_word";
     questions.push({
       type: "multiple_choice",
@@ -527,7 +773,7 @@ function buildLessonQuestionsFromBank(
       promptLang: nativeLang,
       promptKind: mcKind,
       correctAnswer: mcWord.english,
-      options: shuffle([mcWord.english, ...mcWrongs], optionSeed),
+      options: shuffle([mcWord.english, ...finalWrongs], optionSeed),
       xp: 10,
     });
   };
@@ -548,13 +794,18 @@ function buildLessonQuestionsFromBank(
     if (sentences.length > 0) {
       const s = pick(sentences, 0);
       const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-      const extra = pickLessonWrongs(
+      const rawExtra = pickLessonWrongs(
         lessonWords,
         "",
         2,
         seed + 20,
         (d) => !sentSet.has(d.toLowerCase()),
       );
+      const extra = targetLang === "ar"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+        : targetLang === "ru"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+        : rawExtra;
       questions.push({
         type: "sentence_builder",
         kurdishSentence: s.kurdish,
@@ -568,13 +819,18 @@ function buildLessonQuestionsFromBank(
     if (sentences.length > 1) {
       const s = pick(sentences, 1);
       const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-      const extra = pickLessonWrongs(
+      const rawExtra = pickLessonWrongs(
         lessonWords,
         "",
         2,
         seed + 30,
         (d) => !sentSet.has(d.toLowerCase()),
       );
+      const extra = targetLang === "ar"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+        : targetLang === "ru"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+        : rawExtra;
       questions.push({
         type: "listen_build",
         sentence: s.english.join(" "),
@@ -588,7 +844,12 @@ function buildLessonQuestionsFromBank(
     // 4. Fill Blank (1×)
     if (fills.length > 0) {
       const f = pick(fills, 0);
-      const fillWrongs = sanitizeFillWrongs(f.answer, f.wrongs);
+      const rawFillWrongs = sanitizeFillWrongs(f.answer, f.wrongs);
+      const fillWrongs = targetLang === "ar"
+        ? rawFillWrongs.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+        : targetLang === "ru"
+        ? rawFillWrongs.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+        : rawFillWrongs;
       questions.push({
         type: "fill_blank",
         sentenceParts: f.parts,
@@ -623,15 +884,20 @@ function buildLessonQuestionsFromBank(
     const distinctMCImgWords = getWordsWithDistinctImages(words, 1);
     if (distinctMCImgWords.length > 0) {
       const targetWordObj = distinctMCImgWords[0];
-      const mcWrongs = pickLessonWrongs(
+      const rawMcWrongs = pickLessonWrongs(
         words.map((w) => w.english),
         targetWordObj.english,
         3,
         seed + 60
       );
+      const mcWrongs = targetLang === "ar"
+        ? rawMcWrongs.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+        : targetLang === "ru"
+        ? rawMcWrongs.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+        : rawMcWrongs;
       questions.push({
         type: "image_multiple_choice",
-        prompt: "Which word matches the image?",
+        prompt: getPromptText("which_matches_image", nativeLang, targetLang, ""),
         correctAnswer: targetWordObj.english,
         image: getWord3DImage(targetWordObj.english),
         options: shuffle([targetWordObj.english, ...mcWrongs], seed + 60),
@@ -710,7 +976,7 @@ function buildLessonQuestionsFromBank(
   const mcSource = isNormal && sentences.length > 0 ? pick(sentences, 0) : null;
   if (isNormal && mcSource) {
     const correctSentence = mcSource.english.join(" ");
-    const sentenceWrongs = normalDifficulty
+    const rawSentenceWrongs = normalDifficulty
       ? selectProgressiveDistractors({
           correct: correctSentence,
           closeCandidates: [
@@ -730,6 +996,11 @@ function buildLessonQuestionsFromBank(
           seed + 10,
           (d) => d.split(" ").length > 2,
         );
+    const sentenceWrongs = targetLang === "ar"
+      ? rawSentenceWrongs.filter((s) => !/[a-zA-Z]{2,}/.test(s))
+      : targetLang === "ru"
+      ? rawSentenceWrongs.filter((s) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(s))
+      : rawSentenceWrongs;
     questions.push({
       type: "multiple_choice",
       prompt: getPromptText("choose_correct", nativeLang, targetLang, mcSource.kurdish),
@@ -761,7 +1032,7 @@ function buildLessonQuestionsFromBank(
       continue;
     }
     const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-    const extra = normalDifficulty
+    const rawExtra = normalDifficulty
       ? selectSentenceBuilderExtras(
           learnedSingleWords,
           s.english,
@@ -775,6 +1046,11 @@ function buildLessonQuestionsFromBank(
           seed + 20 + i,
           (d) => !sentSet.has(d.toLowerCase()),
         );
+    const extra = targetLang === "ar"
+      ? rawExtra.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+      : targetLang === "ru"
+      ? rawExtra.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+      : rawExtra;
     questions.push({
       type: "sentence_builder",
       kurdishSentence: s.kurdish,
@@ -789,7 +1065,7 @@ function buildLessonQuestionsFromBank(
     const s = pick(sentences, 2) ?? pick(sentences, 0);
     if (s) {
       const sentSet = new Set(s.english.map((w) => w.toLowerCase()));
-      const extra = normalDifficulty
+      const rawExtra = normalDifficulty
         ? selectSentenceBuilderExtras(
             learnedSingleWords,
             s.english,
@@ -803,6 +1079,11 @@ function buildLessonQuestionsFromBank(
             seed + 30,
             (d) => !sentSet.has(d.toLowerCase()),
           );
+      const extra = targetLang === "ar"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+        : targetLang === "ru"
+        ? rawExtra.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+        : rawExtra;
       questions.push({
         type: "listen_build",
         sentence: s.english.join(" "),
@@ -821,7 +1102,7 @@ function buildLessonQuestionsFromBank(
       pushWordMc(14 + i, seed + 40 + i);
       continue;
     }
-    const fillWrongs = normalDifficulty
+    const rawFillWrongs = normalDifficulty
       ? buildFillDistractors(
           f.answer,
           f.wrongs,
@@ -829,6 +1110,11 @@ function buildLessonQuestionsFromBank(
           learnedSingleWords,
         )
       : sanitizeFillWrongs(f.answer, f.wrongs);
+    const fillWrongs = targetLang === "ar"
+      ? rawFillWrongs.filter((w) => !/[a-zA-Z]{2,}/.test(w))
+      : targetLang === "ru"
+      ? rawFillWrongs.filter((w) => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w))
+      : rawFillWrongs;
     questions.push({
       type: "fill_blank",
       sentenceParts: f.parts,
@@ -867,7 +1153,16 @@ function buildLessonQuestionsFromBank(
         2,
         seed + 60,
       );
-      const completeOptions = [...new Set([c.correct, ...completeDistractors].filter(Boolean))];
+      let completeOptions = [...new Set([c.correct, ...completeDistractors].filter(Boolean))];
+      if (targetLang === "ru") {
+        completeOptions = completeOptions.filter(opt => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(opt));
+        const ruWrongs = [c.wrong1, c.wrong2, c.wrong3, "Я так не думаю.", "Давайте проверим другое."]
+          .filter(w => w && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w) && w !== c.correct);
+        for (const rw of ruWrongs) {
+          if (!completeOptions.includes(rw)) completeOptions.push(rw);
+          if (completeOptions.length >= 2) break;
+        }
+      }
       if (completeOptions.length < 2) {
         pushWordMc(6 + i, seed + 50 + i);
         continue;
@@ -887,6 +1182,16 @@ function buildLessonQuestionsFromBank(
       c,
       normalDifficulty?.closeDistractorCount ?? 2,
     );
+    let progOptions = progressiveConversation.options;
+    if (targetLang === "ru") {
+      progOptions = progOptions.filter(opt => !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(opt));
+      const ruWrongs = [c.wrong1, c.wrong2, c.wrong3, "Я так не думаю, это не подходит.", "Давайте выберем другой вариант.", "Я не уверена."]
+        .filter(w => w && !/[a-zA-Z]{2,}|[\u0600-\u06FF]/.test(w) && w !== c.correct);
+      for (const rw of ruWrongs) {
+        if (!progOptions.includes(rw)) progOptions.push(rw);
+        if (progOptions.length >= 3) break;
+      }
+    }
     questions.push({
       type: "conversation_pick",
       situation: c.situation,
@@ -894,7 +1199,7 @@ function buildLessonQuestionsFromBank(
       correctAnswer: c.correct,
       optionTiers: progressiveConversation.optionTiers,
       options: shuffle(
-        progressiveConversation.options,
+        progOptions,
         seed + 50 + i,
       ),
       explanation: c.explanation,

@@ -37,7 +37,12 @@
     "aiVoiceSubtitle": "A real-time voice tutor listens, answers, and helps you sound natural.",
     "aiVoiceCta": "Start live voice",
     "aiVoiceNote": "Kurdish intro → English practice",
-    "lessonPanelTitle": "Keep your path warm"
+    "lessonPanelTitle": "Keep your path warm",
+    "course": "Course",
+    "myCourses": "MY COURSES",
+    "addCourse": "Course",
+    "courseComingSoon": "Coming soon",
+    "switchCourse": "Switch course"
   },
   "games": {
     "title": "Practice",

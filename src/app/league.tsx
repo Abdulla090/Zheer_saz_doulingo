@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 const League = () => {
   return (
-    <ScreenOpeningShell variant="general" screenKey="league" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="general" screenKey="league" firstTimeOnly={false}>
       <LeagueScreen />
     </ScreenOpeningShell>
   );

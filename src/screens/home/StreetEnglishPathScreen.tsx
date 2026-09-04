@@ -280,7 +280,7 @@ export const StreetEnglishPathScreen = ({
       setTimeout(() => {
         try {
           if (visibleSections.length > 0) {
-            scrollPathToCurrentLesson(listRef, visibleSections, true);
+            scrollPathToCurrentLesson(listRef, visibleSections, true, "street");
           }
         } catch {
           // Ignore fallback errors

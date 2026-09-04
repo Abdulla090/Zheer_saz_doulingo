@@ -19,6 +19,8 @@ export type KidsChoice = {
   id: string;
   emoji: string;
   label: string;
+  kurdishLabel?: string;
+  arabicLabel?: string;
 };
 
 export type KidsGameStep =
@@ -26,12 +28,14 @@ export type KidsGameStep =
       kind: "scene";
       scene: KidsSceneKey;
       prompt: string;
+      promptAr?: string;
       correctId: string;
       choices: KidsChoice[];
     }
   | {
       kind: "bubble";
       prompt: string;
+      promptAr?: string;
       correctId: string;
       choices: KidsChoice[];
     }
@@ -39,23 +43,27 @@ export type KidsGameStep =
       kind: "feed";
       mascotEmoji: string;
       prompt: string;
+      promptAr?: string;
       correctId: string;
       choices: KidsChoice[];
     }
   | {
       kind: "shadow";
       prompt: string;
+      promptAr?: string;
       items: KidsChoice[];
     }
   | {
       kind: "native";
       kurdishPrompt: string;
+      arabicPrompt?: string;
       correctId: string;
       choices: KidsChoice[];
     }
   | {
       kind: "simon";
       phrase: string;
+      phraseAr?: string;
       correctId: string;
       choices: KidsChoice[];
     }
@@ -63,12 +71,15 @@ export type KidsGameStep =
       kind: "train";
       words: string[];
       kurdishHint: string;
+      arabicHint?: string;
+      arabicWords?: string[];
       extraWords?: string[];
     }
   | {
       kind: "trick";
       showEmoji: string;
       showLabel: string;
+      showLabelAr?: string;
       spokenWord: string;
       matches: boolean;
     }
@@ -77,6 +88,7 @@ export type KidsGameStep =
       prompt: string;
       target: string;
       targetKurdish: string;
+      targetArabic?: string;
       imageRequire?: any;
     }
   | {

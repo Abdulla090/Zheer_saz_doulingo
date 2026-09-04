@@ -4,7 +4,7 @@ import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 export default function ReadingPracticeRoute() {
   return (
-    <ScreenOpeningShell variant="practice" screenKey="reading-practice" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="practice" screenKey="reading-practice" firstTimeOnly={false}>
       <ReadingPracticeScreen />
     </ScreenOpeningShell>
   );

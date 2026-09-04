@@ -16,18 +16,21 @@ export type GuidebookWord = {
   english: string;
   kurdish: string;
   arabic?: string;
+  russian?: string;
 };
 
 export type GuidebookPhrase = {
   english: string;
   kurdish: string;
   arabic?: string;
+  russian?: string;
 };
 
 export type GuidebookLesson = {
   topic: string;
   topicKu: string;
   topicAr?: string;
+  topicRu?: string;
   words: GuidebookWord[];
   phrases: GuidebookPhrase[];
 };
@@ -54,6 +57,7 @@ function addPhrase(
   english: string | undefined,
   kurdish: string | undefined,
   arabic?: string,
+  russian?: string,
 ) {
   const englishText = cleanText(english);
   if (!englishText) return;
@@ -66,6 +70,7 @@ function addPhrase(
     english: englishText,
     kurdish: cleanText(kurdish) ?? "",
     ...(cleanText(arabic) ? { arabic: cleanText(arabic) } : {}),
+    ...(cleanText(russian) ? { russian: cleanText(russian) } : {}),
   });
 }
 
@@ -87,12 +92,12 @@ export function buildGuidebookFromUnit(
     const seenPhrases = new Set<string>();
 
     for (const v of lesson.voices ?? []) {
-      addPhrase(phrases, seenPhrases, v.target, v.targetKurdish, v.targetArabic);
+      addPhrase(phrases, seenPhrases, v.target, v.targetKurdish, v.targetArabic, v.targetRussian);
     }
 
     for (const s of lesson.sentences ?? []) {
       if (!s?.english?.length) continue;
-      addPhrase(phrases, seenPhrases, s.english.join(" "), s.kurdish, s.arabic);
+      addPhrase(phrases, seenPhrases, s.english.join(" "), s.kurdish, s.arabic, s.russian);
     }
 
     for (const c of lesson.conversations ?? []) {
@@ -103,6 +108,7 @@ export function buildGuidebookFromUnit(
         c.correct,
         c.explanation,
         c.correctAr ?? c.explanationAr,
+        c.correctRu ?? c.explanationRu,
       );
     }
 
@@ -110,10 +116,12 @@ export function buildGuidebookFromUnit(
       topic: lesson.topic ?? "",
       topicKu: lesson.topicKu ?? "",
       ...(cleanText(lesson.topicAr) ? { topicAr: cleanText(lesson.topicAr) } : {}),
+      ...(cleanText(lesson.topicRu) ? { topicRu: cleanText(lesson.topicRu) } : {}),
       words: (lesson.words ?? []).map((word) => ({
         english: word.english,
         kurdish: word.kurdish,
         ...(cleanText(word.arabic) ? { arabic: cleanText(word.arabic) } : {}),
+        ...(cleanText(word.russian) ? { russian: cleanText(word.russian) } : {}),
       })),
       phrases,
     };

@@ -9,7 +9,7 @@ import { ScreenOpeningShell } from "../../components/animations/skia-gsap-openin
  */
 export default function GuidebookEverydayRoute() {
   return (
-    <ScreenOpeningShell variant="guidebook" screenKey="guidebook-everyday" firstTimeOnly={true}>
+    <ScreenOpeningShell variant="guidebook" screenKey="guidebook-everyday" firstTimeOnly={false}>
       <GuidebookScreen />
     </ScreenOpeningShell>
   );

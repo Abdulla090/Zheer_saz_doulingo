@@ -22,15 +22,15 @@ export function runGsapStagger(root: unknown, onComplete?: () => void) {
 
   gsap.fromTo(
     targets,
-    { opacity: 0, y: 36, scale: 0.96 },
+    { opacity: 0, y: 32, scale: 0.97 },
     {
       opacity: 1,
       y: 0,
       scale: 1,
-      duration: 0.68,
-      stagger: 0.085,
+      duration: 0.64,
+      stagger: 0.08,
       ease: "power3.out",
-      delay: 0.04,
+      delay: 0,
       clearProps: "transform",
       onComplete,
     },
@@ -44,5 +44,5 @@ export function resetGsapEnterBlocks(root: unknown) {
 
   const blocks = element.querySelectorAll(ENTER_SELECTOR);
   const targets = blocks.length > 0 ? blocks : [element];
-  gsap.set(targets, { opacity: 0, y: 36, scale: 0.96 });
+  gsap.killTweensOf(targets);
 }

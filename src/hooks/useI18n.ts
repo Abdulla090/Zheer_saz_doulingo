@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocaleStore } from "../stores/useLocaleStore";
 
@@ -7,20 +8,28 @@ export function useI18n() {
   const ready = useLocaleStore((s) => s.ready);
   const setLocale = useLocaleStore((s) => s.setLocale); // Legacy alias
 
-  const t = (key: string, options?: any): string => {
-    const isGameKey =
-      key.startsWith("lessons.") ||
-      key.startsWith("game.") ||
-      key.startsWith("slang.") ||
-      key.startsWith("aiTeacher.") ||
-      key.startsWith("rolePlay.") ||
-      key.startsWith("voiceTutor.");
+  /*
+   * `t` must keep a stable identity between renders: consumers hold it in
+   * `useMemo`/`useCallback` deps (PathStatsBar items, CustomTabBar labels), and
+   * a fresh closure per render silently defeats those memos.
+   */
+  const t = useCallback(
+    (key: string, options?: any): string => {
+      const isGameKey =
+        key.startsWith("lessons.") ||
+        key.startsWith("game.") ||
+        key.startsWith("slang.") ||
+        key.startsWith("aiTeacher.") ||
+        key.startsWith("rolePlay.") ||
+        key.startsWith("voiceTutor.");
 
-    if (locale === "ku" && isGameKey) {
-      return baseT(key, { ...options, lng: "ku" }) as string;
-    }
-    return baseT(key, options) as string;
-  };
+      if (locale === "ku" && isGameKey) {
+        return baseT(key, { ...options, lng: "ku" }) as string;
+      }
+      return baseT(key, options) as string;
+    },
+    [baseT, locale],
+  );
 
   return {
     t,

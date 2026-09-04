@@ -175,6 +175,7 @@ export async function fetchRemoteCurriculum(
       cacheKey(mode, sourceLanguage, targetLanguage),
       JSON.stringify({ version: row.version, content: row.content }),
     );
+    bumpStorageVersion();
     return row.content;
   } catch (error) {
     console.warn(`[curriculum-loader] Failed to fetch ${mode}/${sourceLanguage}-${targetLanguage}:`, error);
@@ -226,13 +227,65 @@ export async function publishCurriculumPack(
     cacheKey(mode, sourceLanguage, targetLanguage),
     JSON.stringify({ version: Date.now(), content: units }),
   );
+  bumpStorageVersion();
   return { ok: true };
+}
+
+/*
+ * Parsed + validated packs are memoized per (mode, language pair, storage
+ * version). This function sits on the path screens' render path — the section
+ * data rebuilds on every progress or language change and calls it again — so
+ * the sync storage read, the JSON.parse, and the full 180-lesson validation
+ * walk must not repeat per call. The only way a stored v2 pack can change is a
+ * write through this module, and both writers bump `storageVersion`, which
+ * invalidates the memo.
+ */
+const CACHED_PACK_LIMIT = 4;
+const cachedPacks = new Map<string, UnitBank[]>();
+let storageVersion = 0;
+
+function bumpStorageVersion() {
+  storageVersion += 1;
+  cachedPacks.clear();
+}
+
+function getCachedPack(key: string): UnitBank[] | undefined {
+  const hit = cachedPacks.get(key);
+  if (hit !== undefined) {
+    // Re-insert to refresh recency, so eviction takes the least-recently used
+    // entry rather than the most-used one.
+    cachedPacks.delete(key);
+    cachedPacks.set(key, hit);
+  }
+  return hit;
+}
+
+function putCachedPack(key: string, units: UnitBank[]) {
+  cachedPacks.set(key, units);
+  if (cachedPacks.size > CACHED_PACK_LIMIT) {
+    const oldest = cachedPacks.keys().next().value;
+    if (oldest !== undefined) cachedPacks.delete(oldest);
+  }
 }
 
 export function getUnitsFromCacheOrBundle(
   mode: LessonPathMode,
   sourceLanguage = useLocaleStore.getState().selectedSourceLanguage,
   targetLanguage = useLocaleStore.getState().selectedTargetLanguage,
+): UnitBank[] {
+  const memoKey = `${mode}.${sourceLanguage}.${targetLanguage}.${storageVersion}`;
+  const memoHit = getCachedPack(memoKey);
+  if (memoHit) return memoHit;
+
+  const units = computeUnitsFromCacheOrBundle(mode, sourceLanguage, targetLanguage);
+  putCachedPack(memoKey, units);
+  return units;
+}
+
+function computeUnitsFromCacheOrBundle(
+  mode: LessonPathMode,
+  sourceLanguage: string,
+  targetLanguage: string,
 ): UnitBank[] {
   try {
     const cached = appStorage.getItemSync(cacheKey(mode, sourceLanguage, targetLanguage));

@@ -3,7 +3,7 @@ import React from "react";
 import { ScreenOpeningShell } from "../components/animations/skia-gsap-opening";
 
 const quest = () => (
-  <ScreenOpeningShell variant="quest" screenKey="quest" firstTimeOnly={true}>
+  <ScreenOpeningShell variant="quest" screenKey="quest" firstTimeOnly={false}>
     <QuestScreen />
   </ScreenOpeningShell>
 );

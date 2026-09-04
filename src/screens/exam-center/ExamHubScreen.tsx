@@ -33,12 +33,14 @@ import { PremiumPressable } from "../../components/PremiumPressable";
 import { Colors } from "../../constants/theme";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { DirectionBoundary } from "../../i18n/layout-direction";
 import { useExamStore } from "../../stores/useExamStore";
 import { crossShadow } from "../../utils/shadows";
 import type { ExamId } from "../../types/exam-center";
 
 export default function ExamHubScreen() {
+  const safeBack = useSafeBack("/exam-center");
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams<{ examId?: string }>();
@@ -80,7 +82,7 @@ export default function ExamHubScreen() {
           {/* Top Bar with Back & Switcher */}
           <View style={[styles.topBar, isRtl && styles.rowReverse]}>
             <PremiumPressable
-              onPress={() => router.push("/exam-center" as never)}
+              onPress={safeBack}
               style={[styles.backBtn, { borderColor: colors.border }]}
             >
               <HugeiconsIcon

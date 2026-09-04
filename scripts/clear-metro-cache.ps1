@@ -14,15 +14,14 @@ Remove-Item -Recurse -Force (Join-Path $projectRoot ".metro-cache") -ErrorAction
 Remove-Item -Recurse -Force (Join-Path $projectRoot "node_modules\.cache") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $projectRoot "dist") -ErrorAction SilentlyContinue
 
-# Legacy %TEMP% caches (Uniwind used to force these; still clean up stale dirs)
-Get-ChildItem -Path $temp -Filter "metro-cache*" -ErrorAction SilentlyContinue |
+# Legacy %TEMP% caches (clean up any stale Metro/Haste cache files in %TEMP%)
+Get-ChildItem -Path $temp -Filter "*metro-cache*" -ErrorAction SilentlyContinue |
   ForEach-Object { Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue }
 
-Get-ChildItem -Path $temp -Filter "metro-file-map*" -ErrorAction SilentlyContinue |
+Get-ChildItem -Path $temp -Filter "*metro-file-map*" -ErrorAction SilentlyContinue |
   ForEach-Object { Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue }
 
-Get-ChildItem -Path $temp -Directory -ErrorAction SilentlyContinue |
-  Where-Object { $_.Name -like "metro-file-map-expo-*" } |
+Get-ChildItem -Path $temp -Filter "*haste-map*" -ErrorAction SilentlyContinue |
   ForEach-Object { Remove-Item -Recurse -Force $_.FullName -ErrorAction SilentlyContinue }
 
 Get-ChildItem -Path (Join-Path $projectRoot "node_modules") -Filter ".babel-preset-expo-*" -Directory -ErrorAction SilentlyContinue |

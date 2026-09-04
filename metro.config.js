@@ -11,9 +11,13 @@ const isWindows = process.platform === "win32";
 const projectRoot = __dirname;
 const projectCacheRoot = path.join(projectRoot, ".metro-cache");
 const transformCacheRoot = path.join(projectCacheRoot, "transform");
+const fileMapCacheRoot = path.join(projectCacheRoot, "file-map");
 
 if (!fs.existsSync(projectCacheRoot)) {
   fs.mkdirSync(projectCacheRoot, { recursive: true });
+}
+if (!fs.existsSync(fileMapCacheRoot)) {
+  fs.mkdirSync(fileMapCacheRoot, { recursive: true });
 }
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -106,6 +110,8 @@ const metroConfig = withUniwindConfig(config, {
 });
 
 metroConfig.cacheStores = [new FileStore({ root: transformCacheRoot })];
+metroConfig.fileMapCacheDirectory = fileMapCacheRoot;
+metroConfig.hasteMapCacheDirectory = fileMapCacheRoot;
 metroConfig.maxWorkers = isWindows ? 2 : Math.min(4, require("os").cpus().length);
 metroConfig.transformer = {
   ...metroConfig.transformer,

@@ -28,7 +28,7 @@ type Props = {
 
 export function SkiaRevealOverlay({ variant, playKey, onComplete }: Props) {
   const { width, height } = useWindowDimensions();
-  const theme = OPENING_THEMES[variant];
+  const theme = OPENING_THEMES[variant] ?? OPENING_THEMES.general;
   const maxDim = Math.max(width, height, 1);
 
   const veilOpacity = useSharedValue(1);

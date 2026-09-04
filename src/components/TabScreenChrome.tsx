@@ -2,6 +2,8 @@ import { usePathname } from "expo-router";
 import React from "react";
 import { Platform, useWindowDimensions, View } from "react-native";
 
+import { ScreenOpeningShell } from "./animations/skia-gsap-opening";
+import type { ScreenOpeningVariant } from "./animations/skia-gsap-opening/opening-themes";
 import {
   isDesktopWebWidth,
   WEB_DESKTOP_NAV_WIDTH,
@@ -10,15 +12,15 @@ import {
 
 /**
  * TabScreenChrome wraps each tab screen.
- * Tab screens render instantly — no opening overlay.
- * Navigation owns the transition so tab screens do not animate twice.
+ * Applies the universal ScreenOpeningShell entrance transition.
  */
 export function TabScreenChrome({
   children,
+  openingVariant,
 }: {
   children: React.ReactNode;
-  lazy?: boolean;
   openingVariant?: string;
+  lazy?: boolean;
 }) {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
@@ -26,6 +28,8 @@ export function TabScreenChrome({
     Platform.OS === "web" && isDesktopWebWidth(width);
   const usesDesktopRail =
     pathname === "/" || pathname === "/index" || pathname === "/play";
+
+  const variant = (openingVariant as ScreenOpeningVariant) || "general";
 
   return (
     <View
@@ -37,7 +41,9 @@ export function TabScreenChrome({
         },
       ]}
     >
-      {children}
+      <ScreenOpeningShell variant={variant} screenKey={pathname} firstTimeOnly={false}>
+        {children}
+      </ScreenOpeningShell>
     </View>
   );
 }

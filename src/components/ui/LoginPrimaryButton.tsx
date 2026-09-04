@@ -48,10 +48,21 @@ export function LoginPrimaryButtonLabel({
   style,
   ...props
 }: AppTextProps & { style?: StyleProp<TextStyle> }) {
+  const isRtl =
+    props.forceKurdishFont ||
+    props.languageCode === "ku" ||
+    props.languageCode === "ar";
+
   return (
     <AppText
+      adjustsFontSizeToFit
+      minimumFontScale={0.75}
       {...props}
-      style={[styles.label, style]}
+      style={[
+        styles.label,
+        isRtl && styles.rtlLabel,
+        style,
+      ]}
       latinRole="bold"
       numberOfLines={1}
     />
@@ -60,9 +71,11 @@ export function LoginPrimaryButtonLabel({
 
 const styles = StyleSheet.create({
   button: {
+    width: "100%",
     height: PRIMARY_ACTION.height,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 16,
     borderRadius: PRIMARY_ACTION.radius,
     backgroundColor: PRIMARY_ACTION.face,
     borderBottomWidth: PRIMARY_ACTION.rimWidth,
@@ -76,7 +89,12 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 15.5,
     letterSpacing: 0.1,
+    textAlign: "center",
+  },
+  rtlLabel: {
+    letterSpacing: 0,
+    fontSize: 15,
   },
 });

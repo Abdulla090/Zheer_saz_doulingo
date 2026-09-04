@@ -519,7 +519,7 @@ export function GamesScreen() {
                   { backgroundColor: withAlpha("#22C55E", isDark ? 0.26 : 0.2) },
                 ]}
               />
-              <WaveformGlyph size={compact ? 40 : 46} color={accent} />
+              <WaveformGlyph size={compact ? 34 : 38} color={accent} />
             </View>
 
             <DirectionBoundary
@@ -555,7 +555,7 @@ export function GamesScreen() {
                 align="start"
                 forceKurdishFont={isRtl}
                 fullWidth
-                numberOfLines={1}
+                numberOfLines={2}
               >
                 {t("games.voiceTutorTitle")}
               </AppText>
@@ -613,7 +613,7 @@ export function GamesScreen() {
                 { backgroundColor: isDark ? "rgba(59, 130, 246, 0.18)" : "#EFF6FF", borderColor: isDark ? "rgba(59, 130, 246, 0.32)" : "#BFDBFE" },
               ]}
             >
-              <HugeiconsIcon icon={Certificate01Icon} size={compact ? 28 : 32} color="#3B82F6" strokeWidth={2.2} />
+              <HugeiconsIcon icon={Certificate01Icon} size={compact ? 24 : 28} color="#3B82F6" strokeWidth={2.2} />
             </View>
 
             <DirectionBoundary
@@ -644,9 +644,9 @@ export function GamesScreen() {
                 align="start"
                 forceKurdishFont={isRtl}
                 fullWidth
-                numberOfLines={1}
+                numberOfLines={2}
               >
-                {isKu ? "ئامادەکاری و تاقیکردنەوەی IELTS و DET" : locale === "ar" ? "تحضير واختبارات IELTS وDET" : "IELTS & DET Exam Center"}
+                {isKu ? "تاقیکردنەوەی IELTS و DET" : locale === "ar" ? "اختبارات IELTS وDET" : "IELTS & DET Exam Center"}
               </AppText>
               <AppText
                 style={styles.featuredBlurb}
@@ -988,17 +988,17 @@ function createStyles(
       borderRadius: isDesktopWeb ? 24 : 22,
       borderCurve: "continuous",
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: isDesktopWeb ? 18 : compact ? 12 : 15,
-      paddingVertical: isDesktopWeb ? 18 : compact ? 13 : 16,
+      paddingHorizontal: isDesktopWeb ? 18 : compact ? 12 : 14,
+      paddingVertical: isDesktopWeb ? 18 : compact ? 12 : 14,
       flexDirection: "row",
       alignItems: "center",
-      gap: isDesktopWeb ? 16 : compact ? 11 : 14,
+      gap: isDesktopWeb ? 16 : compact ? 10 : 12,
       overflow: "hidden",
     },
     featuredGlyph: {
-      width: isDesktopWeb ? 86 : compact ? 68 : 78,
-      height: isDesktopWeb ? 86 : compact ? 68 : 78,
-      borderRadius: isDesktopWeb ? 26 : compact ? 21 : 24,
+      width: isDesktopWeb ? 84 : compact ? 60 : 68,
+      height: isDesktopWeb ? 84 : compact ? 60 : 68,
+      borderRadius: isDesktopWeb ? 26 : compact ? 19 : 22,
       borderCurve: "continuous",
       borderWidth: StyleSheet.hairlineWidth,
       alignItems: "center",
@@ -1041,26 +1041,26 @@ function createStyles(
     },
     featuredTitle: {
       color: colors.foreground,
-      marginTop: 6,
-      fontSize: isDesktopWeb ? 21 : compact ? 17 : 19,
-      lineHeight: isDesktopWeb ? 27 : compact ? 22 : 25,
+      marginTop: 5,
+      fontSize: isDesktopWeb ? 20 : compact ? 15 : 16.5,
+      lineHeight: isDesktopWeb ? 26 : compact ? 20 : 22,
       fontWeight: "900",
       fontFamily: "Rabar_044",
     },
     featuredBlurb: {
       color: colors.mutedForeground,
       marginTop: 2,
-      fontSize: isDesktopWeb ? 13.5 : compact ? 12 : 13,
-      lineHeight: isDesktopWeb ? 19 : compact ? 16 : 18,
+      fontSize: isDesktopWeb ? 13.5 : compact ? 11.5 : 12.5,
+      lineHeight: isDesktopWeb ? 19 : compact ? 15 : 17,
       fontWeight: "600",
     },
     featuredAction: {
-      width: isDesktopWeb ? 44 : 40,
-      height: isDesktopWeb ? 44 : 40,
+      width: isDesktopWeb ? 42 : 36,
+      height: isDesktopWeb ? 42 : 36,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
-      alignSelf: "flex-end",
+      alignSelf: "center",
       flexShrink: 0,
     },
 

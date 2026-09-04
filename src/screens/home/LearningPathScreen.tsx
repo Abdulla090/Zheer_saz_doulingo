@@ -4,7 +4,6 @@ import { KidsEnglishPathScreen } from "./KidsEnglishPathScreen";
 import { NormalEnglishPathScreen } from "./NormalEnglishPathScreen";
 import { StreetEnglishPathScreen } from "./StreetEnglishPathScreen";
 import { BottomScrollFade } from "../../components/ui/BottomScrollFade";
-import { TopScrollFade } from "../../components/ui/TopScrollFade";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   CONTENT_PACKS,

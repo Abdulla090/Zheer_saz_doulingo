@@ -442,14 +442,16 @@ export function CustomTabBar({
     <View style={[styles.host, { paddingBottom: bottomPad }]}>
       {Platform.OS === "android" ? (
         <View style={shellStyle}>
-          <BlurView
-            blurTarget={blurTarget}
-            blurMethod="dimezisBlurViewSdk31Plus"
-            blurReductionFactor={2.15}
-            intensity={92}
-            tint={isDark ? "dark" : "extraLight"}
-            style={styles.androidBlur}
-          />
+          {blurTarget?.current ? (
+            <BlurView
+              blurTarget={blurTarget}
+              blurMethod="dimezisBlurViewSdk31Plus"
+              blurReductionFactor={2.15}
+              intensity={92}
+              tint={isDark ? "dark" : "extraLight"}
+              style={styles.androidBlur}
+            />
+          ) : null}
           <View
             pointerEvents="none"
             style={[
@@ -457,8 +459,8 @@ export function CustomTabBar({
               styles.androidFrost,
               {
                 backgroundColor: isDark
-                  ? "rgba(15,23,42,0.34)"
-                  : "rgba(241,245,249,0.34)",
+                  ? (blurTarget?.current ? "rgba(15,23,42,0.34)" : "rgba(15,23,42,0.85)")
+                  : (blurTarget?.current ? "rgba(241,245,249,0.34)" : "rgba(241,245,249,0.88)"),
               },
             ]}
           />

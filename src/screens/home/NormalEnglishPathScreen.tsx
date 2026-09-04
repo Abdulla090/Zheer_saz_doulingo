@@ -404,7 +404,7 @@ export function NormalEnglishPathScreen({
       setTimeout(() => {
         try {
           if (visibleSections.length > 0) {
-            scrollPathToCurrentLesson(listRef, visibleSections, true);
+            scrollPathToCurrentLesson(listRef, visibleSections, true, "normal");
           }
         } catch {
           // Ignore fallback errors

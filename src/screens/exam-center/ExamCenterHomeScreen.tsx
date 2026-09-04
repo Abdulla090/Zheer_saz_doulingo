@@ -32,12 +32,14 @@ import { PremiumPressable } from "../../components/PremiumPressable";
 import { Colors } from "../../constants/theme";
 import { useI18n } from "../../hooks/useI18n";
 import { useThemeColors } from "../../hooks/useThemeColors";
+import { useSafeBack } from "../../hooks/use-safe-back";
 import { DirectionBoundary } from "../../i18n/layout-direction";
 import { useExamStore } from "../../stores/useExamStore";
 import { crossShadow } from "../../utils/shadows";
 import type { ExamId } from "../../types/exam-center";
 
 export default function ExamCenterHomeScreen() {
+  const safeBack = useSafeBack("/(tabs)/play");
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -75,6 +77,23 @@ export default function ExamCenterHomeScreen() {
         ]}
       >
         <View style={styles.content}>
+          {/* Top Bar with Back */}
+          <View style={[styles.topBar, isRtl && styles.rowReverse]}>
+            <PremiumPressable
+              onPress={safeBack}
+              style={[styles.backBtn, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.back", "Back")}
+            >
+              <HugeiconsIcon
+                icon={isRtl ? ArrowRight01Icon : ArrowLeft01Icon}
+                size={20}
+                color={colors.foreground}
+                strokeWidth={2.2}
+              />
+            </PremiumPressable>
+          </View>
+
           {/* Top Header */}
           <View style={[styles.header, isRtl && styles.rowReverse]}>
             <View style={styles.headerLeft}>
@@ -347,6 +366,20 @@ function createStyles(
     },
     rowReverse: {
       flexDirection: "row-reverse",
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.surfaceRaised,
     },
     header: {
       flexDirection: "row",

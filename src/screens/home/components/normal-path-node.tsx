@@ -16,16 +16,14 @@
  * normal path renders this. Locked and completed states are additions to the
  * reference, which has neither — they are load-bearing here.
  *
- * ── Static vs. pressable split ──
+ * ── Press feedback on every row ──
  *
- * Locked, completed and unavailable rows can never be pressed, so their press
- * travel can never run — yet they used to carry the same Reanimated shared
- * values, view adapters and animated-props mappings as the live rows. Those are
- * per-row mount and memory cost on the JS thread, paid again every time the
- * virtualized list recycles a cell during a fling. Since they are nearly every
- * row on the path, non-pressable rows now render a plain SVG tree with no
- * animation machinery at all; only pressable rows (the current lesson and each
- * unit's discoverable first lesson) keep the animated press.
+ * Locked, completed and unavailable rows play the same face-travel press as
+ * live rows — for them the press is pure feedback, because the handler the
+ * path wires in (`list-item`'s `handleSelect`) is a no-op. An earlier version
+ * split this file into a static SVG branch for those rows to skip the
+ * Reanimated mount cost; that split is gone because no row is unpressable any
+ * more. Only a render with no `onPress` at all is inert.
  */
 
 import React, { useCallback, useMemo } from "react";
@@ -134,100 +132,16 @@ function GoldGradientDef({ gradientId }: { gradientId: string }) {
   );
 }
 
-export const NormalPathNode = React.memo(
-  (props: NormalPathNodeProps) => {
-    const { onPress, isLocked = false, isUnavailable = false } = props;
-    const canPress = Boolean(onPress) && !isLocked && !isUnavailable;
-
-    if (!canPress) return <StaticNormalPathNode {...props} />;
-    return <PressableNormalPathNode {...props} />;
-  },
-);
+export const NormalPathNode = React.memo((props: NormalPathNodeProps) => (
+  <PressableNormalPathNode {...props} />
+));
 
 NormalPathNode.displayName = "NormalPathNode";
 
 /**
- * Locked, completed and unavailable rows. A disabled `Pressable` still exposes
- * the same accessibility semantics, but the drawing is inert: plain elements,
- * no shared values, nothing for Reanimated to attach per frame.
- */
-function StaticNormalPathNode({
-  size = 80,
-  translateX,
-  variant = "green",
-  IconComponent = LessonStar,
-  iconColor,
-  isCompleted = false,
-  isLocked = false,
-  isUnavailable = false,
-  isSelected = false,
-  accessibilityLabel,
-}: NormalPathNodeProps) {
-  const goldGradientId = React.useId().replace(/:/g, "");
-  const colors = useMemo(() => nodeColors(variant), [variant]);
-  const usesMetallicGold = isCompleted || variant === "gold";
-  const resolvedIconColor =
-    iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
-
-  return (
-    <Pressable
-      disabled
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: true, selected: isSelected }}
-      style={{
-        width: size,
-        height: size,
-        opacity: isUnavailable ? 0.62 : 1,
-        transform: [{ translateX: translateX || 0 }],
-      }}
-    >
-      <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
-        {usesMetallicGold ? (
-          <GoldGradientDef gradientId={goldGradientId} />
-        ) : null}
-
-        <Ellipse
-          cx={BUTTON_CENTER_X}
-          cy={RIM_CY}
-          rx={RX}
-          ry={RY}
-          fill={colors.rim}
-        />
-
-        <Ellipse
-          cx={BUTTON_CENTER_X}
-          cy={FACE_BASE_CY}
-          rx={RX}
-          ry={RY}
-          fill={usesMetallicGold ? `url(#${goldGradientId})` : colors.face}
-          stroke={usesMetallicGold ? "#FFE681" : undefined}
-          strokeWidth={usesMetallicGold ? 1.25 : 0}
-        />
-
-        <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
-          <G
-            transform={`scale(${ICON_SCALE}) translate(${-ICON_VB_W / 2} ${-ICON_VB_H / 2})`}
-          >
-            <IconComponent
-              color={resolvedIconColor}
-              fill={resolvedIconColor}
-              stroke={resolvedIconColor}
-              strokeWidth={1}
-              width={ICON_VB_W}
-              height={ICON_VB_H}
-            />
-          </G>
-        </G>
-      </Svg>
-    </Pressable>
-  );
-}
-
-/**
- * The current lesson and each unit's discoverable first lesson — the rows that
- * can actually be pressed. The face ellipse travels down into the rim on press
- * and the icon rides the same displacement, exactly as in the reference.
+ * Every path row renders this. The face ellipse travels down into the rim on
+ * press and the icon rides the same displacement, exactly as in the reference;
+ * locked, completed and unavailable rows animate too, they just never act.
  */
 const PressableNormalPathNode = React.memo(
   ({
@@ -264,21 +178,23 @@ const PressableNormalPathNode = React.memo(
       transform: [{ translateY: cy.value - FACE_BASE_CY }],
     }));
 
+    /*
+     * The press travel runs for locked and unavailable rows too — it is their
+     * only press feedback — while `handlePress` keeps their handler inert.
+     */
     const handlePressIn = useCallback(() => {
-      if (isLocked || isUnavailable) return;
       cy.value = withTiming(FACE_PRESSED_CY, {
         duration: PRESS_IN_MS,
         easing: Easing.out(Easing.cubic),
       });
-    }, [cy, isLocked, isUnavailable]);
+    }, [cy]);
 
     const handlePressOut = useCallback(() => {
-      if (isLocked || isUnavailable) return;
       cy.value = withTiming(FACE_BASE_CY, {
         duration: PRESS_OUT_MS,
         easing: Easing.out(Easing.cubic),
       });
-    }, [cy, isLocked, isUnavailable]);
+    }, [cy]);
 
     const handlePress = useCallback(() => {
       if (isLocked || isUnavailable) return;
@@ -292,11 +208,12 @@ const PressableNormalPathNode = React.memo(
        * top of the face travel — the ellipse slide is the whole press language
        * here, so it has to be the only thing that moves.
        *
-       * Whether a locked node is pressable is the caller's call: the path opens
-       * a popup explaining the lock, so `onPress` is still wired when locked.
+       * Only a missing handler disables the press entirely: the path wires a
+       * handler into every row (locked and completed ones included — they
+       * animate but the handler no-ops), so every row answers a tap.
        */
       <Pressable
-        disabled={!onPress || isLocked || isUnavailable}
+        disabled={!onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={handlePress}

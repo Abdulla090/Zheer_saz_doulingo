@@ -18,6 +18,11 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SVG_BUTTON_COLOR_SETS, type SvgButtonVariant } from "./list-button";
 import {
+  calculatePopupLayout,
+  POPUP_CARD_PADDING as CARD_PADDING,
+  POPUP_CARET_SIZE as CARET_SIZE,
+} from "./path-lesson-popup-layout";
+import {
   isDesktopWebWidth,
   WEB_DESKTOP_NAV_WIDTH,
   WEB_DESKTOP_RAIL_WIDTH,
@@ -40,22 +45,12 @@ const PALE_FACE_VARIANTS: readonly SvgButtonVariant[] = [
   "gold",
 ];
 
-const CARD_MAX_WIDTH = 268;
-const CARD_SIDE_MARGIN = 16;
-const CARD_PADDING = 16;
-const CARET_SIZE = 10;
-/** Keeps the caret from sliding out past the card's rounded corners. */
-const CARET_EDGE_INSET = 20;
-
 /**
  * Opening height guess, used only for the very first frame before `onLayout`
  * reports the real one. Roughly: padding, a two-line title, the lesson line,
  * and the button.
  */
 const ESTIMATED_CARD_HEIGHT = 168;
-
-const GAP_OFFSET = 14;
-const BOTTOM_CLEARANCE = 80;
 
 function popupVariant(selection: SelectedPathLesson): SvgButtonVariant {
   const { item } = selection;
@@ -120,52 +115,16 @@ export function PathLessonPopup({
       )
     : windowWidth;
   const viewportWidth = selection.anchor?.rootWidth ?? fallbackViewportWidth;
-  const cardWidth = Math.min(
-    viewportWidth - CARD_SIDE_MARGIN * 2,
-    CARD_MAX_WIDTH,
-  );
 
-  const nodeTop = selection.anchor?.nodeTop ?? 0;
-  const nodeHeight = selection.anchor?.nodeHeight ?? 76;
-  const nodeBottom = nodeTop + nodeHeight;
-
-  /*
-   * Centred on the node rather than on the viewport. A full-width card could be
-   * centred either way and still land under the finger; this one is narrow
-   * enough that viewport-centring would push it a long way off the node it
-   * belongs to, with the caret stretched over to reach.
-   */
-  const anchorX = selection.anchor?.x ?? viewportWidth / 2;
-  const cardLeft = Math.max(
-    CARD_SIDE_MARGIN,
-    Math.min(
-      viewportWidth - cardWidth - CARD_SIDE_MARGIN,
-      anchorX - cardWidth / 2,
-    ),
-  );
-
-  const placeAbove =
-    Boolean(selection.anchor) &&
-    nodeBottom + cardHeight + GAP_OFFSET >
-      (selection.anchor?.rootHeight ?? windowHeight) -
-        Math.max(insets.bottom, 20) -
-        BOTTOM_CLEARANCE;
-
-  const cardTop = selection.anchor
-    ? placeAbove
-      ? Math.max(16, nodeTop - cardHeight - GAP_OFFSET)
-      : nodeBottom + GAP_OFFSET
-    : undefined;
-
-  const caretLeft = selection.anchor
-    ? Math.max(
-        CARET_EDGE_INSET,
-        Math.min(
-          cardWidth - CARET_EDGE_INSET - CARET_SIZE * 2,
-          anchorX - cardLeft - CARET_SIZE,
-        ),
-      )
-    : 0;
+  const layout = calculatePopupLayout({
+    anchor: selection.anchor,
+    viewportWidth,
+    viewportHeight: windowHeight,
+    cardHeight,
+    bottomInset: insets.bottom,
+    isRtl,
+    isNative: Platform.OS !== "web",
+  });
 
   const startLesson = () => {
     if (isLocked || isCompleted) return;
@@ -216,14 +175,14 @@ export function PathLessonPopup({
         style={[
           styles.card,
           {
-            width: cardWidth,
-            left: cardLeft,
+            width: layout.cardWidth,
+            left: layout.cardPositionLeft,
             backgroundColor: cardFace,
             borderBottomColor: cardRim,
           },
-          cardTop != null
-            ? { top: cardTop }
-            : { bottom: Math.max(insets.bottom + 20, 106) },
+          layout.cardTop != null
+            ? { top: layout.cardTop }
+            : { bottom: layout.cardBottom },
         ]}
         accessibilityViewIsModal={false}
       >
@@ -231,27 +190,18 @@ export function PathLessonPopup({
           <View
             pointerEvents="none"
             style={[
-              placeAbove ? styles.caretBottom : styles.caretTop,
+              layout.placeAbove ? styles.caretBottom : styles.caretTop,
               {
-                // Keep this in physical screen coordinates. On native RTL,
-                // React Native can swap an absolute `left` value a second time,
-                // which points at the English-side node instead of the tapped one.
-                transform: [{ translateX: caretLeft }],
-                [placeAbove ? "borderTopColor" : "borderBottomColor"]: cardFace,
+                left: layout.caretPositionLeft,
+                [layout.placeAbove ? "borderTopColor" : "borderBottomColor"]: cardFace,
               },
             ]}
           />
         ) : null}
 
         <AppText
-          style={[
-            styles.title,
-            {
-              color: ink,
-              textAlign: isRtl ? "right" : "left",
-              writingDirection: isRtl ? "rtl" : "ltr",
-            },
-          ]}
+          style={[styles.title, { color: ink }]}
+          align="start"
           forceKurdishFont={isKu}
           forceLatinFont={!isKu}
           numberOfLines={2}
@@ -260,14 +210,8 @@ export function PathLessonPopup({
         </AppText>
 
         <AppText
-          style={[
-            styles.lessonLine,
-            {
-              color: inkSoft,
-              textAlign: isRtl ? "right" : "left",
-              writingDirection: isRtl ? "rtl" : "ltr",
-            },
-          ]}
+          style={[styles.lessonLine, { color: inkSoft }]}
+          align="start"
           forceKurdishFont={isKu}
           forceLatinFont={!isKu}
           numberOfLines={1}
@@ -320,9 +264,6 @@ const styles = StyleSheet.create({
   },
   card: {
     position: "absolute",
-    // Popup coordinates come from physical window measurements. Keep this
-    // overlay LTR so React Native does not mirror `left` in RTL languages.
-    ...(Platform.OS !== "web" ? ({ direction: "ltr" } as const) : {}),
     zIndex: 40,
     borderRadius: 20,
     borderCurve: "continuous",
@@ -339,7 +280,6 @@ const styles = StyleSheet.create({
   },
   caretTop: {
     position: "absolute",
-    left: 0,
     top: -CARET_SIZE,
     width: 0,
     height: 0,
@@ -351,7 +291,6 @@ const styles = StyleSheet.create({
   },
   caretBottom: {
     position: "absolute",
-    left: 0,
     bottom: -CARET_SIZE,
     width: 0,
     height: 0,
