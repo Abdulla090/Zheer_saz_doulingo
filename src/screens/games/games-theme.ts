@@ -217,7 +217,8 @@ export type GameModeKey =
   | "podcast"
   | "slang"
   | "roleplay"
-  | "ai-teacher";
+  | "ai-teacher"
+  | "study-tutor";
 
 export type GameModeHue = {
   /** Graphic value. Chip wash, decorative rules. Never text, never tappable. */
@@ -239,6 +240,8 @@ export const GAME_MODE_HUES: Record<GameModeKey, GameModeHue> = {
   roleplay: { hue: "#EC4899", inkLight: "#BE185D", inkDark: "#F472B6" },
   /** Teal — instruction. Distinct from `success` green at chip size. */
   "ai-teacher": { hue: "#14B8A6", inkLight: "#0F766E", inkDark: "#2DD4BF" },
+  /** Sapphire Blue — academic study tutor, STEM calculations & logic. */
+  "study-tutor": { hue: "#2563EB", inkLight: "#1D4ED8", inkDark: "#60A5FA" },
 };
 
 export type ResolvedGameHue = {

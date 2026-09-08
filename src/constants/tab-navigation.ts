@@ -13,6 +13,7 @@ export const TAB_BAR_HIDDEN_ROUTES = new Set([
   "podcast",
   "reading-practice",
   "exam-center",
+  "study-tutor",
 ]);
 
 export function pathnameHidesTabBar(pathname: string): boolean {

@@ -25,7 +25,10 @@ export type OpeningTheme = {
   origin: { x: number; y: number };
 };
 
-const TRANSPARENT_GRADIENT: [string, string] = ["transparent", "transparent"];
+const TRANSPARENT_GRADIENT: [string, string] = [
+  "rgba(0,0,0,0)",
+  "rgba(0,0,0,0)",
+];
 
 const DEFAULT_THEME: OpeningTheme = {
   veilGradient: TRANSPARENT_GRADIENT,

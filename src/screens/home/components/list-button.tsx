@@ -320,8 +320,7 @@ export const SvgButton = React.memo(
     }, [haloProgress, showHalo]);
 
     /*
-     * The press travel runs for locked and unavailable rows too — their only
-     * press feedback — while the action itself stays gated below.
+     * The press travel runs for all nodes, and pressing opens the lesson details.
      */
     const handlePressIn = () => {
       activatedOnPressInRef.current = false;
@@ -329,14 +328,13 @@ export const SvgButton = React.memo(
         duration: 60,
         easing: Easing.out(Easing.quad),
       });
-      if (activateOnPressIn && onPress && !isLocked && !isUnavailable) {
+      if (activateOnPressIn && onPress) {
         activatedOnPressInRef.current = true;
         onPress();
       }
     };
 
     const handlePress = () => {
-      if (isLocked || isUnavailable) return;
       if (activatedOnPressInRef.current) {
         activatedOnPressInRef.current = false;
         return;
@@ -457,7 +455,7 @@ export const SvgButton = React.memo(
         pressScale={1}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked || isUnavailable, selected: isSelected }}
+        accessibilityState={{ disabled: !onPress, selected: isSelected }}
         style={[
             { width, height: totalHeight, opacity: isUnavailable ? 0.62 : 1 },
           translateX ? { transform: [{ translateX }] } : undefined,

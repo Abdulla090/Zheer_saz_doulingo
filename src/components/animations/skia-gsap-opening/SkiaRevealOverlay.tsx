@@ -18,8 +18,7 @@ type Props = {
   onComplete?: () => void;
 };
 
-/** Web reveal — Reanimated orbs + gradient (avoids Skia/Metro web resolution issues). */
-export function SkiaRevealOverlay({ variant, playKey, onComplete }: Props) {
+function WebRevealOverlay({ variant, playKey, onComplete }: Props) {
   const { width, height } = useWindowDimensions();
   const theme = OPENING_THEMES[variant] ?? OPENING_THEMES.general;
   const maxDim = Math.max(width, height, 1);
@@ -137,6 +136,17 @@ export function SkiaRevealOverlay({ variant, playKey, onComplete }: Props) {
       />
     </Animated.View>
   );
+}
+
+/**
+ * Universal reveal overlay. The corner orb effect is disabled on mobile native to
+ * prevent texture buffer crashes on screen transitions, while remaining enabled on web.
+ */
+export function SkiaRevealOverlay(props: Props) {
+  if (Platform.OS !== "web") {
+    return null;
+  }
+  return <WebRevealOverlay {...props} />;
 }
 
 const styles = StyleSheet.create({

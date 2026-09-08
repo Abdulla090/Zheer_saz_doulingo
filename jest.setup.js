@@ -12,3 +12,13 @@ jest.mock("expo-secure-store", () => ({
   setItemAsync: jest.fn(async () => undefined),
   deleteItemAsync: jest.fn(async () => undefined),
 }));
+
+jest.mock("react-native-webview", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    WebView: React.forwardRef((props, ref) => {
+      return React.createElement(View, { ...props, ref, testID: props.testID || "mock-webview" });
+    }),
+  };
+});

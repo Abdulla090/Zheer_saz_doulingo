@@ -160,6 +160,27 @@ function InnerLayout() {
   }, [uiLanguage]);
 
   useEffect(() => {
+    if (Platform.OS === "web" && typeof window !== "undefined" && typeof document !== "undefined") {
+      const mediaQuery = window.matchMedia ? window.matchMedia("(min-width: 1024px)") : null;
+      const syncDesktopZoom = () => {
+        const matches = mediaQuery ? mediaQuery.matches : window.innerWidth >= 1024;
+        (document.documentElement.style as any).zoom = matches ? "1.10" : "1";
+      };
+      syncDesktopZoom();
+      if (mediaQuery?.addEventListener) {
+        mediaQuery.addEventListener("change", syncDesktopZoom);
+        return () => mediaQuery.removeEventListener("change", syncDesktopZoom);
+      } else if ((mediaQuery as any)?.addListener) {
+        (mediaQuery as any).addListener(syncDesktopZoom);
+        return () => (mediaQuery as any).removeListener(syncDesktopZoom);
+      } else {
+        window.addEventListener("resize", syncDesktopZoom);
+        return () => window.removeEventListener("resize", syncDesktopZoom);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (ready) {
       void syncHomeWidget();
       const task = InteractionManager.runAfterInteractions(() => {
@@ -256,6 +277,7 @@ function InnerLayout() {
                   <Stack.Screen name="podcast" />
                   <Stack.Screen name="slang" />
                   <Stack.Screen name="reading-practice" />
+                  <Stack.Screen name="study-tutor" />
                   <Stack.Screen name="course-details" />
                   <Stack.Screen name="quest" />
                   <Stack.Screen name="league" />

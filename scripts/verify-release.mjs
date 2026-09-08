@@ -288,10 +288,19 @@ if (!nativePerf.includes("PATH_LIST_REMOVE_CLIPPED")) {
 }
 
 const listButton = read("src/screens/home/components/list-button.tsx");
-if (listButton.includes("Animated.createAnimatedComponent(G)")) {
-  fail("list-button still uses AnimatedG (Android risk)");
+const normalPathNode = read("src/screens/home/components/normal-path-node.tsx");
+const currentLessonIcon = read("src/screens/home/components/current-lesson-icon.tsx");
+if (
+  listButton.includes("Animated.createAnimatedComponent(G)") ||
+  normalPathNode.includes("Animated.createAnimatedComponent(G)") ||
+  normalPathNode.includes("Animated.createAnimatedComponent(Ellipse)") ||
+  currentLessonIcon.includes("Animated.createAnimatedComponent(G)") ||
+  normalPathNode.includes("<G>") ||
+  normalPathNode.includes("<G ")
+) {
+  fail("Path buttons still use Animated SVG components or nested SVG G elements (Android risk)");
 } else {
-  ok("Path buttons avoid AnimatedG");
+  ok("Path buttons avoid Animated SVG components and nested SVG G elements");
 }
 
 if (!existsSync(join(root, "src/components/icons/LessonPathIcons.tsx"))) {

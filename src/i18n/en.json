@@ -136,8 +136,27 @@
     "readingBlurb": "Read aloud and build vocabulary.",
     "podcastBlurb": "Listen to real conversations.",
     "slangBlurb": "Learn everyday expressions.",
-    "rolePlayBlurb": "Practice real-life scenarios.",
-    "teacherBlurb": "Personal lessons and feedback."
+    "teacherBlurb": "Personal lessons and feedback.",
+    "studyTutorTitle": "AI Study Tutor",
+    "studyTutorSubtitle": "Interactive STEM simulations & step-by-step problem solver",
+    "studyTutorBlurb": "Learn Math, Physics & Chemistry with interactive models."
+  },
+  "studyTutor": {
+    "title": "AI Study Tutor",
+    "subtitle": "Interactive STEM & Logic Learning Lab",
+    "math": "Math",
+    "physics": "Physics",
+    "chemistry": "Chemistry",
+    "logic": "Chess & Logic",
+    "askQuestion": "Ask a question",
+    "listening": "Listening...",
+    "generating": "Gemini is building your interactive simulation...",
+    "stepByStep": "Step-by-Step Breakdown",
+    "conceptCheck": "Concept Check",
+    "reset": "Reset",
+    "balanced": "Balanced",
+    "netDifference": "Net difference",
+    "keyEquation": "Key Equation"
   },
   "slang": {
     "title": "Street Dictionary",

@@ -22,6 +22,7 @@ export function useSpeechCapture(lang = "en-US") {
       options?: { continuous?: boolean; contextualStrings?: string[] },
     ) => {
       handlersRef.current = handlers;
+      setError(null);
 
       if (!available) {
         setError("Speech recognition is not available in this browser.");
@@ -29,6 +30,23 @@ export function useSpeechCapture(lang = "en-US") {
       }
 
       try {
+        if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach((track) => track.stop());
+          } catch (permErr: any) {
+            if (
+              permErr?.name === "NotAllowedError" ||
+              permErr?.name === "PermissionDeniedError"
+            ) {
+              const message = "Microphone permission denied. Please allow microphone access.";
+              setError(message);
+              handlers.onError?.("not-allowed", message);
+              return false;
+            }
+          }
+        }
+
         const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const rec = new SpeechRecognitionClass();
         recognitionRef.current = rec;
@@ -60,13 +78,20 @@ export function useSpeechCapture(lang = "en-US") {
         };
 
         rec.onerror = (event: any) => {
-          setListening(false);
           const errCode = event.error || "unknown";
+          if (errCode === "aborted") return;
+          if (errCode === "no-speech") {
+            handlersRef.current?.onError?.(errCode, "No speech detected.");
+            return;
+          }
+          setListening(false);
           let message = "Speech recognition error";
-          if (errCode === "not-allowed") {
+          if (errCode === "not-allowed" || errCode === "service-not-allowed") {
             message = "Microphone permission denied.";
-          } else if (errCode === "no-speech") {
-            message = "No speech detected.";
+          } else if (errCode === "audio-capture") {
+            message = "No microphone found.";
+          } else if (errCode === "network") {
+            message = "Speech recognition service unavailable.";
           }
           setError(message);
           handlersRef.current?.onError?.(errCode, message);

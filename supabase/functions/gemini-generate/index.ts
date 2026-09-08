@@ -162,7 +162,11 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
       400,
     );
   }
-  const model = FEATURE_MODELS[
+  const requestedModel =
+    typeof input.model === "string" && /^[a-z0-9_.-]+$/i.test(input.model)
+      ? input.model
+      : null;
+  const model = requestedModel || FEATURE_MODELS[
     featureKey as keyof typeof FEATURE_MODELS
   ];
   if (!model) return json({ error: "AI feature not available" }, 400);
@@ -271,16 +275,21 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
 
   const isTts = false;
   const generationConfig = sanitizeGenerationConfig(input.generationConfig, isTts) ?? {};
+  const maxAllowedTokens = requestedModel ? 4_096 : FEATURE_MAX_OUTPUT_TOKENS[featureKey];
   generationConfig.maxOutputTokens = Math.min(
     typeof generationConfig.maxOutputTokens === "number"
       ? generationConfig.maxOutputTokens
-      : FEATURE_MAX_OUTPUT_TOKENS[featureKey],
-    FEATURE_MAX_OUTPUT_TOKENS[featureKey],
+      : maxAllowedTokens,
+    maxAllowedTokens,
   );
   const body: Record<string, unknown> = { contents, generationConfig };
 
   if (!isTts && systemInstruction) {
     body.systemInstruction = systemInstruction;
+  }
+
+  if (Array.isArray(input.tools)) {
+    body.tools = input.tools;
   }
 
   const controller = new AbortController();

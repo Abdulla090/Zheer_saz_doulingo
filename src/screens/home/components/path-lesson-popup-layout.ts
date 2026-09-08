@@ -92,10 +92,11 @@ export function calculatePopupLayout(params: CalculatePopupLayoutParams): PopupL
     nodeBottom + cardHeight + POPUP_GAP_OFFSET >
       rootHeight - Math.max(bottomInset, 20) - POPUP_BOTTOM_CLEARANCE;
 
+  const maxCardTop = Math.max(16, rootHeight - Math.max(bottomInset, 20) - cardHeight - 16);
   const cardTop = anchor
     ? placeAbove
       ? Math.max(16, nodeTop - cardHeight - POPUP_GAP_OFFSET)
-      : nodeBottom + POPUP_GAP_OFFSET
+      : Math.min(maxCardTop, nodeBottom + POPUP_GAP_OFFSET)
     : undefined;
 
   const cardBottom = anchor ? undefined : Math.max(bottomInset + 20, 106);

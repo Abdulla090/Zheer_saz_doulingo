@@ -59,7 +59,7 @@ const unit11: UnitBank = [
   },
   {
     topic: "English Humor & Sarcasm", topicKu: "شوخی و دیاردەی ئینگلیزی",
-    words: [{ english: "Oh sure", kurdish: "ئاوا بەلێ" }, { english: "Because that makes total sense", kurdish: "چونکە ئەوا بەتەواوی مەعقوولە" }, { english: "Cool, cool", kurdish: "باشە باشە" }, { english: "Wow thanks", kurdish: "واو سوپاس" }, { english: "Obviously", kurdish: "ئاشکرایانەیە" }],
+    words: [{ english: "Oh sure", kurdish: "ئاوا بەلێ" }, { english: "Makes total sense", kurdish: "بەتەواوی مەعقوولە" }, { english: "Cool, cool", kurdish: "باشە باشە" }, { english: "Wow thanks", kurdish: "واو سوپاس" }, { english: "Obviously", kurdish: "ئاشکرایانەیە" }],
     voices: [{ prompt: "دیاردە", target: "Oh sure, because that totally makes sense — not!", targetKurdish: "ئاوا بەلێ، چونکە ئەوا بەتەواوی مەعقوولە — نەخێر!" }, { prompt: "شوخی", target: "Cool cool — so he's three hours late and that's fine apparently", targetKurdish: "باشە باشە — پس سێ کاتژمێر دواکەوتووە و ئەوا باشە ئاشکرایانەیە" }],
     sentences: [{ english: ["Oh", "sure", "because", "that", "makes", "total", "sense"], kurdish: "ئاوا بەلێ ئەوا بەتەواوی مەعقوولە" }, { english: ["Cool", "cool", "three", "hours", "late", "apparently", "fine"], kurdish: "باشە باشە سێ کاتژمێر دواکەوتووە ئاشکرایانەیە باشە" }],
     fillBlanks: [{ parts: ["Oh", "— because that totally makes sense, right?!"], hint: "ئاوا بەلێ — چونکە ئەوا بەتەواوی مەعقوولە ئایا؟!", answer: "sure", wrongs: ["yes", "wow", "great"] }, { parts: ["Cool,", "— only an hour late, no big deal!"], hint: "باشە، باشە — تەنها یەک کاتژمێر دواکەوتووە، بەکلەک نیە!", answer: "cool", wrongs: ["alright", "fine", "yeah"] }],

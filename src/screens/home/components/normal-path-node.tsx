@@ -2,42 +2,37 @@
  * Normal English path node — a direct port of the reference implementation at
  * github.com/hewad-mubariz/duolingo-clone (`src/screens/home/components/list-button.tsx`).
  *
- * The depth illusion is two stacked ellipses, not a stack of Views: a static rim
- * ellipse sits low (`RIM_CY`) and the face ellipse rides above it at
- * `FACE_BASE_CY`, animating down to `FACE_PRESSED_CY` on press. Because both are
- * the same size, the exposed sliver of rim *is* the side wall, so pressing the
- * node genuinely collapses it rather than faking the collapse with opacity.
+ * The depth illusion is two stacked ellipses: a static rim ellipse sits low
+ * (`RIM_CY`) and the face ellipse rides above it at `FACE_BASE_CY`, animating
+ * down to `FACE_PRESSED_CY` on press. Because both are the same size, the
+ * exposed sliver of rim *is* the side wall, so pressing the node genuinely
+ * collapses it rather than faking the collapse with opacity.
  *
- * The reference also paints two gloss sheens across the face. Ordinary nodes
- * stay flat and cheap to draw; completed nodes alone receive a compact metallic
- * gold ramp so completion cannot be mistaken for the bright-yellow reward state.
+ * Ordinary nodes stay flat and cheap to draw; completed nodes alone receive a
+ * compact metallic gold ramp so completion cannot be mistaken for the
+ * bright-yellow reward state.
  *
- * Street and kids paths keep the View + LinearGradient `SvgButton`; only the
- * normal path renders this. Locked and completed states are additions to the
- * reference, which has neither — they are load-bearing here.
+ * To avoid native SVG animation crashes and virtual view nesting crashes on Android
+ * (New Architecture / Fabric), all movement is driven via native `Animated.View`
+ * transforms, and all icon components are rendered in hardware-positioned Views
+ * rather than nested inside SVG Group elements.
  *
- * ── Press feedback on every row ──
- *
- * Locked, completed and unavailable rows play the same face-travel press as
- * live rows — for them the press is pure feedback, because the handler the
- * path wires in (`list-item`'s `handleSelect`) is a no-op. An earlier version
- * split this file into a static SVG branch for those rows to skip the
- * Reanimated mount cost; that split is gone because no row is unpressable any
- * more. Only a render with no `onPress` at all is inert.
+ * Locked and completed rows render through `StaticNormalPathNode` — pure static
+ * SVG with no Reanimated hooks, keeping SectionList scrolling lean.
  */
 
-import React, { useCallback, useMemo } from "react";
-import { Pressable } from "react-native";
+import React, { useCallback, useEffect, useMemo } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
-  useAnimatedProps,
+  useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import Svg, {
   Defs,
   Ellipse,
-  G,
   LinearGradient as SvgLinearGradient,
   Stop,
 } from "react-native-svg";
@@ -52,32 +47,15 @@ import {
 const BUTTON_CENTER_X = 50;
 const FACE_BASE_CY = 40;
 const RIM_CY = 53;
-const FACE_PRESSED_CY = 52;
 const RX = 55;
 const RY = 45;
-const ICON_SCALE = 1.8;
 const SVG_VIEWBOX = "-10 -10 120 130";
-const ICON_VB_W = 32;
-const ICON_VB_H = 32;
 
 const PRESS_IN_MS = 55;
 const PRESS_OUT_MS = 80;
 
-const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
-const AnimatedGroup = Animated.createAnimatedComponent(G);
-
-/*
- * The reference's own face/rim pairs. They differ from this app's shared
- * `SVG_BUTTON_COLOR_SETS` on three variants — purple (#ce82ff vs #8B73E8), blue's
- * rim (#2b70c9 vs #1482b8) and green's rim (#58a700 vs #46a302) — so the exact
- * values are pinned here rather than by editing the shared palette, which the
- * unit banner and the street and kids paths also read.
- *
- * Variants the reference never defines (orange, red, gold) fall through to the
- * shared palette.
- */
 const REFERENCE_NODE_COLORS = {
-  green: { rim: "#58a700", face: "#58cc02" },
+  green: { rim: "#46a302", face: "#58cc02" },
   purple: { rim: "#a568cc", face: "#ce82ff" },
   blue: { rim: "#2b70c9", face: "#1cb0f6" },
   mint: { rim: "#0B8A6C", face: "#08c296" },
@@ -109,8 +87,7 @@ export type NormalPathNodeProps = {
 };
 
 /**
- * The metallic gold ramp, shared verbatim by both branches so a completed row
- * looks identical whether it rendered static or pressable a moment before.
+ * Metallic gold ramp for legendary / gold reward nodes.
  */
 function GoldGradientDef({ gradientId }: { gradientId: string }) {
   return (
@@ -132,16 +109,110 @@ function GoldGradientDef({ gradientId }: { gradientId: string }) {
   );
 }
 
-export const NormalPathNode = React.memo((props: NormalPathNodeProps) => (
-  <PressableNormalPathNode {...props} />
-));
+/**
+ * Static SVG rendering for locked, completed, or inert nodes.
+ * Skips Reanimated mount and shared values entirely.
+ * Icons are rendered in a positioned View above the face to avoid nested SVG virtual view crashes.
+ */
+function StaticNormalPathNode({
+  size = 80,
+  translateX,
+  variant = "green",
+  IconComponent = LessonStar,
+  iconColor,
+  isCurrentLesson = false,
+  isCompleted = false,
+  isLocked = false,
+  isUnavailable = false,
+  isSelected = false,
+  accessibilityLabel,
+}: NormalPathNodeProps) {
+  const goldGradientId = React.useId().replace(/:/g, "");
+  const colors = useMemo(() => nodeColors(variant), [variant]);
+  const usesMetallicGold = !isCompleted && variant === "gold";
+  const resolvedIconColor =
+    iconColor ?? (isCompleted ? "#FFFFFF" : variant === "gray" ? "#AFAFAF" : "white");
 
-NormalPathNode.displayName = "NormalPathNode";
+  // 50 viewBox units for completed checkmark, 57.6 for stars/icons
+  const iconPixelSize = Math.round(size * (isCompleted ? 50 / 130 : 57.6 / 130));
+  const iconLeft = Math.round((size - iconPixelSize) / 2);
+  const iconTop = Math.round(size * (49 / 130) - iconPixelSize / 2);
+
+  return (
+    <Pressable
+      disabled
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: true, selected: isSelected }}
+      style={{
+        width: size,
+        height: size,
+        opacity: isUnavailable ? 0.62 : 1,
+        transform: [{ translateX: translateX || 0 }],
+      }}
+    >
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox={SVG_VIEWBOX}
+        style={StyleSheet.absoluteFill}
+      >
+        <Defs>
+          {usesMetallicGold ? (
+            <GoldGradientDef gradientId={goldGradientId} />
+          ) : null}
+        </Defs>
+
+        {/* 1. Rim — 3D cylinder depth */}
+        <Ellipse
+          cx={BUTTON_CENTER_X}
+          cy={RIM_CY}
+          rx={RX}
+          ry={RY}
+          fill={colors.rim}
+        />
+
+        {/* 2. Face — top ellipse */}
+        <Ellipse
+          cx={BUTTON_CENTER_X}
+          cy={FACE_BASE_CY}
+          rx={RX}
+          ry={RY}
+          fill={usesMetallicGold ? `url(#${goldGradientId})` : colors.face}
+          stroke={usesMetallicGold ? "#FFE681" : undefined}
+          strokeWidth={usesMetallicGold ? 1.25 : 0}
+        />
+      </Svg>
+
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: iconLeft,
+          top: iconTop,
+          width: iconPixelSize,
+          height: iconPixelSize,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <IconComponent
+          color={resolvedIconColor}
+          fill={resolvedIconColor}
+          stroke={resolvedIconColor}
+          strokeWidth={1}
+          width={iconPixelSize}
+          height={iconPixelSize}
+        />
+      </View>
+    </Pressable>
+  );
+}
 
 /**
- * Every path row renders this. The face ellipse travels down into the rim on
- * press and the icon rides the same displacement, exactly as in the reference;
- * locked, completed and unavailable rows animate too, they just never act.
+ * Interactive path row. On touch, the face layer travels downward into the rim
+ * via a standard hardware-accelerated `Animated.View` translation, keeping the
+ * entire animation off Fabric's SVG ShadowNodes and avoiding nested SVG crashes.
  */
 const PressableNormalPathNode = React.memo(
   ({
@@ -160,58 +231,50 @@ const PressableNormalPathNode = React.memo(
   }: NormalPathNodeProps) => {
     const goldGradientId = React.useId().replace(/:/g, "");
     const colors = useMemo(() => nodeColors(variant), [variant]);
-    const usesMetallicGold = isCompleted || variant === "gold";
+    const usesMetallicGold = !isCompleted && variant === "gold";
     const resolvedIconColor =
-      iconColor ?? (variant === "gray" ? "#AFAFAF" : "white");
+      iconColor ?? (isCompleted ? "#FFFFFF" : variant === "gray" ? "#AFAFAF" : "white");
 
-    const cy = useSharedValue(FACE_BASE_CY);
+    const pressProgress = useSharedValue(0);
 
-    const faceAnimatedProps = useAnimatedProps(() => ({ cy: cy.value }));
+    // 12 viewBox units (52 - 40) scaled to pixel dimensions
+    const faceTravelPx = Math.round(size * (12 / 130));
+    // 50 viewBox units for completed checkmark, 57.6 for stars/icons
+    const iconPixelSize = Math.round(size * (isCompleted ? 50 / 130 : 57.6 / 130));
+    const iconLeft = Math.round((size - iconPixelSize) / 2);
+    const iconTop = Math.round(size * (49 / 130) - iconPixelSize / 2);
 
-    /*
-     * The icon is painted *on* the face, so it travels by exactly the face's own
-     * displacement. Deriving it from `cy` rather than interpolating over a
-     * separate range keeps it welded to the surface — an independent range
-     * drifts by a unit at the pressed end and the icon visibly slides.
-     */
-    const followFaceProps = useAnimatedProps(() => ({
-      transform: [{ translateY: cy.value - FACE_BASE_CY }],
+    const faceAnimatedStyle = useAnimatedStyle(() => ({
+      transform: [{ translateY: pressProgress.value * faceTravelPx }],
     }));
 
-    /*
-     * The press travel runs for locked and unavailable rows too — it is their
-     * only press feedback — while `handlePress` keeps their handler inert.
-     */
     const handlePressIn = useCallback(() => {
-      cy.value = withTiming(FACE_PRESSED_CY, {
+      pressProgress.value = withTiming(1, {
         duration: PRESS_IN_MS,
         easing: Easing.out(Easing.cubic),
       });
-    }, [cy]);
+    }, [pressProgress]);
 
     const handlePressOut = useCallback(() => {
-      cy.value = withTiming(FACE_BASE_CY, {
+      pressProgress.value = withTiming(0, {
         duration: PRESS_OUT_MS,
         easing: Easing.out(Easing.cubic),
       });
-    }, [cy]);
+    }, [pressProgress]);
 
     const handlePress = useCallback(() => {
-      if (isLocked || isUnavailable) return;
       onPress?.();
-    }, [isLocked, isUnavailable, onPress]);
+    }, [onPress]);
+
+    useEffect(() => {
+      return () => {
+        cancelAnimation(pressProgress);
+      };
+    }, [pressProgress]);
+
+    const showsActiveLessonIcon = isCurrentLesson && !isLocked;
 
     return (
-      /*
-       * Plain `Pressable`, as in the reference. `IOSPressable`'s `inList` branch
-       * dims to `activeOpacity` while pressed, which would wash the node out on
-       * top of the face travel — the ellipse slide is the whole press language
-       * here, so it has to be the only thing that moves.
-       *
-       * Only a missing handler disables the press entirely: the path wires a
-       * handler into every row (locked and completed ones included — they
-       * animate but the handler no-ops), so every row answers a tap.
-       */
       <Pressable
         disabled={!onPress}
         onPressIn={handlePressIn}
@@ -219,7 +282,7 @@ const PressableNormalPathNode = React.memo(
         onPress={handlePress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: isLocked || isUnavailable, selected: isSelected }}
+        accessibilityState={{ disabled: !onPress, selected: isSelected }}
         style={{
           width: size,
           height: size,
@@ -227,13 +290,14 @@ const PressableNormalPathNode = React.memo(
           transform: [{ translateX: translateX || 0 }],
         }}
       >
-        <Svg width="100%" height="100%" viewBox={SVG_VIEWBOX}>
-          {usesMetallicGold ? (
-            <GoldGradientDef gradientId={goldGradientId} />
-          ) : null}
-
-          {/* 1. Rim — static, and the part left exposed below the face reads as
-              the node's side wall. */}
+        {/* 1. Rim — static, and the part left exposed below the face reads as
+            the node's side wall. */}
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox={SVG_VIEWBOX}
+          style={StyleSheet.absoluteFill}
+        >
           <Ellipse
             cx={BUTTON_CENTER_X}
             cy={RIM_CY}
@@ -241,51 +305,82 @@ const PressableNormalPathNode = React.memo(
             ry={RY}
             fill={colors.rim}
           />
-
-          {/* 2. Face — travels down on press to seat into the rim. */}
-          <AnimatedEllipse
-            animatedProps={faceAnimatedProps}
-            cx={BUTTON_CENTER_X}
-            cy={FACE_BASE_CY}
-            rx={RX}
-            ry={RY}
-            fill={
-              usesMetallicGold ? `url(#${goldGradientId})` : colors.face
-            }
-            stroke={usesMetallicGold ? "#FFE681" : undefined}
-            strokeWidth={usesMetallicGold ? 1.25 : 0}
-          />
-
-          {/* 3. Icon — painted on the face, so it rides the same displacement. */}
-          <AnimatedGroup animatedProps={followFaceProps}>
-            <G transform={`translate(${BUTTON_CENTER_X} ${FACE_BASE_CY})`}>
-              <G
-                transform={`scale(${ICON_SCALE}) translate(${-ICON_VB_W / 2} ${-ICON_VB_H / 2})`}
-              >
-                {isCurrentLesson && !isLocked ? (
-                  <CurrentLessonIcon
-                    IconComponent={IconComponent}
-                    color={resolvedIconColor}
-                    width={ICON_VB_W}
-                    height={ICON_VB_H}
-                  />
-                ) : (
-                  <IconComponent
-                    color={resolvedIconColor}
-                    fill={resolvedIconColor}
-                    stroke={resolvedIconColor}
-                    strokeWidth={1}
-                    width={ICON_VB_W}
-                    height={ICON_VB_H}
-                  />
-                )}
-              </G>
-            </G>
-          </AnimatedGroup>
         </Svg>
+
+        {/* 2. Face + Icon — travels down on press to seat into the rim. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, faceAnimatedStyle]}
+        >
+          <Svg
+            width="100%"
+            height="100%"
+            viewBox={SVG_VIEWBOX}
+            style={StyleSheet.absoluteFill}
+          >
+            <Defs>
+              {usesMetallicGold ? (
+                <GoldGradientDef gradientId={goldGradientId} />
+              ) : null}
+            </Defs>
+
+            <Ellipse
+              cx={BUTTON_CENTER_X}
+              cy={FACE_BASE_CY}
+              rx={RX}
+              ry={RY}
+              fill={
+                usesMetallicGold ? `url(#${goldGradientId})` : colors.face
+              }
+              stroke={usesMetallicGold ? "#FFE681" : undefined}
+              strokeWidth={usesMetallicGold ? 1.25 : 0}
+            />
+          </Svg>
+
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: iconLeft,
+              top: iconTop,
+              width: iconPixelSize,
+              height: iconPixelSize,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {showsActiveLessonIcon ? (
+              <CurrentLessonIcon
+                IconComponent={IconComponent}
+                color={resolvedIconColor}
+                width={iconPixelSize}
+                height={iconPixelSize}
+              />
+            ) : (
+              <IconComponent
+                color={resolvedIconColor}
+                fill={resolvedIconColor}
+                stroke={resolvedIconColor}
+                strokeWidth={1}
+                width={iconPixelSize}
+                height={iconPixelSize}
+              />
+            )}
+          </View>
+        </Animated.View>
       </Pressable>
     );
   },
 );
 
 PressableNormalPathNode.displayName = "PressableNormalPathNode";
+
+export const NormalPathNode = React.memo((props: NormalPathNodeProps) => {
+  const { onPress } = props;
+  const canPress = Boolean(onPress);
+
+  if (!canPress) return <StaticNormalPathNode {...props} />;
+  return <PressableNormalPathNode {...props} />;
+});
+
+NormalPathNode.displayName = "NormalPathNode";

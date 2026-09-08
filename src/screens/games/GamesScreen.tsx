@@ -109,6 +109,13 @@ const MODES = [
     href: "/ai-teacher" as const,
     icon: Mortarboard02Icon,
   },
+  {
+    key: "study-tutor",
+    mode: "study-tutor" as GameModeKey,
+    titleKey: "games.studyTutorTitle",
+    href: "/study-tutor" as const,
+    icon: Idea01Icon,
+  },
 ] as const;
 
 /**

@@ -2,6 +2,7 @@
   "extends": "./node_modules/expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
+    "types": ["node"],
     "paths": {
       "@/*": [
         "./src/*"
@@ -23,6 +24,7 @@
     "supabase",
     ".agents",
     "agent",
-    "videos"
+    "videos",
+    "scripts"
   ]
 }

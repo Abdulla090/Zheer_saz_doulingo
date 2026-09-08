@@ -1,7 +1,8 @@
 import type { LessonListItem, SectionDataItem } from "../data/list-items";
 import { findItemLocation } from "../utils/path-scroll";
+import { getWebDesktopZoomFactor } from "../constants/web-layout";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { SectionList, View } from "react-native";
+import { Platform, type SectionList, type View } from "react-native";
 
 export type SelectedPathLesson = {
   item: LessonListItem;
@@ -50,7 +51,7 @@ type WindowMeasurement = {
   height: number;
 };
 
-/** Measure both views in the same native round-trip instead of serial hops. */
+/** Measure both views in the same native round-trip with a fallback timer. */
 function measureNodeAgainstRoot(
   root: View,
   node: View,
@@ -58,19 +59,89 @@ function measureNodeAgainstRoot(
 ) {
   let rootBox: WindowMeasurement | null = null;
   let nodeBox: WindowMeasurement | null = null;
+  let done = false;
 
   const finish = () => {
-    if (rootBox && nodeBox) onMeasured(rootBox, nodeBox);
+    if (done) return;
+    if (rootBox && nodeBox) {
+      done = true;
+      const zoom = getWebDesktopZoomFactor();
+      if (zoom !== 1 && zoom > 0) {
+        onMeasured(
+          {
+            x: rootBox.x / zoom,
+            y: rootBox.y / zoom,
+            width: rootBox.width / zoom,
+            height: rootBox.height / zoom,
+          },
+          {
+            x: nodeBox.x / zoom,
+            y: nodeBox.y / zoom,
+            width: nodeBox.width / zoom,
+            height: nodeBox.height / zoom,
+          },
+        );
+        return;
+      }
+      onMeasured(rootBox, nodeBox);
+    }
   };
 
-  root.measureInWindow((x, y, width, height) => {
-    rootBox = { x, y, width, height };
-    finish();
-  });
-  node.measureInWindow((x, y, width, height) => {
-    nodeBox = { x, y, width, height };
-    finish();
-  });
+  // 1. Web-native DOM measurement (instant, accurate, never throws)
+  if (Platform.OS === "web") {
+    try {
+      const rootEl = root as any;
+      const nodeEl = node as any;
+      const r = rootEl?.getBoundingClientRect ? rootEl.getBoundingClientRect() : null;
+      const n = nodeEl?.getBoundingClientRect ? nodeEl.getBoundingClientRect() : null;
+      if (r && n) {
+        rootBox = { x: r.left, y: r.top, width: r.width, height: r.height };
+        nodeBox = { x: n.left, y: n.top, width: n.width, height: n.height };
+        finish();
+        return;
+      }
+    } catch {
+      // ignore and fallback
+    }
+  }
+
+  // 2. React Native native measureInWindow
+  try {
+    if (typeof (root as any)?.measureInWindow === "function") {
+      root.measureInWindow((x, y, width, height) => {
+        rootBox = { x: x || 0, y: y || 0, width: width || 0, height: height || 0 };
+        finish();
+      });
+    } else {
+      rootBox = { x: 0, y: 0, width: 360, height: 700 };
+    }
+  } catch {
+    rootBox = { x: 0, y: 0, width: 360, height: 700 };
+  }
+
+  try {
+    if (typeof (node as any)?.measureInWindow === "function") {
+      node.measureInWindow((x, y, width, height) => {
+        nodeBox = { x: x || 0, y: y || 0, width: width || 0, height: height || 0 };
+        finish();
+      });
+    } else {
+      nodeBox = { x: 180, y: 350, width: 80, height: 80 };
+    }
+  } catch {
+    nodeBox = { x: 180, y: 350, width: 80, height: 80 };
+  }
+
+  // Safety fallback so popup never hangs if measureInWindow is dropped
+  setTimeout(() => {
+    if (!done) {
+      done = true;
+      onMeasured(
+        rootBox ?? { x: 0, y: 0, width: 360, height: 700 },
+        nodeBox ?? { x: 180, y: 350, width: 80, height: 80 },
+      );
+    }
+  }, 100);
 }
 
 export function usePathLessonSelection(
@@ -102,12 +173,6 @@ export function usePathLessonSelection(
         clearTimeout(openTimerRef.current);
         openTimerRef.current = null;
       }
-      /*
-       * Only collapse an *open* popup. Returning the previous value untouched
-       * keeps React from re-rendering the whole path list before the measure
-       * has even started — a wasted pass over every node on the common tap.
-       */
-      setSelectedLesson((previous) => (previous ? null : previous));
       const requestId = selectionRequestRef.current + 1;
       selectionRequestRef.current = requestId;
 
@@ -122,89 +187,19 @@ export function usePathLessonSelection(
         return;
       }
 
-      /** Measure, then show. Re-measured after any scroll so the caret lands true. */
-      const measureAndShow = () => {
-        const currentRoot = overlayRootRef.current;
-        const target = node;
-        if (!currentRoot || !target) {
-          displayPopupWithAnchor();
-          return;
-        }
-        measureNodeAgainstRoot(currentRoot, target, (rootBox, nodeBox) => {
-          const anchorX = nodeBox.x - rootBox.x + nodeBox.width / 2;
-          const nodeTop = nodeBox.y - rootBox.y;
-
-          displayPopupWithAnchor({
-            x: anchorX,
-            y: nodeTop + nodeBox.height,
-            nodeTop,
-            nodeHeight: nodeBox.height,
-            rootWidth: rootBox.width,
-            rootHeight: rootBox.height,
-          });
-        });
-      };
-
-      /*
-       * One measurement pass decides placement *and* anchors the popup.
-       *
-       * `measureInWindow` is an async hop to the UI thread and back. That thread
-       * is also laying out the path's nodes, so each hop costs far more than a
-       * frame under load. Root and node used to be measured one after the other;
-       * starting both together removes one whole native round-trip before the
-       * popup can mount.
-       */
       measureNodeAgainstRoot(root, node, (rootBox, nodeBox) => {
         if (selectionRequestRef.current !== requestId) return;
 
         const nodeTop = nodeBox.y - rootBox.y;
-        const nodeBottom = nodeTop + nodeBox.height;
 
-        // The popup opens below the node when there is room, and flips above
-        // it when there is not. Only when *neither* direction fits does the
-        // list have to move.
-        const fitsBelow =
-          nodeBottom + POPUP_GAP + POPUP_HEIGHT + POPUP_BOTTOM_CLEARANCE <=
-          rootBox.height;
-        const fitsAbove =
-          nodeTop - POPUP_GAP - POPUP_HEIGHT >= POPUP_TOP_CLEARANCE;
-        const location = findItemLocation(sections, item);
-
-        if (fitsBelow || fitsAbove || !location || !listRef.current) {
-          // Nothing will move, so these coordinates are already final.
-          displayPopupWithAnchor({
-            x: nodeBox.x - rootBox.x + nodeBox.width / 2,
-            y: nodeTop + nodeBox.height,
-            nodeTop,
-            nodeHeight: nodeBox.height,
-            rootWidth: rootBox.width,
-            rootHeight: rootBox.height,
-          });
-          return;
-        }
-
-        /*
-         * Bring the node to the middle of the viewport, then open. Measuring
-         * before the scroll settles would anchor the popup to where the node
-         * *was*, which is exactly the off-screen popup this avoids.
-         */
-        try {
-          listRef.current.scrollToLocation({
-            sectionIndex: location.sectionIndex,
-            itemIndex: location.itemIndex,
-            animated: true,
-            viewPosition: 0.5,
-          });
-        } catch {
-          measureAndShow();
-          return;
-        }
-
-        openTimerRef.current = setTimeout(() => {
-          openTimerRef.current = null;
-          if (selectionRequestRef.current !== requestId) return;
-          measureAndShow();
-        }, SCROLL_SETTLE_MS);
+        displayPopupWithAnchor({
+          x: nodeBox.x - rootBox.x + (nodeBox.width || 80) / 2,
+          y: nodeTop + (nodeBox.height || 80),
+          nodeTop,
+          nodeHeight: nodeBox.height || 80,
+          rootWidth: rootBox.width || 360,
+          rootHeight: rootBox.height || 700,
+        });
       });
     },
     [listRef, overlayRootRef, sections],

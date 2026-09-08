@@ -54,13 +54,12 @@ const ESTIMATED_CARD_HEIGHT = 168;
 
 function popupVariant(selection: SelectedPathLesson): SvgButtonVariant {
   const { item } = selection;
-  if (item.status === "locked") return "gray";
   if (item.status === "completed") return "gold";
   if (item.type === "cup") return "yellow";
   if (item.sectionTheme === "gray" && item.displayTheme !== "gray") {
     return item.displayTheme as SvgButtonVariant;
   }
-  return item.sectionTheme as SvgButtonVariant;
+  return (item.displayTheme || item.sectionTheme || "blue") as SvgButtonVariant;
 }
 
 export function PathLessonPopup({
@@ -105,7 +104,6 @@ export function PathLessonPopup({
   const cardRim = variantColors.rim;
   const ink = isPaleFace ? "#243044" : "#FFFFFF";
   const inkSoft = isPaleFace ? "rgba(36,48,68,0.66)" : "rgba(255,255,255,0.84)";
-  const actionInk = isLocked ? colors.mutedForeground : colors.foreground;
 
   const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(windowWidth);
   const fallbackViewportWidth = isDesktopWeb
@@ -127,7 +125,7 @@ export function PathLessonPopup({
   });
 
   const startLesson = () => {
-    if (isLocked || isCompleted) return;
+    onDismiss();
     router.push({
       pathname: "/lesson",
       params: {
@@ -155,7 +153,7 @@ export function PathLessonPopup({
         entering={FadeIn.duration(100).easing(Easing.out(Easing.cubic))}
         exiting={FadeOut.duration(80).easing(Easing.in(Easing.quad))}
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, styles.scrim, isLocked && styles.lockedScrim]}
+        style={[StyleSheet.absoluteFill, styles.scrim]}
       />
       <Pressable
         onPress={handleDismiss}
@@ -220,22 +218,21 @@ export function PathLessonPopup({
         </AppText>
 
         <PressableScale
-          onPress={isLocked || isCompleted ? undefined : startLesson}
+          onPress={startLesson}
           activateOnPressIn={Platform.OS !== "web"}
-          disabled={isLocked || isCompleted}
           accessibilityRole="button"
           accessibilityLabel={t("home.startLesson")}
           style={[
             styles.action,
             {
-              backgroundColor: isLocked ? colors.muted : colors.surfaceRaised,
+              backgroundColor: colors.surfaceRaised,
               borderBottomColor: colors.border,
             },
           ]}
           scaleDown={0.975}
         >
           <AppText
-            style={[styles.actionText, { color: actionInk }]}
+            style={[styles.actionText, { color: colors.foreground }]}
             forceKurdishFont={isKu}
             forceLatinFont={!isKu}
             numberOfLines={1}
@@ -258,9 +255,6 @@ const styles = StyleSheet.create({
   dismissTarget: {
     ...StyleSheet.absoluteFill,
     zIndex: 31,
-  },
-  lockedScrim: {
-    backgroundColor: "rgba(15,23,42,0.18)",
   },
   card: {
     position: "absolute",

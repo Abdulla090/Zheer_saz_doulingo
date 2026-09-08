@@ -151,14 +151,199 @@ const SETUP_COPY = {
   },
 } as const;
 
-const KURDISH_TEMPLATE_COPY: Record<string, { title: string; description: string }> = {
-  "Morning Market": { title: "بازاڕی بەیانی", description: "وشەی ڕۆژانە و ڕستەی کورت و ڕوون." },
-  "A Good Friend": { title: "هاوڕێیەکی باش", description: "چیرۆکێکی سادە بۆ زیادکردنی متمانە." },
-  "Learning Languages": { title: "فێربوونی زمانەکان", description: "وشەی مامناوەند و بیرۆکەی پەیوەست." },
-  "Smart Devices": { title: "ئامێرە زیرەکەکان", description: "بابەتێکی نوێ لەگەڵ وشەی جۆراوجۆر." },
-  "The Art of Focus": { title: "هونەری سەرنجدان", description: "ڕستەی درێژتر و دەربڕینی ئەکادیمی." },
-  "Sustainable Cities": { title: "شارە بەردەوامەکان", description: "وشەی پێشکەوتوو و ڕستەی ئاڵۆزتر." },
+const TEMPLATE_COPY: Record<
+  string,
+  {
+    en: { title: string; description: string };
+    ku: { title: string; description: string };
+    ar: { title: string; description: string };
+  }
+> = {
+  "Morning Market": {
+    en: { title: "Morning Market", description: "Clear daily vocabulary with short sentences." },
+    ku: { title: "بازاڕی بەیانی", description: "وشەی ڕۆژانە و ڕستەی کورت و ڕوون." },
+    ar: { title: "سوق الصباح", description: "مفردات يومية وجمل قصيرة وواضحة." },
+  },
+  "A Good Friend": {
+    en: { title: "A Good Friend", description: "Warm beginner story for confidence." },
+    ku: { title: "هاوڕێیەکی باش", description: "چیرۆکێکی سادە بۆ زیادکردنی متمانە." },
+    ar: { title: "صديق مخلص", description: "قصة دافئة للمبتدئين لبناء الثقة." },
+  },
+  "Learning Languages": {
+    en: { title: "Learning Languages", description: "Balanced vocabulary and connected ideas." },
+    ku: { title: "فێربوونی زمانەکان", description: "وشەی مامناوەند و بیرۆکەی پەیوەست." },
+    ar: { title: "تعلم اللغات", description: "مفردات متوازنة وأفكار مترابطة." },
+  },
+  "Smart Devices": {
+    en: { title: "Smart Devices", description: "Modern topic with natural pronunciation challenges." },
+    ku: { title: "ئامێرە زیرەکەکان", description: "بابەتێکی نوێ لەگەڵ وشەی جۆراوجۆر." },
+    ar: { title: "الأجهزة الذكية", description: "موضوع حديث مع تحديات نطق طبيعية." },
+  },
+  "The Art of Focus": {
+    en: { title: "The Art of Focus", description: "Longer rhythm with academic phrasing." },
+    ku: { title: "هونەری سەرنجدان", description: "ڕستەی درێژتر و دەربڕینی ئەکادیمی." },
+    ar: { title: "فن التركيز", description: "إيقاع أطول مع صياغة أكاديمية رصينة." },
+  },
+  "Sustainable Cities": {
+    en: { title: "Sustainable Cities", description: "Advanced vocabulary with longer clauses." },
+    ku: { title: "شارە بەردەوامەکان", description: "وشەی پێشکەوتوو و ڕستەی ئاڵۆزتر." },
+    ar: { title: "مدن مستدامة", description: "مفردات متقدمة وجمل أكثر تركيباً." },
+  },
 };
+
+const PRACTICE_COPY = {
+  en: {
+    words: "words",
+    sentences: "sentences",
+    maxTime: "2:00 max",
+    previewGuide: "Preview the full passage, then tap the mic to start.",
+    readingGuide: "Read continuously. Tap the mic when finished, or scoring starts automatically at 2:00.",
+    resultsGuide: "Review your marked words, then retry the same passage or generate a new one.",
+    strongReading: "Strong reading",
+    goodBase: "Good base",
+    needsPractice: "Needs another pass",
+    transcriptLabel: "Transcript:",
+    noSpeechCaptured: "No clear speech captured.",
+    coverage: "Coverage",
+    correct: "Correct",
+    sentencesLabel: "Sentences",
+    wpm: "WPM",
+    time: "Time",
+    secondUnit: "s",
+    sentenceCheck: "Sentence check",
+    whatWorked: "What worked",
+    nextPass: "Next pass",
+    scoringReading: "Scoring your reading...",
+    startReading: "Start reading",
+    stopReading: "Stop reading",
+    retry: "Retry",
+    newPassage: "New passage",
+    fullAttemptFallback: "You completed a full reading attempt.",
+    retryFallback: "Try the same passage again.",
+  },
+  ku: {
+    words: "وشە",
+    sentences: "ڕستە",
+    maxTime: "٢:٠٠ زۆرینە",
+    previewGuide: "پێشبینینی هەموو دەقەکە بکە، پاشان پەنجە بنێ بە مایکەکەدا بۆ دەستپێکردن.",
+    readingGuide: "بە بەردەوامی بخوێنەوە. کاتێک تەواو بوویت پەنجە بنێ بە مایکەکەدا، یان لە ٢:٠٠ خۆکارانە تەواو دەبێت.",
+    resultsGuide: "پێداچوونەوە بە وشەکانتدا بکە، پاشان هەمان دەق دووبارە بکەرەوە یان دەقێکی نوێ دروست بکە.",
+    strongReading: "خوێندنەوەیەکی بەهێز",
+    goodBase: "ئاستێکی باش",
+    needsPractice: "پێویستی بە دووبارەکردنەوەیە",
+    transcriptLabel: "دەقی تۆمارکراو:",
+    noSpeechCaptured: "هیچ دەنگێکی ڕوون تۆمار نەکرا.",
+    coverage: "داپۆشین",
+    correct: "ڕاست",
+    sentencesLabel: "ڕستەکان",
+    wpm: "خێرایی (WPM)",
+    time: "کات",
+    secondUnit: "چ",
+    sentenceCheck: "پشکنینی ڕستەکان",
+    whatWorked: "خاڵە بەهێزەکان",
+    nextPass: "هەنگاوی داهاتوو",
+    scoringReading: "هەڵسەنگاندنی خوێندنەوەکەت دەکرێت...",
+    startReading: "دەستپێکردنی خوێندنەوە",
+    stopReading: "وەستاندنی خوێندنەوە",
+    retry: "دووبارەکردنەوە",
+    newPassage: "دەقێکی نوێ",
+    fullAttemptFallback: "هەوڵێکی تەواوی خوێندنەوەت ئەنجامدا.",
+    retryFallback: "هەمان دەق دووبارە بکەرەوە.",
+  },
+  ar: {
+    words: "كلمات",
+    sentences: "جمل",
+    maxTime: "2:00 كحد أقصى",
+    previewGuide: "عاين النص بالكامل، ثم اضغط على الميكروفون للبدء.",
+    readingGuide: "اقرأ بشكل متواصل. اضغط على الميكروفون عند الانتهاء، أو يبدأ التقييم تلقائياً عند 2:00.",
+    resultsGuide: "راجع الكلمات المحددة، ثم أعد المحاولة لنفس النص أو أنشئ نصاً جديداً.",
+    strongReading: "قراءة ممتازة",
+    goodBase: "مستوى جيد",
+    needsPractice: "تحتاج إلى تدريب إضافي",
+    transcriptLabel: "النص المسجل:",
+    noSpeechCaptured: "لم يتم التقاط صوت واضح.",
+    coverage: "التغطية",
+    correct: "صحيح",
+    sentencesLabel: "الجمل",
+    wpm: "السرعة (WPM)",
+    time: "الوقت",
+    secondUnit: "ث",
+    sentenceCheck: "تدقيق الجمل",
+    whatWorked: "ما تم إتقانه",
+    nextPass: "الخطوة التالية",
+    scoringReading: "جارٍ تقييم قراءتك...",
+    startReading: "ابدأ القراءة",
+    stopReading: "إيقاف القراءة",
+    retry: "إعادة المحاولة",
+    newPassage: "نص جديد",
+    fullAttemptFallback: "أكملت محاولة قراءة كاملة.",
+    retryFallback: "حاول قراءة نفس النص مرة أخرى.",
+  },
+} as const;
+
+function translateFeedback(item: string, lang: "en" | "ku" | "ar"): string {
+  if (lang === "en") return item;
+
+  if (item === "You pronounced most target words clearly.") {
+    return lang === "ku"
+      ? "زۆربەی وشە دیاریکراوەکانت بە ڕوونی گۆ کرد."
+      : "نطقت معظم الكلمات المستهدفة بوضوح.";
+  }
+  if (item === "Repeat the highlighted red words before your next attempt.") {
+    return lang === "ku"
+      ? "پێش هەوڵی داهاتوو، ئەو وشانەی بە سوور دیاریکراون دووبارە بکەرەوە."
+      : "تدرّب على الكلمات المظللة بالأحمر قبل محاولتك القادمة.";
+  }
+  if (item === "Your word order stayed close to the passage.") {
+    return lang === "ku"
+      ? "ڕیزبەندی وشەکانت لەگەڵ دەقەکەدا زۆر گونجاو بوو."
+      : "ترتيب كلماتك كان دقيقاً ومطابقاً للنص.";
+  }
+  if (item === "Follow each line in order instead of jumping between phrases.") {
+    return lang === "ku"
+      ? "دێڕ بە دێڕ بە ڕیزبەندی بخوێنەوە لەجیاتی بازدان لە نێوان دەستەواژەکاندا."
+      : "اتبع الأسطر بالترتيب بدلاً من القفز بين العبارات.";
+  }
+  if (item === "You completed every sentence accurately.") {
+    return lang === "ku"
+      ? "هەموو ڕستەکانت بە تەواوی و بە دروستی خوێندەوە."
+      : "أكملت كل الجمل بدقة متناهية.";
+  }
+  const sentenceMatch = item.match(/Focus on the (\d+) sentence(?:s)? below 80%\./);
+  if (sentenceMatch) {
+    const count = sentenceMatch[1];
+    return lang === "ku"
+      ? `سەرنج بخەرە سەر ئەو ${count} ڕستەیەی لە خوار ٨٠٪ بوون.`
+      : `ركز على ${count} جمل حققت تقييماً أقل من 80%.`;
+  }
+  if (item === "Your pace was controlled for this level.") {
+    return lang === "ku"
+      ? "خێرایی خوێندنەوەکەت بۆ ئەم ئاستە زۆر گونجاو بوو."
+      : "كانت وتيرة وسرعة قراءتك ممتازة لهذا المستوى.";
+  }
+  if (item === "Try the same passage again at a slightly faster pace.") {
+    return lang === "ku"
+      ? "هەمان دەق بە خێراییەکی کەمێک زیاتر بخوێنەرەوە."
+      : "أعد قراءة نفس النص بوتيرة أسرع قليلاً.";
+  }
+  if (item === "Slow down so pronunciation stays clear.") {
+    return lang === "ku"
+      ? "کەمێک هێواشتر بخوێنەوە بۆ ئەوەی گۆکردنت ڕوون بمێنێتەوە."
+      : "تمهل قليلاً ليظل نطقك واضحاً وسليماً.";
+  }
+  if (item === "You completed a full reading attempt.") {
+    return lang === "ku"
+      ? "هەوڵێکی تەواوی خوێندنەوەت تەواو کرد."
+      : "أكملت محاولة قراءة كاملة.";
+  }
+  if (item === "Try the same passage again.") {
+    return lang === "ku"
+      ? "هەمان دەق دووبارە بخوێنەرەوە."
+      : "حاول قراءة نفس النص مرة أخرى.";
+  }
+
+  return item;
+}
 
 const MAX_READING_SECONDS = 120;
 const SPEED_RATE: Record<Speed, number> = {
@@ -225,7 +410,9 @@ export default function ReadingPracticeScreen() {
   const { locale, isKu, isAr } = useI18n();
   const { theme, metrics, isWide, isRtl } = useGamesChrome("reading-practice");
   const styles = useReadingStyles();
+  const langKey = isKu ? "ku" : isAr ? "ar" : "en";
   const setupCopy = isKu ? SETUP_COPY.ku : isAr ? SETUP_COPY.ar : SETUP_COPY.en;
+  const practiceCopy = isKu ? PRACTICE_COPY.ku : isAr ? PRACTICE_COPY.ar : PRACTICE_COPY.en;
   // Western digits everywhere: the Sorani/Arabic UI face has no Arabic-Indic
   // digit glyphs, so converted numbers rendered as blank dots.
   const formatNumber = (value: number) => String(value);
@@ -255,7 +442,9 @@ export default function ReadingPracticeScreen() {
   const stoppingRef = useRef(false);
   const autoStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollY = useSharedValue(0);
+  const isReadingAnim = useSharedValue(0);
 
   const compact = width < 430;
   const readingViewportHeight = Math.max(
@@ -270,9 +459,8 @@ export default function ReadingPracticeScreen() {
     Math.max(1, Math.ceil(Math.max(targetWords.length, requestedWords) / TARGET_WPM[difficulty])),
   );
   const activeTemplate = TEMPLATES[difficulty][selectedTemplateIndex] ?? TEMPLATES[difficulty][0];
-  const activeTemplateCopy = isKu
-    ? KURDISH_TEMPLATE_COPY[activeTemplate.title] ?? activeTemplate
-    : activeTemplate;
+  const activeTemplateCopy =
+    TEMPLATE_COPY[activeTemplate.title]?.[langKey] ?? activeTemplate;
 
   const clearReadingTimers = useCallback(() => {
     if (autoStopTimerRef.current) {
@@ -283,7 +471,18 @@ export default function ReadingPracticeScreen() {
       clearInterval(clockTimerRef.current);
       clockTimerRef.current = null;
     }
+    if (autoScrollTimerRef.current) {
+      clearTimeout(autoScrollTimerRef.current);
+      autoScrollTimerRef.current = null;
+    }
   }, []);
+
+  useEffect(() => {
+    isReadingAnim.value = withTiming(state === "reading" ? 1 : 0, {
+      duration: 380,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  }, [isReadingAnim, state]);
 
   useEffect(() => {
     return () => {
@@ -298,8 +497,9 @@ export default function ReadingPracticeScreen() {
   }, [difficulty]);
 
   const resetScrollPosition = useCallback(() => {
-    const start = Math.max(24, Math.round(readingViewportHeight * 0.16));
-    scrollY.value = start;
+    cancelAnimation(scrollY);
+    const startBottom = Math.round(readingViewportHeight * 0.80);
+    scrollY.value = startBottom;
   }, [readingViewportHeight, scrollY]);
 
   useEffect(() => {
@@ -344,14 +544,21 @@ export default function ReadingPracticeScreen() {
       setParagraphs(generated.filter(Boolean));
       setState("preview");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not generate a passage. Please try again.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : isKu
+            ? "نەتوانرا دەق دروست بکرێت. تکایە دووبارە هەوڵ بدەرەوە."
+            : isAr
+              ? "تعذر إنشاء النص. يرجى المحاولة مرة أخرى."
+              : "Could not generate a passage. Please try again.";
       setParagraphs([]);
       setGenerationError(message);
       setState("setup");
     } finally {
       await refreshBillingAccount();
     }
-  }, [difficulty, paragraphCount, refreshBillingAccount, wordCount]);
+  }, [difficulty, isAr, isKu, paragraphCount, refreshBillingAccount, wordCount]);
 
   const handleBuildPractice = useCallback(() => {
     if (sourceMode === "ai") void generatePassage();
@@ -428,7 +635,6 @@ export default function ReadingPracticeScreen() {
     setEvaluation(null);
     resetScrollPosition();
 
-    const start = Math.max(24, Math.round(readingViewportHeight * 0.16));
     const expectedDurationMs =
       (Math.max(1, targetWords.length) / (TARGET_WPM[difficulty] * SPEED_RATE[speed])) * 60_000;
     const duration = Math.min(
@@ -438,31 +644,67 @@ export default function ReadingPracticeScreen() {
 
     let started = false;
 
-    if (speech.available) {
-      started = await speech.start({
-        onResult: (text, isFinal) => {
-          if (isFinal) {
-            finalTranscriptRef.current = mergeReadingTranscript(
-              finalTranscriptRef.current,
-              text,
-            );
-            transcriptRef.current = finalTranscriptRef.current;
-          } else {
-            transcriptRef.current = mergeReadingTranscript(finalTranscriptRef.current, text);
-          }
-        },
-        onEnd: () => {
+    speech.setError?.(null);
+
+    const speechOptions = {
+      continuous: true,
+      contextualStrings: [...new Set(targetWords.map((word) => word.normalized))].slice(0, 100),
+    };
+
+    const buildSpeechHandlers = () => ({
+      onResult: (text: string, isFinal: boolean) => {
+        if (isFinal) {
+          finalTranscriptRef.current = mergeReadingTranscript(
+            finalTranscriptRef.current,
+            text,
+          );
+          transcriptRef.current = finalTranscriptRef.current;
+        } else {
+          transcriptRef.current = mergeReadingTranscript(finalTranscriptRef.current, text);
+        }
+      },
+      onEnd: () => {
+        // Natural speech pauses between sentences trigger onEnd.
+        // If the learner is still reading, restart to keep listening.
+        if (stoppingRef.current || captureBackendRef.current !== "speech") return;
+        finalTranscriptRef.current = transcriptRef.current;
+        void speech.start(buildSpeechHandlers(), speechOptions);
+      },
+      onError: (code: string) => {
+        if (code === "no-speech" || code === "speech-timeout" || code === "aborted") {
+          // Natural pause; restart to continue listening
           if (!stoppingRef.current && captureBackendRef.current === "speech") {
-            void stopReading();
+            finalTranscriptRef.current = transcriptRef.current;
+            void speech.start(buildSpeechHandlers(), speechOptions);
           }
-        },
-        onError: () => {
-          if (!stoppingRef.current) void stopReading();
-        },
-      }, {
-        continuous: true,
-        contextualStrings: [...new Set(targetWords.map((word) => word.normalized))].slice(0, 100),
-      });
+          return;
+        }
+
+        // If local speech recognition fails (e.g. network error connecting to browser speech service)
+        // and no words have been captured yet, seamlessly fall back to Gemini voice capture!
+        if (!stoppingRef.current && transcriptRef.current === "" && geminiCapture.available) {
+          console.warn("Speech recognition failed, falling back to Gemini capture:", code);
+          captureBackendRef.current = null;
+          void geminiCapture.start({
+            onResult: () => {},
+            onError: (err) => console.warn("Gemini fallback recording error:", err),
+          }).then((ok) => {
+            if (ok) {
+              captureBackendRef.current = "gemini";
+              speech.setError?.(null);
+            } else {
+              void stopReading();
+            }
+          });
+          return;
+        }
+
+        if (!stoppingRef.current) void stopReading();
+      },
+    });
+
+    if (speech.available) {
+      started = await speech.start(buildSpeechHandlers(), speechOptions);
       if (started) captureBackendRef.current = "speech";
     }
 
@@ -494,8 +736,11 @@ export default function ReadingPracticeScreen() {
       void stopReading();
     }, MAX_READING_SECONDS * 1000);
 
-    scrollY.value = start;
-    scrollY.value = withTiming(-textHeight - 60, {
+    cancelAnimation(scrollY);
+    const startBottom = Math.round(readingViewportHeight * 0.80);
+    const endTop = -Math.max(textHeight, 180) - 50;
+    scrollY.value = startBottom;
+    scrollY.value = withTiming(endTop, {
       duration,
       easing: Easing.linear,
     });
@@ -528,6 +773,41 @@ export default function ReadingPracticeScreen() {
   const scrollStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: scrollY.value }],
   }));
+
+  const recordButtonAnimStyle = useAnimatedStyle(() => {
+    const translateY = isReadingAnim.value * (compact ? 16 : 20);
+    const scale = 1 - isReadingAnim.value * 0.26;
+    return {
+      transform: [{ translateY }, { scale }],
+    };
+  });
+
+  const secondaryActionsAnimStyle = useAnimatedStyle(() => {
+    const opacity = 1 - isReadingAnim.value;
+    const translateY = isReadingAnim.value * 24;
+    const maxHeight = (1 - isReadingAnim.value) * 54;
+    return {
+      opacity,
+      maxHeight,
+      transform: [{ translateY }],
+      overflow: "hidden" as const,
+    };
+  });
+
+  const hintTextAnimStyle = useAnimatedStyle(() => {
+    const opacity = 1 - isReadingAnim.value;
+    const maxHeight = (1 - isReadingAnim.value) * 36;
+    return {
+      opacity,
+      maxHeight,
+      overflow: "hidden" as const,
+    };
+  });
+
+  const topGradientStyle = useAnimatedStyle(() => {
+    const opacity = scrollY.value < 20 ? 1 : 0;
+    return { opacity };
+  });
 
   const renderPassage = () => {
     if (!evaluation) {
@@ -724,6 +1004,8 @@ export default function ReadingPracticeScreen() {
                   <View style={styles.templateGrid}>
                     {TEMPLATES[difficulty].map((template, index) => {
                       const on = selectedTemplateIndex === index;
+                      const itemCopy =
+                        TEMPLATE_COPY[template.title]?.[langKey] ?? template;
                       return (
                         <GamesCard
                           key={template.title}
@@ -736,23 +1018,18 @@ export default function ReadingPracticeScreen() {
                               GamesType.section,
                               { fontSize: 15, color: on ? theme.accentInk : theme.ink },
                             ]}
-                            languageCode={isKu ? "ku" : "en"}
+                            languageCode={locale}
                           >
-                            {isKu
-                              ? KURDISH_TEMPLATE_COPY[template.title]?.title ?? template.title
-                              : template.title}
+                            {itemCopy.title}
                           </AppText>
                           <AppText
                             style={[
                               GamesType.caption,
                               { fontSize: 12, color: theme.mutedInk, lineHeight: 16 },
                             ]}
-                            languageCode={isKu ? "ku" : "en"}
+                            languageCode={locale}
                           >
-                            {isKu
-                              ? KURDISH_TEMPLATE_COPY[template.title]?.description ??
-                                template.description
-                              : template.description}
+                            {itemCopy.description}
                           </AppText>
                         </GamesCard>
                       );
@@ -782,8 +1059,8 @@ export default function ReadingPracticeScreen() {
             {isKu
               ? `نزیکەی ${formatNumber(estimatedMinutes)} خولەک  ·  ${sourceMode === "template" ? activeTemplateCopy.title : `${formatNumber(wordCount)} وشە`}`
               : isAr
-                ? `حوالي ${estimatedMinutes} د  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} كلمة`}`
-                : `About ${estimatedMinutes} min  ·  ${sourceMode === "template" ? activeTemplate.title : `${wordCount} words`}`}
+                ? `حوالي ${formatNumber(estimatedMinutes)} دقيقة  ·  ${sourceMode === "template" ? activeTemplateCopy.title : `${formatNumber(wordCount)} كلمة`}`
+                : `About ${estimatedMinutes} min  ·  ${sourceMode === "template" ? activeTemplateCopy.title : `${wordCount} words`}`}
           </AppText>
         </GamesScreenShell>
 
@@ -814,8 +1091,8 @@ export default function ReadingPracticeScreen() {
         contentContainerStyle={[
           styles.practiceScrollContent,
           {
-            paddingTop: metrics.sectionGap,
-            paddingBottom: insets.bottom + (compact ? 158 : 184),
+            paddingTop: metrics.sectionGap + 4,
+            paddingBottom: insets.bottom + (state === "reading" ? 72 : compact ? 158 : 184),
             maxWidth: isWide ? metrics.maxWidth : "100%",
             alignSelf: isWide ? "center" : "stretch",
             width: "100%",
@@ -827,14 +1104,14 @@ export default function ReadingPracticeScreen() {
           <View style={[styles.stageStats, isRtl && styles.rowReverse]}>
             <View style={styles.stageStat}>
               <HugeiconsIcon icon={BookOpen02Icon} size={16} color={theme.mutedInk} strokeWidth={2.2} />
-              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
-                {passageStats.wordCount} words
+              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]} languageCode={locale}>
+                {formatNumber(passageStats.wordCount)} {practiceCopy.words}
               </AppText>
             </View>
             <View style={styles.stageStat}>
               <HugeiconsIcon icon={Target02Icon} size={16} color={theme.mutedInk} strokeWidth={2.2} />
-              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
-                {passageStats.sentenceCount} sentences
+              <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]} languageCode={locale}>
+                {formatNumber(passageStats.sentenceCount)} {practiceCopy.sentences}
               </AppText>
             </View>
             {/* The clock turns coral only while it is actually counting down —
@@ -859,11 +1136,12 @@ export default function ReadingPracticeScreen() {
                   GamesType.caption,
                   { fontSize: 12, color: state === "reading" ? theme.accentInk : theme.ink },
                 ]}
-                forceLatinFont
+                forceLatinFont={state === "reading"}
+                languageCode={locale}
               >
                 {state === "reading"
                   ? `${Math.floor(secondsRemaining / 60)}:${String(secondsRemaining % 60).padStart(2, "0")}`
-                  : "2:00 max"}
+                  : practiceCopy.maxTime}
               </AppText>
             </View>
           </View>
@@ -872,12 +1150,13 @@ export default function ReadingPracticeScreen() {
               GamesType.body,
               { fontSize: 13, color: theme.mutedInk, textAlign: isRtl ? "right" : "left" },
             ]}
+            languageCode={locale}
           >
             {state === "reading"
-              ? "Read continuously. Tap the mic when finished, or scoring starts automatically at 2:00."
+              ? practiceCopy.readingGuide
               : state === "results"
-                ? "Review your marked words, then retry the same passage or generate a new one."
-                : "Preview the full passage, then tap the mic to start."}
+                ? practiceCopy.resultsGuide
+                : practiceCopy.previewGuide}
           </AppText>
         </View>
 
@@ -910,11 +1189,12 @@ export default function ReadingPracticeScreen() {
 
           {state === "reading" ? (
             <>
-              <LinearGradient
-                colors={[theme.surface, withAlpha(theme.surface, 0)]}
-                style={styles.gradientTop}
-                pointerEvents="none"
-              />
+              <Animated.View style={[styles.gradientTop, topGradientStyle]} pointerEvents="none">
+                <LinearGradient
+                  colors={[theme.surface, withAlpha(theme.surface, 0)]}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Animated.View>
               <LinearGradient
                 colors={[withAlpha(theme.surface, 0), theme.surface]}
                 style={styles.gradientBottom}
@@ -942,47 +1222,74 @@ export default function ReadingPracticeScreen() {
                       GamesType.section,
                       { fontSize: 18, color: theme.ink, textAlign: isRtl ? "right" : "left" },
                     ]}
+                    languageCode={locale}
                   >
                     {evaluation.accuracyScore >= 80
-                      ? "Strong reading"
+                      ? practiceCopy.strongReading
                       : evaluation.accuracyScore >= 60
-                        ? "Good base"
-                        : "Needs another pass"}
+                        ? practiceCopy.goodBase
+                        : practiceCopy.needsPractice}
                   </AppText>
                   <AppText
-                    style={[GamesType.caption, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
-                    languageCode="en"
+                    style={[
+                      GamesType.caption,
+                      {
+                        fontSize: 12,
+                        color: theme.mutedInk,
+                        lineHeight: 17,
+                        textAlign: isRtl ? "right" : "left",
+                      },
+                    ]}
+                    languageCode={locale}
                     align="start"
                     fullWidth
-                    forceLatinFont
                   >
-                    Transcript: {evaluation.transcript || "No clear speech captured."}
+                    {practiceCopy.transcriptLabel}{" "}
+                    <AppText
+                      style={[GamesType.caption, { fontSize: 12, color: theme.ink, lineHeight: 17 }]}
+                      forceLatinFont={Boolean(evaluation.transcript)}
+                      languageCode={evaluation.transcript ? "en" : locale}
+                    >
+                      {evaluation.transcript || practiceCopy.noSpeechCaptured}
+                    </AppText>
                   </AppText>
                 </View>
               </View>
 
-              <View style={styles.metricsRow}>
-                <GamesStatTile label="Coverage" value={`${evaluation.coverageScore}%`} tone="success" />
+              <View style={[styles.metricsRow, isRtl && styles.rowReverse]}>
                 <GamesStatTile
-                  label="Correct"
+                  label={practiceCopy.coverage}
+                  value={`${evaluation.coverageScore}%`}
+                  tone="success"
+                  languageCode={locale}
+                />
+                <GamesStatTile
+                  label={practiceCopy.correct}
                   value={`${evaluation.correctWords}/${evaluation.totalWords}`}
                   tone="success"
+                  languageCode={locale}
                 />
                 <GamesStatTile
-                  label="Sentences"
+                  label={practiceCopy.sentencesLabel}
                   value={`${evaluation.correctSentences}/${evaluation.totalSentences}`}
+                  languageCode={locale}
                 />
                 <GamesStatTile
-                  label="WPM"
+                  label={practiceCopy.wpm}
                   value={`${evaluation.wpm}`}
                   tone={evaluation.fluencyScore >= 70 ? "success" : "danger"}
+                  languageCode={locale}
                 />
-                <GamesStatTile label="Time" value={`${evaluation.durationSeconds}s`} />
+                <GamesStatTile
+                  label={practiceCopy.time}
+                  value={`${evaluation.durationSeconds}${practiceCopy.secondUnit}`}
+                  languageCode={locale}
+                />
               </View>
 
               <View style={{ gap: 8 }}>
                 <GamesSectionLabel languageCode={locale}>
-                  {isKu ? "هەڵسەنگاندنی ڕستەکان" : "Sentence check"}
+                  {practiceCopy.sentenceCheck}
                 </GamesSectionLabel>
                 {evaluation.sentenceResults.map((sentence, index) => (
                   <DirectionBoundary
@@ -1041,51 +1348,59 @@ export default function ReadingPracticeScreen() {
 
               <View style={styles.feedbackGrid}>
                 <View style={styles.feedbackBlock}>
-                  <View style={styles.feedbackTitleRow}>
+                  <View style={[styles.feedbackTitleRow, isRtl && styles.rowReverse]}>
                     <HugeiconsIcon
                       icon={CheckmarkCircle02Icon}
                       size={16}
                       color={theme.successInk}
                       strokeWidth={2.4}
                     />
-                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
-                      What worked
+                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]} languageCode={locale}>
+                      {practiceCopy.whatWorked}
                     </AppText>
                   </View>
                   {(evaluation.strengths.length
                     ? evaluation.strengths
-                    : ["You completed a full reading attempt."]
+                    : [practiceCopy.fullAttemptFallback]
                   ).map((item) => (
                     <AppText
                       key={item}
-                      style={[GamesType.body, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
+                      style={[
+                        GamesType.body,
+                        { fontSize: 12, color: theme.mutedInk, lineHeight: 17, textAlign: isRtl ? "right" : "left" },
+                      ]}
+                      languageCode={locale}
                     >
-                      • {item}
+                      • {translateFeedback(item, langKey)}
                     </AppText>
                   ))}
                 </View>
 
                 <View style={styles.feedbackBlock}>
-                  <View style={styles.feedbackTitleRow}>
+                  <View style={[styles.feedbackTitleRow, isRtl && styles.rowReverse]}>
                     <HugeiconsIcon
                       icon={RefreshIcon}
                       size={16}
                       color={theme.accentInk}
                       strokeWidth={2.4}
                     />
-                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}>
-                      Next pass
+                    <AppText style={[GamesType.caption, { fontSize: 12, color: theme.ink }]} languageCode={locale}>
+                      {practiceCopy.nextPass}
                     </AppText>
                   </View>
                   {(evaluation.nextSteps.length
                     ? evaluation.nextSteps
-                    : ["Try the same passage again."]
+                    : [practiceCopy.retryFallback]
                   ).map((item) => (
                     <AppText
                       key={item}
-                      style={[GamesType.body, { fontSize: 12, color: theme.mutedInk, lineHeight: 17 }]}
+                      style={[
+                        GamesType.body,
+                        { fontSize: 12, color: theme.mutedInk, lineHeight: 17, textAlign: isRtl ? "right" : "left" },
+                      ]}
+                      languageCode={locale}
                     >
-                      • {item}
+                      • {translateFeedback(item, langKey)}
                     </AppText>
                   ))}
                 </View>
@@ -1095,34 +1410,49 @@ export default function ReadingPracticeScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.controlDock, { paddingBottom: insets.bottom + 14 }]}>
+      <View
+        style={[
+          styles.controlDock,
+          {
+            paddingBottom: insets.bottom + (state === "reading" ? 8 : 14),
+          },
+        ]}
+      >
         {/* Theme-aware fade. The old version hardcoded #F8FAFC, which painted a
             pale smear across the dark canvas. */}
-        <GamesScrollFade position="bottom" height={140} />
+        <GamesScrollFade position="bottom" height={state === "reading" ? 70 : 140} />
         {state === "processing" ? (
-          <View style={[styles.processingPill, { backgroundColor: theme.surfaceRaised, borderColor: theme.border }]}>
+          <View
+            style={[
+              styles.processingPill,
+              { backgroundColor: theme.surfaceRaised, borderColor: theme.border },
+              isRtl && styles.rowReverse,
+            ]}
+          >
             <ActivityIndicator size="small" color={theme.accent} />
-            <AppText style={[GamesType.section, { fontSize: 14, color: theme.ink }]}>
-              Scoring your reading...
+            <AppText style={[GamesType.section, { fontSize: 14, color: theme.ink }]} languageCode={locale}>
+              {practiceCopy.scoringReading}
             </AppText>
           </View>
         ) : (
           <>
-            <View style={styles.micWrap}>
-              {state !== "reading" ? (
-                <AppText
-                  style={[GamesType.caption, { fontSize: 11, color: theme.mutedInk, textAlign: "center", maxWidth: 300 }]}
-                  languageCode={locale}
-                >
-                  {speech.available
-                    ? isKu
-                      ? "پشکنینی ناوخۆیی بەخۆڕاییە"
-                      : isAr
-                        ? "التقييم المحلي مجاني"
-                        : "Local scoring is free"
-                    : `${isKu ? "پشکنینی دەنگی Gemini" : isAr ? "تقييم نطق Gemini" : "Gemini pronunciation evaluation"}: ${aiPrice(billingAccount?.entitlements, "reading_pronunciation_evaluation")} ${isKu ? "کرێدیت" : isAr ? "رصيد" : "credits"}`}
-                </AppText>
-              ) : null}
+            <Animated.View style={[styles.micWrap, recordButtonAnimStyle]}>
+              <Animated.View style={hintTextAnimStyle}>
+                {state !== "reading" ? (
+                  <AppText
+                    style={[GamesType.caption, { fontSize: 11, color: theme.mutedInk, textAlign: "center", maxWidth: 300 }]}
+                    languageCode={locale}
+                  >
+                    {speech.available
+                      ? isKu
+                        ? "پشکنینی ناوخۆیی بەخۆڕاییە"
+                        : isAr
+                          ? "التقييم المحلي مجاني"
+                          : "Local scoring is free"
+                      : `${isKu ? "پشکنینی دەنگی Gemini" : isAr ? "تقييم نطق Gemini" : "Gemini pronunciation evaluation"}: ${aiPrice(billingAccount?.entitlements, "reading_pronunciation_evaluation")} ${isKu ? "کرێدیت" : isAr ? "رصيد" : "credits"}`}
+                  </AppText>
+                ) : null}
+              </Animated.View>
               <MicCaptureOrb
                 listening={state === "reading"}
                 onPress={handleMicPress}
@@ -1137,6 +1467,7 @@ export default function ReadingPracticeScreen() {
                     borderColor:
                       state === "reading" ? theme.danger : withAlpha(theme.accent, 0.24),
                   },
+                  isRtl && styles.rowReverse,
                 ]}
               >
                 <HugeiconsIcon
@@ -1150,8 +1481,9 @@ export default function ReadingPracticeScreen() {
                     GamesType.eyebrow,
                     { fontSize: 11, letterSpacing: 0.6, color: state === "reading" ? "#FFFFFF" : theme.accentInk },
                   ]}
+                  languageCode={locale}
                 >
-                  {state === "reading" ? "Stop reading" : "Start reading"}
+                  {state === "reading" ? practiceCopy.stopReading : practiceCopy.startReading}
                 </AppText>
               </View>
               {state !== "reading" && (speech.error || geminiCapture.error) ? (
@@ -1160,13 +1492,17 @@ export default function ReadingPracticeScreen() {
                     GamesType.caption,
                     { fontSize: 11, lineHeight: 15, maxWidth: 260, textAlign: "center", color: theme.dangerInk },
                   ]}
+                  languageCode={locale}
                 >
                   {speech.error || geminiCapture.error}
                 </AppText>
               ) : null}
-            </View>
+            </Animated.View>
 
-            <View style={styles.secondaryActions}>
+            <Animated.View
+              style={[styles.secondaryActions, secondaryActionsAnimStyle, isRtl && styles.rowReverse]}
+              pointerEvents={state === "reading" ? "none" : "auto"}
+            >
               <PressableScale
                 style={[
                   styles.secondaryButton,
@@ -1181,8 +1517,9 @@ export default function ReadingPracticeScreen() {
                 <AppText
                   numberOfLines={1}
                   style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}
+                  languageCode={locale}
                 >
-                  Retry
+                  {practiceCopy.retry}
                 </AppText>
               </PressableScale>
               <PressableScale
@@ -1195,11 +1532,12 @@ export default function ReadingPracticeScreen() {
                 <AppText
                   numberOfLines={1}
                   style={[GamesType.caption, { fontSize: 12, color: theme.ink }]}
+                  languageCode={locale}
                 >
-                  New passage
+                  {practiceCopy.newPassage}
                 </AppText>
               </PressableScale>
-            </View>
+            </Animated.View>
           </>
         )}
       </View>
@@ -1293,12 +1631,12 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
     },
     passageWrap: {
       paddingHorizontal: 26,
-      paddingTop: 16,
-      paddingBottom: 100,
+      paddingTop: 32,
+      paddingBottom: 70,
     },
     previewScrollContent: {
       paddingHorizontal: 24,
-      paddingVertical: 28,
+      paddingVertical: 32,
     },
     passageText: {
       fontSize: 22,
@@ -1408,10 +1746,10 @@ function createStyles(theme: GamesTheme, metrics: GamesMetrics) {
       left: 0,
       right: 0,
       bottom: 0,
-      minHeight: 118,
+      minHeight: 80,
       alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
+      justifyContent: "flex-end",
+      gap: 6,
       paddingTop: 8,
       backgroundColor: "transparent",
     },

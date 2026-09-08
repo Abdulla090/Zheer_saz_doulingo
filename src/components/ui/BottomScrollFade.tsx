@@ -12,7 +12,7 @@ export function BottomScrollFade() {
   const rgb = isDark ? "15, 23, 42" : "255, 255, 255";
   
   return (
-    <View style={[styles.container, { pointerEvents: "none" }]}>
+    <View style={styles.container} pointerEvents="none">
       <LinearGradient
         colors={[
           `rgba(${rgb}, 0)`,

@@ -138,6 +138,13 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Desktop web only: slight zoom for enhanced presence and legibility on desktop displays */
+  @media screen and (min-width: 1024px) {
+    html {
+      zoom: 1.10;
+    }
+  }
+
   /* Remove touch-only browser chrome without hiding keyboard focus. */
   * {
     -webkit-tap-highlight-color: rgba(0,0,0,0) !important;

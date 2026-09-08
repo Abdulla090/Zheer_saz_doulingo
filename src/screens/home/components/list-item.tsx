@@ -88,7 +88,6 @@ function lessonColorTheme(item: LessonListItem): SectionTheme {
 
 function resolveButtonVariant(item: LessonListItem): SvgButtonVariant {
   if (item.status === "locked") return "gray";
-  if (item.status === "completed") return "gold";
   if (item.type === "cup") return "yellow";
   if (item.isCurrent && item.sectionTheme === "gray") return "mint";
 
@@ -146,7 +145,7 @@ export const ListItem = React.memo(
     const xOffset = isRtl ? -rawOffset : rawOffset;
     const isLocked = status === "locked";
     const isCompleted = status === "completed";
-    const isUnavailable = isCompleted;
+    const isUnavailable = false;
     const LessonNodeIcon = isCompleted
       ? CompletedCheckIcon
       : (LESSON_ICON_MAP[item.type] ?? LessonStar);
@@ -168,7 +167,7 @@ export const ListItem = React.memo(
     const isGrayInProgress = isActiveLesson && item.sectionTheme === "gray";
     const buttonColor = resolveButtonVariant(item);
     const iconColorOverride = isCompleted
-      ? "#49340E"
+      ? "#FFFFFF"
       : isGrayInProgress
         ? "white"
         : undefined;
@@ -220,14 +219,8 @@ export const ListItem = React.memo(
       });
     };
     const handleSelect = () => {
-      /*
-       * Locked and completed rows still play their press animation — the
-       * handler below is wired into every node for exactly that — but the
-       * press is feedback only: no popup, no navigation, no haptic.
-       */
-      if (isLocked || isUnavailable) return;
       hapticSelection();
-      if (onSelect && !isUnavailable) {
+      if (onSelect) {
         onSelect(item, sectionTitle, nodeRef.current, unitLessonCount);
         return;
       }
@@ -273,10 +266,8 @@ export const ListItem = React.memo(
         <View style={{ zIndex: 2, transform: [{ translateX: xOffset }] }}>
           <View
             ref={nodeRef}
-            // This is the view the popup anchors to, so it has to survive
-            // Android's layout-only view flattening — a collapsed view has no
-            // native counterpart for `measureInWindow` to report.
-            collapsable={isNormalPathNode ? false : undefined}
+            // Must not be collapsed by Android's layout flattening so measureInWindow succeeds
+            collapsable={false}
             style={{
               position: "relative",
               width: metrics.lessonButtonSize,
@@ -288,13 +279,10 @@ export const ListItem = React.memo(
             {chestKind ? (
               <IOSPressable
                 inList
-                // Not `disabled`: locked and completed chests also dim on
-                // press — feedback without action, matching the lesson nodes.
                 onPress={handleSelect}
                 accessibilityRole="button"
                 accessibilityLabel={`Unit ${unitNumber} lesson ${lessonNumber}, ${chestKind} chest${isLocked ? ", locked" : isCompleted ? ", completed" : ", current"}`}
                 accessibilityState={{
-                  disabled: isLocked || isUnavailable,
                   selected: isSelected,
                 }}
                 style={{
@@ -317,7 +305,7 @@ export const ListItem = React.memo(
                   />
                 )}
                 {isCompleted ? (
-                  <View
+                    <View
                     pointerEvents="none"
                     style={{
                       position: "absolute",
@@ -327,15 +315,15 @@ export const ListItem = React.memo(
                       borderRadius: Math.round(metrics.lessonButtonSize * 0.2),
                       alignItems: "center",
                       justifyContent: "center",
-                      backgroundColor: "#FFC72C",
+                      backgroundColor: "#58cc02",
                       borderWidth: 1.5,
-                      borderColor: "#8E5000",
+                      borderColor: "#46a302",
                     }}
                   >
                     <CompletedCheckIcon
                       width={Math.round(metrics.lessonButtonSize * 0.28)}
                       height={Math.round(metrics.lessonButtonSize * 0.28)}
-                      color="#49340E"
+                      color="#FFFFFF"
                     />
                   </View>
                 ) : null}

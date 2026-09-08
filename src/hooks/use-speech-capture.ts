@@ -47,10 +47,16 @@ export function useSpeechCapture(lang = "en-US") {
   });
 
   useSpeechRecognitionEvent("error", (event) => {
+    const errCode = event.error ?? "unknown";
+    if (errCode === "aborted") return;
+    if (errCode === "no-speech") {
+      handlersRef.current?.onError?.(errCode, "No speech detected.");
+      return;
+    }
     setListening(false);
     const message = event.message || "Speech recognition unavailable";
     setError(message);
-    handlersRef.current?.onError?.(event.error ?? "unknown", message);
+    handlersRef.current?.onError?.(errCode, message);
   });
 
   const start = useCallback(

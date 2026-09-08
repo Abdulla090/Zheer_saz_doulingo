@@ -15,6 +15,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { getUnitsForPath } from "./content-access";
+import { getBundledUnits } from "./content-registry";
 import { GameQuestion, LessonBank, LessonPathMode, VoiceQuestion } from "./types";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getWord3DImage, getWordsWithDistinctImages } from "../utils/kids-assets";
@@ -1309,8 +1310,11 @@ export function getLessonQuestions(
   lessonIndex: number,
   mode: LessonPathMode = "street",
 ): GameQuestion[] {
-  const units = getUnitsForPath(mode);
-  if (units.length === 0) return [];
+  let units = getUnitsForPath(mode);
+  if (!units || units.length === 0) {
+    units = getBundledUnits(mode);
+  }
+  if (!units || units.length === 0) return [];
 
   const unit = units[Math.abs(unitIndex) % units.length];
   if (!unit?.length) return [];

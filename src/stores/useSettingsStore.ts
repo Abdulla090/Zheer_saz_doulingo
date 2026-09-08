@@ -19,7 +19,7 @@ const STORAGE_KEY = "twino.app.settings";
 export type { PathMode } from "../constants/path-availability";
 export type AppTheme = "light" | "dark" | "system";
 
-const DEFAULT_APP_THEME: AppTheme = "dark";
+const DEFAULT_APP_THEME: AppTheme = "light";
 
 function resolveAppTheme(value: unknown): AppTheme {
   return value === "light" || value === "dark" || value === "system"
@@ -121,7 +121,7 @@ const initialSettings = (() => {
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
       pathMode: savedMode,
-      // Dark is the product default, but keep every explicit saved choice.
+      // Light is the product default, but keep every explicit saved choice.
       theme: resolveAppTheme(parsed.theme),
       nativeLang: typeof parsed.nativeLang === "string" ? parsed.nativeLang : "ku",
       targetLang: typeof parsed.targetLang === "string" ? parsed.targetLang : "en",

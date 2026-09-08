@@ -39,7 +39,7 @@ export function ScreenOpeningShell({
   variant,
   children,
   screenKey,
-  firstTimeOnly = false,
+  firstTimeOnly = true,
 }: Props) {
   const { colors } = useThemeColors();
   const effectiveKey = screenKey ?? variant;
@@ -60,9 +60,10 @@ export function ScreenOpeningShell({
     setPlayKey((k) => k + 1);
 
     if (Platform.OS === "web") {
-      runGsapStagger(contentRef.current);
+      const contentNode = contentRef.current;
+      runGsapStagger(contentNode);
       return () => {
-        resetGsapEnterBlocks(contentRef.current);
+        resetGsapEnterBlocks(contentNode);
       };
     }
 
@@ -97,11 +98,10 @@ export function ScreenOpeningShell({
             styles.content,
             Platform.OS !== "web" && shouldAnimate && nativeAnimatedStyle,
           ]}
-          renderToHardwareTextureAndroid={Platform.OS === "android"}
         >
           {children}
         </Animated.View>
-        {shouldAnimate ? (
+        {Platform.OS === "web" && shouldAnimate ? (
           <SkiaRevealOverlay variant={variant} playKey={playKey} />
         ) : null}
       </View>

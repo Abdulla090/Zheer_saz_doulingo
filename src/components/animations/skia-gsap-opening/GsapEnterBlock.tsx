@@ -68,7 +68,6 @@ function AnimatedEnterBlock({
     <Animated.View
       {...rest}
       style={[{ backgroundColor: "transparent" }, style, animStyle]}
-      renderToHardwareTextureAndroid={Platform.OS === "android"}
     >
       {children}
     </Animated.View>

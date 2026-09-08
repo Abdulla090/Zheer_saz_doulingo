@@ -1,10 +1,13 @@
 import React, { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
 import Animated, {
+  cancelAnimation,
   Easing,
   Extrapolation,
   interpolate,
   ReduceMotion,
-  useAnimatedProps,
+  useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withRepeat,
@@ -12,7 +15,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { G } from "react-native-svg";
 
 import { FX_ALLOW_DECORATION } from "../../../utils/native-perf";
 
@@ -64,18 +66,23 @@ const FALL_SPRING = {
   reduceMotion: ReduceMotion.System,
 } as const;
 
-const AnimatedGroup = Animated.createAnimatedComponent(G);
-
 export const CurrentLessonIcon = ({
   IconComponent,
   color,
   width,
   height,
 }: CurrentLessonIconProps) => {
+  const reduceMotion = useReducedMotion();
   const translateY = useSharedValue(0);
   const rotate = useSharedValue(0);
 
   useEffect(() => {
+    if (reduceMotion) {
+      translateY.value = 0;
+      rotate.value = 0;
+      return;
+    }
+
     translateY.value = withRepeat(
       withSequence(
         // Load up: ease *in*, so the crouch settles rather than snapping.
@@ -100,12 +107,14 @@ export const CurrentLessonIcon = ({
       -1,
       false,
     );
-  }, [rotate, translateY]);
 
-  const cx = width / 2;
-  const cy = height / 2;
+    return () => {
+      cancelAnimation(translateY);
+      cancelAnimation(rotate);
+    };
+  }, [reduceMotion, rotate, translateY]);
 
-  const animatedProps = useAnimatedProps(() => {
+  const animatedStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       translateY.value,
       [MOVE_UP_Y, 0, MOVE_DOWN_Y],
@@ -115,17 +124,14 @@ export const CurrentLessonIcon = ({
 
     return {
       transform: [
-        { translateX: cx },
-        { translateY: cy + translateY.value },
+        { translateY: translateY.value },
         { rotate: `${rotate.value}deg` },
         { scale },
-        { translateX: -cx },
-        { translateY: -cy },
       ],
     };
   });
 
-  const shadowAnimatedProps = useAnimatedProps(() => {
+  const shadowAnimatedStyle = useAnimatedStyle(() => {
     /*
      * Monotonic in the icon's height: the gap is widest at the apex and closes
      * to nothing at the crouch, where the icon is pressed into the surface.
@@ -145,45 +151,52 @@ export const CurrentLessonIcon = ({
 
     return {
       transform: [
-        { translateX: cx },
-        { translateY: cy + translateY.value + extraSpace },
+        { translateY: translateY.value + extraSpace },
         { rotate: `${rotate.value}deg` },
         { scale: 1 + (iconScale - 1) * SHADOW_SCALE_FOLLOW },
-        { translateX: -cx },
-        { translateY: -cy },
       ],
     };
   });
 
   return (
-    <G>
-      {/*
-       * The cast shadow doubles this icon's cost: a second copy of the artwork
-       * and a second animated group pushing transforms into native on every
-       * frame, forever, since the arc never stops. It is pure depth cueing, so
-       * older hardware gets the jumping icon without it.
-       */}
+    <View style={{ width, height, alignItems: "center", justifyContent: "center" }}>
       {FX_ALLOW_DECORATION ? (
-        <AnimatedGroup animatedProps={shadowAnimatedProps}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { alignItems: "center", justifyContent: "center" },
+            shadowAnimatedStyle,
+          ]}
+        >
           <IconComponent
+            color="rgba(0, 0, 0, 0.3)"
             fill="rgba(0, 0, 0, 0.3)"
             stroke="rgba(0, 0, 0, 0.1)"
             strokeWidth={1}
             width={width}
             height={height}
           />
-        </AnimatedGroup>
+        </Animated.View>
       ) : null}
 
-      <AnimatedGroup animatedProps={animatedProps}>
+      <Animated.View
+        renderToHardwareTextureAndroid
+        shouldRasterizeIOS
+        style={[
+          { width, height, alignItems: "center", justifyContent: "center" },
+          animatedStyle,
+        ]}
+      >
         <IconComponent
+          color={color}
           fill={color}
           stroke={color}
           strokeWidth={1}
           width={width}
           height={height}
         />
-      </AnimatedGroup>
-    </G>
+      </Animated.View>
+    </View>
   );
 };

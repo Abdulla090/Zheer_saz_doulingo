@@ -6,6 +6,7 @@ export type GeminiGatewayBody = {
   contents: unknown[];
   generationConfig?: Record<string, unknown>;
   systemInstruction?: Record<string, unknown>;
+  tools?: unknown[];
 };
 
 export type GeminiGatewayOptions = {
@@ -33,7 +34,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function generateGeminiContent<T>(
-  _model: string,
+  model: string,
   body: GeminiGatewayBody,
   options: GeminiGatewayOptions,
 ): Promise<T> {
@@ -59,6 +60,7 @@ export async function generateGeminiContent<T>(
       supabase.functions.invoke<T>("gemini-generate", {
         body: {
           ...body,
+          model,
           featureKey: options.featureKey,
           idempotencyKey:
             options.idempotencyKey ?? createAiIdempotencyKey(options.featureKey),
