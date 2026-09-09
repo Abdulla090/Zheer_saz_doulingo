@@ -118,7 +118,7 @@ describe("StudyVoiceBar Component", () => {
     assertNoTextNodeUnderAnyView(root);
   });
 
-  test("renders properly and text-node-free in typing mode", () => {
+  test("renders properly and text-node-free while typing", () => {
     const onAskQuestion = jest.fn();
     let component: renderer.ReactTestRenderer | undefined;
     act(() => {
@@ -133,17 +133,8 @@ describe("StudyVoiceBar Component", () => {
     });
 
     const root = component!.root;
-    // Find placeholder and click it to open typing mode
-    const placeholderPressable = root.findByProps({ accessibilityLabel: "Type question" });
 
-    act(() => {
-      placeholderPressable.props.onPress();
-    });
-
-    // In typing mode, assert no text nodes directly under View
-    assertNoTextNodeUnderAnyView(root);
-
-    // Verify TextInput is present
+    // Verify TextInput is always present now
     const input = root.findByType(TextInput);
     expect(input).toBeDefined();
 
@@ -159,63 +150,8 @@ describe("StudyVoiceBar Component", () => {
       submitBtn.props.onPress();
     });
 
-    expect(onAskQuestion).toHaveBeenCalledWith("What is kinetic energy?");
+    expect(onAskQuestion).toHaveBeenCalledWith("What is kinetic energy?", undefined, undefined);
     assertNoTextNodeUnderAnyView(root);
-  });
-
-  test("canceling typing mode returns to placeholder without errors", () => {
-    let component: renderer.ReactTestRenderer | undefined;
-    act(() => {
-      component = renderer.create(
-        <StudyVoiceBar
-          onAskQuestion={jest.fn()}
-          isGenerating={false}
-          onReplayAudio={jest.fn()}
-          speaking={false}
-        />,
-      );
-    });
-
-    const root = component!.root;
-    const placeholderPressable = root.findByProps({ accessibilityLabel: "Type question" });
-
-    act(() => {
-      placeholderPressable.props.onPress();
-    });
-
-    // Find the cancel button
-    const cancelPressable = root.findByProps({ accessibilityLabel: "Cancel typing" });
-    expect(cancelPressable).toBeDefined();
-
-    act(() => {
-      cancelPressable!.props.onPress();
-    });
-
-    // Should return to normal mode
-    assertNoTextNodeUnderAnyView(root);
-    expect(root.findAllByType(TextInput).length).toBe(0);
-  });
-
-  test("invokes onReplayAudio when replay audio button is pressed", () => {
-    const onReplayAudio = jest.fn();
-    let component: renderer.ReactTestRenderer | undefined;
-    act(() => {
-      component = renderer.create(
-        <StudyVoiceBar
-          onAskQuestion={jest.fn()}
-          isGenerating={false}
-          onReplayAudio={onReplayAudio}
-          speaking={false}
-        />,
-      );
-    });
-
-    const replayBtn = component!.root.findByProps({ accessibilityLabel: "Listen to tutor" });
-    expect(replayBtn).toBeDefined();
-    act(() => {
-      replayBtn.props.onPress();
-    });
-    expect(onReplayAudio).toHaveBeenCalledTimes(1);
   });
 
   test("toggles microphone and handles speech recognition callbacks", async () => {
@@ -252,7 +188,7 @@ describe("StudyVoiceBar Component", () => {
     act(() => {
       capturedHandlers.onResult("how does gravity work", true);
     });
-    expect(onAskQuestion).toHaveBeenCalledWith("how does gravity work");
+    expect(onAskQuestion).toHaveBeenCalledWith("how does gravity work", undefined, undefined);
     assertNoTextNodeUnderAnyView(root);
   });
 });

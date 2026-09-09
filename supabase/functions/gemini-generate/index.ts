@@ -86,20 +86,27 @@ function sanitizeContents(value: unknown) {
         return { text: part.text };
       }
 
-      const inline = part.inline_data;
+      const inline = part.inline_data || (part as Record<string, unknown>).inlineData;
       if (!inline || typeof inline !== "object") throw new Error("Unsupported part");
       const data = (inline as Record<string, unknown>).data;
-      const mimeType = (inline as Record<string, unknown>).mime_type;
+      const mimeType = String(
+        (inline as Record<string, unknown>).mime_type ||
+          (inline as Record<string, unknown>).mimeType ||
+          "",
+      );
+      const isAudio = mimeType.startsWith("audio/");
+      const isImage = mimeType.startsWith("image/");
       if (
         typeof data !== "string" ||
-        typeof mimeType !== "string" ||
-        !mimeType.startsWith("audio/") ||
+        (!isAudio && !isImage) ||
         !/^[A-Za-z0-9+/=]+$/.test(data)
       ) {
-        throw new Error("Invalid audio part");
+        throw new Error("Invalid media part");
       }
-      audioParts += 1;
-      if (audioParts > 1) throw new Error("Only one audio part is allowed");
+      if (isAudio) {
+        audioParts += 1;
+        if (audioParts > 1) throw new Error("Only one audio part is allowed");
+      }
       return { inline_data: { mime_type: mimeType.slice(0, 64), data } };
     });
 
@@ -182,7 +189,11 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
   }
 
   const containsAudio = contents.some((content) =>
-    content.parts.some((part) => "inline_data" in part)
+    content.parts.some(
+      (part) =>
+        "inline_data" in part &&
+        part.inline_data.mime_type.startsWith("audio/"),
+    ),
   );
   const contentTextChars = contents.reduce(
     (total, content) => total + content.parts.reduce(

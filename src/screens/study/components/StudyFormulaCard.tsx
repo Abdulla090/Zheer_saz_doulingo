@@ -3,12 +3,146 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import Animated, { FadeIn, SlideInDown } from "react-native-reanimated";
 
 import { PressableScale } from "../../../components/animations";
 import { AppText } from "../../../components/ui/AppText";
 import { useI18n } from "../../../hooks/useI18n";
 import { useGamesTheme } from "../../games/games-theme";
 import type { StudyQuizQuestion, StudyStep } from "../../../services/study-tutor-service";
+
+/**
+ * Formats raw LaTeX mathematical strings into clean, readable Unicode math expressions.
+ * Transforms commands like \implies, \frac{a}{b}, \lim, \cdot, exponents, and greek letters.
+ */
+export function formatMathFormula(raw?: string): string {
+  if (!raw) return "";
+
+  let s = raw.trim();
+
+  // Remove outer math delimiters if present ($...$ or \[...\])
+  s = s.replace(/^\$\$?/, "").replace(/\$\$?$/, "");
+  s = s.replace(/^\\\[/, "").replace(/\\\]$/, "");
+  s = s.replace(/^\\\(/, "").replace(/\\\)$/, "");
+
+  // Replace fractions iteratively: \frac{num}{den} -> (num) / (den) or num/den
+  let prev = "";
+  while (prev !== s && s.includes("\\frac")) {
+    prev = s;
+    s = s.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, (_m, num, den) => {
+      const cleanNum = num.trim();
+      const cleanDen = den.trim();
+      const numFormatted = /^[a-zA-Z0-9]+$/.test(cleanNum) ? cleanNum : `(${cleanNum})`;
+      const denFormatted = /^[a-zA-Z0-9]+$/.test(cleanDen) ? cleanDen : `(${cleanDen})`;
+      return `${numFormatted} / ${denFormatted}`;
+    });
+  }
+
+  // Common math symbols
+  s = s.replace(/\\implies/g, " ⟹ ");
+  s = s.replace(/\\impliedby/g, " ⟸ ");
+  s = s.replace(/\\iff/g, " ⟺ ");
+  s = s.replace(/\\to(?![a-zA-Z])|\\rightarrow(?![a-zA-Z])/g, " → ");
+  s = s.replace(/\\leftarrow(?![a-zA-Z])/g, " ← ");
+  s = s.replace(/\\lim_\{([^}]+)\}/g, "lim($1) ");
+  s = s.replace(/\\lim(?![a-zA-Z])/g, "lim ");
+  s = s.replace(/\\sqrt\s*\{([^}]+)\}/g, "√($1)");
+  s = s.replace(/\\cdot(?![a-zA-Z])/g, " · ");
+  s = s.replace(/\\times(?![a-zA-Z])/g, " × ");
+  s = s.replace(/\\div(?![a-zA-Z])/g, " ÷ ");
+  s = s.replace(/\\pm(?![a-zA-Z])/g, " ± ");
+  s = s.replace(/\\mp(?![a-zA-Z])/g, " ∓ ");
+  s = s.replace(/\\(?:neq|ne)(?![a-zA-Z])/g, " ≠ ");
+  s = s.replace(/\\(?:leq|le)(?![a-zA-Z])/g, " ≤ ");
+  s = s.replace(/\\(?:geq|ge)(?![a-zA-Z])/g, " ≥ ");
+  s = s.replace(/\\approx(?![a-zA-Z])/g, " ≈ ");
+  s = s.replace(/\\equiv(?![a-zA-Z])/g, " ≡ ");
+  s = s.replace(/\\propto(?![a-zA-Z])/g, " ∝ ");
+  s = s.replace(/\\degree(?![a-zA-Z])|\^\\circ/g, "°");
+  s = s.replace(/\\infty(?![a-zA-Z])/g, "∞");
+  s = s.replace(/\\partial(?![a-zA-Z])/g, "∂");
+  s = s.replace(/\\nabla(?![a-zA-Z])/g, "∇");
+  s = s.replace(/\\sum(?![a-zA-Z])/g, "∑");
+  s = s.replace(/\\int(?![a-zA-Z])/g, "∫");
+  s = s.replace(/\\in(?![a-zA-Z])/g, " ∈ ");
+  s = s.replace(/\\notin(?![a-zA-Z])/g, " ∉ ");
+
+  // Greek letters
+  s = s.replace(/\\alpha(?![a-zA-Z])/g, "α");
+  s = s.replace(/\\beta(?![a-zA-Z])/g, "β");
+  s = s.replace(/\\gamma(?![a-zA-Z])/g, "γ");
+  s = s.replace(/\\delta(?![a-zA-Z])/g, "δ");
+  s = s.replace(/\\epsilon(?![a-zA-Z])/g, "ε");
+  s = s.replace(/\\zeta(?![a-zA-Z])/g, "ζ");
+  s = s.replace(/\\eta(?![a-zA-Z])/g, "η");
+  s = s.replace(/\\theta(?![a-zA-Z])/g, "θ");
+  s = s.replace(/\\lambda(?![a-zA-Z])/g, "λ");
+  s = s.replace(/\\mu(?![a-zA-Z])/g, "μ");
+  s = s.replace(/\\pi(?![a-zA-Z])/g, "π");
+  s = s.replace(/\\rho(?![a-zA-Z])/g, "ρ");
+  s = s.replace(/\\sigma(?![a-zA-Z])/g, "σ");
+  s = s.replace(/\\tau(?![a-zA-Z])/g, "τ");
+  s = s.replace(/\\phi(?![a-zA-Z])/g, "φ");
+  s = s.replace(/\\psi(?![a-zA-Z])/g, "ψ");
+  s = s.replace(/\\omega(?![a-zA-Z])/g, "ω");
+  s = s.replace(/\\Delta(?![a-zA-Z])/g, "Δ");
+  s = s.replace(/\\Omega(?![a-zA-Z])/g, "Ω");
+
+  // LaTeX spacing and styling commands
+  s = s.replace(/\\quad\b/g, "   ");
+  s = s.replace(/\\qquad\b/g, "     ");
+  s = s.replace(/\\text\s*\{([^}]+)\}/g, "$1");
+  s = s.replace(/\\mathrm\s*\{([^}]+)\}/g, "$1");
+  s = s.replace(/\\mathbf\s*\{([^}]+)\}/g, "$1");
+  s = s.replace(/\\left\s*([(\[{|])/g, "$1");
+  s = s.replace(/\\right\s*([)\]}|])/g, "$1");
+
+  // Exponents superscripts
+  const superscripts: Record<string, string> = {
+    "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+    "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+    "+": "⁺", "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾",
+    "a": "ᵃ", "b": "ᵇ", "c": "ᶜ", "d": "ᵈ", "e": "ᵉ",
+    "f": "ᶠ", "g": "ᵍ", "h": "ʰ", "i": "ⁱ", "j": "ʲ",
+    "k": "ᵏ", "l": "ˡ", "m": "ᵐ", "n": "ⁿ", "o": "ᵒ",
+    "p": "ᵖ", "r": "ʳ", "s": "ˢ", "t": "ᵗ", "u": "ᵘ",
+    "v": "ᵛ", "w": "ʷ", "x": "ˣ", "y": "ʸ", "z": "ᶻ",
+  };
+  s = s.replace(/\^([0-9a-z+-])/g, (_m, ch) => superscripts[ch] || `^${ch}`);
+  s = s.replace(/\^\{([^{}]+)\}/g, (_m, exp) => {
+    const chars = exp.split("");
+    if (chars.every((c: string) => superscripts[c])) {
+      return chars.map((c: string) => superscripts[c]).join("");
+    }
+    return `^(${exp})`;
+  });
+
+  // Subscripts
+  const subscripts: Record<string, string> = {
+    "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄",
+    "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉",
+    "+": "₊", "-": "₋", "=": "₌", "(": "₍", ")": "₎",
+    "a": "ₐ", "e": "ₑ", "h": "ₕ", "i": "ᵢ", "j": "ⱼ",
+    "k": "ₖ", "l": "ₗ", "m": "ₘ", "n": "ₙ", "o": "ₒ",
+    "p": "ₚ", "r": "ᵣ", "s": "ₛ", "t": "ₜ", "u": "ᵤ",
+    "v": "ᵥ", "x": "ₓ",
+  };
+  s = s.replace(/_([0-9aehijklmnoprstuvx+-])/g, (_m, ch) => subscripts[ch] || `_${ch}`);
+  s = s.replace(/_\{([^{}]+)\}/g, (_m, sub) => {
+    const chars = sub.split("");
+    if (chars.every((c: string) => subscripts[c])) {
+      return chars.map((c: string) => subscripts[c]).join("");
+    }
+    return `_(${sub})`;
+  });
+
+  // Clean remaining braces and multiple spaces
+  s = s.replace(/\{([a-zA-Z0-9_]+)\}/g, "$1");
+  s = s.replace(/\\/g, ""); // strip any remaining orphan backslashes
+  s = s.replace(/\s{2,}/g, " ").trim();
+
+  return s;
+}
 
 export function StudyFormulaCard({
   formula,
@@ -17,13 +151,17 @@ export function StudyFormulaCard({
   quickQuiz,
   onSpeakStep,
   speakingStepIndex,
+  visibleStepCount,
+  cleanMathMode = false,
 }: {
   formula: string;
   summary: string;
   steps: StudyStep[];
-  quickQuiz: StudyQuizQuestion;
+  quickQuiz?: StudyQuizQuestion;
   onSpeakStep: (text: string, index: number) => void;
   speakingStepIndex: number | null;
+  visibleStepCount?: number;
+  cleanMathMode?: boolean;
 }) {
   const theme = useGamesTheme();
   const isDark = theme.isDark;
@@ -38,12 +176,103 @@ export function StudyFormulaCard({
     setSelectedQuizOption(index);
     setShowQuizResult(true);
 
-    if (index === quickQuiz.correctIndex) {
+    if (quickQuiz && index === quickQuiz.correctIndex) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
   };
+
+  const formattedFormula = formatMathFormula(formula);
+  const displayedSteps =
+    typeof visibleStepCount === "number" ? steps.slice(0, visibleStepCount) : steps;
+
+  // Clean Math Mode: "NO CARD NO NOTHING JUST STEP X AND THE LATEX MATH STEP IN THERE IN LARGE APEAR"
+  if (cleanMathMode) {
+    if (steps.length === 0) return null;
+
+    return (
+      <View style={styles.cleanMathContainer}>
+        {displayedSteps.map((step, idx) => {
+          const isPlaying = speakingStepIndex === idx;
+          const mathExpression = step.latex || step.formulaSnippet || "";
+          const formattedMath = formatMathFormula(mathExpression) || mathExpression;
+          const displayContent = formattedMath || step.explanation || step.title;
+
+          return (
+            <Animated.View
+              key={`pure-clean-step-${step.stepNumber}-${idx}`}
+              entering={
+                typeof SlideInDown !== "undefined" && typeof SlideInDown.springify === "function"
+                  ? SlideInDown.springify()
+                  : typeof FadeIn !== "undefined"
+                    ? FadeIn
+                    : undefined
+              }
+              style={styles.pureStepWrapper}
+            >
+              <PressableScale
+                onPress={() =>
+                  onSpeakStep(
+                    step.explanation
+                      ? `${step.title || 'Step ' + step.stepNumber}. ${step.explanation}`
+                      : displayContent,
+                    idx,
+                  )
+                }
+                style={styles.pureStepTouchable}
+                accessibilityLabel={`Step ${step.stepNumber}`}
+              >
+                {/* STEP X Micro Label */}
+                <View style={styles.pureStepHeaderRow}>
+                  <AppText
+                    style={[
+                      styles.pureStepNumberText,
+                      { color: isPlaying ? "#2563EB" : isDark ? "#94A3B8" : "#64748B" },
+                    ]}
+                  >
+                    {isKu
+                      ? `هەنگاوی ${step.stepNumber}`
+                      : isAr
+                        ? `الخطوة ${step.stepNumber}`
+                        : `STEP ${step.stepNumber}`}
+                  </AppText>
+                  {isPlaying ? (
+                    <View style={styles.pureSpeakingIndicator}>
+                      <View style={styles.pureSpeakingDot} />
+                      <AppText style={styles.pureSpeakingLabel}>Speaking</AppText>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Large LaTeX Math Formula: Bold, High-Contrast, Spacious */}
+                {Boolean(displayContent) ? (
+                  <AppText
+                    style={[
+                      styles.pureLargeMathText,
+                      {
+                        color: isPlaying
+                          ? isDark
+                            ? "#93C5FD"
+                            : "#1D4ED8"
+                          : isDark
+                            ? "#60A5FA"
+                            : "#2563EB",
+                      },
+                    ]}
+                    forceLatinFont
+                    latinRole="bold"
+                  >
+                    {displayContent}
+                  </AppText>
+                ) : null}
+              </PressableScale>
+            </Animated.View>
+          );
+        })}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -53,8 +282,8 @@ export function StudyFormulaCard({
           style={[
             styles.formulaCard,
             {
-              backgroundColor: isDark ? "#1E293B" : "#F8FAFC",
-              borderColor: isDark ? "#334155" : "#E2E8F0",
+              backgroundColor: isDark ? "rgba(30, 41, 59, 0.7)" : "rgba(248, 250, 252, 0.9)",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
             },
           ]}
         >
@@ -68,7 +297,7 @@ export function StudyFormulaCard({
             forceLatinFont
             latinRole="bold"
           >
-            {formula}
+            {formattedFormula || formula}
           </AppText>
           {Boolean(summary) ? (
             <AppText
@@ -82,100 +311,145 @@ export function StudyFormulaCard({
         </View>
       ) : null}
 
-      {/* Step-by-Step Breakdown */}
-      <View style={styles.stepsContainer}>
-        <AppText
-          style={[styles.stepsHeaderTitle, { color: theme.ink }]}
-          languageCode={locale}
-          forceKurdishFont={isRtl}
-        >
-          {isKu ? "هەنگاو بە هەنگاو شیکارکردن" : isAr ? "خطوة بخطوة بالتفصيل" : "Step-by-Step Breakdown"}
-        </AppText>
-
-        {steps.map((step, idx) => {
-          const isPlaying = speakingStepIndex === idx;
-
-          return (
-            <View
-              key={`step-${step.stepNumber}-${idx}`}
-              style={[
-                styles.stepRow,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: isPlaying ? "#2563EB" : theme.border,
-                },
-              ]}
+      {/* Step-by-Step LaTeX Derivation: Clean, Minimal, Card-less */}
+      {steps.length > 0 ? (
+        <View style={styles.stepsContainer}>
+          <View style={styles.stepsHeaderRow}>
+            <AppText
+              style={[styles.stepsHeaderTitle, { color: theme.ink }]}
+              languageCode={locale}
+              forceKurdishFont={isRtl}
             >
-              <View style={styles.stepHeaderRow}>
-                <View style={styles.stepNumberBadge}>
-                  <AppText style={styles.stepNumberText}>{step.stepNumber}</AppText>
-                </View>
+              {isKu
+                ? "هەنگاو بە هەنگاو شیکارکردن"
+                : isAr
+                  ? "خطوة بخطوة بالتفصيل"
+                  : "Step-by-Step Derivation"}
+            </AppText>
 
-                <AppText
-                  style={[styles.stepTitleText, { color: theme.ink }]}
-                  languageCode={locale}
-                  forceKurdishFont={isRtl}
-                  numberOfLines={1}
-                >
-                  {step.title}
+            {typeof visibleStepCount === "number" && visibleStepCount < steps.length ? (
+              <View style={styles.stepProgressPill}>
+                <AppText style={styles.stepProgressText}>
+                  {`${visibleStepCount} / ${steps.length}`}
                 </AppText>
-
-                <PressableScale
-                  onPress={() => onSpeakStep(`${step.title}. ${step.explanation}`, idx)}
-                  style={[
-                    styles.audioButton,
-                    {
-                      backgroundColor: isPlaying
-                        ? "#2563EB"
-                        : isDark
-                          ? "#334155"
-                          : "#E2E8F0",
-                    },
-                  ]}
-                  accessibilityLabel="Read step aloud"
-                >
-                  <HugeiconsIcon
-                    icon={VolumeHighIcon}
-                    size={16}
-                    color={isPlaying ? "#FFFFFF" : isDark ? "#94A3B8" : "#64748B"}
-                  />
-                </PressableScale>
               </View>
+            ) : null}
+          </View>
 
-              <AppText
-                style={[styles.stepExplanationText, { color: theme.mutedInk }]}
-                languageCode={locale}
-                forceKurdishFont={isRtl}
+          {displayedSteps.map((step, idx) => {
+            const isPlaying = speakingStepIndex === idx;
+            const mathExpression = step.latex || step.formulaSnippet || "";
+            const formattedMath = formatMathFormula(mathExpression) || mathExpression;
+
+            return (
+              <View
+                key={`clean-step-${step.stepNumber}-${idx}`}
+                style={[
+                  styles.cleanStepItem,
+                  {
+                    borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+                  },
+                ]}
               >
-                {step.explanation}
-              </AppText>
-
-              {Boolean(step.formulaSnippet) ? (
-                <View
-                  style={[
-                    styles.snippetBox,
-                    {
-                      backgroundColor: isDark ? "rgba(37, 99, 235, 0.12)" : "rgba(37, 99, 235, 0.08)",
-                      borderColor: "rgba(37, 99, 235, 0.25)",
-                    },
-                  ]}
-                >
-                  <AppText
-                    style={[styles.snippetText, { color: isDark ? "#93C5FD" : "#1D4ED8" }]}
-                    forceLatinFont
-                    latinRole="bold"
+                {/* Step Header: Step X + Title + Speaking Indicator + Speaker */}
+                <View style={styles.stepHeaderRow}>
+                  <View
+                    style={[
+                      styles.stepNumberBadge,
+                      {
+                        backgroundColor: isPlaying
+                          ? "#2563EB"
+                          : isDark
+                            ? "#334155"
+                            : "#E2E8F0",
+                      },
+                    ]}
                   >
-                    {step.formulaSnippet}
+                    <AppText
+                      style={[
+                        styles.stepNumberText,
+                        { color: isPlaying ? "#FFFFFF" : isDark ? "#F8FAFC" : "#334155" },
+                      ]}
+                    >
+                      {step.stepNumber}
+                    </AppText>
+                  </View>
+
+                  <AppText
+                    style={[
+                      styles.stepTitleText,
+                      { color: isPlaying ? "#2563EB" : theme.ink },
+                    ]}
+                    languageCode={locale}
+                    forceKurdishFont={isRtl}
+                    numberOfLines={1}
+                  >
+                    {step.title}
                   </AppText>
+
+                  {isPlaying ? (
+                    <View style={styles.speakingWavePill}>
+                      <View style={styles.speakingWaveDot} />
+                      <AppText style={styles.speakingWaveText}>Speaking</AppText>
+                    </View>
+                  ) : null}
+
+                  <PressableScale
+                    onPress={() => onSpeakStep(`${step.title}. ${step.explanation}`, idx)}
+                    style={[
+                      styles.audioButton,
+                      {
+                        backgroundColor: isPlaying
+                          ? "#2563EB"
+                          : isDark
+                            ? "#334155"
+                            : "#E2E8F0",
+                      },
+                    ]}
+                    accessibilityLabel="Read step aloud"
+                  >
+                    <HugeiconsIcon
+                      icon={VolumeHighIcon}
+                      size={16}
+                      color={isPlaying ? "#FFFFFF" : isDark ? "#94A3B8" : "#64748B"}
+                    />
+                  </PressableScale>
                 </View>
-              ) : null}
-            </View>
-          );
-        })}
-      </View>
+
+                {/* Large LaTeX Math Display (clean, bold, no box) */}
+                {Boolean(formattedMath) ? (
+                  <View style={styles.largeMathWrapper}>
+                    <AppText
+                      style={[
+                        styles.largeMathText,
+                        { color: isDark ? "#60A5FA" : "#2563EB" },
+                      ]}
+                      forceLatinFont
+                      latinRole="bold"
+                    >
+                      {formattedMath}
+                    </AppText>
+                  </View>
+                ) : null}
+
+                {/* Intuitive Step Explanation */}
+                {Boolean(step.explanation) ? (
+                  <AppText
+                    style={[styles.stepExplanationText, { color: theme.mutedInk }]}
+                    languageCode={locale}
+                    forceKurdishFont={isRtl}
+                  >
+                    {step.explanation}
+                  </AppText>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
 
       {/* Concept Understanding Check Quiz */}
-      {Boolean(quickQuiz?.question) ? (
+      {quickQuiz && quickQuiz.question ? (
         <View
           style={[
             styles.quizCard,
@@ -242,7 +516,10 @@ export function StudyFormulaCard({
                     style={[
                       styles.optionBullet,
                       {
-                        borderColor: isSelected || (showQuizResult && isCorrect) ? optionBorder : theme.faintInk,
+                        borderColor:
+                          isSelected || (showQuizResult && isCorrect)
+                            ? optionBorder
+                            : theme.faintInk,
                         backgroundColor: showQuizResult && isCorrect ? "#10B981" : "transparent",
                       },
                     ]}
@@ -309,12 +586,12 @@ export function StudyFormulaCard({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    gap: 16,
+    gap: 20,
   },
   formulaCard: {
     borderRadius: 18,
     borderWidth: 1,
-    padding: 16,
+    padding: 18,
     alignItems: "center",
   },
   formulaBadgeRow: {
@@ -333,31 +610,49 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   formulaText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     letterSpacing: 0.5,
     textAlign: "center",
   },
   summaryText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: "center",
-    marginTop: 6,
+    marginTop: 8,
   },
   stepsContainer: {
-    gap: 10,
+    width: "100%",
+    gap: 4,
+  },
+  stepsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
   stepsHeaderTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "800",
     letterSpacing: -0.3,
-    marginBottom: 2,
   },
-  stepRow: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
+  stepProgressPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(37, 99, 235, 0.1)",
+  },
+  stepProgressText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
+  cleanStepItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
+    backgroundColor: "transparent",
   },
   stepHeaderRow: {
     flexDirection: "row",
@@ -365,22 +660,40 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stepNumberBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#2563EB",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   stepNumberText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#FFFFFF",
   },
   stepTitleText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
+  },
+  speakingWavePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(37, 99, 235, 0.12)",
+  },
+  speakingWaveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#2563EB",
+  },
+  speakingWaveText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#2563EB",
   },
   audioButton: {
     width: 32,
@@ -389,26 +702,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  largeMathWrapper: {
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  largeMathText: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    lineHeight: 38,
+  },
   stepExplanationText: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  snippetBox: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 2,
-  },
-  snippetText: {
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 21,
   },
   quizCard: {
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
     gap: 12,
+    marginTop: 8,
   },
   quizHeaderRow: {
     flexDirection: "row",
@@ -467,5 +780,59 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontWeight: "600",
+  },
+  cleanMathContainer: {
+    width: "100%",
+    gap: 20,
+    marginVertical: 12,
+  },
+  pureStepWrapper: {
+    width: "100%",
+    paddingVertical: 10,
+  },
+  pureStepTouchable: {
+    width: "100%",
+    gap: 8,
+  },
+  pureStepHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  pureStepNumberText: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  pureSpeakingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(37, 99, 235, 0.12)",
+  },
+  pureSpeakingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#2563EB",
+  },
+  pureSpeakingLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
+  pureLargeMathText: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    lineHeight: 44,
+  },
+  pureStepExplanation: {
+    fontSize: 14,
+    lineHeight: 22,
   },
 });

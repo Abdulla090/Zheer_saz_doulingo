@@ -31,13 +31,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   },
 
   replayOnboarding: async () => {
-    // Navigate to onboarding first, then flip state after a tick so the
-    // old screen tree unmounts gracefully (prevents Android crash).
+    appStorage.setItemSync(STORAGE_KEY, "false");
+    set({ completed: false });
     router.replace("/onboarding" as any);
-    setTimeout(() => {
-      appStorage.setItemSync(STORAGE_KEY, "false");
-      set({ completed: false });
-    }, 50);
   },
 
   resetOnboarding: async () => {

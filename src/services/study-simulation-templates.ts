@@ -1401,3 +1401,197 @@ export function generateChessTacticsHtml(config: {
     `,
   });
 }
+
+/**
+ * 7. Quantum Physics: Double-Slit Wave-Particle Duality Simulation
+ */
+export function generateQuantumPhysicsHtml(config?: {
+  slitDistance?: number;
+  wavelength?: number;
+  intensity?: number;
+}, isDark = false): string {
+  const defaultSlitDist = config?.slitDistance ?? 40;
+  const defaultWavelength = config?.wavelength ?? 20;
+
+  return wrapSimulationHtml({
+    title: "Quantum Physics: Double-Slit Interference",
+    isDark,
+    bodyHtml: `
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:4px;">
+        <div id="quantumBadge" class="sim-badge">QUANTUM WAVE DUALITY</div>
+        <div class="sim-badge" style="color:var(--accent); font-weight:800;" id="particleCountBadge">Photons: 0</div>
+      </div>
+      <canvas id="quantumCanvas" style="width:100%; height:190px; flex:1;"></canvas>
+      <div style="font-size:11px; color:var(--muted); text-align:center; margin:3px 0;">
+        Adjust sliders to observe interference fringe spacing Δy = (λL)/d and quantum wavefunction collapse.
+      </div>
+      <div class="sim-controls">
+        <label style="font-size:11px; font-weight:600; display:flex; align-items:center; gap:4px;">
+          Slits (d): <input type="range" id="slitRange" min="20" max="70" value="${defaultSlitDist}" style="width:65px;" />
+        </label>
+        <label style="font-size:11px; font-weight:600; display:flex; align-items:center; gap:4px;">
+          Wave (λ): <input type="range" id="waveRange" min="10" max="35" value="${defaultWavelength}" style="width:65px;" />
+        </label>
+        <button class="sim-btn accent" id="modeBtn" onclick="toggleMode()">Wave Mode</button>
+        <button class="sim-btn" onclick="resetSim()">Reset Screen</button>
+      </div>
+    `,
+    scriptJs: `
+      var canvas = document.getElementById('quantumCanvas');
+      var ctx = canvas.getContext('2d');
+      var slitInput = document.getElementById('slitRange');
+      var waveInput = document.getElementById('waveRange');
+      var modeBtn = document.getElementById('modeBtn');
+      var countBadge = document.getElementById('particleCountBadge');
+
+      var slitDist = ${defaultSlitDist};
+      var lambda = ${defaultWavelength};
+      var isParticleMode = false;
+      var hits = [];
+      var time = 0;
+
+      function resize() {
+        var dpr = window.devicePixelRatio || 1;
+        var rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      slitInput.addEventListener('input', function(e) {
+        slitDist = parseFloat(e.target.value);
+        if (window.sendToTwino) window.sendToTwino({ type: 'haptic', style: 'selection' });
+      });
+
+      waveInput.addEventListener('input', function(e) {
+        lambda = parseFloat(e.target.value);
+        if (window.sendToTwino) window.sendToTwino({ type: 'haptic', style: 'selection' });
+      });
+
+      window.toggleMode = function() {
+        isParticleMode = !isParticleMode;
+        modeBtn.innerText = isParticleMode ? 'Particle Mode' : 'Wave Mode';
+        if (window.sendToTwino) window.sendToTwino({ type: 'haptic', style: 'medium' });
+      };
+
+      window.resetSim = function() {
+        hits = [];
+        countBadge.innerText = 'Photons: 0';
+        if (window.sendToTwino) window.sendToTwino({ type: 'haptic', style: 'light' });
+      };
+      window.resetSimulation = window.resetSim;
+
+      function probability(y, L, d, wl) {
+        var angle = (Math.PI * d * y) / (wl * L);
+        var envelope = Math.exp(-(y * y) / (2 * 50 * 50));
+        return Math.cos(angle) * Math.cos(angle) * envelope;
+      }
+
+      function sampleHit(L, d, wl, maxH) {
+        for (var attempt = 0; attempt < 50; attempt++) {
+          var testY = (Math.random() - 0.5) * maxH * 0.85;
+          var prob = probability(testY, L, d, wl);
+          if (Math.random() < prob) {
+            return testY;
+          }
+        }
+        return 0;
+      }
+
+      function loop() {
+        var rect = canvas.getBoundingClientRect();
+        var w = rect.width;
+        var h = rect.height;
+        if (!w || !h) {
+          requestAnimationFrame(loop);
+          return;
+        }
+
+        ctx.clearRect(0, 0, w, h);
+        time += 0.08;
+
+        var sourceX = 25;
+        var slitX = w * 0.38;
+        var screenX = w - 45;
+        var cy = h / 2;
+        var slit1Y = cy - slitDist / 2;
+        var slit2Y = cy + slitDist / 2;
+        var L = screenX - slitX;
+
+        // 1. Slit Barrier
+        ctx.fillStyle = '#64748B';
+        var wallThickness = 5;
+        var slitH = 8;
+        ctx.fillRect(slitX - wallThickness/2, 0, wallThickness, slit1Y - slitH/2);
+        ctx.fillRect(slitX - wallThickness/2, slit1Y + slitH/2, wallThickness, slit2Y - slitH/2 - (slit1Y + slitH/2));
+        ctx.fillRect(slitX - wallThickness/2, slit2Y + slitH/2, wallThickness, h - (slit2Y + slitH/2));
+
+        // 2. Waves or Particles
+        if (!isParticleMode) {
+          ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+          ctx.lineWidth = 1.5;
+          for (var r = (time * 12) % lambda; r < slitX - sourceX; r += lambda) {
+            ctx.beginPath();
+            ctx.arc(sourceX, cy, r, -Math.PI/3, Math.PI/3);
+            ctx.stroke();
+          }
+
+          var maxR = Math.sqrt(L * L + h * h);
+          var wavePhase = (time * 15) % lambda;
+
+          for (var r1 = wavePhase; r1 < maxR && r1 < screenX - slitX + 40; r1 += lambda) {
+            ctx.strokeStyle = 'rgba(99, 102, 241, 0.35)';
+            ctx.beginPath();
+            ctx.arc(slitX, slit1Y, r1, -Math.PI/2.5, Math.PI/2.5);
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(168, 85, 247, 0.35)';
+            ctx.beginPath();
+            ctx.arc(slitX, slit2Y, r1, -Math.PI/2.5, Math.PI/2.5);
+            ctx.stroke();
+          }
+        } else {
+          if (hits.length < 500 && Math.random() < 0.7) {
+            var hitOffset = sampleHit(L, slitDist, lambda, h);
+            hits.push(cy + hitOffset);
+            countBadge.innerText = 'Photons: ' + hits.length;
+          }
+
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.75)';
+          for (var i = 0; i < hits.length; i++) {
+            ctx.beginPath();
+            ctx.arc(screenX + 10, hits[i], 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // 3. Screen and |Psi|^2 probability density curve
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(screenX, 8, 3, h - 16);
+
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        var curveMaxW = 32;
+        for (var py = 8; py < h - 8; py += 2) {
+          var yOff = py - cy;
+          var p = probability(yOff, L, slitDist, lambda);
+          var px = screenX + p * curveMaxW;
+          if (py === 8) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#2563EB';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('|Ψ|²', screenX + 6, 16);
+
+        requestAnimationFrame(loop);
+      }
+      loop();
+    `,
+  });
+}
+

@@ -338,7 +338,7 @@ export function StudyInteractiveCanvas({
             key={`web-frame-${reloadKey}-${widgetState.title}`}
             ref={iframeRef}
             srcDoc={simulationHtml}
-            sandbox="allow-scripts allow-same-origin allow-forms"
+            sandbox="allow-scripts allow-forms"
             style={{
               width: "100%",
               height: 290,

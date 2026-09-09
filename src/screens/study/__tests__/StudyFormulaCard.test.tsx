@@ -36,7 +36,7 @@ jest.mock("../../../components/animations", () => {
   };
 });
 
-import { StudyFormulaCard } from "../components/StudyFormulaCard";
+import { formatMathFormula, StudyFormulaCard } from "../components/StudyFormulaCard";
 import type { StudyQuizQuestion, StudyStep } from "../../../services/study-tutor-service";
 
 function assertNoTextNodeUnderAnyView(root: renderer.ReactTestInstance) {
@@ -187,4 +187,172 @@ describe("StudyFormulaCard Component", () => {
       0,
     );
   });
+
+  test("formatMathFormula converts LaTeX commands to clean readable Unicode math", () => {
+    const rawEquation = "a x + b = c \\implies x = \\frac{c - b}{a}";
+    const formatted = formatMathFormula(rawEquation);
+    expect(formatted).toContain("⟹");
+    expect(formatted).not.toContain("\\implies");
+    expect(formatted).not.toContain("\\frac");
+    expect(formatted).toContain("(c - b) / a");
+
+    const derivative = "\\frac{d}{dx}\\left[\\frac{1}{1+x}\\right] = -\\frac{1}{(1+x)^2}";
+    const formattedDeriv = formatMathFormula(derivative);
+    expect(formattedDeriv).not.toContain("\\frac");
+    expect(formattedDeriv).not.toContain("\\left");
+    expect(formattedDeriv).toContain("²");
+  });
+
+  test("respects visibleStepCount for synchronized progressive step reveal", () => {
+    let component: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      component = renderer.create(
+        <StudyFormulaCard
+          formula="2x + 4 = 12"
+          summary="A balanced linear equation."
+          steps={mockSteps}
+          quickQuiz={mockQuiz}
+          onSpeakStep={jest.fn()}
+          speakingStepIndex={0}
+          visibleStepCount={1}
+        />,
+      );
+    });
+
+    const root = component!.root;
+    assertNoTextNodeUnderAnyView(root);
+
+    // Only step 1 title should be rendered, step 2 should not be visible yet
+    const allTexts = root.findAllByType("Text" as any).map((t) => t.props.children).flat().join(" ");
+    expect(allTexts).toContain("1 / 2");
+    expect(allTexts).toContain("Subtract 4 from both sides");
+    expect(allTexts).not.toContain("Divide both sides by 2");
+  });
+
+  test("renders all steps when visibleStepCount is omitted or equals total steps", () => {
+    let component: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      component = renderer.create(
+        <StudyFormulaCard
+          formula="2x + 4 = 12"
+          summary="A balanced linear equation."
+          steps={mockSteps}
+          quickQuiz={mockQuiz}
+          onSpeakStep={jest.fn()}
+          speakingStepIndex={null}
+          visibleStepCount={2}
+        />,
+      );
+    });
+
+    const root = component!.root;
+    assertNoTextNodeUnderAnyView(root);
+
+    const allTexts = root.findAllByType("Text" as any).map((t) => t.props.children).flat().join(" ");
+    expect(allTexts).toContain("Subtract 4 from both sides");
+    expect(allTexts).toContain("Divide both sides by 2");
+  });
+
+  test("cleanMathMode renders strictly cardless: just Step X and large LaTeX math without cards or quiz", () => {
+    let component: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      component = renderer.create(
+        <StudyFormulaCard
+          formula="f'(x) = -1/(1+x)^2"
+          summary="Derivative of rational function."
+          steps={[
+            {
+              stepNumber: 1,
+              title: "Power Rule",
+              explanation: "Convert to negative power.",
+              latex: "y = (1 + x)^{-1}",
+            },
+            {
+              stepNumber: 2,
+              title: "Differentiate",
+              explanation: "Apply chain rule.",
+              latex: "\\frac{dy}{dx} = -1(1+x)^{-2}",
+            },
+          ]}
+          quickQuiz={mockQuiz}
+          onSpeakStep={jest.fn()}
+          speakingStepIndex={0}
+          visibleStepCount={1}
+          cleanMathMode={true}
+        />,
+      );
+    });
+
+    const root = component!.root;
+    assertNoTextNodeUnderAnyView(root);
+
+    const allTexts = root.findAllByType("Text" as any).map((t) => t.props.children).flat().join(" ");
+    // Must contain step number and clean math
+    expect(allTexts).toMatch(/STEP 1|هەنگاوی 1/);
+    expect(allTexts).toContain("(1 + x)⁻¹");
+    // Must NOT contain card badges or quiz
+    expect(allTexts).not.toContain("KEY EQUATION");
+    expect(allTexts).not.toContain("CONCEPT CHECK");
+    expect(allTexts).not.toContain("Step-by-Step Derivation");
+    expect(allTexts).not.toContain("STEP 2");
+  });
+
+  test("formatMathFormula converts LaTeX subscripts properly", () => {
+    const formatted = formatMathFormula("x_0 + x_1 + \\tau_1 = a_{n}");
+    expect(formatted).toContain("x₀");
+    expect(formatted).toContain("x₁");
+    expect(formatted).toContain("τ₁");
+    expect(formatted).toContain("aₙ");
+  });
+
+  test("formatMathFormula handles multi-letter subscripts like net and max", () => {
+    const formatted = formatMathFormula("F_{net} = m \\cdot a_{max}");
+    expect(formatted).toContain("Fₙₑₜ");
+    expect(formatted).toContain("aₘₐₓ");
+  });
+
+  test("formatMathFormula converts extended operators and symbols", () => {
+    const formatted = formatMathFormula(
+      "a \\div b \\pm c \\mp d \\le e \\ge f \\neq g \\nabla f \\in S",
+    );
+    expect(formatted).toContain("÷");
+    expect(formatted).toContain("±");
+    expect(formatted).toContain("∓");
+    expect(formatted).toContain("≤");
+    expect(formatted).toContain("≥");
+    expect(formatted).toContain("≠");
+    expect(formatted).toContain("∇");
+    expect(formatted).toContain("∈");
+  });
+
+  test("cleanMathMode falls back to explanation or title if formula is not present", () => {
+    let component: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      component = renderer.create(
+        <StudyFormulaCard
+          formula=""
+          summary=""
+          steps={[
+            {
+              stepNumber: 1,
+              title: "Conceptual Intuition",
+              explanation: "Think of momentum as mass in motion.",
+            },
+          ]}
+          quickQuiz={mockQuiz}
+          onSpeakStep={jest.fn()}
+          speakingStepIndex={null}
+          visibleStepCount={1}
+          cleanMathMode={true}
+        />,
+      );
+    });
+
+    const root = component!.root;
+    assertNoTextNodeUnderAnyView(root);
+    const allTexts = root.findAllByType("Text" as any).map((t) => t.props.children).flat().join(" ");
+    expect(allTexts).toContain("Think of momentum as mass in motion.");
+    expect(allTexts).not.toContain("KEY EQUATION");
+  });
 });
+

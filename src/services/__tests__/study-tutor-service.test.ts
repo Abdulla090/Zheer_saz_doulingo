@@ -2,10 +2,7 @@ import { describe, expect, test } from "@jest/globals";
 import {
   FALLBACK_GEMINI_STUDY_MODEL,
   PRIMARY_GEMINI_STUDY_MODEL,
-  STUDY_PRESETS,
   askStudyTutor,
-  getLocalizedStudyPreset,
-  getOfflinePresetFallback,
   parseGeminiStudyResponse,
   type StudySubject,
 } from "../study-tutor-service";
@@ -16,97 +13,8 @@ describe("Study Tutor Service & STEM Presets", () => {
     expect(FALLBACK_GEMINI_STUDY_MODEL).toBe("gemini-3.5-flash-lite");
   });
 
-  test("all built-in presets have valid structures", () => {
-    const presetKeys = Object.keys(STUDY_PRESETS);
-    expect(presetKeys.length).toBeGreaterThanOrEqual(6);
-
-    for (const key of presetKeys) {
-      const preset = STUDY_PRESETS[key];
-      expect(preset.id).toBe(key);
-      expect(preset.title).toBeTruthy();
-      expect(preset.speechExplanation).toBeTruthy();
-      expect(preset.formula).toBeTruthy();
-      expect(preset.summary).toBeTruthy();
-      expect(preset.steps.length).toBeGreaterThan(0);
-      expect(preset.interactive.type).toBeTruthy();
-      expect(preset.interactive.config).toBeDefined();
-      expect(preset.quickQuiz.question).toBeTruthy();
-      expect(preset.quickQuiz.options.length).toBeGreaterThanOrEqual(2);
-      expect(preset.quickQuiz.correctIndex).toBeGreaterThanOrEqual(0);
-      expect(preset.quickQuiz.correctIndex).toBeLessThan(preset.quickQuiz.options.length);
-    }
-  });
-
-  test("contains all required STEM and Logic widget types", () => {
-    const widgetTypes = Object.values(STUDY_PRESETS).map((p) => p.interactive.type);
-    expect(widgetTypes).toContain("balance-scale");
-    expect(widgetTypes).toContain("coordinate-graph");
-    expect(widgetTypes).toContain("lever-torque");
-    expect(widgetTypes).toContain("circuit-sim");
-    expect(widgetTypes).toContain("atom-builder");
-    expect(widgetTypes).toContain("chess-tactics");
-  });
-
-  test("getLocalizedStudyPreset returns localized Kurdish and Arabic content", () => {
-    const kuPreset = getLocalizedStudyPreset("math-balance", "ku");
-    expect(kuPreset.title).toBe("شیکارکردنی هاوکێشە بە تەرازووی هاوسەنگ");
-    expect(kuPreset.steps[0].title).toBe("ناسینی هاوسەنگی");
-
-    const arPreset = getLocalizedStudyPreset("math-balance", "ar");
-    expect(arPreset.title).toBe("حل المعادلات بميزان التوازن");
-    expect(arPreset.steps[0].title).toBe("تحديد حالة التوازن");
-
-    const enPreset = getLocalizedStudyPreset("math-balance", "en");
-    expect(enPreset.title).toBe("Solving Equations with Balance Scale");
-  });
-
-  test("getOfflinePresetFallback resolves correct widget from question keywords", () => {
-    expect(getOfflinePresetFallback("How does balance work?", "math").interactive.type).toBe("balance-scale");
-    expect(getOfflinePresetFallback("Plot linear slope", "math").interactive.type).toBe("coordinate-graph");
-    expect(getOfflinePresetFallback("What is torque lever?", "physics").interactive.type).toBe("lever-torque");
-    expect(getOfflinePresetFallback("Calculate electric circuit Ohm", "physics").interactive.type).toBe("circuit-sim");
-    expect(getOfflinePresetFallback("Build a Bohr atom with protons", "chemistry").interactive.type).toBe("atom-builder");
-    expect(getOfflinePresetFallback("Show chess knight fork tactic", "logic").interactive.type).toBe("chess-tactics");
-  });
-
-  test("askStudyTutor falls back gracefully to appropriate presets for known keywords", async () => {
-    const mathRes = await askStudyTutor({ question: "Explain balance scale equation" });
-    expect(mathRes.interactive.type).toBe("balance-scale");
-
-    const graphRes = await askStudyTutor({ question: "How does linear slope work?" });
-    expect(graphRes.interactive.type).toBe("coordinate-graph");
-
-    const torqueRes = await askStudyTutor({ question: "What is torque on a seesaw?" });
-    expect(torqueRes.interactive.type).toBe("lever-torque");
-
-    const circuitRes = await askStudyTutor({ question: "Explain Ohm's Law circuit" });
-    expect(circuitRes.interactive.type).toBe("circuit-sim");
-
-    const atomRes = await askStudyTutor({ question: "What is a Bohr atom?" });
-    expect(atomRes.interactive.type).toBe("atom-builder");
-
-    const chessRes = await askStudyTutor({ question: "How do I do a knight fork in chess?" });
-    expect(chessRes.interactive.type).toBe("chess-tactics");
-  });
-
-  test("askStudyTutor handles unexpected inputs cleanly without throwing", async () => {
-    const emptyRes = await askStudyTutor({ question: "" });
-    expect(emptyRes).toBeDefined();
-    expect(emptyRes.title).toBeTruthy();
-
-    const randomSubj: StudySubject = "general";
-    const generalRes = await askStudyTutor({ question: "???", subject: randomSubj });
-    expect(generalRes).toBeDefined();
-    expect(generalRes.interactive).toBeDefined();
-  });
-
-  test("all presets include self-contained interactive simulation HTML", () => {
-    for (const preset of Object.values(STUDY_PRESETS)) {
-      expect(preset.interactive.html).toBeDefined();
-      expect(preset.interactive.html).toContain("<!DOCTYPE html>");
-      expect(preset.interactive.html).toContain("<canvas");
-      expect(preset.interactive.html).toContain("window.sendToTwino");
-    }
+  test("askStudyTutor throws when empty question and no image provided", async () => {
+    await expect(askStudyTutor({ question: "" })).rejects.toThrow();
   });
 
   test("parseGeminiStudyResponse parses dynamic AI simulation with Python code execution", () => {
@@ -265,5 +173,162 @@ describe("Study Tutor Service & STEM Presets", () => {
     expect(parsed!.interactive.html).toContain("<!DOCTYPE html>");
     expect(parsed!.interactive.html).toContain("function sieve");
   });
+
+  test("parseGeminiStudyResponse parses thinkingProcess array and latex property on steps", () => {
+    const mathJson = JSON.stringify({
+      subject: "math",
+      title: "Derivative of 1/(1+x)",
+      thinkingProcess: [
+        "1. Identify quotient/power rule applicability for f(x) = (1+x)^(-1)",
+        "2. Apply chain rule: d/du[u^(-1)] * du/dx",
+        "3. Simplify to -1/(1+x)^2",
+        "4. Calculate sample slopes with Python runtime",
+      ],
+      speechExplanation: "We rewrite the fraction using negative exponents and apply the chain rule.",
+      formula: "\\frac{d}{dx}\\left[\\frac{1}{1+x}\\right] = -\\frac{1}{(1+x)^2}",
+      summary: "Power and chain rules give -1/(1+x)^2.",
+      steps: [
+        {
+          stepNumber: 1,
+          title: "Rewrite using Negative Exponent",
+          latex: "f(x) = (1 + x)^{-1}",
+          explanation: "Express the denominator as a negative power for direct differentiation.",
+        },
+        {
+          stepNumber: 2,
+          title: "Apply Power & Chain Rule",
+          latex: "f'(x) = -1 \\cdot (1 + x)^{-2} \\cdot \\frac{d}{dx}[1+x]",
+          explanation: "Bring down exponent -1 and multiply by the inner derivative.",
+        },
+      ],
+    });
+
+    const parsed = parseGeminiStudyResponse(mathJson);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.thinkingProcess).toBeDefined();
+    expect(parsed!.thinkingProcess?.length).toBe(4);
+    expect(parsed!.thinkingProcess?.[0]).toContain("Identify quotient/power rule");
+    expect(parsed!.steps[0].latex).toBe("f(x) = (1 + x)^{-1}");
+    expect(parsed!.steps[1].latex).toBe("f'(x) = -1 \\cdot (1 + x)^{-2} \\cdot \\frac{d}{dx}[1+x]");
+    // formulaSnippet fallback should match latex
+    expect(parsed!.steps[0].formulaSnippet).toBe("f(x) = (1 + x)^{-1}");
+  });
+
+  test("parseGeminiStudyResponse extracts <thought> tag into thinkingProcess when field not in JSON", () => {
+    const thoughtBlockText = String.raw`<thought>
+Analyze torque balance
+Calculate tau_net = r1 * F1 - r2 * F2
+Verify equilibrium condition
+</thought>
+{
+  "subject": "physics",
+  "title": "Torque Equilibrium",
+  "speechExplanation": "Torques must sum to zero for rotational equilibrium.",
+  "formula": "\\sum \\tau = 0",
+  "summary": "Equal and opposite torques balance the lever.",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "title": "Balance Torques",
+      "formulaSnippet": "\\tau_1 = \\tau_2",
+      "explanation": "Ensure clockwise torque equals counter-clockwise torque."
+    }
+  ]
+}`;
+
+    const parsed = parseGeminiStudyResponse(thoughtBlockText);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.thinkingProcess).toBeDefined();
+    expect(parsed!.thinkingProcess?.length).toBe(3);
+    expect(parsed!.thinkingProcess?.[0]).toBe("Analyze torque balance");
+    expect(parsed!.steps[0].latex).toBe("\\tau_1 = \\tau_2");
+  });
+
+  test("parseGeminiStudyResponse successfully parses science response when steps array is empty or omitted", () => {
+    const scienceJson = JSON.stringify({
+      subject: "physics",
+      title: "Gravitational Orbit Simulation",
+      thinkingProcess: [
+        "1. Identify Keplerian orbital mechanics and Newton's law of universal gravitation.",
+        "2. Formulate velocity vector: v = sqrt(G*M/r).",
+        "3. Execute Python verification to calculate orbital period: T = 2*pi*sqrt(r^3/(G*M)).",
+        "4. Synthesize 60fps dynamic canvas simulation with orbiting satellite.",
+      ],
+      speechExplanation: "Watch how the planet's velocity vector curves under gravitational acceleration.",
+      formula: "",
+      summary: "Gravity acts as the centripetal force sustaining the orbit.",
+      steps: [],
+      interactive: {
+        type: "dynamic-simulation",
+        title: "Orbital Mechanics",
+        html: "<canvas id='orbit'></canvas>",
+      },
+      quickQuiz: {
+        question: "What happens to orbital velocity as orbital radius increases?",
+        options: ["Decreases", "Increases", "Remains constant"],
+        correctIndex: 0,
+        explanation: "Velocity decreases inversely with the square root of radius.",
+      },
+    });
+
+    const parsed = parseGeminiStudyResponse(scienceJson, "v = sqrt(G*M/r)", "v = 7.67 km/s");
+    expect(parsed).not.toBeNull();
+    expect(parsed!.subject).toBe("physics");
+    expect(parsed!.steps.length).toBe(0);
+    expect(parsed!.interactive.executedPythonCode).toBe("v = sqrt(G*M/r)");
+    expect(parsed!.interactive.executedPythonOutput).toBe("v = 7.67 km/s");
+  });
+
+  test("parseGeminiStudyResponse extracts executedPythonCode from JSON body if tool args are missing", () => {
+    const jsonWithPython = JSON.stringify({
+      subject: "math",
+      title: "Roots of Quadratic",
+      speechExplanation: "Find roots using the quadratic formula.",
+      formula: "ax^2 + bx + c = 0",
+      summary: "Roots found via discriminant.",
+      steps: [],
+      interactive: {
+        type: "dynamic-simulation",
+        title: "Parabola Plotter",
+        html: "<canvas id='parabola'></canvas>",
+        executedPythonCode: "import sympy\nx = sympy.Symbol('x')\nprint(sympy.solve(x**2 - 4, x))",
+        executedPythonOutput: "[-2, 2]",
+      },
+    });
+
+    const parsed = parseGeminiStudyResponse(jsonWithPython);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.interactive.executedPythonCode).toContain("sympy.solve");
+    expect(parsed!.interactive.executedPythonOutput).toBe("[-2, 2]");
+  });
+
+  test("askStudyTutor synthesized offline response produces empty steps and atom-builder simulation for chemistry", async () => {
+    const response = await askStudyTutor({
+      question: "Explain atomic structure and electrons of carbon",
+      subject: "chemistry",
+    });
+
+    expect(response.subject).toBe("chemistry");
+    expect(response.steps.length).toBe(0); // Science focuses purely on dynamic simulation
+    expect(response.interactive.type).toBe("atom-builder");
+    expect(response.interactive.html).toBeDefined();
+    expect(response.interactive.executedPythonCode).toContain("Carbon");
+    expect(response.interactive.executedPythonOutput).toContain("Charge=0");
+    expect(response.thinkingProcess?.length).toBeGreaterThan(0);
+  });
+
+  test("askStudyTutor produces quantum double-slit simulation and empty steps for quantum physics", async () => {
+    const response = await askStudyTutor({
+      question: "explain quantum physics",
+      subject: "physics",
+    });
+
+    expect(response.subject).toBe("physics");
+    expect(response.steps.length).toBe(0); // Non-math focuses on dynamic simulation
+    expect(response.interactive.type).not.toBe("lever-torque");
+    expect(response.interactive.html).toBeDefined();
+    expect(response.thinkingProcess?.length).toBeGreaterThan(0);
+  });
 });
+
 

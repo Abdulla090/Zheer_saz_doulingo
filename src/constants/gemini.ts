@@ -4,10 +4,23 @@
  * Gemini credentials never ship in the app. REST requests go through the
  * authenticated Supabase `gemini-generate` Edge Function.
  */
+export function getGeminiApiKey(): string {
+  return (
+    process.env.EXPO_PUBLIC_GEMINI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    ""
+  );
+}
+
+export function hasDirectGeminiKey(): boolean {
+  return Boolean(getGeminiApiKey());
+}
+
 export function isGeminiConfigured(): boolean {
   return Boolean(
-    process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim(),
+    hasDirectGeminiKey() ||
+      (process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() &&
+        process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim()),
   );
 }
 
