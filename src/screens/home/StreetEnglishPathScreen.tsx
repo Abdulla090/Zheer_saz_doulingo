@@ -163,7 +163,7 @@ export const StreetEnglishPathScreen = ({
     );
   }, [hasMore, locale]);
 
-  usePathScrollAfterLesson("street", localizedSections, listRef);
+  usePathScrollAfterLesson("street", visibleSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
     const fullTitle = getPathUnitTitle("street", activeSectionIndex, locale);
@@ -270,22 +270,27 @@ export const StreetEnglishPathScreen = ({
     }
   }).current;
 
+  const scrollRetryCount = useRef(0);
+
   const onScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
       const offset = Math.max(0, info.highestMeasuredFrameIndex * (info.averageItemLength || 80));
       listRef.current?.getScrollResponder()?.scrollTo({
         y: offset,
-        animated: true,
+        animated: false,
       });
-      setTimeout(() => {
-        try {
-          if (visibleSections.length > 0) {
-            scrollPathToCurrentLesson(listRef, visibleSections, true, "street");
+      if (scrollRetryCount.current < 2) {
+        scrollRetryCount.current += 1;
+        setTimeout(() => {
+          try {
+            if (visibleSections.length > 0) {
+              scrollPathToCurrentLesson(listRef, visibleSections, false, "street");
+            }
+          } catch {
+            // Ignore fallback errors
           }
-        } catch {
-          // Ignore fallback errors
-        }
-      }, 100);
+        }, 120);
+      }
     },
     [visibleSections],
   );

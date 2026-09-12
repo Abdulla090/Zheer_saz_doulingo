@@ -189,13 +189,13 @@ function TabButton({
 }
 
 type CustomTabBarProps = BottomTabBarProps & {
+  /** @deprecated Android uses frosted glass surface; native blur target is no longer needed */
   blurTarget?: RefObject<NativeView | null>;
 };
 
 export function CustomTabBar({
   state,
   navigation,
-  blurTarget,
 }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
@@ -329,7 +329,7 @@ export function CustomTabBar({
        `contentStyle`), so its labels must not compensate for the app's RTL
        layout either. */
     <LayoutDirectionProvider value="ltr">
-      {Platform.OS === "android" ? (
+      {Platform.OS !== "web" ? (
         <Animated.View
           pointerEvents="none"
           style={[
@@ -379,7 +379,7 @@ export function CustomTabBar({
           />
         </Animated.View>
       ) : null}
-      {Platform.OS === "android" ? (
+      {Platform.OS !== "web" ? (
         <LinearGradient
           pointerEvents="none"
           colors={
@@ -391,7 +391,7 @@ export function CustomTabBar({
           style={styles.glassSheen}
         />
       ) : null}
-      {Platform.OS === "android" ? (
+      {Platform.OS !== "web" ? (
         <LinearGradient
           pointerEvents="none"
           colors={
@@ -429,7 +429,13 @@ export function CustomTabBar({
               icon={item.renderIcon(isFocused, iconSize, colors.foreground, colors.mutedForeground)}
               onPressIn={() => {
                 if (isFocused) energizeIndicator();
-                router.prefetch(item.href);
+                if (Platform.OS === "web") {
+                  try {
+                    router.prefetch(item.href);
+                  } catch {
+                    // Safe no-op on web
+                  }
+                }
               }}
               onPress={onPress}
             />
@@ -440,76 +446,62 @@ export function CustomTabBar({
 
   return (
     <View style={[styles.host, { paddingBottom: bottomPad }]}>
-      {Platform.OS === "android" ? (
-        <View style={shellStyle}>
-          {blurTarget?.current ? (
-            <BlurView
-              blurTarget={blurTarget}
-              blurMethod="dimezisBlurViewSdk31Plus"
-              blurReductionFactor={2.15}
-              intensity={92}
-              tint={isDark ? "dark" : "extraLight"}
-              style={styles.androidBlur}
-            />
-          ) : null}
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              styles.androidFrost,
-              {
-                backgroundColor: isDark
-                  ? (blurTarget?.current ? "rgba(15,23,42,0.34)" : "rgba(15,23,42,0.85)")
-                  : (blurTarget?.current ? "rgba(241,245,249,0.34)" : "rgba(241,245,249,0.88)"),
-              },
-            ]}
+      <View style={shellStyle}>
+        {Platform.OS === "ios" ? (
+          <BlurView
+            intensity={isDark ? 65 : 85}
+            tint={isDark ? "dark" : "light"}
+            style={styles.androidBlur}
           />
-          <LinearGradient
-            pointerEvents="none"
-            colors={
-              isDark
-                ? ["rgba(125,211,252,0.08)", "rgba(255,255,255,0.025)", "rgba(196,181,253,0.055)"]
-                : ["rgba(186,230,253,0.16)", "rgba(255,255,255,0.04)", "rgba(221,214,254,0.13)"]
-            }
-            locations={[0, 0.5, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.androidAmbientLight}
-          />
-          <LinearGradient
-            pointerEvents="none"
-            colors={
-              isDark
-                ? ["rgba(255,255,255,0.34)", "rgba(255,255,255,0.065)", "rgba(255,255,255,0)"]
-                : ["rgba(255,255,255,0.98)", "rgba(255,255,255,0.3)", "rgba(255,255,255,0)"]
-            }
-            locations={[0, 0.32, 1]}
-            style={styles.androidSpecular}
-          />
-          <View
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              styles.androidDarkRim,
-              {
-                borderColor: isDark
-                  ? "rgba(2,6,23,0.64)"
-                  : "rgba(51,65,85,0.28)",
-              },
-            ]}
-          />
-          <View style={contentStyle}>{tabButtons}</View>
-        </View>
-      ) : (
+        ) : null}
         <View
-          {...(Platform.OS === "web"
-            ? ({ dir: "ltr" } as any)
-            : null)}
-          style={[shellStyle, contentStyle]}
-        >
-          {tabButtons}
-        </View>
-      )}
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            styles.androidFrost,
+            {
+              backgroundColor: isDark
+                ? (Platform.OS === "ios" ? "rgba(15,23,42,0.45)" : "rgba(15,23,42,0.88)")
+                : (Platform.OS === "ios" ? "rgba(241,245,249,0.55)" : "rgba(241,245,249,0.92)"),
+            },
+          ]}
+        />
+        <LinearGradient
+          pointerEvents="none"
+          colors={
+            isDark
+              ? ["rgba(125,211,252,0.08)", "rgba(255,255,255,0.025)", "rgba(196,181,253,0.055)"]
+              : ["rgba(186,230,253,0.16)", "rgba(255,255,255,0.04)", "rgba(221,214,254,0.13)"]
+          }
+          locations={[0, 0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.androidAmbientLight}
+        />
+        <LinearGradient
+          pointerEvents="none"
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.34)", "rgba(255,255,255,0.065)", "rgba(255,255,255,0)"]
+              : ["rgba(255,255,255,0.98)", "rgba(255,255,255,0.3)", "rgba(255,255,255,0)"]
+          }
+          locations={[0, 0.32, 1]}
+          style={styles.androidSpecular}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            styles.androidDarkRim,
+            {
+              borderColor: isDark
+                ? "rgba(2,6,23,0.64)"
+                : "rgba(51,65,85,0.28)",
+            },
+          ]}
+        />
+        <View style={contentStyle}>{tabButtons}</View>
+      </View>
     </View>
   );
 }

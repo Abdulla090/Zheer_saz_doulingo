@@ -182,24 +182,30 @@ function InnerLayout() {
 
   useEffect(() => {
     if (ready) {
-      void syncHomeWidget();
+      void syncHomeWidget().catch(() => {});
+      let idleTimer: ReturnType<typeof setTimeout> | null = null;
       const task = InteractionManager.runAfterInteractions(() => {
         // Fetch active curriculum first
-        void fetchRemoteCurriculum("normal").then(() => {
-          if (typeof globalThis.requestIdleCallback === "function") {
-            globalThis.requestIdleCallback(() => {
-              void fetchRemoteCurriculum("street");
-              void fetchRemoteCurriculum("kids");
-            });
-          } else {
-            setTimeout(() => {
-              void fetchRemoteCurriculum("street");
-              void fetchRemoteCurriculum("kids");
-            }, 1200);
-          }
-        });
+        void fetchRemoteCurriculum("normal")
+          .then(() => {
+            if (typeof globalThis.requestIdleCallback === "function") {
+              globalThis.requestIdleCallback(() => {
+                void fetchRemoteCurriculum("street").catch(() => {});
+                void fetchRemoteCurriculum("kids").catch(() => {});
+              });
+            } else {
+              idleTimer = setTimeout(() => {
+                void fetchRemoteCurriculum("street").catch(() => {});
+                void fetchRemoteCurriculum("kids").catch(() => {});
+              }, 1200);
+            }
+          })
+          .catch(() => {});
       });
-      return () => task.cancel();
+      return () => {
+        task.cancel();
+        if (idleTimer) clearTimeout(idleTimer);
+      };
     }
   }, [ready]);
 

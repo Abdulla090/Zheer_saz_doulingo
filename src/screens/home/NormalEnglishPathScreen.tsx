@@ -264,7 +264,7 @@ export function NormalEnglishPathScreen({
     );
   }, [hasMore, locale]);
 
-  usePathScrollAfterLesson("normal", localizedSections, listRef);
+  usePathScrollAfterLesson("normal", visibleSections, listRef);
 
   const activeSectionDisplay = useMemo(() => {
     const fullTitle = getPathUnitTitle("normal", activeSectionIndex, locale);
@@ -394,22 +394,27 @@ export function NormalEnglishPathScreen({
     }
   }).current;
 
+  const scrollRetryCount = useRef(0);
+
   const onScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
       const offset = Math.max(0, info.highestMeasuredFrameIndex * (info.averageItemLength || 80));
       listRef.current?.getScrollResponder()?.scrollTo({
         y: offset,
-        animated: true,
+        animated: false,
       });
-      setTimeout(() => {
-        try {
-          if (visibleSections.length > 0) {
-            scrollPathToCurrentLesson(listRef, visibleSections, true, "normal");
+      if (scrollRetryCount.current < 2) {
+        scrollRetryCount.current += 1;
+        setTimeout(() => {
+          try {
+            if (visibleSections.length > 0) {
+              scrollPathToCurrentLesson(listRef, visibleSections, false, "normal");
+            }
+          } catch {
+            // Ignore fallback errors
           }
-        } catch {
-          // Ignore fallback errors
-        }
-      }, 100);
+        }, 120);
+      }
     },
     [visibleSections],
   );

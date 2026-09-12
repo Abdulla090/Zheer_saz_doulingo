@@ -32,7 +32,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 export type DuolingoCourseDropdownProps = {
-  visible: boolean;
+  visible?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   topOffset?: number;
 };
@@ -45,9 +46,11 @@ const SHELF_HEIGHT = 160;
 
 export function DuolingoCourseDropdown({
   visible,
+  isOpen,
   onClose,
   topOffset = 54,
 }: DuolingoCourseDropdownProps) {
+  const isVisible = visible ?? isOpen ?? false;
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { colors, isDark } = useThemeColors();
   const { t, isKu, isAr } = useI18n();
@@ -56,7 +59,7 @@ export function DuolingoCourseDropdown({
   const currentSource = useLocaleStore((s) => s.selectedSourceLanguage);
   const setLanguagePair = useLocaleStore((s) => s.setLanguagePair);
 
-  const [isRendered, setIsRendered] = useState(visible);
+  const [isRendered, setIsRendered] = useState(isVisible);
 
   // Single progress shared value: 0 = fully closed, 1 = fully open
   const progress = useSharedValue(0);
@@ -85,7 +88,7 @@ export function DuolingoCourseDropdown({
   }, [onAnimationComplete, progress]);
 
   useEffect(() => {
-    if (visible) {
+    if (isVisible) {
       setIsRendered(true);
       hapticSelection();
       // Fluid Apple / Duolingo deceleration ease
@@ -107,7 +110,7 @@ export function DuolingoCourseDropdown({
         },
       );
     }
-  }, [isRendered, onAnimationComplete, progress, visible]);
+  }, [isRendered, onAnimationComplete, progress, isVisible]);
 
   // Buttery smooth sliding shelf animation (no scale, no wobble)
   const animatedShelfStyle = useAnimatedStyle(() => ({
@@ -202,7 +205,7 @@ export function DuolingoCourseDropdown({
       {/* Dim Backdrop covering screen below the top bar */}
       <Animated.View
         style={[styles.backdrop, animatedBackdropStyle]}
-        pointerEvents={visible ? "auto" : "none"}
+        pointerEvents={isVisible ? "auto" : "none"}
       >
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -213,7 +216,7 @@ export function DuolingoCourseDropdown({
       </Animated.View>
 
       {/* Dropdown Shelf sliding down from behind the top bar */}
-      <View style={styles.shelfClippingWrapper} pointerEvents={visible ? "box-none" : "none"}>
+      <View style={styles.shelfClippingWrapper} pointerEvents={isVisible ? "box-none" : "none"}>
         <Animated.View style={[styles.shelfCard, animatedShelfStyle]}>
           {/* Speech-bubble Caret pointing directly to the flag */}
           <View style={styles.caret} />

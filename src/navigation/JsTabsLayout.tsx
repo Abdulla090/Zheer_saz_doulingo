@@ -7,9 +7,8 @@ import { pathnameHidesTabBar } from "../constants/tab-navigation";
 import { isDesktopWebWidth } from "../constants/web-layout";
 import { DesktopWebSidebar } from "../components/web/DesktopWebSidebar";
 import { DesktopWebRail } from "../components/web/DesktopWebRail";
-import { BlurTargetView } from "expo-blur";
 import { router, Tabs, usePathname } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Platform, useWindowDimensions, View } from "react-native";
 import { useThemeColors } from "../hooks/useThemeColors";
 
@@ -17,13 +16,24 @@ const WARM_TAB_ROUTES = ["/play", "/dashboard", "/more"] as const;
 
 function useWarmTabRoutes() {
   useEffect(() => {
+    // Only prefetch chunk bundles on web. On native iOS/Android, all screens
+    // are bundled in the binary and router.prefetch dispatches PRELOAD actions
+    // into React Navigation which crashes native stack navigators.
+    if (Platform.OS !== "web") return;
+
     let cancelled = false;
     const timers = WARM_TAB_ROUTES.map((href, index) =>
       setTimeout(() => {
         if (cancelled) return;
 
         const prefetch = () => {
-          if (!cancelled) router.prefetch(href);
+          if (!cancelled) {
+            try {
+              router.prefetch(href);
+            } catch {
+              // Best-effort prefetch
+            }
+          }
         };
 
         if (typeof globalThis.requestIdleCallback === "function") {
@@ -44,7 +54,6 @@ function useWarmTabRoutes() {
 function JsTabsLayoutInner() {
   useWarmTabRoutes();
   const { colors } = useThemeColors();
-  const blurTargetRef = useRef<View | null>(null);
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { hidden: contextHidden } = useTabBarVisibility();
@@ -60,7 +69,7 @@ function JsTabsLayoutInner() {
       initialRouteName="index"
       tabBar={(props) =>
         isDesktopWeb ? null : (
-          <CustomTabBar {...props} blurTarget={blurTargetRef} />
+          <CustomTabBar {...props} />
         )
       }
       screenOptions={{
@@ -108,13 +117,9 @@ function JsTabsLayoutInner() {
 
   return (
     <View style={{ flex: 1 }}>
-    {Platform.OS === "android" ? (
-      <BlurTargetView ref={blurTargetRef} style={{ flex: 1 }}>
-        {tabs}
-      </BlurTargetView>
-    ) : tabs}
-    {isDesktopWeb && !hideTabBar ? <DesktopWebSidebar /> : null}
-    {showDesktopRail ? <DesktopWebRail /> : null}
+      {tabs}
+      {isDesktopWeb && !hideTabBar ? <DesktopWebSidebar /> : null}
+      {showDesktopRail ? <DesktopWebRail /> : null}
     </View>
   );
 }
