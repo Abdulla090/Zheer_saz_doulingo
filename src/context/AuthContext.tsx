@@ -5,7 +5,7 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 import { isMascotId } from "../constants/mascots";
 import { getBillingAccount, type BillingAccount } from "../services/billing";
 import type { Session, User } from "@supabase/supabase-js";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 
 interface Profile {
   id: string;
@@ -22,6 +22,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   billingAccount: BillingAccount | null;
+  billingError: boolean;
   loading: boolean;
   refreshBillingAccount: () => Promise<BillingAccount | null>;
   signOut: () => Promise<void>;
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   profile: null,
   billingAccount: null,
+  billingError: false,
   loading: true,
   refreshBillingAccount: async () => null,
   signOut: async () => {},
@@ -46,17 +48,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [billingAccount, setBillingAccount] = useState<BillingAccount | null>(null);
+  const [billingError, setBillingError] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Reference to track sync operation so we do not sync during initial load
   const isInitialLoad = useRef(true);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const settingsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeUserId = useRef<string | null>(null);
+  const accountGeneration = useRef(0);
+  const billingRequest = useRef<Promise<BillingAccount | null> | null>(null);
 
-  const refreshBillingAccount = useCallback(async () => {
+  const refreshBillingAccount = useCallback((): Promise<BillingAccount | null> => {
+    if (!activeUserId.current) return Promise.resolve(null);
+    if (billingRequest.current) return billingRequest.current;
+    const generation = accountGeneration.current;
+    const request = (async () => {
     try {
       const account = await getBillingAccount();
+      if (generation !== accountGeneration.current) return null;
       setBillingAccount(account);
+      setBillingError(false);
       const premium =
         account.subscription.status === "active" &&
         account.subscription.plan !== "free";
@@ -66,11 +78,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .setSubscriptionTier(premium ? account.subscription.plan : "free");
       return account;
     } catch (error) {
+      if (generation !== accountGeneration.current) return null;
+      setBillingError(true);
       if (__DEV__) {
         console.warn("Billing account refresh failed:", error);
       }
       return null;
+    } finally {
+      if (generation === accountGeneration.current) billingRequest.current = null;
     }
+    })();
+    billingRequest.current = request;
+    return request;
   }, []);
 
   const pushProgressToDatabase = useCallback(async (userId: string, state: any) => {
@@ -121,6 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Load profile and sync progress on user login
   const handleUserLogin = useCallback(async (loggedUser: User) => {
+    const generation = accountGeneration.current;
+    const isCurrent = () => generation === accountGeneration.current && activeUserId.current === loggedUser.id;
     try {
       // 1. Fetch Profile
       const { data: profileData, error: profileErr } = await supabase
@@ -128,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select("id, username, display_name, avatar_url, selected_mascot_id, age, path_mode, tutor_voice, is_premium, subscription_tier")
         .eq("id", loggedUser.id)
         .single();
+      if (!isCurrent()) return;
       
       if (!profileErr && profileData) {
         setProfile(profileData);
@@ -151,11 +173,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         useSettingsStore.getState().setIsPremium(!!profileData.is_premium);
         useSettingsStore.getState().setSubscriptionTier(profileData.subscription_tier || null);
-      } else {
+      } else if (profileErr?.code === "PGRST116") {
         // If no profile, push local settings to initialize
         const localSettings = useSettingsStore.getState();
         await pushSettingsToDatabase(loggedUser.id, localSettings);
       }
+      if (!isCurrent()) return;
 
       // 2. Fetch Progress
       const { data: dbProgress, error: progressErr } = await supabase
@@ -163,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select("*")
         .eq("user_id", loggedUser.id)
         .single();
+      if (!isCurrent()) return;
 
       isInitialLoad.current = true; // Block writing back during load
 
@@ -178,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           lastActiveDate: dbProgress.last_active_date,
           lastActivity: dbProgress.last_activity,
         });
-      } else {
+      } else if (progressErr?.code === "PGRST116") {
         // If no progress in DB, push current local progress to initialize DB
         const localProgress = useProgressStore.getState();
         await pushProgressToDatabase(loggedUser.id, localProgress);
@@ -186,63 +210,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Wallet and plan state are server-owned. Fetch them only after the
       // shared Supabase session has been restored.
-      await refreshBillingAccount();
+      if (isCurrent()) await refreshBillingAccount();
     } catch (e) {
       console.error("Error during user login sync:", e);
     } finally {
-      isInitialLoad.current = false;
+      if (isCurrent()) isInitialLoad.current = false;
     }
   }, [pushProgressToDatabase, pushSettingsToDatabase, refreshBillingAccount]);
 
-  // Listen for session/auth changes
+  // Auth callbacks must return before invoking Supabase again (its auth lock
+  // is still held). Token refreshes must not reload and overwrite local progress.
   useEffect(() => {
     let mounted = true;
+    let receivedAuthEvent = false;
+    let loginTimer: ReturnType<typeof setTimeout> | undefined;
+    const applySession = (next: Session | null) => {
+      if (!mounted) return;
+      const nextId = next?.user.id ?? null;
+      const previousId = activeUserId.current;
+      setSession(next);
+      setUser(next?.user ?? null);
+      setLoading(false);
+      if (nextId === previousId) return;
 
-    // Never leave the app in a permanent loading state if secure storage or
-    // the initial auth read fails. Remote profile/progress synchronization is
-    // deliberately background work: it must not block the first screen.
-    const initializeSession = async () => {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        if (!mounted) return;
-
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        if (initialSession?.user) {
-          void handleUserLogin(initialSession.user);
-        }
-      } catch (error) {
-        console.error("Unable to restore the saved session:", error);
-        if (mounted) {
-          setSession(null);
-          setUser(null);
-        }
-      } finally {
-        if (mounted) setLoading(false);
+      accountGeneration.current += 1;
+      activeUserId.current = nextId;
+      billingRequest.current = null;
+      isInitialLoad.current = true;
+      clearTimeout(loginTimer);
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      if (settingsSyncTimeoutRef.current) clearTimeout(settingsSyncTimeoutRef.current);
+      setProfile(null);
+      setBillingAccount(null);
+      setBillingError(false);
+      useSettingsStore.getState().setIsPremium(false);
+      useSettingsStore.getState().setSubscriptionTier(null);
+      if (previousId) {
+        useProgressStore.getState().resetProgress();
+        useSettingsStore.getState().setUserName("");
+        useSettingsStore.getState().setUserAge("");
+        useSettingsStore.getState().setAvatarUrl("");
+      }
+      if (next?.user) {
+        loginTimer = setTimeout(() => {
+          if (mounted) void handleUserLogin(next.user);
+        }, 0);
       }
     };
 
-    void initializeSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      if (currentSession?.user) {
-        handleUserLogin(currentSession.user).then(() => setLoading(false));
-      } else {
-        setProfile(null);
-        // Clear progress to default when logged out (or keep it local)
-        isInitialLoad.current = true;
-        setLoading(false);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
+      receivedAuthEvent = true;
+      applySession(next);
     });
-
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (error) throw error;
+      if (!receivedAuthEvent) applySession(data.session);
+    }).catch((error) => {
+      console.error("Unable to restore the saved session:", error);
+      if (mounted) setLoading(false);
+    });
     return () => {
       mounted = false;
+      accountGeneration.current += 1;
+      activeUserId.current = null;
+      billingRequest.current = null;
+      clearTimeout(loginTimer);
       subscription.unsubscribe();
     };
   }, [handleUserLogin]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const update = (state: string) => {
+      if (state === "active") void supabase.auth.startAutoRefresh();
+      else void supabase.auth.stopAutoRefresh();
+    };
+    update(AppState.currentState);
+    const listener = AppState.addEventListener("change", update);
+    return () => {
+      listener.remove();
+      void supabase.auth.stopAutoRefresh();
+    };
+  }, []);
 
   // Returning from hosted web checkout brings the app back to the foreground.
   // Refresh once on that transition so web and mobile show the same account.
@@ -357,6 +406,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session,
         profile,
         billingAccount,
+        billingError,
         loading,
         refreshBillingAccount,
         signOut,

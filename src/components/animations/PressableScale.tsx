@@ -39,7 +39,7 @@ export type PressableScaleProps = {
   /** Neutral buttons — liquid glass + iOS edge shading */
   glass?: boolean;
   glassRadius?: number;
-  accessibilityRole?: string;
+  accessibilityRole?: React.ComponentProps<typeof Pressable>["accessibilityRole"];
   accessibilityLabel?: string;
   accessibilityState?: React.ComponentProps<typeof Pressable>["accessibilityState"];
   hitSlop?: React.ComponentProps<typeof Pressable>["hitSlop"];
@@ -92,7 +92,7 @@ export function PressableScale({
   disabled = false,
   glass = false,
   glassRadius = 16,
-  accessibilityRole,
+  accessibilityRole = "button",
   accessibilityLabel,
   accessibilityState,
   hitSlop,
@@ -136,9 +136,9 @@ export function PressableScale({
   return (
     <Pressable
       disabled={disabled}
-      accessibilityRole={accessibilityRole as any}
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={accessibilityState}
+      accessibilityState={{ ...accessibilityState, disabled }}
       hitSlop={hitSlop}
       onPressIn={() => {
         activatedOnPressInRef.current = false;
@@ -176,10 +176,10 @@ export function PressableScale({
         }
         firePress();
       }}
-      onLongPress={() => {
+      onLongPress={onLongPress ? () => {
         if (haptic) fireHaptic(hapticStyle);
-        onLongPress?.();
-      }}
+        onLongPress();
+      } : undefined}
       delayLongPress={delayLongPress}
       style={[layoutStyle, disabled ? { opacity: 0.5 } : undefined]}
     >

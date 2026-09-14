@@ -13,15 +13,7 @@ import { hapticImpact, hapticNotification, hapticSelection } from "../../../util
 import { crossShadow } from "../../../utils/shadows";
 import * as Haptics from "expo-haptics";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -187,7 +179,6 @@ export function DuolingoCourseDropdown({
   if (!isRendered) return null;
 
   const isRtl = isKu || isAr;
-  const containerWidth = Math.min(windowWidth, 640);
   const sideOffset = Math.max(0, (windowWidth - 640) / 2);
 
   const styles = createStyles(
@@ -237,8 +228,11 @@ export function DuolingoCourseDropdown({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carouselContent}
+            nestedScrollEnabled={true}
+            directionalLockEnabled={true}
             keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.carouselContent}
+            style={{ width: "100%" }}
           >
             {courses.map((lang) => {
               const isActive = lang.id === currentTarget;
@@ -248,6 +242,7 @@ export function DuolingoCourseDropdown({
                 <Pressable
                   key={lang.id}
                   onPress={() => handleSelectLanguage(lang.id)}
+                  unstable_pressDelay={60}
                   style={({ pressed }) => [
                     styles.courseCard,
                     isActive ? styles.activeCourseCard : styles.inactiveCourseCard,
@@ -311,6 +306,7 @@ export function DuolingoCourseDropdown({
             {/* "+ Course" Add Card */}
             <Pressable
               onPress={handleAddCoursePress}
+              unstable_pressDelay={60}
               style={({ pressed }) => [
                 styles.addCourseCard,
                 pressed && { transform: [{ scale: 0.95 }] },
@@ -428,7 +424,6 @@ function createStyles(
       paddingHorizontal: 16,
       gap: 12,
       alignItems: "center",
-      flexDirection: isRtl ? "row-reverse" : "row",
     },
     courseCard: {
       width: CARD_WIDTH,

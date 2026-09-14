@@ -142,9 +142,9 @@ Deno.serve(async (req: Request) => {
       statusText: res.statusText,
       headers: newHeaders,
     });
-  } catch (err) {
+  } catch (_err) {
     return Response.json(
-      { code: "SERVER_ERROR", message: err instanceof Error ? err.message : String(err) },
+      { code: "SERVER_ERROR", message: "Service temporarily unavailable. Please try again later." },
       { status: 500, headers: corsHeaders },
     );
   }

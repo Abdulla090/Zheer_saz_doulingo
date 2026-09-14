@@ -91,8 +91,6 @@ export function PathLessonPopup({
   if (!selection) return null;
 
   const { item, sectionTitle } = selection;
-  const isLocked = item.status === "locked";
-  const isCompleted = item.status === "completed";
   const isRtl = isKu || isAr;
   const unitNumber = item.displayUnitNumber ?? item.lessonId + 1;
   const lessonNumber = item.sectionItemIndex + 1;

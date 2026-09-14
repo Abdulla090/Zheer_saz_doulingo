@@ -1,15 +1,7 @@
-import { useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
+
+
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-  Image,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, {
@@ -60,6 +52,7 @@ type ThreadItem = {
   imageBase64?: string;
   imageMimeType?: string;
   lesson?: StudyTutorResponse;
+  error?: string;
 };
 
 function AgentThinkingCard() {
@@ -69,11 +62,9 @@ function AgentThinkingCard() {
   useEffect(() => {
     const i1 = setTimeout(() => {
       setStage(2);
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 1600);
     const i2 = setTimeout(() => {
       setStage(3);
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 3800);
 
     opacity.value = withRepeat(
@@ -237,12 +228,11 @@ function AgentThoughtDisclosure({
 }
 
 export function StudyTutorScreen() {
-  const router = useRouter();
   const safeBack = useSafeBack("/(tabs)/play");
   const theme = useGamesTheme();
   const isDark = theme.isDark;
   const insets = useSafeAreaInsets();
-  const { isKu, isAr, locale } = useI18n();
+  const { isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
 
   const [activeSubject, setActiveSubject] = useState<StudySubject>("math");
@@ -254,6 +244,8 @@ export function StudyTutorScreen() {
   const [isWalkthroughActive, setIsWalkthroughActive] = useState<boolean>(false);
   const [expandedTraceId, setExpandedTraceId] = useState<string | null>(null);
 
+  const requestInFlight = useRef(false);
+  const messageSequence = useRef(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const advanceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -408,8 +400,10 @@ export function StudyTutorScreen() {
     [stop],
   );
 
-  const handleAskQuestion = async (query: string, imageBase64?: string, imageMimeType?: string) => {
-    if (!query.trim() && !imageBase64) return;
+  const handleAskQuestion = useCallback(async (query: string, imageBase64?: string, imageMimeType?: string) => {
+    if ((!query.trim() && !imageBase64) || requestInFlight.current) return;
+    requestInFlight.current = true;
+    const messageId = ++messageSequence.current;
 
     if (advanceTimerRef.current) {
       clearTimeout(advanceTimerRef.current);
@@ -420,7 +414,7 @@ export function StudyTutorScreen() {
     setIsWalkthroughActive(false);
 
     const newUserMsg: ThreadItem = {
-      id: `usr-${Date.now()}`,
+      id: `usr-${messageId}`,
       role: "user",
       text: query,
       imageBase64,
@@ -481,39 +475,12 @@ export function StudyTutorScreen() {
     } catch (err: any) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to connect to the tutor. Please try again.";
-      const errorMsg: ThreadItem = {
-        id: `err-${Date.now()}`,
-        role: "agent",
-        lesson: {
-          id: `lesson-err-${Date.now()}`,
-          subject: "general",
-          title: "Oops, something went wrong!",
-          speechExplanation:
-            "There was an error communicating with the AI. Please check your connection or try again later.",
-          formula: "",
-          summary: errorMessage,
-          steps: [
-            {
-              stepNumber: 1,
-              title: "Error",
-              explanation:
-                "I couldn't process that request right now. This could be due to a network issue or missing API keys.",
-            },
-          ],
-          interactive: { type: "error" },
-          quickQuiz: {
-            question: "What happened?",
-            options: ["Network error", "API limit", "Unknown"],
-            correctIndex: 2,
-            explanation: errorMessage,
-          },
-        },
-      };
-      setThread((prev) => [...prev, errorMsg]);
+      setThread((prev) => [...prev, { id: `err-${messageId}`, role: "agent", error: errorMessage }]);
     } finally {
+      requestInFlight.current = false;
       setIsGenerating(false);
     }
-  };
+  }, [activeSubject, isAr, isKu, speak, speakStepWithProgression, speechLang, stop]);
 
   const handleSpeakStep = useCallback(
     (lesson: StudyTutorResponse, text: string, index: number) => {
@@ -567,11 +534,7 @@ export function StudyTutorScreen() {
           currentLesson ? (
             <View style={styles.headerPill}>
               <AppText style={styles.headerPillText}>
-                {currentLesson.modelUsed === "gemini-3.5-flash-lite"
-                  ? "3.5 Lite"
-                  : currentLesson.modelUsed === "gemini-3.8-flash"
-                    ? "Gemini 3.8"
-                    : "Interactive"}
+                {isKu ? "وانەی تۆ" : isAr ? "درسك" : "Your lesson"}
               </AppText>
             </View>
           ) : undefined
@@ -688,6 +651,15 @@ export function StudyTutorScreen() {
                   </Animated.View>
                 );
               }
+
+              if (item.error) return (
+                <View key={item.id} style={styles.agentContainer} accessibilityLiveRegion="polite">
+                  <AppText style={{ color: theme.ink, fontSize: 16, lineHeight: 24 }}>
+                    {isKu ? "وانەکە ئامادە نەکرا. تکایە دووبارە هەوڵ بدەوە." : isAr ? "تعذر إعداد الدرس. حاول مرة أخرى." : "We couldn’t prepare your lesson. Please try again."}
+                  </AppText>
+                  <AppText style={{ color: theme.mutedInk, fontSize: 14, lineHeight: 21 }} selectable>{item.error}</AppText>
+                </View>
+              );
 
               // Agent lesson
               if (item.role === "agent" && item.lesson) {

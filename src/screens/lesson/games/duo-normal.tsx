@@ -753,7 +753,7 @@ export function DuoTile({
       }
       prevState.current = state;
     }
-  }, [activateOnPressIn, pop, shakeX, state, targetColors, fromFace, toFace, fromBorder, toBorder, fromRim, toRim, colorProgress]);
+  }, [activateOnPressIn, drop, pop, shakeX, state, targetColors, fromFace, toFace, fromBorder, toBorder, fromRim, toRim, colorProgress]);
 
   React.useEffect(() => {
     if (!shakeSignal) return;

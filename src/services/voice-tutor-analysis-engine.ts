@@ -273,6 +273,67 @@ const NATIVE_SPEECH_RULES: SpeechRule[] = [
     explanation: "Use the present perfect continuous ('have been working') with 'for' when expressing duration.",
     category: "grammar",
   },
+
+  // ── Spanish Natural Speech & Collocations ──
+  {
+    pattern: /\bsoy\s+de\s+acuerdo\b/i,
+    corrected: "estoy de acuerdo",
+    explanation: "En español se usa el verbo 'estar': 'estoy de acuerdo', no 'soy de acuerdo'.",
+    category: "grammar",
+    nativeTip: "Siempre di: 'Estoy de acuerdo contigo'.",
+  },
+  {
+    pattern: /\bsoy\s+correcto\b/i,
+    corrected: "tengo razón",
+    explanation: "Para indicar que tienes la razón, se dice 'tengo razón' en lugar de 'soy correcto'.",
+    category: "natural_phrasing",
+  },
+  {
+    pattern: /\bestoy\s+hambriento\b/i,
+    corrected: "tengo hambre",
+    explanation: "Los hablantes nativos dicen 'tengo hambre' con el verbo tener.",
+    category: "natural_phrasing",
+  },
+  {
+    pattern: /\bdepende\s+de\s+el\b/i,
+    corrected: "depende del",
+    explanation: "La preposición 'de' y el artículo 'el' siempre se contraen en 'del'.",
+    category: "grammar",
+  },
+
+  // ── Russian Natural Speech & Phrasing ──
+  {
+    pattern: /(?:^|[^\p{L}\p{N}])(я\s+есть\s+согласен)(?:$|[^\p{L}\p{N}])/iu,
+    corrected: "я согласен",
+    explanation: "В русском языке связка 'есть' в настоящем времени опускается: 'я согласен'.",
+    category: "grammar",
+  },
+  {
+    pattern: /(?:^|[^\p{L}\p{N}])(в\s+этом\s+утре)(?:$|[^\p{L}\p{N}])/iu,
+    corrected: "этим утром / сегодня утром",
+    explanation: "Носители языка говорят 'сегодня утром' или 'этим утром', а не 'в этом утре'.",
+    category: "natural_phrasing",
+  },
+  {
+    pattern: /(?:^|[^\p{L}\p{N}])(делать\s+вопрос)(?:$|[^\p{L}\p{N}])/iu,
+    corrected: "задать вопрос",
+    explanation: "Правильное русское словосочетание — 'задать вопрос', а не 'делать вопрос'.",
+    category: "collocation",
+  },
+
+  // ── Arabic Natural Speech & Agreement ──
+  {
+    pattern: /(?:^|[^\p{L}\p{N}])(أنا\s+أكون\s+متفق)(?:$|[^\p{L}\p{N}])/iu,
+    corrected: "أنا متفق",
+    explanation: "في اللغة العربية لا نستخدم فعل الكينونة في المضارع، بل نقول مباشرة: 'أنا متفق'.",
+    category: "grammar",
+  },
+  {
+    pattern: /(?:^|[^\p{L}\p{N}])(عملت\s+صورة)(?:$|[^\p{L}\p{N}])/iu,
+    corrected: "التقطت صورة / أخذت صورة",
+    explanation: "التعبير الطبيعي الفصيح هو 'التقطت صورة' بدلاً من 'عملت صورة'.",
+    category: "natural_phrasing",
+  },
 ];
 
 /**
@@ -286,7 +347,7 @@ export function localSpeechAndGrammarReview(text: string): GrammarError[] {
   for (const rule of NATIVE_SPEECH_RULES) {
     const match = text.match(rule.pattern);
     if (match) {
-      const original = match[0].trim();
+      const original = (match[1] ?? match[0]).trim();
       const key = original.toLowerCase();
       if (!seenOriginals.has(key)) {
         seenOriginals.add(key);
@@ -318,9 +379,12 @@ export function extractTranscriptRecasts(turns: RealConversationTurn[]): Grammar
     if (currentTurn.sender === "user" && nextTurn.sender === "ai") {
       const aiText = nextTurn.text;
 
-      // Check for explicit recast patterns like "Native speakers say: ...", "You can say: ...", "More naturally: ..."
+      // Check for explicit recast patterns in English, Spanish, Russian, Arabic
       const recastPatterns = [
         /(?:native speakers (?:usually )?say|more naturally|you can say|a more natural way is|instead of ['"].*?['"](?:,| )?(?:say|use))\s*[:\-]?\s*["“'‘]?([^"”'’\n.!?]+)["”'’]?/i,
+        /(?:en español se dice|es más natural decir|los nativos dicen|puedes decir)\s*[:\-]?\s*["“'‘]?([^"”'’\n.!?]+)["”'’]?/i,
+        /(?:по-русски лучше сказать|носители говорят|естественнее сказать|можно сказать)\s*[:\-]?\s*["“'‘]?([^"”'’\n.!?]+)["”'’]?/i,
+        /(?:من الأفضل أن تقول|التعبير الأدق هو|يقول المتحدثون الأصليون|بشكل طبيعي أكثر)\s*[:\-]?\s*["“'‘]?([^"”'’\n.!?]+)["”'’]?/i,
       ];
 
       for (const pattern of recastPatterns) {
@@ -365,13 +429,13 @@ export async function computeSessionAnalysis(
   const userTurns = turns.filter((t) => t.sender === "user");
   const turnCount = turns.length;
 
-  // Extract all distinct words (>3 characters) spoken by the user for vocabulary usage statistics
+  // Extract all distinct words (>2 characters) spoken by the user for vocabulary usage statistics (Unicode-aware)
   const userTextJoined = userTurns.map((t) => t.text).join(" ");
   const cleanWords = userTextJoined
     .toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "")
+    .replace(/[\p{P}\p{S}]/gu, "")
     .split(/\s+/)
-    .filter((w) => w.length > 3);
+    .filter((w) => w.length >= 2);
   const vocabularyUsed = [...new Set(cleanWords)];
 
   // Basic word bank highlights

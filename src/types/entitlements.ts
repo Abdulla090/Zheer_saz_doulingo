@@ -13,6 +13,7 @@ export type FeatureKey =
   | "advanced_ai_evaluation";
 
 export type AiFeatureKey =
+  | "study_tutor"
   | "live_tutor_5"
   | "live_tutor_10"
   | "live_tutor_15"
@@ -40,6 +41,7 @@ export type AccountEntitlements = {
  * and never trust these client values.
  */
 export const AI_CREDIT_COSTS: AiPriceCatalog = {
+  study_tutor: 100,
   live_tutor_5: 200,
   live_tutor_10: 400,
   live_tutor_15: 600,

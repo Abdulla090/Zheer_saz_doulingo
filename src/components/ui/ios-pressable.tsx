@@ -31,12 +31,11 @@ export type IOSPressableProps = PressableProps & {
 };
 
 /** Current iOS compression and release motion without overriding semantic colors. */
-export const IOSPressable = forwardRef<View, IOSPressableProps>(
+const AnimatedIOSPressable = forwardRef<View, IOSPressableProps>(
   function IOSPressable(
     {
       activeOpacity = IOS_BUTTON_PRESS_OPACITY,
       pressScale = IOS_BUTTON_PRESS_SCALE,
-      inList = false,
       disabled,
       onPressIn,
       onPressOut,
@@ -45,8 +44,6 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
     },
     ref,
   ) {
-    // Hooks must run before the list fast path so the component remains valid
-    // when a virtualized row changes its `inList` flag between renders.
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
     const translateY = useSharedValue(0);
@@ -62,32 +59,6 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
       ],
     }));
 
-    if (inList) {
-      return (
-        <Pressable
-          ref={ref}
-          {...props}
-          disabled={disabled}
-          /*
-           * Forward the press callbacks explicitly. They are destructured out of
-           * `props` above (so this branch can skip Reanimated), which silently
-           * dropped them: any `inList` consumer running its own press animation
-           * off onPressIn/onPressOut got no events at all. The path nodes were
-           * built exactly that way, so their 3D press travel never ran.
-           */
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-          style={(state) => {
-            const baseStyle = typeof style === "function" ? style(state) : style;
-            return [
-              baseStyle,
-              { borderCurve: "continuous" as const },
-              state.pressed && { opacity: activeOpacity },
-            ];
-          }}
-        />
-      );
-    }
     const resolvedStyle =
       typeof style === "function"
         ? (state: Parameters<typeof style>[0]) => {
@@ -135,6 +106,26 @@ export const IOSPressable = forwardRef<View, IOSPressableProps>(
           onPressOut?.(event);
         }}
         style={resolvedStyle as PressableProps["style"]}
+      />
+    );
+  },
+);
+
+// Keep the list branch in a separate component: it allocates no worklets or
+// shared values, and changing inList never changes a component's hook order.
+export const IOSPressable = forwardRef<View, IOSPressableProps>(
+  function IOSPressable({ inList = false, activeOpacity = IOS_BUTTON_PRESS_OPACITY, ...props }, ref) {
+    if (!inList) return <AnimatedIOSPressable ref={ref} activeOpacity={activeOpacity} {...props} />;
+    const { style, pressScale: _pressScale, ...nativeProps } = props;
+    return (
+      <Pressable
+        ref={ref}
+        {...nativeProps}
+        style={(state) => [
+          typeof style === "function" ? style(state) : style,
+          { borderCurve: "continuous" },
+          state.pressed && { opacity: activeOpacity },
+        ]}
       />
     );
   },

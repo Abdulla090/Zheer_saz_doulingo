@@ -1,3 +1,4 @@
+import { BillingStatusNotice } from "../../components/BillingStatusNotice";
 import {
   ArrowLeft02Icon,
   ArrowRight02Icon,
@@ -6,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -60,12 +61,13 @@ const COPY = {
     renew: "Renew",
     unavailable: "Purchases paused",
     downgradeBlocked: "Available after your higher plan expires",
-    noProducts: "Add real package prices after your merchant account is approved.",
-    setup: "Checkout is ready and waiting for verified merchant activation.",
+    noProducts: "Credit packages are not available yet.",
+    setup: "Purchases are currently unavailable. Please try again later.",
+    delayed: "Confirmation is taking longer than expected. Refresh this page later; you do not need to pay again.",
     pending: "Confirming payment with the provider…",
     paid: "Payment confirmed. Your Twino account is updated.",
     failed: "Payment was not completed. Your account was not changed.",
-    secure: "Provider-hosted checkout · Verified webhooks · No card details stored by Twino",
+    secure: "Your card details are never stored by Twino.",
   },
   ku: {
     back: "گەڕانەوە بۆ فێربوون",
@@ -89,12 +91,13 @@ const COPY = {
     renew: "نوێکردنەوە",
     unavailable: "کڕین وەستێنراوە",
     downgradeBlocked: "دوای بەسەرچوونی پلانی بەرزتر بەردەستە",
-    noProducts: "دوای پەسەندکردنی هەژماری بازرگانی، نرخە ڕاستەقینەکان زیاد بکە.",
-    setup: "Checkout چاوەڕێی چالاککردنی پشتڕاستکراوەی هەژماری بازرگانییە.",
+    noProducts: "پاکەتەکانی کرێدیت هێشتا بەردەست نین.",
+    setup: "کڕین ئێستا بەردەست نییە. تکایە دواتر هەوڵ بدەوە.",
+    delayed: "پشتڕاستکردنەوە درێژتر دەخایەنێت. دواتر پەڕەکە نوێ بکەوە؛ پێویست ناکات دووبارە پارە بدەیت.",
     pending: "پارەدان لەلایەن دابینکەرەوە پشتڕاست دەکرێتەوە…",
     paid: "پارەدان پشتڕاست کرایەوە و هەژماری Twino نوێ بووەوە.",
     failed: "پارەدان تەواو نەبوو و هەژمارەکەت نەگۆڕا.",
-    secure: "Checkout ـی دابینکەر · Webhook ـی پشتڕاستکراو · Twino زانیاری کارت هەڵناگرێت",
+    secure: "Twino زانیاری کارتەکەت هەڵناگرێت.",
   },
   ar: {
     back: "العودة إلى التعلم",
@@ -118,12 +121,13 @@ const COPY = {
     renew: "تجديد",
     unavailable: "الشراء متوقف",
     downgradeBlocked: "متاح بعد انتهاء خطتك الأعلى",
-    noProducts: "أضف الأسعار الحقيقية بعد اعتماد حساب التاجر.",
-    setup: "صفحة الدفع جاهزة وتنتظر تفعيل حساب التاجر بعد التحقق منه.",
+    noProducts: "حزم الرصيد غير متاحة بعد.",
+    setup: "الشراء غير متاح حاليًا. حاول مرة أخرى لاحقًا.",
+    delayed: "يستغرق التأكيد وقتًا أطول. حدّث الصفحة لاحقًا؛ لا تحتاج إلى الدفع مرة أخرى.",
     pending: "يتم تأكيد الدفع مع المزوّد…",
     paid: "تم تأكيد الدفع وتحديث حساب Twino.",
     failed: "لم تكتمل عملية الدفع ولم يتغير حسابك.",
-    secure: "صفحة دفع مستضافة · Webhooks موثقة · لا يخزن Twino بيانات البطاقة",
+    secure: "لا يخزن Twino بيانات بطاقتك.",
   },
 } as const;
 
@@ -177,6 +181,7 @@ export function SubscriptionScreen() {
   const [providerReady, setProviderReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const checkoutInFlight = useRef(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const loadCatalog = useCallback(async () => {
@@ -210,13 +215,15 @@ export function SubscriptionScreen() {
     if (!user || !returnedPayment) return;
     let stopped = false;
     let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setNotice({ tone: "info", text: copy.pending });
 
     const check = async () => {
       attempts += 1;
       try {
         const payment = await getBillingPaymentStatus(returnedPayment);
-        if (stopped || !payment) return;
+        if (stopped) return;
+        if (!payment) throw new Error("Payment status unavailable");
         if (payment.status === "completed") {
           stopped = true;
           setNotice({ tone: "success", text: copy.paid });
@@ -228,27 +235,25 @@ export function SubscriptionScreen() {
       } catch {
         // Keep the pending notice; provider reconciliation may still complete.
       }
-    };
-
-    void check();
-    const interval = setInterval(() => {
-      if (stopped || attempts >= 24) {
-        clearInterval(interval);
-      } else {
-        void check();
+      if (!stopped) {
+        if (attempts >= 24) setNotice({ tone: "info", text: copy.delayed });
+        else timer = setTimeout(() => void check(), 2500);
       }
-    }, 2500);
+    };
+    void check();
     return () => {
       stopped = true;
-      clearInterval(interval);
+      clearTimeout(timer);
     };
-  }, [copy.failed, copy.paid, copy.pending, refreshBillingAccount, returnedPayment, user]);
+  }, [copy.delayed, copy.failed, copy.paid, copy.pending, refreshBillingAccount, returnedPayment, user]);
 
   const startCheckout = async (product: BillingProduct) => {
     if (!user) {
       router.push({ pathname: "/auth", params: { redirect: "/pricing" } });
       return;
     }
+    if (checkoutInFlight.current || !providerReady || !product.purchasable) return;
+    checkoutInFlight.current = true;
     setProcessingId(product.id);
     setNotice(null);
     try {
@@ -267,6 +272,7 @@ export function SubscriptionScreen() {
         tone: "error",
         text: await functionErrorMessage(error, copy.setup),
       });
+      checkoutInFlight.current = false;
       setProcessingId(null);
     }
   };
@@ -300,8 +306,8 @@ export function SubscriptionScreen() {
     return (
       <PremiumPressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: processing }}
-        disabled={processing}
+        accessibilityState={{ disabled: processingId !== null, busy: processing }}
+        disabled={processingId !== null}
         onPress={() => void startCheckout(product)}
         style={styles.buyButton}
       >
@@ -343,7 +349,7 @@ export function SubscriptionScreen() {
         </View>
 
         <View style={styles.hero}>
-          <AppText style={styles.eyebrow} forceLatinFont latinRole="bold">
+          <AppText style={styles.eyebrow} languageCode={planLocale} latinRole="bold">
             {copy.eyebrow}
           </AppText>
           <AppText
@@ -364,8 +370,8 @@ export function SubscriptionScreen() {
 
         {user ? (
           <View style={styles.accountStrip}>
-            <AccountMetric label={copy.balance} value={(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()} styles={styles} isKu={isKu} />
-            <AccountMetric label={copy.currentPlan} value={currentPlan.toUpperCase()} styles={styles} isKu={isKu} />
+            <AccountMetric label={copy.balance} value={billingAccount ? billingAccount.wallet.creditBalance.toLocaleString() : "—"} styles={styles} isKu={isKu} />
+            <AccountMetric label={copy.currentPlan} value={billingAccount ? currentPlan.toUpperCase() : "—"} styles={styles} isKu={isKu} />
             <AccountMetric label={copy.expires} value={formatDate(billingAccount?.subscription.expiresAt ?? null, locale)} styles={styles} isKu={isKu} />
           </View>
         ) : (
@@ -379,6 +385,8 @@ export function SubscriptionScreen() {
             </AppText>
           </PremiumPressable>
         )}
+
+        <BillingStatusNotice />
 
         {notice ? (
           <View

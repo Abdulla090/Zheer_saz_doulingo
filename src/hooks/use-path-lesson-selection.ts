@@ -1,5 +1,5 @@
 import type { LessonListItem, SectionDataItem } from "../data/list-items";
-import { findItemLocation } from "../utils/path-scroll";
+
 import { getWebDesktopZoomFactor } from "../constants/web-layout";
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { Platform, type SectionList, type View } from "react-native";
@@ -19,30 +19,6 @@ export type SelectedPathLesson = {
   };
 };
 
-/*
- * Room the popup needs, mirroring the placement maths in `path-lesson-popup`.
- *
- * These decide one thing only: whether the popup can open where the node
- * already is, or whether the list has to scroll first. Scrolling costs a
- * `SCROLL_SETTLE_MS` wait before anything appears, so it is worth being precise
- * — the previous version asked instead whether the node sat in the top quarter
- * of the viewport *or* within 300pt of the bottom, and on a phone-sized
- * viewport that describes very nearly every node. Almost every tap paid for a
- * scroll it did not need, which is why the popup felt instant on a tall desktop
- * window and sluggish on a short one.
- *
- * The card is compact now, so on any ordinary phone viewport at least one of
- * the two directions fits and the popup opens straight away.
- */
-const POPUP_HEIGHT = 170;
-const POPUP_GAP = 18;
-/** Tab bar and home indicator sit under the list. */
-const POPUP_BOTTOM_CLEARANCE = 110;
-/** Unit header and stats chrome sit over it. */
-const POPUP_TOP_CLEARANCE = 16;
-
-/** Settle time for the scroll before measuring — a moving node measures stale. */
-const SCROLL_SETTLE_MS = 320;
 
 type WindowMeasurement = {
   x: number;
@@ -202,7 +178,7 @@ export function usePathLessonSelection(
         });
       });
     },
-    [listRef, overlayRootRef, sections],
+    [overlayRootRef],
   );
 
   useEffect(

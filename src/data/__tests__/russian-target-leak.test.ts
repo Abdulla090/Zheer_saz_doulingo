@@ -6,6 +6,7 @@ import { ALL_UNITS } from "../units";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 
 jest.mock("@react-native-async-storage/async-storage", () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- resolve native dependency inside the hoisted mock.
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 jest.mock("react-native-mmkv", () => {
@@ -20,7 +21,7 @@ jest.mock("react-native-mmkv", () => {
 });
 
 function findNonRussianLeaks(units: any[][], mode: LessonPathMode) {
-  const leaks: Array<{ unit: number; lesson: number; type: string; field: string; val: any }> = [];
+  const leaks: { unit: number; lesson: number; type: string; field: string; val: any }[] = [];
   // English words (2+ Latin chars) or Arabic characters (\u0600-\u06FF) in target fields
   const leakRegex = /[a-zA-Z]{2,}|[\u0600-\u06FF]/;
 

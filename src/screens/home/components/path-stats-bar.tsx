@@ -105,7 +105,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dropdownTop = mobileWeb ? 50 : compact ? 54 : 60;
 
   return (
-    <View style={styles.shell}>
+    <View style={[styles.shell, isDropdownOpen && { zIndex: 999, elevation: 999 }]}>
       <View
         style={[
           styles.row,

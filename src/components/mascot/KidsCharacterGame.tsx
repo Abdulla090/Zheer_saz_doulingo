@@ -18,7 +18,6 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
-  interpolate,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle, Line } from "react-native-svg";
@@ -325,14 +324,6 @@ export function KidsCharacterGame({
     transform: [{ translateY: floatY.value }, { scale: breathe.value }],
   }));
 
-  const shadowStyle = useAnimatedStyle(() => {
-    const scaleX = interpolate(floatY.value, [-5, 5], [0.85, 1.15]);
-    const opacity = interpolate(floatY.value, [-5, 5], [0.04, 0.08]);
-    return {
-      transform: [{ scaleX }],
-      opacity,
-    };
-  });
 
   const droplet1Style = useAnimatedStyle(() => ({
     transform: [{ translateY: droplet1Y.value }],

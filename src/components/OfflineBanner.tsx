@@ -1,9 +1,10 @@
 import { useI18n } from "../hooks/useI18n";
 import { useNetworkStatus } from "../hooks/use-network-status";
 import React, { useEffect } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -15,6 +16,7 @@ export function OfflineBanner() {
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const progress = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     progress.value = withTiming(isOnline ? 0 : 1, { duration: 220 });
@@ -22,14 +24,15 @@ export function OfflineBanner() {
 
   const style = useAnimatedStyle(() => ({
     opacity: progress.value,
-    transform: [{ translateY: (1 - progress.value) * -12 }],
+    transform: [{ translateY: reduceMotion ? 0 : (1 - progress.value) * -12 }],
   }));
-
-  if (Platform.OS === "web") return null;
 
   return (
     <Animated.View
-      pointerEvents={isOnline ? "none" : "auto"}
+      pointerEvents="none"
+      accessibilityLiveRegion="polite"
+      accessibilityElementsHidden={isOnline}
+      importantForAccessibility={isOnline ? "no-hide-descendants" : "auto"}
       style={[
         styles.banner,
         { paddingTop: insets.top + 6 },

@@ -70,9 +70,10 @@ config.resolver = {
       };
     }
     if (
+      platform !== "ios" && (
       moduleName.includes("@expo/ui/swift-ui") ||
       moduleName.includes("@expo/ui/src/swift-ui") ||
-      moduleName.includes("../src/swift-ui")
+      moduleName.includes("../src/swift-ui"))
     ) {
       return {
         type: "sourceFile",

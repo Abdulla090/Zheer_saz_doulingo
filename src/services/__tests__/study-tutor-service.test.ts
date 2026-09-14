@@ -1,16 +1,18 @@
-import { describe, expect, test } from "@jest/globals";
+import { describe, expect, test, jest, beforeEach } from "@jest/globals";
 import {
-  FALLBACK_GEMINI_STUDY_MODEL,
   PRIMARY_GEMINI_STUDY_MODEL,
   askStudyTutor,
   parseGeminiStudyResponse,
-  type StudySubject,
 } from "../study-tutor-service";
+import { generateGeminiContent } from "../gemini-gateway";
+
+jest.mock("../gemini-gateway", () => ({ generateGeminiContent: jest.fn() }));
+const generate = jest.mocked(generateGeminiContent);
+beforeEach(() => { generate.mockReset(); });
 
 describe("Study Tutor Service & STEM Presets", () => {
-  test("specifies correct Gemini primary and fallback models", () => {
-    expect(PRIMARY_GEMINI_STUDY_MODEL).toBe("gemini-3.8-flash");
-    expect(FALLBACK_GEMINI_STUDY_MODEL).toBe("gemini-3.5-flash-lite");
+  test("identifies its default server model", () => {
+    expect(PRIMARY_GEMINI_STUDY_MODEL).toBe("gemini-3.6-flash");
   });
 
   test("askStudyTutor throws when empty question and no image provided", async () => {
@@ -302,33 +304,16 @@ Verify equilibrium condition
     expect(parsed!.interactive.executedPythonOutput).toBe("[-2, 2]");
   });
 
-  test("askStudyTutor synthesized offline response produces empty steps and atom-builder simulation for chemistry", async () => {
-    const response = await askStudyTutor({
-      question: "Explain atomic structure and electrons of carbon",
-      subject: "chemistry",
-    });
-
-    expect(response.subject).toBe("chemistry");
-    expect(response.steps.length).toBe(0); // Science focuses purely on dynamic simulation
-    expect(response.interactive.type).toBe("atom-builder");
-    expect(response.interactive.html).toBeDefined();
-    expect(response.interactive.executedPythonCode).toContain("Carbon");
-    expect(response.interactive.executedPythonOutput).toContain("Charge=0");
-    expect(response.thinkingProcess?.length).toBeGreaterThan(0);
+  test("does not fabricate an answer or make another charge after a provider failure", async () => {
+    generate.mockRejectedValue(new Error("Network unavailable"));
+    await expect(askStudyTutor({ question: "Read this equation", imageBase64: "AAAA", imageMimeType: "image/png" })).rejects.toThrow("Network unavailable");
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(generate.mock.calls[0][2].featureKey).toBe("study_tutor");
   });
 
-  test("askStudyTutor produces quantum double-slit simulation and empty steps for quantum physics", async () => {
-    const response = await askStudyTutor({
-      question: "explain quantum physics",
-      subject: "physics",
-    });
-
-    expect(response.subject).toBe("physics");
-    expect(response.steps.length).toBe(0); // Non-math focuses on dynamic simulation
-    expect(response.interactive.type).not.toBe("lever-torque");
-    expect(response.interactive.html).toBeDefined();
-    expect(response.thinkingProcess?.length).toBeGreaterThan(0);
+  test("rejects unreadable responses instead of substituting a canned lesson", async () => {
+    generate.mockResolvedValue({ candidates: [] });
+    await expect(askStudyTutor({ question: "Explain quantum physics" })).rejects.toThrow("lesson could not be read");
+    expect(generate).toHaveBeenCalledTimes(1);
   });
 });
-
-

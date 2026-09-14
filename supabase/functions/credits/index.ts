@@ -50,6 +50,10 @@ const credits = withSupabase({ auth: "user" }, async (req, ctx) => {
     return json({ code: "INVALID_JSON", message: "Invalid request body." }, 400);
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return json({ code: "INVALID_JSON", message: "Expected a request object." }, 400);
+  }
+
   const action = body.action ?? "balance";
 
   if (action === "balance") {
@@ -124,9 +128,9 @@ Deno.serve(async (req: Request) => {
       statusText: res.statusText,
       headers: newHeaders,
     });
-  } catch (err) {
+  } catch (_err) {
     return Response.json(
-      { code: "SERVER_ERROR", message: err instanceof Error ? err.message : String(err) },
+      { code: "SERVER_ERROR", message: "Service temporarily unavailable. Please try again later." },
       { status: 500, headers: corsHeaders },
     );
   }

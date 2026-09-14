@@ -23,19 +23,22 @@ export function useNetworkStatus(): NetworkStatus {
   });
 
   useEffect(() => {
+    let active = true;
+    let receivedEvent = false;
+    const update = (state: NetInfoState) => {
+      if (!active) return;
+      const isOnline = computeOnline(state);
+      setStatus(previous => previous.isOnline === isOnline && previous.type === state.type
+        ? previous : { isOnline, type: state.type });
+    };
     const unsubscribe = NetInfo.addEventListener((state) => {
-      setStatus({
-        isOnline: computeOnline(state),
-        type: state.type,
-      });
+      receivedEvent = true;
+      update(state);
     });
-    void NetInfo.fetch().then((state) => {
-      setStatus({
-        isOnline: computeOnline(state),
-        type: state.type,
-      });
-    });
-    return unsubscribe;
+    void NetInfo.fetch().then(state => {
+      if (!receivedEvent) update(state);
+    }).catch(() => { /* Keep the last known connection state. */ });
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   return status;

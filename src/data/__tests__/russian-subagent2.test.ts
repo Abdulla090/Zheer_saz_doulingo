@@ -4,6 +4,7 @@ import { NORMAL_UNITS } from "../normal-english";
 import { useLocaleStore } from "../../stores/useLocaleStore";
 
 jest.mock("@react-native-async-storage/async-storage", () =>
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- resolve native dependency inside the hoisted mock.
   require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
 );
 jest.mock("react-native-mmkv", () => {

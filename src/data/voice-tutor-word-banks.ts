@@ -413,3 +413,204 @@ export const WORD_BANKS: Record<number, WordEntry[]> = {
     { word: "hit the nail on the head", definition: "To describe exactly what is causing a situation.", exampleSentence: "Your comment hit the nail on the head.", partOfSpeech: "phrase" }
   ]
 };
+
+export const SPANISH_WORD_BANKS: Record<number, WordEntry[]> = {
+  1: [
+    { word: "hola", definition: "Saludo amistoso al encontrarse.", exampleSentence: "¡Hola! ¿Cómo estás?", partOfSpeech: "phrase" },
+    { word: "adiós", definition: "Despedida habitual.", exampleSentence: "Adiós, hasta mañana.", partOfSpeech: "phrase" },
+    { word: "por favor", definition: "Fórmula de cortesía para pedir algo.", exampleSentence: "Agua, por favor.", partOfSpeech: "phrase" },
+    { word: "gracias", definition: "Expresión de agradecimiento.", exampleSentence: "Muchas gracias por tu ayuda.", partOfSpeech: "phrase" },
+    { word: "sí", definition: "Afirmación o acuerdo.", exampleSentence: "Sí, estoy listo.", partOfSpeech: "phrase" },
+    { word: "no", definition: "Negación o desacuerdo.", exampleSentence: "No, no tengo sueño.", partOfSpeech: "phrase" },
+    { word: "amigo", definition: "Persona con quien se tiene amistad.", exampleSentence: "Él es mi mejor amigo.", partOfSpeech: "noun" },
+    { word: "familia", definition: "Grupo de personas emparentadas.", exampleSentence: "Amo a mi familia.", partOfSpeech: "noun" },
+    { word: "agua", definition: "Líquido vital transparente.", exampleSentence: "¿Tienes agua fresca?", partOfSpeech: "noun" },
+    { word: "comida", definition: "Alimento que se consume.", exampleSentence: "La comida está muy rica.", partOfSpeech: "noun" },
+  ],
+  2: [
+    { word: "casa", definition: "Edificio para habitar.", exampleSentence: "Mi casa está cerca del parque.", partOfSpeech: "noun" },
+    { word: "trabajo", definition: "Actividad laboral u ocupación.", exampleSentence: "Empiezo mi trabajo temprano.", partOfSpeech: "noun" },
+    { word: "tiempo", definition: "Duración o clima.", exampleSentence: "Hace buen tiempo hoy.", partOfSpeech: "noun" },
+    { word: "mañana", definition: "Primera parte del día o el día siguiente.", exampleSentence: "Nos vemos mañana por la mañana.", partOfSpeech: "noun" },
+    { word: "aprender", definition: "Adquirir conocimiento.", exampleSentence: "Quiero aprender español.", partOfSpeech: "verb" },
+    { word: "hablar", definition: "Expresarse con palabras.", exampleSentence: "Me gusta hablar con gente nueva.", partOfSpeech: "verb" },
+  ],
+  3: [
+    { word: "ciudad", definition: "Población grande y urbanizada.", exampleSentence: "Esta ciudad es hermosa.", partOfSpeech: "noun" },
+    { word: "viaje", definition: "Acción de trasladarse de un lugar a otro.", exampleSentence: "Buen viaje a Madrid.", partOfSpeech: "noun" },
+    { word: "pregunta", definition: "Interrogación para saber algo.", exampleSentence: "Tengo una pregunta importante.", partOfSpeech: "noun" },
+    { word: "entender", definition: "Comprender el sentido de algo.", exampleSentence: "Ahora puedo entender mejor.", partOfSpeech: "verb" },
+  ],
+  4: [
+    { word: "oportunidad", definition: "Momento propicio para hacer algo.", exampleSentence: "Es una gran oportunidad laboral.", partOfSpeech: "noun" },
+    { word: "experiencia", definition: "Conocimiento adquirido con la práctica.", exampleSentence: "Tengo experiencia en enseñanza.", partOfSpeech: "noun" },
+    { word: "compartir", definition: "Distribuir o usar algo en común.", exampleSentence: "Me gusta compartir historias.", partOfSpeech: "verb" },
+  ],
+  5: [
+    { word: "desarrollo", definition: "Crecimiento o mejora continua.", exampleSentence: "El desarrollo personal es clave.", partOfSpeech: "noun" },
+    { word: "perspectiva", definition: "Punto de vista sobre un asunto.", exampleSentence: "Es una perspectiva interesante.", partOfSpeech: "noun" },
+    { word: "costumbre", definition: "Hábito adquirido por la práctica frecuente.", exampleSentence: "Es una costumbre típica del país.", partOfSpeech: "noun" },
+  ],
+  6: [
+    { word: "significativo", definition: "Que tiene importancia o valor.", exampleSentence: "Fue un avance muy significativo.", partOfSpeech: "adjective" },
+    { word: "argumentar", definition: "Dar razones para defender una idea.", exampleSentence: "Sabe argumentar con claridad.", partOfSpeech: "verb" },
+  ],
+  7: [
+    { word: "imprescindible", definition: "Que resulta completamente necesario.", exampleSentence: "La paciencia es imprescindible.", partOfSpeech: "adjective" },
+    { word: "enriquecedor", definition: "Que aporta valor o conocimiento.", exampleSentence: "Fue un debate muy enriquecedor.", partOfSpeech: "adjective" },
+  ],
+  8: [
+    { word: "elocuencia", definition: "Facultad de hablar de modo eficaz.", exampleSentence: "Habló con gran elocuencia.", partOfSpeech: "noun" },
+    { word: "paradigma", definition: "Modelo o ejemplo de referencia.", exampleSentence: "Un cambio de paradigma cultural.", partOfSpeech: "noun" },
+  ],
+  9: [
+    { word: "resiliencia", definition: "Capacidad de adaptación frente a la adversidad.", exampleSentence: "La resiliencia de la comunidad inspiró a todos.", partOfSpeech: "noun" },
+    { word: "efímero", definition: "Que dura poco tiempo o es pasajero.", exampleSentence: "El éxito puede ser efímero.", partOfSpeech: "adjective" },
+  ],
+  10: [
+    { word: "yuxtaposición", definition: "Acción de situar dos cosas juntas para compararlas.", exampleSentence: "La yuxtaposición de luces y sombras era artística.", partOfSpeech: "noun" },
+    { word: "serendipia", definition: "Hallazgo afortunado e inesperado.", exampleSentence: "Conocerte fue pura serendipia.", partOfSpeech: "noun" },
+  ],
+};
+
+export const RUSSIAN_WORD_BANKS: Record<number, WordEntry[]> = {
+  1: [
+    { word: "привет", definition: "Дружеское приветствие при встрече.", exampleSentence: "Привет! Как твои дела?", partOfSpeech: "phrase" },
+    { word: "пока", definition: "Непринужденное прощание.", exampleSentence: "Пока, увидимся завтра.", partOfSpeech: "phrase" },
+    { word: "пожалуйста", definition: "Вежливое обращение с просьбой или ответ на спасибо.", exampleSentence: "Воды, пожалуйста.", partOfSpeech: "phrase" },
+    { word: "спасибо", definition: "Слово благодарности.", exampleSentence: "Большое спасибо за помощь.", partOfSpeech: "phrase" },
+    { word: "да", definition: "Согласие или подтверждение.", exampleSentence: "Да, я готов.", partOfSpeech: "phrase" },
+    { word: "нет", definition: "Отрицание или несогласие.", exampleSentence: "Нет, я не устал.", partOfSpeech: "phrase" },
+    { word: "друг", definition: "Близкий человек, связанный дружбой.", exampleSentence: "Он мой лучший друг.", partOfSpeech: "noun" },
+    { word: "семья", definition: "Группа живущих вместе родственников.", exampleSentence: "У меня большая семья.", partOfSpeech: "noun" },
+    { word: "вода", definition: "Прозрачная жидкость для питья.", exampleSentence: "Можно стакан воды, пожалуйста?", partOfSpeech: "noun" },
+    { word: "еда", definition: "То, что едят, пища.", exampleSentence: "Еда очень вкусная.", partOfSpeech: "noun" },
+  ],
+  2: [
+    { word: "дом", definition: "Жилое здание или домашний очаг.", exampleSentence: "Мой дом находится рядом с парком.", partOfSpeech: "noun" },
+    { word: "работа", definition: "Служба, занятие или труд.", exampleSentence: "Я люблю свою работу.", partOfSpeech: "noun" },
+    { word: "время", definition: "Часы, период или пора.", exampleSentence: "У нас есть немного времени.", partOfSpeech: "noun" },
+    { word: "утро", definition: "Начало дня.", exampleSentence: "Доброе утро всем.", partOfSpeech: "noun" },
+    { word: "учить", definition: "Приобретать знания или обучать.", exampleSentence: "Я хочу учить русский язык.", partOfSpeech: "verb" },
+    { word: "говорить", definition: "Выражать мысли словами.", exampleSentence: "Мне нравится говорить с тобой.", partOfSpeech: "verb" },
+  ],
+  3: [
+    { word: "город", definition: "Крупный населенный пункт.", exampleSentence: "Этот город очень красивый.", partOfSpeech: "noun" },
+    { word: "путешествие", definition: "Поездка или передвижение по миру.", exampleSentence: "У нас было интересное путешествие.", partOfSpeech: "noun" },
+    { word: "вопрос", definition: "Обращение, требующее ответа.", exampleSentence: "У меня есть вопрос.", partOfSpeech: "noun" },
+    { word: "понимать", definition: "Осознавать смысл услышанного.", exampleSentence: "Теперь я понимаю намного лучше.", partOfSpeech: "verb" },
+  ],
+  4: [
+    { word: "возможность", definition: "Благоприятные условия для достижения цели.", exampleSentence: "Это отличная возможность.", partOfSpeech: "noun" },
+    { word: "опыт", definition: "Совокупность знаний и умений.", exampleSentence: "У него большой опыт в общении.", partOfSpeech: "noun" },
+    { word: "делиться", definition: "Рассказывать или делиться чем-то с другими.", exampleSentence: "Приятно делиться мыслями.", partOfSpeech: "verb" },
+  ],
+  5: [
+    { word: "развитие", definition: "Процесс совершенствования и роста.", exampleSentence: "Развитие навыков требует времени.", partOfSpeech: "noun" },
+    { word: "мнение", definition: "Собственный взгляд на вопрос.", exampleSentence: "Каково твоё мнение по этой теме?", partOfSpeech: "noun" },
+    { word: "традиция", definition: "Обычай, переходящий из поколения в поколение.", exampleSentence: "Это старая семейная традиция.", partOfSpeech: "noun" },
+  ],
+  6: [
+    { word: "значительный", definition: "Важный, заметный по влиянию.", exampleSentence: "Это был значительный успех.", partOfSpeech: "adjective" },
+    { word: "обсуждать", definition: "Разговаривать о чем-либо, взвешивая мнения.", exampleSentence: "Давай обсудим этот план.", partOfSpeech: "verb" },
+  ],
+  7: [
+    { word: "необходимый", definition: "Такой, без которого нельзя обойтись.", exampleSentence: "Практика необходима для беглости.", partOfSpeech: "adjective" },
+    { word: "впечатление", definition: "След, оставленный в сознании событиями.", exampleSentence: "Разговор произвел отличное впечатление.", partOfSpeech: "noun" },
+  ],
+  8: [
+    { word: "красноречие", definition: "Умение красиво и убедительно говорить.", exampleSentence: "Его красноречие покорило всех слушателей.", partOfSpeech: "noun" },
+    { word: "точка зрения", definition: "Жизненная или концептуальная позиция.", exampleSentence: "Я уважаю твою точку зрения.", partOfSpeech: "phrase" },
+  ],
+  9: [
+    { word: "стойкость", definition: "Способность выдерживать трудности и невзгоды.", exampleSentence: "Стойкость духа помогает преодолеть всё.", partOfSpeech: "noun" },
+    { word: "многогранный", definition: "Имеющий много разнообразных сторон.", exampleSentence: "Русский язык очень глубокий и многогранный.", partOfSpeech: "adjective" },
+  ],
+  10: [
+    { word: "сопоставление", definition: "Сравнение различных явлений или идей.", exampleSentence: "Сопоставление культур обогащает кругозор.", partOfSpeech: "noun" },
+    { word: "краеугольный камень", definition: "Главная основа чего-либо.", exampleSentence: "Практика — это краеугольный камень успеха.", partOfSpeech: "phrase" },
+  ],
+};
+
+export const ARABIC_WORD_BANKS: Record<number, WordEntry[]> = {
+  1: [
+    { word: "مرحبا", definition: "تحية ودية عند اللقاء.", exampleSentence: "مرحباً! كيف حالك اليوم؟", partOfSpeech: "phrase" },
+    { word: "مع السلامة", definition: "عبارة تقال عند الوداع.", exampleSentence: "مع السلامة، أراك غداً.", partOfSpeech: "phrase" },
+    { word: "شكرا", definition: "كلمة تعبر عن الامتنان والتقدير.", exampleSentence: "شكراً جزيلاً لمساعدتك.", partOfSpeech: "phrase" },
+    { word: "من فضلك", definition: "عبارة مؤدبة لطلب شيء.", exampleSentence: "ماء، من فضلك.", partOfSpeech: "phrase" },
+    { word: "نعم", definition: "أداة إيجاب وموافقة.", exampleSentence: "نعم، أنا مستعد الآن.", partOfSpeech: "phrase" },
+    { word: "لا", definition: "أداة نفي ورفض.", exampleSentence: "لا، لست متعباً.", partOfSpeech: "phrase" },
+    { word: "صديق", definition: "شخص تربطك به علاقة مودة ومحبة.", exampleSentence: "هو صديقي المفضل.", partOfSpeech: "noun" },
+    { word: "عائلة", definition: "أسرة تتكون من الوالدين والأبناء.", exampleSentence: "عائلتي تحب التجمع دائماً.", partOfSpeech: "noun" },
+    { word: "ماء", definition: "سائل نقي لا غنى عنه للحياة.", exampleSentence: "هل يمكنني الحصول على ماء بارد؟", partOfSpeech: "noun" },
+    { word: "طعام", definition: "ما يؤكل للتغذي والنمو.", exampleSentence: "هذا الطعام شهي ولذيذ جداً.", partOfSpeech: "noun" },
+  ],
+  2: [
+    { word: "بيت", definition: "مكان السكن والاستقرار.", exampleSentence: "بيتي يقع بجوار الحديقة العامة.", partOfSpeech: "noun" },
+    { word: "عمل", definition: "مهنة أو وظيفة يقوم بها الإنسان.", exampleSentence: "عملي يتطلب الكثير من التركيز.", partOfSpeech: "noun" },
+    { word: "وقت", definition: "الزمن أو المقدار المحدد من الساعات.", exampleSentence: "الوقت يمر بسرعة عندما نستمتع.", partOfSpeech: "noun" },
+    { word: "صباح", definition: "أول النهار.", exampleSentence: "صباح الخير والنشاط.", partOfSpeech: "noun" },
+    { word: "تعلم", definition: "اكتساب المعرفة والمهارات.", exampleSentence: "أحب تعلم اللغات الجديدة.", partOfSpeech: "verb" },
+    { word: "تحدث", definition: "التعبير عن الأفكار بالصوت والكلام.", exampleSentence: "من الرائع أن نتحدث معاً.", partOfSpeech: "verb" },
+  ],
+  3: [
+    { word: "مدينة", definition: "مستوطنة عمرانية كبيرة متطورة.", exampleSentence: "هذه المدينة ساحرة ومليئة بالحياة.", partOfSpeech: "noun" },
+    { word: "سفر", definition: "الانتقال من مكان إلى آخر.", exampleSentence: "السفر يفتح آفاقاً جديدة.", partOfSpeech: "noun" },
+    { word: "سؤال", definition: "طلب إيضاح أو جواب عن أمر ما.", exampleSentence: "عندي سؤال حول النطق الصحيح.", partOfSpeech: "noun" },
+    { word: "فهم", definition: "إدراك معنى الكلام واستيعابه.", exampleSentence: "الآن بدأت أفهم القواعد بشكل أوضح.", partOfSpeech: "verb" },
+  ],
+  4: [
+    { word: "فرصة", definition: "وقت مناسب لإنجاز هدف محدد.", exampleSentence: "هذه فرصة رائعة للتطور.", partOfSpeech: "noun" },
+    { word: "خبرة", definition: "معرفة ناتجة عن التجربة والممارسة.", exampleSentence: "الخبرة تأتي بالممارسة اليومية.", partOfSpeech: "noun" },
+    { word: "مشاركة", definition: "التفاعل والتعاون مع الآخرين.", exampleSentence: "تسعدني مشاركة أفكاري معك.", partOfSpeech: "verb" },
+  ],
+  5: [
+    { word: "تطوير", definition: "التحسين والارتقاء بالأداء.", exampleSentence: "تطوير مهارات التحدث هدف أساسي.", partOfSpeech: "noun" },
+    { word: "رأي", definition: "وجهة نظر شخصية حول موضوع ما.", exampleSentence: "ما هو رأيك في هذه الفكرة؟", partOfSpeech: "noun" },
+    { word: "ثقافة", definition: "معارف وعادات وتقاليد الشعوب.", exampleSentence: "التعرف على ثقافة جديدة متعة حقيقية.", partOfSpeech: "noun" },
+  ],
+  6: [
+    { word: "مهم", definition: "ذو شأن وقيمة كبيرة.", exampleSentence: "الاستماع خطوة مهمة للطلاقة.", partOfSpeech: "adjective" },
+    { word: "نقاش", definition: "تبادل الآراء والحجج حول موضوع.", exampleSentence: "كان نقاشاً مثمراً وممتعاً.", partOfSpeech: "noun" },
+  ],
+  7: [
+    { word: "ضروري", definition: "لازم لا يمكن الاستغناء عنه.", exampleSentence: "التدريب المستمر ضروري للنجاح.", partOfSpeech: "adjective" },
+    { word: "إتقان", definition: "أداء الشيء بدقة ومهارة فائقة.", exampleSentence: "إتقان اللغة يتطلب الشغف والصبر.", partOfSpeech: "noun" },
+  ],
+  8: [
+    { word: "فصاحة", definition: "البيان وحسن التعبير وسلاسته.", exampleSentence: "تحدث بفصاحة أثارت إعجاب الحاضرين.", partOfSpeech: "noun" },
+    { word: "وجهة نظر", definition: "زاوية رؤية خاصة للأمور.", exampleSentence: "أحترم وجهة نظرك تماماً.", partOfSpeech: "phrase" },
+  ],
+  9: [
+    { word: "مرونة", definition: "القدرة على التكيف والتجاوب مع المواقف.", exampleSentence: "المرونة الذهنية تصنع الفارق في التعلم.", partOfSpeech: "noun" },
+    { word: "عميق", definition: "ذو معنى واسع وأبعاد دقيقة.", exampleSentence: "حوارنا كان عميقاً ومليئاً بالفائدة.", partOfSpeech: "adjective" },
+  ],
+  10: [
+    { word: "حجر الزاوية", definition: "الأساس المتين الذي يبنى عليه الشيء.", exampleSentence: "الثقة بالنفس هي حجر الزاوية للتحدث بطلاقة.", partOfSpeech: "phrase" },
+    { word: "بلاغة", definition: "مطابقة الكلام لمقتضى الحال مع الفصاحة.", exampleSentence: "البلاغة العربية غنية بالجمال والمعاني السامية.", partOfSpeech: "noun" },
+  ],
+};
+
+/**
+ * Returns the word bank for the given target language and level.
+ * Falls back to English if the language is unknown or bank level is missing.
+ */
+export function getWordBankForLanguage(
+  languageCode: string,
+  level: number,
+): WordEntry[] {
+  const normalized = (languageCode || "").toLowerCase().trim();
+  const safeLevel = Math.max(1, Math.min(10, level || 5));
+
+  let bank: Record<number, WordEntry[]> = WORD_BANKS;
+  if (normalized === "es") {
+    bank = SPANISH_WORD_BANKS;
+  } else if (normalized === "ru") {
+    bank = RUSSIAN_WORD_BANKS;
+  } else if (normalized === "ar") {
+    bank = ARABIC_WORD_BANKS;
+  }
+
+  return bank[safeLevel] || bank[1] || WORD_BANKS[safeLevel] || [];
+}
+

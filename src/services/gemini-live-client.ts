@@ -10,7 +10,11 @@ import { useLocaleStore } from "../stores/useLocaleStore";
 import { getLanguage } from "../config/languages";
 import { LEVEL_CONFIGS } from "../data/voice-tutor-word-banks";
 
-export type LiveSessionPhase = "intro_ku" | "english";
+export type LiveSessionPhase =
+  | "intro_ku"
+  | "native_onboarding"
+  | "english"
+  | "immersion";
 
 export type LiveServerMessage = Record<string, unknown>;
 type GeminiLiveUsageMetadata = Record<string, unknown>;
@@ -130,29 +134,61 @@ async function createGeminiLiveToken(
   };
 }
 
-function getLanguageName(code: string): string {
+export function getLanguageName(code: string): string {
   const language = getLanguage(code);
   if (!language) return code || "English";
   return language.id === "ku" ? "Kurdish Sorani" : language.name;
 }
 
-function getLocalizedLanguageName(targetCode: string, inSourceCode: string): string {
-  const kuNames: Record<string, string> = {
-    en: "ئینگلیزی",
-    ku: "کوردی",
-    ar: "عەرەبی",
-    es: "ئیسپانی",
-    ru: "ڕووسی",
+export function getLiveTutorLanguages(): { sourceLangCode: string; targetLangCode: string } {
+  const localeStore = useLocaleStore.getState();
+  const settingsStore = useSettingsStore.getState();
+  const sourceLangCode = settingsStore.nativeLang || localeStore.selectedSourceLanguage || "ku";
+  const targetLangCode = settingsStore.targetLang || localeStore.selectedTargetLanguage || "en";
+  return { sourceLangCode, targetLangCode };
+}
+
+export function getLocalizedLanguageName(targetCode: string, inSourceCode: string): string {
+  const dicts: Record<string, Record<string, string>> = {
+    ku: {
+      en: "ئینگلیزی",
+      ku: "کوردی",
+      ar: "عەرەبی",
+      es: "ئیسپانی",
+      ru: "ڕووسی",
+    },
+    ar: {
+      en: "الإنجليزية",
+      ku: "الكردية",
+      ar: "العربية",
+      es: "الإسبانية",
+      ru: "الروسية",
+    },
+    es: {
+      en: "inglés",
+      ku: "kurdo",
+      ar: "árabe",
+      es: "español",
+      ru: "ruso",
+    },
+    ru: {
+      en: "английского языка",
+      ku: "курдского языка",
+      ar: "арабского языка",
+      es: "испанского языка",
+      ru: "русского языка",
+    },
+    en: {
+      en: "English",
+      ku: "Kurdish",
+      ar: "Arabic",
+      es: "Spanish",
+      ru: "Russian",
+    },
   };
-  const arNames: Record<string, string> = {
-    en: "الإنجليزية",
-    ku: "الكردية",
-    ar: "العربية",
-    es: "الإسبانية",
-    ru: "الروسية",
-  };
-  if (inSourceCode === "ku" && kuNames[targetCode]) return kuNames[targetCode];
-  if (inSourceCode === "ar" && arNames[targetCode]) return arNames[targetCode];
+
+  const inDict = dicts[inSourceCode];
+  if (inDict && inDict[targetCode]) return inDict[targetCode];
   return getLanguageName(targetCode);
 }
 
@@ -163,8 +199,7 @@ export function buildLiveTutorSystem(): string {
   const sex = settings.userSex || "";
   const name = settings.userName?.trim() || "Student";
 
-  const sourceLangCode = useLocaleStore.getState().selectedSourceLanguage || "ku";
-  const targetLangCode = useLocaleStore.getState().selectedTargetLanguage || "en";
+  const { sourceLangCode, targetLangCode } = getLiveTutorLanguages();
 
   const sourceLangName = getLanguageName(sourceLangCode);
   const targetLangName = getLanguageName(targetLangCode);
@@ -216,7 +251,11 @@ export function buildLiveTutorSystem(): string {
       ? `  1) گفتوگۆی ئازاد (Open Free Conversation): قسەکردنی ئازاد دەربارەی بابەتە ڕۆژانەییەکان بۆ زیادکردنی باوەڕبەخۆبوون و ڕەوانی قسەکردن.\n  2) زاراوە و سلاینگ (Idioms & Slangs): فێربوونی دەستەواژەی باو و زمانی شەقام و قسەکردنی خەڵکی ڕەسەن.\n  3) دەوڵەمەندکردنی وشەکان (Vocabulary Builder): فێربوونی وشەی بەهێز و نوێ بۆ ئەوەی وشەی زیاتر بزانیت و دەربڕینت دەوڵەمەندتر بێت.`
       : sourceLangCode === "ar"
         ? `  1) محادثة حرة ومفتوحة (Open Free Conversation): التحدث الحر حول مواضيع يومية لبناء الثقة والطلاقة.\n  2) مصطلحات وتعبيرات عامية (Idioms & Slangs): تعبيرات دارجة ومصطلحات حقيقية يستخدمها المتحدثون الأصليون.\n  3) بناء وتوسيع المفردات (Vocabulary Builder): تعلم كلمات جديدة وقوية لإثراء حصيلتك اللغوية وبناء جمل أكثر تعبيراً.`
-        : `  1) Open Free Conversation: Casual, natural everyday talking to build confidence, speaking flow, and fluency.\n  2) Idioms and Slangs: Real-world colloquial phrases, street slang, and natural idioms used by native speakers.\n  3) Vocabulary Builder: Learning powerful new words, rich collocations, and expressive vocabulary to expand word power.`,
+        : sourceLangCode === "es"
+          ? `  1) Conversación libre (Open Free Conversation): Charlas casuales sobre temas cotidianos para ganar confianza y fluidez al hablar.\n  2) Modismos y jerga nativa (Idioms & Slangs): Expresiones coloquiales y frases de la calle usadas por hablantes nativos.\n  3) Constructor de vocabulario (Vocabulary Builder): Palabras y combinaciones nuevas y potentes para enriquecer tu expresión.`
+          : sourceLangCode === "ru"
+            ? `  1) Свободный разговор (Open Free Conversation): Непринуждённое общение на повседневные темы для уверенности и беглости речи.\n  2) Идиомы и сленг (Idioms & Slangs): Разговорные фразы, сленг и живые идиомы носителей языка.\n  3) Расширение словарного запаса (Vocabulary Builder): Изучение сильных новых слов и выражений для богатой речи.`
+            : `  1) Open Free Conversation: Casual, natural everyday talking to build confidence, speaking flow, and fluency.\n  2) Idioms and Slangs: Real-world colloquial phrases, street slang, and natural idioms used by native speakers.\n  3) Vocabulary Builder: Learning powerful new words, rich collocations, and expressive vocabulary to expand word power.`,
     `- Wait for their choice before teaching.`,
     ``,
     `STAGE 3: AGENTIC ADAPTIVE TUTORING (Turn 3 & Onward)`,
@@ -257,8 +296,7 @@ export function buildLiveTutorSystem(): string {
 export function buildLiveTutorOpeningPrompt(): string {
   const settings = useSettingsStore.getState();
   const name = settings.userName?.trim() || "";
-  const sourceLangCode = useLocaleStore.getState().selectedSourceLanguage || "ku";
-  const targetLangCode = useLocaleStore.getState().selectedTargetLanguage || "en";
+  const { sourceLangCode, targetLangCode } = getLiveTutorLanguages();
   const sourceLangName = getLanguageName(sourceLangCode);
   const targetLangName = getLanguageName(targetLangCode);
   const targetLangInSource = getLocalizedLanguageName(targetLangCode, sourceLangCode);
@@ -268,6 +306,10 @@ export function buildLiveTutorOpeningPrompt(): string {
     nativeGreetingText = `سڵاو ${name ? `${name} گیان` : ""}! من توینۆم، مامۆستای زیرەکی لایڤی تۆ بۆ فێربوونی زمانی ${targetLangInSource}. دەمەوێت بزانم پێشتر چەند لەم زمانە دەزانیت؟ ئایا لە سەرەتاوە دەست پێ دەکەیت، بنچینەکان دەزانیت، یان دەتوانیت قسە بکەیت؟`;
   } else if (sourceLangCode === "ar") {
     nativeGreetingText = `مرحباً ${name ? name : ""}! أنا توينو، معلمك الذكي المباشر لتعلم اللغة ${targetLangInSource}. أود أن أعرف أولاً: كم تعرف عن اللغة ${targetLangInSource} حالياً؟ هل أنت مبتدئ تماماً، أم تعرف بعض الأساسيات، أم تستطيع التحدث بالفعل؟`;
+  } else if (sourceLangCode === "es") {
+    nativeGreetingText = `¡Hola ${name ? name : ""}! Soy Twino, tu tutor de IA en vivo para aprender ${targetLangInSource}. Primero me encantaría saber: ¿cuánto sabes actualmente sobre el idioma? ¿Estás empezando desde cero, conoces lo básico o ya puedes conversar?`;
+  } else if (sourceLangCode === "ru") {
+    nativeGreetingText = `Привет, ${name ? name : ""}! Я Twino, твой персональный онлайн-репетитор для изучения ${targetLangInSource}. Для начала расскажи: какой у тебя сейчас уровень владения языком? Ты только начинаешь с нуля, знаешь основы или уже можешь общаться?`;
   } else {
     nativeGreetingText = `Hello ${name ? name : ""}! I am Twino, your live AI tutor for learning ${targetLangName}. First, I would love to know: how much do you currently know about ${targetLangName}? Are you a complete beginner, do you know some basics, or can you already converse?`;
   }

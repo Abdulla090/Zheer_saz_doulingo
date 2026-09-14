@@ -1,4 +1,5 @@
 export type MeteredAiFeatureKey =
+  | "study_tutor"
   | "live_tutor_5"
   | "live_tutor_10"
   | "live_tutor_15"

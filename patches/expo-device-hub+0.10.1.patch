@@ -1,0 +1,120 @@
+diff --git a/node_modules/expo-device-hub/dist/server/index.mjs b/node_modules/expo-device-hub/dist/server/index.mjs
+index fa9b875..a1645d8 100644
+--- a/node_modules/expo-device-hub/dist/server/index.mjs
++++ b/node_modules/expo-device-hub/dist/server/index.mjs
+@@ -9043,11 +9043,12 @@ function spawnEmulator(emulatorPath, options) {
+ 
+ // ../@expo/hub-android-utils/dist/sdk-paths.js
+ import { join } from "node:path";
+-var DEFAULT_SDK_SUBPATH = "Library/Android/sdk";
+-var AVDMANAGER_SUBPATH = "cmdline-tools/latest/bin/avdmanager";
+-var SDKMANAGER_SUBPATH = "cmdline-tools/latest/bin/sdkmanager";
+-var EMULATOR_SUBPATH = "emulator/emulator";
+-var ADB_SUBPATH = "platform-tools/adb";
++var isWin = process.platform === "win32";
++var DEFAULT_SDK_SUBPATH = isWin ? "AppData/Local/Android/Sdk" : "Library/Android/sdk";
++var AVDMANAGER_SUBPATH = isWin ? "cmdline-tools/latest/bin/avdmanager.bat" : "cmdline-tools/latest/bin/avdmanager";
++var SDKMANAGER_SUBPATH = isWin ? "cmdline-tools/latest/bin/sdkmanager.bat" : "cmdline-tools/latest/bin/sdkmanager";
++var EMULATOR_SUBPATH = isWin ? "emulator/emulator.exe" : "emulator/emulator";
++var ADB_SUBPATH = isWin ? "platform-tools/adb.exe" : "platform-tools/adb";
+ function resolveSdkRoot(env, homeDir) {
+   const androidHome = nonEmpty(env.ANDROID_HOME);
+   if (androidHome)
+@@ -9122,7 +9123,7 @@ async function bootDevice(options) {
+ import { homedir as homedir2 } from "node:os";
+ 
+ // ../@expo/hub-android-utils/dist/avdmanager.js
+-import { execFile } from "node:child_process";
++import { execFile, exec } from "node:child_process";
+ import { readFile } from "node:fs/promises";
+ import { join as join2 } from "node:path";
+ import { promisify } from "node:util";
+@@ -9152,9 +9153,17 @@ function isAssignment(line) {
+ 
+ // ../@expo/hub-android-utils/dist/avdmanager.js
+ var execFileAsync = promisify(execFile);
++var execBatchAsync = promisify(exec);
++function runAvdmanagerCmd(binPath, args = []) {
++  if (process.platform === "win32" && (binPath.endsWith(".bat") || binPath.endsWith(".cmd"))) {
++    const fullCmd = `"${binPath}" ${args.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ")}`;
++    return execBatchAsync(fullCmd);
++  }
++  return execFileAsync(binPath, args);
++}
+ async function runAvdmanagerListAvd(avdmanagerPath2) {
+   try {
+-    const { stdout } = await execFileAsync(avdmanagerPath2, [
++    const { stdout } = await runAvdmanagerCmd(avdmanagerPath2, [
+       "list",
+       "avd"
+     ]);
+@@ -9165,7 +9174,7 @@ async function runAvdmanagerListAvd(avdmanagerPath2) {
+ }
+ async function runAvdmanagerListDevice(avdmanagerPath2) {
+   try {
+-    const { stdout } = await execFileAsync(avdmanagerPath2, [
++    const { stdout } = await runAvdmanagerCmd(avdmanagerPath2, [
+       "list",
+       "device"
+     ]);
+@@ -9198,7 +9207,7 @@ function buildCreateAvdArgs(options) {
+ async function runAvdmanagerCreateAvd(avdmanagerPath2, options) {
+   const args = buildCreateAvdArgs(options);
+   try {
+-    const { stdout } = await execFileAsync(avdmanagerPath2, args);
++    const { stdout } = await runAvdmanagerCmd(avdmanagerPath2, args);
+     return result(stdout);
+   } catch (error) {
+     return result(null, reportError("[android-utils] Failed to run `avdmanager create avd`:", error));
+@@ -9221,7 +9230,7 @@ function buildDeleteAvdArgs(name) {
+ async function runAvdmanagerDeleteAvd(avdmanagerPath2, name) {
+   const args = buildDeleteAvdArgs(name);
+   try {
+-    const { stdout } = await execFileAsync(avdmanagerPath2, args);
++    const { stdout } = await runAvdmanagerCmd(avdmanagerPath2, args);
+     return result(stdout);
+   } catch (error) {
+     return result(null, reportError("[android-utils] Failed to run `avdmanager delete avd`:", error));
+@@ -9709,12 +9718,20 @@ function toSystemImage(pkg, cells) {
+ }
+ 
+ // ../@expo/hub-android-utils/dist/sdkmanager.js
+-import { execFile as execFile3 } from "node:child_process";
++import { execFile as execFile3, exec as exec3 } from "node:child_process";
+ import { promisify as promisify3 } from "node:util";
+ var execFileAsync3 = promisify3(execFile3);
++var execBatchAsync3 = promisify3(exec3);
++function runSdkmanagerCmd(binPath, args = []) {
++  if (process.platform === "win32" && (binPath.endsWith(".bat") || binPath.endsWith(".cmd"))) {
++    const fullCmd = `"${binPath}" ${args.map((a) => /\s/.test(a) ? `"${a}"` : a).join(" ")}`;
++    return execBatchAsync3(fullCmd);
++  }
++  return execFileAsync3(binPath, args);
++}
+ async function runSdkmanagerListInstalled(sdkmanagerPath2) {
+   try {
+-    const { stdout } = await execFileAsync3(sdkmanagerPath2, [
++    const { stdout } = await runSdkmanagerCmd(sdkmanagerPath2, [
+       "--list_installed"
+     ]);
+     return result(stdout);
+@@ -10872,7 +10889,7 @@ async function listAndroidEmulators() {
+       supported: isSupportedAndroidDevice(device),
+       deviceFrame: androidDeviceFrame(device),
+       lastUsedAt: latestTimestamp(device.lastBootedAt)
+-    })).filter((device) => device.booted || device.lastUsedAt !== undefined),
++    })).filter((device) => device.booted || device.lastUsedAt !== undefined || Boolean(device.name)),
+     error: toSerializableError(listed.error)
+   };
+ }
+@@ -10889,8 +10906,9 @@ function latestTimestamp(...timestamps) {
+ }
+ async function listDevices3(platform) {
+   const empty = () => ({ devices: [], error: null });
++  const isMac = process.platform === "darwin";
+   const [simulators, emulators] = await Promise.all([
+-    platform === "android" ? empty() : listIosSimulators(),
++    platform === "android" || !isMac ? empty() : listIosSimulators(),
+     platform === "ios" ? empty() : listAndroidEmulators()
+   ]);
+   return {

@@ -10,9 +10,9 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useAuth } from "../../context/AuthContext";
 import { aiPrice } from "../../types/entitlements";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
-import { hapticImpact } from "../../utils/haptics";
+import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { isDesktopWebWidth } from "../../constants/web-layout";
-import { getTextDirection } from "../../i18n/direction";
+
 import Svg, {
   Path,
   Defs,
@@ -22,7 +22,9 @@ import Svg, {
 import {
   ActivityIndicator,
   Linking,
+  Modal,
   Platform,
+  Pressable,
   StyleSheet,
   View,
   ScrollView,
@@ -30,6 +32,9 @@ import {
   Image,
   useWindowDimensions,
 } from "react-native";
+import { useLocaleStore } from "../../stores/useLocaleStore";
+import { isSupportedLanguagePair } from "../../config/languages";
+import { detectScriptLanguage } from "../../utils/streaming-transcript";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   AlertCircleIcon,
@@ -40,6 +45,28 @@ import {
   RefreshIcon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons";
+
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { PressableScale } from "../../components/animations";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withSpring,
+  Easing,
+  useAnimatedProps,
+  runOnJS,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 function getCategoryMeta(category?: string, isKu?: boolean, isAr?: boolean) {
   switch (category) {
@@ -75,28 +102,6 @@ function getCategoryMeta(category?: string, isKu?: boolean, isAr?: boolean) {
   }
 }
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { PressableScale } from "../../components/animations";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withSpring,
-  Easing,
-  useAnimatedProps,
-  runOnJS,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
-
 const BRAND_LOGO = require("../../../assets/images/logo-compressed.png");
 
 const SHEET_WAVE_HEIGHT = 180;
@@ -126,9 +131,17 @@ export function VoiceTutorScreen() {
   const level = useSettingsStore((s) => s.englishLevel) || 5;
   const onboardingComplete = useSettingsStore((s) => s.tutorOnboardingComplete);
   const analysisData = useSettingsStore((s) => s.lastAnalysis);
-  const liveTranscriptDirection = getTextDirection(tutor.transcript);
-  const liveTranscriptLanguage =
-    liveTranscriptDirection === "rtl" ? "ar" : "en";
+
+  const sourceLangCode = useLocaleStore((s) => s.selectedSourceLanguage) || "ku";
+  const savedTargetLanguage = useSettingsStore((s) => s.targetLang);
+  const selectedTargetLanguage = useLocaleStore((s) => s.selectedTargetLanguage);
+  const targetLangCode = savedTargetLanguage || selectedTargetLanguage || "en";
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  const { languageCode: liveTranscriptLanguage } = useMemo(
+    () => detectScriptLanguage(tutor.transcript, sourceLangCode, targetLangCode),
+    [tutor.transcript, sourceLangCode, targetLangCode],
+  );
 
   // ── Animated voice reactive waveforms ──
   const phase = useSharedValue(0);
@@ -506,21 +519,50 @@ export function VoiceTutorScreen() {
           </AppText>
         </View>
 
-        {/* Floating pill for level badge & language */}
+        {/* Floating pills for level badge & target language */}
         <View style={styles.topControlRow}>
-          <View
-            style={[
-              styles.langBadge,
-              { width: "auto", paddingHorizontal: 12, borderRadius: 20 },
-            ]}
-          >
-            <AppText style={styles.langText} forceLatinFont latinRole="bold">
-              {onboardingComplete
-                ? `Lv. ${level} / ${LEVEL_CONFIGS[level]?.cefr || "A1"}`
-                : isKu
-                  ? "ئۆنبۆردینگ"
-                  : "ONBOARDING"}
-            </AppText>
+          <View style={styles.topBadgesRow}>
+            <View
+              style={[
+                styles.langBadge,
+                { width: "auto", paddingHorizontal: 12, borderRadius: 20 },
+              ]}
+            >
+              <AppText style={styles.langText} forceLatinFont latinRole="bold">
+                {onboardingComplete
+                  ? `Lv. ${level} / ${LEVEL_CONFIGS[level]?.cefr || "A1"}`
+                  : isKu
+                    ? "ئۆنبۆردینگ"
+                    : "ONBOARDING"}
+              </AppText>
+            </View>
+
+            <PressableScale
+              onPress={() => {
+                if (!tutor.sessionActive) {
+                  hapticSelection();
+                  setLanguageModalVisible(true);
+                }
+              }}
+              style={[
+                styles.langBadge,
+                styles.targetLangBadge,
+                tutor.sessionActive && { opacity: 0.8 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Target language: ${targetLangCode}`}
+            >
+              <AppText style={styles.langText} forceLatinFont latinRole="bold">
+                {targetLangCode === "es"
+                  ? "🇪🇸 Español"
+                  : targetLangCode === "ru"
+                    ? "🇷🇺 Русский"
+                    : targetLangCode === "ar"
+                      ? "🇸🇦 العربية"
+                      : "🇬🇧 English"}
+                {!tutor.sessionActive ? " ▾" : ""}
+              </AppText>
+            </PressableScale>
           </View>
         </View>
       </View>
@@ -1011,8 +1053,8 @@ export function VoiceTutorScreen() {
                 <View style={styles.transcriptLog}>
                   {tutor.turns.map((turn) => {
                     const isUser = turn.sender === "user";
-                    const turnDirection = getTextDirection(turn.text);
-                    const turnLanguage = turnDirection === "rtl" ? "ar" : "en";
+                    const { languageCode: turnLanguage } =
+                      detectScriptLanguage(turn.text, sourceLangCode, targetLangCode);
                     return (
                       <View
                         key={turn.id}
@@ -1311,6 +1353,80 @@ export function VoiceTutorScreen() {
           )}
         </View>
       </Animated.View>
+
+      {/* Target Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setLanguageModalVisible(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <AppText style={[styles.modalTitle, isRtl && styles.rtlText]}>
+              {isKu
+                ? "زمانی فێربوون بۆ گفتوگۆی لایڤ"
+                : isAr
+                  ? "اختر لغة التدريب للمحادثة المباشرة"
+                  : "Choose Practice Language"}
+            </AppText>
+            <View style={styles.modalOptionsList}>
+              {[
+                { code: "en", name: "English", subname: "English", flag: "🇬🇧" },
+                { code: "es", name: "Spanish", subname: "Español", flag: "🇪🇸" },
+                { code: "ru", name: "Russian", subname: "Русский", flag: "🇷🇺" },
+                { code: "ar", name: "Arabic", subname: "العربية", flag: "🇸🇦" },
+              ].map((lang) => {
+                const isSelected = targetLangCode === lang.code;
+                return (
+                  <PressableScale
+                    key={lang.code}
+                    onPress={() => {
+                      hapticSelection();
+                      useSettingsStore.getState().setTargetLang(lang.code);
+                      if (isSupportedLanguagePair(sourceLangCode, lang.code)) {
+                        useLocaleStore.getState().setLanguagePair(sourceLangCode, lang.code);
+                      }
+                      setLanguageModalVisible(false);
+                    }}
+                    style={[
+                      styles.modalOptionCard,
+                      isSelected && styles.modalOptionCardSelected,
+                    ]}
+                  >
+                    <View style={styles.modalOptionRow}>
+                      <AppText style={styles.modalOptionFlag}>{lang.flag}</AppText>
+                      <View style={{ flex: 1, marginHorizontal: 12 }}>
+                        <AppText
+                          style={[styles.modalOptionName, isSelected && { color: colors.primary }]}
+                          forceLatinFont
+                          latinRole="bold"
+                        >
+                          {lang.name}
+                        </AppText>
+                        <AppText style={styles.modalOptionSub}>
+                          {lang.subname}
+                        </AppText>
+                      </View>
+                      {isSelected ? (
+                        <HugeiconsIcon
+                          icon={CheckmarkCircle01Icon}
+                          size={20}
+                          color={colors.primary}
+                          strokeWidth={2.5}
+                        />
+                      ) : null}
+                    </View>
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -1907,5 +2023,76 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       color: colors.mutedForeground,
       lineHeight: 17,
       fontFamily: "Rabar_044",
+    },
+    topBadgesRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    targetLangBadge: {
+      paddingHorizontal: 12,
+      borderRadius: 20,
+      width: "auto",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.10)",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.65)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+    modalContent: {
+      width: "100%",
+      maxWidth: 380,
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: colors.foreground,
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    modalOptionsList: {
+      gap: 10,
+    },
+    modalOptionCard: {
+      borderRadius: 16,
+      backgroundColor: colors.surfaceRaised || colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+    },
+    modalOptionCardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.12)" : "rgba(255, 107, 74, 0.08)",
+    },
+    modalOptionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    modalOptionFlag: {
+      fontSize: 24,
+    },
+    modalOptionName: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    modalOptionSub: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+      marginTop: 2,
     },
   });

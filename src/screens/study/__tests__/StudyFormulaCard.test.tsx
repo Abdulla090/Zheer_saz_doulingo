@@ -1,7 +1,10 @@
 import { describe, expect, test, jest } from "@jest/globals";
 import React from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import renderer, { act } from "react-test-renderer";
+
+import { formatMathFormula, StudyFormulaCard } from "../components/StudyFormulaCard";
+import type { StudyQuizQuestion, StudyStep } from "../../../services/study-tutor-service";
 
 jest.mock("react-native-reanimated", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -35,9 +38,6 @@ jest.mock("../../../components/animations", () => {
     PressableScale: (props: any) => ReactActual.createElement(RNPressable, props),
   };
 });
-
-import { formatMathFormula, StudyFormulaCard } from "../components/StudyFormulaCard";
-import type { StudyQuizQuestion, StudyStep } from "../../../services/study-tutor-service";
 
 function assertNoTextNodeUnderAnyView(root: renderer.ReactTestInstance) {
   const allViews = root.findAllByType(View);

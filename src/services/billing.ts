@@ -50,8 +50,8 @@ function safeInteger(value: unknown, minimum = 0): value is number {
 }
 
 export async function getBillingAccount(): Promise<BillingAccount> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
     if (!session?.access_token) {
       return {
         wallet: { creditBalance: 0, updatedAt: null },
@@ -69,6 +69,7 @@ export async function getBillingAccount(): Promise<BillingAccount> {
 
     const { data, error } = await supabase.functions.invoke("billing-account", {
       body: {},
+      timeout: 15_000,
     });
     if (error) throw error;
 
@@ -81,38 +82,28 @@ export async function getBillingAccount(): Promise<BillingAccount> {
       !["free", "plus", "pro", "max"].includes(plan) ||
       !["active", "expired", "cancelled"].includes(status) ||
       !rawEntitlements ||
-      !safeInteger(rawEntitlements.creditBalance)
+      !safeInteger(rawEntitlements.creditBalance) ||
+      rawEntitlements.creditBalance !== balance ||
+      !["free", "plus", "pro", "max"].includes(rawEntitlements.currentPlan) ||
+      !Object.keys(PLAN_FEATURES.free).every(key => typeof rawEntitlements.features?.[key] === "boolean") ||
+      !rawEntitlements.aiPrices ||
+      !Object.values(rawEntitlements.aiPrices).every(value => safeInteger(value))
     ) {
       throw new Error("Invalid billing account response.");
     }
 
     return data as BillingAccount;
-  } catch (error) {
-    if (__DEV__) {
-      console.warn("getBillingAccount fallback applied:", error instanceof Error ? error.message : error);
-    }
-    return {
-      wallet: { creditBalance: 0, updatedAt: null },
-      subscription: {
-        plan: "free",
-        status: "active",
-        startsAt: null,
-        expiresAt: null,
-        provider: null,
-        updatedAt: null,
-      },
-      entitlements: fallbackEntitlements("free", 0, null),
-    };
-  }
+
 }
 
 export async function getBillingCatalog() {
-  try {
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: { action: "catalog" },
+      timeout: 15_000,
     });
     if (error) throw error;
 
+    if (!Array.isArray(data?.products)) throw new Error("Invalid billing catalog response.");
     const products = Array.isArray(data?.products)
       ? data.products.filter(
           (product: BillingProduct) =>
@@ -132,13 +123,7 @@ export async function getBillingCatalog() {
       providerReady: data?.providerReady === true,
       products: products as BillingProduct[],
     };
-  } catch {
-    return {
-      provider: null,
-      providerReady: false,
-      products: [] as BillingProduct[],
-    };
-  }
+
 }
 
 export function fallbackEntitlements(
@@ -158,6 +143,7 @@ export function fallbackEntitlements(
 export async function createBillingCheckout(productId: string) {
   const { data, error } = await supabase.functions.invoke("create-checkout", {
     body: { action: "create", productId },
+    timeout: 30_000,
   });
   if (error) throw error;
   if (
@@ -177,6 +163,7 @@ export async function createBillingCheckout(productId: string) {
 export async function getBillingPaymentStatus(paymentId: string) {
   const { data, error } = await supabase.functions.invoke("create-checkout", {
     body: { action: "status", paymentId },
+    timeout: 15_000,
   });
   if (error) throw error;
   return data?.payment as

@@ -1,28 +1,11 @@
-import {
-  Cancel01Icon,
-  Mic01Icon,
-  PlayIcon,
-  SentIcon,
-  StopIcon,
-  Add01Icon
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Mic01Icon, SentIcon, StopIcon, Add01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
-import {
-  Platform,
-  StyleSheet,
-  TextInput,
-  View,
-  Image,
-  ActionSheetIOS,
-  Alert,
-  Modal,
-  Pressable
-} from "react-native";
+import { Platform, StyleSheet, TextInput, View, Image, Modal, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -53,11 +36,10 @@ export function StudyVoiceBar({
 }) {
   const theme = useGamesTheme();
   const isDark = theme.isDark;
-  const { isKu, isAr, locale } = useI18n();
+  const { isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
 
   const [textInput, setTextInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const [interimSpeech, setInterimSpeech] = useState("");
   const [selectedImage, setSelectedImage] = useState<{ uri: string; base64: string; mimeType: string } | null>(null);
   const [showMediaMenu, setShowMediaMenu] = useState(false);
@@ -117,7 +99,6 @@ export function StudyVoiceBar({
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onAskQuestion(trimmed, selectedImage?.base64 ?? undefined, selectedImage?.mimeType ?? undefined);
     setTextInput("");
-    setIsTyping(false);
     setSelectedImage(null);
   };
 
@@ -132,7 +113,6 @@ export function StudyVoiceBar({
       const asset = result.assets[0];
       const mimeType = asset.uri.endsWith(".png") ? "image/png" : "image/jpeg";
       setSelectedImage({ uri: asset.uri, base64: asset.base64 as string, mimeType });
-      setIsTyping(true); // Open input so user can type a question alongside image
     }
   };
 
@@ -154,7 +134,6 @@ export function StudyVoiceBar({
       const asset = result.assets[0];
       const mimeType = asset.uri.endsWith(".png") ? "image/png" : "image/jpeg";
       setSelectedImage({ uri: asset.uri, base64: asset.base64 as string, mimeType });
-      setIsTyping(true);
     }
   };
 
@@ -174,7 +153,6 @@ export function StudyVoiceBar({
            console.log("Could not read file as base64", e);
         }
         setSelectedImage({ uri: asset.uri, base64, mimeType });
-        setIsTyping(true);
       }
     } catch (err) {
       console.log(err);

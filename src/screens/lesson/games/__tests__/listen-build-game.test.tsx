@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import React from "react";
 import renderer, { act } from "react-test-renderer";
-import { Text, View } from "react-native";
+import { Text } from "react-native";
+
+import ListenBuildGame from "../ListenBuildGame";
+import { LightWordTile, LightCheckButton } from "../lesson-light-primitives";
+import type { ListenBuildQuestion } from "../../../../data/types";
 
 // Mock expo-router
 jest.mock("expo-router", () => ({
@@ -84,7 +88,7 @@ jest.mock("react-native-reanimated", () => {
     FadeOutDown: chainable,
     FadeOutUp: chainable,
     useSharedValue: (initial: unknown) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
+       
       const ref = useRef({ value: initial });
       return ref.current;
     },
@@ -113,9 +117,20 @@ jest.mock("react-native-gesture-handler", () => {
     },
   );
   return {
-    Gesture: {
-      Pan: () => gestureChain,
-    },
+    Gesture: new Proxy(
+      {
+        Pan: () => gestureChain,
+        Tap: () => gestureChain,
+        Race: (..._args: any[]) => gestureChain,
+        Simultaneous: (..._args: any[]) => gestureChain,
+      },
+      {
+        get: (target: any, prop: string) => {
+          if (prop in target) return target[prop];
+          return () => gestureChain;
+        },
+      },
+    ),
     GestureDetector: ({ children }: any) => <RNView>{children}</RNView>,
   };
 });
@@ -155,10 +170,6 @@ jest.mock("react-native-svg", () => {
     Line: RNView,
   };
 });
-
-import ListenBuildGame from "../ListenBuildGame";
-import { LightWordTile, LightCheckButton } from "../lesson-light-primitives";
-import type { ListenBuildQuestion } from "../../../../data/types";
 
 const mockQuestion: ListenBuildQuestion = {
   type: "listen_build",
@@ -288,4 +299,244 @@ describe("ListenBuildGame", () => {
     // onAnswer should be called with true for correct sentence
     expect(onAnswerMock).toHaveBeenCalledWith(true);
   });
+
+  it("handles wrong answer submission and reports false", async () => {
+    const onAnswerMock = jest.fn();
+
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={mockQuestion}
+          onAnswer={onAnswerMock}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root = tree!.root;
+
+    // Pick a single wrong word: "banana"
+    const bankTiles = root.findAllByType(LightWordTile);
+    const bananaTile = bankTiles.find(
+      (t) => t.props.label === "banana" && !t.props.disabled && t.props.onPress,
+    );
+    expect(bananaTile).toBeDefined();
+
+    await act(async () => {
+      bananaTile!.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    const checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(false);
+
+    await act(async () => {
+      checkBtn.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    expect(onAnswerMock).toHaveBeenCalledWith(false);
+  });
+
+  it("supports tapping answered words to return them to bank", async () => {
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={mockQuestion}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root = tree!.root;
+
+    // Pick "I"
+    const bankTiles = root.findAllByType(LightWordTile);
+    const iTile = bankTiles.find((t) => t.props.label === "I" && t.props.onPress);
+    expect(iTile).toBeDefined();
+
+    await act(async () => {
+      iTile!.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    let checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(false);
+
+    // Tap "I" again to return it
+    await act(async () => {
+      iTile!.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(true);
+  });
+
+  it("resets state when question changes", async () => {
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={mockQuestion}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root = tree!.root;
+
+    // Select a word
+    const bankTiles = root.findAllByType(LightWordTile);
+    const iTile = bankTiles.find((t) => t.props.label === "I" && t.props.onPress);
+
+    await act(async () => {
+      iTile!.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    let checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(false);
+
+    const nextQuestion: ListenBuildQuestion = {
+      type: "listen_build",
+      sentence: "We speak Kurdish",
+      correctWords: ["We", "speak", "Kurdish"],
+      wordBank: ["Kurdish", "speak", "We", "Arabic"],
+      targetLanguage: "en",
+      xp: 10,
+    };
+
+    act(() => {
+      tree?.update(
+        <ListenBuildGame
+          question={nextQuestion}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(true);
+  });
+
+  it("reveals sentence text when 'Can't listen now' is pressed", async () => {
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={mockQuestion}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root = tree!.root;
+
+    // Initially sentence is not visible
+    let textNodes = root.findAllByType(Text);
+    let texts = textNodes
+      .map((n) => (typeof n.props.children === "string" ? n.props.children : ""))
+      .filter(Boolean);
+    expect(texts).not.toContain(mockQuestion.sentence);
+
+    // Find and press the "Can't listen now" pressable
+    const cantListenBtn = root.findByProps({ testID: "cant-listen-btn" });
+    expect(cantListenBtn).toBeDefined();
+
+    await act(async () => {
+      cantListenBtn!.props.onPress();
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    // Now the sentence text should be rendered as a fallback
+    textNodes = root.findAllByType(Text);
+    texts = textNodes
+      .map((n) => (typeof n.props.children === "string" ? n.props.children : ""))
+      .filter(Boolean);
+    expect(texts).toContain(mockQuestion.sentence);
+  });
+
+  it("produces deterministic word bank ordering across renders", () => {
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={mockQuestion}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root1 = tree!.root;
+    const tiles1 = root1.findAllByType(LightWordTile).map((t) => t.props.label);
+
+    act(() => {
+      tree?.update(
+        <ListenBuildGame
+          question={{ ...mockQuestion }}
+          onAnswer={jest.fn()}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root2 = tree!.root;
+    const tiles2 = root2.findAllByType(LightWordTile).map((t) => t.props.label);
+
+    expect(tiles1).toEqual(tiles2);
+  });
+
+  it("handles duplicate words in the word bank properly", async () => {
+    const questionWithDupes: ListenBuildQuestion = {
+      type: "listen_build",
+      sentence: "the cat saw the dog",
+      correctWords: ["the", "cat", "saw", "the", "dog"],
+      wordBank: ["the", "cat", "saw", "the", "dog", "bird"],
+      targetLanguage: "en",
+      xp: 10,
+    };
+
+    const onAnswerMock = jest.fn();
+
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame
+          question={questionWithDupes}
+          onAnswer={onAnswerMock}
+          pathMode="normal"
+        />,
+      );
+    });
+
+    const root = tree!.root;
+
+    // Pick words in order: "the", "cat", "saw", "the", "dog"
+    for (const targetWord of questionWithDupes.correctWords) {
+      const bankTiles = root.findAllByType(LightWordTile);
+      // Find an unselected tile matching targetWord
+      const tile = bankTiles.find(
+        (t) => t.props.label === targetWord && t.props.state === "idle" && t.props.onPress,
+      );
+      expect(tile).toBeDefined();
+
+      await act(async () => {
+        tile!.props.onPress();
+        await jest.advanceTimersByTimeAsync(300);
+      });
+    }
+
+    const checkBtn = root.findByType(LightCheckButton);
+    expect(checkBtn.props.disabled).toBe(false);
+
+    await act(async () => {
+      checkBtn.props.onPress();
+      await jest.advanceTimersByTimeAsync(300);
+    });
+
+    expect(onAnswerMock).toHaveBeenCalledWith(true);
+  });
 });
+

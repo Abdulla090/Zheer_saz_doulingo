@@ -1,3 +1,4 @@
+import { getAiRequestPolicy, isRequestObject } from "../_shared/ai-request-policy.ts";
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import {
@@ -18,30 +19,6 @@ import {
 const MAX_REQUEST_BYTES = 8_500_000;
 const MAX_TEXT_CHARS = 12_000;
 const DAILY_REQUEST_LIMIT = 120;
-const FEATURE_MODELS: Record<Exclude<MeteredAiFeatureKey, `live_tutor_${number}` | "dynamic_tts_minute">, string> = {
-  ai_teacher_writing: "gemini-3.6-flash",
-  ai_teacher_speaking: "gemini-3.6-flash",
-  reading_pronunciation_evaluation: "gemini-3.6-flash",
-  reading_passage_generation: "gemini-3.5-flash-lite",
-  roleplay_text_response: "gemini-3.5-flash-lite",
-  roleplay_voice_response: "gemini-3.5-flash-lite",
-};
-const ALLOWED_FEATURES = new Set<MeteredAiFeatureKey>([
-  "ai_teacher_writing",
-  "ai_teacher_speaking",
-  "reading_passage_generation",
-  "reading_pronunciation_evaluation",
-  "roleplay_text_response",
-  "roleplay_voice_response",
-]);
-const FEATURE_MAX_OUTPUT_TOKENS: Record<string, number> = {
-  ai_teacher_writing: 768,
-  ai_teacher_speaking: 768,
-  reading_pronunciation_evaluation: 768,
-  reading_passage_generation: 1_024,
-  roleplay_text_response: 512,
-  roleplay_voice_response: 512,
-};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -151,14 +128,16 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
 
   let input: Record<string, unknown>;
   try {
-    input = JSON.parse(raw) as Record<string, unknown>;
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRequestObject(parsed)) throw new Error("Expected an object");
+    input = parsed;
   } catch {
     return json({ error: "Invalid JSON" }, 400);
   }
 
   const featureKey =
     typeof input.featureKey === "string" &&
-    ALLOWED_FEATURES.has(input.featureKey as MeteredAiFeatureKey)
+    getAiRequestPolicy(input.featureKey)
       ? (input.featureKey as MeteredAiFeatureKey)
       : null;
   const idempotencyKey =
@@ -169,14 +148,9 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
       400,
     );
   }
-  const requestedModel =
-    typeof input.model === "string" && /^[a-z0-9_.-]+$/i.test(input.model)
-      ? input.model
-      : null;
-  const model = requestedModel || FEATURE_MODELS[
-    featureKey as keyof typeof FEATURE_MODELS
-  ];
-  if (!model) return json({ error: "AI feature not available" }, 400);
+  const policy = getAiRequestPolicy(featureKey);
+  if (!policy) return json({ error: "AI feature not available" }, 400);
+  const model = policy.model;
 
   const userId = ctx.userClaims?.id;
   if (!userId) return json({ error: "Authentication required" }, 401);
@@ -286,7 +260,7 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
 
   const isTts = false;
   const generationConfig = sanitizeGenerationConfig(input.generationConfig, isTts) ?? {};
-  const maxAllowedTokens = requestedModel ? 4_096 : FEATURE_MAX_OUTPUT_TOKENS[featureKey];
+  const maxAllowedTokens = policy.maxOutputTokens;
   generationConfig.maxOutputTokens = Math.min(
     typeof generationConfig.maxOutputTokens === "number"
       ? generationConfig.maxOutputTokens
@@ -299,9 +273,9 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
     body.systemInstruction = systemInstruction;
   }
 
-  if (Array.isArray(input.tools)) {
-    body.tools = input.tools;
-  }
+  // Clients cannot enable unpriced provider tools. Study uses structured JSON
+  // and local, sandboxed visualizations; no arbitrary tool execution.
+  if (featureKey === "study_tutor") generationConfig.responseMimeType = "application/json";
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 50_000);
@@ -334,7 +308,6 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
           name: billingError instanceof Error ? billingError.name : "UnknownError",
         });
       }
-      const upstreamError = payload.error as { message?: unknown } | undefined;
       await finalizeAiUsage(ctx.supabaseAdmin, {
         reservationId: reservation.reservationId,
         userId,
@@ -353,7 +326,7 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
       return json(
         {
           code: "AI_PROVIDER_FAILED",
-          error: typeof upstreamError?.message === "string" ? upstreamError.message : "AI request failed",
+          error: "AI is temporarily unavailable. Please try again later.",
           billing: reversed ? aiBillingResponse(reversed) : aiBillingResponse(reservation),
         },
         status,
@@ -457,9 +430,9 @@ Deno.serve(async (req: Request) => {
       statusText: res.statusText,
       headers: newHeaders,
     });
-  } catch (err) {
+  } catch (_err) {
     return Response.json(
-      { code: "SERVER_ERROR", message: err instanceof Error ? err.message : String(err) },
+      { code: "SERVER_ERROR", message: "Service temporarily unavailable. Please try again later." },
       { status: 500, headers: corsHeaders },
     );
   }

@@ -4,6 +4,7 @@ import {
 } from "../constants/gemini";
 import {
   GeminiLiveSession,
+  getLiveTutorLanguages,
   type LiveSessionPhase,
 } from "../services/gemini-live-client";
 import {
@@ -18,9 +19,13 @@ import {
   SessionWordState,
   createEmptySessionWordState,
 } from "../data/voice-tutor-types";
-import { WORD_BANKS } from "../data/voice-tutor-word-banks";
+import { getWordBankForLanguage } from "../data/voice-tutor-word-banks";
 import { computeSessionAnalysis } from "../services/voice-tutor-analysis-engine";
 import { mergeStreamingTranscript } from "../utils/streaming-transcript";
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export type LiveTutorStatus =
   | "idle"
@@ -181,7 +186,10 @@ export function useGeminiLiveTutor() {
 
     if (activeWordRef.current) {
       const target = activeWordRef.current;
-      const userSpokeWord = new RegExp(`\\b${target}\\b`, "i").test(cleanText);
+      const userSpokeWord = new RegExp(
+        `(?:^|[^\\p{L}\\p{N}])${escapeRegExp(target)}(?:$|[^\\p{L}\\p{N}])`,
+        "iu",
+      ).test(cleanText);
 
       setSessionWords((prev) => {
         if (userSpokeWord) {
@@ -217,7 +225,10 @@ export function useGeminiLiveTutor() {
         }),
         targetWord: activeWordRef.current || undefined,
         wordCorrect: activeWordRef.current
-          ? new RegExp(`\\b${activeWordRef.current}\\b`, "i").test(cleanText)
+          ? new RegExp(
+              `(?:^|[^\\p{L}\\p{N}])${escapeRegExp(activeWordRef.current)}(?:$|[^\\p{L}\\p{N}])`,
+              "iu",
+            ).test(cleanText)
           : undefined,
       },
     ]);
@@ -385,11 +396,17 @@ export function useGeminiLiveTutor() {
 
             // 1. Process AI response text for word introductions
             const currentLevel = useSettingsStore.getState().englishLevel || 5;
-            const levelWordBank = WORD_BANKS[currentLevel] || [];
+            const { targetLangCode } = getLiveTutorLanguages();
+            const levelWordBank = getWordBankForLanguage(targetLangCode, currentLevel);
             let detectedWord: string | null = null;
 
             for (const entry of levelWordBank) {
-              if (new RegExp(`\\b${entry.word}\\b`, "i").test(aiResponseText)) {
+              if (
+                new RegExp(
+                  `(?:^|[^\\p{L}\\p{N}])${escapeRegExp(entry.word)}(?:$|[^\\p{L}\\p{N}])`,
+                  "iu",
+                ).test(aiResponseText)
+              ) {
                 detectedWord = entry.word;
                 break;
               }
@@ -544,9 +561,9 @@ export function useGeminiLiveTutor() {
     await attemptConnect(1);
   }, [
     appendAiText,
+    commitUserTurn,
     configured,
     flushTranscript,
-    recordUserTurn,
     startMic,
     stopMic,
     stopPlayer,

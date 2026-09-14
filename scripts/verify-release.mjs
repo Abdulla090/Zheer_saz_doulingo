@@ -256,6 +256,9 @@ const geminiGateway = read("src/services/gemini-gateway.ts");
 const geminiFunction = read("supabase/functions/gemini-generate/index.ts");
 if (
   teacherService.includes("generativelanguage.googleapis.com") ||
+  geminiGateway.includes("generativelanguage.googleapis.com") ||
+  appConfig.includes("geminiApiKey") ||
+  appConfig.includes("EXPO_PUBLIC_GEMINI_API_KEY") ||
   geminiConfig.includes("EXPO_PUBLIC_GEMINI_API_KEY") ||
   rootLayoutContent.includes("twino.gemini.apikey")
 ) {

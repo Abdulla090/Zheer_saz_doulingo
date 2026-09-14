@@ -42,8 +42,6 @@ const noSystemHighlightStyle =
     ? (({
         WebkitTapHighlightColor: "transparent",
         WebkitTouchCallout: "none",
-        outlineColor: "transparent",
-        outlineStyle: "none",
         userSelect: "none",
       } as unknown) as ViewStyle)
     : undefined;

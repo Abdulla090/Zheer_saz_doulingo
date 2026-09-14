@@ -3,7 +3,10 @@ import React from "react";
 import { View } from "react-native";
 import renderer, { act } from "react-test-renderer";
 
+import { CurrentLessonIcon } from "../current-lesson-icon";
+
 jest.mock("react-native-reanimated", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- resolve native dependency inside the hoisted mock.
   const { View: NativeView } = require("react-native");
   const passthrough = (value: unknown) => value;
   const easingFn = () => 0;
@@ -16,6 +19,7 @@ jest.mock("react-native-reanimated", () => {
       bezier: () => easingFn,
       quad: easingFn,
       cubic: easingFn,
+      linear: easingFn,
     },
     useAnimatedStyle: (fn: any) => fn(),
     useReducedMotion: () => false,
@@ -24,13 +28,13 @@ jest.mock("react-native-reanimated", () => {
     withRepeat: passthrough,
     withSequence: passthrough,
     withTiming: passthrough,
+    withSpring: passthrough,
+    ReduceMotion: { System: "system", Never: "never" },
     cancelAnimation: jest.fn(),
     Extrapolation: { CLAMP: "clamp" },
     interpolate: (val: number, inR: number[], outR: number[]) => outR[0] ?? 1,
   };
 });
-
-import { CurrentLessonIcon } from "../current-lesson-icon";
 
 const MockIcon = (props: any) => <View testID="mock-icon" {...props} />;
 

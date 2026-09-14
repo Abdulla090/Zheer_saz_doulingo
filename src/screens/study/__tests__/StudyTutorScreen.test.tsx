@@ -3,6 +3,8 @@ import React from "react";
 import { View } from "react-native";
 import renderer, { act } from "react-test-renderer";
 
+import { StudyTutorScreen } from "../StudyTutorScreen";
+
 jest.mock("expo-router", () => ({
   useRouter: () => ({
     back: jest.fn(),
@@ -71,8 +73,6 @@ jest.mock("../../../hooks/use-speech-capture", () => ({
 jest.mock("react-native-webview", () => ({
   WebView: () => null,
 }));
-
-import { StudyTutorScreen } from "../StudyTutorScreen";
 
 function assertNoTextNodeUnderAnyView(root: renderer.ReactTestInstance) {
   const allViews = root.findAllByType(View);

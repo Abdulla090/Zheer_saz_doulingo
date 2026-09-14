@@ -5,12 +5,14 @@ import Animated, {
   Easing,
   Extrapolation,
   interpolate,
+  ReduceMotion,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withDelay,
   withRepeat,
   withSequence,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
 
@@ -40,12 +42,10 @@ type CurrentLessonIconProps = {
 const MOVE_DOWN_Y = 5;
 const MOVE_UP_Y = -8;
 
-// Thrown-object flight timing: crouch -> leap -> hang -> soft landing
 const CROUCH_MS = 180;
 const RISE_MS = 400;
 /** Long enough to register as hang time, short enough not to stall the loop. */
 const HANG_MS = 150;
-const FALL_MS = 560;
 
 /** Apex is nearest the viewer; the crouch is pressed into the surface. */
 const LIFT_SCALE = 1.06;
@@ -55,6 +55,16 @@ const CROUCH_SCALE = 0.97;
 const SHADOW_LIFT = 6;
 /** The shadow tracks the icon's scale, but only partly, so the two separate. */
 const SHADOW_SCALE_FOLLOW = 0.35;
+
+const FALL_SPRING = {
+  duration: 560,
+  dampingRatio: 0.7,
+  mass: 4,
+  overshootClamping: false,
+  energyThreshold: 6e-9,
+  velocity: 0,
+  reduceMotion: ReduceMotion.System,
+} as const;
 
 export const CurrentLessonIcon = ({
   IconComponent,
@@ -73,7 +83,6 @@ export const CurrentLessonIcon = ({
       return;
     }
 
-    // 1. Vertical thrown-object arc: crouch -> leap -> hang -> physical landing bounce
     translateY.value = withRepeat(
       withSequence(
         // Load up: ease *in*, so the crouch settles rather than snapping.
@@ -82,36 +91,18 @@ export const CurrentLessonIcon = ({
           easing: Easing.in(Easing.quad),
         }),
         // Leap: ease *out*, so it arrives at the apex already slowing down.
-        withTiming(MOVE_UP_Y, {
-          duration: RISE_MS,
-          easing: Easing.out(Easing.cubic),
-        }),
-        // Hang & Fall: hold at apex, then soft spring-like overshoot landing to 0
-        withDelay(
-          HANG_MS,
-          withTiming(0, {
-            duration: FALL_MS,
-            easing: Easing.bezier(0.34, 1.3, 0.64, 1),
-          }),
+        withTiming(
+          MOVE_UP_Y,
+          { duration: RISE_MS, easing: Easing.out(Easing.cubic) },
+          (finished) => {
+            if (finished) {
+              // Spun at the top of the arc. A five-point star is identical
+              // after 72 degrees, so each loop closes without a visible jump.
+              rotate.value = withSpring(rotate.value + 72, FALL_SPRING);
+            }
+          },
         ),
-      ),
-      -1,
-      false,
-    );
-
-    // 2. Synchronized spin: waits for crouch, spins 72 degrees through flight, resets seamlessly.
-    // A 5-pointed star is identical at 72 degrees, so 72deg and 0deg are visually equivalent.
-    // Driving this independently eliminates UI-thread callback bridge crossing and NaN calculations.
-    rotate.value = withRepeat(
-      withSequence(
-        withDelay(
-          CROUCH_MS,
-          withTiming(72, {
-            duration: RISE_MS + HANG_MS + FALL_MS,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          }),
-        ),
-        withTiming(0, { duration: 0 }),
+        withDelay(HANG_MS, withSpring(0, FALL_SPRING)),
       ),
       -1,
       false,

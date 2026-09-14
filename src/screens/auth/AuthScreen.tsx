@@ -305,7 +305,7 @@ export default function AuthScreen() {
     }
 
     return () => subscription.unsubscribe();
-  }, [authMode, isKu]);
+  }, [authMode, isKu, redirect, router]);
 
   const validateEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

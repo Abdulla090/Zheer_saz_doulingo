@@ -1,3 +1,4 @@
+import { BillingStatusNotice } from "../../components/BillingStatusNotice";
 import SafeContainer from "../../components/shared/safe-container";
 import { PressableScale } from "../../components/animations/PressableScale";
 import { AppText } from "../../components/ui/AppText";
@@ -113,7 +114,7 @@ export function SubscriptionScreen() {
         <View style={styles.centerColumn}>
           <View style={styles.hero}>
             <View style={styles.badge}>
-              <AppText style={styles.badgeText} languageCode="en">
+              <AppText style={styles.badgeText} languageCode={planLocale}>
                 {copy.eyebrow}
               </AppText>
             </View>
@@ -135,17 +136,18 @@ export function SubscriptionScreen() {
             </AppText>
           </View>
 
+          <BillingStatusNotice />
           <View style={styles.accountStrip}>
             <View style={styles.accountMetric}>
               <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.credits}</AppText>
               <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
-                {(billingAccount?.wallet.creditBalance ?? 0).toLocaleString()}
+                {billingAccount ? billingAccount.wallet.creditBalance.toLocaleString() : "—"}
               </AppText>
             </View>
             <View style={styles.accountMetric}>
               <AppText style={styles.accountLabel} forceKurdishFont={isKu}>{copy.plan}</AppText>
               <AppText style={styles.accountValue} forceLatinFont latinRole="bold">
-                {currentPlan.toUpperCase()}
+                {billingAccount ? currentPlan.toUpperCase() : "—"}
               </AppText>
             </View>
             <View style={styles.accountMetric}>

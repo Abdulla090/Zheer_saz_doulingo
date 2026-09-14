@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 import { ContentPackCard } from "../../components/ContentPackCard";
 import { KidsEnglishPathScreen } from "./KidsEnglishPathScreen";
 import { NormalEnglishPathScreen } from "./NormalEnglishPathScreen";

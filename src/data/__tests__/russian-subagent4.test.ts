@@ -34,7 +34,7 @@ describe('Subagent 4: Russian Translation Dictionary (ru.json)', () => {
   });
 
   test('has ZERO Latin character leaks [a-zA-Z] in translation values', () => {
-    const latinLeaks: Array<{ key: string; val: string }> = [];
+    const latinLeaks: { key: string; val: string }[] = [];
     const latinRegex = /[a-zA-Z]/;
 
     for (const [key, val] of Object.entries(ruData)) {
@@ -46,7 +46,7 @@ describe('Subagent 4: Russian Translation Dictionary (ru.json)', () => {
   });
 
   test('has ZERO Arabic character leaks [\\u0600-\\u06FF] in translation values', () => {
-    const arabicLeaks: Array<{ key: string; val: string }> = [];
+    const arabicLeaks: { key: string; val: string }[] = [];
     const arabicRegex = /[\u0600-\u06FF]/;
 
     for (const [key, val] of Object.entries(ruData)) {

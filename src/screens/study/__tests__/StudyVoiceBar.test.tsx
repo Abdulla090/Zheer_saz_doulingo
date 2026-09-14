@@ -1,7 +1,9 @@
 import { describe, expect, test, jest, beforeEach } from "@jest/globals";
 import React from "react";
-import { Pressable, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import renderer, { act } from "react-test-renderer";
+
+import { StudyVoiceBar } from "../components/StudyVoiceBar";
 
 jest.mock("react-native-reanimated", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -53,8 +55,6 @@ jest.mock("../../../hooks/use-speech-capture", () => ({
     available: mockAvailable,
   }),
 }));
-
-import { StudyVoiceBar } from "../components/StudyVoiceBar";
 
 function assertNoTextNodeUnderAnyView(root: renderer.ReactTestInstance) {
   const allViews = root.findAllByType(View);

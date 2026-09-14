@@ -191,8 +191,6 @@ export const ListItem = React.memo(
             lessonColorTheme(item) as SvgButtonVariant
           ].face
         : SVG_BUTTON_COLOR_SETS.blue.face;
-    /** The one branch below that renders `NormalPathNode`. */
-    const isNormalPathNode = isNormalPath && !chestKind;
 
     // Normal path only: the mascot fills the gap the curve leaves at its
     // extremes. Anchored to the unit, so each unit gets its own two companions

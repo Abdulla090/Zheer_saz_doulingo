@@ -130,6 +130,7 @@ function LeaderboardAvatar({
       >
         <Image
           source={{ uri: uploadedUrl }}
+          recyclingKey={`${item.userId}:${uploadedUrl}`}
           contentFit="cover"
           transition={160}
           cachePolicy="memory-disk"
