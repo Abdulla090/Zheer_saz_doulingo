@@ -1,4 +1,5 @@
 import { AppText } from "../../../components/ui/AppText";
+import { Host, Switch } from "@expo/ui";
 import { SUBSCRIPTION_URL } from "../../../constants/app-meta";
 import { Image, type ImageSource } from "expo-image";
 import type { LessonPathMode } from "../../../data/lesson-content";
@@ -18,6 +19,8 @@ import {
 
 import { isDesktopWebWidth } from "../../../constants/web-layout";
 import { useLocaleStore } from "../../../stores/useLocaleStore";
+import { useSettingsStore } from "../../../stores/useSettingsStore";
+import { hapticSelection } from "../../../utils/haptics";
 import { openHttpsUrl } from "../../../utils/safe-link";
 import { LanguageFlag } from "../../onboarding/components/OnboardingFlag";
 import { DuolingoCourseDropdown } from "./DuolingoCourseDropdown";
@@ -46,6 +49,8 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
   const dailyGoalXp = useProgressStore((state) => state.dailyGoalXp);
   const streakDays = useProgressStore((state) => state.streakDays);
   const targetLanguage = useLocaleStore((state) => state.selectedTargetLanguage);
+  const focusModeEnabled = useSettingsStore((state) => state.focusModeEnabled);
+  const setFocusModeEnabled = useSettingsStore((state) => state.setFocusModeEnabled);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -188,6 +193,19 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         </View>
       </View>
 
+      <View style={styles.focusToggle}>
+        <Host matchContents colorScheme={isDark ? "dark" : "light"} seedColor={colors.primary}>
+          <Switch
+            value={focusModeEnabled}
+            onValueChange={(enabled) => {
+              hapticSelection();
+              setFocusModeEnabled(enabled);
+            }}
+            label={t("focus.mode")}
+          />
+        </Host>
+      </View>
+
       {/* Duolingo Course Dropdown Slider */}
       <DuolingoCourseDropdown
         visible={isDropdownOpen}
@@ -221,6 +239,13 @@ function createStyles(
       paddingHorizontal: mobileWeb ? 10 : 14,
       marginBottom: mobileWeb ? 4 : 6,
       zIndex: 102,
+    },
+    focusToggle: {
+      minHeight: 44,
+      alignSelf: "center",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
     },
     flagButton: {
       paddingHorizontal: compact ? 6 : 8,

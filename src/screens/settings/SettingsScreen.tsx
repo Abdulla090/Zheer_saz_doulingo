@@ -24,9 +24,9 @@ import React, { useMemo } from "react";
 import {
   Alert,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -199,33 +199,24 @@ function SettingsSwitch({
   value,
   onValueChange,
   activeColor,
+  offColor,
   label,
 }: {
   value: boolean;
   onValueChange: (value: boolean) => void;
   activeColor: string;
+  offColor: string;
   label: string;
 }) {
   return (
-    <Pressable
-      accessibilityRole="switch"
+    <Switch
       accessibilityLabel={label}
-      accessibilityState={{ checked: value }}
-      hitSlop={9}
-      onPress={() => onValueChange(!value)}
-      style={({ pressed }) => [
-        stylesStatic.switchTrack,
-        value ? { backgroundColor: activeColor } : stylesStatic.switchTrackOff,
-        pressed && stylesStatic.switchPressed,
-      ]}
-    >
-      <View
-        style={[
-          stylesStatic.switchThumb,
-          value ? stylesStatic.switchThumbOn : stylesStatic.switchThumbOff,
-        ]}
-      />
-    </Pressable>
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: offColor, true: activeColor }}
+      ios_backgroundColor={offColor}
+      thumbColor="#FFFFFF"
+    />
   );
 }
 
@@ -504,11 +495,13 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const replayOnboarding = useOnboardingStore((state) => state.replayOnboarding);
   const haptics = useSettingsStore((state) => state.hapticsEnabled);
   const sounds = useSettingsStore((state) => state.soundsEnabled);
+  const focusModeEnabled = useSettingsStore((state) => state.focusModeEnabled);
   const theme = useSettingsStore((state) => state.theme);
   const tutorVoice = useSettingsStore((state) => state.tutorVoice);
   const pathMode = useSettingsStore((state) => state.pathMode);
   const setHaptics = useSettingsStore((state) => state.setHapticsEnabled);
   const setSounds = useSettingsStore((state) => state.setSoundsEnabled);
+  const setFocusModeEnabled = useSettingsStore((state) => state.setFocusModeEnabled);
   const setTheme = useSettingsStore((state) => state.setTheme);
   const setTutorVoice = useSettingsStore((state) => state.setTutorVoice);
   const setPathMode = useSettingsStore((state) => state.setPathMode);
@@ -854,6 +847,25 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                 <SectionHeading title={copy.feel} hint={copy.feelHint} locale={locale} styles={styles} />
                 <View style={styles.controlGroup}>
                   <ControlRow
+                    icon={VoiceIcon}
+                    title={t("focus.mode")}
+                    subtitle={t("focus.modeHint")}
+                    locale={locale}
+                    styles={styles}
+                    control={
+                      <SettingsSwitch
+                        label={t("focus.mode")}
+                        value={focusModeEnabled}
+                        onValueChange={(enabled) => {
+                          setFocusModeEnabled(enabled);
+                          router.replace("/(tabs)");
+                        }}
+                        activeColor={colors.primary}
+                        offColor={colors.border}
+                      />
+                    }
+                  />
+                  <ControlRow
                     icon={TouchInteraction01Icon}
                     title={t("settings.haptics")}
                     locale={locale}
@@ -864,6 +876,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                         value={haptics}
                         onValueChange={setHaptics}
                         activeColor={colors.primary}
+                        offColor={colors.border}
                       />
                     }
                   />
@@ -878,6 +891,7 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
                         value={sounds}
                         onValueChange={setSounds}
                         activeColor={colors.primary}
+                        offColor={colors.border}
                       />
                     }
                   />
@@ -1039,45 +1053,6 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
     </View>
   );
 }
-
-const stylesStatic = StyleSheet.create({
-  switchTrack: {
-    width: 48,
-    height: 28,
-    borderRadius: 999,
-    justifyContent: "center",
-    flexShrink: 0,
-    ...Platform.select({
-      web: { userSelect: "none", cursor: "pointer" },
-    }),
-  },
-  switchTrackOff: {
-    backgroundColor: "#CBD5E1",
-  },
-  switchPressed: {
-    opacity: 0.8,
-  },
-  switchThumb: {
-    position: "absolute",
-    top: 3,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#FFFFFF",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#0F172A",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.16,
-        shadowRadius: 2,
-      },
-      android: { elevation: 2 },
-      web: { boxShadow: "0 1px 4px rgba(15, 23, 42, 0.2)" },
-    }),
-  },
-  switchThumbOff: { left: 3 },
-  switchThumbOn: { left: 23 },
-});
 
 const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDesktopWeb: boolean = false) => {
   const featureBackground = isDark ? colors.surfaceRaised : colors.foreground;

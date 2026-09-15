@@ -347,7 +347,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build app
-        timeout-minutes: 60
+        timeout-minutes: 120
         if: inputs.mode == 'build' && steps.appcache.outputs.cache-hit != 'true'
         env:
           UDID: ${{ steps.sim.outputs.udid }}
@@ -372,6 +372,10 @@ jobs:
             -destination "id=$UDID" \
             -derivedDataPath build/ios \
             CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf \
+            ONLY_ACTIVE_ARCH=YES \
+            -parallelizeTargets \
             -quiet \
             build
 

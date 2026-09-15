@@ -4,6 +4,9 @@ import {
   LeaderboardTabIcon,
   ProfileTabIconFlat,
 } from "./icons/HomeDashboardIcons";
+import { BookOpen01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { WaveformIcon } from "./icons/TwinoHomeIcons";
 import {
   TAB_BAR_FLOAT_MARGIN_BOTTOM,
   TAB_BAR_FLOAT_MARGIN_H,
@@ -36,6 +39,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { crossShadow } from "../utils/shadows";
 import { AppText } from "./ui/AppText";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useSettingsStore } from "../stores/useSettingsStore";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -53,12 +57,14 @@ const INDICATOR_MOVE_DURATION = 240;
 
 type TabRoute = "index" | "play" | "dashboard" | typeof TAB_FAB_ROUTE;
 
-const TAB_ITEMS: {
+type TabItem = {
   route: TabRoute;
   href: "/" | "/play" | "/dashboard" | "/more";
   labelKey: I18nKey;
   renderIcon: (active: boolean, size: number, activeColor: string, inactiveColor: string) => React.ReactNode;
-}[] = [
+};
+
+const TAB_ITEMS: TabItem[] = [
   {
     route: "index",
     href: "/",
@@ -89,6 +95,38 @@ const TAB_ITEMS: {
     labelKey: "tabs.profile",
     renderIcon: (active, size, activeColor, inactiveColor) => (
       <ProfileTabIconFlat size={size} color={active ? activeColor : inactiveColor} />
+    ),
+  },
+];
+
+const FOCUS_TAB_ITEMS: TabItem[] = [
+  {
+    route: "index",
+    href: "/",
+    labelKey: "focus.talk",
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <WaveformIcon size={size} color={active ? activeColor : inactiveColor} />
+    ),
+  },
+  {
+    route: "play",
+    href: "/play",
+    labelKey: "tabs.games",
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <GamesTabIcon size={size} color={active ? activeColor : inactiveColor} />
+    ),
+  },
+  {
+    route: "dashboard",
+    href: "/dashboard",
+    labelKey: "focus.words",
+    renderIcon: (active, size, activeColor, inactiveColor) => (
+      <HugeiconsIcon
+        icon={BookOpen01Icon}
+        size={size}
+        color={active ? activeColor : inactiveColor}
+        strokeWidth={2.2}
+      />
     ),
   },
 ];
@@ -202,13 +240,14 @@ export function CustomTabBar({
   const { width } = useWindowDimensions();
   const { t, isKu, isAr } = useI18n();
   const { colors, isDark } = useThemeColors();
+  const focusModeEnabled = useSettingsStore((state) => state.focusModeEnabled);
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const activeRouteName = state.routes[state.index]?.name;
   const isRtl = isKu || isAr;
 
   const items = useMemo(
-    () => TAB_ITEMS.map((item) => ({ ...item, label: t(item.labelKey) })),
-    [t],
+    () => (focusModeEnabled ? FOCUS_TAB_ITEMS : TAB_ITEMS).map((item) => ({ ...item, label: t(item.labelKey) })),
+    [focusModeEnabled, t],
   );
   // Keep layout coordinates LTR and mirror the data exactly once. Native RTL
   // otherwise mirrors the row/absolute inset while indicator math mirrors the
@@ -246,7 +285,7 @@ export function CustomTabBar({
     cancelAnimation(indicatorX);
     cancelAnimation(indicatorScaleX);
     cancelAnimation(indicatorScaleY);
-    if (!hasPositionedIndicator.current || reducedMotion) {
+    if (!hasPositionedIndicator.current || reducedMotion || focusModeEnabled) {
       indicatorX.value = target;
       indicatorScaleX.value = 1;
       indicatorScaleY.value = 1;
@@ -277,6 +316,7 @@ export function CustomTabBar({
     indicatorScaleY,
     indicatorTarget,
     indicatorX,
+    focusModeEnabled,
     reducedMotion,
   ]);
 

@@ -29,6 +29,7 @@ function resolveAppTheme(value: unknown): AppTheme {
 
 interface SettingsState {
   ready: boolean;
+  focusModeEnabled: boolean;
   hapticsEnabled: boolean;
   soundsEnabled: boolean;
   pathMode: PathMode;
@@ -50,6 +51,7 @@ interface SettingsState {
   wordsInProgress: string[];
   lastAnalysis: RealAnalysis | null;
   tutorOnboardingComplete: boolean;
+  setFocusModeEnabled: (v: boolean) => void;
   setHapticsEnabled: (v: boolean) => void;
   setSoundsEnabled: (v: boolean) => void;
   setPathMode: (mode: PathMode) => void;
@@ -73,6 +75,50 @@ interface SettingsState {
   setTutorOnboardingComplete: (v: boolean) => void;
 }
 
+type TutorVocabularyAnalysis = Pick<
+  RealAnalysis,
+  "wordsIntroduced" | "wordsMastered" | "wordsForReview"
+>;
+
+function uniqueWords(values: unknown[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const word = value.trim();
+    const key = word.toLocaleLowerCase();
+    if (!word || seen.has(key)) continue;
+    seen.add(key);
+    result.push(word);
+  }
+
+  return result;
+}
+
+export function mergeTutorVocabulary(
+  knownWords: unknown[],
+  wordsInProgress: unknown[],
+  analysis: TutorVocabularyAnalysis | null,
+) {
+  const mastered = uniqueWords([
+    ...knownWords,
+    ...(Array.isArray(analysis?.wordsMastered) ? analysis.wordsMastered : []),
+  ]);
+  const masteredKeys = new Set(mastered.map((word) => word.toLocaleLowerCase()));
+  const learning = uniqueWords([
+    ...wordsInProgress,
+    ...(Array.isArray(analysis?.wordsIntroduced) ? analysis.wordsIntroduced : []),
+    ...(Array.isArray(analysis?.wordsForReview) ? analysis.wordsForReview : []),
+  ]).filter((word) => !masteredKeys.has(word.toLocaleLowerCase()));
+
+  return { knownWords: mastered, wordsInProgress: learning };
+}
+
+export function resolveFocusModeEnabled(value: unknown) {
+  return value !== false;
+}
+
 function persist(partial: Partial<SettingsState>) {
   try {
     const raw = appStorage.getItemSync(STORAGE_KEY);
@@ -90,6 +136,7 @@ const savedSettingsRaw = appStorage.getItemSync(STORAGE_KEY);
 const initialSettings = (() => {
   if (!savedSettingsRaw) {
     return {
+      focusModeEnabled: true,
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: DEFAULT_PATH_MODE,
@@ -117,7 +164,14 @@ const initialSettings = (() => {
     const parsed = JSON.parse(savedSettingsRaw) as Partial<SettingsState>;
     // A path paused after this preference was written must not resurrect it.
     const savedMode: PathMode = resolvePathMode(parsed.pathMode ?? null);
+    const lastAnalysis = parsed.lastAnalysis ?? null;
+    const vocabulary = mergeTutorVocabulary(
+      Array.isArray(parsed.knownWords) ? parsed.knownWords : [],
+      Array.isArray(parsed.wordsInProgress) ? parsed.wordsInProgress : [],
+      lastAnalysis,
+    );
     return {
+      focusModeEnabled: resolveFocusModeEnabled(parsed.focusModeEnabled),
       hapticsEnabled: parsed.hapticsEnabled !== false,
       soundsEnabled: parsed.soundsEnabled !== false,
       pathMode: savedMode,
@@ -141,13 +195,14 @@ const initialSettings = (() => {
         : DEFAULT_MASCOT_ID,
       isPremium: parsed.isPremium === true,
       subscriptionTier: typeof parsed.subscriptionTier === "string" ? parsed.subscriptionTier : null,
-      knownWords: Array.isArray((parsed as any).knownWords) ? (parsed as any).knownWords : [],
-      wordsInProgress: Array.isArray((parsed as any).wordsInProgress) ? (parsed as any).wordsInProgress : [],
-      lastAnalysis: (parsed as any).lastAnalysis ?? null,
+      knownWords: vocabulary.knownWords,
+      wordsInProgress: vocabulary.wordsInProgress,
+      lastAnalysis,
       tutorOnboardingComplete: Boolean((parsed as any).tutorOnboardingComplete),
     };
   } catch {
     return {
+      focusModeEnabled: true,
       hapticsEnabled: true,
       soundsEnabled: true,
       pathMode: DEFAULT_PATH_MODE,
@@ -175,6 +230,11 @@ const initialSettings = (() => {
 export const useSettingsStore = create<SettingsState>((set) => ({
   ...initialSettings,
   ready: true,
+
+  setFocusModeEnabled: (focusModeEnabled) => {
+    set({ focusModeEnabled });
+    persist({ focusModeEnabled });
+  },
 
   setHapticsEnabled: (hapticsEnabled) => {
     set({ hapticsEnabled });
@@ -262,22 +322,42 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   // ── Voice tutor setters ──
 
   addKnownWords: (words) => {
-    const cur = useSettingsStore.getState().knownWords;
-    const merged = [...new Set([...cur, ...words])];
-    set({ knownWords: merged });
-    persist({ knownWords: merged } as any);
+    const current = useSettingsStore.getState();
+    const vocabulary = mergeTutorVocabulary(
+      current.knownWords,
+      current.wordsInProgress,
+      { wordsIntroduced: [], wordsMastered: words, wordsForReview: [] },
+    );
+    set(vocabulary);
+    persist(vocabulary);
   },
 
   addWordsInProgress: (words) => {
-    const cur = useSettingsStore.getState().wordsInProgress;
-    const merged = [...new Set([...cur, ...words])];
-    set({ wordsInProgress: merged });
-    persist({ wordsInProgress: merged } as any);
+    const current = useSettingsStore.getState();
+    const vocabulary = mergeTutorVocabulary(
+      current.knownWords,
+      current.wordsInProgress,
+      { wordsIntroduced: words, wordsMastered: [], wordsForReview: [] },
+    );
+    set(vocabulary);
+    persist(vocabulary);
   },
 
   setLastAnalysis: (lastAnalysis) => {
-    set({ lastAnalysis });
-    persist({ lastAnalysis } as any);
+    if (!lastAnalysis) {
+      set({ lastAnalysis });
+      persist({ lastAnalysis });
+      return;
+    }
+
+    const current = useSettingsStore.getState();
+    const vocabulary = mergeTutorVocabulary(
+      current.knownWords,
+      current.wordsInProgress,
+      lastAnalysis,
+    );
+    set({ lastAnalysis, ...vocabulary });
+    persist({ lastAnalysis, ...vocabulary });
   },
 
   setTutorOnboardingComplete: (tutorOnboardingComplete) => {

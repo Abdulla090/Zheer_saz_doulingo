@@ -11,6 +11,7 @@ import { router, Tabs, usePathname } from "expo-router";
 import React, { useEffect } from "react";
 import { Platform, useWindowDimensions, View } from "react-native";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 const WARM_TAB_ROUTES = ["/play", "/dashboard", "/more"] as const;
 
@@ -54,21 +55,23 @@ function useWarmTabRoutes() {
 function JsTabsLayoutInner() {
   useWarmTabRoutes();
   const { colors } = useThemeColors();
+  const focusModeEnabled = useSettingsStore((state) => state.focusModeEnabled);
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const { hidden: contextHidden } = useTabBarVisibility();
   const hideTabBar = contextHidden || pathnameHidesTabBar(pathname);
   const isDesktopWeb =
     Platform.OS === "web" && isDesktopWebWidth(width);
+  const showDesktopChrome = isDesktopWeb && !focusModeEnabled;
   const showDesktopRail =
-    isDesktopWeb &&
+    showDesktopChrome &&
     (pathname === "/" || pathname === "/index" || pathname === "/play");
 
   const tabs = (
     <Tabs
       initialRouteName="index"
       tabBar={(props) =>
-        isDesktopWeb ? null : (
+        showDesktopChrome ? null : (
           <CustomTabBar {...props} />
         )
       }
@@ -78,7 +81,7 @@ function JsTabsLayoutInner() {
         tabBarActiveTintColor: colors.foreground,
         tabBarInactiveTintColor: colors.mutedForeground,
         sceneStyle: { backgroundColor: colors.background },
-        animation: "fade",
+        animation: focusModeEnabled ? "none" : "fade",
         transitionSpec: {
           animation: "timing",
           config: { duration: 160 },
@@ -87,7 +90,7 @@ function JsTabsLayoutInner() {
         tabBarBackground: () => (
           <View style={{ flex: 1, backgroundColor: "transparent" }} />
         ),
-        tabBarStyle: hideTabBar || isDesktopWeb
+        tabBarStyle: hideTabBar || showDesktopChrome
           ? { display: "none" }
           : {
               position: "absolute",
@@ -118,7 +121,7 @@ function JsTabsLayoutInner() {
   return (
     <View style={{ flex: 1 }}>
       {tabs}
-      {isDesktopWeb && !hideTabBar ? <DesktopWebSidebar /> : null}
+      {showDesktopChrome && !hideTabBar ? <DesktopWebSidebar /> : null}
       {showDesktopRail ? <DesktopWebRail /> : null}
     </View>
   );

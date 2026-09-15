@@ -1,15 +1,11 @@
 import {
-  ArrowLeft01Icon,
   ArrowLeft02Icon,
-  ArrowRight01Icon,
   ArrowRight02Icon,
   BookOpen01Icon,
-  BubbleChatIcon,
   Certificate01Icon,
   FireIcon,
   HeadphonesIcon,
   Idea01Icon,
-  MaskTheater01Icon,
   Mortarboard02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
@@ -38,7 +34,8 @@ import { DirectionBoundary } from "../../i18n/layout-direction";
 import { useProgressStore } from "../../stores/useProgressStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { crossShadow } from "../../utils/shadows";
-import { resolveGameHue, type GameModeKey } from "./games-theme";
+import { GAME_MODES } from "./game-modes";
+import { PracticeCard } from "./practice-card";
 
 const XP_PER_LEVEL = 300;
 
@@ -58,65 +55,7 @@ function withAlpha(hex: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-/**
- * The five secondary modes. Voice tutor is deliberately absent — it is the
- * featured card above the grid, so listing it here too would offer the same
- * destination twice on one screen.
- *
- * Each entry's `mode` key is the one the destination screen registers in
- * `GAME_MODE_HUES`. The tile glyph and its chevron therefore render in exactly
- * the hue the learner is about to land on, so the grid cell reads as a preview
- * of the screen behind it rather than as decoration. Nothing else on the card
- * carries the hue: the screen's own accent stays the mascot colour.
- *
- * No blurb key: the cards show a glyph and a title. The per-card descriptions
- * were the bulk of this screen's copy, and the `games.*Blurb` strings stay in
- * the locale files because each destination screen still uses its own.
- */
-const MODES = [
-  {
-    key: "reading-practice",
-    mode: "reading-practice" as GameModeKey,
-    titleKey: "games.paragraphSpeechTitle",
-    href: "/reading-practice" as const,
-    icon: BookOpen01Icon,
-  },
-  {
-    key: "podcast",
-    mode: "podcast" as GameModeKey,
-    titleKey: "games.podcastTitle",
-    href: "/podcast" as const,
-    icon: HeadphonesIcon,
-  },
-  {
-    key: "slang",
-    mode: "slang" as GameModeKey,
-    titleKey: "games.slangTitle",
-    href: "/slang" as const,
-    icon: BubbleChatIcon,
-  },
-  {
-    key: "roleplay",
-    mode: "roleplay" as GameModeKey,
-    titleKey: "games.rolePlayTitle",
-    href: "/roleplay" as const,
-    icon: MaskTheater01Icon,
-  },
-  {
-    key: "ai-teacher",
-    mode: "ai-teacher" as GameModeKey,
-    titleKey: "games.teacherTitle",
-    href: "/ai-teacher" as const,
-    icon: Mortarboard02Icon,
-  },
-  {
-    key: "study-tutor",
-    mode: "study-tutor" as GameModeKey,
-    titleKey: "games.studyTutorTitle",
-    href: "/study-tutor" as const,
-    icon: Idea01Icon,
-  },
-] as const;
+
 
 /**
  * Level dial for the stats card: the number, with its tier beneath it.
@@ -314,7 +253,6 @@ export function GamesScreen() {
 
   const ringSize = isDesktopWeb ? 104 : compact ? 84 : 96;
   const forwardIcon = isRtl ? ArrowLeft02Icon : ArrowRight02Icon;
-  const chevronIcon = isRtl ? ArrowLeft01Icon : ArrowRight01Icon;
 
   return (
     <DirectionBoundary direction="ltr" style={styles.root}>
@@ -682,76 +620,9 @@ export function GamesScreen() {
 
           {/* Two-column grid: five modes + the tip / streak cell. */}
           <View style={styles.grid}>
-            {MODES.map((mode) => {
-              /* `ink` rather than the raw hue: violet and sky at full
-                 saturation fall under 3:1 against the dark canvas, so the
-                 registry keeps a lightened variant for that case. */
-              const hue = resolveGameHue(mode.mode, isDark);
-              return (
-              <PremiumPressable
-                key={mode.key}
-                onPress={() => router.push(mode.href as never)}
-                containerStyle={styles.gridCellContainer}
-                style={[
-                  styles.gridCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-                pressScale={0.97}
-              >
-                <View style={[styles.gridHead, isRtl && styles.rowReverse]}>
-                  <View
-                    style={[
-                      styles.gridGlyph,
-                      { backgroundColor: hue.wash, borderWidth: 1, borderColor: hue.border },
-                    ]}
-                  >
-                    <HugeiconsIcon
-                      icon={mode.icon}
-                      size={compact ? 26 : 30}
-                      color={hue.ink}
-                      strokeWidth={2.1}
-                    />
-                  </View>
-                </View>
-
-                {/* Icon and title carry the card. The blurb underneath each of
-                    the five modes was the bulk of the screen's copy and said
-                    little the title did not. */}
-                <DirectionBoundary
-                  direction={isRtl ? "rtl" : "ltr"}
-                  style={styles.gridCopy}
-                >
-                  <AppText
-                    style={styles.gridTitle}
-                    languageCode={locale}
-                    align="start"
-                    forceKurdishFont={isRtl}
-                    fullWidth
-                    numberOfLines={2}
-                  >
-                    {t(mode.titleKey)}
-                  </AppText>
-                </DirectionBoundary>
-
-                <View
-                  style={[
-                    styles.gridArrowRow,
-                    isRtl && styles.gridArrowRowRtl,
-                  ]}
-                >
-                  <HugeiconsIcon
-                    icon={chevronIcon}
-                    size={16}
-                    color={hue.ink}
-                    strokeWidth={2.4}
-                  />
-                </View>
-              </PremiumPressable>
-              );
-            })}
+            {GAME_MODES.map((mode) => (
+              <PracticeCard key={mode.key} mode={mode} containerStyle={styles.gridCellContainer} />
+            ))}
 
             {/* Sixth cell — static, so it is a plain View rather than a press target. */}
             <View style={styles.gridCellContainer}>
@@ -846,7 +717,7 @@ function createStyles(
   colors: (typeof Colors)["light"] | (typeof Colors)["dark"],
   isDesktopWeb: boolean,
 ) {
-  const cardRadius = isDesktopWeb ? 22 : 20;
+  const cardRadius = 26;
 
   return StyleSheet.create({
     root: {
@@ -1085,7 +956,7 @@ function createStyles(
     },
     gridCard: {
       width: "100%",
-      minHeight: isDesktopWeb ? 132 : compact ? 114 : 122,
+      minHeight: 176,
       borderRadius: cardRadius,
       borderCurve: "continuous",
       borderWidth: StyleSheet.hairlineWidth,
