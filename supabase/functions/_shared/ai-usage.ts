@@ -61,6 +61,18 @@ const MODEL_PRICING = {
     outputTextPerMillion: 4.5,
     outputAudioPerMillion: 12,
   },
+  "gemini-3.8-live": {
+    inputTextPerMillion: 0.75,
+    inputAudioPerMillion: 3,
+    outputTextPerMillion: 4.5,
+    outputAudioPerMillion: 12,
+  },
+  "gemini-3.8-live-extended-thinking": {
+    inputTextPerMillion: 1.25,
+    inputAudioPerMillion: 4,
+    outputTextPerMillion: 6,
+    outputAudioPerMillion: 16,
+  },
 } as const;
 
 function safeCount(value: unknown): number {
@@ -127,8 +139,17 @@ export function snapshotGeminiUsage(
 
   let estimatedCostUsd = 0;
   let pricingSnapshot: Record<string, number | string> = { pricedAt: "2026-08-10" };
-  if (model === "gemini-3.1-flash-live-preview") {
-    const rates = MODEL_PRICING[model];
+  if (
+    model === "gemini-3.8-live" ||
+    model === "gemini-3.8-live-extended-thinking" ||
+    model === "gemini-3.1-flash-live-preview"
+  ) {
+    const rates = MODEL_PRICING[model as keyof typeof MODEL_PRICING] as {
+      inputTextPerMillion: number;
+      inputAudioPerMillion: number;
+      outputTextPerMillion: number;
+      outputAudioPerMillion: number;
+    };
     const textInput = Math.max(0, inputTokens - audioInputTokens);
     const textOutput = Math.max(0, outputTokens - audioOutputTokens);
     estimatedCostUsd =

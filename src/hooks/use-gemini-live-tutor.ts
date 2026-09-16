@@ -1,6 +1,7 @@
 import {
   GEMINI_LIVE_INPUT_RATE,
   isGeminiLiveConfigured,
+  type GeminiLiveModel,
 } from "../constants/gemini";
 import {
   GeminiLiveSession,
@@ -33,6 +34,7 @@ export type LiveTutorStatus =
   | "live"
   | "speaking"
   | "listening"
+  | "thinking"
   | "paused"
   | "error";
 
@@ -60,6 +62,7 @@ export function useGeminiLiveTutor() {
   const [sessionActive, setSessionActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [isReasoning, setIsReasoning] = useState(false);
   const [transcript, setTranscript] = useState("");
 
   // ─── Real state tracking ───
@@ -271,6 +274,7 @@ export function useGeminiLiveTutor() {
 
   const connectSession = useCallback(async (
     durationMinutes: 5 | 10 | 15 = 5,
+    model?: GeminiLiveModel,
   ) => {
     if (!configured) {
       setError(
@@ -467,6 +471,20 @@ export function useGeminiLiveTutor() {
               }
             });
           },
+          onInteractionStatus: (interactionStatus) => {
+            if (!isCurrentSession()) return;
+            if (interactionStatus === "IN_PROGRESS") {
+              setIsReasoning(true);
+              if (statusRef.current !== "speaking" && statusRef.current !== "listening") {
+                setStatus("thinking");
+              }
+            } else if (interactionStatus === "IDLE") {
+              setIsReasoning(false);
+              if (statusRef.current === "thinking") {
+                setStatus(playerRef.current?.isPlaying ? "speaking" : "live");
+              }
+            }
+          },
           onInterrupted: () => {
             if (!isCurrentSession()) return;
             ignoreCurrentAiAudioRef.current = false;
@@ -516,7 +534,7 @@ export function useGeminiLiveTutor() {
               attempt,
             );
           },
-        }, durationMinutes);
+        }, durationMinutes, model);
       } catch (err) {
         const msg =
           err instanceof Error
@@ -666,9 +684,10 @@ export function useGeminiLiveTutor() {
 
   const startSession = useCallback(async (
     durationMinutes: 5 | 10 | 15 = 5,
+    requestedModel?: GeminiLiveModel,
   ) => {
     autoLiveRef.current = true;
-    await connectSession(durationMinutes);
+    await connectSession(durationMinutes, requestedModel);
   }, [connectSession]);
 
   const signalReady = useCallback(async () => {
@@ -735,7 +754,8 @@ export function useGeminiLiveTutor() {
     speaking,
     listening: status === "listening",
     paused: status === "paused",
-    thinking: status === "connecting",
+    thinking: status === "connecting" || status === "thinking" || isReasoning,
+    isReasoning,
     transcript,
     error,
     turns,

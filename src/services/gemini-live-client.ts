@@ -1,6 +1,8 @@
 import {
   GEMINI_LIVE_INPUT_RATE,
   GEMINI_LIVE_MODEL,
+  type GeminiLiveModel,
+  isLiveExtendedThinkingModel,
   getGeminiLiveWebSocketUrl,
 } from "../constants/gemini";
 import { supabase } from "../lib/supabase";
@@ -9,6 +11,7 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 import { useLocaleStore } from "../stores/useLocaleStore";
 import { getLanguage } from "../config/languages";
 import { LEVEL_CONFIGS } from "../data/voice-tutor-word-banks";
+import { getPersonaById } from "../constants/voice-personas";
 
 export type LiveSessionPhase =
   | "intro_ku"
@@ -27,6 +30,7 @@ export type LiveSessionCallbacks = {
   onInputTranscription?: (text: string) => void;
   onOutputTranscription?: (text: string) => void;
   onTurnComplete?: () => void;
+  onInteractionStatus?: (status: "IN_PROGRESS" | "IDLE") => void;
   onInterrupted?: () => void;
   onClose?: (reason?: string) => void;
   onError?: (message: string) => void;
@@ -52,6 +56,7 @@ export type GeminiLiveTokenGrant = {
 
 async function createGeminiLiveToken(
   durationMinutes: 5 | 10 | 15,
+  model?: GeminiLiveModel,
 ): Promise<GeminiLiveTokenGrant> {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session?.access_token) {
@@ -64,6 +69,7 @@ async function createGeminiLiveToken(
       {
         body: {
           durationMinutes,
+          model: model || useSettingsStore.getState().liveTutorModel || GEMINI_LIVE_MODEL,
           idempotencyKey: createAiIdempotencyKey(`live_tutor_${durationMinutes}`),
         },
         timeout: 12_000,
@@ -198,6 +204,11 @@ export function buildLiveTutorSystem(): string {
   const age = settings.userAge || "";
   const sex = settings.userSex || "";
   const name = settings.userName?.trim() || "Student";
+  const persona = getPersonaById(settings.voicePersonaId || settings.tutorVoice);
+  const personaIdentity =
+    persona.nativeName && persona.nativeName !== persona.name
+      ? `${persona.name} (${persona.nativeName})`
+      : persona.name;
 
   const { sourceLangCode, targetLangCode } = getLiveTutorLanguages();
 
@@ -223,8 +234,12 @@ export function buildLiveTutorSystem(): string {
     : "Gender: Not specified.";
 
   const systemRules = [
-    `You are Twino, an elite, highly perceptive Agentic Live AI Tutor specialized in coaching a ${sourceLangName}-speaking learner (${name}) to master ${targetLangName}.`,
+    `You are ${personaIdentity}, an elite, highly perceptive Live AI Tutor on Twino specialized in coaching a ${sourceLangName}-speaking learner (${name}) to master ${targetLangName}.`,
     `You are not a generic chatbot. You act as an active, diagnostic, goal-oriented personal tutor who leads the session through a structured agent protocol.`,
+    ``,
+    `=== VOICE PERSONA & CHARACTER TRAITS ===`,
+    `- Tutor Persona: ${personaIdentity}`,
+    `- Persona Traits & Teaching Style: ${persona.personalityPrompt}`,
     ``,
     `=== LEARNER PROFILE ===`,
     `- Name: ${name}`,
@@ -239,7 +254,7 @@ export function buildLiveTutorSystem(): string {
     ``,
     `STAGE 1: NATIVE GREETING & LEVEL DIAGNOSTIC (Turn 1)`,
     `- LANGUAGE: You MUST speak ONLY in the learner's native language (${sourceLangName}).`,
-    `- ACTION: Greet ${name} warmly by name. Introduce yourself as Twino, their personal live tutor for ${targetLangName}.`,
+    `- ACTION: Greet ${name} warmly by name. Introduce yourself as ${personaIdentity} from Twino, their personal live tutor for ${targetLangName}.`,
     `- ASK: Inquire how much they currently know about ${targetLangName} (e.g. are they starting from scratch as a beginner, know basic words, or can already converse?).`,
     `- Do NOT list learning tracks or start lessons yet. Wait for their response.`,
     ``,
@@ -279,8 +294,34 @@ export function buildLiveTutorSystem(): string {
     `    - Show how each word elevates their expression (e.g. swapping basic words like "very tired" for "exhausted", "good" for "outstanding").`,
     `    - Give a clear contextual example sentence, then ask the learner to create their own sentence using the word.`,
     ``,
+    `=== BILINGUAL MASTERY & CONTRASTIVE PEDAGOGY ===`,
+    `- DUAL-LANGUAGE EXCELLENCE: You possess native-level mastery of both the learner's native tongue (${sourceLangName}) and the target tongue (${targetLangName}).`,
+    sourceLangCode === "ku"
+      ? [
+          `- NATIVE KURDISH (SORANI) AUTHENTICITY & DIALECT DYNAMICS:`,
+          `  * When speaking Kurdish, speak ONLY in authentic, rich Sorani Kurdish (Central Kurdish) as spoken across Kurdistan (Slemani, Hawler, Duhok, Kirkuk).`,
+          `  * Embody genuine Kurdish cultural warmth, hospitable etiquette, and natural honorifics ('گیان', 'ئازیزی من', 'دەستت خۆش بێت', 'هەر بژی', 'ئافەرم', 'واڵا زۆر چاکە', 'بێگومان').`,
+          `  * Use natural Sorani verbal prefixes and colloquial syntax ('دەچم', 'دەیکەین', 'با بزانین', 'سەیری ئەمە بکە') rather than stiff machine-translated phrases or literal calques from Persian or Arabic.`,
+          `  * Contrastive Kurdish-to-${targetLangName} Bridges:`,
+          `    - Connect ${targetLangName} phrasal verbs and idioms to intuitive Kurdish compound verbs ('دەست پێکردن', 'پاشگەزبوونەوە') and traditional proverbs ('پەندەکانی پێشینان').`,
+          `    - Clear phonetic bridges: For sounds challenging Kurdish speakers (such as English 'th' /θ/ & /ð/, /w/ vs /v/, short /ɪ/ vs long /iː/, and word-initial 's' clusters), explain tongue and lip placement using intuitive Sorani Kurdish comparisons.`,
+          `  * Effortless Kurdish Comprehension: Fully understand whatever dialect or speed of Kurdish the learner uses (Slemani, Hawler, Badini) or code-mixed speech ('ئەم وشەیە چۆن pronounce دەکەین؟'). Validate their thought warmly in Kurdish, then model the natural ${targetLangName} expression.`,
+        ].join("\n")
+      : sourceLangCode === "ar"
+        ? [
+            `- NATIVE ARABIC LINGUISTIC MASTERY:`,
+            `  * Speak with articulate, eloquent Arabic when explaining grammar contrasts or difficult expressions.`,
+            `  * Guide Arabic learners on English phonetics (vowel length contrasts, 'p' vs 'b', consonant clusters) with scholarly clarity.`,
+            `  * Comprehend regional Arabic colloquial expressions and bridge them smoothly to native ${targetLangName}.`,
+          ].join("\n")
+        : [
+            `- BILINGUAL BRIDGING:`,
+            `  * Seamlessly bridge between ${sourceLangName} and ${targetLangName}.`,
+            `  * Explain false friends, prepositions, and phonetic contrasts clearly in ${sourceLangName}.`,
+          ].join("\n"),
+    ``,
     `=== NATIVE LANGUAGE BRIDGING POLICY IN STAGE 3 ===`,
-    `- Conduct immersion primarily in ${targetLangName}.`,
+    `- Conduct immersion primarily in ${targetLangName} (aim for 75-85% target language practice during active speaking).`,
     `- SUPPORTIVE BRIDGE: When explaining the meaning of a tricky idiom, subtle slang nuance, new vocabulary word, or whenever the student hesitates, is confused, or speaks in their native language (${sourceLangName}), provide a concise, warm explanation in ${sourceLangName} to ensure complete clarity, then smoothly return to ${targetLangName}.`,
     ``,
     `=== AUDIO SPEECH CONSTRAINTS (CRITICAL) ===`,
@@ -296,22 +337,30 @@ export function buildLiveTutorSystem(): string {
 export function buildLiveTutorOpeningPrompt(): string {
   const settings = useSettingsStore.getState();
   const name = settings.userName?.trim() || "";
+  const persona = getPersonaById(settings.voicePersonaId || settings.tutorVoice);
   const { sourceLangCode, targetLangCode } = getLiveTutorLanguages();
   const sourceLangName = getLanguageName(sourceLangCode);
   const targetLangName = getLanguageName(targetLangCode);
   const targetLangInSource = getLocalizedLanguageName(targetLangCode, sourceLangCode);
 
+  const personaDisplayName =
+    sourceLangCode === "ku" && persona.nativeName
+      ? persona.nativeName
+      : sourceLangCode === "ar" && persona.nativeName
+        ? persona.nativeName
+        : persona.name;
+
   let nativeGreetingText = "";
   if (sourceLangCode === "ku") {
-    nativeGreetingText = `سڵاو ${name ? `${name} گیان` : ""}! من توینۆم، مامۆستای زیرەکی لایڤی تۆ بۆ فێربوونی زمانی ${targetLangInSource}. دەمەوێت بزانم پێشتر چەند لەم زمانە دەزانیت؟ ئایا لە سەرەتاوە دەست پێ دەکەیت، بنچینەکان دەزانیت، یان دەتوانیت قسە بکەیت؟`;
+    nativeGreetingText = `سڵاو ${name ? `${name} گیان` : ""}! من ${personaDisplayName}م لە توینۆ، مامۆستای تایبەتی تۆ بۆ فێربوونی زمانی ${targetLangInSource}. دەمەوێت بزانم پێشتر چەند لەم زمانە دەزانیت؟ ئایا لە سەرەتاوە دەست پێ دەکەیت، بنچینەکان دەزانیت، یان دەتوانیت قسە بکەیت؟`;
   } else if (sourceLangCode === "ar") {
-    nativeGreetingText = `مرحباً ${name ? name : ""}! أنا توينو، معلمك الذكي المباشر لتعلم اللغة ${targetLangInSource}. أود أن أعرف أولاً: كم تعرف عن اللغة ${targetLangInSource} حالياً؟ هل أنت مبتدئ تماماً، أم تعرف بعض الأساسيات، أم تستطيع التحدث بالفعل؟`;
+    nativeGreetingText = `مرحباً ${name ? name : ""}! أنا ${personaDisplayName} من توينو، معلمك المباشر لتعلم اللغة ${targetLangInSource}. أود أن أعرف أولاً: كم تعرف عن اللغة ${targetLangInSource} حالياً؟ هل أنت مبتدئ تماماً، أم تعرف بعض الأساسيات، أم تستطيع التحدث بالفعل؟`;
   } else if (sourceLangCode === "es") {
-    nativeGreetingText = `¡Hola ${name ? name : ""}! Soy Twino, tu tutor de IA en vivo para aprender ${targetLangInSource}. Primero me encantaría saber: ¿cuánto sabes actualmente sobre el idioma? ¿Estás empezando desde cero, conoces lo básico o ya puedes conversar?`;
+    nativeGreetingText = `¡Hola ${name ? name : ""}! Soy ${personaDisplayName} de Twino, tu tutor de IA en vivo para aprender ${targetLangInSource}. Primero me encantaría saber: ¿cuánto sabes actualmente sobre el idioma? ¿Estás empezando desde cero, conoces lo básico o ya puedes conversar?`;
   } else if (sourceLangCode === "ru") {
-    nativeGreetingText = `Привет, ${name ? name : ""}! Я Twino, твой персональный онлайн-репетитор для изучения ${targetLangInSource}. Для начала расскажи: какой у тебя сейчас уровень владения языком? Ты только начинаешь с нуля, знаешь основы или уже можешь общаться?`;
+    nativeGreetingText = `Привет, ${name ? name : ""}! Я ${personaDisplayName} из Twino, твой персональный онлайн-репетитор для изучения ${targetLangInSource}. Для начала расскажи: какой у тебя сейчас уровень владения языком? Ты только начинаешь с нуля, знаешь основы или уже можешь общаться?`;
   } else {
-    nativeGreetingText = `Hello ${name ? name : ""}! I am Twino, your live AI tutor for learning ${targetLangName}. First, I would love to know: how much do you currently know about ${targetLangName}? Are you a complete beginner, do you know some basics, or can you already converse?`;
+    nativeGreetingText = `Hello ${name ? name : ""}! I am ${personaDisplayName} from Twino, your live AI tutor for learning ${targetLangName}. First, I would love to know: how much do you currently know about ${targetLangName}? Are you a complete beginner, do you know some basics, or can you already converse?`;
   }
 
   return [
@@ -390,6 +439,7 @@ function extractTranscriptionText(
 export class GeminiLiveSession {
   private ws: WebSocket | null = null;
   private callbacks: LiveSessionCallbacks = {};
+  private activeModel: GeminiLiveModel = GEMINI_LIVE_MODEL;
   private setupDone = false;
   private incomingMessageChain: Promise<void> = Promise.resolve();
   private connectionId = 0;
@@ -404,8 +454,13 @@ export class GeminiLiveSession {
   async connect(
     callbacks: LiveSessionCallbacks,
     durationMinutes: 5 | 10 | 15 = 5,
+    model?: GeminiLiveModel,
   ): Promise<void> {
     this.callbacks = callbacks;
+    this.activeModel =
+      model ||
+      useSettingsStore.getState().liveTutorModel ||
+      GEMINI_LIVE_MODEL;
     this.setupDone = false;
     this.usageMetadata = null;
     this.sessionStartedAtMs = Date.now();
@@ -413,7 +468,7 @@ export class GeminiLiveSession {
     const connectionId = ++this.connectionId;
     this.incomingMessageChain = Promise.resolve();
 
-    const grant = await createGeminiLiveToken(durationMinutes);
+    const grant = await createGeminiLiveToken(durationMinutes, this.activeModel);
     this.tokenGrant = grant;
     if (connectionId !== this.connectionId) {
       await this.reportLiveUsage("abandoned");
@@ -533,6 +588,13 @@ export class GeminiLiveSession {
           this.callbacks.onTurnComplete?.();
         }
 
+        const rawStatus =
+          pick<string>(msg, "interactionStatus", "interaction_status") ||
+          pick<string>(serverContent || {}, "interactionStatus", "interaction_status");
+        if (rawStatus === "IN_PROGRESS" || rawStatus === "IDLE") {
+          this.callbacks.onInteractionStatus?.(rawStatus as "IN_PROGRESS" | "IDLE");
+        }
+
         const goAway =
           pick<Record<string, unknown>>(msg, "goAway", "go_away") ||
           pick<Record<string, unknown>>(serverContent || {}, "goAway", "go_away");
@@ -624,6 +686,7 @@ export class GeminiLiveSession {
           action: "usage",
           reservationId: grant.reservationId,
           status,
+          model: this.activeModel,
           usageMetadata,
           audioDurationSeconds: elapsedSeconds,
         },
@@ -642,21 +705,37 @@ export class GeminiLiveSession {
   }
 
   private sendSetup() {
+    const isExtendedThinking = isLiveExtendedThinkingModel(this.activeModel);
+
+    const state = useSettingsStore.getState();
+    const persona = getPersonaById(state.voicePersonaId || state.tutorVoice);
+    const resolvedVoiceName = persona.geminiVoice || state.tutorVoice || "Aoede";
+
+    const generationConfig: Record<string, unknown> = {
+      responseModalities: ["AUDIO"],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: resolvedVoiceName,
+          },
+        },
+      },
+      maxOutputTokens: 800,
+    };
+
+    // Official Gemini Multimodal Live API specifications:
+    // - gemini-3.8-live-extended-thinking: supports background reasoning with "low" | "medium" | "high" (defaulting to "medium")
+    // - gemini-3.8-live: does NOT support thinkingLevel; thinkingConfig must be omitted entirely.
+    if (isExtendedThinking) {
+      generationConfig.thinkingConfig = {
+        thinkingLevel: "MEDIUM",
+      };
+    }
+
     this.send({
       setup: {
-        model: `models/${GEMINI_LIVE_MODEL}`,
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          thinkingConfig: {
-            thinkingLevel: "minimal",
-          },
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: useSettingsStore.getState().tutorVoice || "Aoede" },
-            },
-          },
-          maxOutputTokens: 800,
-        },
+        model: `models/${this.activeModel}`,
+        generationConfig,
         systemInstruction: {
           parts: [{ text: buildLiveTutorSystem() }],
         },

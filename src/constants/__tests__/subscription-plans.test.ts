@@ -49,6 +49,7 @@ describe("subscription and AI credit catalog", () => {
       reading_pronunciation_evaluation: 20,
       roleplay_text_response: 5,
       roleplay_voice_response: 10,
+      study_tutor: 100,
       dynamic_tts_minute: 40,
     });
   });

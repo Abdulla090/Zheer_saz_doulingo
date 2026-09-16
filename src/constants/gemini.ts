@@ -22,12 +22,22 @@ export function isGeminiLiveConfigured(): boolean {
 export function getGeminiLiveWebSocketUrl(ephemeralToken: string): string {
   return (
     "wss://generativelanguage.googleapis.com/ws/" +
-    "google.ai.generativelanguage.v1alpha.GenerativeService." +
+    "google.ai.generativelanguage.v1beta.GenerativeService." +
     "BidiGenerateContentConstrained?access_token=" +
     encodeURIComponent(ephemeralToken)
   );
 }
 
-export const GEMINI_LIVE_MODEL = "gemini-3.1-flash-live-preview";
+export const GEMINI_LIVE_MODEL = "gemini-3.8-live";
+export const GEMINI_LIVE_EXTENDED_THINKING_MODEL = "gemini-3.8-live-extended-thinking";
+
+export type GeminiLiveModel =
+  | typeof GEMINI_LIVE_MODEL
+  | typeof GEMINI_LIVE_EXTENDED_THINKING_MODEL;
+
+export function isLiveExtendedThinkingModel(model?: string | null): boolean {
+  return model === GEMINI_LIVE_EXTENDED_THINKING_MODEL;
+}
+
 export const GEMINI_LIVE_INPUT_RATE = 16_000;
 export const GEMINI_LIVE_OUTPUT_RATE = 24_000;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGeminiLiveTutor } from "./use-gemini-live-tutor";
 import { useOpenAILiveTutor } from "./use-openai-live-tutor";
+import type { GeminiLiveModel } from "../constants/gemini";
 
 type Provider = "openai" | "gemini";
 
@@ -39,9 +40,10 @@ export function useLiveVoiceTutor() {
 
   const startSession = useCallback(async (
     durationMinutes: 5 | 10 | 15 = 5,
+    requestedModel?: GeminiLiveModel,
   ) => {
     if (provider === "gemini") {
-      await gemini.startSession(durationMinutes);
+      await gemini.startSession(durationMinutes, requestedModel);
       return;
     }
     fallbackStartedRef.current = false;

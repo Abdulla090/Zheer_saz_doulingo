@@ -12,6 +12,15 @@ import {
   type PathMode,
 } from "../constants/path-availability";
 import { isUserSex, type UserSex } from "../constants/user-profile";
+import {
+  type GeminiLiveModel,
+  GEMINI_LIVE_MODEL,
+  GEMINI_LIVE_EXTENDED_THINKING_MODEL,
+} from "../constants/gemini";
+import {
+  DEFAULT_PERSONA_ID,
+  getPersonaById,
+} from "../constants/voice-personas";
 
 const STORAGE_KEY = "twino.app.settings";
 
@@ -42,6 +51,8 @@ interface SettingsState {
   englishLevel: number;
   learningGoal: string;
   tutorVoice: string;
+  voicePersonaId: string;
+  liveTutorModel: GeminiLiveModel;
   avatarUrl: string;
   selectedMascotId: MascotId;
   isPremium: boolean;
@@ -64,6 +75,8 @@ interface SettingsState {
   setEnglishLevel: (level: number) => void;
   setLearningGoal: (goal: string) => void;
   setTutorVoice: (voice: string) => void;
+  setVoicePersonaId: (personaId: string) => void;
+  setLiveTutorModel: (model: GeminiLiveModel) => void;
   setAvatarUrl: (url: string) => void;
   setSelectedMascotId: (mascotId: MascotId) => void;
   setIsPremium: (isPremium: boolean) => void;
@@ -149,9 +162,10 @@ const initialSettings = (() => {
       englishLevel: 2,
       learningGoal: "conversations",
       tutorVoice: "Aoede",
+      voicePersonaId: DEFAULT_PERSONA_ID,
+      liveTutorModel: GEMINI_LIVE_MODEL as GeminiLiveModel,
       avatarUrl: "",
       selectedMascotId: DEFAULT_MASCOT_ID,
-      customMascot: null,
       isPremium: false,
       subscriptionTier: null,
       knownWords: [],
@@ -170,6 +184,10 @@ const initialSettings = (() => {
       Array.isArray(parsed.wordsInProgress) ? parsed.wordsInProgress : [],
       lastAnalysis,
     );
+    const savedPersonaId = typeof parsed.voicePersonaId === "string" ? parsed.voicePersonaId : null;
+    const resolvedPersona = getPersonaById(savedPersonaId || parsed.tutorVoice || DEFAULT_PERSONA_ID);
+    const tutorVoice = typeof parsed.tutorVoice === "string" ? parsed.tutorVoice : resolvedPersona.geminiVoice;
+
     return {
       focusModeEnabled: resolveFocusModeEnabled(parsed.focusModeEnabled),
       hapticsEnabled: parsed.hapticsEnabled !== false,
@@ -188,7 +206,11 @@ const initialSettings = (() => {
           : 2,
       learningGoal:
         typeof parsed.learningGoal === "string" ? parsed.learningGoal : "conversations",
-      tutorVoice: typeof parsed.tutorVoice === "string" ? parsed.tutorVoice : "Aoede",
+      tutorVoice,
+      voicePersonaId: resolvedPersona.id,
+      liveTutorModel: (parsed.liveTutorModel === GEMINI_LIVE_EXTENDED_THINKING_MODEL
+        ? GEMINI_LIVE_EXTENDED_THINKING_MODEL
+        : GEMINI_LIVE_MODEL) as GeminiLiveModel,
       avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : "",
       selectedMascotId: isMascotId(parsed.selectedMascotId)
         ? parsed.selectedMascotId
@@ -215,6 +237,8 @@ const initialSettings = (() => {
       englishLevel: 2,
       learningGoal: "conversations",
       tutorVoice: "Aoede",
+      voicePersonaId: DEFAULT_PERSONA_ID,
+      liveTutorModel: GEMINI_LIVE_MODEL as GeminiLiveModel,
       avatarUrl: "",
       selectedMascotId: DEFAULT_MASCOT_ID,
       isPremium: false,
@@ -295,8 +319,21 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   setTutorVoice: (tutorVoice) => {
-    set({ tutorVoice });
-    persist({ tutorVoice });
+    const persona = getPersonaById(tutorVoice);
+    set({ tutorVoice, voicePersonaId: persona.id });
+    persist({ tutorVoice, voicePersonaId: persona.id });
+  },
+
+  setVoicePersonaId: (voicePersonaId) => {
+    const persona = getPersonaById(voicePersonaId);
+    const tutorVoice = persona.geminiVoice;
+    set({ voicePersonaId: persona.id, tutorVoice });
+    persist({ voicePersonaId: persona.id, tutorVoice });
+  },
+
+  setLiveTutorModel: (liveTutorModel) => {
+    set({ liveTutorModel });
+    persist({ liveTutorModel });
   },
 
   setAvatarUrl: (avatarUrl) => {

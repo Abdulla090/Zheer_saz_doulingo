@@ -10,6 +10,16 @@ import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useAuth } from "../../context/AuthContext";
 import { aiPrice } from "../../types/entitlements";
 import { LEVEL_CONFIGS } from "../../data/voice-tutor-word-banks";
+import {
+  GEMINI_LIVE_MODEL,
+  GEMINI_LIVE_EXTENDED_THINKING_MODEL,
+  isLiveExtendedThinkingModel,
+} from "../../constants/gemini";
+import {
+  VOICE_PERSONAS,
+  getPersonaById,
+  type PersonaLanguage,
+} from "../../constants/voice-personas";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { isDesktopWebWidth } from "../../constants/web-layout";
 
@@ -128,6 +138,19 @@ export function VoiceTutorScreen() {
   const isDesktopWeb = Platform.OS === "web" && isDesktopWebWidth(screenWidth);
   const styles = useMemo(() => createStyles(colors, isDark, isDesktopWeb), [colors, isDark, isDesktopWeb]);
 
+  const liveTutorModel = useSettingsStore((s) => s.liveTutorModel) || GEMINI_LIVE_MODEL;
+  const setLiveTutorModel = useSettingsStore((s) => s.setLiveTutorModel);
+  const voicePersonaId = useSettingsStore((s) => s.voicePersonaId);
+  const setVoicePersonaId = useSettingsStore((s) => s.setVoicePersonaId);
+  const currentPersona = useMemo(() => getPersonaById(voicePersonaId), [voicePersonaId]);
+  const [personaModalVisible, setPersonaModalVisible] = useState(false);
+  const [modalPersonaLang, setModalPersonaLang] = useState<PersonaLanguage | "all">("all");
+
+  const modalFilteredPersonas = useMemo(() => {
+    if (modalPersonaLang === "all") return VOICE_PERSONAS;
+    return VOICE_PERSONAS.filter((p) => p.language === modalPersonaLang);
+  }, [modalPersonaLang]);
+
   const level = useSettingsStore((s) => s.englishLevel) || 5;
   const onboardingComplete = useSettingsStore((s) => s.tutorOnboardingComplete);
   const analysisData = useSettingsStore((s) => s.lastAnalysis);
@@ -208,13 +231,17 @@ export function VoiceTutorScreen() {
           ? "متوقف مؤقتًا — ارفع إصبعك للمتابعة"
           : "Paused — release to resume";
     }
-    if (tutor.thinking) return t("voiceTutor.statusThinking");
+    if (tutor.thinking) {
+      return isLiveExtendedThinkingModel(liveTutorModel)
+        ? (t("voiceTutor.statusReasoning") || t("voiceTutor.statusThinking"))
+        : t("voiceTutor.statusThinking");
+    }
     if (tutor.speaking) return t("voiceTutor.statusSpeaking");
     if (tutor.listening) return t("voiceTutor.statusListening");
     if (tutor.status === "error") return t("voiceTutor.statusError");
     if (!tutor.sessionActive) return t("voiceTutor.statusConnect");
     return t("voiceTutor.statusWaiting");
-  }, [isAr, isKu, tutor, t]);
+  }, [isAr, isKu, tutor, t, liveTutorModel]);
 
   const holdActiveRef = useRef(false);
   const holdResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -229,12 +256,12 @@ export function VoiceTutorScreen() {
   const handleTutorPress = useCallback(async () => {
     if (holdActiveRef.current) return;
     if (!tutor.sessionActive) {
-      await tutor.startSession(durationMinutes);
+      await tutor.startSession(durationMinutes, liveTutorModel);
       await refreshBillingAccount();
       return;
     }
     tutor.handleMicPress();
-  }, [durationMinutes, refreshBillingAccount, tutor]);
+  }, [durationMinutes, liveTutorModel, refreshBillingAccount, tutor]);
 
   const handleTutorLongPress = useCallback(() => {
     holdActiveRef.current = true;
@@ -571,6 +598,107 @@ export function VoiceTutorScreen() {
       <View style={styles.main}>
         {!tutor.sessionActive ? (
           <View style={styles.blockPicker}>
+            {/* Live Model Toggle */}
+            <View style={[styles.modelSelectorRow, isRtl && styles.rtlRow]}>
+              <PressableScale
+                onPress={() => {
+                  hapticSelection();
+                  setLiveTutorModel(GEMINI_LIVE_MODEL);
+                }}
+                style={[
+                  styles.modelChip,
+                  liveTutorModel === GEMINI_LIVE_MODEL && styles.modelChipSelected,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Gemini 3.8 Live"
+              >
+                <HugeiconsIcon
+                  icon={SparklesIcon}
+                  size={14}
+                  color={liveTutorModel === GEMINI_LIVE_MODEL ? "#FFFFFF" : colors.primary}
+                  strokeWidth={2.4}
+                />
+                <AppText
+                  style={[
+                    styles.modelChipText,
+                    liveTutorModel === GEMINI_LIVE_MODEL && styles.modelChipTextSelected,
+                  ]}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  3.8 Live
+                </AppText>
+              </PressableScale>
+
+              <PressableScale
+                onPress={() => {
+                  hapticSelection();
+                  setLiveTutorModel(GEMINI_LIVE_EXTENDED_THINKING_MODEL);
+                }}
+                style={[
+                  styles.modelChip,
+                  liveTutorModel === GEMINI_LIVE_EXTENDED_THINKING_MODEL && styles.modelChipSelected,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Gemini 3.8 Live Extended Thinking"
+              >
+                <HugeiconsIcon
+                  icon={SparklesIcon}
+                  size={14}
+                  color={liveTutorModel === GEMINI_LIVE_EXTENDED_THINKING_MODEL ? "#FFFFFF" : colors.primary}
+                  strokeWidth={2.4}
+                />
+                <AppText
+                  style={[
+                    styles.modelChipText,
+                    liveTutorModel === GEMINI_LIVE_EXTENDED_THINKING_MODEL && styles.modelChipTextSelected,
+                  ]}
+                  forceLatinFont
+                  latinRole="bold"
+                >
+                  3.8 Live Thinking
+                </AppText>
+              </PressableScale>
+            </View>
+
+            {/* Quick Persona Trigger */}
+            <PressableScale
+              onPress={() => {
+                hapticSelection();
+                setPersonaModalVisible(true);
+              }}
+              style={[styles.personaTriggerCard, isRtl && styles.rtlRow]}
+              accessibilityRole="button"
+              accessibilityLabel={`Tutor Persona: ${currentPersona.name}`}
+            >
+              <View style={styles.personaTriggerAvatar}>
+                <AppText style={styles.personaTriggerAvatarText}>
+                  {currentPersona.nativeName ? currentPersona.nativeName[0] : currentPersona.name[0]}
+                </AppText>
+              </View>
+              <View style={styles.personaTriggerDetails}>
+                <View style={[styles.personaTriggerTopRow, isRtl && styles.rtlRow]}>
+                  <AppText style={styles.personaTriggerName}>
+                    {currentPersona.name}
+                    {currentPersona.nativeName && currentPersona.nativeName !== currentPersona.name
+                      ? ` • ${currentPersona.nativeName}`
+                      : ""}
+                  </AppText>
+                  <View style={styles.personaTriggerBadge}>
+                    <AppText style={styles.personaTriggerBadgeText}>
+                      {t(currentPersona.accentKey) || currentPersona.accentKey}
+                    </AppText>
+                  </View>
+                </View>
+                <AppText style={styles.personaTriggerTag}>
+                  {t(currentPersona.tagKey) || currentPersona.tagKey}
+                </AppText>
+              </View>
+              <AppText style={styles.personaTriggerChange}>
+                {t("voiceTutor.switchPersona") || "Change"} ▾
+              </AppText>
+            </PressableScale>
+
             <AppText style={styles.blockTitle}>
               {isKu
                 ? "ماوەی وانە هەڵبژێرە"
@@ -627,11 +755,20 @@ export function VoiceTutorScreen() {
 
         {/* STATUS & LIVE TRANSCRIPT DISPLAY */}
         <View style={styles.transcriptBox}>
-          <AppText
-            style={[styles.statusLabel, tutor.listening && { color: colors.primary }]}
-          >
-            {statusLabel}
-          </AppText>
+          <View style={styles.statusRow}>
+            {tutor.thinking ? (
+              <View style={styles.thinkingBadge}>
+                <AppText style={styles.thinkingBadgeText} forceLatinFont>
+                  {isKu ? "بیرکردنەوەی قووڵ" : isAr ? "تفكير متقدم" : "Extended Thinking"}
+                </AppText>
+              </View>
+            ) : null}
+            <AppText
+              style={[styles.statusLabel, tutor.listening && { color: colors.primary }]}
+            >
+              {statusLabel}
+            </AppText>
+          </View>
           {tutor.speaking && tutor.transcript ? (
             <AppText
               style={styles.transcriptText}
@@ -1427,6 +1564,148 @@ export function VoiceTutorScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Voice Persona Selection Modal */}
+      <Modal
+        visible={personaModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPersonaModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setPersonaModalVisible(false)}
+        >
+          <Pressable style={styles.personaModalContent} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.personaModalHeader, isRtl && styles.rtlRow]}>
+              <AppText style={[styles.modalTitle, isRtl && styles.rtlText]}>
+                {t("voiceTutor.tutorPersonaLabel") || "AI Tutor Persona"}
+              </AppText>
+              <PressableScale
+                onPress={() => {
+                  hapticSelection();
+                  setPersonaModalVisible(false);
+                }}
+                style={styles.modalCloseBtn}
+              >
+                <AppText style={styles.modalCloseText}>✕</AppText>
+              </PressableScale>
+            </View>
+
+            {/* Language filter pills */}
+            <View style={[styles.modalFilterRow, isRtl && styles.rtlRow]}>
+              {[
+                { id: "all" as const, label: t("settings.personaFilterAll") || "All" },
+                { id: "en" as const, label: t("settings.personaFilterEn") || "English" },
+                { id: "ku" as const, label: t("settings.personaFilterKu") || "Kurdish" },
+                { id: "ar" as const, label: t("settings.personaFilterAr") || "Arabic" },
+                { id: "global" as const, label: t("settings.personaFilterGlobal") || "Global" },
+              ].map((tab) => {
+                const isSelected = modalPersonaLang === tab.id;
+                return (
+                  <PressableScale
+                    key={tab.id}
+                    onPress={() => {
+                      hapticSelection();
+                      setModalPersonaLang(tab.id);
+                    }}
+                    style={[
+                      styles.modalFilterChip,
+                      isSelected && styles.modalFilterChipSelected,
+                    ]}
+                  >
+                    <AppText
+                      style={[
+                        styles.modalFilterChipText,
+                        isSelected && styles.modalFilterChipTextSelected,
+                      ]}
+                    >
+                      {tab.label}
+                    </AppText>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <ScrollView
+              style={styles.personaModalScroll}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.personaModalList}>
+                {modalFilteredPersonas.map((persona) => {
+                  const isSelected = currentPersona.id === persona.id;
+                  const accentText = t(persona.accentKey) || persona.accentKey;
+                  const tagText = t(persona.tagKey) || persona.tagKey;
+                  const descText = t(persona.descriptionKey) || persona.descriptionKey;
+
+                  return (
+                    <PressableScale
+                      key={persona.id}
+                      onPress={() => {
+                        hapticSelection();
+                        setVoicePersonaId(persona.id);
+                        setPersonaModalVisible(false);
+                      }}
+                      style={[
+                        styles.modalPersonaItem,
+                        isSelected && styles.modalPersonaItemSelected,
+                      ]}
+                      accessibilityRole="button"
+                    >
+                      <View style={[styles.modalPersonaItemHeader, isRtl && styles.rtlRow]}>
+                        <View
+                          style={[
+                            styles.modalPersonaAvatar,
+                            isSelected && styles.modalPersonaAvatarSelected,
+                          ]}
+                        >
+                          <AppText style={styles.modalPersonaAvatarText}>
+                            {persona.nativeName ? persona.nativeName[0] : persona.name[0]}
+                          </AppText>
+                        </View>
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <View style={[styles.modalPersonaTitleRow, isRtl && styles.rtlRow]}>
+                            <AppText
+                              style={[
+                                styles.modalPersonaName,
+                                isSelected && styles.modalPersonaNameSelected,
+                              ]}
+                            >
+                              {persona.name}
+                              {persona.nativeName && persona.nativeName !== persona.name
+                                ? ` • ${persona.nativeName}`
+                                : ""}
+                            </AppText>
+                            <View style={styles.modalPersonaAccent}>
+                              <AppText style={styles.modalPersonaAccentText}>
+                                {accentText}
+                              </AppText>
+                            </View>
+                          </View>
+                          <AppText style={styles.modalPersonaTag}>
+                            {tagText}
+                          </AppText>
+                          <AppText style={styles.modalPersonaDesc} numberOfLines={2}>
+                            {descText}
+                          </AppText>
+                        </View>
+                        {isSelected ? (
+                          <HugeiconsIcon
+                            icon={CheckmarkCircle01Icon}
+                            size={20}
+                            color={colors.primary}
+                            strokeWidth={2.5}
+                          />
+                        ) : null}
+                      </View>
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -1536,8 +1815,58 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       width: "100%",
       maxWidth: 430,
       alignItems: "center",
-      gap: 9,
+      gap: 12,
       paddingHorizontal: 18,
+    },
+    modelSelectorRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginBottom: 4,
+    },
+    modelChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 99,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceRaised,
+    },
+    modelChipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modelChipText: {
+      fontSize: 12,
+      color: colors.foreground,
+    },
+    modelChipTextSelected: {
+      color: "#FFFFFF",
+    },
+    statusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginBottom: 16,
+    },
+    thinkingBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      backgroundColor: "rgba(255, 107, 74, 0.15)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 107, 74, 0.3)",
+    },
+    thinkingBadgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primary,
+      letterSpacing: 0.5,
     },
     blockTitle: {
       color: colors.foreground,
@@ -1592,7 +1921,6 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontWeight: "800",
       letterSpacing: 1.2,
       textTransform: "uppercase",
-      marginBottom: 16,
     },
     transcriptText: {
       fontSize: 22,
@@ -2094,5 +2422,207 @@ const createStyles = (colors: any, isDark: boolean, isDesktopWeb: boolean = fals
       fontSize: 12,
       color: colors.mutedForeground,
       marginTop: 2,
+    },
+    personaTriggerCard: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 12,
+      borderRadius: 16,
+      borderCurve: "continuous",
+      backgroundColor: colors.surfaceRaised || colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 6,
+    },
+    personaTriggerAvatar: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.2)" : "rgba(255, 107, 74, 0.12)",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    personaTriggerAvatarText: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    personaTriggerDetails: {
+      flex: 1,
+      gap: 2,
+    },
+    personaTriggerTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    personaTriggerName: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    personaTriggerBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 1.5,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    },
+    personaTriggerBadgeText: {
+      fontSize: 9.5,
+      fontWeight: "600",
+      color: colors.mutedForeground,
+    },
+    personaTriggerTag: {
+      fontSize: 11,
+      color: colors.primary,
+      fontWeight: "600",
+    },
+    personaTriggerChange: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.primary,
+      paddingHorizontal: 4,
+    },
+    personaModalContent: {
+      width: "100%",
+      maxWidth: 420,
+      maxHeight: "80%",
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    personaModalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    modalCloseBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    },
+    modalCloseText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.mutedForeground,
+    },
+    modalFilterRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 14,
+    },
+    modalFilterChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 99,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceRaised || colors.background,
+    },
+    modalFilterChipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    modalFilterChipText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.foreground,
+    },
+    modalFilterChipTextSelected: {
+      color: "#FFFFFF",
+      fontWeight: "700",
+    },
+    personaModalScroll: {
+      maxHeight: 380,
+    },
+    personaModalList: {
+      gap: 8,
+      paddingBottom: 8,
+    },
+    modalPersonaItem: {
+      borderRadius: 14,
+      backgroundColor: colors.surfaceRaised || colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 10,
+    },
+    modalPersonaItemSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.12)" : "rgba(255, 107, 74, 0.08)",
+    },
+    modalPersonaItemHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    modalPersonaAvatar: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalPersonaAvatarSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.2)" : "rgba(255, 107, 74, 0.12)",
+    },
+    modalPersonaAvatarText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    modalPersonaTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      flexWrap: "wrap",
+    },
+    modalPersonaName: {
+      fontSize: 13.5,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    modalPersonaNameSelected: {
+      color: colors.primary,
+    },
+    modalPersonaAccent: {
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+      borderRadius: 4,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    },
+    modalPersonaAccentText: {
+      fontSize: 9.5,
+      fontWeight: "600",
+      color: colors.mutedForeground,
+    },
+    modalPersonaTag: {
+      fontSize: 10.5,
+      color: colors.primary,
+      fontWeight: "600",
+    },
+    modalPersonaDesc: {
+      fontSize: 11,
+      lineHeight: 15,
+      color: colors.mutedForeground,
     },
   });

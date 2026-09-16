@@ -48,6 +48,16 @@ import {
   PRIVACY_POLICY_URL,
   SUPPORT_EMAIL,
 } from "../../constants/app-meta";
+import {
+  GEMINI_LIVE_MODEL,
+  GEMINI_LIVE_EXTENDED_THINKING_MODEL,
+  type GeminiLiveModel,
+} from "../../constants/gemini";
+import {
+  VOICE_PERSONAS,
+  type PersonaLanguage,
+} from "../../constants/voice-personas";
+import { hapticSelection } from "../../utils/haptics";
 import { ENABLE_ADMIN } from "../../constants/feature-flags";
 import { tabBarScrollPadding } from "../../constants/layout";
 import { isDesktopWebWidth } from "../../constants/web-layout";
@@ -99,6 +109,10 @@ const COPY = {
     target: "I am learning",
     feel: "Feel and sound",
     feelHint: "Physical feedback and audio",
+    model: "Live Tutor Model",
+    modelHint: "Choose fast live voice or extended background reasoning",
+    persona: "Voice Persona",
+    personaHint: "Choose your tutor's personality, native accent, and tone",
     voice: "Tutor voice",
     voiceHint: "Cycle through the available live tutor voices",
     previous: "Previous",
@@ -136,6 +150,10 @@ const COPY = {
     target: "فێری دەبم",
     feel: "هەست و دەنگ",
     feelHint: "لەرزین و دەنگ",
+    model: "مۆدێلی ڕاهێنەری AI",
+    modelHint: "دەنگی خێرا یان بیرکردنەوەی قووڵ هەڵبژێرە",
+    persona: "کەسایەتی و دەنگی ڕاهێنەر",
+    personaHint: "کەسایەتی، شێوەزار و شێوازی وانەوتنەوەی مامۆستاکەت دیاری بکە",
     voice: "دەنگی ڕاهێنەر",
     voiceHint: "لە نێوان دەنگەکانی ڕاهێنەری ڕاستەوخۆدا بگۆڕە",
     previous: "پێشوو",
@@ -173,6 +191,10 @@ const COPY = {
     target: "أتعلم",
     feel: "الإحساس والصوت",
     feelHint: "الاهتزاز والصوت",
+    model: "نموذج المدرّب المباشر",
+    modelHint: "اختر الصوت المباشر السريع أو التفكير المتقدم",
+    persona: "شخصية وصوت المدرّب",
+    personaHint: "اختر شخصية مدرّبك ولغته ونبرته في التدريب",
     voice: "صوت المدرّب",
     voiceHint: "تنقل بين أصوات المدرّب المباشر",
     previous: "السابق",
@@ -399,82 +421,6 @@ function ActionRow({
   );
 }
 
-function CycleSelector({
-  title,
-  hint,
-  value,
-  countLabel,
-  onPrevious,
-  onNext,
-  copy,
-  locale,
-  icon,
-  styles,
-}: {
-  title: string;
-  hint: string;
-  value: string;
-  countLabel: string;
-  onPrevious: () => void;
-  onNext: () => void;
-  copy: (typeof COPY)[SettingsLocale];
-  locale: string;
-  icon: HugeIcon;
-  styles: any;
-}) {
-  return (
-    <View style={styles.cycleBlock}>
-      <View style={styles.cycleHeader}>
-        <View style={styles.rowIconBox}>
-          <HugeiconsIcon icon={icon} size={19} color={styles.iconColor.color} strokeWidth={2.1} />
-        </View>
-        <View style={styles.rowCopy}>
-          <AppText style={styles.rowTitle} languageCode={locale} align="start" latinRole="bold">
-            {title}
-          </AppText>
-          <AppText style={styles.rowSubtitle} languageCode={locale} align="start">
-            {hint}
-          </AppText>
-        </View>
-        <AppText style={styles.counter} languageCode="en" align="center" latinRole="bold">
-          {countLabel}
-        </AppText>
-      </View>
-
-      <View style={styles.cycleDeck}>
-        <PressableScale
-          accessibilityRole="button"
-          accessibilityLabel={copy.previous}
-          onPress={onPrevious}
-          scaleDown={0.9}
-          style={styles.cycleArrow}
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={19} color={styles.iconColor.color} strokeWidth={2.3} />
-        </PressableScale>
-        <View style={styles.cycleValue}>
-          <AppText
-            style={styles.cycleValueText}
-            languageCode={locale}
-            align="center"
-            latinRole="bold"
-          >
-            {value}
-          </AppText>
-        </View>
-        <PressableScale
-          accessibilityRole="button"
-          accessibilityLabel={copy.next}
-          onPress={onNext}
-          scaleDown={0.9}
-          style={styles.cycleArrow}
-        >
-          <HugeiconsIcon icon={ArrowRight01Icon} size={19} color={styles.iconColor.color} strokeWidth={2.3} />
-        </PressableScale>
-      </View>
-    </View>
-  );
-}
-
 export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: boolean }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -497,13 +443,16 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const sounds = useSettingsStore((state) => state.soundsEnabled);
   const focusModeEnabled = useSettingsStore((state) => state.focusModeEnabled);
   const theme = useSettingsStore((state) => state.theme);
-  const tutorVoice = useSettingsStore((state) => state.tutorVoice);
+  const liveTutorModel = useSettingsStore((state) => state.liveTutorModel);
   const pathMode = useSettingsStore((state) => state.pathMode);
   const setHaptics = useSettingsStore((state) => state.setHapticsEnabled);
   const setSounds = useSettingsStore((state) => state.setSoundsEnabled);
   const setFocusModeEnabled = useSettingsStore((state) => state.setFocusModeEnabled);
   const setTheme = useSettingsStore((state) => state.setTheme);
-  const setTutorVoice = useSettingsStore((state) => state.setTutorVoice);
+  const voicePersonaId = useSettingsStore((state) => state.voicePersonaId);
+  const setVoicePersonaId = useSettingsStore((state) => state.setVoicePersonaId);
+  const [selectedPersonaLang, setSelectedPersonaLang] = React.useState<PersonaLanguage | "all">("all");
+  const setLiveTutorModel = useSettingsStore((state) => state.setLiveTutorModel);
   const setPathMode = useSettingsStore((state) => state.setPathMode);
   const targetLang = useLocaleStore((state) => state.selectedTargetLanguage);
   const nativeLang = useLocaleStore((state) => state.selectedSourceLanguage);
@@ -511,23 +460,37 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
   const setUiLanguage = useLocaleStore((state) => state.setUiLanguage);
   const setLanguagePair = useLocaleStore((state) => state.setLanguagePair);
 
-  const voiceOptions = useMemo(
+  const modelOptions = useMemo(
     () => [
-      { id: "Aoede", label: t("settings.tutorVoiceAoede") },
-      { id: "Puck", label: t("settings.tutorVoicePuck") },
-      { id: "Charon", label: t("settings.tutorVoiceCharon") },
-      { id: "Fenrir", label: t("settings.tutorVoiceFenrir") },
-      { id: "Kore", label: t("settings.tutorVoiceKore") },
+      {
+        id: GEMINI_LIVE_MODEL,
+        label: t("settings.tutorModel38Live"),
+        tag: "Fast",
+      },
+      {
+        id: GEMINI_LIVE_EXTENDED_THINKING_MODEL,
+        label: t("settings.tutorModel38Thinking"),
+        tag: "Thinking",
+      },
     ],
     [t],
   );
 
-  const selectedVoiceIndex = Math.max(0, voiceOptions.findIndex((option) => option.id === tutorVoice));
+  const filteredPersonas = useMemo(() => {
+    if (selectedPersonaLang === "all") return VOICE_PERSONAS;
+    return VOICE_PERSONAS.filter((p) => p.language === selectedPersonaLang);
+  }, [selectedPersonaLang]);
 
-  const changeVoice = (delta: number) => {
-    const nextIndex = (selectedVoiceIndex + delta + voiceOptions.length) % voiceOptions.length;
-    setTutorVoice(voiceOptions[nextIndex].id);
-  };
+  const personaFilterTabs: { id: PersonaLanguage | "all"; label: string }[] = useMemo(
+    () => [
+      { id: "all", label: t("settings.personaFilterAll") || "All" },
+      { id: "en", label: t("settings.personaFilterEn") || "English" },
+      { id: "ku", label: t("settings.personaFilterKu") || "Kurdish" },
+      { id: "ar", label: t("settings.personaFilterAr") || "Arabic" },
+      { id: "global", label: t("settings.personaFilterGlobal") || "Global" },
+    ],
+    [t],
+  );
 
 
   const confirmReplayOnboarding = () => {
@@ -901,18 +864,160 @@ export default function SettingsScreen({ isKidsMode = false }: { isKidsMode?: bo
 
             <GsapEnterBlock index={4}>
               <View style={[styles.section, isDesktopWeb && styles.desktopGridCard]}>
-                <CycleSelector
-                  title={copy.voice}
-                  hint={copy.voiceHint}
-                  value={voiceOptions[selectedVoiceIndex].label}
-                  countLabel={`${selectedVoiceIndex + 1}/${voiceOptions.length}`}
-                  onPrevious={() => changeVoice(-1)}
-                  onNext={() => changeVoice(1)}
-                  copy={copy}
+                <SectionHeading
+                  title={copy.model}
+                  hint={copy.modelHint}
                   locale={locale}
-                  icon={VoiceIcon}
                   styles={styles}
                 />
+                <View style={styles.choiceWrap}>
+                  {modelOptions.map((opt) => (
+                    <ChoiceChip
+                      key={opt.id}
+                      label={opt.label}
+                      selected={liveTutorModel === opt.id}
+                      onPress={() => {
+                        hapticSelection();
+                        setLiveTutorModel(opt.id as GeminiLiveModel);
+                      }}
+                      languageCode={locale}
+                      styles={styles}
+                      statusLabel={opt.tag}
+                    />
+                  ))}
+                </View>
+
+                <View style={{ height: 22 }} />
+
+                <SectionHeading
+                  title={copy.persona}
+                  hint={copy.personaHint}
+                  locale={locale}
+                  styles={styles}
+                />
+
+                {/* Persona Language Filter Chips */}
+                <View style={[styles.personaFilterRow, isRtl && styles.rtlRow]}>
+                  {personaFilterTabs.map((tab) => {
+                    const isSelected = selectedPersonaLang === tab.id;
+                    return (
+                      <PressableScale
+                        key={tab.id}
+                        onPress={() => {
+                          hapticSelection();
+                          setSelectedPersonaLang(tab.id);
+                        }}
+                        style={[
+                          styles.personaFilterChip,
+                          isSelected && styles.personaFilterChipSelected,
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={tab.label}
+                      >
+                        <AppText
+                          style={[
+                            styles.personaFilterChipText,
+                            isSelected && styles.personaFilterChipTextSelected,
+                          ]}
+                          forceLatinFont={tab.id === "en" || tab.id === "global"}
+                        >
+                          {tab.label}
+                        </AppText>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+
+                {/* Persona Cards */}
+                <View style={styles.personaList}>
+                  {filteredPersonas.map((persona) => {
+                    const isSelected = (voicePersonaId || "rebwar") === persona.id;
+                    const accentText = t(persona.accentKey) || persona.accentKey;
+                    const tagText = t(persona.tagKey) || persona.tagKey;
+                    const descText = t(persona.descriptionKey) || persona.descriptionKey;
+
+                    return (
+                      <PressableScale
+                        key={persona.id}
+                        onPress={() => {
+                          hapticSelection();
+                          setVoicePersonaId(persona.id);
+                        }}
+                        style={[
+                          styles.personaCard,
+                          isSelected && styles.personaCardSelected,
+                        ]}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isSelected }}
+                      >
+                        <View style={[styles.personaCardHeader, isRtl && styles.rtlRow]}>
+                          <View
+                            style={[
+                              styles.personaAvatar,
+                              isSelected && styles.personaAvatarSelected,
+                            ]}
+                          >
+                            <AppText
+                              style={[
+                                styles.personaAvatarText,
+                                isSelected && styles.personaAvatarTextSelected,
+                              ]}
+                            >
+                              {persona.nativeName ? persona.nativeName[0] : persona.name[0]}
+                            </AppText>
+                          </View>
+
+                          <View style={styles.personaInfo}>
+                            <View style={[styles.personaTitleRow, isRtl && styles.rtlRow]}>
+                              <AppText
+                                style={[
+                                  styles.personaName,
+                                  isSelected && styles.personaNameSelected,
+                                ]}
+                              >
+                                {persona.name}
+                                {persona.nativeName && persona.nativeName !== persona.name
+                                  ? ` • ${persona.nativeName}`
+                                  : ""}
+                              </AppText>
+                              <View style={styles.personaAccentBadge}>
+                                <AppText style={styles.personaAccentBadgeText}>
+                                  {accentText}
+                                </AppText>
+                              </View>
+                            </View>
+
+                            <View style={[styles.personaTagRow, isRtl && styles.rtlRow]}>
+                              <View style={styles.personaTagPill}>
+                                <AppText style={styles.personaTagText}>
+                                  {tagText}
+                                </AppText>
+                              </View>
+                              <AppText style={styles.personaVoiceSubtle}>
+                                {persona.geminiVoice}
+                              </AppText>
+                            </View>
+
+                            <AppText style={styles.personaDesc} numberOfLines={2}>
+                              {descText}
+                            </AppText>
+                          </View>
+
+                          <View
+                            style={[
+                              styles.personaRadio,
+                              isSelected && styles.personaRadioSelected,
+                            ]}
+                          >
+                            {isSelected ? (
+                              <View style={styles.personaRadioInner} />
+                            ) : null}
+                          </View>
+                        </View>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
               </View>
             </GsapEnterBlock>
 
@@ -1445,6 +1550,152 @@ const createStyles = (colors: any, isDark: boolean, isCompact: boolean, isDeskto
     cycleDivider: {
       height: 1,
       backgroundColor: colors.border,
+    },
+    personaFilterRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 14,
+    },
+    personaFilterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: 99,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: subtleBackground,
+    },
+    personaFilterChipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    personaFilterChipText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.foreground,
+    },
+    personaFilterChipTextSelected: {
+      color: colors.onPrimary,
+      fontWeight: "700",
+    },
+    personaList: {
+      gap: 10,
+    },
+    personaCard: {
+      padding: 12,
+      borderRadius: 16,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: subtleBackground,
+    },
+    personaCardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.08)" : "rgba(255, 107, 74, 0.05)",
+    },
+    personaCardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    personaAvatar: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    personaAvatarSelected: {
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "rgba(255, 107, 74, 0.2)" : "rgba(255, 107, 74, 0.12)",
+    },
+    personaAvatarText: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    personaAvatarTextSelected: {
+      color: colors.primary,
+    },
+    personaInfo: {
+      flex: 1,
+      gap: 3,
+    },
+    personaTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flexWrap: "wrap",
+    },
+    personaName: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.foreground,
+    },
+    personaNameSelected: {
+      color: colors.primary,
+    },
+    personaAccentBadge: {
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: 6,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    },
+    personaAccentBadgeText: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: colors.mutedForeground,
+    },
+    personaTagRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    personaTagPill: {
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: 4,
+      backgroundColor: "rgba(255, 107, 74, 0.12)",
+    },
+    personaTagText: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.primary,
+    },
+    personaVoiceSubtle: {
+      fontSize: 10,
+      color: colors.mutedForeground,
+      opacity: 0.7,
+    },
+    personaDesc: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: colors.mutedForeground,
+      marginTop: 2,
+    },
+    personaRadio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    personaRadioSelected: {
+      borderColor: colors.primary,
+    },
+    personaRadioInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    rtlRow: {
+      flexDirection: "row-reverse",
     },
     flatList: {
       borderTopWidth: 1,

@@ -21,6 +21,7 @@ if (Platform.OS === "web") {
     "Blocked aria-hidden on an element",
     "Invalid style property of \"direction\"",
     "Did you mean \"writingDirection\"?",
+    "Animated: `useNativeDriver` is not supported because the native animated module is missing",
   ];
 
   const originalWarn = console.warn;

@@ -4,6 +4,7 @@ import {
   buildLiveTutorSystem,
 } from "./gemini-live-client";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { getPersonaById } from "../constants/voice-personas";
 
 export const OPENAI_REALTIME_MODEL = "gpt-realtime-2.1";
 export const OPENAI_REALTIME_SAMPLE_RATE = 24_000;
@@ -20,8 +21,11 @@ type RealtimeCallbacks = {
 };
 
 type ClientSecretResponse = {
+  client_secret?: {
+    value: string;
+    expires_at?: number;
+  };
   value?: string;
-  model?: string;
 };
 
 const OPENAI_VOICES = new Set([
@@ -38,7 +42,11 @@ const OPENAI_VOICES = new Set([
 ]);
 
 function selectedOpenAIVoice(): string {
-  const selected = useSettingsStore.getState().tutorVoice || "Aoede";
+  const state = useSettingsStore.getState();
+  const persona = getPersonaById(state.voicePersonaId || state.tutorVoice);
+  if (persona.openAiFallbackVoice) return persona.openAiFallbackVoice;
+
+  const selected = state.tutorVoice || "Aoede";
   if (OPENAI_VOICES.has(selected.toLowerCase())) return selected.toLowerCase();
 
   const legacyMap: Record<string, string> = {

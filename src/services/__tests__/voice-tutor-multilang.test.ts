@@ -117,7 +117,7 @@ describe("Voice Tutor Multi-Language & Streaming", () => {
 
       const prompt = buildLiveTutorOpeningPrompt();
       expect(prompt).toContain("¡Hola Carlos!");
-      expect(prompt).toContain("Soy Twino");
+      expect(prompt).toContain("de Twino");
 
       const system = buildLiveTutorSystem();
       expect(system).toContain("Spanish-speaking learner");
@@ -131,7 +131,7 @@ describe("Voice Tutor Multi-Language & Streaming", () => {
 
       const prompt = buildLiveTutorOpeningPrompt();
       expect(prompt).toContain("Привет, Алексей!");
-      expect(prompt).toContain("Я Twino");
+      expect(prompt).toContain("из Twino");
 
       const system = buildLiveTutorSystem();
       expect(system).toContain("Russian-speaking learner");

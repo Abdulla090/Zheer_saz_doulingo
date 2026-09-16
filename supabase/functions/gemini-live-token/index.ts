@@ -16,7 +16,19 @@ import {
 } from "../_shared/ai-usage.ts";
 
 const DAILY_SESSION_LIMIT = 40;
-const LIVE_MODEL = "gemini-3.1-flash-live-preview";
+const DEFAULT_LIVE_MODEL = "gemini-3.8-live";
+const SUPPORTED_LIVE_MODELS = new Set([
+  "gemini-3.8-live",
+  "gemini-3.8-live-extended-thinking",
+  "gemini-3.1-flash-live-preview",
+]);
+
+function resolveLiveModel(inputModel: unknown): string {
+  if (typeof inputModel === "string" && SUPPORTED_LIVE_MODELS.has(inputModel.trim())) {
+    return inputModel.trim();
+  }
+  return DEFAULT_LIVE_MODEL;
+}
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -102,7 +114,7 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
         reservationId,
         userId,
         feature: reservation.feature_key,
-        model: LIVE_MODEL,
+        model: resolveLiveModel(input.model),
         creditsCharged: reservation.status === "reversed" ? 0 : reservation.amount,
         status,
         usage: usageMetadata,
@@ -181,7 +193,7 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
 
     try {
       const upstream = await fetch(
-        "https://generativelanguage.googleapis.com/v1alpha/auth_tokens",
+        "https://generativelanguage.googleapis.com/v1beta/auth_tokens",
         {
           method: "POST",
           headers: {
@@ -235,12 +247,13 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
         );
       }
 
+      const requestedModel = resolveLiveModel(input.model);
       try {
         await startAiUsage(ctx.supabaseAdmin, {
           reservationId: reservation.reservationId,
           userId,
           feature: LIVE_FEATURES[durationMinutes],
-          model: LIVE_MODEL,
+          model: requestedModel,
           creditsCharged: reservation.chargedAmount,
           metadata: {
             durationMinutes,
@@ -291,7 +304,7 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
           reservationId: reservation.reservationId,
           userId,
           feature: LIVE_FEATURES[durationMinutes],
-          model: LIVE_MODEL,
+          model: requestedModel,
           creditsCharged: 0,
           status: "failed",
           metadata: { reason: "credit_settlement_failed" },
@@ -308,6 +321,7 @@ const createToken = withSupabase({ auth: "user" }, async (req, ctx) => {
       return json({
         token: token.name,
         durationMinutes,
+        model: requestedModel,
         expiresAt: expireTime.toISOString(),
         chargedCredits: settled.chargedAmount,
         ...aiBillingResponse(settled),

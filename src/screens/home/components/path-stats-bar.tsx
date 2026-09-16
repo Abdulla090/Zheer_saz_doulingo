@@ -197,7 +197,7 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
         <Host matchContents colorScheme={isDark ? "dark" : "light"} seedColor={colors.primary}>
           <Switch
             value={focusModeEnabled}
-            onValueChange={(enabled) => {
+            onValueChange={(enabled: boolean) => {
               hapticSelection();
               setFocusModeEnabled(enabled);
             }}
