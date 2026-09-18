@@ -13,12 +13,6 @@ import { getLanguage } from "../config/languages";
 import { LEVEL_CONFIGS } from "../data/voice-tutor-word-banks";
 import { getPersonaById } from "../constants/voice-personas";
 
-export type LiveSessionPhase =
-  | "intro_ku"
-  | "native_onboarding"
-  | "english"
-  | "immersion";
-
 export type LiveServerMessage = Record<string, unknown>;
 type GeminiLiveUsageMetadata = Record<string, unknown>;
 
@@ -149,7 +143,7 @@ export function getLanguageName(code: string): string {
 export function getLiveTutorLanguages(): { sourceLangCode: string; targetLangCode: string } {
   const localeStore = useLocaleStore.getState();
   const settingsStore = useSettingsStore.getState();
-  const sourceLangCode = settingsStore.nativeLang || localeStore.selectedSourceLanguage || "ku";
+  const sourceLangCode = localeStore.selectedSourceLanguage || "ku";
   const targetLangCode = settingsStore.targetLang || localeStore.selectedTargetLanguage || "en";
   return { sourceLangCode, targetLangCode };
 }
@@ -165,6 +159,8 @@ const LIVE_TRANSCRIPTION_LANGUAGE_CODES: Record<string, string> = {
 const SORANI_TRANSCRIPTION_VOCABULARY = [
   "کوردی",
   "سۆرانی",
+  "کوردی سۆرانی",
+  "زمانی کوردی",
   "کوردستان",
   "سلێمانی",
   "هەولێر",
@@ -184,6 +180,35 @@ const SORANI_TRANSCRIPTION_VOCABULARY = [
   "فێربوون",
   "قسەکردن",
   "ئینگلیزی",
+  "ڕۆژباش",
+  "ببورە",
+  "دەزانم",
+  "دەمەوێت",
+  "فێرم بکە",
+  "بە کوردی قسە بکە",
+  "من کوردی قسە دەکەم",
+  "تێناگەم",
+  "دووبارە بکەوە",
+  "هێواشتر قسە بکە",
+  "دەکرێت هێواشتر قسە بکەیت",
+  "واتای چییە",
+  "ئەم وشەیە واتای چییە",
+  "چۆن دەوترێت",
+  "چی",
+  "چۆن",
+  "بۆچی",
+  "کوێ",
+  "کەی",
+  "من",
+  "تۆ",
+  "ئێمە",
+  "ئێوە",
+  "ئەمە",
+  "ئەوە",
+  "دەکرێت",
+  "دەتوانم",
+  "ناتوانم",
+  "فێری زمانم بکە",
   "توینۆ",
 ];
 
@@ -196,16 +221,23 @@ export function buildLiveInputAudioTranscriptionConfig(
   sourceLangCode: string,
   targetLangCode: string,
 ): Record<string, unknown> {
-  const languageCodes = Array.from(
-    new Set(
-      [sourceLangCode, targetLangCode]
-        .map((code) => LIVE_TRANSCRIPTION_LANGUAGE_CODES[code])
-        .filter((code): code is string => Boolean(code)),
-    ),
-  );
+  // `ku` is Gemini Live's documented Kurdish code. In Sorani sessions it must
+  // be the sole ASR hint: adding English or the lesson language makes short
+  // Kurdish utterances compete with unrelated Latin-script hypotheses. The
+  // native-audio model still hears the raw audio and can teach/code-switch.
+  const languageCodes = sourceLangCode === "ku"
+    ? ["ku"]
+    : Array.from(
+        new Set(
+          [sourceLangCode, targetLangCode]
+            .map((code) => LIVE_TRANSCRIPTION_LANGUAGE_CODES[code])
+            .filter((code): code is string => Boolean(code)),
+        ),
+      );
 
   return {
     ...(languageCodes.length > 0 ? { languageCodes } : {}),
+    mode: "VERBATIM",
     ...(sourceLangCode === "ku"
       ? { customVocabulary: SORANI_TRANSCRIPTION_VOCABULARY }
       : {}),
@@ -236,11 +268,11 @@ export function getLocalizedLanguageName(targetCode: string, inSourceCode: strin
       ru: "ruso",
     },
     ru: {
-      en: "английского языка",
-      ku: "курдского языка",
-      ar: "арабского языка",
-      es: "испанского языка",
-      ru: "русского языка",
+      en: "английском языке",
+      ku: "курдском языке",
+      ar: "арабском языке",
+      es: "испанском языке",
+      ru: "русском языке",
     },
     en: {
       en: "English",
@@ -260,7 +292,6 @@ export function buildLiveTutorSystem(): string {
   const settings = useSettingsStore.getState();
   const level = settings.englishLevel || 5;
   const age = settings.userAge || "";
-  const sex = settings.userSex || "";
   const name = settings.userName?.trim() || "Student";
   const persona = getPersonaById(settings.voicePersonaId || settings.tutorVoice);
   const personaIdentity =
@@ -275,120 +306,46 @@ export function buildLiveTutorSystem(): string {
 
   const currentLevel = LEVEL_CONFIGS[level] || LEVEL_CONFIGS[5];
 
-  const parsedAge = age ? parseInt(age, 10) : null;
-  const isChild = parsedAge !== null && !isNaN(parsedAge) && parsedAge < 13;
-  const isTeen = parsedAge !== null && !isNaN(parsedAge) && parsedAge >= 13 && parsedAge < 18;
-
-  const ageContext = isChild
-    ? `Child (${age} years old). Speak with playful, warm, highly encouraging energy. Keep examples kid-friendly (games, pets, school, cartoons).`
-    : isTeen
-      ? `Teenager (${age} years old). Speak with upbeat, modern conversational energy.`
-      : age
-        ? `Adult (${age} years old). Discuss real-life situations, everyday culture, opinions, and practical topics.`
-        : "Adult/General Learner.";
-
-  const genderContext = sex
-    ? `Learner gender/sex: ${sex}. Address respectfully.`
-    : "Gender: Not specified.";
+  const parsedAge = Number.parseInt(age, 10);
+  const learnerContext = Number.isFinite(parsedAge) && parsedAge < 13
+    ? `The learner is ${parsedAge}; keep every topic child-safe and concrete.`
+    : Number.isFinite(parsedAge) && parsedAge < 18
+      ? `The learner is ${parsedAge}; use age-appropriate, natural examples.`
+      : "Use practical adult everyday contexts.";
 
   const systemRules = [
-    `You are ${personaIdentity}, an elite, highly perceptive Live AI Tutor on Twino specialized in coaching a ${sourceLangName}-speaking learner (${name}) to master ${targetLangName}.`,
-    `You are not a generic chatbot. You act as an active, diagnostic, goal-oriented personal tutor who leads the session through a structured agent protocol.`,
+    `You are ${personaIdentity}, Twino's perceptive live language coach for ${name}.`,
+    `Voice and temperament: ${persona.personalityPrompt}`,
+    `Learner context: native language ${sourceLangName}; saved learning language ${targetLangName}; level ${level}/10 (${currentLevel.cefr}). ${learnerContext}`,
+    `The saved learning language is only the session default, never a permanent rule.`,
     ``,
-    `=== VOICE PERSONA & CHARACTER TRAITS ===`,
-    `- Tutor Persona: ${personaIdentity}`,
-    `- Persona Traits & Teaching Style: ${persona.personalityPrompt}`,
+    `INTENT OVERRIDES DEFAULTS`,
+    `- Follow the learner's latest clear request. If they say "teach me Spanish", "let's practise Arabic", or name any other language, make that the active learning language immediately and keep it active until they change it again.`,
+    `- Never claim that you teach English unless English is actually the active learning language. Never steer a learner back to ${targetLangName} after they explicitly chose another language.`,
+    `- Do not force an onboarding script, placement interview, track menu, or fixed lesson order. Infer the goal from natural speech and start helping. Ask one short clarification only when the request is genuinely ambiguous.`,
     ``,
-    `=== LEARNER PROFILE ===`,
-    `- Name: ${name}`,
-    `- Age Profile: ${ageContext}`,
-    `- ${genderContext}`,
-    `- Native Language (Mother Tongue): ${sourceLangName}`,
-    `- Target Language to Learn: ${targetLangName}`,
-    `- Default Profile Level: Level ${level}/10 (${currentLevel.cefr})`,
-    ``,
-    `=== AGENT PROTOCOL: 3-STAGE INTERACTION WORKFLOW ===`,
-    `You must manage the live voice session through these exact three stages:`,
-    ``,
-    `STAGE 1: NATIVE GREETING & LEVEL DIAGNOSTIC (Turn 1)`,
-    `- LANGUAGE: You MUST speak ONLY in the learner's native language (${sourceLangName}).`,
-    `- ACTION: Greet ${name} warmly by name. Introduce yourself as ${personaIdentity} from Twino, their personal live tutor for ${targetLangName}.`,
-    `- ASK: Inquire how much they currently know about ${targetLangName} (e.g. are they starting from scratch as a beginner, know basic words, or can already converse?).`,
-    `- Do NOT list learning tracks or start lessons yet. Wait for their response.`,
-    ``,
-    `STAGE 2: LEARNING TRACK & GOAL SELECTION (Turn 2)`,
-    `- LANGUAGE: Continue speaking in ${sourceLangName}.`,
-    `- ACTION: Validate and encourage the learner's reported level in 1 warm sentence.`,
-    `- ASK: Present the three learning tracks clearly and ask how they prefer to learn ${targetLangName} today:`,
-    sourceLangCode === "ku"
-      ? `  1) گفتوگۆی ئازاد (Open Free Conversation): قسەکردنی ئازاد دەربارەی بابەتە ڕۆژانەییەکان بۆ زیادکردنی باوەڕبەخۆبوون و ڕەوانی قسەکردن.\n  2) زاراوە و سلاینگ (Idioms & Slangs): فێربوونی دەستەواژەی باو و زمانی شەقام و قسەکردنی خەڵکی ڕەسەن.\n  3) دەوڵەمەندکردنی وشەکان (Vocabulary Builder): فێربوونی وشەی بەهێز و نوێ بۆ ئەوەی وشەی زیاتر بزانیت و دەربڕینت دەوڵەمەندتر بێت.`
-      : sourceLangCode === "ar"
-        ? `  1) محادثة حرة ومفتوحة (Open Free Conversation): التحدث الحر حول مواضيع يومية لبناء الثقة والطلاقة.\n  2) مصطلحات وتعبيرات عامية (Idioms & Slangs): تعبيرات دارجة ومصطلحات حقيقية يستخدمها المتحدثون الأصليون.\n  3) بناء وتوسيع المفردات (Vocabulary Builder): تعلم كلمات جديدة وقوية لإثراء حصيلتك اللغوية وبناء جمل أكثر تعبيراً.`
-        : sourceLangCode === "es"
-          ? `  1) Conversación libre (Open Free Conversation): Charlas casuales sobre temas cotidianos para ganar confianza y fluidez al hablar.\n  2) Modismos y jerga nativa (Idioms & Slangs): Expresiones coloquiales y frases de la calle usadas por hablantes nativos.\n  3) Constructor de vocabulario (Vocabulary Builder): Palabras y combinaciones nuevas y potentes para enriquecer tu expresión.`
-          : sourceLangCode === "ru"
-            ? `  1) Свободный разговор (Open Free Conversation): Непринуждённое общение на повседневные темы для уверенности и беглости речи.\n  2) Идиомы и сленг (Idioms & Slangs): Разговорные фразы, сленг и живые идиомы носителей языка.\n  3) Расширение словарного запаса (Vocabulary Builder): Изучение сильных новых слов и выражений для богатой речи.`
-            : `  1) Open Free Conversation: Casual, natural everyday talking to build confidence, speaking flow, and fluency.\n  2) Idioms and Slangs: Real-world colloquial phrases, street slang, and natural idioms used by native speakers.\n  3) Vocabulary Builder: Learning powerful new words, rich collocations, and expressive vocabulary to expand word power.`,
-    `- Wait for their choice before teaching.`,
-    ``,
-    `STAGE 3: AGENTIC ADAPTIVE TUTORING (Turn 3 & Onward)`,
-    `- CONTEXT LOCK: Retain the learner's reported level and chosen track in your active memory context throughout the entire session. Adapt every question, exercise, and topic to their choice. Never restart or repeat Stage 1/2 onboarding questions.`,
-    `- IMMERSION SHIFT: Enthusiastically confirm their track choice and switch into ${targetLangName} as the primary language for immersion.`,
-    `- EXECUTE ACCORDING TO CHOSEN TRACK:`,
-    `  * TRACK A: OPEN FREE CONVERSATION:`,
-    `    - Act as an engaging, charismatic conversation partner.`,
-    `    - Pick an interesting topic suited to their level (daily life, hobbies, work, culture, personal experiences).`,
-    `    - Share a personal observation or thought, then ask at most ONE thoughtful question to keep the dialogue flowing.`,
-    `    - When the learner makes an unnatural phrasing mistake or awkward translation, naturally recast it in your response ("In native speech, we usually say: ...") without breaking the rhythm.`,
-    `  * TRACK B: IDIOMS AND SLANG:`,
-    `    - Act as a phraseology and street-smarts coach.`,
-    `    - Introduce ONE high-frequency, authentic idiom or slang phrase per turn.`,
-    `    - Explain what it means, the vibe/context (casual, banter, friends, workplace), and give an authentic example sentence.`,
-    `    - Prompt ${name} to use it in a reply or mini-roleplay.`,
-    `    - Praise their attempt and refine their usage immediately.`,
-    `  * TRACK C: VOCABULARY BUILDER:`,
-    `    - Act as a dynamic lexical coach.`,
-    `    - Introduce 1-2 powerful, high-utility words or collocations suited to their level.`,
-    `    - Show how each word elevates their expression (e.g. swapping basic words like "very tired" for "exhausted", "good" for "outstanding").`,
-    `    - Give a clear contextual example sentence, then ask the learner to create their own sentence using the word.`,
-    ``,
-    `=== BILINGUAL MASTERY & CONTRASTIVE PEDAGOGY ===`,
-    `- DUAL-LANGUAGE EXCELLENCE: You possess native-level mastery of both the learner's native tongue (${sourceLangName}) and the target tongue (${targetLangName}).`,
+    `LANGUAGE CONTROL`,
+    `- Understand ${sourceLangName} and the active learning language, including natural code-switching. Do not translate or relabel what the learner said unless they ask.`,
+    `- Use ${sourceLangName} for brief explanations and recovery when the learner is confused. Use the active learning language for examples, practice, role-play, and immersion. Follow an explicit request to speak in a particular language.`,
+    `- Once the learner chooses a response language, do not drift into another language.`,
     sourceLangCode === "ku"
       ? [
-          `- NATIVE KURDISH (SORANI) AUTHENTICITY & DIALECT DYNAMICS:`,
-          `  * LANGUAGE LOCK: The learner's native language is Central Kurdish (Sorani), BCP-47 "ku". Treat their speech as Sorani by default, including fast, accented, informal, and code-mixed speech. Never reinterpret it as Hindi, Spanish, Persian, Urdu, or Arabic unless the learner clearly and intentionally switches to that language.`,
-          `  * Sorani script evidence includes letters and combinations such as ڕ، ڵ، ۆ، ێ، ڤ، گ، چ، پ، ژ. If recognition is uncertain, ask one short clarification question in Sorani instead of guessing a different language or inventing a translation.`,
-          `  * When speaking Kurdish, speak ONLY in authentic, rich Sorani Kurdish (Central Kurdish) as spoken across Kurdistan (Slemani, Hawler, Duhok, Kirkuk).`,
-          `  * Embody genuine Kurdish cultural warmth, hospitable etiquette, and natural honorifics ('گیان', 'ئازیزی من', 'دەستت خۆش بێت', 'هەر بژی', 'ئافەرم', 'واڵا زۆر چاکە', 'بێگومان').`,
-          `  * Use natural Sorani verbal prefixes and colloquial syntax ('دەچم', 'دەیکەین', 'با بزانین', 'سەیری ئەمە بکە') rather than stiff machine-translated phrases or literal calques from Persian or Arabic.`,
-          `  * Contrastive Kurdish-to-${targetLangName} Bridges:`,
-          `    - Connect ${targetLangName} phrasal verbs and idioms to intuitive Kurdish compound verbs ('دەست پێکردن', 'پاشگەزبوونەوە') and traditional proverbs ('پەندەکانی پێشینان').`,
-          `    - Clear phonetic bridges: For sounds challenging Kurdish speakers (such as English 'th' /θ/ & /ð/, /w/ vs /v/, short /ɪ/ vs long /iː/, and word-initial 's' clusters), explain tongue and lip placement using intuitive Sorani Kurdish comparisons.`,
-          `  * Effortless Kurdish Comprehension: Fully understand whatever dialect or speed of Kurdish the learner uses (Slemani, Hawler, Badini) or code-mixed speech ('ئەم وشەیە چۆن pronounce دەکەین؟'). Validate their thought warmly in Kurdish, then model the natural ${targetLangName} expression.`,
+          `- The learner's native language is Central Kurdish (Sorani), BCP-47 "ku". Treat Arabic-script Kurdish speech as Sorani by default, including informal, fast, accented, and code-mixed speech. Never reinterpret it as Turkish, English, Persian, Urdu, or Arabic unless the learner clearly switches.`,
+          `- Listen for Iraqi Central Kurdish phonology and meaning even when automatic transcription is imperfect. Do not trust a conflicting Turkish, English, Persian, Urdu, or Arabic transcript label over the learner's actual audio and conversation context.`,
+          `- Whenever you repeat, quote, or write the learner's Kurdish, preserve it in Arabic-script Sorani using letters such as ڕ، ڵ، ۆ، ێ، ە، ڤ، گ، چ، پ، ژ. Never transliterate Sorani into Latin script and never translate it into another language unless asked.`,
+          `- When speaking Kurdish, use natural Iraqi Sorani, not Kurmanji, Persian, Arabic, or literal machine translation. If uncertain what was said, ask one short clarification in Sorani instead of inventing a transcript or meaning.`,
         ].join("\n")
-      : sourceLangCode === "ar"
-        ? [
-            `- NATIVE ARABIC LINGUISTIC MASTERY:`,
-            `  * Speak with articulate, eloquent Arabic when explaining grammar contrasts or difficult expressions.`,
-            `  * Guide Arabic learners on English phonetics (vowel length contrasts, 'p' vs 'b', consonant clusters) with scholarly clarity.`,
-            `  * Comprehend regional Arabic colloquial expressions and bridge them smoothly to native ${targetLangName}.`,
-          ].join("\n")
-        : [
-            `- BILINGUAL BRIDGING:`,
-            `  * Seamlessly bridge between ${sourceLangName} and ${targetLangName}.`,
-            `  * Explain false friends, prepositions, and phonetic contrasts clearly in ${sourceLangName}.`,
-          ].join("\n"),
+      : `- Interpret the learner's speech as ${sourceLangName} by default unless they clearly switch languages.`,
     ``,
-    `=== NATIVE LANGUAGE BRIDGING POLICY IN STAGE 3 ===`,
-    `- Conduct immersion primarily in ${targetLangName} (aim for 75-85% target language practice during active speaking).`,
-    `- SUPPORTIVE BRIDGE: When explaining the meaning of a tricky idiom, subtle slang nuance, new vocabulary word, or whenever the student hesitates, is confused, or speaks in their native language (${sourceLangName}), provide a concise, warm explanation in ${sourceLangName} to ensure complete clarity, then smoothly return to ${targetLangName}.`,
+    `TEACH LIKE A HUMAN`,
+    `- Respond to the meaning of the learner's last turn, then add one useful teaching move: a natural recast, a precise explanation, a better phrase, or a short challenge. Do not dump all four.`,
+    `- Start with a concrete example or practice turn instead of describing what you could teach. Adapt difficulty continuously from the learner's actual replies.`,
+    `- Correct high-value errors without interrupting every sentence. Avoid canned praise, repeated introductions, slogans, lectures, and generic encouragement.`,
+    `- Remember the active language, topic, corrections, and learner choices for the whole session. Do not restart the conversation.`,
     ``,
-    `=== AUDIO SPEECH CONSTRAINTS (CRITICAL) ===`,
-    `- You are speaking over a live voice stream. Everything you generate is spoken aloud by TTS.`,
-    `- NEVER use markdown: no asterisks (*bold*), no bullet points (-), no numbered lists (1.), no headers (#), no JSON, and no emojis.`,
-    `- Keep turns concise: 1 to 3 spoken sentences per turn (under 25 seconds). Give the learner room to speak.`,
-    `- Ask at most ONE question per turn. Never interrogate the learner.`,
+    `VOICE OUTPUT`,
+    `- Everything is spoken aloud. Use natural spoken sentences only: no markdown, lists, headings, JSON, emoji, or stage directions.`,
+    `- Usually speak for 1 to 3 sentences and ask at most one question. Leave room for the learner to talk.`,
   ];
 
   return systemRules.join("\n");
@@ -410,24 +367,24 @@ export function buildLiveTutorOpeningPrompt(): string {
         ? persona.nativeName
         : persona.name;
 
-  let nativeGreetingText = "";
+  let nativeGreetingText: string;
   if (sourceLangCode === "ku") {
-    nativeGreetingText = `سڵاو ${name ? `${name} گیان` : ""}! من ${personaDisplayName}م لە توینۆ، مامۆستای تایبەتی تۆ بۆ فێربوونی زمانی ${targetLangInSource}. دەمەوێت بزانم پێشتر چەند لەم زمانە دەزانیت؟ ئایا لە سەرەتاوە دەست پێ دەکەیت، بنچینەکان دەزانیت، یان دەتوانیت قسە بکەیت؟`;
+    nativeGreetingText = `سڵاو ${name ? `${name} گیان` : ""}! من ${personaDisplayName}م. ئەمڕۆ دەتەوێت لە زمانی ${targetLangInSource} چی فێربیت یان چی ڕاهێنان بکەیت؟`;
   } else if (sourceLangCode === "ar") {
-    nativeGreetingText = `مرحباً ${name ? name : ""}! أنا ${personaDisplayName} من توينو، معلمك المباشر لتعلم اللغة ${targetLangInSource}. أود أن أعرف أولاً: كم تعرف عن اللغة ${targetLangInSource} حالياً؟ هل أنت مبتدئ تماماً، أم تعرف بعض الأساسيات، أم تستطيع التحدث بالفعل؟`;
+    nativeGreetingText = `مرحباً ${name || ""}! أنا ${personaDisplayName}. ماذا تريد أن تتعلم أو تتدرب عليه اليوم في ${targetLangInSource}؟`;
   } else if (sourceLangCode === "es") {
-    nativeGreetingText = `¡Hola ${name ? name : ""}! Soy ${personaDisplayName} de Twino, tu tutor de IA en vivo para aprender ${targetLangInSource}. Primero me encantaría saber: ¿cuánto sabes actualmente sobre el idioma? ¿Estás empezando desde cero, conoces lo básico o ya puedes conversar?`;
+    nativeGreetingText = `¡Hola ${name || ""}! Soy ${personaDisplayName}. ¿Qué quieres aprender o practicar hoy en ${targetLangInSource}?`;
   } else if (sourceLangCode === "ru") {
-    nativeGreetingText = `Привет, ${name ? name : ""}! Я ${personaDisplayName} из Twino, твой персональный онлайн-репетитор для изучения ${targetLangInSource}. Для начала расскажи: какой у тебя сейчас уровень владения языком? Ты только начинаешь с нуля, знаешь основы или уже можешь общаться?`;
+    nativeGreetingText = `Привет, ${name || ""}! Я ${personaDisplayName}. Что ты хочешь сегодня выучить или потренировать в ${targetLangInSource}?`;
   } else {
-    nativeGreetingText = `Hello ${name ? name : ""}! I am ${personaDisplayName} from Twino, your live AI tutor for learning ${targetLangName}. First, I would love to know: how much do you currently know about ${targetLangName}? Are you a complete beginner, do you know some basics, or can you already converse?`;
+    nativeGreetingText = `Hello ${name || ""}! I am ${personaDisplayName}. What would you like to learn or practise in ${targetLangName} today?`;
   }
 
   return [
-    `ACTION: START THE LIVE CONVERSATION IN THE LEARNER'S NATIVE LANGUAGE NOW.`,
-    `CRITICAL: You MUST speak ONLY in the learner's native language (${sourceLangName}). Do NOT speak in ${targetLangName} yet.`,
-    `Greet ${name || "the learner"} warmly and ask how much they know about ${targetLangName}. For example: "${nativeGreetingText}"`,
-    `Do not list learning options or word drills yet. Ask ONLY how much they know, then wait for their reply.`,
+    `Start the session now.`,
+    `OUTPUT LANGUAGE FOR THIS TURN: ${sourceLangName}. RESPOND UNMISTAKABLY IN ${sourceLangName}.`,
+    `Say this naturally, without adding a menu or placement test: "${nativeGreetingText}"`,
+    `Then wait. The learner's next request may replace ${targetLangName} with another active learning language.`,
   ].join(" ");
 }
 
@@ -781,7 +738,7 @@ export class GeminiLiveSession {
           },
         },
       },
-      maxOutputTokens: 800,
+      maxOutputTokens: 320,
     };
 
     // Official Gemini Multimodal Live API specifications:

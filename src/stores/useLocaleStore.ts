@@ -3,6 +3,7 @@ import { I18nManager, Platform } from "react-native";
 import { create } from "zustand";
 import { getLanguageDirection } from "../i18n/direction";
 import { isSupportedLanguagePair } from "../config/languages";
+import { useSettingsStore } from "./useSettingsStore";
 
 const UI_LANG_KEY = "twino.app.uiLanguage";
 const SOURCE_LANG_KEY = "twino.app.sourceLanguage";
@@ -43,6 +44,12 @@ export function applyUiLanguageDirection(languageCode: string) {
   I18nManager.forceRTL(shouldBeRtl);
 }
 
+function syncTutorLanguagePair(source: string, target: string) {
+  const settings = useSettingsStore.getState();
+  if (settings.nativeLang !== source) settings.setNativeLang(source);
+  if (settings.targetLang !== target) settings.setTargetLang(target);
+}
+
 export const useLocaleStore = create<LocaleState>((set) => ({
   selectedUiLanguage: defaultUi,
   selectedSourceLanguage: defaultSource,
@@ -73,7 +80,12 @@ export const useLocaleStore = create<LocaleState>((set) => ({
       selectedTargetLanguage: target,
       locale: source,
     });
+    syncTutorLanguagePair(source, target);
     applyUiLanguageDirection(source);
   },
 }));
+
+// Older builds persisted a second, independent Tutor language pair. Reconcile
+// it once on startup so an existing install cannot stay locked to Kurdish/English.
+syncTutorLanguagePair(defaultSource, defaultTarget);
 

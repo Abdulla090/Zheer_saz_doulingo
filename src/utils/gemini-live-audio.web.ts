@@ -1,4 +1,5 @@
 import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
+import { normalizePcm16 } from "./pcm16";
 
 export type MicStreamHandle = {
   stop: () => void;
@@ -372,7 +373,11 @@ export async function startMicPcmStream(
       view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
     }
 
-    const bytes = new Uint8Array(buffer);
+    const bytes = normalizePcm16(
+      new Uint8Array(buffer),
+      audioCtx.sampleRate,
+      sampleRate,
+    );
     const b64 = encodeBase64(bytes);
     onData(b64);
   };

@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import * as FileSystem from "expo-file-system/legacy";
 import { LivePcmPlayer } from "../gemini-live-audio";
+import { normalizePcm16 } from "../pcm16";
 
 let mockStatusListener: ((status: Record<string, unknown>) => void) | null =
   null;
@@ -99,6 +100,22 @@ function decodeBase64(value: string): Uint8Array {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
+
+describe("normalizePcm16", () => {
+  it("downmixes stereo and resamples device audio to Gemini's 16 kHz input", () => {
+    const source = new ArrayBuffer(48_000 * 2 * 2);
+    const view = new DataView(source);
+    for (let frame = 0; frame < 48_000; frame += 1) {
+      view.setInt16(frame * 4, 12_000, true);
+      view.setInt16(frame * 4 + 2, 4_000, true);
+    }
+
+    const normalized = normalizePcm16(new Uint8Array(source), 48_000, 16_000, 2);
+
+    expect(normalized.byteLength).toBe(16_000 * 2);
+    expect(new DataView(normalized.buffer).getInt16(0, true)).toBe(8_000);
+  });
+});
 
 describe("LivePcmPlayer turn draining", () => {
   beforeEach(() => {

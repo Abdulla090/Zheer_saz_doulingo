@@ -85,7 +85,6 @@ export function useLiveVoiceTutor() {
     ...active,
     provider,
     configured: openai.configured || gemini.configured,
-    phase: provider === "gemini" ? gemini.phase : ("english" as const),
     messages: provider === "gemini" ? gemini.messages : [],
     wordHighlight: provider === "gemini" ? gemini.wordHighlight : null,
     teachNote: provider === "gemini" ? gemini.teachNote : null,

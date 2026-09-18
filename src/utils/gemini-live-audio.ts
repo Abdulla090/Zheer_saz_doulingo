@@ -12,6 +12,7 @@ import {
 import * as FileSystem from "expo-file-system/legacy";
 import { PermissionsAndroid, Platform } from "react-native";
 import { GEMINI_LIVE_OUTPUT_RATE } from "../constants/gemini";
+import { normalizePcm16 } from "./pcm16";
 
 export type MicStreamHandle = {
   stop: () => void;
@@ -736,7 +737,13 @@ export async function startMicPcmStream(
   });
 
   const subscription = stream.addListener("audioStreamBuffer", (event) => {
-    const bytes = new Uint8Array(event.data);
+    const bytes = normalizePcm16(
+      new Uint8Array(event.data),
+      event.sampleRate,
+      sampleRate,
+      event.channels,
+    );
+    if (bytes.length === 0) return;
 
     // Calculate RMS to filter ambient background noise and quiet spillover
     let sum = 0;

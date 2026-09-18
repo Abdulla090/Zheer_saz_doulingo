@@ -6,7 +6,6 @@ import {
 import {
   GeminiLiveSession,
   getLiveTutorLanguages,
-  type LiveSessionPhase,
 } from "../services/gemini-live-client";
 import {
   LivePcmPlayer,
@@ -57,7 +56,6 @@ export function useGeminiLiveTutor() {
   const userTurnTextRef = useRef("");
   const transcriptFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [phase, setPhase] = useState<LiveSessionPhase>("intro_ku");
   const [status, setStatus] = useState<LiveTutorStatus>("idle");
   const [sessionActive, setSessionActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -266,7 +264,6 @@ export function useGeminiLiveTutor() {
     setTranscript("");
     aiTurnTextRef.current = "";
     userTurnTextRef.current = "";
-    setPhase("intro_ku");
     activeWordRef.current = null;
   }, [stopMic, stopPlayer]);
 
@@ -301,7 +298,6 @@ export function useGeminiLiveTutor() {
       setStatus("connecting");
       setSessionActive(true);
       if (attempt === 1) {
-        setPhase("intro_ku");
         setTurns([]);
         setSessionWords(createEmptySessionWordState());
         sessionStartTimeRef.current = Date.now();
@@ -748,7 +744,6 @@ export function useGeminiLiveTutor() {
   return {
     configured,
     supported,
-    phase,
     status,
     sessionActive,
     speaking,

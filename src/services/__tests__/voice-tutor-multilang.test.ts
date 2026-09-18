@@ -13,6 +13,7 @@ import {
 import { localSpeechAndGrammarReview } from "../voice-tutor-analysis-engine";
 
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useLocaleStore } from "../../stores/useLocaleStore";
 
 describe("Voice Tutor Multi-Language & Streaming", () => {
   describe("detectScriptLanguage", () => {
@@ -105,41 +106,45 @@ describe("Voice Tutor Multi-Language & Streaming", () => {
       expect(getLocalizedLanguageName("es", "ku")).toBe("ئیسپانی");
       expect(getLocalizedLanguageName("ru", "ar")).toBe("الروسية");
       expect(getLocalizedLanguageName("en", "es")).toBe("inglés");
-      expect(getLocalizedLanguageName("es", "ru")).toBe("испанского языка");
+      expect(getLocalizedLanguageName("es", "ru")).toBe("испанском языке");
       expect(getLocalizedLanguageName("es", "en")).toBe("Spanish");
     });
   });
 
   describe("buildLiveTutorOpeningPrompt & System", () => {
     it("builds Spanish opening greeting when native language is Spanish", () => {
+      useLocaleStore.setState({ selectedSourceLanguage: "es", selectedTargetLanguage: "en" });
       useSettingsStore.getState().setNativeLang("es");
       useSettingsStore.getState().setTargetLang("en");
       useSettingsStore.getState().setUserName("Carlos");
 
       const prompt = buildLiveTutorOpeningPrompt();
       expect(prompt).toContain("¡Hola Carlos!");
-      expect(prompt).toContain("de Twino");
+      expect(prompt).toContain("Soy Rebwar");
 
       const system = buildLiveTutorSystem();
-      expect(system).toContain("Spanish-speaking learner");
-      expect(system).toContain("Conversación libre");
+      expect(system).toContain("native language Spanish");
+      expect(system).toContain("saved learning language English");
     });
 
     it("builds Russian opening greeting when native language is Russian", () => {
+      useLocaleStore.setState({ selectedSourceLanguage: "ru", selectedTargetLanguage: "es" });
       useSettingsStore.getState().setNativeLang("ru");
       useSettingsStore.getState().setTargetLang("es");
       useSettingsStore.getState().setUserName("Алексей");
 
       const prompt = buildLiveTutorOpeningPrompt();
       expect(prompt).toContain("Привет, Алексей!");
-      expect(prompt).toContain("из Twino");
+      expect(prompt).toContain("Я Rebwar");
+      expect(prompt).toContain("в испанском языке");
 
       const system = buildLiveTutorSystem();
-      expect(system).toContain("Russian-speaking learner");
-      expect(system).toContain("Свободный разговор");
+      expect(system).toContain("native language Russian");
+      expect(system).toContain("saved learning language Spanish");
     });
 
     it("restores Kurdish defaults cleanly", () => {
+      useLocaleStore.setState({ selectedSourceLanguage: "ku", selectedTargetLanguage: "en" });
       useSettingsStore.getState().setNativeLang("ku");
       useSettingsStore.getState().setTargetLang("en");
       useSettingsStore.getState().setUserName("Aza");
@@ -149,23 +154,47 @@ describe("Voice Tutor Multi-Language & Streaming", () => {
 
       const system = buildLiveTutorSystem();
       expect(system).toContain('Central Kurdish (Sorani), BCP-47 "ku"');
-      expect(system).toContain("Never reinterpret it as Hindi, Spanish, Persian, Urdu, or Arabic");
+      expect(system).toContain("Never reinterpret it as Turkish, English, Persian, Urdu, or Arabic");
+      expect(system).toContain("teach me Spanish");
+      expect(system).toContain("saved learning language is only the session default");
+      expect(system).not.toContain("3-STAGE INTERACTION WORKFLOW");
+    });
+
+    it("keeps Live Tutor synchronized with the language pair changed in settings", () => {
+      useLocaleStore.getState().setLanguagePair("ar", "ru");
+
+      expect(useSettingsStore.getState().nativeLang).toBe("ar");
+      expect(useSettingsStore.getState().targetLang).toBe("ru");
+      expect(buildLiveTutorOpeningPrompt()).toContain("في الروسية");
+
+      useLocaleStore.getState().setLanguagePair("ku", "en");
     });
   });
 
   describe("live input transcription language bias", () => {
-    it("locks Kurdish sessions to Sorani plus the lesson language", () => {
+    it("makes Sorani the sole transcription language in Kurdish sessions", () => {
       const config = buildLiveInputAudioTranscriptionConfig("ku", "en");
 
-      expect(config.languageCodes).toEqual(["ku", "en-US"]);
+      expect(config.languageCodes).toEqual(["ku"]);
+      expect(config.mode).toBe("VERBATIM");
       expect(config.customVocabulary).toEqual(
-        expect.arrayContaining(["کوردی", "سۆرانی", "سلێمانی", "هەولێر", "سڵاو"]),
+        expect.arrayContaining([
+          "کوردی",
+          "سۆرانی",
+          "سلێمانی",
+          "هەولێر",
+          "سڵاو",
+          "بە کوردی قسە بکە",
+          "دەکرێت هێواشتر قسە بکەیت",
+          "ئەم وشەیە واتای چییە",
+        ]),
       );
     });
 
     it("keeps code-switching support without Sorani vocabulary for other sources", () => {
       expect(buildLiveInputAudioTranscriptionConfig("ar", "es")).toEqual({
         languageCodes: ["ar", "es-419"],
+        mode: "VERBATIM",
       });
     });
   });

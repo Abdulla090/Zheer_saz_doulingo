@@ -658,8 +658,10 @@ const styles = StyleSheet.create({
   durationMinutes: { fontSize: 13, lineHeight: 17 },
   durationCost: { fontSize: 10, lineHeight: 14, opacity: 0.9 },
   balance: { fontSize: 12, lineHeight: 17, fontVariant: ["tabular-nums"] },
-  orbButtonContainer: { width: 240, height: 240, alignSelf: "center", marginTop: 6 },
-  orbButton: { flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 120, borderCurve: "continuous" },
+  // PremiumPressable deliberately stretches its outer animated wrapper. Make
+  // that wrapper a full-width centering rail and size the actual control here.
+  orbButtonContainer: { width: "100%", height: 240, marginTop: 6, alignItems: "center" },
+  orbButton: { width: 240, height: 240, alignItems: "center", justifyContent: "center", borderRadius: 120, borderCurve: "continuous" },
   orbStage: { width: 240, height: 240, alignItems: "center", justifyContent: "center" },
   logoStage: { width: 240, height: 240, alignItems: "center", justifyContent: "center" },
   logoImage: { width: 240, height: 240 },
