@@ -154,6 +154,64 @@ export function getLiveTutorLanguages(): { sourceLangCode: string; targetLangCod
   return { sourceLangCode, targetLangCode };
 }
 
+const LIVE_TRANSCRIPTION_LANGUAGE_CODES: Record<string, string> = {
+  ku: "ku",
+  en: "en-US",
+  ar: "ar",
+  es: "es-419",
+  ru: "ru-RU",
+};
+
+const SORANI_TRANSCRIPTION_VOCABULARY = [
+  "کوردی",
+  "سۆرانی",
+  "کوردستان",
+  "سلێمانی",
+  "هەولێر",
+  "کەرکووک",
+  "دهۆک",
+  "سڵاو",
+  "چۆنی",
+  "باشم",
+  "سوپاس",
+  "تکایە",
+  "بەڵێ",
+  "نەخێر",
+  "دەست خۆش",
+  "هەر بژی",
+  "گیان",
+  "هاوڕێ",
+  "فێربوون",
+  "قسەکردن",
+  "ئینگلیزی",
+  "توینۆ",
+];
+
+/**
+ * Bias Live transcription toward the configured language pair. Sorani shares
+ * Arabic script with several languages, so automatic detection alone can
+ * produce confident but completely wrong transcripts in unrelated languages.
+ */
+export function buildLiveInputAudioTranscriptionConfig(
+  sourceLangCode: string,
+  targetLangCode: string,
+): Record<string, unknown> {
+  const languageCodes = Array.from(
+    new Set(
+      [sourceLangCode, targetLangCode]
+        .map((code) => LIVE_TRANSCRIPTION_LANGUAGE_CODES[code])
+        .filter((code): code is string => Boolean(code)),
+    ),
+  );
+
+  return {
+    ...(languageCodes.length > 0 ? { languageCodes } : {}),
+    ...(sourceLangCode === "ku"
+      ? { customVocabulary: SORANI_TRANSCRIPTION_VOCABULARY }
+      : {}),
+  };
+}
+
 export function getLocalizedLanguageName(targetCode: string, inSourceCode: string): string {
   const dicts: Record<string, Record<string, string>> = {
     ku: {
@@ -299,6 +357,8 @@ export function buildLiveTutorSystem(): string {
     sourceLangCode === "ku"
       ? [
           `- NATIVE KURDISH (SORANI) AUTHENTICITY & DIALECT DYNAMICS:`,
+          `  * LANGUAGE LOCK: The learner's native language is Central Kurdish (Sorani), BCP-47 "ku". Treat their speech as Sorani by default, including fast, accented, informal, and code-mixed speech. Never reinterpret it as Hindi, Spanish, Persian, Urdu, or Arabic unless the learner clearly and intentionally switches to that language.`,
+          `  * Sorani script evidence includes letters and combinations such as ڕ، ڵ، ۆ، ێ، ڤ، گ، چ، پ، ژ. If recognition is uncertain, ask one short clarification question in Sorani instead of guessing a different language or inventing a translation.`,
           `  * When speaking Kurdish, speak ONLY in authentic, rich Sorani Kurdish (Central Kurdish) as spoken across Kurdistan (Slemani, Hawler, Duhok, Kirkuk).`,
           `  * Embody genuine Kurdish cultural warmth, hospitable etiquette, and natural honorifics ('گیان', 'ئازیزی من', 'دەستت خۆش بێت', 'هەر بژی', 'ئافەرم', 'واڵا زۆر چاکە', 'بێگومان').`,
           `  * Use natural Sorani verbal prefixes and colloquial syntax ('دەچم', 'دەیکەین', 'با بزانین', 'سەیری ئەمە بکە') rather than stiff machine-translated phrases or literal calques from Persian or Arabic.`,
@@ -710,6 +770,7 @@ export class GeminiLiveSession {
     const state = useSettingsStore.getState();
     const persona = getPersonaById(state.voicePersonaId || state.tutorVoice);
     const resolvedVoiceName = persona.geminiVoice || state.tutorVoice || "Aoede";
+    const { sourceLangCode, targetLangCode } = getLiveTutorLanguages();
 
     const generationConfig: Record<string, unknown> = {
       responseModalities: ["AUDIO"],
@@ -739,7 +800,10 @@ export class GeminiLiveSession {
         systemInstruction: {
           parts: [{ text: buildLiveTutorSystem() }],
         },
-        inputAudioTranscription: {},
+        inputAudioTranscription: buildLiveInputAudioTranscriptionConfig(
+          sourceLangCode,
+          targetLangCode,
+        ),
         outputAudioTranscription: {},
       },
     });

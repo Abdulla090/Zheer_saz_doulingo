@@ -1,59 +1,56 @@
-/**
- * RolePlayScreen — on the shared practice-surface system (`games-theme.ts`).
- *
- * The four scenarios used to carry their own accent colours (`#F59E0B`,
- * `#8B5CF6`, `#10B981`, `#EF4444`). Two of those are the app's success and
- * danger colours, on a screen that also grades spoken answers — so "green"
- * meant both "the interview scenario" and "you got that right". Scenario
- * identity is now carried by the icon and the title; colour is reserved for
- * meaning: coral for what you can act on, red only for stop.
- */
-
 import { PressableScale } from "../../components/animations";
+import { AppText } from "../../components/ui/AppText";
 import { MicCaptureOrb } from "../../components/voice/MicCaptureOrb";
-import { useSpeechCapture } from "../../hooks/use-speech-capture";
+import { useAuth } from "../../context/AuthContext";
 import { useSafeBack } from "../../hooks/use-safe-back";
+import { useGeminiVoiceCapture } from "../../hooks/use-gemini-voice-capture";
 import { useTTS } from "../../hooks/use-tts";
-import { crossShadow } from "../../utils/shadows";
+import {
+  generateRolePlayResponse,
+  generateRolePlayVoiceResponse,
+  isGeminiConfigured,
+  type RolePlayTurn,
+  type RolePlayTurnFeedback,
+} from "../../services/gemini-speech-service";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import {
+  getLocalizedRolePlayScenario,
+  getRolePlayLanguageName,
+  getRolePlaySpeechLocale,
+  resolveRolePlayTargetCode,
+} from "../../constants/roleplay-language";
+import { aiPrice } from "../../types/entitlements";
 import { hapticImpact, hapticSelection } from "../../utils/haptics";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
+  ArrowRight02Icon,
+  Briefcase01Icon,
+  BulbIcon,
   Coffee01Icon,
   Rocket01Icon,
-  Briefcase01Icon,
-  Store01Icon,
   RotateLeft01Icon,
+  StarIcon,
+  Store01Icon,
+  Target02Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
-import { AppText } from "../../components/ui/AppText";
-import { useAuth } from "../../context/AuthContext";
-import { aiPrice } from "../../types/entitlements";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  cancelAnimation,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  isGeminiConfigured,
-  generateRolePlayResponse,
-} from "../../services/gemini-speech-service";
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
+import Animated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   GamesCard,
   GamesGlassHeader,
   GamesIconButton,
-  GamesIntroCard,
   GamesPrimaryButton,
   GamesScreenShell,
   GamesSectionLabel,
@@ -69,20 +66,17 @@ import {
   type GamesTheme,
 } from "../games/games-theme";
 
-type HugeiconsIconData = {
-  name: string;
-  paths: string[];
-  width: number;
-  height: number;
-};
-
 type Scenario = {
-  id: string;
+  id: "cafe" | "space" | "job" | "market";
   title: string;
   titleKu: string;
-  subtitleKu: string;
   subtitle: string;
-  icon: any;
+  subtitleKu: string;
+  mission: string;
+  goals: [string, string, string];
+  phrases: [string, string];
+  difficulty: "Easy" | "Medium" | "Hard";
+  icon: unknown;
   initialMessage: string;
   voicePitch: number;
   voiceRate: number;
@@ -93,842 +87,598 @@ const SCENARIOS: Scenario[] = [
     id: "cafe",
     title: "Coffee Shop",
     titleKu: "قاوەخانەی پاریس",
-    subtitleKu: "داواکردنی قاوە و کرۆسان بە ئینگلیزی",
-    subtitle: "Order coffee and croissants in English",
+    subtitle: "Order with confidence in a busy Paris café",
+    subtitleKu: "بە متمانەوە لە قاوەخانەیەکی پاریس داوا بکە",
+    mission: "Get the exact breakfast you want without switching languages.",
+    goals: ["Order a drink", "Add or change an item", "Confirm the final order"],
+    phrases: ["Could I have…?", "Can I get that without…?"],
+    difficulty: "Easy",
     icon: Coffee01Icon,
-    initialMessage:
-      "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
-    voicePitch: 0.95,
-    voiceRate: 1.0,
+    initialMessage: "Bonjour! Welcome to Le Petit Café. What can I get started for you today?",
+    voicePitch: 1,
+    voiceRate: 0.98,
   },
   {
     id: "space",
     title: "Mars Flight",
     titleKu: "گەشتی مەریخ",
-    subtitleKu: "گفتوگۆ لەسەر کێشی جانتاکەت",
-    subtitle: "Explain your overweight luggage to the gate agent",
+    subtitle: "Defend your overweight luggage at the gate",
+    subtitleKu: "لە دەروازەکە بەرگری لە جانتای قورسەکەت بکە",
+    mission: "Convince a strict gate agent that your equipment must fly.",
+    goals: ["Explain what is in the bag", "Give a convincing reason", "Reach a decision"],
+    phrases: ["I need it because…", "Is there any exception for…?"],
+    difficulty: "Medium",
     icon: Rocket01Icon,
-    initialMessage:
-      "Greetings space traveler. Your bag exceeds the Mars transit weight limit. Please justify.",
-    voicePitch: 1.25,
-    voiceRate: 1.05,
+    initialMessage: "Space traveler, your bag exceeds the Mars transit weight limit. Explain why I should allow it.",
+    voicePitch: 1.04,
+    voiceRate: 0.98,
   },
   {
     id: "job",
     title: "Job Interview",
     titleKu: "چاوپێکەوتنی کار",
-    subtitleKu: "چاوپێکەوتن بۆ ئەندازیاری AI",
-    subtitle: "Interview for an AI Engineering position",
+    subtitle: "Win an AI Engineering interview",
+    subtitleKu: "لە چاوپێکەوتنی ئەندازیاری AI سەرکەوتوو بە",
+    mission: "Show clear thinking, real experience, and confident professional English.",
+    goals: ["Describe relevant experience", "Explain a technical choice", "Ask a strong question"],
+    phrases: ["A project I’m proud of…", "The trade-off was…"],
+    difficulty: "Hard",
     icon: Briefcase01Icon,
-    initialMessage:
-      "Thank you for joining us. Could you describe your experience optimizing small language models?",
-    voicePitch: 1.1,
-    voiceRate: 0.95,
+    initialMessage: "Thanks for joining us. Tell me about a project where you optimized a language model.",
+    voicePitch: 1,
+    voiceRate: 0.94,
   },
   {
     id: "market",
     title: "Bazaar Bargain",
     titleKu: "بازاڕی گەورە",
-    subtitleKu: "ڕێككەوتن لەسەر نرخی فەرش",
-    subtitle: "Negotiate the price of a hand-woven rug",
+    subtitle: "Negotiate a fair price for a hand-woven rug",
+    subtitleKu: "لەسەر نرخێکی گونجاو بۆ فەرشێکی دەستکرد ڕێک بکەوە",
+    mission: "Use persuasive English to lower the price and close the deal.",
+    goals: ["Make a counteroffer", "Give a reason for your price", "Close or walk away"],
+    phrases: ["That’s more than I planned…", "I can offer…"],
+    difficulty: "Medium",
     icon: Store01Icon,
-    initialMessage:
-      "Ah, my friend! This rug was woven under a blue moon. For you, only five hundred gold coins!",
-    voicePitch: 0.85,
-    voiceRate: 1.1,
+    initialMessage: "My friend, this rug is a masterpiece. For you, only five hundred gold coins!",
+    voicePitch: 0.96,
+    voiceRate: 1,
   },
 ];
 
 type Status = "idle" | "listening" | "thinking" | "speaking" | "error";
+type Phase = "setup" | "playing" | "results";
+type Message = { sender: "user" | "ai"; text: string };
 
-/* ─── Animated Pulse Ring ─── */
-const PulseRing = React.memo(function PulseRing({
-  size,
-  color,
-  delay,
-  status,
-}: {
-  size: number;
-  color: string;
-  delay: number;
-  status: Status;
-}) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    cancelAnimation(scale);
-    cancelAnimation(opacity);
-
-    if (status === "listening") {
-      scale.value = 1;
-      opacity.value = withRepeat(
-        withSequence(
-          withTiming(0.5, { duration: 200, easing: Easing.out(Easing.ease) }),
-          withTiming(0, { duration: 1200, easing: Easing.out(Easing.ease) }),
-        ),
-        -1,
-        false,
-      );
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: delay }),
-          withTiming(1.6, { duration: 1400, easing: Easing.out(Easing.cubic) }),
-          withTiming(1, { duration: 0 }),
-        ),
-        -1,
-        false,
-      );
-    } else if (status === "speaking") {
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.15, { duration: 800, easing: Easing.inOut(Easing.sin) }),
-          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
-      );
-      opacity.value = withTiming(0.25, { duration: 400 });
-    } else if (status === "thinking") {
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.98, { duration: 600, easing: Easing.inOut(Easing.ease) }),
-        ),
-        -1,
-        true,
-      );
-      opacity.value = withTiming(0.15, { duration: 300 });
-    } else {
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.04, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-          withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
-      );
-      opacity.value = withTiming(0.12, { duration: 600 });
-    }
-  }, [status, scale, opacity, delay]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const r = size / 2;
-  return (
-    <Animated.View
-      style={[
-        {
-          position: "absolute",
-          width: size,
-          height: size,
-          borderRadius: r,
-          borderWidth: 2,
-          borderColor: color,
-        },
-        animStyle,
-      ]}
-    />
-  );
-});
-
-/* ─── Chat Bubble ───
- * The AI side carries the mode hue on its avatar chip only — a persona marker,
- * never an affordance. The user side is accent-washed, which is the same
- * "this is yours / this is active" signal used everywhere else in the system.
- */
-const ChatBubble = React.memo(function ChatBubble({
-  sender,
-  text,
+function ChatBubble({
+  message,
   icon,
   isRtl,
+  languageCode,
 }: {
-  sender: "user" | "ai";
-  text: string;
-  icon: HugeiconsIconData;
+  message: Message;
+  icon: unknown;
   isRtl: boolean;
+  languageCode: string;
 }) {
-  const isAi = sender === "ai";
   const theme = useGamesTheme();
   const hue = useGameHue("roleplay");
   const st = useRolePlayStyles();
-
+  const isAi = message.sender === "ai";
   return (
     <Animated.View
-      entering={FadeInUp.duration(300).springify().damping(18)}
+      entering={FadeInUp.duration(240)}
       style={[
         st.bubbleRow,
         isAi
-          ? { flexDirection: isRtl ? "row-reverse" : "row" }
-          : { flexDirection: isRtl ? "row" : "row-reverse" },
+          ? { flexDirection: isRtl ? "row-reverse" : "row", alignSelf: "flex-start" }
+          : { flexDirection: isRtl ? "row" : "row-reverse", alignSelf: "flex-end" },
       ]}
     >
-      {isAi && (
-        <View
-          style={[
-            st.avatar,
-            { backgroundColor: hue.wash, borderColor: hue.border, borderWidth: 1 },
-          ]}
-        >
-          <HugeiconsIcon icon={icon as any} size={16} color={hue.ink} strokeWidth={2} />
+      {isAi ? (
+        <View style={[st.avatar, { backgroundColor: hue.wash, borderColor: hue.border }]}>
+          <HugeiconsIcon icon={icon as never} size={16} color={hue.ink} strokeWidth={2} />
         </View>
-      )}
+      ) : null}
       <View
         style={[
           st.bubble,
           isAi
-            ? { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }
-            : {
-                alignSelf: "flex-end",
-                backgroundColor: theme.accentWash,
-                borderColor: withAlpha(theme.accent, 0.28),
-                borderWidth: 1,
-              },
+            ? { backgroundColor: theme.surface, borderColor: theme.border }
+            : { backgroundColor: theme.accentWash, borderColor: withAlpha(theme.accent, 0.28) },
         ]}
       >
-        <AppText
-          style={[GamesType.body, { color: theme.ink, lineHeight: 22 }]}
-          languageCode="en"
-          align="start"
-          latinRole="medium"
-        >
-          {text}
+        <AppText style={[GamesType.body, { color: theme.ink, lineHeight: 22 }]} languageCode={languageCode} align="start">
+          {message.text}
         </AppText>
       </View>
     </Animated.View>
   );
-});
+}
 
-/* ─── Main Screen ─── */
-export function RolePlayScreen() {
-  const safeBack = useSafeBack("/(tabs)/play");
-  const insets = useSafeAreaInsets();
-  const { theme, metrics, isWide, isRtl, t, locale, isKu } =
-    useGamesChrome("roleplay");
-  const st = useRolePlayStyles();
-  const scrollRef = useRef<ScrollView>(null);
-  const speech = useSpeechCapture("en-US");
-  const abortSpeech = speech.abort;
-  const { speak: speakTts, stop: stopTts } = useTTS();
-  const { billingAccount, refreshBillingAccount } = useAuth();
-
-  const [activeScenario, setActiveScenario] = useState<Scenario>(SCENARIOS[0]);
-  const [status, setStatus] = useState<Status>("idle");
-  const [history, setHistory] = useState<{ sender: "user" | "ai"; text: string }[]>([]);
-  const [scrolled, setScrolled] = useState(false);
-  const [creditNotice, setCreditNotice] = useState<string | null>(null);
-
-  const statusRef = useRef(status);
-  const scenarioRef = useRef(activeScenario);
-  const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const responseRequestIdRef = useRef(0);
-  const finalTranscriptHandledRef = useRef(false);
-  const historyRef = useRef(history);
-
-  const setStatusNow = useCallback((next: Status) => {
-    statusRef.current = next;
-    setStatus(next);
-  }, []);
-
-  useEffect(() => { historyRef.current = history; }, [history]);
-  useEffect(() => { statusRef.current = status; }, [status]);
-  useEffect(() => { scenarioRef.current = activeScenario; }, [activeScenario]);
-
-  const clearListenTimeout = useCallback(() => {
-    if (listenTimeoutRef.current) {
-      clearTimeout(listenTimeoutRef.current);
-      listenTimeoutRef.current = null;
-    }
-  }, []);
-
-  const stopSpeaking = useCallback(() => {
-    void stopTts();
-  }, [stopTts]);
-
-  useEffect(() => {
-    return () => {
-      clearListenTimeout();
-      stopSpeaking();
-      abortSpeech();
-    };
-  }, [abortSpeech, clearListenTimeout, stopSpeaking]);
-
-  function stopListening() {
-    clearListenTimeout();
-    speech.stop();
-  }
-
-  function stopAll() {
-    responseRequestIdRef.current += 1;
-    stopSpeaking();
-    stopListening();
-  }
-
-  function speak(text: string) {
-    const sc = scenarioRef.current;
-    setStatusNow("speaking");
-    void speakTts(text, "en", "roleplay", {
-      rate: sc.voiceRate,
-      pitch: sc.voicePitch,
-      onDone: () => {
-        if (statusRef.current === "speaking") void startListening();
-      },
-    });
-  }
-
-  const handleUserResponse = useCallback(async (userText: string) => {
-    const cleanText = userText.trim();
-    if (!cleanText) {
-      setStatusNow("idle");
-      return;
-    }
-
-    const requestId = responseRequestIdRef.current + 1;
-    responseRequestIdRef.current = requestId;
-
-    setHistory((p) => [...p, { sender: "user", text: cleanText }]);
-    setStatusNow("thinking");
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-
-    if (isGeminiConfigured()) {
-      try {
-        setCreditNotice(null);
-        const currentHistory = historyRef.current;
-        const r = await generateRolePlayResponse(scenarioRef.current.id, cleanText, currentHistory);
-        if (responseRequestIdRef.current !== requestId || statusRef.current !== "thinking") {
-          return;
-        }
-        setHistory((p) => [...p, { sender: "ai", text: r }]);
-        speak(r);
-        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-        return;
-      } catch (err) {
-        console.warn("Gemini RolePlay failed, falling back to mock:", err);
-        const message = err instanceof Error ? err.message : "";
-        if (/credit|کرێدیت|رصيد/i.test(message)) setCreditNotice(message);
-      } finally {
-        await refreshBillingAccount();
-      }
-    }
-
-    // Fallback Mock logic
-    setTimeout(() => {
-      const sc = scenarioRef.current;
-      let r = "";
-      if (responseRequestIdRef.current !== requestId || statusRef.current !== "thinking") {
-        return;
-      }
-
-      const lower = cleanText.toLowerCase();
-
-      if (sc.id === "cafe") {
-        r =
-          lower.includes("croissant") || lower.includes("pastry")
-            ? "Excellent choice! Our croissants are baked fresh. Would you like a café au lait with that?"
-            : lower.includes("espresso") || lower.includes("coffee")
-              ? "Double espresso, très bien! Coming right up. Shall I add a pain au chocolat?"
-              : "Of course! Will you be enjoying that at our sunny patio, or is it to go?";
-      } else if (sc.id === "space") {
-        r =
-          lower.includes("oxygen") || lower.includes("life support")
-            ? "Life support systems are critical gear. Fee waived. Enjoy your journey to Mars!"
-            : "My scanner detects dense materials. You must justify this weight in English, passenger.";
-      } else if (sc.id === "job") {
-        r =
-          lower.includes("optim") || lower.includes("model") || lower.includes("ai")
-            ? "Impressive. How do you handle quantization trade-offs for mobile speech models?"
-            : "Interesting. What's your approach to balancing responsiveness with heavy AI processing?";
-      } else {
-        const nums = cleanText.match(/\d+/g);
-        r = nums
-          ? parseInt(nums[0], 10) < 300
-            ? "You break my heart! Four hundred is my final offer!"
-            : "A skilled negotiator! Three fifty, and I add Turkish tea. Deal?"
-          : "Feel the quality! Pure silk. Make me a serious offer in English!";
-      }
-
-      setHistory((p) => [...p, { sender: "ai", text: r }]);
-      speak(r);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
-    }, 700);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const startListening = async () => {
-    stopSpeaking();
-    finalTranscriptHandledRef.current = false;
-    setStatusNow("listening");
-
-    const started = await speech.start({
-      onResult: (text, isFinal) => {
-        if (!isFinal) return;
-        if (finalTranscriptHandledRef.current) return;
-        finalTranscriptHandledRef.current = true;
-        clearListenTimeout();
-        setStatusNow("thinking");
-        handleUserResponse(text);
-      },
-      onEnd: () => {
-        if (statusRef.current === "listening") setStatusNow("idle");
-      },
-    });
-
-    if (!started) {
-      setStatusNow("idle");
-      return;
-    }
-
-    clearListenTimeout();
-    listenTimeoutRef.current = setTimeout(() => {
-      if (statusRef.current === "listening") {
-        speech.stop();
-        setStatusNow("idle");
-      }
-    }, 12000);
-  };
-
-  function startSession() {
-    stopAll();
-    hapticImpact();
-    const msg = scenarioRef.current.initialMessage;
-    setHistory([{ sender: "ai", text: msg }]);
-    speak(msg);
-  }
-
-  function resetSession() {
-    stopAll();
-    hapticImpact();
-    setHistory([]);
-    setStatusNow("idle");
-  }
-
-  const handleMicTap = () => {
-    hapticImpact();
-    switch (statusRef.current) {
-      case "idle":
-      case "error":
-        if (history.length === 0) startSession();
-        else void startListening();
-        break;
-      case "speaking":
-        stopSpeaking();
-        void startListening();
-        break;
-      case "listening":
-        stopListening();
-        setStatusNow("idle");
-        break;
-      case "thinking":
-        responseRequestIdRef.current += 1;
-        setStatusNow("idle");
-        break;
-    }
-  };
-
-  const sessionStarted = history.length > 0;
-  const Icon = activeScenario.icon;
-  const scenarioTitle = isKu ? activeScenario.titleKu : activeScenario.title;
-  const scenarioSubtitle = isKu ? activeScenario.subtitleKu : activeScenario.subtitle;
-  const scenarioLanguage = isKu ? "ku" : "en";
-
-  const micHint = speech.error
-    ? speech.error
-    : status === "listening"
-      ? t("rolePlay.listening")
-      : status === "thinking"
-        ? t("rolePlay.thinking")
-        : status === "speaking"
-          ? t("rolePlay.interrupt")
-          : t("rolePlay.tapSpeak");
-
-  const handleExit = useCallback(() => {
-    stopAll();
-    safeBack();
-  }, [safeBack]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ─── Scenario Picker (Setup) ─── */
-  if (!sessionStarted) {
-    return (
-      <GamesScreenShell
-        onScroll={(e) => setScrolled(e.nativeEvent.contentOffset.y > 4)}
-        header={
-          <GamesGlassHeader
-            title={t("rolePlay.headerTitle")}
-            titleLanguageCode={locale}
-            onBack={handleExit}
-            scrolled={scrolled}
-          />
-        }
-        footer={
-          <View style={{ gap: 10 }}>
-            <AppText
-              style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
-              languageCode={locale}
-            >
-              {isKu
-                ? `هەر وەڵامێکی دەنگی AI: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} کرێدیت · وەڵامی ئامادەکراو بەخۆڕاییە`
-                : locale === "ar"
-                  ? `كل رد صوتي بالذكاء الاصطناعي: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} رصيد · البديل النصي مجاني`
-                  : `Each voice AI response: ${aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} credits · scripted fallback is free`}
-            </AppText>
-            <GamesPrimaryButton
-              label={t("rolePlay.start")}
-              languageCode={locale}
-              onPress={startSession}
-            />
-          </View>
-        }
-      >
-        {/* The intro card doubles as a live preview of the picked scene: the
-            hue stays constant (that is the mode's identity) while the glyph and
-            title track the selection, so the choice is confirmed immediately. */}
-        <GamesIntroCard
-          mode="roleplay"
-          icon={Icon}
-          languageCode={scenarioLanguage}
-          eyebrow={t("rolePlay.headerSub")}
-          title={scenarioTitle}
-          blurb={scenarioSubtitle}
-        />
-
-        <View style={{ gap: 10 }}>
-          <GamesSectionLabel languageCode={locale}>
-            {t("rolePlay.chooseScene")}
-          </GamesSectionLabel>
-
-          <GamesCard padded={false} entering={FadeInDown.duration(GamesMotion.enterMs)}>
-            {SCENARIOS.map((sc, idx) => {
-              const sel = activeScenario.id === sc.id;
-              const ScIcon = sc.icon;
-              const isLast = idx === SCENARIOS.length - 1;
-              return (
-                <React.Fragment key={sc.id}>
-                  <PressableScale
-                    onPress={() => {
-                      hapticSelection();
-                      setActiveScenario(sc);
-                    }}
-                    scaleDown={0.98}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: sel }}
-                  >
-                    <View
-                      style={[
-                        st.scenarioRow,
-                        { flexDirection: isRtl ? "row-reverse" : "row" },
-                        sel && { backgroundColor: theme.accentWash },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          st.scenarioIconCircle,
-                          {
-                            backgroundColor: sel ? theme.accent : theme.surfaceSunken,
-                            borderColor: sel ? theme.accentBorder : theme.border,
-                          },
-                        ]}
-                      >
-                        <HugeiconsIcon
-                          icon={ScIcon as any}
-                          size={22}
-                          color={sel ? theme.onAccent : theme.mutedInk}
-                          strokeWidth={2}
-                        />
-                      </View>
-                      <View
-                        style={[
-                          st.scenarioTextCol,
-                          { alignItems: isRtl ? "flex-end" : "flex-start" },
-                        ]}
-                      >
-                        <AppText
-                          style={[
-                            GamesType.section,
-                            { fontSize: 15, color: sel ? theme.accentInk : theme.ink },
-                          ]}
-                          languageCode={isKu ? "ku" : "en"}
-                          align="start"
-                        >
-                          {isKu ? sc.titleKu : sc.title}
-                        </AppText>
-                        <AppText
-                          style={[GamesType.caption, { fontSize: 12, color: theme.mutedInk }]}
-                          languageCode={isKu ? "ku" : "en"}
-                          align="start"
-                          latinRole="medium"
-                        >
-                          {isKu ? sc.subtitleKu : sc.subtitle}
-                        </AppText>
-                      </View>
-                      {sel && (
-                        <View style={[st.checkCircle, { backgroundColor: theme.accent }]}>
-                          <HugeiconsIcon
-                            icon={Tick02Icon}
-                            size={14}
-                            color={theme.onAccent}
-                            strokeWidth={3}
-                          />
-                        </View>
-                      )}
-                    </View>
-                  </PressableScale>
-                  {!isLast && <View style={st.rowDivider} />}
-                </React.Fragment>
-              );
-            })}
-          </GamesCard>
-
-          <AppText
-            style={[GamesType.caption, { color: theme.faintInk, lineHeight: 18 }]}
-            languageCode={locale}
-            align="start"
-          >
-            {t("rolePlay.practiceDisclaimer")}
-          </AppText>
-        </View>
-      </GamesScreenShell>
-    );
-  }
-
-  /* ─── In-Session Conversation UI ─── */
-  const statusActive = status !== "idle";
-
+function ScoreBar({ label, value }: { label: string; value: number }) {
+  const theme = useGamesTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: theme.canvas }}>
-      <GamesGlassHeader
-        title={scenarioTitle}
-        titleLanguageCode={scenarioLanguage}
-        onBack={handleExit}
-        scrolled
-        right={
-          <GamesIconButton
-            icon={RotateLeft01Icon}
-            onPress={resetSession}
-            accessibilityLabel={t("rolePlay.headerTitle")}
-          />
-        }
-      />
-
-      {/* Voice orb — the one accent-filled thing on screen, because tapping it
-          is the only thing you can do here. */}
-      <Animated.View entering={FadeIn.duration(500)} style={st.orbSection}>
-        <View style={st.orbContainer}>
-          <PulseRing size={180} color={theme.accent} delay={0} status={status} />
-          <PulseRing size={220} color={theme.accent} delay={400} status={status} />
-          <PulseRing size={260} color={theme.accent} delay={800} status={status} />
-          <View
-            style={[
-              st.orbCore,
-              {
-                backgroundColor: theme.accent,
-                ...crossShadow({
-                  color: theme.accent,
-                  offsetY: 12,
-                  blur: 32,
-                  opacity: theme.isDark ? 0.36 : 0.28,
-                  elevation: 8,
-                }),
-              },
-            ]}
-          >
-            <HugeiconsIcon icon={Icon as any} size={40} color={theme.onAccent} strokeWidth={1.8} />
-          </View>
-        </View>
-
-        <AppText
-          style={[
-            GamesType.eyebrow,
-            { color: statusActive ? theme.accentInk : theme.mutedInk, textAlign: "center" },
-          ]}
-          languageCode={locale}
-          align="center"
-        >
-          {status === "listening"
-            ? t("rolePlay.listening")
-            : status === "thinking"
-              ? t("rolePlay.thinking")
-              : status === "speaking"
-                ? t("rolePlay.interrupt")
-                : t("rolePlay.tapSpeak")}
-        </AppText>
-        <AppText
-          style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]}
-          languageCode={locale}
-        >
-          {isKu ? "AI" : "AI"}: {aiPrice(billingAccount?.entitlements, "roleplay_voice_response")} · {isKu ? "باڵانس" : locale === "ar" ? "الرصيد" : "Balance"} {billingAccount?.entitlements.creditBalance ?? 0}
-        </AppText>
-        {creditNotice ? (
-          <PressableScale
-            onPress={() => router.push("/credits")}
-            style={{ borderWidth: 1, borderColor: theme.accentBorder, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}
-          >
-            <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>
-              {isKu ? "کرێدیت زیاد بکە یان پلان ببینە" : locale === "ar" ? "اشحن الرصيد أو اعرض الخطط" : "Top up credits or view plans"}
-            </AppText>
-          </PressableScale>
-        ) : null}
-      </Animated.View>
-
-      {/* Transcript */}
-      <View
-        style={[
-          st.chatContainer,
-          {
-            paddingHorizontal: metrics.gutter,
-            maxWidth: isWide ? metrics.maxWidth : "100%",
-            alignSelf: isWide ? "center" : "stretch",
-          },
-        ]}
-      >
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[st.chatContent, { paddingBottom: 24 }]}
-        >
-          {history.map((msg, idx) => (
-            <ChatBubble key={idx} sender={msg.sender} text={msg.text} icon={Icon} isRtl={isRtl} />
-          ))}
-          {status === "thinking" && (
-            <Animated.View entering={FadeInUp.duration(200)} style={st.thinkingRow}>
-              <View style={[st.thinkingDot, { backgroundColor: theme.accent }]} />
-              <View style={[st.thinkingDot, { backgroundColor: theme.accent, opacity: 0.6 }]} />
-              <View style={[st.thinkingDot, { backgroundColor: theme.accent, opacity: 0.3 }]} />
-            </Animated.View>
-          )}
-        </ScrollView>
+    <View style={{ gap: 7 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <AppText style={[GamesType.caption, { color: theme.ink }]} languageCode="en">{label}</AppText>
+        <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode="en">{value}</AppText>
       </View>
-
-      {/* Mic bar. Red only while recording — that is a stop affordance, which is
-          the one non-error use of `danger` the system allows. */}
-      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <MicCaptureOrb
-          listening={status === "listening" || speech.listening}
-          disabled={status === "thinking"}
-          color={status === "listening" ? theme.danger : theme.accent}
-          size={100}
-          hint={micHint}
-          onPress={handleMicTap}
-        />
+      <View style={{ height: 7, borderRadius: 4, backgroundColor: theme.surfaceSunken, overflow: "hidden" }}>
+        <View style={{ height: "100%", width: `${value}%`, borderRadius: 4, backgroundColor: theme.accent }} />
       </View>
     </View>
   );
 }
 
-/* ─── Styles ─── */
+export function RolePlayScreen() {
+  const safeBack = useSafeBack("/(tabs)/play");
+  const insets = useSafeAreaInsets();
+  const { theme, metrics, isWide, isRtl, t, locale, isKu } = useGamesChrome("roleplay");
+  const st = useRolePlayStyles();
+  const voiceCapture = useGeminiVoiceCapture();
+  const {
+    abort: abortVoiceCapture,
+    start: startVoiceCapture,
+    stopAndGetAudio,
+  } = voiceCapture;
+  const { speak: speakTts, stop: stopTts } = useTTS();
+  const { billingAccount, refreshBillingAccount } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+  const targetLanguageCode = resolveRolePlayTargetCode(
+    useSettingsStore((state) => state.targetLang),
+  );
+  const coachLanguageCode = useSettingsStore((state) => state.nativeLang) || locale;
+  const targetLanguageName = getRolePlayLanguageName(targetLanguageCode);
+  const targetSpeechLocale = getRolePlaySpeechLocale(targetLanguageCode);
+
+  const [scenario, setScenario] = useState(SCENARIOS[0]);
+  const [phase, setPhase] = useState<Phase>("setup");
+  const [status, setStatus] = useState<Status>("idle");
+  const [history, setHistory] = useState<Message[]>([]);
+  const [feedback, setFeedback] = useState<RolePlayTurnFeedback[]>([]);
+  const [completedGoals, setCompletedGoals] = useState<number[]>([]);
+  const [typedMode, setTypedMode] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  const statusRef = useRef(status);
+  const scenarioRef = useRef(scenario);
+  const historyRef = useRef(history);
+  const typedModeRef = useRef(typedMode);
+  const responseRequestIdRef = useRef(0);
+  const handledTranscriptRef = useRef(false);
+  const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishVoiceTurnRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { scenarioRef.current = scenario; }, [scenario]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { typedModeRef.current = typedMode; }, [typedMode]);
+
+  const setStatusNow = useCallback((next: Status) => {
+    statusRef.current = next;
+    setStatus(next);
+  }, []);
+  const clearListenTimeout = useCallback(() => {
+    if (listenTimeoutRef.current) clearTimeout(listenTimeoutRef.current);
+    listenTimeoutRef.current = null;
+  }, []);
+  const stopAll = useCallback(() => {
+    responseRequestIdRef.current += 1;
+    clearListenTimeout();
+    void abortVoiceCapture();
+    void stopTts();
+  }, [abortVoiceCapture, clearListenTimeout, stopTts]);
+  useEffect(() => () => stopAll(), [stopAll]);
+
+  const startListening = useCallback(async () => {
+    void stopTts();
+    handledTranscriptRef.current = false;
+    setError(null);
+    setStatusNow("listening");
+    const started = await startVoiceCapture({
+      onResult: () => undefined,
+      onError: (message) => {
+        setError(message);
+        setStatusNow("error");
+      },
+    });
+    if (!started) {
+      setError(voiceCapture.error || t("rolePlay.micUnavailable"));
+      setStatusNow("error");
+    }
+    else {
+      clearListenTimeout();
+      listenTimeoutRef.current = setTimeout(() => {
+        if (statusRef.current === "listening") {
+          finishVoiceTurnRef.current();
+        }
+      }, 20_000);
+    }
+  }, [clearListenTimeout, setStatusNow, startVoiceCapture, stopTts, t, voiceCapture.error]);
+
+  const speak = useCallback((text: string) => {
+    const active = scenarioRef.current;
+    setStatusNow("speaking");
+    void speakTts(text, targetSpeechLocale, "roleplay", {
+      rate: active.voiceRate,
+      pitch: active.voicePitch,
+      onDone: () => {
+        if (statusRef.current !== "speaking") return;
+        if (typedModeRef.current) setStatusNow("idle");
+        else void startListening();
+      },
+    });
+  }, [setStatusNow, speakTts, startListening, targetSpeechLocale]);
+
+  const applyCompletedTurn = useCallback((turn: RolePlayTurn, transcript: string) => {
+    setFeedback((current) => [...current, turn.feedback]);
+    setCompletedGoals((current) =>
+      Array.from(new Set([...current, ...turn.feedback.completedGoalIndexes])),
+    );
+    setHistory((current) => [
+      ...current,
+      { sender: "user", text: transcript },
+      { sender: "ai", text: turn.reply },
+    ]);
+    speak(turn.reply);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+  }, [speak]);
+
+  const handleUserResponse = useCallback(async (rawText: string) => {
+    const text = rawText.trim();
+    if (!text || statusRef.current === "thinking") return;
+    const requestId = responseRequestIdRef.current + 1;
+    responseRequestIdRef.current = requestId;
+    const priorHistory = historyRef.current;
+    setDraft("");
+    setError(null);
+    setStatusNow("thinking");
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    if (!isGeminiConfigured()) {
+      setError(t("rolePlay.aiUnavailable"));
+      setStatusNow("error");
+      return;
+    }
+    try {
+      const turn = await generateRolePlayResponse(
+        scenarioRef.current.id,
+        text,
+        priorHistory,
+        getLocalizedRolePlayScenario(scenarioRef.current.id, targetLanguageCode).goals,
+        targetLanguageCode,
+        coachLanguageCode,
+      );
+      if (responseRequestIdRef.current !== requestId) return;
+      applyCompletedTurn(turn, text);
+    } catch (caught) {
+      if (responseRequestIdRef.current !== requestId) return;
+      setError(caught instanceof Error ? caught.message : t("rolePlay.tryAgain"));
+      setStatusNow("error");
+    } finally {
+      await refreshBillingAccount();
+    }
+  }, [applyCompletedTurn, coachLanguageCode, refreshBillingAccount, setStatusNow, t, targetLanguageCode]);
+  const finishVoiceTurn = useCallback(async () => {
+    if (statusRef.current !== "listening" || handledTranscriptRef.current) return;
+    handledTranscriptRef.current = true;
+    clearListenTimeout();
+    setError(null);
+    setStatusNow("thinking");
+    const requestId = responseRequestIdRef.current + 1;
+    responseRequestIdRef.current = requestId;
+    const priorHistory = historyRef.current;
+
+    try {
+      const audio = await stopAndGetAudio();
+      if (!audio?.base64) {
+        throw new Error(voiceCapture.error || t("rolePlay.noSpeech"));
+      }
+      const turn = await generateRolePlayVoiceResponse({
+        scenarioId: scenarioRef.current.id,
+        audioBase64: audio.base64,
+        mimeType: audio.mimeType,
+        history: priorHistory,
+        goals: getLocalizedRolePlayScenario(
+          scenarioRef.current.id,
+          targetLanguageCode,
+        ).goals,
+        targetLanguageCode,
+        coachLanguageCode,
+      });
+      if (responseRequestIdRef.current !== requestId) return;
+      applyCompletedTurn(turn, turn.transcript);
+    } catch (caught) {
+      if (responseRequestIdRef.current !== requestId) return;
+      setError(caught instanceof Error ? caught.message : t("rolePlay.tryAgain"));
+      setStatusNow("error");
+    } finally {
+      await refreshBillingAccount();
+    }
+  }, [applyCompletedTurn, clearListenTimeout, coachLanguageCode, refreshBillingAccount, setStatusNow, stopAndGetAudio, t, targetLanguageCode, voiceCapture.error]);
+  useEffect(() => {
+    finishVoiceTurnRef.current = () => { void finishVoiceTurn(); };
+  }, [finishVoiceTurn]);
+
+  const startSession = () => {
+    stopAll();
+    hapticImpact();
+    setFeedback([]);
+    setCompletedGoals([]);
+    setError(null);
+    setPhase("playing");
+    const localized = getLocalizedRolePlayScenario(scenario.id, targetLanguageCode);
+    setHistory([{ sender: "ai", text: localized.initialMessage }]);
+    setTimeout(() => speak(localized.initialMessage), 180);
+  };
+  const resetSession = () => {
+    stopAll();
+    hapticImpact();
+    setPhase("setup");
+    setHistory([]);
+    setFeedback([]);
+    setCompletedGoals([]);
+    setError(null);
+    setStatusNow("idle");
+  };
+  const toggleInputMode = () => {
+    stopAll();
+    hapticSelection();
+    setTypedMode((current) => !current);
+    setStatusNow("idle");
+  };
+  const handleMicTap = () => {
+    hapticImpact();
+    if (statusRef.current === "speaking") {
+      void stopTts();
+      void startListening();
+    } else if (statusRef.current === "listening") {
+      void finishVoiceTurn();
+    } else if (statusRef.current !== "thinking") void startListening();
+  };
+  const finishSession = () => {
+    if (feedback.length < 2) return;
+    stopAll();
+    hapticImpact();
+    setStatusNow("idle");
+    setPhase("results");
+  };
+
+  const scores = useMemo(() => {
+    const average = (key: keyof RolePlayTurnFeedback["scores"]) =>
+      feedback.length ? Math.round(feedback.reduce((sum, item) => sum + item.scores[key], 0) / feedback.length) : 0;
+    return { fluency: average("fluency"), naturalness: average("naturalness"), mission: average("mission") };
+  }, [feedback]);
+  const overall = Math.round((scores.fluency + scores.naturalness + scores.mission) / 3);
+  const latestFeedback = feedback.at(-1);
+  const userTurns = history.filter((item) => item.sender === "user").length;
+  const scenarioTitle = isKu ? scenario.titleKu : scenario.title;
+  const scenarioSubtitle = isKu ? scenario.subtitleKu : scenario.subtitle;
+  const localizedScenario = getLocalizedRolePlayScenario(scenario.id, targetLanguageCode);
+  const handleExit = useCallback(() => { stopAll(); safeBack(); }, [safeBack, stopAll]);
+
+  if (phase === "setup") {
+    return (
+      <GamesScreenShell
+        onScroll={(event) => setScrolled(event.nativeEvent.contentOffset.y > 4)}
+        header={<GamesGlassHeader title={t("rolePlay.headerTitle")} titleLanguageCode={locale} onBack={handleExit} scrolled={scrolled} />}
+        footer={
+          <View style={{ gap: 9 }}>
+            <AppText style={[GamesType.caption, { color: theme.mutedInk, textAlign: "center" }]} languageCode={locale}>
+              {t("rolePlay.oneCallPrice", { price: aiPrice(billingAccount?.entitlements, "roleplay_voice_response") })}
+            </AppText>
+            <GamesPrimaryButton label={t("rolePlay.startMission")} languageCode={locale} onPress={startSession} />
+          </View>
+        }
+      >
+        <Animated.View entering={FadeInDown.duration(GamesMotion.enterMs)}>
+          <GamesCard raised style={st.heroCard}>
+            <View style={[st.heroIcon, { backgroundColor: theme.accentWash, borderColor: theme.accentBorder }]}>
+              <HugeiconsIcon icon={scenario.icon as never} size={28} color={theme.accentInk} strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1, gap: 5 }}>
+              <AppText style={[GamesType.eyebrow, { color: theme.accentInk }]} languageCode="en">{scenario.difficulty} · {targetLanguageName} · 4–6 min</AppText>
+              <AppText style={[GamesType.title, { color: theme.ink, fontSize: 24 }]} languageCode={isKu ? "ku" : "en"} align="start">{scenarioTitle}</AppText>
+              <AppText style={[GamesType.body, { color: theme.mutedInk }]} languageCode={isKu ? "ku" : "en"} align="start">{scenarioSubtitle}</AppText>
+            </View>
+          </GamesCard>
+        </Animated.View>
+
+        <View style={{ gap: 10 }}>
+          <GamesSectionLabel languageCode={locale}>{t("rolePlay.chooseScene")}</GamesSectionLabel>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.scenarioRail}>
+            {SCENARIOS.map((item) => {
+              const selected = item.id === scenario.id;
+              return (
+                <PressableScale
+                  key={item.id}
+                  onPress={() => { hapticSelection(); setScenario(item); }}
+                  style={[st.scenarioChip, { backgroundColor: selected ? theme.accentWash : theme.surface, borderColor: selected ? theme.accentBorder : theme.border }]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                >
+                  <HugeiconsIcon icon={item.icon as never} size={19} color={selected ? theme.accentInk : theme.mutedInk} strokeWidth={2} />
+                  <AppText numberOfLines={1} style={[GamesType.caption, { color: selected ? theme.accentInk : theme.ink }]} languageCode={isKu ? "ku" : "en"}>{isKu ? item.titleKu : item.title}</AppText>
+                </PressableScale>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        <GamesCard style={{ gap: 14 }}>
+          <View style={st.cardHeading}>
+            <View style={[st.smallIcon, { backgroundColor: theme.accentWash }]}><HugeiconsIcon icon={Target02Icon} size={18} color={theme.accentInk} strokeWidth={2.2} /></View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText style={[GamesType.section, { color: theme.ink }]} languageCode={locale}>{t("rolePlay.yourMission")}</AppText>
+              <AppText style={[GamesType.caption, { color: theme.mutedInk }]} languageCode={targetLanguageCode} align="start">{localizedScenario.mission}</AppText>
+            </View>
+          </View>
+          {localizedScenario.goals.map((goal, index) => (
+            <View key={goal} style={st.goalRow}>
+              <View style={[st.goalNumber, { backgroundColor: theme.surfaceSunken }]}><AppText style={[GamesType.caption, { color: theme.mutedInk }]} languageCode="en">{index + 1}</AppText></View>
+              <AppText style={[GamesType.body, { color: theme.ink, flex: 1 }]} languageCode={targetLanguageCode} align="start">{goal}</AppText>
+            </View>
+          ))}
+        </GamesCard>
+
+        <GamesCard flat style={{ gap: 9 }}>
+          <View style={st.cardHeading}>
+            <HugeiconsIcon icon={BulbIcon} size={18} color={theme.warningInk} strokeWidth={2.2} />
+            <AppText style={[GamesType.section, { color: theme.ink }]} languageCode={locale}>{t("rolePlay.phraseKit")}</AppText>
+          </View>
+          {localizedScenario.phrases.map((phrase) => <AppText key={phrase} style={[GamesType.body, { color: theme.mutedInk }]} languageCode={targetLanguageCode} align="start">“{phrase}”</AppText>)}
+        </GamesCard>
+      </GamesScreenShell>
+    );
+  }
+
+  if (phase === "results") {
+    return (
+      <GamesScreenShell
+        header={<GamesGlassHeader title={t("rolePlay.sessionComplete")} titleLanguageCode={locale} onBack={resetSession} />}
+        footer={<GamesPrimaryButton label={t("rolePlay.tryAnother")} languageCode={locale} onPress={resetSession} />}
+      >
+        <Animated.View entering={FadeIn.duration(350)} style={{ alignItems: "center", gap: 12 }}>
+          <View style={[st.scoreRing, { backgroundColor: theme.accentWash, borderColor: theme.accentBorder }]}>
+            <AppText style={[GamesType.title, { color: theme.accentInk, fontSize: 36 }]} languageCode="en">{overall}</AppText>
+            <AppText style={[GamesType.caption, { color: theme.mutedInk }]} languageCode="en">/ 100</AppText>
+          </View>
+          <AppText style={[GamesType.title, { color: theme.ink, textAlign: "center" }]} languageCode={locale}>{t("rolePlay.missionReport")}</AppText>
+          <AppText style={[GamesType.body, { color: theme.mutedInk, textAlign: "center" }]} languageCode={locale}>
+            {t("rolePlay.sessionStats", { goals: completedGoals.length, turns: userTurns, scene: scenarioTitle })}
+          </AppText>
+        </Animated.View>
+        <GamesCard style={{ gap: 16 }}>
+          <ScoreBar label={t("rolePlay.fluency")} value={scores.fluency} />
+          <ScoreBar label={t("rolePlay.naturalness")} value={scores.naturalness} />
+          <ScoreBar label={t("rolePlay.missionSkill")} value={scores.mission} />
+        </GamesCard>
+        <View style={{ gap: 10 }}>
+          <GamesSectionLabel languageCode={locale}>{t("rolePlay.missionGoals")}</GamesSectionLabel>
+          {localizedScenario.goals.map((goal, index) => {
+            const done = completedGoals.includes(index);
+            return (
+              <View key={goal} style={[st.resultGoal, { backgroundColor: done ? theme.successWash : theme.surface, borderColor: done ? theme.success : theme.border }]}>
+                <HugeiconsIcon icon={done ? Tick02Icon : Target02Icon} size={19} color={done ? theme.successInk : theme.mutedInk} strokeWidth={2.2} />
+                <AppText style={[GamesType.body, { color: done ? theme.successInk : theme.ink, flex: 1 }]} languageCode={targetLanguageCode} align="start">{goal}</AppText>
+              </View>
+            );
+          })}
+        </View>
+        {latestFeedback ? (
+          <GamesCard flat style={{ gap: 10 }}>
+            <View style={st.cardHeading}><HugeiconsIcon icon={StarIcon} size={18} color={theme.warningInk} strokeWidth={2.2} /><AppText style={[GamesType.section, { color: theme.ink }]} languageCode={locale}>{t("rolePlay.bestNextStep")}</AppText></View>
+            <AppText style={[GamesType.body, { color: theme.ink }]} languageCode={coachLanguageCode} align="start">{latestFeedback.correction ?? latestFeedback.praise}</AppText>
+            <AppText style={[GamesType.body, { color: theme.accentInk }]} languageCode={targetLanguageCode} align="start">“{latestFeedback.betterReply}”</AppText>
+          </GamesCard>
+        ) : null}
+        <GamesPrimaryButton label={t("rolePlay.replayMission")} languageCode={locale} onPress={startSession} />
+      </GamesScreenShell>
+    );
+  }
+
+  const micHint = status === "listening" ? t("rolePlay.listening") : status === "thinking" ? t("rolePlay.thinking") : status === "speaking" ? t("rolePlay.interrupt") : t("rolePlay.tapSpeak");
+  return (
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.canvas }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <GamesGlassHeader
+        title={scenarioTitle}
+        titleLanguageCode={isKu ? "ku" : "en"}
+        onBack={handleExit}
+        right={<GamesIconButton icon={RotateLeft01Icon} onPress={resetSession} accessibilityLabel={t("rolePlay.newMission")} />}
+      />
+      <View style={[st.progressCard, { marginHorizontal: metrics.gutter, backgroundColor: theme.surface, borderColor: theme.border, maxWidth: isWide ? metrics.maxWidth : undefined, alignSelf: "center" }]}>
+        <View style={[st.smallIcon, { backgroundColor: theme.accentWash }]}><HugeiconsIcon icon={scenario.icon as never} size={18} color={theme.accentInk} strokeWidth={2} /></View>
+        <View style={{ flex: 1, gap: 5 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+            <AppText numberOfLines={1} style={[GamesType.caption, { color: theme.ink, flex: 1 }]} languageCode={targetLanguageCode}>{localizedScenario.mission}</AppText>
+            <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode="en">{completedGoals.length}/3</AppText>
+          </View>
+          <View style={st.progressDots}>{localizedScenario.goals.map((_, index) => <View key={index} style={[st.progressDot, { backgroundColor: completedGoals.includes(index) ? theme.success : theme.surfaceSunken }]} />)}</View>
+        </View>
+      </View>
+      <View style={[st.chatContainer, { paddingHorizontal: metrics.gutter, maxWidth: isWide ? metrics.maxWidth : "100%", alignSelf: "center" }]}>
+        <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={st.chatContent}>
+          {history.map((message, index) => <ChatBubble key={`${message.sender}-${index}`} message={message} icon={scenario.icon} isRtl={isRtl} languageCode={targetLanguageCode} />)}
+          {status === "thinking" ? <Animated.View entering={FadeIn.duration(180)} style={[st.thinkingPill, { backgroundColor: theme.surfaceSunken }]}><AppText style={[GamesType.caption, { color: theme.mutedInk }]} languageCode={locale}>{t("rolePlay.coachThinking")}</AppText></Animated.View> : null}
+          {latestFeedback ? (
+            <Animated.View entering={FadeInDown.duration(260)} style={[st.coachCard, { backgroundColor: theme.surfaceSunken, borderColor: theme.border }]}>
+              <View style={st.cardHeading}><HugeiconsIcon icon={BulbIcon} size={17} color={theme.warningInk} strokeWidth={2.2} /><AppText style={[GamesType.section, { color: theme.ink, fontSize: 14 }]} languageCode={locale}>{t("rolePlay.liveCoach")}</AppText></View>
+              <AppText style={[GamesType.caption, { color: theme.successInk }]} languageCode={coachLanguageCode} align="start">{latestFeedback.praise}</AppText>
+              {latestFeedback.correction ? <AppText style={[GamesType.caption, { color: theme.ink }]} languageCode={coachLanguageCode} align="start">{latestFeedback.correction}</AppText> : null}
+              <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={targetLanguageCode} align="start">{t("rolePlay.tryThis")} “{latestFeedback.betterReply}”</AppText>
+            </Animated.View>
+          ) : null}
+          {error ? (
+            <View style={[st.errorCard, { backgroundColor: theme.dangerWash, borderColor: theme.danger }]}>
+              <AppText style={[GamesType.caption, { color: theme.dangerInk, flex: 1 }]} languageCode={locale} align="start">{error}</AppText>
+              {/credit|کرێدیت|رصيد/i.test(error) ? <PressableScale onPress={() => router.push("/credits")}><AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>{t("rolePlay.getCredits")}</AppText></PressableScale> : null}
+            </View>
+          ) : null}
+        </ScrollView>
+      </View>
+      <View style={[st.bottomBar, { paddingBottom: Math.max(insets.bottom, 12), borderTopColor: theme.border, backgroundColor: theme.canvas }]}>
+        {typedMode ? (
+          <View style={{ width: "100%", gap: 8 }}>
+            <View style={st.inputRow}>
+              <TextInput value={draft} onChangeText={setDraft} onSubmitEditing={() => void handleUserResponse(draft)} editable={status !== "thinking"} placeholder={t("rolePlay.typeReply")} placeholderTextColor={theme.faintInk} returnKeyType="send" style={[st.input, { color: theme.ink, backgroundColor: theme.surface, borderColor: theme.border }]} />
+              <PressableScale onPress={() => void handleUserResponse(draft)} disabled={!draft.trim() || status === "thinking"} style={[st.sendButton, { backgroundColor: theme.accent, opacity: !draft.trim() || status === "thinking" ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel={t("rolePlay.send")}>
+                <HugeiconsIcon icon={ArrowRight02Icon} size={22} color={theme.onAccent} strokeWidth={2.4} />
+              </PressableScale>
+            </View>
+            <PressableScale onPress={toggleInputMode} style={st.modeLink}><AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>{t("rolePlay.useVoice")}</AppText></PressableScale>
+          </View>
+        ) : (
+          <View style={{ alignItems: "center", gap: 6 }}>
+            <MicCaptureOrb listening={status === "listening" || voiceCapture.listening} disabled={status === "thinking" || voiceCapture.processing} color={status === "listening" ? theme.danger : theme.accent} size={82} hint={micHint} onPress={handleMicTap} />
+            <PressableScale onPress={toggleInputMode} style={st.modeLink}><AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>{t("rolePlay.typeInstead")}</AppText></PressableScale>
+          </View>
+        )}
+        {feedback.length >= 2 ? (
+          <PressableScale onPress={finishSession} style={[st.finishButton, { borderColor: theme.accentBorder, backgroundColor: theme.accentWash }]}>
+            <HugeiconsIcon icon={StarIcon} size={17} color={theme.accentInk} strokeWidth={2.2} />
+            <AppText style={[GamesType.caption, { color: theme.accentInk }]} languageCode={locale}>{t("rolePlay.finishSession")}</AppText>
+          </PressableScale>
+        ) : null}
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
 function useRolePlayStyles() {
   const theme = useGamesTheme();
   const metrics = useGamesMetrics(false);
-  return useMemo(() => createStyles(theme, metrics.radiusChip), [theme, metrics]);
+  return useMemo(() => createStyles(theme, metrics.radiusCard), [theme, metrics.radiusCard]);
 }
 
-function createStyles(theme: GamesTheme, radiusChip: number) {
+function createStyles(theme: GamesTheme, radiusCard: number) {
   return StyleSheet.create({
-    /* Scenario rows */
-    scenarioRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      gap: 14,
-    },
-    scenarioIconCircle: {
-      width: 44,
-      height: 44,
-      borderRadius: radiusChip,
-      borderWidth: 1,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    scenarioTextCol: {
-      flex: 1,
-      gap: 2,
-    },
-    checkCircle: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    rowDivider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: theme.border,
-      marginHorizontal: 16,
-    },
-
-    /* Orb section */
-    orbSection: {
-      alignItems: "center",
-      paddingTop: 12,
-      paddingBottom: 4,
-      gap: 14,
-    },
-    orbContainer: {
-      width: 160,
-      height: 160,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    orbCore: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1.5,
-      borderColor: "rgba(255,255,255,0.35)",
-    },
-
-    /* Transcript */
-    chatContainer: {
-      flex: 1,
-      width: "100%",
-    },
-    chatContent: {
-      gap: 10,
-      paddingTop: 8,
-    },
-    bubbleRow: {
-      flexDirection: "row",
-      alignItems: "flex-end",
-      gap: 8,
-      maxWidth: "92%",
-    },
-    avatar: {
-      width: 30,
-      height: 30,
-      borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 2,
-    },
-    bubble: {
-      flex: 1,
-      borderRadius: 18,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    thinkingRow: {
-      flexDirection: "row",
-      gap: 6,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      alignSelf: "flex-start",
-    },
-    thinkingDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-
-    /* Bottom bar */
-    bottomBar: {
-      alignItems: "center",
-      paddingTop: 10,
-      paddingHorizontal: 20,
-      backgroundColor: "transparent",
-    },
+    heroCard: { flexDirection: "row", alignItems: "center", gap: 14 },
+    heroIcon: { width: 58, height: 58, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+    scenarioRail: { gap: 8, paddingRight: 4 },
+    scenarioChip: { height: 44, paddingHorizontal: 13, borderRadius: 22, borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 7 },
+    cardHeading: { flexDirection: "row", alignItems: "center", gap: 9 },
+    smallIcon: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+    goalRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    goalNumber: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+    progressCard: { width: "90%", marginTop: 8, padding: 10, borderRadius: 16, borderWidth: 1, flexDirection: "row", alignItems: "center", gap: 10 },
+    progressDots: { flexDirection: "row", gap: 5 },
+    progressDot: { height: 5, flex: 1, borderRadius: 3 },
+    chatContainer: { flex: 1, width: "100%" },
+    chatContent: { paddingTop: 12, paddingBottom: 16, gap: 10 },
+    bubbleRow: { maxWidth: "92%", alignItems: "flex-end", gap: 7 },
+    avatar: { width: 30, height: 30, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 2 },
+    bubble: { maxWidth: "88%", borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
+    thinkingPill: { alignSelf: "flex-start", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
+    coachCard: { borderRadius: 16, borderWidth: 1, padding: 12, gap: 7 },
+    errorCard: { borderRadius: 14, borderWidth: 1, padding: 11, flexDirection: "row", alignItems: "center", gap: 8 },
+    bottomBar: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 9, paddingHorizontal: 16, alignItems: "center", gap: 8 },
+    modeLink: { minHeight: 32, paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
+    inputRow: { flexDirection: "row", gap: 9, alignItems: "center" },
+    input: { flex: 1, height: 48, borderRadius: 16, borderWidth: 1, paddingHorizontal: 14, fontSize: 16, writingDirection: "ltr", textAlign: "left" },
+    sendButton: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+    finishButton: { minHeight: 38, borderRadius: 19, borderWidth: 1, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+    scoreRing: { width: 118, height: 118, borderRadius: 59, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+    resultGoal: { minHeight: 52, borderRadius: 16, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 },
   });
 }

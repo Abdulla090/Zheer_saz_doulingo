@@ -5,6 +5,10 @@ import {
 import { generateGeminiContent } from "./gemini-gateway";
 import type { AiFeatureKey } from "../types/entitlements";
 import { matchesTarget } from "../utils/speech-match";
+import {
+  getRolePlayLanguageName,
+  type RolePlayScenarioId,
+} from "../constants/roleplay-language";
 
 export type GeminiSpeechEvaluation = {
   transcript: string;
@@ -165,66 +169,235 @@ export async function evaluateSpeechWithGemini(input: {
   return parseEvaluationPayload(text, input.targetPhrase);
 }
 
-export async function generateRolePlayResponse(
-  scenarioId: string,
-  userText: string,
-  history: { sender: "user" | "ai"; text: string }[]
-): Promise<string> {
-  const scenarioDetails: Record<string, { role: string; instructions: string }> = {
+export type RolePlayTurnFeedback = {
+  praise: string;
+  correction: string | null;
+  betterReply: string;
+  vocabulary: string[];
+  scores: {
+    fluency: number;
+    naturalness: number;
+    mission: number;
+  };
+  completedGoalIndexes: number[];
+};
+
+export type RolePlayTurn = {
+  reply: string;
+  feedback: RolePlayTurnFeedback;
+};
+
+export type RolePlayVoiceTurn = RolePlayTurn & { transcript: string };
+
+const clampScore = (value: unknown) => {
+  const score = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0;
+};
+
+export function parseRolePlayTurnPayload(raw: string): RolePlayTurn {
+  const cleaned = extractJsonObject(raw);
+  if (!cleaned) {
+    throw new Error("The coach returned an invalid response. Please try that turn again.");
+  }
+  let value: unknown;
+
+  try {
+    value = JSON.parse(cleaned);
+  } catch {
+    throw new Error("The coach returned an invalid response. Please try that turn again.");
+  }
+
+  if (!value || typeof value !== "object") {
+    throw new Error("The coach returned an invalid response. Please try that turn again.");
+  }
+
+  const payload = value as Record<string, unknown>;
+  const feedback = payload.feedback as Record<string, unknown> | undefined;
+  const scores = feedback?.scores as Record<string, unknown> | undefined;
+  const reply = typeof payload.reply === "string" ? payload.reply.trim() : "";
+
+  if (!reply || !feedback || !scores) {
+    throw new Error("The coach returned an incomplete response. Please try that turn again.");
+  }
+
+  return {
+    reply,
+    feedback: {
+      praise: typeof feedback.praise === "string" ? feedback.praise.trim() : "Good effort.",
+      correction:
+        typeof feedback.correction === "string" && feedback.correction.trim()
+          ? feedback.correction.trim()
+          : null,
+      betterReply:
+        typeof feedback.betterReply === "string" && feedback.betterReply.trim()
+          ? feedback.betterReply.trim()
+          : reply,
+      vocabulary: Array.isArray(feedback.vocabulary)
+        ? feedback.vocabulary.filter((item): item is string => typeof item === "string").slice(0, 3)
+        : [],
+      scores: {
+        fluency: clampScore(scores.fluency),
+        naturalness: clampScore(scores.naturalness),
+        mission: clampScore(scores.mission),
+      },
+      completedGoalIndexes: Array.isArray(feedback.completedGoalIndexes)
+        ? Array.from(new Set(feedback.completedGoalIndexes
+            .map(Number)
+            .filter((index) => Number.isInteger(index) && index >= 0 && index <= 2)))
+        : [],
+    },
+  };
+}
+
+export function parseRolePlayVoiceTurnPayload(raw: string): RolePlayVoiceTurn {
+  const jsonText = extractJsonObject(raw);
+  if (!jsonText) throw new Error("The coach returned an invalid response. Please try again.");
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(jsonText) as Record<string, unknown>;
+  } catch {
+    throw new Error("The coach returned an invalid response. Please try again.");
+  }
+
+  const transcript = typeof payload.transcript === "string" ? payload.transcript.trim() : "";
+  if (!transcript) {
+    throw new Error("I could not hear that clearly. Please tap the microphone and try again.");
+  }
+
+  return { ...parseRolePlayTurnPayload(jsonText), transcript };
+}
+
+type RolePlayPromptInput = {
+  scenarioId: RolePlayScenarioId;
+  history: { sender: "user" | "ai"; text: string }[];
+  goals: string[];
+  targetLanguageCode: string;
+  coachLanguageCode: string;
+  userText?: string;
+  includesAudio?: boolean;
+};
+
+function buildRolePlayPrompt(input: RolePlayPromptInput): string {
+  const scenarioDetails: Record<RolePlayScenarioId, { role: string; instructions: string }> = {
     cafe: {
-      role: "a polite French café barista",
-      instructions: "The user is a customer ordering a coffee or croissant. Keep it light, offer pastries, and respond in character."
+      role: "a friendly, busy café barista",
+      instructions: "The learner is ordering food and drinks. React to the exact order, offer one relevant option, and keep the queue moving.",
     },
     space: {
-      role: "a strict Mars transit flight gate agent",
-      instructions: "The user is a space traveler whose baggage exceeds weight limits. Demand justifications in a robotic but amusing gate agent persona."
+      role: "a strict but witty Mars-flight gate agent",
+      instructions: "The learner's baggage is overweight. Challenge weak reasons, accept convincing ones, and negotiate a realistic decision.",
     },
     job: {
-      role: "an AI Engineering hiring manager",
-      instructions: "The user is an applicant. Ask questions about optimizing small language models, quantization, or mobile AI deployment."
+      role: "a warm but demanding AI Engineering hiring manager",
+      instructions: "Ask specific follow-ups about the learner's experience, technical choices, trade-offs, and impact. Never turn it into a generic quiz.",
     },
     market: {
-      role: "a persistent bazaar merchant bargaining over a high-quality rug",
-      instructions: "The user is trying to bargain. Start high (500 gold coins), be dramatic, and bargain back-and-forth."
-    }
+      role: "a charismatic bazaar merchant bargaining over a hand-woven rug",
+      instructions: "Start high, react to each counteroffer, bargain playfully, and move toward a believable deal or walk-away.",
+    },
   };
-
-  const sc = scenarioDetails[scenarioId] ?? {
-    role: "a conversational partner",
-    instructions: "Engage in a friendly roleplay scenario."
-  };
-
-  const historyPrompt = history
-    .slice(-8)
-    .map((h) => `${h.sender === "user" ? "Learner" : "You (AI roleplayer)"}: ${h.text}`)
+  const scenario = scenarioDetails[input.scenarioId];
+  const targetLanguage = getRolePlayLanguageName(input.targetLanguageCode);
+  const coachLanguage = getRolePlayLanguageName(input.coachLanguageCode);
+  const historyPrompt = input.history
+    .slice(-10)
+    .map((item) => `${item.sender === "user" ? "Learner" : "Character"}: ${item.text}`)
     .join("\n");
+  const outputShape = input.includesAudio
+    ? '{"transcript":"exact learner speech","reply":"in-character spoken line","feedback":{"praise":"one specific strength","correction":"one concise correction or null","betterReply":"natural improved learner line","vocabulary":["useful phrase"],"scores":{"fluency":0,"naturalness":0,"mission":0},"completedGoalIndexes":[0]}}'
+    : '{"reply":"in-character spoken line","feedback":{"praise":"one specific strength","correction":"one concise correction or null","betterReply":"natural improved learner line","vocabulary":["useful phrase"],"scores":{"fluency":0,"naturalness":0,"mission":0},"completedGoalIndexes":[0]}}';
 
-  const prompt = [
-    `You are roleplaying as ${sc.role}.`,
-    `Scenario Context & Instructions: ${sc.instructions}`,
-    `Keep your response simple (A2-B1 English), warm, and concise (1-2 sentences).`,
-    `Do not include any translations, explanations, or metadata. Reply ONLY with your in-character spoken line.`,
-    `\nHistory:`,
-    historyPrompt,
-    `Learner: ${userText}`,
-    `You (AI roleplayer):`
+  return [
+    `You are the roleplay character (${scenario.role}) and a supportive language coach.`,
+    `Scenario: ${scenario.instructions}`,
+    `The learner is practicing ${targetLanguage}. The character reply MUST be entirely in natural, contemporary ${targetLanguage}.`,
+    `Sound casual and human: react directly to what the learner said, use contractions or everyday phrasing where natural, vary sentence openings, and avoid generic teacher language.`,
+    `Keep the spoken character reply to 1-2 short sentences and ask at most one relevant question. Stay in character.`,
+    `Write praise and correction in ${coachLanguage}; keep betterReply and vocabulary in ${targetLanguage}.`,
+    `Mission goals: ${input.goals.map((goal, index) => `${index}: ${goal}`).join(" | ") || "continue naturally"}.`,
+    "Do not penalize speech-recognition punctuation, capitalization, or a reasonable accent. Mark goals complete only when clearly achieved.",
+    input.includesAudio
+      ? `First transcribe the attached audio faithfully in ${targetLanguage}. Do not translate it or invent missing words.`
+      : `Latest learner message: ${input.userText ?? ""}`,
+    "Reply ONLY with valid JSON matching this shape:",
+    outputShape,
+    "Scores are integers from 0 to 100. Use at most 3 vocabulary items and goal indexes 0, 1, or 2.",
+    historyPrompt ? `Conversation so far:\n${historyPrompt}` : "This is the first learner turn.",
   ].join("\n");
+}
+
+export async function generateRolePlayResponse(
+  scenarioId: RolePlayScenarioId,
+  userText: string,
+  history: { sender: "user" | "ai"; text: string }[],
+  goals: string[] = [],
+  targetLanguageCode = "en",
+  coachLanguageCode = "en",
+): Promise<RolePlayTurn> {
+  const prompt = buildRolePlayPrompt({
+    scenarioId,
+    userText,
+    history,
+    goals,
+    targetLanguageCode,
+    coachLanguageCode,
+  });
 
   const data = await requestGeminiGenerateContent(
     {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.65,
-        maxOutputTokens: 96,
+        temperature: 0.55,
+        maxOutputTokens: 420,
       },
     },
-    "roleplay_voice_response",
+    "roleplay_text_response",
     12_000,
   );
 
   const text = extractGeminiText(data);
+  if (!text) throw new Error("The coach returned an empty response. Please try again.");
+  return parseRolePlayTurnPayload(text);
+}
 
-  return text || "Of course! Let's continue.";
+export async function generateRolePlayVoiceResponse(input: {
+  scenarioId: RolePlayScenarioId;
+  audioBase64: string;
+  mimeType: string;
+  history: { sender: "user" | "ai"; text: string }[];
+  goals?: string[];
+  targetLanguageCode?: string;
+  coachLanguageCode?: string;
+}): Promise<RolePlayVoiceTurn> {
+  if (!input.audioBase64) throw new Error("No audio was captured.");
+
+  const prompt = buildRolePlayPrompt({
+    scenarioId: input.scenarioId,
+    history: input.history,
+    goals: input.goals ?? [],
+    targetLanguageCode: input.targetLanguageCode ?? "en",
+    coachLanguageCode: input.coachLanguageCode ?? "en",
+    includesAudio: true,
+  });
+  const data = await requestGeminiGenerateContent(
+    {
+      contents: [{
+        role: "user",
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: normalizeGeminiMimeType(input.mimeType), data: input.audioBase64 } },
+        ],
+      }],
+      generationConfig: { temperature: 0.72, maxOutputTokens: 520 },
+    },
+    "roleplay_voice_response",
+    25_000,
+  );
+
+  const text = extractGeminiText(data);
+  if (!text) throw new Error("The coach returned an empty response. Please try again.");
+  return parseRolePlayVoiceTurnPayload(text);
 }
 
 export type AiPodcastTemplateId =

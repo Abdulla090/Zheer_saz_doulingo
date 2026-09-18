@@ -75,6 +75,8 @@ const TILE_HEIGHT = 48;
 const TILE_GAP = 8;
 const LINE_HEIGHT = 62;
 const BANK_OFFSET_Y = 24;
+const NATIVE_PHYSICAL_LAYOUT =
+  Platform.OS === "web" ? undefined : ({ direction: "ltr" } as const);
 const SLOW_RATE = 0.45;
 
 function getSeededShuffle(words: string[], seedStr: string): string[] {
@@ -426,7 +428,7 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
 
       return (
         <View
-          style={s.wordTileCell}
+          style={[s.wordTileCell, NATIVE_PHYSICAL_LAYOUT && s.nativeWordTileCell]}
           collapsable={false}
           pointerEvents={Platform.OS === "web" ? "auto" : "none"}
         >
@@ -478,9 +480,11 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
         style={[
           s.bankPlaceholder,
           style,
-          {
+          Platform.OS === "web" && {
             left: style.left - TILE_GAP,
             width: style.width + TILE_GAP * 2,
+          },
+          {
             backgroundColor: isDark ? colors.surface : L.bgSoft,
             borderColor: isDark ? colors.border : L.slotDash,
           },
@@ -539,7 +543,7 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
               </View>
             </View>
 
-            <Animated.View style={[s.duoContainer, wrongShakeStyle]}>
+            <Animated.View style={[s.duoContainer, NATIVE_PHYSICAL_LAYOUT, wrongShakeStyle]}>
               <DuoDragDrop
                 key={`listen-build-${fullSentence}-${shuffledWordBank.join("-")}`}
                 ref={duoRef}
@@ -695,6 +699,10 @@ const s = StyleSheet.create({
   wordTileCell: {
     height: TILE_HEIGHT,
     justifyContent: "center",
+  },
+  nativeWordTileCell: {
+    marginHorizontal: TILE_GAP,
+    marginBottom: TILE_GAP * 2,
   },
   duoWordTile: {
     height: TILE_HEIGHT,

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import React from "react";
 import renderer, { act } from "react-test-renderer";
-import { Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import ListenBuildGame from "../ListenBuildGame";
 import { LightWordTile, LightCheckButton } from "../lesson-light-primitives";
@@ -232,6 +232,24 @@ describe("ListenBuildGame", () => {
     for (const word of mockQuestion.wordBank) {
       expect(renderedTexts).toContain(word);
     }
+  });
+
+  it("keeps native tile coordinates physical and reserves visible gaps", () => {
+    act(() => {
+      tree = renderer.create(
+        <ListenBuildGame question={mockQuestion} onAnswer={jest.fn()} pathMode="normal" />,
+      );
+    });
+
+    const root = tree!.root;
+    const firstTile = root.findAllByType(LightWordTile)[0];
+    expect(StyleSheet.flatten(firstTile.parent!.props.style)).toMatchObject({
+      marginHorizontal: 8,
+      marginBottom: 16,
+    });
+    expect(
+      root.findAllByType(View).some((node) => StyleSheet.flatten(node.props.style)?.direction === "ltr"),
+    ).toBe(true);
   });
 
   it("renders both standard speed and slow speed audio buttons", () => {
@@ -539,4 +557,3 @@ describe("ListenBuildGame", () => {
     expect(onAnswerMock).toHaveBeenCalledWith(true);
   });
 });
-

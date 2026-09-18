@@ -67,6 +67,8 @@ const TILE_HEIGHT = 48;
 const TILE_GAP = 8;
 const LINE_HEIGHT = 62;
 const BANK_OFFSET_Y = 24;
+const NATIVE_PHYSICAL_LAYOUT =
+  Platform.OS === "web" ? undefined : ({ direction: "ltr" } as const);
 
 function getSeededShuffle(words: string[], seedStr: string): string[] {
   let seed = 0;
@@ -273,7 +275,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
 
       return (
         <View
-          style={s.wordTileCell}
+          style={[s.wordTileCell, NATIVE_PHYSICAL_LAYOUT && s.nativeWordTileCell]}
           collapsable={false}
           pointerEvents={Platform.OS === "web" ? "auto" : "none"}
         >
@@ -325,9 +327,11 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
         style={[
           s.bankPlaceholder,
           style,
-          {
+          Platform.OS === "web" && {
             left: style.left - TILE_GAP,
             width: style.width + TILE_GAP * 2,
+          },
+          {
             backgroundColor: isDark ? colors.surface : L.bgSoft,
             borderColor: isDark ? colors.border : L.slotDash,
           },
@@ -362,7 +366,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
               {question.kurdishSentence}
             </LightQuestionPrompt>
 
-            <Animated.View style={[s.duoContainer, wrongShakeStyle]}>
+            <Animated.View style={[s.duoContainer, NATIVE_PHYSICAL_LAYOUT, wrongShakeStyle]}>
               <DuoDragDrop
                 key={`sentence-builder-${question.kurdishSentence}-${shuffledWordBank.join("-")}`}
                 ref={duoRef}
@@ -444,6 +448,10 @@ const s = StyleSheet.create({
   wordTileCell: {
     height: TILE_HEIGHT,
     justifyContent: "center",
+  },
+  nativeWordTileCell: {
+    marginHorizontal: TILE_GAP,
+    marginBottom: TILE_GAP * 2,
   },
   duoWordTile: {
     height: TILE_HEIGHT,

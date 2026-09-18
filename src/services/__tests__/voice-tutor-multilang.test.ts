@@ -6,6 +6,7 @@ import {
 import { getWordBankForLanguage } from "../../data/voice-tutor-word-banks";
 import {
   buildLiveTutorOpeningPrompt,
+  buildLiveInputAudioTranscriptionConfig,
   buildLiveTutorSystem,
   getLocalizedLanguageName,
 } from "../gemini-live-client";
@@ -145,6 +146,27 @@ describe("Voice Tutor Multi-Language & Streaming", () => {
 
       const prompt = buildLiveTutorOpeningPrompt();
       expect(prompt).toContain("سڵاو Aza گیان!");
+
+      const system = buildLiveTutorSystem();
+      expect(system).toContain('Central Kurdish (Sorani), BCP-47 "ku"');
+      expect(system).toContain("Never reinterpret it as Hindi, Spanish, Persian, Urdu, or Arabic");
+    });
+  });
+
+  describe("live input transcription language bias", () => {
+    it("locks Kurdish sessions to Sorani plus the lesson language", () => {
+      const config = buildLiveInputAudioTranscriptionConfig("ku", "en");
+
+      expect(config.languageCodes).toEqual(["ku", "en-US"]);
+      expect(config.customVocabulary).toEqual(
+        expect.arrayContaining(["کوردی", "سۆرانی", "سلێمانی", "هەولێر", "سڵاو"]),
+      );
+    });
+
+    it("keeps code-switching support without Sorani vocabulary for other sources", () => {
+      expect(buildLiveInputAudioTranscriptionConfig("ar", "es")).toEqual({
+        languageCodes: ["ar", "es-419"],
+      });
     });
   });
 

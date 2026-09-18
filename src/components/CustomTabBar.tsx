@@ -46,6 +46,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
@@ -53,7 +54,8 @@ import { orderTabsForDirection } from "../utils/tab-order";
 
 const MAX_BAR_WIDTH = 460;
 const BAR_PADDING = 6;
-const INDICATOR_MOVE_DURATION = 240;
+const INDICATOR_SPRING = { duration: 340, dampingRatio: 0.72 } as const;
+const CONTENT_SPRING = { duration: 260, dampingRatio: 0.64 } as const;
 
 type TabRoute = "index" | "play" | "dashboard" | typeof TAB_FAB_ROUTE;
 
@@ -162,29 +164,63 @@ function TabButton({
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const reducedMotion = useReducedMotion();
   const pressScale = useSharedValue(1);
+  const activeScale = useSharedValue(1);
+  const activeLift = useSharedValue(0);
+  const wasFocused = useRef(isFocused);
+
+  useEffect(() => {
+    if (reducedMotion || !isFocused || wasFocused.current) {
+      activeScale.set(1);
+      activeLift.set(0);
+      wasFocused.current = isFocused;
+      return;
+    }
+
+    activeScale.set(
+      withSequence(
+        withTiming(1.1, { duration: 80, easing: Easing.out(Easing.quad) }),
+        withSpring(1, CONTENT_SPRING),
+      ),
+    );
+    activeLift.set(
+      withSequence(
+        withTiming(-2.5, { duration: 80, easing: Easing.out(Easing.quad) }),
+        withSpring(0, CONTENT_SPRING),
+      ),
+    );
+    wasFocused.current = true;
+  }, [activeLift, activeScale, isFocused, reducedMotion]);
+
   const animatedPressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pressScale.value }],
+    transform: [
+      { translateY: activeLift.get() },
+      { scale: pressScale.get() * activeScale.get() },
+    ],
   }));
 
   const handlePressIn = () => {
     cancelAnimation(pressScale);
-    pressScale.value = reducedMotion
-      ? 1
-      : withTiming(0.965, {
-          duration: 90,
-          easing: Easing.out(Easing.quad),
-        });
+    pressScale.set(
+      reducedMotion
+        ? 1
+        : withTiming(0.965, {
+            duration: 90,
+            easing: Easing.out(Easing.quad),
+          }),
+    );
     onPressIn();
   };
 
   const handlePressOut = () => {
     cancelAnimation(pressScale);
-    pressScale.value = reducedMotion
-      ? 1
-      : withTiming(1, {
-          duration: 140,
-          easing: Easing.out(Easing.cubic),
-        });
+    pressScale.set(
+      reducedMotion
+        ? 1
+        : withTiming(1, {
+            duration: 140,
+            easing: Easing.out(Easing.cubic),
+          }),
+    );
   };
 
   return (
@@ -285,10 +321,10 @@ export function CustomTabBar({
     cancelAnimation(indicatorX);
     cancelAnimation(indicatorScaleX);
     cancelAnimation(indicatorScaleY);
-    if (!hasPositionedIndicator.current || reducedMotion || focusModeEnabled) {
-      indicatorX.value = target;
-      indicatorScaleX.value = 1;
-      indicatorScaleY.value = 1;
+    if (!hasPositionedIndicator.current || reducedMotion) {
+      indicatorX.set(target);
+      indicatorScaleX.set(1);
+      indicatorScaleY.set(1);
       hasPositionedIndicator.current = true;
       previousActiveItemIndex.current = activeItemIndex;
       return;
@@ -296,18 +332,19 @@ export function CustomTabBar({
 
     const changedTab = previousActiveItemIndex.current !== activeItemIndex;
     previousActiveItemIndex.current = activeItemIndex;
-    indicatorX.value = withTiming(target, {
-      duration: INDICATOR_MOVE_DURATION,
-      easing: Easing.bezier(0.2, 0.82, 0.2, 1),
-    });
+    indicatorX.set(withSpring(target, INDICATOR_SPRING));
     if (changedTab) {
-      indicatorScaleX.value = withSequence(
-        withTiming(1.14, { duration: 105, easing: Easing.out(Easing.quad) }),
-        withTiming(1, { duration: 150, easing: Easing.out(Easing.cubic) }),
+      indicatorScaleX.set(
+        withSequence(
+          withTiming(1.18, { duration: 85, easing: Easing.out(Easing.quad) }),
+          withSpring(1, INDICATOR_SPRING),
+        ),
       );
-      indicatorScaleY.value = withSequence(
-        withTiming(0.94, { duration: 95, easing: Easing.out(Easing.quad) }),
-        withTiming(1, { duration: 160, easing: Easing.out(Easing.cubic) }),
+      indicatorScaleY.set(
+        withSequence(
+          withTiming(0.88, { duration: 85, easing: Easing.out(Easing.quad) }),
+          withSpring(1, INDICATOR_SPRING),
+        ),
       );
     }
   }, [
@@ -316,15 +353,14 @@ export function CustomTabBar({
     indicatorScaleY,
     indicatorTarget,
     indicatorX,
-    focusModeEnabled,
     reducedMotion,
   ]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: indicatorX.value },
-      { scaleX: indicatorScaleX.value },
-      { scaleY: indicatorScaleY.value },
+      { translateX: indicatorX.get() },
+      { scaleX: indicatorScaleX.get() },
+      { scaleY: indicatorScaleY.get() },
     ],
   }));
 
@@ -332,13 +368,17 @@ export function CustomTabBar({
     if (reducedMotion) return;
     cancelAnimation(indicatorScaleX);
     cancelAnimation(indicatorScaleY);
-    indicatorScaleX.value = withSequence(
-      withTiming(1.045, { duration: 70, easing: Easing.out(Easing.quad) }),
-      withTiming(1, { duration: 135, easing: Easing.out(Easing.cubic) }),
+    indicatorScaleX.set(
+      withSequence(
+        withTiming(1.06, { duration: 70, easing: Easing.out(Easing.quad) }),
+        withSpring(1, CONTENT_SPRING),
+      ),
     );
-    indicatorScaleY.value = withSequence(
-      withTiming(0.975, { duration: 70, easing: Easing.out(Easing.quad) }),
-      withTiming(1, { duration: 135, easing: Easing.out(Easing.cubic) }),
+    indicatorScaleY.set(
+      withSequence(
+        withTiming(0.96, { duration: 70, easing: Easing.out(Easing.quad) }),
+        withSpring(1, CONTENT_SPRING),
+      ),
     );
   };
 

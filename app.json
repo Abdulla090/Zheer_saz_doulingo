@@ -95,7 +95,7 @@
     },
     "plugins": [
       "expo-dev-client",
-      ["expo-router", { "asyncRoutes": { "web": true, "default": false } }],
+      ["expo-router", { "asyncRoutes": false }],
       [
         "expo-navigation-bar",
         {
@@ -147,7 +147,6 @@
         }
       ],
       "expo-status-bar",
-      "expo-web-browser",
       [
         "expo-audio",
         {

@@ -39,7 +39,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PremiumPressable } from "../../components/PremiumPressable";
 import {
-  MicPulseIcon,
   SettingsTuneIcon,
   WaveformIcon,
 } from "../../components/icons/TwinoHomeIcons";
@@ -70,24 +69,30 @@ const BRAND_LOGO = require("../../../assets/images/logo-compressed.png");
 function FocusHeader() {
   const router = useRouter();
   const { colors, isDark } = useThemeColors();
-  const { t } = useI18n();
+  const { t, isKu, isAr } = useI18n();
   const enabled = useSettingsStore((state) => state.focusModeEnabled);
   const setEnabled = useSettingsStore((state) => state.setFocusModeEnabled);
 
   return (
     <View style={styles.header}>
-      <TwinoBrandMark size={40} showName nameColor={colors.foreground} nameSize={23} />
-      <View style={styles.headerActions}>
-        <Host matchContents colorScheme={isDark ? "dark" : "light"} seedColor={colors.primary}>
+      <View style={styles.focusToggleSlot}>
+        <Host
+          matchContents={Platform.OS === "web" ? true : { vertical: true }}
+          colorScheme={isDark ? "dark" : "light"}
+          seedColor={colors.primary}
+          layoutDirection={isKu || isAr ? "rightToLeft" : "leftToRight"}
+          style={Platform.OS === "web" ? undefined : styles.focusSwitchHost}
+        >
           <Switch
             value={enabled}
             onValueChange={(value: boolean) => {
               hapticSelection();
               setEnabled(value);
             }}
-            label={t("focus.mode")}
           />
         </Host>
+      </View>
+      <TwinoBrandMark size={38} showName={false} />
       <PremiumPressable
         accessibilityRole="button"
         accessibilityLabel={t("settings.title")}
@@ -111,7 +116,6 @@ function FocusHeader() {
       >
         <SettingsTuneIcon size={24} color={colors.foreground} />
       </PremiumPressable>
-      </View>
     </View>
   );
 }
@@ -173,7 +177,6 @@ function FocusOrb({
 
 export function FocusTalkScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { width } = useWindowDimensions();
   const { t, locale, isKu, isAr } = useI18n();
   const isRtl = isKu || isAr;
@@ -274,12 +277,6 @@ export function FocusTalkScreen() {
       >
         <FocusHeader />
 
-        <DirectionBoundary direction={isRtl ? "rtl" : "ltr"} style={styles.talkIntro}>
-          <AppText style={[styles.talkTitle, { color: colors.foreground }]} languageCode={locale} align="center" latinRole="bold" fullWidth>
-            {t("focus.talkTitle")}
-          </AppText>
-        </DirectionBoundary>
-
         {!sessionActive ? (
           <View style={styles.sessionPicker}>
             <View style={styles.durationRow}>
@@ -320,11 +317,27 @@ export function FocusTalkScreen() {
           </View>
         ) : null}
 
-        <FocusOrb
-          active={sessionActive}
-          listening={listening}
-          speaking={speaking}
-        />
+        <PremiumPressable
+          accessibilityRole="button"
+          accessibilityLabel={sessionActive ? statusLabel : t("focus.tapToStart")}
+          accessibilityState={{ busy: starting }}
+          onPress={() => void startOrToggleMic()}
+          disabled={starting}
+          containerStyle={styles.orbButtonContainer}
+          style={styles.orbButton}
+          pressScale={0.965}
+        >
+          <FocusOrb
+            active={sessionActive}
+            listening={listening}
+            speaking={speaking}
+          />
+          {starting ? (
+            <View style={[styles.orbLoading, { backgroundColor: colors.surfaceRaised }]}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          ) : null}
+        </PremiumPressable>
 
         <DirectionBoundary direction={isRtl ? "rtl" : "ltr"} style={styles.transcriptBlock}>
           {sessionActive || error ? (
@@ -357,52 +370,21 @@ export function FocusTalkScreen() {
           ) : null}
         </DirectionBoundary>
 
-        <View style={styles.talkActions}>
-          <PremiumPressable
-            accessibilityRole="button"
-            accessibilityLabel={t("focus.words")}
-            onPress={() => router.navigate("/dashboard" as never)}
-            containerStyle={styles.sideActionContainer}
-            style={[styles.sideAction, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
-            pressScale={0.94}
-          >
-            <HugeiconsIcon icon={BookOpen01Icon} size={23} color={colors.foreground} strokeWidth={2.1} />
-          </PremiumPressable>
-
-          <PremiumPressable
-            accessibilityRole="button"
-            accessibilityLabel={t("focus.talk")}
-            onPress={() => void startOrToggleMic()}
-            disabled={starting}
-            containerStyle={styles.micButtonContainer}
-            style={[styles.micButton, { backgroundColor: colors.primary }]}
-            pressScale={0.94}
-          >
-            {starting ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <MicPulseIcon size={38} color={colors.onPrimary} />
-            )}
-          </PremiumPressable>
-
+        {sessionActive ? (
           <PremiumPressable
             accessibilityRole="button"
             accessibilityLabel={t("focus.end")}
-            accessibilityState={{ disabled: !sessionActive }}
             onPress={endSession}
-            disabled={!sessionActive}
-            containerStyle={[styles.sideActionContainer, !sessionActive && styles.disabledAction]}
-            style={[styles.sideAction, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
-            pressScale={0.94}
+            containerStyle={styles.endSessionContainer}
+            style={[styles.endSessionButton, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
+            pressScale={0.96}
           >
-            <View style={[styles.endGlyph, { borderColor: sessionActive ? colors.foreground : colors.mutedForeground }]} />
+            <View style={[styles.endGlyph, { borderColor: colors.foreground }]} />
+            <AppText style={[styles.endSessionText, { color: colors.foreground }]} languageCode={locale} align="center" latinRole="bold">
+              {t("focus.end")}
+            </AppText>
           </PremiumPressable>
-        </View>
-        <View style={styles.actionLabels}>
-          <AppText style={[styles.actionLabel, { color: colors.mutedForeground }]} languageCode={locale} align="center">{t("focus.words")}</AppText>
-          <AppText style={[styles.actionLabel, { color: colors.foreground }]} languageCode={locale} align="center" latinRole="bold">{t("focus.talk")}</AppText>
-          <AppText style={[styles.actionLabel, { color: colors.mutedForeground }]} languageCode={locale} align="center">{t("focus.end")}</AppText>
-        </View>
+        ) : null}
       </ScrollView>
     </DirectionBoundary>
   );
@@ -638,13 +620,14 @@ const styles = StyleSheet.create({
   header: {
     width: "100%",
     minHeight: 56,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
+    position: "relative",
   },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
-  settingsButtonContainer: { width: 48, height: 48, alignSelf: "auto" },
+  focusToggleSlot: { position: "absolute", left: 20, minWidth: 52, minHeight: 44, justifyContent: "center" },
+  focusSwitchHost: { width: 56, minHeight: 44 },
+  settingsButtonContainer: { position: "absolute", right: 20, width: 46, height: 46, alignSelf: "auto" },
   settingsButton: {
     flex: 1,
     borderRadius: 24,
@@ -659,9 +642,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: "center",
   },
-  talkIntro: { width: "100%", alignItems: "center", paddingHorizontal: 20, paddingTop: 10 },
-  talkTitle: { fontSize: 30, lineHeight: 38, letterSpacing: -0.7 },
-  sessionPicker: { width: "100%", alignItems: "center", paddingHorizontal: 18, paddingTop: 12, gap: 9 },
+  sessionPicker: { width: "100%", alignItems: "center", paddingHorizontal: 18, paddingTop: 20, gap: 9 },
   durationRow: { width: "100%", maxWidth: 430, flexDirection: "row", gap: 8 },
   durationChip: {
     flex: 1,
@@ -677,53 +658,22 @@ const styles = StyleSheet.create({
   durationMinutes: { fontSize: 13, lineHeight: 17 },
   durationCost: { fontSize: 10, lineHeight: 14, opacity: 0.9 },
   balance: { fontSize: 12, lineHeight: 17, fontVariant: ["tabular-nums"] },
-  orbStage: { width: 240, height: 240, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  orbButtonContainer: { width: 240, height: 240, alignSelf: "center", marginTop: 6 },
+  orbButton: { flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 120, borderCurve: "continuous" },
+  orbStage: { width: 240, height: 240, alignItems: "center", justifyContent: "center" },
   logoStage: { width: 240, height: 240, alignItems: "center", justifyContent: "center" },
   logoImage: { width: 240, height: 240 },
-  transcriptBlock: { width: "100%", minHeight: 84, alignItems: "center", paddingHorizontal: 24, gap: 8 },
+  orbLoading: { position: "absolute", width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  transcriptBlock: { width: "100%", minHeight: 76, alignItems: "center", paddingHorizontal: 24, gap: 7 },
   status: { fontSize: 13, lineHeight: 18 },
   transcript: { maxWidth: 560, minHeight: 48, fontSize: 20, lineHeight: 28 },
   errorBlock: { width: "100%", alignItems: "center", gap: 5 },
   errorText: { fontSize: 12, lineHeight: 17 },
   errorAction: { fontSize: 13, lineHeight: 18 },
-  talkActions: {
-    width: "100%",
-    maxWidth: 390,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    marginTop: 12,
-  },
-  sideActionContainer: { width: 58, height: 58, alignSelf: "auto" },
-  sideAction: {
-    flex: 1,
-    borderRadius: 29,
-    borderCurve: "continuous",
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  micButtonContainer: { width: 82, height: 82, alignSelf: "auto" },
-  micButton: {
-    flex: 1,
-    borderRadius: 41,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-    ...crossShadow({ color: "#FF6B4A", offsetY: 10, blur: 22, opacity: 0.25, elevation: 5 }),
-  },
-  disabledAction: { opacity: 0.42 },
   endGlyph: { width: 23, height: 11, borderWidth: 2.2, borderRadius: 9, transform: [{ rotate: "20deg" }] },
-  actionLabels: {
-    width: "100%",
-    maxWidth: 390,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    marginTop: 5,
-  },
-  actionLabel: { width: 90, fontSize: 12, lineHeight: 17 },
+  endSessionContainer: { alignSelf: "center", marginTop: 12 },
+  endSessionButton: { minHeight: 48, borderRadius: 24, borderCurve: "continuous", borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingHorizontal: 20 },
+  endSessionText: { fontSize: 14, lineHeight: 19 },
   gamesScroll: { width: "100%", alignSelf: "center", paddingHorizontal: 20 },
   screenHeading: { width: "100%", paddingTop: 20 },
   screenTitle: { fontSize: 32, lineHeight: 39, letterSpacing: -0.7 },

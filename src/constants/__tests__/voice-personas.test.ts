@@ -49,6 +49,9 @@ describe("Voice Personas Catalog", () => {
     expect(ids).toContain("layla");
     expect(ids).toContain("mateo");
     expect(ids).toContain("sofia");
+    expect(ids).toContain("statesman");
+    expect(ids).toContain("documentarian");
+    expect(ids).toContain("broadcaster");
 
     // Verify rich Kurdish female representation:
     const kurdishPersonas = VOICE_PERSONAS.filter((p) => p.language === "ku");
@@ -59,6 +62,16 @@ describe("Voice Personas Catalog", () => {
     for (const kp of kurdishPersonas) {
       expect(kp.nativeName).toBeTruthy();
       expect(kp.personalityPrompt).toContain("Kurdish");
+    }
+  });
+
+  it("uses licensed prebuilt voices for original popular-style presets", () => {
+    expect(getPersonaById("statesman").geminiVoice).toBe("Orus");
+    expect(getPersonaById("documentarian").geminiVoice).toBe("Rasalgethi");
+    expect(getPersonaById("broadcaster").geminiVoice).toBe("Algenib");
+
+    for (const id of ["statesman", "documentarian", "broadcaster"]) {
+      expect(getPersonaById(id).personalityPrompt).toContain("original");
     }
   });
 

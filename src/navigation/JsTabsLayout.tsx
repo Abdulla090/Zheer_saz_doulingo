@@ -81,7 +81,7 @@ function JsTabsLayoutInner() {
         tabBarActiveTintColor: colors.foreground,
         tabBarInactiveTintColor: colors.mutedForeground,
         sceneStyle: { backgroundColor: colors.background },
-        animation: focusModeEnabled ? "none" : "fade",
+        animation: "fade",
         transitionSpec: {
           animation: "timing",
           config: { duration: 160 },

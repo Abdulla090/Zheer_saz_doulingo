@@ -194,7 +194,13 @@ export function PathStatsBar({ pathMode }: { pathMode: LessonPathMode }) {
       </View>
 
       <View style={styles.focusToggle}>
-        <Host matchContents colorScheme={isDark ? "dark" : "light"} seedColor={colors.primary}>
+        <Host
+          matchContents={Platform.OS === "web" ? true : { vertical: true }}
+          colorScheme={isDark ? "dark" : "light"}
+          seedColor={colors.primary}
+          layoutDirection={isRtl ? "rightToLeft" : "leftToRight"}
+          style={Platform.OS === "web" ? undefined : styles.focusToggleHost}
+        >
           <Switch
             value={focusModeEnabled}
             onValueChange={(enabled: boolean) => {
@@ -246,6 +252,10 @@ function createStyles(
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 4,
+    },
+    focusToggleHost: {
+      width: 150,
+      minHeight: 44,
     },
     flagButton: {
       paddingHorizontal: compact ? 6 : 8,

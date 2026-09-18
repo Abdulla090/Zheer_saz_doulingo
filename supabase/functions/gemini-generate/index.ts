@@ -176,12 +176,13 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
     ),
     0,
   );
-  const requiresAudio = featureKey === "reading_pronunciation_evaluation";
+  const requiresAudio =
+    featureKey === "reading_pronunciation_evaluation" ||
+    featureKey === "roleplay_voice_response";
   const forbidsAudio =
     featureKey === "ai_teacher_writing" ||
     featureKey === "reading_passage_generation" ||
-    featureKey === "roleplay_text_response" ||
-    featureKey === "roleplay_voice_response";
+    featureKey === "roleplay_text_response";
   if ((requiresAudio && !containsAudio) || (forbidsAudio && containsAudio)) {
     return json(
       {
@@ -275,7 +276,9 @@ const generate = withSupabase({ auth: "user" }, async (req, ctx) => {
 
   // Clients cannot enable unpriced provider tools. Study uses structured JSON
   // and local, sandboxed visualizations; no arbitrary tool execution.
-  if (featureKey === "study_tutor") generationConfig.responseMimeType = "application/json";
+  if ("responseMimeType" in policy) {
+    generationConfig.responseMimeType = policy.responseMimeType;
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 50_000);
