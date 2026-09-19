@@ -60,6 +60,7 @@ import { detectScriptLanguage } from "../../utils/streaming-transcript";
 import { GAME_MODES } from "../games/game-modes";
 import { PracticeCard } from "../games/practice-card";
 import { withAlpha } from "../games/games-theme";
+import { FocusAnalysisModal } from "./FocusAnalysisModal";
 
 type ThemeColors = (typeof Colors)["light"] | (typeof Colors)["dark"];
 type SessionMinutes = 5 | 10 | 15;
@@ -131,6 +132,7 @@ function FocusOrb({
 }) {
   const reducedMotion = useReducedMotion();
   const pulse = useSharedValue(0);
+  const rotation = useSharedValue(0);
 
   useEffect(() => {
     cancelAnimation(pulse);
@@ -152,11 +154,35 @@ function FocusOrb({
     return () => cancelAnimation(pulse);
   }, [active, listening, pulse, reducedMotion, speaking]);
 
+  useEffect(() => {
+    cancelAnimation(rotation);
+    if (!reducedMotion && speaking) {
+      rotation.set(0);
+      rotation.set(
+        withRepeat(
+          withTiming(1, {
+            duration: 2400,
+            easing: Easing.linear,
+          }),
+          -1,
+          false,
+        ),
+      );
+    } else {
+      rotation.set(0);
+    }
+
+    return () => cancelAnimation(rotation);
+  }, [reducedMotion, rotation, speaking]);
+
   const logoStyle = useAnimatedStyle(() => {
     const progress = pulse.get();
     return {
       opacity: active ? 0.92 + progress * 0.08 : 1,
-      transform: [{ scale: 1 + progress * 0.065 }],
+      transform: [
+        { rotate: `${rotation.get() * 360}deg` },
+        { scale: 1 + progress * 0.065 },
+      ],
     };
   });
 
@@ -186,8 +212,11 @@ export function FocusTalkScreen() {
   const { billingAccount, refreshBillingAccount } = useAuth();
   const [durationMinutes, setDurationMinutes] = useState<SessionMinutes>(5);
   const [starting, setStarting] = useState(false);
+  const [analysisVisible, setAnalysisVisible] = useState(false);
+  const analysisData = useSettingsStore((state) => state.lastAnalysis);
   const tutor = useLiveVoiceTutor();
   const {
+    analysisLoading,
     error,
     listening,
     runAnalysis,
@@ -197,6 +226,7 @@ export function FocusTalkScreen() {
     stopAll,
     thinking,
     transcript,
+    turns,
     handleMicPress,
   } = tutor;
   const liveMethodsRef = useRef({ runAnalysis, stopAll });
@@ -250,13 +280,20 @@ export function FocusTalkScreen() {
     }
   }, [durationMinutes, handleMicPress, refreshBillingAccount, sessionActive, startSession, starting]);
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback(async () => {
     if (!sessionActive) return;
     hapticImpact();
-    void runAnalysis();
+    const analysisPromise = runAnalysis();
     stopAll();
-    void refreshBillingAccount();
+    setAnalysisVisible(true);
+    await Promise.allSettled([analysisPromise, refreshBillingAccount()]);
   }, [refreshBillingAccount, runAnalysis, sessionActive, stopAll]);
+
+  const openAnalysis = useCallback(() => {
+    hapticSelection();
+    setAnalysisVisible(true);
+    void runAnalysis();
+  }, [runAnalysis]);
 
   const maxWidth = width >= 760 ? 680 : undefined;
   const balance = billingAccount?.entitlements.creditBalance;
@@ -374,7 +411,7 @@ export function FocusTalkScreen() {
           <PremiumPressable
             accessibilityRole="button"
             accessibilityLabel={t("focus.end")}
-            onPress={endSession}
+            onPress={() => void endSession()}
             containerStyle={styles.endSessionContainer}
             style={[styles.endSessionButton, { backgroundColor: colors.surfaceRaised, borderColor: colors.border }]}
             pressScale={0.96}
@@ -385,7 +422,41 @@ export function FocusTalkScreen() {
             </AppText>
           </PremiumPressable>
         ) : null}
+
+        {!sessionActive && turns.length > 0 ? (
+          <PremiumPressable
+            accessibilityRole="button"
+            accessibilityLabel={isKu ? "بینینی شیکردنەوە" : isAr ? "عرض التحليل" : "View analysis"}
+            onPress={openAnalysis}
+            containerStyle={styles.analysisButtonContainer}
+            style={[
+              styles.analysisButton,
+              { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
+            ]}
+            pressScale={0.96}
+          >
+            <WaveformIcon size={19} color={colors.primary} />
+            <AppText
+              style={[styles.analysisButtonText, { color: colors.foreground }]}
+              languageCode={locale}
+              latinRole="bold"
+            >
+              {isKu ? "بینینی شیکردنەوە" : isAr ? "عرض التحليل" : "View analysis"}
+            </AppText>
+          </PremiumPressable>
+        ) : null}
       </ScrollView>
+
+      <FocusAnalysisModal
+        visible={analysisVisible}
+        loading={analysisLoading}
+        analysis={analysisData}
+        turns={turns}
+        sourceLanguage={sourceLanguage}
+        targetLanguage={targetLanguage}
+        onClose={() => setAnalysisVisible(false)}
+        onRetry={() => void runAnalysis()}
+      />
     </DirectionBoundary>
   );
 }
@@ -676,6 +747,9 @@ const styles = StyleSheet.create({
   endSessionContainer: { alignSelf: "center", marginTop: 12 },
   endSessionButton: { minHeight: 48, borderRadius: 24, borderCurve: "continuous", borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingHorizontal: 20 },
   endSessionText: { fontSize: 14, lineHeight: 19 },
+  analysisButtonContainer: { width: "100%", marginTop: 12, alignItems: "center" },
+  analysisButton: { width: 190, minHeight: 48, borderRadius: 18, borderCurve: "continuous", borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 18, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  analysisButtonText: { fontSize: 14, lineHeight: 19 },
   gamesScroll: { width: "100%", alignSelf: "center", paddingHorizontal: 20 },
   screenHeading: { width: "100%", paddingTop: 20 },
   screenTitle: { fontSize: 32, lineHeight: 39, letterSpacing: -0.7 },

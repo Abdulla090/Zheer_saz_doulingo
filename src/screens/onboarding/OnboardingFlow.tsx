@@ -125,13 +125,13 @@ export function OnboardingFlow() {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     if (reduceMotion) {
-      completeOnboarding("/auth?redirect=/(tabs)");
+      completeOnboarding("/auth?redirect=/(tabs)&fromOnboarding=1");
       return;
     }
     // Smooth transition: fade out root view, then replace route to show login screen.
     rootOpacity.value = withTiming(0, { duration: 400 }, (finished) => {
       if (finished) {
-        runOnJS(completeOnboarding)("/auth?redirect=/(tabs)");
+        runOnJS(completeOnboarding)("/auth?redirect=/(tabs)&fromOnboarding=1");
       }
     });
   }, [completeOnboarding, reduceMotion, rootOpacity, selectedPath, setPathMode]);
@@ -158,7 +158,7 @@ export function OnboardingFlow() {
      * done and hands straight off to auth.
      */
     setPathMode(selectedPath);
-    completeOnboarding("/auth?redirect=/(tabs)");
+    completeOnboarding("/auth?redirect=/(tabs)&fromOnboarding=1");
   }, [completeOnboarding, selectedPath, setPathMode]);
 
   const goNext = useCallback(() => {

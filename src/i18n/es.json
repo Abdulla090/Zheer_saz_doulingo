@@ -1,4 +1,12 @@
 {
+  "lessons": {
+    "wordRescueTitle": "Recupera la palabra que falta",
+    "wordRescueInstruction": "Toca las letras en orden para completar la frase.",
+    "wordRescueAnswer": "Tu palabra",
+    "wordRescueUndo": "Deshacer",
+    "wordRescueHint": "Revelar una letra",
+    "wordRescueListen": "Escuchar"
+  },
   "settings": {
     "nativeLanguage": "Idioma nativo",
     "learningLanguage": "Idioma de aprendizaje"

@@ -405,6 +405,12 @@
     "tutorPersonaLabel": "شخصية المدرّب"
   },
   "lessons": {
+    "wordRescueTitle": "أكمل الكلمة المفقودة",
+    "wordRescueInstruction": "اضغط الحروف بالترتيب لإكمال الجملة.",
+    "wordRescueAnswer": "كلمتك",
+    "wordRescueUndo": "تراجع",
+    "wordRescueHint": "اكشف حرفًا",
+    "wordRescueListen": "استمع",
     "chooseAnswer": "اختر الإجابة",
     "mcHowToSay": "كيف تقول هذا؟",
     "mcWhatIsWord": "ما معنى هذا؟",

@@ -405,6 +405,12 @@
     "tutorPersonaLabel": "Tutor Persona"
   },
   "lessons": {
+    "wordRescueTitle": "Rescue the missing word",
+    "wordRescueInstruction": "Tap the letters in order to complete the sentence.",
+    "wordRescueAnswer": "Your word",
+    "wordRescueUndo": "Undo",
+    "wordRescueHint": "Reveal a letter",
+    "wordRescueListen": "Listen",
     "chooseAnswer": "Choose the answer",
     "mcHowToSay": "How do you say this?",
     "mcWhatIsWord": "What does this mean?",

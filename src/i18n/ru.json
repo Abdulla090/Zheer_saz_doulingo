@@ -1,4 +1,12 @@
 {
+  "lessons": {
+    "wordRescueTitle": "Восстанови пропущенное слово",
+    "wordRescueInstruction": "Нажимай на буквы по порядку, чтобы дополнить предложение.",
+    "wordRescueAnswer": "Твоё слово",
+    "wordRescueUndo": "Отменить",
+    "wordRescueHint": "Открыть букву",
+    "wordRescueListen": "Послушать"
+  },
   "settings": {
     "nativeLanguage": "Родной язык",
     "learningLanguage": "Язык изучения"

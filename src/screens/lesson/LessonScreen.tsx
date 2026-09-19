@@ -62,6 +62,8 @@ import {
 } from "./games/lesson-light-primitives";
 import { HomeLiquidButton, HomeLiquidCard } from "../../components/ui/ios-liquid-home";
 import MultipleChoiceGame from "./games/MultipleChoiceGame";
+import WordRescueGame from "./games/word-rescue-game";
+import { selectWordRescue } from "./games/word-rescue";
 import PairMatchGame from "./games/PairMatchGame";
 import SentenceBuilderGame from "./games/SentenceBuilderGame";
 import ListenBuildGame from "./games/ListenBuildGame";
@@ -350,7 +352,12 @@ export default function LessonScreen() {
     const shared = { onAnswer: handleAnswer, pathMode, questionIndex: current, totalQuestions: questions.length };
     const key = q.type;
     switch (q.type) {
-      case "multiple_choice":     return <MultipleChoiceGame       key={key} {...shared} question={q} />;
+      case "multiple_choice": {
+        const puzzle = selectWordRescue(questions, current, pathMode, lessonId, lessonIndex);
+        return puzzle
+          ? <WordRescueGame key={`word-rescue-${lessonId}-${lessonIndex}-${current}-${q.correctAnswer}`} question={q} puzzle={puzzle} onAnswer={handleAnswer} />
+          : <MultipleChoiceGame key={key} {...shared} question={q} />;
+      }
       case "pair_match":          return <PairMatchGame            key={key} {...shared} question={q} />;
       case "sentence_builder":    return <SentenceBuilderGame      key={key} {...shared} question={q} />;
       case "listen_build":        return <ListenBuildGame          key={key} {...shared} question={q} />;

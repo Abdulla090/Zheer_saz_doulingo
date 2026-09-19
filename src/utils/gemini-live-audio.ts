@@ -95,6 +95,7 @@ export class LivePcmPlayer {
   private writeChain: Promise<void> = Promise.resolve();
   private generation = 0;
   private queuedAudioBytes = 0;
+  private expectedTrackCount = 0;
   private playbackStarted = false;
   private drainCandidateSince = 0;
   private receivedFirstChunk = false;
@@ -247,7 +248,7 @@ export class LivePcmPlayer {
       return;
     }
 
-    if (playing || isBuffering) {
+    if (isBuffering) {
       this.drainCandidateSince = 0;
       return;
     }
@@ -256,6 +257,14 @@ export class LivePcmPlayer {
 
     const trackFinished = duration > 0 && currentTime >= duration - 0.05;
     const hasUnplayedTracks = currentIndex < trackCount - 1;
+
+    // Some native backends briefly keep `playing=true` after play() is called
+    // on an ended track. A newly appended next track must win over that stale
+    // flag or the tail of a long response can remain parked forever.
+    if (playing && !(trackFinished && hasUnplayedTracks)) {
+      this.drainCandidateSince = 0;
+      return;
+    }
 
     if (hasUnplayedTracks) {
       this.drainCandidateSince = 0;
@@ -300,6 +309,26 @@ export class LivePcmPlayer {
     ) {
       this.drainCandidateSince = 0;
       return;
+    }
+
+    // playlist.add() crosses the native bridge. On a long response the final
+    // WAV can be accepted by JS before native trackCount/currentIndex expose
+    // it. Never declare the queue drained until native playback has caught up
+    // with every file this player generated.
+    const playlist = this.playlist;
+    if (playlist && this.expectedTrackCount > 0) {
+      try {
+        if (
+          playlist.trackCount < this.expectedTrackCount ||
+          playlist.currentIndex < this.expectedTrackCount - 1
+        ) {
+          this.drainCandidateSince = 0;
+          return;
+        }
+      } catch {
+        this.drainCandidateSince = 0;
+        return;
+      }
     }
 
     if (this.drainCandidateSince === 0) {
@@ -470,6 +499,7 @@ export class LivePcmPlayer {
           playlist.skipTo(playlist.currentIndex + 1);
         }
       }
+      this.expectedTrackCount += 1;
       this.requestPlayback();
       this.ensureWatchdog();
     } catch (error) {
@@ -488,6 +518,7 @@ export class LivePcmPlayer {
 
   private resetCompletedTurn() {
     this.queuedAudioBytes = 0;
+    this.expectedTrackCount = 0;
     this.playbackStarted = false;
     this.drainCandidateSince = 0;
     // Reset first-chunk flag so the next turn gets leading silence again.
@@ -618,6 +649,7 @@ export class LivePcmPlayer {
     }
     this.pendingBytes = new Uint8Array(0);
     this.queuedAudioBytes = 0;
+    this.expectedTrackCount = 0;
     this.playbackStarted = false;
     this.drainCandidateSince = 0;
     this.receivedFirstChunk = false;

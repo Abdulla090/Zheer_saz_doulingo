@@ -439,7 +439,7 @@ export default function ListenBuildGame({ question, onAnswer, pathMode }: Props)
             isKids={pathMode === "kids"}
             duoDepthStyle="subtle"
             disabled={fb !== "idle"}
-            onPress={() => handleWordTap(index)}
+            onPress={Platform.OS === "web" ? undefined : () => handleWordTap(index)}
             fitLabel
             fitLabelLines={1}
             labelLines={1}

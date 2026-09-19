@@ -18,7 +18,7 @@ import {
   Cancel01Icon,
   AlertCircleIcon,
 } from "@hugeicons/core-free-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -27,6 +27,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  BackHandler,
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -186,10 +187,13 @@ export default function AuthScreen() {
   const {
     redirect,
     mode: modeParam,
+    fromOnboarding,
   } = useLocalSearchParams<{
     redirect?: string;
     mode?: string;
+    fromOnboarding?: string;
   }>();
+  const isOnboardingAuthGate = fromOnboarding === "1";
   const safeBack = useSafeBack(
     (typeof redirect === "string" && redirect ? redirect : "/more") as any,
   );
@@ -237,14 +241,27 @@ export default function AuthScreen() {
     setModalVisible(true);
   };
 
-  const changeMode = (nextMode: AuthMode) => {
+  const changeMode = useCallback((nextMode: AuthMode) => {
     setAuthMode(nextMode);
     setErrorMessage(null);
     setPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setPasswordVisible(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web" || !isOnboardingAuthGate) return;
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (authMode === "forgot" || authMode === "recovery") {
+        changeMode("signIn");
+      }
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [authMode, changeMode, isOnboardingAuthGate]);
 
   useEffect(() => {
     const nextMode = getInitialMode(modeParam);
@@ -553,29 +570,31 @@ export default function AuthScreen() {
             },
           ]}
         >
-          <TouchableOpacity
-            style={[
-              styles.backBtn,
-              { top: insets.top + 16 },
-              isRtl ? { right: 20 } : { left: 20 },
-            ]}
-            onPress={() => {
-              if (isForgot || isRecovery) {
-                changeMode("signIn");
-              } else {
-                safeBack();
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={isKu ? "گەڕانەوە" : "Go back"}
-          >
-            <HugeiconsIcon
-              icon={isRtl ? ArrowRight02Icon : ArrowLeft02Icon}
-              size={20}
-              color={colors.foreground}
-              strokeWidth={2.5}
-            />
-          </TouchableOpacity>
+          {(!isOnboardingAuthGate || isForgot || isRecovery) ? (
+            <TouchableOpacity
+              style={[
+                styles.backBtn,
+                { top: insets.top + 16 },
+                isRtl ? { right: 20 } : { left: 20 },
+              ]}
+              onPress={() => {
+                if (isForgot || isRecovery) {
+                  changeMode("signIn");
+                } else {
+                  safeBack();
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={isKu ? "گەڕانەوە" : "Go back"}
+            >
+              <HugeiconsIcon
+                icon={isRtl ? ArrowRight02Icon : ArrowLeft02Icon}
+                size={20}
+                color={colors.foreground}
+                strokeWidth={2.5}
+              />
+            </TouchableOpacity>
+          ) : null}
 
           <View style={styles.authShell}>
             {isDesktopWeb ? (

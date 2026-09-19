@@ -405,6 +405,12 @@
     "tutorPersonaLabel": "کەسایەتی مامۆستا"
   },
   "lessons": {
+    "wordRescueTitle": "وشە ونبووەکە تەواو بکە",
+    "wordRescueInstruction": "پیتەکان بە ڕیز دابگرە بۆ تەواوکردنی ڕستەکە.",
+    "wordRescueAnswer": "وشەکەت",
+    "wordRescueUndo": "گەڕانەوە",
+    "wordRescueHint": "پیتێک پیشان بدە",
+    "wordRescueListen": "گوێ بگرە",
     "chooseAnswer": "وەڵام هەڵبژێرە",
     "mcHowToSay": "چۆن ئەمە دەڵێیت؟",
     "mcWhatIsWord": "ئەمە واتای چییە؟",

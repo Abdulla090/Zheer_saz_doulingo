@@ -286,7 +286,7 @@ export default function SentenceBuilderGame({ question, onAnswer, pathMode }: Pr
             isKids={pathMode === "kids"}
             duoDepthStyle="subtle"
             disabled={fb !== "idle"}
-            onPress={() => handleWordTap(index)}
+            onPress={Platform.OS === "web" ? undefined : () => handleWordTap(index)}
             fitLabel
             fitLabelLines={1}
             labelLines={1}

@@ -12,6 +12,8 @@ import { normalizePcm16 } from "../pcm16";
 
 let mockStatusListener: ((status: Record<string, unknown>) => void) | null =
   null;
+let delayAddedTrackVisibility = false;
+let pendingVisibleTracks = 0;
 
 const mockPlaylist = {
   playing: false,
@@ -33,7 +35,11 @@ const mockPlaylist = {
     mockPlaylist.trackCount = 0;
   }),
   add: jest.fn(() => {
-    mockPlaylist.trackCount += 1;
+    if (delayAddedTrackVisibility) {
+      pendingVisibleTracks += 1;
+    } else {
+      mockPlaylist.trackCount += 1;
+    }
   }),
   skipTo: jest.fn((index: number) => {
     mockPlaylist.currentIndex = index;
@@ -122,6 +128,8 @@ describe("LivePcmPlayer turn draining", () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
     mockStatusListener = null;
+    delayAddedTrackVisibility = false;
+    pendingVisibleTracks = 0;
     Object.assign(mockPlaylist, {
       playing: false,
       isLoaded: true,
@@ -281,6 +289,49 @@ describe("LivePcmPlayer turn draining", () => {
       duration: 1,
     });
     jest.advanceTimersByTime(200);
+    expect(states).toEqual([true, false]);
+    player.destroy();
+  });
+
+  it("waits for late native track-count updates before draining a long turn", async () => {
+    const states: boolean[] = [];
+    const player = new LivePcmPlayer((isPlaying) => states.push(isPlaying));
+
+    player.enqueueBase64Pcm("AAAA");
+    jest.advanceTimersByTime(200);
+    await flushPromises();
+    emitStatus({
+      playing: false,
+      didJustFinish: true,
+      currentIndex: 0,
+      trackCount: 1,
+      currentTime: 1,
+      duration: 1,
+    });
+
+    delayAddedTrackVisibility = true;
+    player.enqueueBase64Pcm("AAAA");
+    await player.finishTurn();
+    jest.advanceTimersByTime(400);
+
+    expect(pendingVisibleTracks).toBe(1);
+    expect(states).toEqual([true]);
+
+    mockPlaylist.trackCount += pendingVisibleTracks;
+    pendingVisibleTracks = 0;
+    jest.advanceTimersByTime(150);
+    expect(mockPlaylist.skipTo).toHaveBeenCalledWith(1);
+
+    emitStatus({
+      playing: false,
+      didJustFinish: true,
+      currentIndex: 1,
+      trackCount: 2,
+      currentTime: 1,
+      duration: 1,
+    });
+    jest.advanceTimersByTime(250);
+
     expect(states).toEqual([true, false]);
     player.destroy();
   });
